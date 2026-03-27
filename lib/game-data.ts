@@ -39,6 +39,12 @@ export const genres: { id: Genre; name: string; available: boolean }[] = [
   { id: 'western', name: 'Western', available: false },
 ]
 
+export const tonePresets = [
+  { id: 'epic', name: 'Epic', description: 'Grand stakes, heroic moments' },
+  { id: 'gritty', name: 'Gritty', description: 'Harsh realities, tough choices' },
+  { id: 'witty', name: 'Witty', description: 'Humor, banter, clever twists' },
+]
+
 export const species: Species[] = [
   {
     id: 'human',

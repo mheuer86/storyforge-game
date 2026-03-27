@@ -110,11 +110,11 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                   <div className="flex flex-wrap gap-1">
                     {c.proficiencies.map((p) => (
                       <Badge
-                        key={p.name}
+                        key={p}
                         variant="secondary"
                         className="bg-secondary/50 text-[10px] text-secondary-foreground"
                       >
-                        {p.name}
+                        {p}
                       </Badge>
                     ))}
                   </div>
@@ -148,11 +148,15 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                 <div className="flex gap-4 text-foreground">
                   <span>
                     <span className="text-muted-foreground">HP:</span>{' '}
-                    <span className="font-semibold">{selectedClass.hp}/{selectedClass.hp}</span>
+                    <span className="font-semibold">{selectedClass.startingHp}/{selectedClass.startingHp}</span>
                   </span>
                   <span>
                     <span className="text-muted-foreground">AC:</span>{' '}
-                    <span className="font-semibold">{selectedClass.ac}</span>
+                    <span className="font-semibold">{selectedClass.startingAc}</span>
+                  </span>
+                  <span>
+                    <span className="text-muted-foreground">Credits:</span>{' '}
+                    <span className="font-semibold">{selectedClass.startingCredits}cr</span>
                   </span>
                 </div>
 
@@ -160,8 +164,8 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                 <div>
                   <span className="text-muted-foreground">Starting Gear:</span>
                   <ul className="mt-1 list-inside list-disc text-foreground">
-                    {selectedClass.startingGear.map((item) => (
-                      <li key={item}>{item}</li>
+                    {selectedClass.startingInventory.map((item) => (
+                      <li key={item.id}>{item.name}{item.damage ? ` (${item.damage})` : ''}</li>
                     ))}
                   </ul>
                 </div>
