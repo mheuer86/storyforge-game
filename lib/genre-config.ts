@@ -262,7 +262,7 @@ const spaceOperaClasses: CharacterClass[] = [
 
 const spaceOperaTheme: GenreTheme = {
   logo: '/storyforge_logo.png',
-  fontNarrative: 'var(--font-geist-sans)',
+  fontNarrative: 'var(--font-geist-mono), monospace',
   background: 'oklch(0.12 0.02 260)',
   foreground: 'oklch(0.92 0.01 90)',
   card: 'oklch(0.15 0.02 260)',
@@ -517,7 +517,7 @@ const fantasyClasses: CharacterClass[] = [
 
 const fantasyTheme: GenreTheme = {
   logo: '/logo_fantasy.png',
-  fontNarrative: 'var(--font-lora)',
+  fontNarrative: "var(--font-lora), 'Lora', Georgia, serif",
   background: 'oklch(0.12 0.02 45)',
   foreground: 'oklch(0.92 0.02 80)',
   card: 'oklch(0.15 0.02 45)',
