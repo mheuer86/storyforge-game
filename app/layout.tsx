@@ -65,6 +65,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} font-sans antialiased`}>
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
+        <div className="mist-bg hidden" aria-hidden="true" />
         <div className="relative z-10 min-h-screen">
           {children}
         </div>

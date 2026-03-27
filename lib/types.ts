@@ -143,7 +143,7 @@ export interface MetaState {
   lastSaved: string
   chapterNumber: number
   chapterTitle: string
-  genre: 'space-opera'
+  genre: string
   sessionCount: number
 }
 

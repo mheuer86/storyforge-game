@@ -6,22 +6,37 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { genres, tonePresets, type Genre } from '@/lib/game-data'
+import { genres, getGenreConfig, applyGenreTheme, type Genre } from '@/lib/genre-config'
 
 interface WorldSetupProps {
-  onNext: (data: { genre: Genre; tone: string }) => void
+  onNext: (data: { genre: Genre }) => void
 }
 
 export function WorldSetup({ onNext }: WorldSetupProps) {
   const [selectedGenre, setSelectedGenre] = useState<Genre>('space-opera')
-  const [selectedTone, setSelectedTone] = useState('epic')
+  const config = getGenreConfig(selectedGenre)
+
+  const handleGenreSelect = (genre: Genre) => {
+    setSelectedGenre(genre)
+    applyGenreTheme(genre)
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-16 p-8">
       <div className="text-center">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/storyforge_logo.png" alt="Storyforge" width={90} height={90} className="opacity-90 drop-shadow-[0_0_20px_oklch(0.72_0.15_195/0.6)]" />
-          <div className="font-roboto-mono text-6xl text-primary/70" style={{ fontVariant: 'small-caps', textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
+          <Image
+            src={config.theme.logo}
+            alt="Storyforge"
+            width={175}
+            height={175}
+            className="opacity-90"
+            style={{ filter: `drop-shadow(${config.theme.titleGlow.split(',')[0]})` }}
+          />
+          <div
+            className="font-roboto-mono text-6xl text-primary/70"
+            style={{ fontVariant: 'small-caps', textShadow: 'var(--title-glow)' }}
+          >
             storyforge
           </div>
         </div>
@@ -34,11 +49,14 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
       </div>
       <Card className="w-full max-w-2xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl tracking-wide text-primary/70" style={{ textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
+          <CardTitle
+            className="text-3xl tracking-wide text-primary/70"
+            style={{ textShadow: 'var(--title-glow)' }}
+          >
             Choose Your Universe
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Select a genre and set the tone for your campaign
+            Select a genre for your campaign
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-8">
@@ -51,7 +69,7 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
               {genres.map((genre) => (
                 <button
                   key={genre.id}
-                  onClick={() => genre.available && setSelectedGenre(genre.id)}
+                  onClick={() => genre.available && handleGenreSelect(genre.id)}
                   disabled={!genre.available}
                   className={cn(
                     'relative flex flex-col items-center justify-center rounded-lg border p-4 transition-all duration-200',
@@ -76,37 +94,12 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
             </div>
           </div>
 
-          {/* Tone Selection */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Campaign Tone
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {tonePresets.map((tone) => (
-                <button
-                  key={tone.id}
-                  onClick={() => setSelectedTone(tone.id)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 rounded-lg border p-4 transition-all duration-200',
-                    selectedTone === tone.id
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_-3px] shadow-primary/30'
-                      : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-secondary/50'
-                  )}
-                >
-                  <span className="text-sm font-medium text-foreground">{tone.name}</span>
-                  <span className="text-center text-xs text-muted-foreground">
-                    {tone.description}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Next Button */}
           <div className="flex justify-end pt-4">
             <Button
-              onClick={() => onNext({ genre: selectedGenre, tone: selectedTone })}
-              className="action-glow bg-primary px-8 text-primary-foreground hover:bg-primary/90"
+              onClick={() => onNext({ genre: selectedGenre })}
+              className="bg-primary px-8 text-primary-foreground hover:bg-primary/90"
+              style={{ boxShadow: 'var(--action-glow)' }}
             >
               Next
             </Button>
