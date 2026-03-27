@@ -259,8 +259,8 @@ function CharacterSheet({ character }: { character: Character }) {
       <div>
         <h3 className="mb-1 text-xs uppercase text-muted-foreground">Gear</h3>
         <ul className="list-inside list-disc text-foreground">
-          {character.class.startingGear.map((item) => (
-            <li key={item}>{item}</li>
+          {character.class.startingGear.map((item, i) => (
+            <li key={`${item}-${i}`}>{item}</li>
           ))}
         </ul>
       </div>

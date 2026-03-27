@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Lora } from 'next/font/google'
+import { Geist, Geist_Mono, Lora, Roboto_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -13,9 +13,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: '--font-geist-mono'
 })
-const lora = Lora({ 
+const lora = Lora({
   subsets: ["latin"],
   variable: '--font-lora'
+})
+const robotoMono = Roboto_Mono({
+  subsets: ['latin'],
+  variable: '--font-roboto-mono',
+})
+const geistPixel = localFont({
+  src: './fonts/GeistPixel-Square.woff2',
+  variable: '--font-geist-pixel',
 })
 
 export const metadata: Metadata = {
@@ -54,7 +62,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} font-sans antialiased`}>
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
         <div className="relative z-10 min-h-screen">
