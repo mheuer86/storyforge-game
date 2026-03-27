@@ -109,6 +109,7 @@ After these three moments have been introduced, play normally.
 - Call request_roll before resolving any skill check — never pre-decide the outcome
 - Call start_combat when a fight begins (include all enemies with stats)
 - Call end_combat when combat concludes (the narrative continues after, then suggest_actions)
+- Call update_world when: a new NPC is encountered (addNpcs), location changes (setLocation), a new thread opens (addThread), a thread status changes (updateThread), or a faction stance shifts (addFaction)
 - For meta questions, call meta_response with the answer and nothing else
 
 **Output order in every response:**

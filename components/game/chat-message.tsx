@@ -10,6 +10,25 @@ interface ChatMessageProps {
   message: ChatMessageType
 }
 
+function renderMarkdown(text: string) {
+  return text.split('\n').map((line, i) => {
+    const parts: React.ReactNode[] = []
+    // Match **bold**, *italic*, and plain text segments
+    const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g
+    let last = 0
+    let match
+    let key = 0
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > last) parts.push(match.input.slice(last, match.index))
+      if (match[1] !== undefined) parts.push(<strong key={key++}>{match[1]}</strong>)
+      else if (match[2] !== undefined) parts.push(<em key={key++}>{match[2]}</em>)
+      last = match.index + match[0].length
+    }
+    if (last < line.length) parts.push(line.slice(last))
+    return <span key={i}>{parts}{i < text.split('\n').length - 1 && <br />}</span>
+  })
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -29,8 +48,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 p-4">
-          <p className="font-mono text-sm leading-relaxed text-narrative whitespace-pre-wrap">
-            {message.content}
+          <p className="font-mono text-xs leading-relaxed text-narrative">
+            {renderMarkdown(message.content)}
           </p>
         </div>
         {/* Flag button on hover */}

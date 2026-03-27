@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 import { genres, tonePresets, type Genre } from '@/lib/game-data'
 
 interface WorldSetupProps {
@@ -16,10 +17,24 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
   const [selectedTone, setSelectedTone] = useState('epic')
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-16 p-8">
+      <div className="text-center">
+        <div className="flex flex-col items-center gap-3">
+          <Image src="/storyforge_logo.png" alt="Storyforge" width={90} height={90} className="opacity-90 drop-shadow-[0_0_20px_oklch(0.72_0.15_195/0.6)]" />
+          <div className="font-roboto-mono text-6xl text-primary/70" style={{ fontVariant: 'small-caps', textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
+            storyforge
+          </div>
+        </div>
+        <div className="mt-1 text-sm tracking-widest text-muted-foreground uppercase">
+          Text-based action RPG
+        </div>
+        <div className="mt-3 text-base text-muted-foreground/70 italic">
+          Where fate is more than luck
+        </div>
+      </div>
       <Card className="w-full max-w-2xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="font-serif text-3xl tracking-wide text-foreground">
+          <CardTitle className="text-3xl tracking-wide text-primary/70" style={{ textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
             Choose Your Universe
           </CardTitle>
           <CardDescription className="text-muted-foreground">

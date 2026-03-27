@@ -208,6 +208,80 @@ export const gameTools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'update_world',
+    description:
+      'Update world state: add or update NPCs, change current location, add/update factions, add/update narrative threads. Call this whenever the player encounters a new NPC, moves to a new location, or a thread changes.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        addNpcs: {
+          type: 'array',
+          description: 'New NPCs to add to the known NPCs list.',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              description: { type: 'string', description: 'Brief description of who they are' },
+              lastSeen: { type: 'string', description: 'Current location or context' },
+              relationship: { type: 'string', description: 'e.g. "hostile", "neutral", "ally", "contact"' },
+            },
+            required: ['name', 'description', 'lastSeen'],
+          },
+        },
+        updateNpc: {
+          type: 'object',
+          description: 'Update an existing NPC (matched by name).',
+          properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+            lastSeen: { type: 'string' },
+            relationship: { type: 'string' },
+          },
+          required: ['name'],
+        },
+        setLocation: {
+          type: 'object',
+          description: 'Update the current location.',
+          properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+          },
+          required: ['name', 'description'],
+        },
+        addThread: {
+          type: 'object',
+          description: 'Add a new narrative thread.',
+          properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+            status: { type: 'string' },
+            deteriorating: { type: 'boolean' },
+          },
+          required: ['id', 'title', 'status', 'deteriorating'],
+        },
+        updateThread: {
+          type: 'object',
+          description: 'Update an existing thread status (matched by id).',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'string' },
+            deteriorating: { type: 'boolean' },
+          },
+          required: ['id', 'status'],
+        },
+        addFaction: {
+          type: 'object',
+          description: 'Add or update a faction.',
+          properties: {
+            name: { type: 'string' },
+            stance: { type: 'string' },
+          },
+          required: ['name', 'stance'],
+        },
+      },
+    },
+  },
+  {
     name: 'meta_response',
     description:
       'Answer an out-of-character question from the player. Use this ONLY when the message is prefixed with [META]. Answer directly from game state. Do not advance the story.',

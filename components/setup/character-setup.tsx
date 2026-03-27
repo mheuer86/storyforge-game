@@ -31,7 +31,7 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
     <div className="flex min-h-screen items-center justify-center p-8">
       <Card className="w-full max-w-4xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="font-serif text-3xl tracking-wide text-foreground">
+          <CardTitle className="text-3xl tracking-wide text-primary/70" style={{ textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
             Create Your Character
           </CardTitle>
           <CardDescription className="text-muted-foreground">
@@ -129,9 +129,9 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
               <h4 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
                 Character Preview
               </h4>
-              <div className="flex flex-col gap-4 font-mono text-sm">
+              <div className="flex flex-col gap-4 text-sm">
                 {/* Stats */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-foreground">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-foreground">
                   {Object.entries(selectedClass.stats).map(([stat, value]) => (
                     <span key={stat}>
                       <span className="text-muted-foreground">{stat}</span>{' '}
@@ -148,15 +148,15 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                 <div className="flex gap-4 text-foreground">
                   <span>
                     <span className="text-muted-foreground">HP:</span>{' '}
-                    <span className="font-semibold">{selectedClass.startingHp}/{selectedClass.startingHp}</span>
+                    <span className="font-mono font-semibold">{selectedClass.startingHp}/{selectedClass.startingHp}</span>
                   </span>
                   <span>
                     <span className="text-muted-foreground">AC:</span>{' '}
-                    <span className="font-semibold">{selectedClass.startingAc}</span>
+                    <span className="font-mono font-semibold">{selectedClass.startingAc}</span>
                   </span>
                   <span>
                     <span className="text-muted-foreground">Credits:</span>{' '}
-                    <span className="font-semibold">{selectedClass.startingCredits}cr</span>
+                    <span className="font-mono font-semibold">{selectedClass.startingCredits}cr</span>
                   </span>
                 </div>
 
@@ -165,15 +165,20 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                   <span className="text-muted-foreground">Starting Gear:</span>
                   <ul className="mt-1 list-inside list-disc text-foreground">
                     {selectedClass.startingInventory.map((item) => (
-                      <li key={item.id}>{item.name}{item.damage ? ` (${item.damage})` : ''}</li>
+                      <li key={item.id}>
+                        {item.name}
+                        {item.damage && (
+                          <span className="ml-1 font-mono text-xs text-muted-foreground">({item.damage})</span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 </div>
 
                 {/* Trait */}
                 <div>
-                  <span className="text-primary">{selectedClass.trait.name}:</span>{' '}
-                  <span className="text-foreground">{selectedClass.trait.description}</span>
+                  <span className="font-medium text-primary">{selectedClass.trait.name}:</span>{' '}
+                  <span className="text-muted-foreground">{selectedClass.trait.description}</span>
                 </div>
               </div>
             </div>
