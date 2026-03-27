@@ -5,7 +5,7 @@ import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
 import { GameScreen } from '@/components/game/game-screen'
 import { loadGameState, createInitialGameState } from '@/lib/game-data'
-import type { Genre, Species, CharacterClass } from '@/lib/game-data'
+import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 
 type AppState = 'loading' | 'world-setup' | 'character-setup' | 'playing'
@@ -31,13 +31,16 @@ export default function StoryforgeApp() {
   useEffect(() => {
     const existing = loadGameState()
     if (existing) {
+      // Apply the saved game's genre theme
+      const genre = (existing.meta.genre || 'space-opera') as Genre
+      applyGenreTheme(genre)
       setAppState('playing')
     } else {
       setAppState('world-setup')
     }
   }, [])
 
-  const handleWorldSetupComplete = (data: { genre: Genre; tone: string }) => {
+  const handleWorldSetupComplete = (data: { genre: Genre }) => {
     setSetupData((prev) => ({ ...prev, genre: data.genre }))
     setAppState('character-setup')
   }
@@ -50,7 +53,8 @@ export default function StoryforgeApp() {
     const initialState = createInitialGameState(
       data.name,
       data.species.id,
-      data.characterClass.id
+      data.characterClass.id,
+      setupData.genre
     )
     setPendingGameState(initialState)
     setAppState('playing')
@@ -75,6 +79,7 @@ export default function StoryforgeApp() {
   if (appState === 'character-setup') {
     return (
       <CharacterSetup
+        genre={setupData.genre}
         onBack={handleBackToWorldSetup}
         onStart={handleCharacterSetupComplete}
       />

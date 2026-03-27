@@ -3,19 +3,23 @@
 import Image from 'next/image'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getGenreConfig, type Genre } from '@/lib/genre-config'
 
 interface TopBarProps {
   chapterTitle: string
+  genre?: Genre
   onMenuClick: () => void
   onChapterClick: () => void
 }
 
-export function TopBar({ chapterTitle, onMenuClick, onChapterClick }: TopBarProps) {
+export function TopBar({ chapterTitle, genre = 'space-opera', onMenuClick, onChapterClick }: TopBarProps) {
+  const config = getGenreConfig(genre)
+
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-border/30 bg-background/80 px-6 backdrop-blur-sm">
       {/* Wordmark */}
       <div className="flex items-center gap-2">
-        <Image src="/storyforge_logo.png" alt="Storyforge" width={46} height={46} className="opacity-80" />
+        <Image src={config.theme.logo} alt="Storyforge" width={46} height={46} className="opacity-80" />
         <div className="text-sm font-medium tracking-widest text-muted-foreground">
           STORYFORGE
         </div>

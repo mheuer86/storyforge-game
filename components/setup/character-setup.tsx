@@ -7,20 +7,22 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
-  species,
-  characterClasses,
   getStatModifier,
   formatModifier,
-  type Species,
-  type CharacterClass,
 } from '@/lib/game-data'
+import { getGenreConfig, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 
 interface CharacterSetupProps {
+  genre: Genre
   onBack: () => void
   onStart: (data: { name: string; species: Species; characterClass: CharacterClass }) => void
 }
 
-export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
+export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) {
+  const config = getGenreConfig(genre)
+  const genreSpecies = config.species
+  const genreClasses = config.classes
+
   const [characterName, setCharacterName] = useState('')
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(null)
@@ -31,11 +33,14 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
     <div className="flex min-h-screen items-center justify-center p-8">
       <Card className="w-full max-w-4xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl tracking-wide text-primary/70" style={{ textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)' }}>
+          <CardTitle
+            className="text-3xl tracking-wide text-primary/70"
+            style={{ textShadow: 'var(--title-glow)' }}
+          >
             Create Your Character
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Define who you are in this universe
+            Define who you are in this {genre === 'fantasy' ? 'world' : 'universe'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-8">
@@ -55,10 +60,10 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
           {/* Species Selection */}
           <div className="flex flex-col gap-3">
             <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Species
+              {genre === 'fantasy' ? 'Race' : 'Species'}
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {species.map((s) => (
+              {genreSpecies.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setSelectedSpecies(s)}
@@ -84,7 +89,7 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
               Class
             </label>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-              {characterClasses.map((c) => (
+              {genreClasses.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedClass(c)}
@@ -155,8 +160,8 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                     <span className="font-mono font-semibold">{selectedClass.startingAc}</span>
                   </span>
                   <span>
-                    <span className="text-muted-foreground">Credits:</span>{' '}
-                    <span className="font-mono font-semibold">{selectedClass.startingCredits}cr</span>
+                    <span className="text-muted-foreground">{config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1)}:</span>{' '}
+                    <span className="font-mono font-semibold">{selectedClass.startingCredits}{config.currencyAbbrev}</span>
                   </span>
                 </div>
 
@@ -203,7 +208,8 @@ export function CharacterSetup({ onBack, onStart }: CharacterSetupProps) {
                 })
               }
               disabled={!canStart}
-              className="action-glow bg-primary px-8 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="bg-primary px-8 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              style={{ boxShadow: 'var(--action-glow)' }}
             >
               Begin Campaign
             </Button>

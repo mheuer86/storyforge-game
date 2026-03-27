@@ -65,6 +65,14 @@
   --success: oklch(0.65 0.18 145);
   --warning: oklch(0.75 0.15 85);
   --info: oklch(0.65 0.12 220);
+
+  /* Theme-driven glow effects */
+  --title-glow: 0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4);
+  --action-glow: 0 0 0 1px rgba(100,200,220,0.2), 0 0 15px -3px rgba(100,200,220,0.15);
+  --action-glow-hover: 0 0 0 1px rgba(100,200,220,0.4), 0 0 20px -3px rgba(100,200,220,0.3);
+  --scrollbar-thumb: oklch(0.3 0.02 260);
+  --scrollbar-thumb-hover: oklch(0.35 0.02 260);
+  --font-narrative: var(--font-geist-sans);
 }
 
 /* Dark theme is the default for this app */
@@ -210,16 +218,16 @@
 /* Setup screen title glow */
 .title-glow {
   color: oklch(0.92 0.01 90);
-  text-shadow: 0 0 30px oklch(0.72 0.15 195 / 0.6);
+  text-shadow: var(--title-glow);
 }
 
 /* Quick action button glow effect */
 .action-glow {
-  box-shadow: 0 0 0 1px rgba(100,200,220,0.2), 0 0 15px -3px rgba(100,200,220,0.15);
+  box-shadow: var(--action-glow);
   transition: all 0.2s ease;
 }
 .action-glow:hover {
-  box-shadow: 0 0 0 1px rgba(100,200,220,0.4), 0 0 20px -3px rgba(100,200,220,0.3);
+  box-shadow: var(--action-glow-hover);
 }
 
 /* Scrollbar styling */
@@ -231,9 +239,28 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0.02 260);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0.02 260);
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Fantasy mist background effect */
+.mist-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.18 0.04 45 / 0.6) 0%, transparent 100%),
+    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.16 0.03 75 / 0.4) 0%, transparent 100%),
+    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.14 0.02 55 / 0.3) 0%, transparent 100%);
+  animation: mist-drift 90s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+@keyframes mist-drift {
+  from { background-position: 0 0, 100% 100%, 50% 50%; }
+  to { background-position: 100px 50px, -80px -40px, 30px -20px; }
 }

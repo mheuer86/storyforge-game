@@ -7,7 +7,7 @@ import { StateDiffBar } from './state-diff-bar'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { loadGameState, saveGameState } from '@/lib/game-data'
+import { loadGameState, saveGameState, loadQuickActions, saveQuickActions } from '@/lib/game-data'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, Enemy, InventoryItem, TempModifier } from '@/lib/types'
 
 interface DisplayMessage {
@@ -46,7 +46,11 @@ interface PendingRoll {
 export function GameScreen({ initialGameState }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
-  const [quickActions, setQuickActions] = useState<string[]>([])
+  const [quickActions, setQuickActionsRaw] = useState<string[]>([])
+  const setQuickActions = useCallback((actions: string[]) => {
+    setQuickActionsRaw(actions)
+    saveQuickActions(actions)
+  }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
@@ -517,6 +521,12 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
     }))
     setMessages(displayMessages)
 
+    // Restore quick actions from localStorage (they aren't part of game state)
+    const savedActions = loadQuickActions()
+    if (savedActions.length > 0) {
+      setQuickActionsRaw(savedActions)
+    }
+
     if (state.history.messages.length === 0) {
       sendToGM('', state, false, true)
     }
@@ -605,6 +615,7 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
     <div className="flex min-h-screen flex-col">
       <TopBar
         chapterTitle={`Chapter ${gameState.meta.chapterNumber}: ${gameState.meta.chapterTitle}`}
+        genre={(gameState.meta.genre || 'space-opera') as 'space-opera' | 'fantasy'}
         onMenuClick={() => setIsMenuOpen(true)}
         onChapterClick={() => setIsMenuOpen(true)}
       />
