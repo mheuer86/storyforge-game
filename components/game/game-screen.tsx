@@ -496,20 +496,15 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
         onOpenChange={setIsMenuOpen}
         character={{
           name: gameState.character.name,
-          species: { id: gameState.character.species.toLowerCase(), name: gameState.character.species, description: '' },
+          species: { name: gameState.character.species },
           class: {
-            id: gameState.character.class.toLowerCase(),
             name: gameState.character.class,
-            concept: '',
-            primaryStat: '',
             proficiencies: gameState.character.proficiencies.map((p) => ({ name: p })),
-            stats: gameState.character.stats,
+            stats: gameState.character.stats as unknown as Record<string, number>,
             startingGear: gameState.character.inventory.map((i) => i.name),
             trait: gameState.character.traits[0]
               ? { name: gameState.character.traits[0].name, description: gameState.character.traits[0].description }
               : { name: '', description: '' },
-            hp: gameState.character.hp.max,
-            ac: gameState.character.ac,
           },
           level: gameState.character.level,
           hp: gameState.character.hp,

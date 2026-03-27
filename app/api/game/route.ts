@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
               content: [
                 {
                   type: 'tool_result' as const,
-                  tool_use_id: firstMessage.content.find((b) => b.type === 'tool_use' && b.name === 'request_roll')!.id,
+                  tool_use_id: (firstMessage.content.find((b) => b.type === 'tool_use' && (b as { name: string }).name === 'request_roll') as { id: string })!.id,
                   content: rollResultText,
                 },
               ],
