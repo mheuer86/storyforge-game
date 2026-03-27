@@ -53,12 +53,15 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
   const [pendingRoll, setPendingRoll] = useState<PendingRoll | null>(null)
   const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
   const [diceDisplay, setDiceDisplay] = useState(1)
+  const [rollStreamComplete, setRollStreamComplete] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasStarted = useRef(false)
   const isLoadingRef = useRef(false)
   // Refs for roll buffering (accessible inside async stream loop)
   const rollCapturedRef = useRef(false)
   const bufferedTextRef = useRef('')
+  // Full reveal data set when stream completes
+  const rollRevealDataRef = useRef<PendingRoll | null>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -329,9 +332,13 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
         if (!response.ok) throw new Error(`API error: ${response.status}`)
         if (!response.body) throw new Error('No response body')
 
-        // Reset roll buffering refs for this request
+        // Reset all roll state for this request
         rollCapturedRef.current = false
         bufferedTextRef.current = ''
+        rollRevealDataRef.current = null
+        setPendingRoll(null)
+        setRollStreamComplete(false)
+        setDicePhase('idle')
 
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
@@ -366,7 +373,6 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
               }
 
               if (event.type === 'roll') {
-                // Capture the roll but don't display yet — wait for player to click
                 rollCapturedRef.current = true
                 capturedRollMsg = {
                   id: Date.now().toString() + '_roll',
@@ -382,6 +388,15 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
                     reason: event.reason,
                   },
                 }
+                // Show dice card immediately — don't wait for the continuation call to finish
+                setPendingRoll({
+                  rollMsg: capturedRollMsg,
+                  gmMsgId,
+                  extraText: '',
+                  finalState: stateWithPlayerMessage,
+                  statChanges: [],
+                  finalActions: [],
+                })
               }
 
               if (event.type === 'tools') {
@@ -429,16 +444,17 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
                 }
 
                 if (capturedRollMsg) {
-                  // Defer finalization — show roll button, let player click to reveal
-                  setPendingRoll({
+                  // Store full reveal data and signal stream is complete
+                  rollRevealDataRef.current = {
                     rollMsg: capturedRollMsg,
                     gmMsgId,
                     extraText: bufferedTextRef.current,
                     finalState,
                     statChanges,
                     finalActions,
-                  })
-                  // isLoading stays true until player clicks
+                  }
+                  setRollStreamComplete(true)
+                  // isLoading stays true until player clicks and reveal completes
                 } else {
                   setGameState(finalState)
                   saveGameState(finalState)
@@ -468,6 +484,10 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
         )
       } finally {
         if (!rollCapturedRef.current) {
+          // No roll pending — clean up loading state immediately
+          setPendingRoll(null)
+          setRollStreamComplete(false)
+          setDicePhase('idle')
           isLoadingRef.current = false
           setIsLoading(false)
         }
@@ -508,62 +528,54 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
     setDicePhase('rolling')
 
     // Cycle through random numbers
-    let count = 0
     const interval = setInterval(() => {
       setDiceDisplay(Math.floor(Math.random() * 20) + 1)
-      count++
-    }, 60)
+    }, 50)
 
-    // Settle on the real result after ~900ms
+    // Settle on the real result after 700ms
     setTimeout(() => {
       clearInterval(interval)
       setDiceDisplay(actualRoll)
       setDicePhase('revealed')
-    }, 900)
+    }, 700)
   }, [pendingRoll, dicePhase])
 
-  const handleRollReveal = useCallback(() => {
-    if (!pendingRoll) return
-    const { rollMsg, gmMsgId, extraText, finalState, statChanges, finalActions } = pendingRoll
-
-    // Insert roll badge after the first GM message, then continuation as a new GM message
-    setMessages((prev) => {
-      const idx = prev.findIndex((m) => m.id === gmMsgId)
-      const insertions: DisplayMessage[] = [rollMsg]
-      if (extraText) {
-        insertions.push({
-          id: Date.now().toString() + '_cont',
-          type: 'gm',
-          content: extraText,
-        })
-      }
-      return idx >= 0
-        ? [...prev.slice(0, idx + 1), ...insertions, ...prev.slice(idx + 1)]
-        : [...prev, ...insertions]
-    })
-
-    setGameState(finalState)
-    saveGameState(finalState)
-    setLastStatChanges(statChanges)
-    if (finalActions.length > 0) setQuickActions(finalActions)
-
-    setPendingRoll(null)
-    setDicePhase('idle')
-    setDiceDisplay(1)
-    rollCapturedRef.current = false
-    bufferedTextRef.current = ''
-    isLoadingRef.current = false
-    setIsLoading(false)
-  }, [pendingRoll])
-
-  // After dice settles on result, wait then reveal the story continuation
+  // Reveal continuation when BOTH animation is done AND stream has finished
   useEffect(() => {
-    if (dicePhase !== 'revealed') return
+    if (dicePhase !== 'revealed' || !rollStreamComplete) return
     const t = setTimeout(() => {
-      handleRollReveal()
-    }, 1400)
+      const data = rollRevealDataRef.current
+      if (!data) return
+
+      setMessages((prev) => {
+        const { rollMsg, gmMsgId, extraText } = data
+        const idx = prev.findIndex((m) => m.id === gmMsgId)
+        const insertions: DisplayMessage[] = [rollMsg]
+        if (extraText) {
+          insertions.push({ id: Date.now().toString() + '_cont', type: 'gm', content: extraText })
+        }
+        return idx >= 0
+          ? [...prev.slice(0, idx + 1), ...insertions, ...prev.slice(idx + 1)]
+          : [...prev, ...insertions]
+      })
+
+      setGameState(data.finalState)
+      saveGameState(data.finalState)
+      setLastStatChanges(data.statChanges)
+      if (data.finalActions.length > 0) setQuickActions(data.finalActions)
+
+      rollRevealDataRef.current = null
+      setPendingRoll(null)
+      setRollStreamComplete(false)
+      setDicePhase('idle')
+      setDiceDisplay(1)
+      rollCapturedRef.current = false
+      bufferedTextRef.current = ''
+      isLoadingRef.current = false
+      setIsLoading(false)
+    }, 1200)
     return () => clearTimeout(t)
-  }, [dicePhase, handleRollReveal])
+  }, [dicePhase, rollStreamComplete])
 
   const handleActionSelect = useCallback(
     (action: string) => {
@@ -709,7 +721,7 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
             </div>
           )}
           <ActionBar
-            quickActions={quickActions}
+            quickActions={pendingRoll ? [] : quickActions}
             onActionSelect={handleActionSelect}
             onCustomAction={handleCustomAction}
             disabled={isLoading}

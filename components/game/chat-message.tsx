@@ -11,9 +11,20 @@ interface ChatMessageProps {
 }
 
 function renderMarkdown(text: string) {
-  return text.split('\n').map((line, i) => {
+  const lines = text.split('\n')
+  return lines.map((line, i) => {
+    const addBreak = i < lines.length - 1
+
+    // ## heading
+    if (line.startsWith('## ')) {
+      return <span key={i} className="block mt-3 mb-1 font-mono text-xs font-semibold uppercase tracking-widest text-primary/70">{line.slice(3)}{addBreak && <br />}</span>
+    }
+    // # heading
+    if (line.startsWith('# ')) {
+      return <span key={i} className="block mt-4 mb-1 font-mono text-sm font-bold uppercase tracking-widest text-primary/80">{line.slice(2)}{addBreak && <br />}</span>
+    }
+
     const parts: React.ReactNode[] = []
-    // Match **bold**, *italic*, and plain text segments
     const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g
     let last = 0
     let match
@@ -25,7 +36,7 @@ function renderMarkdown(text: string) {
       last = match.index + match[0].length
     }
     if (last < line.length) parts.push(line.slice(last))
-    return <span key={i}>{parts}{i < text.split('\n').length - 1 && <br />}</span>
+    return <span key={i}>{parts}{addBreak && <br />}</span>
   })
 }
 
