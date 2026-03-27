@@ -59,7 +59,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 p-4">
-          <p className="font-mono text-xs leading-relaxed text-narrative">
+          <p className="text-xs leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)' }}>
             {renderMarkdown(message.content)}
           </p>
         </div>
