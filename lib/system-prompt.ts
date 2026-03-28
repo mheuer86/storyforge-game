@@ -112,6 +112,7 @@ After these three moments have been introduced, play normally.
 - Call start_combat when a fight begins (include all enemies with stats)
 - Call end_combat when combat concludes (the narrative continues after, then suggest_actions)
 - Call update_world when: a new NPC is encountered (addNpcs), location changes (setLocation), a new thread opens (addThread), a thread status changes (updateThread), a faction stance shifts (addFaction), the player makes a promise or takes on a debt (addPromise), or a promise is kept or broken (updatePromise)
+- NPC names must be consistent: before calling addNpcs, check the NPCS list in the current game state. If the person is already recorded, call updateNpc instead. Never add parenthetical qualifiers to a name already in the list — "Aldric" stays "Aldric", not "Aldric (the merchant)"
 - Call update_antagonist (action: "establish") when the primary antagonist is first revealed or identified. Call update_antagonist (action: "move") once per chapter for their offscreen move — weave it naturally into the narrative, then call the tool
 - For meta questions, call meta_response with the answer and nothing else
 - Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters
@@ -206,7 +207,9 @@ function compressGameState(gs: GameState): string {
         '\n'
       : ''
 
-  return `CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus}
+  const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
+
+  return `CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus} | Pronouns: ${pronouns}
 STATS: ${statLine}
 PROFICIENCIES: ${c.proficiencies.join(', ')}
 INVENTORY: ${inventoryLine || 'Empty'}

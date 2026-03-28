@@ -15,7 +15,7 @@ import { getGenreConfig, type Genre, type Species, type CharacterClass } from '@
 interface CharacterSetupProps {
   genre: Genre
   onBack: () => void
-  onStart: (data: { name: string; species: Species; characterClass: CharacterClass }) => void
+  onStart: (data: { name: string; species: Species; characterClass: CharacterClass; gender: 'he' | 'she' | 'they' }) => void
 }
 
 export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) {
@@ -26,6 +26,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
   const [characterName, setCharacterName] = useState('')
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(null)
+  const [selectedGender, setSelectedGender] = useState<'he' | 'she' | 'they'>('they')
 
   const canStart = characterName.trim() && selectedSpecies && selectedClass
 
@@ -55,6 +56,33 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               placeholder="Enter your character's name..."
               className="border-border/50 bg-secondary/30 text-foreground placeholder:text-muted-foreground/50 focus:border-primary"
             />
+          </div>
+
+          {/* Gender / Pronouns */}
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Pronouns
+            </label>
+            <div className="flex gap-2">
+              {([
+                { value: 'he', label: 'He / Him' },
+                { value: 'she', label: 'She / Her' },
+                { value: 'they', label: 'They / Them' },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSelectedGender(opt.value)}
+                  className={cn(
+                    'flex-1 rounded-lg border px-3 py-2 text-sm transition-all duration-200',
+                    selectedGender === opt.value
+                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_15px_-3px] shadow-primary/30'
+                      : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Species Selection */}
@@ -205,6 +233,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   name: characterName.trim(),
                   species: selectedSpecies!,
                   characterClass: selectedClass!,
+                  gender: selectedGender,
                 })
               }
               disabled={!canStart}

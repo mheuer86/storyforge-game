@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, Enemy, InventoryItem, TempModifier, AntagonistMove } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
@@ -36,13 +36,15 @@ interface GameScreenProps {
   onNewGame?: () => void
 }
 
-interface PendingRoll {
-  rollMsg: DisplayMessage
-  gmMsgId: string
-  extraText: string
-  finalState: GameState
-  statChanges: StatChange[]
-  finalActions: string[]
+interface RollPrompt {
+  check: string
+  stat: string
+  dc: number
+  modifier: number
+  reason: string
+  toolUseId: string
+  pendingMessages: unknown[]
+  pendingState: GameState
 }
 
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
@@ -56,26 +58,26 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
-  const [pendingRoll, setPendingRoll] = useState<PendingRoll | null>(null)
+  const [rollPrompt, setRollPrompt] = useState<RollPrompt | null>(null)
   const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
   const [diceDisplay, setDiceDisplay] = useState(1)
-  const [rollStreamComplete, setRollStreamComplete] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [rolledValue, setRolledValue] = useState<number | null>(null)
+  const lastMessageRef = useRef<HTMLDivElement>(null)
+  const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
   const isLoadingRef = useRef(false)
-  // Refs for roll buffering (accessible inside async stream loop)
-  const rollCapturedRef = useRef(false)
-  const bufferedTextRef = useRef('')
-  // Full reveal data set when stream completes
-  const rollRevealDataRef = useRef<PendingRoll | null>(null)
-
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, scrollToBottom])
+    const prev = prevMessageCountRef.current
+    const curr = messages.length
+    if (curr === prev) return
+    prevMessageCountRef.current = curr
+    if (curr === 0) return
+    // Initial load: scroll to end so history shows bottom; new messages: anchor to top
+    const block: ScrollLogicalPosition = prev <= 0 ? 'end' : 'start'
+    const behavior: ScrollBehavior = prev === -1 ? 'instant' : 'smooth'
+    lastMessageRef.current?.scrollIntoView({ behavior, block })
+  }, [messages])
 
 
   const applyToolResults = useCallback(
@@ -221,8 +223,23 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           const world = { ...updated.world }
 
           if (input.addNpcs) {
-            world.npcs = [...world.npcs, ...input.addNpcs]
-            input.addNpcs.forEach((n) => statChanges.push({ type: 'new', label: `Met: ${n.name}` }))
+            for (const n of input.addNpcs) {
+              const nameLower = n.name.toLowerCase()
+              const existing = world.npcs.find((x) => {
+                const xLower = x.name.toLowerCase()
+                return xLower === nameLower || xLower.startsWith(nameLower) || nameLower.startsWith(xLower)
+              })
+              if (existing) {
+                // Merge into the existing entry, keep the shorter/established name
+                const canonical = existing.name.length <= n.name.length ? existing.name : n.name
+                world.npcs = world.npcs.map((x) =>
+                  x.name === existing.name ? { ...x, ...n, name: canonical } : x
+                )
+              } else {
+                world.npcs = [...world.npcs, n]
+                statChanges.push({ type: 'new', label: `Met: ${n.name}` })
+              }
+            }
           }
           if (input.updateNpc) {
             world.npcs = world.npcs.map((n) =>
@@ -367,6 +384,126 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     []
   )
 
+  const streamRequest = useCallback(async (
+    body: Record<string, unknown>,
+    gmMsgId: string,
+    isMetaQuestion: boolean,
+    currentState: GameState,
+    onRollPrompt: (prompt: RollPrompt) => void,
+    onDone: (finalState: GameState, statChanges: StatChange[]) => void,
+    onError: (msg: string) => void,
+  ) => {
+    let gmText = ''
+    let stateWithChanges = currentState
+
+    try {
+      const response = await fetch('/api/game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`)
+      if (!response.body) throw new Error('No response body')
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      const statChanges: StatChange[] = []
+      let finalActions: string[] = []
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line) as StreamEvent
+
+            if (event.type === 'text') {
+              gmText += event.content
+              setMessages((prev) =>
+                prev.map((m) => (m.id === gmMsgId ? { ...m, content: gmText } : m))
+              )
+            }
+
+            if (event.type === 'roll_prompt') {
+              onRollPrompt({
+                check: event.check,
+                stat: event.stat,
+                dc: event.dc,
+                modifier: event.modifier,
+                reason: event.reason,
+                toolUseId: event.toolUseId,
+                pendingMessages: event.pendingMessages,
+                pendingState: stateWithChanges,
+              })
+            }
+
+            if (event.type === 'tools') {
+              const suggestTool = event.results.findLast((r) => r.tool === 'suggest_actions')
+              if (suggestTool) {
+                finalActions = (suggestTool.input as { actions: string[] }).actions
+                setQuickActions(finalActions)
+              }
+
+              const metaTool = event.results.find((r) => r.tool === 'meta_response')
+              if (metaTool) {
+                const metaContent = (metaTool.input as { content: string }).content
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === gmMsgId ? { ...m, type: 'meta-response', content: metaContent } : m
+                  )
+                )
+                gmText = metaContent
+              }
+
+              const otherResults = event.results.filter(
+                (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
+              )
+              if (otherResults.length > 0) {
+                stateWithChanges = applyToolResults(otherResults, stateWithChanges, statChanges)
+              }
+            }
+
+            if (event.type === 'done') {
+              const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
+              const finalState = {
+                ...stateWithChanges,
+                history: {
+                  ...stateWithChanges.history,
+                  messages: [
+                    ...stateWithChanges.history.messages,
+                    {
+                      id: gmMsgId,
+                      role: gmRole as 'gm' | 'meta-response',
+                      content: gmText,
+                      timestamp: new Date().toISOString(),
+                    },
+                  ],
+                },
+              }
+              onDone(finalState, statChanges)
+            }
+
+            if (event.type === 'error') {
+              onError(event.message)
+            }
+          } catch {
+            // Skip malformed lines
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }, [applyToolResults, setQuickActions])
+
   const sendToGM = useCallback(
     async (
       playerMessage: string,
@@ -392,7 +529,6 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         setMessages((prev) => [...prev, playerDisplayMessage])
       }
 
-      // Add the player message to history
       let stateWithPlayerMessage = currentState
       if (playerDisplayMessage) {
         stateWithPlayerMessage = {
@@ -413,190 +549,88 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       }
 
       const gmMsgId = (Date.now() + 1).toString()
-      let gmText = ''
-
       setMessages((prev) => [
         ...prev,
         { id: gmMsgId, type: isMetaQuestion ? 'meta-response' : 'gm', content: '' },
       ])
 
-      try {
-        const response = await fetch('/api/game', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: playerMessage,
-            gameState: stateWithPlayerMessage,
-            isMetaQuestion,
-            isInitial,
-          }),
-        })
-
-        if (!response.ok) throw new Error(`API error: ${response.status}`)
-        if (!response.body) throw new Error('No response body')
-
-        // Reset all roll state for this request
-        rollCapturedRef.current = false
-        bufferedTextRef.current = ''
-        rollRevealDataRef.current = null
-        setPendingRoll(null)
-        setRollStreamComplete(false)
-        setDicePhase('idle')
-
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-        const statChanges: StatChange[] = []
-        let finalActions: string[] = []
-        let capturedRollMsg: DisplayMessage | null = null
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() ?? ''
-
-          for (const line of lines) {
-            if (!line.trim()) continue
-            try {
-              const event = JSON.parse(line) as StreamEvent
-
-              if (event.type === 'text') {
-                if (rollCapturedRef.current) {
-                  // Buffer text that comes after the roll — reveal on click
-                  bufferedTextRef.current += event.content
-                } else {
-                  gmText += event.content
-                  setMessages((prev) =>
-                    prev.map((m) => (m.id === gmMsgId ? { ...m, content: gmText } : m))
-                  )
-                }
-              }
-
-              if (event.type === 'roll') {
-                rollCapturedRef.current = true
-                capturedRollMsg = {
-                  id: Date.now().toString() + '_roll',
-                  type: 'roll',
-                  content: `${event.check} — DC ${event.dc} — ${event.roll}+${event.modifier}=${event.total} — ${event.result.toUpperCase()}`,
-                  rollData: {
-                    check: event.check,
-                    dc: event.dc,
-                    roll: event.roll,
-                    modifier: event.modifier,
-                    total: event.total,
-                    result: event.result,
-                    reason: event.reason,
-                  },
-                }
-                // Show dice card immediately — don't wait for the continuation call to finish
-                setPendingRoll({
-                  rollMsg: capturedRollMsg,
-                  gmMsgId,
-                  extraText: '',
-                  finalState: stateWithPlayerMessage,
-                  statChanges: [],
-                  finalActions: [],
-                })
-              }
-
-              if (event.type === 'tools') {
-                const suggestTool = event.results.findLast((r) => r.tool === 'suggest_actions')
-                if (suggestTool) {
-                  finalActions = (suggestTool.input as { actions: string[] }).actions
-                  setQuickActions(finalActions)  // apply immediately regardless of roll state
-                }
-
-                const metaTool = event.results.find((r) => r.tool === 'meta_response')
-                if (metaTool) {
-                  const metaContent = (metaTool.input as { content: string }).content
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === gmMsgId ? { ...m, type: 'meta-response', content: metaContent } : m
-                    )
-                  )
-                  gmText = metaContent
-                }
-
-                const otherResults = event.results.filter(
-                  (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
-                )
-                if (otherResults.length > 0) {
-                  stateWithPlayerMessage = applyToolResults(otherResults, stateWithPlayerMessage, statChanges)
-                }
-              }
-
-              if (event.type === 'done') {
-                const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
-                const finalState = {
-                  ...stateWithPlayerMessage,
-                  history: {
-                    ...stateWithPlayerMessage.history,
-                    messages: [
-                      ...stateWithPlayerMessage.history.messages,
-                      {
-                        id: gmMsgId,
-                        role: gmRole as 'gm' | 'meta-response',
-                        content: gmText + bufferedTextRef.current,
-                        timestamp: new Date().toISOString(),
-                      },
-                    ],
-                  },
-                }
-
-                if (capturedRollMsg) {
-                  // Store full reveal data and signal stream is complete
-                  rollRevealDataRef.current = {
-                    rollMsg: capturedRollMsg,
-                    gmMsgId,
-                    extraText: bufferedTextRef.current,
-                    finalState,
-                    statChanges,
-                    finalActions,
-                  }
-                  setRollStreamComplete(true)
-                  // isLoading stays true until player clicks and reveal completes
-                } else {
-                  setGameState(finalState)
-                  saveGameState(finalState)
-                  setLastStatChanges(statChanges)
-                  if (finalActions.length > 0) {
-                    setQuickActions(finalActions)
-                  }
-                }
-              }
-
-              if (event.type === 'error') {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === gmMsgId ? { ...m, content: `[Error: ${event.message}]` } : m
-                  )
-                )
-              }
-            } catch {
-              // Skip malformed lines
-            }
-          }
-        }
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Something went wrong'
-        setMessages((prev) =>
-          prev.map((m) => (m.id === gmMsgId ? { ...m, content: `[Connection error: ${msg}]` } : m))
-        )
-      } finally {
-        if (!rollCapturedRef.current) {
-          // No roll pending — clean up loading state immediately
-          setPendingRoll(null)
-          setRollStreamComplete(false)
-          setDicePhase('idle')
+      await streamRequest(
+        { message: playerMessage, gameState: stateWithPlayerMessage, isMetaQuestion, isInitial },
+        gmMsgId,
+        isMetaQuestion,
+        stateWithPlayerMessage,
+        (prompt) => {
+          setRollPrompt(prompt)
           isLoadingRef.current = false
           setIsLoading(false)
-        }
-      }
+        },
+        (finalState, statChanges) => {
+          setGameState(finalState)
+          saveGameState(finalState)
+          setLastStatChanges(statChanges)
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+        (msg) => {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: `[Error: ${msg}]` } : m))
+          )
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+      )
     },
-    [applyToolResults]
+    [streamRequest]
+  )
+
+  const sendContinuation = useCallback(
+    async (roll: number, prompt: RollPrompt) => {
+      if (isLoadingRef.current) return
+      isLoadingRef.current = true
+      setIsLoading(true)
+      setLastStatChanges([])
+
+      const rollResolution: RollResolution = {
+        roll,
+        check: prompt.check,
+        stat: prompt.stat,
+        dc: prompt.dc,
+        modifier: prompt.modifier,
+        reason: prompt.reason,
+        toolUseId: prompt.toolUseId,
+        pendingMessages: prompt.pendingMessages,
+      }
+
+      const gmMsgId = (Date.now() + 1).toString()
+      setMessages((prev) => [...prev, { id: gmMsgId, type: 'gm', content: '' }])
+
+      await streamRequest(
+        { message: '', gameState: prompt.pendingState, isMetaQuestion: false, isInitial: false, rollResolution },
+        gmMsgId,
+        false,
+        prompt.pendingState,
+        () => {
+          // nested rolls not expected — treat as error
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+        (finalState, statChanges) => {
+          setGameState(finalState)
+          saveGameState(finalState)
+          setLastStatChanges(statChanges)
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+        (msg) => {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: `[Error: ${msg}]` } : m))
+          )
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+      )
+    },
+    [streamRequest]
   )
 
   // Load state and start campaign on mount
@@ -632,59 +666,36 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [sendToGM, initialGameState])
 
   const handleDiceClick = useCallback(() => {
-    if (!pendingRoll || dicePhase !== 'idle') return
-    const actualRoll = pendingRoll.rollMsg.rollData!.roll
+    if (!rollPrompt || dicePhase !== 'idle') return
+    const roll = Math.floor(Math.random() * 20) + 1
+    setRolledValue(roll)
     setDicePhase('rolling')
 
-    // Cycle through random numbers
     const interval = setInterval(() => {
       setDiceDisplay(Math.floor(Math.random() * 20) + 1)
     }, 50)
 
-    // Settle on the real result after 700ms
     setTimeout(() => {
       clearInterval(interval)
-      setDiceDisplay(actualRoll)
+      setDiceDisplay(roll)
       setDicePhase('revealed')
     }, 700)
-  }, [pendingRoll, dicePhase])
+  }, [rollPrompt, dicePhase])
 
-  // Reveal continuation when BOTH animation is done AND stream has finished
+  // After revealing the dice result, auto-continue to phase 2
   useEffect(() => {
-    if (dicePhase !== 'revealed' || !rollStreamComplete) return
+    if (dicePhase !== 'revealed' || rolledValue === null || !rollPrompt) return
     const t = setTimeout(() => {
-      const data = rollRevealDataRef.current
-      if (!data) return
-
-      setMessages((prev) => {
-        const { rollMsg, gmMsgId, extraText } = data
-        const idx = prev.findIndex((m) => m.id === gmMsgId)
-        const insertions: DisplayMessage[] = [rollMsg]
-        if (extraText) {
-          insertions.push({ id: Date.now().toString() + '_cont', type: 'gm', content: extraText })
-        }
-        return idx >= 0
-          ? [...prev.slice(0, idx + 1), ...insertions, ...prev.slice(idx + 1)]
-          : [...prev, ...insertions]
-      })
-
-      setGameState(data.finalState)
-      saveGameState(data.finalState)
-      setLastStatChanges(data.statChanges)
-      if (data.finalActions.length > 0) setQuickActions(data.finalActions)
-
-      rollRevealDataRef.current = null
-      setPendingRoll(null)
-      setRollStreamComplete(false)
+      const capturedPrompt = rollPrompt
+      const capturedRoll = rolledValue
+      setRollPrompt(null)
       setDicePhase('idle')
       setDiceDisplay(1)
-      rollCapturedRef.current = false
-      bufferedTextRef.current = ''
-      isLoadingRef.current = false
-      setIsLoading(false)
-    }, 1200)
+      setRolledValue(null)
+      sendContinuation(capturedRoll, capturedPrompt)
+    }, 1400)
     return () => clearTimeout(t)
-  }, [dicePhase, rollStreamComplete])
+  }, [dicePhase, rolledValue, rollPrompt, sendContinuation])
 
   const handleSave = useCallback(
     (slot: 1 | 2 | 3) => {
@@ -706,8 +717,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setMessages(displayMessages)
       setQuickActionsRaw([])
       setLastStatChanges([])
-      setPendingRoll(null)
+      setRollPrompt(null)
       setDicePhase('idle')
+      setRolledValue(null)
     },
     [setQuickActionsRaw]
   )
@@ -749,21 +761,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         <ScrollArea className="flex-1">
           <div className="mx-auto max-w-[720px] px-4 py-6">
             <div className="flex flex-col gap-4">
-              {messages.map((message) =>
-                message.type === 'roll' && message.rollData ? (
-                  <RollBadge key={message.id} rollData={message.rollData} />
+              {messages.map((message, index) => {
+                const isLast = index === messages.length - 1
+                return message.type === 'roll' && message.rollData ? (
+                  <div key={message.id} ref={isLast ? lastMessageRef : undefined}>
+                    <RollBadge rollData={message.rollData} />
+                  </div>
                 ) : (
-                  <ChatMessage
-                    key={message.id}
-                    message={{
-                      id: message.id,
-                      type: message.type as 'gm' | 'player' | 'meta-question' | 'meta-response',
-                      content: message.content,
-                      timestamp: new Date(),
-                    }}
-                  />
+                  <div key={message.id} ref={isLast ? lastMessageRef : undefined}>
+                    <ChatMessage
+                      message={{
+                        id: message.id,
+                        type: message.type as 'gm' | 'player' | 'meta-question' | 'meta-response',
+                        content: message.content,
+                        timestamp: new Date(),
+                      }}
+                    />
+                  </div>
                 )
-              )}
+              })}
               {isLoading && (
                 <div className="flex items-center gap-1.5 px-1 pt-1">
                   <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0s]" />
@@ -771,14 +787,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.3s]" />
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
           </div>
         </ScrollArea>
 
         <div className="mx-auto w-full max-w-[720px]">
           <StateDiffBar changes={lastStatChanges} />
-          {pendingRoll && (
+          {rollPrompt && (
             <div className="border-t border-border/30 bg-background/80 px-4 pt-4 pb-2 backdrop-blur-sm">
               {dicePhase === 'idle' ? (
                 <button
@@ -791,10 +806,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         Roll required
                       </div>
                       <div className="mt-0.5 font-mono text-base text-foreground">
-                        {pendingRoll.rollMsg.rollData?.check} — DC {pendingRoll.rollMsg.rollData?.dc}
+                        {rollPrompt.check} — DC {rollPrompt.dc}
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {pendingRoll.rollMsg.rollData?.reason}
+                        {rollPrompt.reason}
                       </div>
                     </div>
                     <div className="ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
@@ -805,59 +820,56 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     Tap to roll
                   </div>
                 </button>
-              ) : (
-                <div className={[
-                  'rounded-lg border px-6 py-4 transition-all duration-500',
-                  dicePhase === 'revealed' && pendingRoll.rollMsg.rollData?.result === 'critical'
-                    ? 'border-yellow-400/60 bg-yellow-400/10'
-                    : dicePhase === 'revealed' && (pendingRoll.rollMsg.rollData?.result === 'success')
-                      ? 'border-primary/60 bg-primary/10'
-                      : dicePhase === 'revealed' && pendingRoll.rollMsg.rollData?.result === 'fumble'
-                        ? 'border-red-500/60 bg-red-500/10'
-                        : dicePhase === 'revealed'
-                          ? 'border-orange-400/60 bg-orange-400/10'
-                          : 'border-border/50 bg-card/50',
-                ].join(' ')}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        {pendingRoll.rollMsg.rollData?.check} — DC {pendingRoll.rollMsg.rollData?.dc}
-                      </div>
-                      {dicePhase === 'revealed' && (
-                        <div className="mt-1 font-mono text-sm text-foreground">
-                          {pendingRoll.rollMsg.rollData?.roll} + {pendingRoll.rollMsg.rollData?.modifier} = {pendingRoll.rollMsg.rollData?.total}
-                          {' '}
-                          <span className={
-                            pendingRoll.rollMsg.rollData?.result === 'critical' ? 'text-yellow-400 font-bold' :
-                            pendingRoll.rollMsg.rollData?.result === 'success' ? 'text-primary font-bold' :
-                            pendingRoll.rollMsg.rollData?.result === 'fumble' ? 'text-red-400 font-bold' :
-                            'text-orange-400 font-bold'
-                          }>
-                            {pendingRoll.rollMsg.rollData?.result === 'critical' ? '— CRITICAL!' :
-                             pendingRoll.rollMsg.rollData?.result === 'success' ? '— SUCCESS' :
-                             pendingRoll.rollMsg.rollData?.result === 'fumble' ? '— FUMBLE' :
-                             '— FAILURE'}
-                          </span>
+              ) : (() => {
+                const total = rolledValue !== null ? rolledValue + rollPrompt.modifier : null
+                const result = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : total !== null && total >= rollPrompt.dc ? 'success' : 'failure'
+                return (
+                  <div className={[
+                    'rounded-lg border px-6 py-4 transition-all duration-500',
+                    dicePhase === 'revealed' && result === 'critical' ? 'border-yellow-400/60 bg-yellow-400/10'
+                    : dicePhase === 'revealed' && result === 'success' ? 'border-primary/60 bg-primary/10'
+                    : dicePhase === 'revealed' && result === 'fumble' ? 'border-red-500/60 bg-red-500/10'
+                    : dicePhase === 'revealed' ? 'border-orange-400/60 bg-orange-400/10'
+                    : 'border-border/50 bg-card/50',
+                  ].join(' ')}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          {rollPrompt.check} — DC {rollPrompt.dc}
                         </div>
-                      )}
-                    </div>
-                    <div className={[
-                      'ml-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold transition-all duration-200',
-                      dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
-                      diceDisplay === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
-                      diceDisplay === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
-                      (pendingRoll.rollMsg.rollData?.result === 'success' || pendingRoll.rollMsg.rollData?.result === 'critical') ? 'border-primary/60 bg-primary/20 text-primary' :
-                      'border-orange-400/60 bg-orange-400/20 text-orange-400',
-                    ].join(' ')}>
-                      {diceDisplay}
+                        {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
+                          <div className="mt-1 font-mono text-sm text-foreground">
+                            {rolledValue} + {rollPrompt.modifier} = {total}
+                            {' '}
+                            <span className={
+                              result === 'critical' ? 'text-yellow-400 font-bold' :
+                              result === 'success' ? 'text-primary font-bold' :
+                              result === 'fumble' ? 'text-red-400 font-bold' :
+                              'text-orange-400 font-bold'
+                            }>
+                              {result === 'critical' ? '— CRITICAL!' : result === 'success' ? '— SUCCESS' : result === 'fumble' ? '— FUMBLE' : '— FAILURE'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className={[
+                        'ml-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold transition-all duration-200',
+                        dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
+                        diceDisplay === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
+                        diceDisplay === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
+                        (result === 'success' || result === 'critical') ? 'border-primary/60 bg-primary/20 text-primary' :
+                        'border-orange-400/60 bg-orange-400/20 text-orange-400',
+                      ].join(' ')}>
+                        {diceDisplay}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
             </div>
           )}
           <ActionBar
-            quickActions={pendingRoll ? [] : quickActions}
+            quickActions={rollPrompt ? [] : quickActions}
             onActionSelect={handleActionSelect}
             onCustomAction={handleCustomAction}
             disabled={isLoading}
@@ -935,29 +947,54 @@ function RollBadge({
   const isCrit = rollData.result === 'critical'
   const isFumble = rollData.result === 'fumble'
   const isSuccess = rollData.result === 'success' || isCrit
-  const label = isCrit ? 'CRITICAL' : isFumble ? 'FUMBLE' : isSuccess ? 'SUCCESS' : 'FAILURE'
+  const label = isCrit ? '— CRITICAL!' : isFumble ? '— FUMBLE' : isSuccess ? '— SUCCESS' : '— FAILURE'
 
-  const colorClass = isSuccess
-    ? 'border-green-800/40 bg-green-950/20 text-green-400'
-    : 'border-red-800/40 bg-red-950/20 text-red-400'
+  const cardClass = isCrit
+    ? 'border-yellow-400/60 bg-yellow-400/10'
+    : isSuccess
+    ? 'border-primary/60 bg-primary/10'
+    : isFumble
+    ? 'border-red-500/60 bg-red-500/10'
+    : 'border-orange-400/60 bg-orange-400/10'
+
+  const labelClass = isCrit
+    ? 'text-yellow-400 font-bold'
+    : isSuccess
+    ? 'text-primary font-bold'
+    : isFumble
+    ? 'text-red-400 font-bold'
+    : 'text-orange-400 font-bold'
+
+  const dieClass = isCrit
+    ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300'
+    : isSuccess
+    ? 'border-primary/60 bg-primary/20 text-primary'
+    : isFumble
+    ? 'border-red-500/60 bg-red-500/20 text-red-400'
+    : 'border-orange-400/60 bg-orange-400/20 text-orange-400'
 
   return (
-    <div
-      className={`flex items-center gap-3 rounded border px-3 py-1.5 font-mono text-xs ${colorClass}`}
-    >
-      <span className="font-semibold">{rollData.check}</span>
-      <span className="text-muted-foreground">DC {rollData.dc}</span>
-      <span>
-        {rollData.roll}
-        {rollData.modifier !== 0 && (
-          <span className="text-muted-foreground">
-            {rollData.modifier > 0 ? '+' : ''}
-            {rollData.modifier}
-          </span>
-        )}{' '}
-        = <span className="font-bold">{rollData.total}</span>
-      </span>
-      <span className="ml-auto font-bold tracking-widest">{label}</span>
+    <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {rollData.check} — DC {rollData.dc}
+          </div>
+          <div className="mt-1 font-mono text-sm text-foreground">
+            {rollData.roll}
+            {rollData.modifier !== 0 && (
+              <span className="text-muted-foreground">
+                {' '}{rollData.modifier > 0 ? '+' : ''}{rollData.modifier}
+              </span>
+            )}
+            {' '}= {rollData.total}{' '}
+            <span className={labelClass}>{label}</span>
+          </div>
+        </div>
+        <div className={`ml-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold ${dieClass}`}>
+          {rollData.roll}
+        </div>
+      </div>
     </div>
   )
 }

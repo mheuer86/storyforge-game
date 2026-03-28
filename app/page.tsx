@@ -69,12 +69,14 @@ export default function StoryforgeApp() {
     name: string
     species: Species
     characterClass: CharacterClass
+    gender: 'he' | 'she' | 'they'
   }) => {
     const initialState = createInitialGameState(
       data.name,
       data.species.id,
       data.characterClass.id,
-      setupData.genre
+      setupData.genre,
+      data.gender
     )
     applyGenreTheme(setupData.genre)
     setPendingGameState(initialState)

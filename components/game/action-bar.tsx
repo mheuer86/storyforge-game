@@ -28,12 +28,12 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
     <div className="flex flex-col gap-3 border-t border-border/30 bg-background/80 p-4 backdrop-blur-sm">
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">
-        {quickActions.map((action) => (
+        {quickActions.map((action, index) => (
           <button
-            key={action}
+            key={`${index}-${action}`}
             onClick={() => !disabled && onActionSelect(action)}
             disabled={disabled}
-            className="action-glow rounded-lg border border-border/50 bg-secondary/40 px-4 py-2 text-xs text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
+            className="action-glow rounded-lg border border-border/50 bg-secondary/40 px-4 py-2 text-left text-xs text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {action}
           </button>
