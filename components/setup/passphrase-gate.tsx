@@ -22,7 +22,7 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
       setChecking(false)
       return
     }
-    if (localStorage.getItem(STORAGE_KEY) === ACCESS_CODE) {
+    if (localStorage.getItem(STORAGE_KEY) === ACCESS_CODE!.trim()) {
       setUnlocked(true)
     }
     setChecking(false)
@@ -30,8 +30,8 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim().toLowerCase() === ACCESS_CODE!.toLowerCase()) {
-      localStorage.setItem(STORAGE_KEY, ACCESS_CODE!)
+    if (input.trim().toLowerCase() === ACCESS_CODE!.trim().toLowerCase()) {
+      localStorage.setItem(STORAGE_KEY, ACCESS_CODE!.trim())
       setUnlocked(true)
     } else {
       setError(true)
