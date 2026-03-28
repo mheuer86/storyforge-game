@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, Enemy, InventoryItem, TempModifier } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, Enemy, InventoryItem, TempModifier, AntagonistMove } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
@@ -304,6 +304,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 nextChapter,
               ],
             },
+            // Reset antagonist's per-chapter move tracker
+            world: updated.world.antagonist
+              ? { ...updated.world, antagonist: { ...updated.world.antagonist, movedThisChapter: false } }
+              : updated.world,
           }
           statChanges.push({ type: 'neutral', label: `Chapter ${nextNum}: ${input.nextTitle}` })
         }
@@ -317,6 +321,44 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               rollLog: [...updated.history.rollLog, rollRecord],
             },
           }
+        }
+
+        if (result.tool === 'update_antagonist') {
+          const input = result.input as {
+            action: 'establish' | 'move'
+            name?: string
+            description?: string
+            agenda?: string
+            moveDescription?: string
+          }
+          const world = { ...updated.world }
+
+          if (input.action === 'establish' && input.name && input.description && input.agenda) {
+            world.antagonist = {
+              name: input.name,
+              description: input.description,
+              agenda: input.agenda,
+              movedThisChapter: false,
+              moves: [],
+            }
+            statChanges.push({ type: 'new', label: `Antagonist: ${input.name}` })
+          }
+
+          if (input.action === 'move' && world.antagonist && input.moveDescription) {
+            const move: AntagonistMove = {
+              chapterNumber: updated.meta.chapterNumber,
+              description: input.moveDescription,
+              timestamp: new Date().toISOString(),
+            }
+            world.antagonist = {
+              ...world.antagonist,
+              movedThisChapter: true,
+              moves: [...world.antagonist.moves, move],
+            }
+            statChanges.push({ type: 'neutral', label: `Antagonist moves` })
+          }
+
+          updated = { ...updated, world }
         }
       }
 
@@ -868,7 +910,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             status: t.status,
             deteriorating: t.deteriorating,
           })),
-          promises: [],
+          promises: gameState.world.promises,
+          antagonist: gameState.world.antagonist,
         }}
         chapters={gameState.history.chapters.map((c) => ({
           number: c.number,

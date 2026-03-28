@@ -328,6 +328,38 @@ export const gameTools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'update_antagonist',
+    description:
+      'Establish or update the primary antagonist and record their offscreen moves. Use "establish" on first appearance to define their identity. Use "move" once per chapter to execute Rule 4 — the antagonist acts regardless of how well the player is doing. Check movedThisChapter in game state before calling — only one move per chapter.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['establish', 'move'],
+          description: '"establish" sets up the antagonist identity (call once, early in the story). "move" records one offscreen action this chapter.',
+        },
+        name: {
+          type: 'string',
+          description: 'Antagonist name (required for establish).',
+        },
+        description: {
+          type: 'string',
+          description: 'Who they are — their role, affiliation, and what makes them dangerous (required for establish).',
+        },
+        agenda: {
+          type: 'string',
+          description: 'What they want — their goal that puts them in conflict with the player (required for establish).',
+        },
+        moveDescription: {
+          type: 'string',
+          description: 'What they did offscreen this chapter — concrete and consequential (required for move).',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
     name: 'meta_response',
     description:
       'Answer an out-of-character question from the player. Use this ONLY when the message is prefixed with [META]. Answer directly from game state. Do not advance the story.',

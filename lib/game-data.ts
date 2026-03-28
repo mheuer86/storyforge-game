@@ -82,6 +82,7 @@ export function createInitialGameState(
     npcs: [],
     threads: [],
     promises: [],
+    antagonist: null,
   }
 
   return {
