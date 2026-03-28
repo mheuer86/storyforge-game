@@ -302,7 +302,7 @@ const spaceOperaConfig: GenreConfig = {
   theme: spaceOperaTheme,
   currencyName: 'credits',
   currencyAbbrev: 'cr',
-  partyBaseName: 'ship',
+  partyBaseName: 'Ship',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a fractured space opera universe.',
     setting: `Year 3187. The Galactic Accord that held 200 star systems together has fractured. Pirate fleets, rogue AIs, and a mysterious signal from beyond the Rim threaten everything. The player commands a scrappy frigate (see SHIP in game state) with a small crew, navigating this chaos.
@@ -596,6 +596,262 @@ Rest terminology: Short rest, Long rest.`,
   ],
 }
 
+// ─── Cyberpunk ────────────────────────────────────────────────────────
+
+const cyberpunkSpecies: Species[] = [
+  {
+    id: 'street-kid',
+    name: 'Street Kid',
+    description: 'Born in the gutter wards. Knows every shortcut, every gang corner, every unwritten rule.',
+    lore: 'Underestimated everywhere above street level. That assumption is a weapon.',
+  },
+  {
+    id: 'corpo',
+    name: 'Corpo Dropout',
+    description: 'Former corporate employee. Polished accent, expensive habits, one bad decision.',
+    lore: 'Still dresses the part, which opens doors — but corp contacts remember faces. Some relationships survive the fall. Most don\'t.',
+  },
+  {
+    id: 'nomad',
+    name: 'Nomad',
+    description: 'Arrived from the badlands with a car, a gun, and clan instincts.',
+    lore: 'Clan loyalty is deep-wired — city people read it as suspicion. The badlands bred a different kind of toughness: no corpo safety net, no NCPD response time.',
+  },
+  {
+    id: 'techie',
+    name: 'Techie',
+    description: 'Grew up tearing apart and reassembling everything in the salvage districts.',
+    lore: 'Machines make more sense than people. A ripperdoc background means bodies are just another kind of machine.',
+  },
+  {
+    id: 'rogue-runner',
+    name: 'Rogue Runner',
+    description: 'Ex-merc or ex-assassin. Too expensive for corps, too principled for the worst gangs.',
+    lore: 'Has the scars and the reputation. Both attract the wrong attention. Operates on a strict code — which in this city counts as an eccentricity.',
+  },
+]
+
+const cyberpunkClasses: CharacterClass[] = [
+  {
+    id: 'ghost',
+    name: 'Ghost',
+    concept: 'Infiltrator / Social Engineer',
+    primaryStat: 'DEX',
+    proficiencies: ['Stealth', 'Deception', 'Hacking', 'Acrobatics'],
+    stats: { STR: 10, DEX: 17, CON: 12, INT: 14, WIS: 11, CHA: 13 },
+    startingInventory: [
+      { id: 'smart_pistol', name: 'Smart Pistol', description: 'Self-tracking rounds, +2 to hit', quantity: 1, damage: '1d8' },
+      { id: 'monowire', name: 'Monowire', description: 'Retractable arm-mounted wire blade', quantity: 1, damage: '1d6+DEX' },
+      { id: 'optical_camo', name: 'Optical Camo Module', description: 'Advantage on Stealth checks, 1 charge', quantity: 1, charges: 1, maxCharges: 1 },
+      { id: 'faceswap_chip', name: 'Faceswap Chip', description: 'Forged biometric ID, passes most scanners', quantity: 1 },
+    ],
+    startingCredits: 1200,
+    startingHp: 9,
+    startingAc: 15,
+    trait: {
+      name: 'Ghost Protocol',
+      description: 'Once per day, automatically leave no trace on one security scan, camera network, or access log.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'razorback',
+    name: 'Razorback',
+    concept: 'Chrome Street Samurai / Enforcer',
+    primaryStat: 'STR',
+    proficiencies: ['Athletics', 'Intimidation', 'Heavy Weapons', 'Cyberware Maintenance'],
+    stats: { STR: 17, DEX: 12, CON: 15, INT: 10, WIS: 11, CHA: 10 },
+    startingInventory: [
+      { id: 'mantis_blades', name: 'Mantis Blades', description: 'Retractable arm blades — always equipped', quantity: 1, damage: '1d10+STR' },
+      { id: 'combat_shotgun', name: 'Combat Shotgun', description: 'Brutal at close range', quantity: 1, damage: '2d6, close range only' },
+      { id: 'subdermal_plates', name: 'Subdermal Armor Plates', description: 'Implanted — always active, +2 AC', quantity: 1 },
+      { id: 'stim_shot', name: 'Stim-Shot', description: 'Combat stimulant — heals 1d6+2 HP', quantity: 2, effect: '1d6+2 HP', charges: 2, maxCharges: 2 },
+    ],
+    startingCredits: 800,
+    startingHp: 12,
+    startingAc: 16,
+    trait: {
+      name: 'Adrenaline Overclocked',
+      description: 'Once per day, make a bonus melee attack immediately after a successful hit.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'netrunner',
+    name: 'Netrunner',
+    concept: 'Hacker / Remote Operator',
+    primaryStat: 'INT',
+    proficiencies: ['Hacking', 'Investigation', 'Electronics', 'Net Architecture'],
+    stats: { STR: 10, DEX: 13, CON: 12, INT: 17, WIS: 13, CHA: 10 },
+    startingInventory: [
+      { id: 'neural_deck', name: 'Neural Interface Deck', description: '+3 to all Hacking checks', quantity: 1 },
+      { id: 'quickhack_suite', name: 'Quickhack Arsenal', description: 'Remote attack daemon', quantity: 1, damage: '1d6 system shock, range 30ft' },
+      { id: 'ice_breaker', name: 'ICE Breaker v2', description: 'Crack security systems in the Net', quantity: 2 },
+      { id: 'pocket_drone', name: 'Pocket Drone', description: 'Compact scouting drone, remote feed', quantity: 1 },
+    ],
+    startingCredits: 1000,
+    startingHp: 8,
+    startingAc: 12,
+    trait: {
+      name: 'Deep Dive',
+      description: 'Once per day, auto-succeed on one Hacking check or seize control of a networked device for 1 minute.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'fixer',
+    name: 'Fixer',
+    concept: 'Information Broker / Face',
+    primaryStat: 'CHA',
+    proficiencies: ['Persuasion', 'Deception', 'Insight', 'Street Lore'],
+    stats: { STR: 10, DEX: 12, CON: 12, INT: 13, WIS: 11, CHA: 17 },
+    startingInventory: [
+      { id: 'concealable_smartgun', name: 'Concealable Smartgun', description: 'Auto-targeting, easy to hide', quantity: 1, damage: '1d6' },
+      { id: 'personal_daemon', name: 'Personal Daemon', description: 'Absorbs 5 damage once per day', quantity: 1, charges: 1, maxCharges: 1 },
+      { id: 'corp_id_kit', name: 'Forged Corp ID Kit', description: 'Convincing credentials for secure facilities', quantity: 1 },
+      { id: 'encrypted_comm', name: 'Encrypted Comm Unit', description: 'Untraceable calls, can intercept signals in range', quantity: 1 },
+    ],
+    startingCredits: 2000,
+    startingHp: 8,
+    startingAc: 11,
+    trait: {
+      name: 'Network Effect',
+      description: 'Once per day, reroll a failed CHA check and take the higher result. Also grants +2 to initial NPC disposition.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'medtech',
+    name: 'Medtech',
+    concept: 'Combat Medic / Body Modder',
+    primaryStat: 'WIS',
+    proficiencies: ['Medicine', 'Perception', 'Survival', 'Cyberware Installation'],
+    stats: { STR: 10, DEX: 13, CON: 14, INT: 13, WIS: 17, CHA: 10 },
+    startingInventory: [
+      { id: 'stun_baton', name: 'Stun Baton', description: 'Non-lethal, DC 12 CON save or stunned 1 round', quantity: 1, damage: '1d6 shock' },
+      { id: 'trauma_kit', name: 'Trauma Kit v3', description: 'Advanced field med — heals 1d8+WIS HP', quantity: 1, effect: '1d8+WIS HP', charges: 3, maxCharges: 3 },
+      { id: 'detox_injector', name: 'Detox Injector', description: 'Neutralize toxins, drugs, and cyberware poison', quantity: 1, charges: 2, maxCharges: 2 },
+      { id: 'neural_scanner', name: 'Neural Scanner', description: 'Read vital signs, augment status, and trauma assessment', quantity: 1 },
+    ],
+    startingCredits: 1000,
+    startingHp: 10,
+    startingAc: 13,
+    trait: {
+      name: 'Field Triage',
+      description: 'Once per day, stabilize a downed ally or gain advantage on Medicine checks as a bonus action.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'wheelman',
+    name: 'Wheelman',
+    concept: 'Driver / Sharpshooter',
+    primaryStat: 'DEX',
+    proficiencies: ['Driving', 'Sharpshooting', 'Acrobatics', 'Vehicle Mechanics'],
+    stats: { STR: 10, DEX: 16, CON: 13, INT: 12, WIS: 13, CHA: 11 },
+    startingInventory: [
+      { id: 'precision_rifle', name: 'Precision Rifle', description: 'Long-range scoped rifle', quantity: 1, damage: '1d10, range 120ft' },
+      { id: 'compact_smg', name: 'Compact SMG', description: 'Reliable close-range backup', quantity: 1, damage: '1d6 burst' },
+      { id: 'reinforced_jacket', name: 'Reinforced Jacket', description: 'Armored weave, +1 AC', quantity: 1 },
+      { id: 'grapple_gun', name: 'Grapple Gun', description: 'Fires a retractable anchor line, 60ft', quantity: 1 },
+    ],
+    startingCredits: 900,
+    startingHp: 10,
+    startingAc: 14,
+    trait: {
+      name: 'Target Acquisition',
+      description: 'Once per day, treat one ranged attack as a critical hit (on a 19-20). Also has vehicle expertise: advantage on all driving and piloting checks.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+]
+
+const cyberpunkTheme: GenreTheme = {
+  logo: '/logo_cyberpunk.png',
+  fontNarrative: "'Geist Mono', monospace",
+  fontHeading: "'Geist Mono', monospace",
+  background: 'oklch(0.09 0.02 260)',
+  foreground: 'oklch(0.90 0.01 80)',
+  card: 'oklch(0.12 0.015 260)',
+  cardForeground: 'oklch(0.90 0.01 80)',
+  primary: 'oklch(0.75 0.22 145)',
+  primaryForeground: 'oklch(0.09 0.02 260)',
+  secondary: 'oklch(0.18 0.015 260)',
+  secondaryForeground: 'oklch(0.82 0.01 80)',
+  muted: 'oklch(0.14 0.01 260)',
+  mutedForeground: 'oklch(0.50 0.01 80)',
+  accent: 'oklch(0.65 0.25 330)',
+  accentForeground: 'oklch(0.09 0.02 260)',
+  destructive: 'oklch(0.55 0.22 25)',
+  border: 'oklch(0.22 0.03 260)',
+  input: 'oklch(0.16 0.02 260)',
+  ring: 'oklch(0.75 0.22 145)',
+  narrative: 'oklch(0.90 0.01 80)',
+  meta: 'oklch(0.55 0.08 220)',
+  success: 'oklch(0.65 0.18 145)',
+  warning: 'oklch(0.75 0.15 85)',
+  titleGlow: '0 0 40px oklch(0.75 0.22 145 / 0.8), 0 0 80px oklch(0.75 0.22 145 / 0.4)',
+  actionGlow: '0 0 0 1px rgba(80,220,120,0.2), 0 0 15px -3px rgba(80,220,120,0.15)',
+  actionGlowHover: '0 0 0 1px rgba(80,220,120,0.4), 0 0 20px -3px rgba(80,220,120,0.3)',
+  scrollbarThumb: 'oklch(0.25 0.02 260)',
+  scrollbarThumbHover: 'oklch(0.30 0.02 260)',
+  backgroundEffect: 'starfield',
+}
+
+const cyberpunkConfig: GenreConfig = {
+  id: 'cyberpunk',
+  name: 'Cyberpunk',
+  available: true,
+  species: cyberpunkSpecies,
+  classes: cyberpunkClasses,
+  theme: cyberpunkTheme,
+  currencyName: 'eddies',
+  currencyAbbrev: '€$',
+  partyBaseName: 'Safehouse',
+  systemPromptFlavor: {
+    role: 'You are the Game Master of Storyforge — a solo text RPG set in a sprawling megacity in the near-future.',
+    setting: `The city never sleeps and it doesn't care if you do. Megacorporations own the law, the media, and most of the people worth knowing. The player runs with a small crew from a safehouse somewhere in the city's grinding middle layers — not poor enough to be invisible, not rich enough to be safe.
+
+Technology: cyberware, neural interfaces, quickhacks, smart weapons, ICE (Intrusion Countermeasure Electronics), the Net, aerial drones, braindances, ripperdocs, fixers, corpo security, NCPD, Trauma Team, gang territories, megacorp arcologies.
+
+Vocabulary (never use fantasy or generic sci-fi terms when the cyberpunk equivalent exists):
+- Sword → monowire / mantis blades / combat knife
+- Magic / tech augment → quickhack / daemon / neural ability / cyberware
+- Potion → stim-shot / medpatch / trauma kit / toxin flush
+- Tavern → bar / dive bar / the Afterlife
+- Dungeon → corp facility / server vault / gang compound / undercity
+- Horse / vehicle → car / AV (aerodyne) / stolen ride
+- Credits / gold → eddies / €$
+- Monster → gang enforcer / corpo agent / rogue AI / cyberpsycho
+- Inn / rest → safehouse / the crew's base`,
+    vocabulary: `Consumable terminology: stim-shots, medpatches, trauma kits, toxin flushes, stims.
+Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
+    tutorialContext: 'The opening scene should be set in a bar, safehouse, or on the street. Introduce a fixer contact or local NPC early. Establish the crew\'s current situation — broke, hunted, or sitting on a job they shouldn\'t have taken.',
+  },
+  openingHooks: [
+    'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now the crew is pinned in a ventilation shaft forty floors up with no way down.',
+    'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours.',
+    'The crew wakes up in a med-bay with a gap in their memory logs and someone else\'s coordinates loaded into their neural buffer. No explanation. No sender. Just a location and a time.',
+    'Three weeks of flatline work, scraping by on small jobs. Then an unsigned braindance clip arrives. Inside: surveillance footage of the crew that no one should have.',
+    'A rival crew is dead. Their equipment, their job board, and their contacts are up for grabs — but so is whoever killed them.',
+    'A corp access card shows up in the safehouse mail slot. The face on the ID matches no one in the crew. The clearance level is maximum.',
+    'Street rumor: a cargo AV is floating dead over the industrial sector, loaded with corp merchandise and no crew aboard. First come, first served — if NCPD doesn\'t get there first.',
+    'The city goes dark. Not a power failure — a targeted blackout in a six-block radius. In the silence, a voice on every local channel says a name. It\'s the player\'s.',
+  ],
+  initialChapterTitle: 'Night One',
+  locationNames: [
+    'The Ghost Circuit', 'The Neon Dogs', 'The Iron Ghosts', 'The Static Crew',
+    'The Last Signal', 'The Chrome Accord', 'The Grid Runners', 'The Null Faction',
+    'The Blind Protocol', 'The Ashen Wire',
+  ],
+}
+
 // ─── Stubs ────────────────────────────────────────────────────────────
 // Stub configs for genres not yet fully implemented. Available: false —
 // they show as "Soon" in the genre picker. No species/classes/hooks needed
@@ -626,7 +882,6 @@ function makeStub(
 }
 
 const dndConfig       = makeStub('dnd',       'Classic D&D',   'gold',    'gp',  'Tavern')
-const cyberpunkConfig = makeStub('cyberpunk',  'Cyberpunk',     'eddies',  '€$',  'Safehouse')
 const westernConfig   = makeStub('western',    'Western',       'dollars', '$',   'Camp')
 const samuraiConfig   = makeStub('samurai',    'Samurai',       'mon',     '¥',   'Dojo')
 const mafiaConfig     = makeStub('mafia',      'Mafia',         'dollars', '$',   'The Family')
@@ -653,7 +908,7 @@ export const genres: { id: Genre; name: string; available: boolean }[] = [
   { id: 'space-opera', name: 'Space Opera',  available: true  },
   { id: 'fantasy',     name: 'Fantasy',       available: true  },
   { id: 'dnd',         name: 'Classic D&D',   available: false },
-  { id: 'cyberpunk',   name: 'Cyberpunk',     available: false },
+  { id: 'cyberpunk',   name: 'Cyberpunk',     available: true  },
   { id: 'western',     name: 'Western',       available: false },
   { id: 'samurai',     name: 'Samurai',       available: false },
   { id: 'mafia',       name: 'Mafia',         available: false },
