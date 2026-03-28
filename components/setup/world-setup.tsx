@@ -66,31 +66,39 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
               Genre
             </h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {genres.map((genre) => (
-                <button
-                  key={genre.id}
-                  onClick={() => genre.available && handleGenreSelect(genre.id)}
-                  disabled={!genre.available}
-                  className={cn(
-                    'relative flex flex-col items-center justify-center rounded-lg border p-4 transition-all duration-200',
-                    genre.available
-                      ? selectedGenre === genre.id
-                        ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_15px_-3px] shadow-primary/30'
-                        : 'border-border/50 bg-secondary/30 text-foreground hover:border-primary/50 hover:bg-secondary/50'
-                      : 'cursor-not-allowed border-border/30 bg-secondary/10 text-muted-foreground/50'
-                  )}
-                >
-                  <span className="text-sm font-medium">{genre.name}</span>
-                  {!genre.available && (
-                    <Badge
-                      variant="outline"
-                      className="absolute -top-2 -right-2 border-muted-foreground/30 bg-background text-[10px] text-muted-foreground"
-                    >
-                      Soon
-                    </Badge>
-                  )}
-                </button>
-              ))}
+              {genres.map((genre) => {
+                const genreConfig = genre.available ? getGenreConfig(genre.id) : null
+                return (
+                  <button
+                    key={genre.id}
+                    onClick={() => genre.available && handleGenreSelect(genre.id)}
+                    disabled={!genre.available}
+                    className={cn(
+                      'relative flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition-all duration-200',
+                      genre.available
+                        ? selectedGenre === genre.id
+                          ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_15px_-3px] shadow-primary/30'
+                          : 'border-border/50 bg-secondary/30 text-foreground hover:border-primary/50 hover:bg-secondary/50'
+                        : 'cursor-not-allowed border-border/30 bg-secondary/10 text-muted-foreground/50'
+                    )}
+                  >
+                    <span className="text-sm font-medium leading-tight">{genre.name}</span>
+                    {genreConfig && (
+                      <span className="text-[10px] leading-snug text-muted-foreground/70 italic">
+                        {genreConfig.tagline}
+                      </span>
+                    )}
+                    {!genre.available && (
+                      <Badge
+                        variant="outline"
+                        className="absolute -top-2 -right-2 border-muted-foreground/30 bg-background text-[10px] text-muted-foreground"
+                      >
+                        Soon
+                      </Badge>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
