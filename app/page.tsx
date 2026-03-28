@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
+import { CampaignSelect } from '@/components/setup/campaign-select'
 import { GameScreen } from '@/components/game/game-screen'
-import { loadGameState, createInitialGameState, clearGameState } from '@/lib/game-data'
+import { loadGameState, createInitialGameState, clearGameState, getSaveSlot, saveGameState, type SaveSlotData } from '@/lib/game-data'
 import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 
-type AppState = 'loading' | 'world-setup' | 'character-setup' | 'playing'
+type AppState = 'loading' | 'campaign-select' | 'world-setup' | 'character-setup' | 'playing'
 
 interface SetupData {
   genre: Genre
@@ -20,6 +21,8 @@ interface SetupData {
 export default function StoryforgeApp() {
   const [appState, setAppState] = useState<AppState>('loading')
   const [pendingGameState, setPendingGameState] = useState<GameState | null>(null)
+  const [autoSave, setAutoSave] = useState<GameState | null>(null)
+  const [saveSlots, setSaveSlots] = useState<(SaveSlotData | null)[]>([null, null, null])
   const [setupData, setSetupData] = useState<SetupData>({
     genre: 'space-opera',
     characterName: '',
@@ -27,18 +30,35 @@ export default function StoryforgeApp() {
     characterClass: null,
   })
 
-  // Check for existing game on mount — skip setup if one exists
   useEffect(() => {
     const existing = loadGameState()
-    if (existing) {
-      // Apply the saved game's genre theme
-      const genre = (existing.meta.genre || 'space-opera') as Genre
-      applyGenreTheme(genre)
-      setAppState('playing')
+    const slots = [getSaveSlot(1), getSaveSlot(2), getSaveSlot(3)]
+    const hasAnySave = existing || slots.some(Boolean)
+
+    if (hasAnySave) {
+      setAutoSave(existing)
+      setSaveSlots(slots)
+      // Apply the current auto-save theme if one exists
+      if (existing) {
+        applyGenreTheme((existing.meta.genre || 'space-opera') as Genre)
+      }
+      setAppState('campaign-select')
     } else {
       setAppState('world-setup')
     }
   }, [])
+
+  const handleContinue = () => {
+    if (!autoSave) return
+    setAppState('playing')
+  }
+
+  const handleLoadSlot = (slot: SaveSlotData) => {
+    saveGameState(slot.gameState)
+    applyGenreTheme((slot.gameState.meta.genre || 'space-opera') as Genre)
+    setPendingGameState(slot.gameState)
+    setAppState('playing')
+  }
 
   const handleWorldSetupComplete = (data: { genre: Genre }) => {
     setSetupData((prev) => ({ ...prev, genre: data.genre }))
@@ -78,6 +98,18 @@ export default function StoryforgeApp() {
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
+    )
+  }
+
+  if (appState === 'campaign-select') {
+    return (
+      <CampaignSelect
+        autoSave={autoSave}
+        slots={saveSlots}
+        onContinue={handleContinue}
+        onLoadSlot={handleLoadSlot}
+        onNewGame={handleNewGame}
+      />
     )
   }
 
