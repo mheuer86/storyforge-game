@@ -41,7 +41,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
             Create Your Character
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Define who you are in this {genre === 'fantasy' ? 'world' : 'universe'}
+            Define who you are in this {config.settingNoun}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-8">
@@ -88,7 +88,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
           {/* Species Selection */}
           <div className="flex flex-col gap-3">
             <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              {genre === 'fantasy' ? 'Race' : 'Species'}
+              {config.speciesLabel}
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2">
               {genreSpecies.map((s) => (

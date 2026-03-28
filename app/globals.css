@@ -76,7 +76,8 @@
   --font-heading: 'Geist Mono', monospace;
 }
 
-[data-genre="fantasy"] {
+[data-genre="fantasy"],
+[data-genre="grimdark"] {
   --font-narrative: 'Lora', Georgia, serif;
   --font-heading: 'Lora', Georgia, serif;
 }

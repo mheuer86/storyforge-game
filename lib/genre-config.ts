@@ -2,7 +2,7 @@ import type { InventoryItem, Trait } from './types'
 
 // ─── Genre Config Interface ───────────────────────────────────────────
 
-export type Genre = 'space-opera' | 'fantasy' | 'dnd' | 'cyberpunk' | 'western' | 'samurai' | 'mafia' | 'rome' | 'ww2' | 'cold-war'
+export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'dnd' | 'cyberpunk' | 'western' | 'samurai' | 'mafia' | 'rome' | 'ww2' | 'cold-war' | 'high-fantasy'
 
 export interface Species {
   id: string
@@ -67,13 +67,16 @@ export interface GenreTheme {
 export interface GenreConfig {
   id: Genre
   name: string
+  tagline: string
   available: boolean
   species: Species[]
+  speciesLabel: string
   classes: CharacterClass[]
   theme: GenreTheme
   currencyName: string
   currencyAbbrev: string
   partyBaseName: string
+  settingNoun: string
   systemPromptFlavor: {
     role: string
     setting: string
@@ -296,13 +299,16 @@ const spaceOperaTheme: GenreTheme = {
 const spaceOperaConfig: GenreConfig = {
   id: 'space-opera',
   name: 'Space Opera',
+  tagline: 'A fractured galaxy. One ship. No good options.',
   available: true,
   species: spaceOperaSpecies,
+  speciesLabel: 'Species',
   classes: spaceOperaClasses,
   theme: spaceOperaTheme,
   currencyName: 'credits',
   currencyAbbrev: 'cr',
   partyBaseName: 'Ship',
+  settingNoun: 'universe',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a fractured space opera universe.',
     setting: `Year 3187. The Galactic Accord that held 200 star systems together has fractured. Pirate fleets, rogue AIs, and a mysterious signal from beyond the Rim threaten everything. The player commands a scrappy frigate (see SHIP in game state) with a small crew, navigating this chaos.
@@ -552,13 +558,16 @@ const fantasyTheme: GenreTheme = {
 const fantasyConfig: GenreConfig = {
   id: 'fantasy',
   name: 'Fantasy',
+  tagline: 'Ancient magic, chosen heroes, and the world worth saving.',
   available: true,
   species: fantasySpecies,
+  speciesLabel: 'Race',
   classes: fantasyClasses,
   theme: fantasyTheme,
   currencyName: 'gold',
   currencyAbbrev: 'gp',
   partyBaseName: 'Quarters',
+  settingNoun: 'world',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a crumbling medieval fantasy world.',
     setting: `The Five Kingdoms have been at peace for a generation, but the Accord of Thorns is fraying. Border raids, a plague spreading from the eastern marshes, and whispers of something stirring beneath the old ruins threaten everything. The player leads a small company of companions, navigating a world where old alliances mean less every day.
@@ -807,13 +816,16 @@ const cyberpunkTheme: GenreTheme = {
 const cyberpunkConfig: GenreConfig = {
   id: 'cyberpunk',
   name: 'Cyberpunk',
+  tagline: 'The city owns everything. You\'re about to steal some of it back.',
   available: true,
   species: cyberpunkSpecies,
+  speciesLabel: 'Origin',
   classes: cyberpunkClasses,
   theme: cyberpunkTheme,
   currencyName: 'eddies',
   currencyAbbrev: '€$',
   partyBaseName: 'Safehouse',
+  settingNoun: 'city',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a sprawling megacity in the near-future.',
     setting: `The city never sleeps and it doesn't care if you do. Megacorporations own the law, the media, and most of the people worth knowing. The player runs with a small crew from a safehouse somewhere in the city's grinding middle layers — not poor enough to be invisible, not rich enough to be safe.
@@ -852,6 +864,264 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
   ],
 }
 
+// ─── Grimdark ─────────────────────────────────────────────────────────
+
+const grimdarkSpecies: Species[] = [
+  {
+    id: 'house-veldran',
+    name: 'House Veldran',
+    description: 'Merchant nobility. Politically dominant, widely spread, no special bloodline traits.',
+    lore: 'Wealth over blood. They are everywhere and own most of what matters. NPCs rarely question a Veldran face.',
+  },
+  {
+    id: 'house-sylvara',
+    name: 'House Sylvara',
+    description: 'Ancient woodland bloodline. Long-lived, keen-eyed, patient to a fault.',
+    lore: 'Respected in courts, distrusted in frontier towns. Their calm is often read as coldness — or worse, contempt.',
+  },
+  {
+    id: 'house-stonemark',
+    name: 'House Stonemark',
+    description: 'Mountain clan bloodline. Dense-boned, blunt-spoken, legendary craftsmen.',
+    lore: 'Trusted in trade guilds, underestimated in matters of subtlety. Their debts run generations.',
+  },
+  {
+    id: 'wandering-kin',
+    name: 'The Wandering Kin',
+    description: 'Rootless small folk. No house, no loyalty, found in every city and camp.',
+    lore: 'Seen as harmless by most, which suits them fine. Owned by no kingdom — a fact some call freedom and others call exile.',
+  },
+  {
+    id: 'house-ashfang',
+    name: 'House Ashfang',
+    description: 'Fallen bloodline. Scaled, fast, remnants of the Wyrm Kingdoms.',
+    lore: 'Once feared as conquerors. Now scattered, distrusted, and carrying a reputation they didn\'t choose. Trusted by few — which has made them careful.',
+  },
+]
+
+const grimdarkClasses: CharacterClass[] = [
+  {
+    id: 'cutthroat',
+    name: 'Cutthroat',
+    concept: 'Assassin / Shadow Operative',
+    primaryStat: 'DEX',
+    proficiencies: ['Stealth', 'Sleight of Hand', 'Lockpicking', 'Poisoncraft'],
+    stats: { STR: 10, DEX: 17, CON: 12, INT: 14, WIS: 11, CHA: 13 },
+    startingInventory: [
+      { id: 'serrated_dirk', name: 'Serrated Dirk', description: 'Ugly blade, efficient work', quantity: 1, damage: '1d6+DEX' },
+      { id: 'throwing_knives_gd', name: 'Throwing Knives', description: 'Balanced for throwing, 20ft range', quantity: 6, damage: '1d4' },
+      { id: 'toxin_vial', name: 'Toxin Vial', description: 'Coat a weapon; DC 13 CON save or poisoned for 3 rounds', quantity: 2 },
+      { id: 'dark_cloak_gd', name: 'Dark Cloak', description: 'Advantage on Stealth checks in dim light or darkness', quantity: 1, charges: 1, maxCharges: 1 },
+    ],
+    startingCredits: 80,
+    startingHp: 9,
+    startingAc: 15,
+    trait: {
+      name: 'Marked',
+      description: 'Once per day, designate a target as Marked. Your first hit against them deals +1d6 bonus damage.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'ironclad',
+    name: 'Ironclad',
+    concept: 'Hardened Mercenary / Heavy Weapons',
+    primaryStat: 'STR',
+    proficiencies: ['Athletics', 'Intimidation', 'Heavy Weapons', 'Shield Tactics'],
+    stats: { STR: 17, DEX: 12, CON: 15, INT: 10, WIS: 11, CHA: 10 },
+    startingInventory: [
+      { id: 'warhammer', name: 'Warhammer', description: 'Heavy, brutal, versatile', quantity: 1, damage: '1d10' },
+      { id: 'battered_shield', name: 'Battered Shield', description: '+2 AC when equipped — dented but solid', quantity: 1 },
+      { id: 'throwing_hatchets', name: 'Throwing Hatchets', description: 'Balanced for throwing, 20ft range', quantity: 3, damage: '1d6' },
+      { id: 'field_dressing', name: 'Field Dressing', description: 'Rough but effective — heals 1d6+2 HP', quantity: 2, effect: '1d6+2 HP', charges: 2, maxCharges: 2 },
+    ],
+    startingCredits: 60,
+    startingHp: 12,
+    startingAc: 16,
+    trait: {
+      name: 'Unbroken',
+      description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'hexblade',
+    name: 'Hexblade',
+    concept: 'Forbidden Magic / Curseworker',
+    primaryStat: 'INT',
+    proficiencies: ['Forbidden Lore', 'Investigation', 'Hexcrafting', 'Corruption Resistance'],
+    stats: { STR: 10, DEX: 13, CON: 12, INT: 17, WIS: 13, CHA: 10 },
+    startingInventory: [
+      { id: 'cursed_focus', name: 'Cursed Focus', description: 'Bone fetish — +3 to hex attack rolls', quantity: 1 },
+      { id: 'hex_bolt', name: 'Hex Bolt', description: 'Ranged necrotic attack', quantity: 1, damage: '1d6 necrotic, range 30ft' },
+      { id: 'binding_scroll', name: 'Binding Scroll', description: 'Restrain a target; DC 14 STR to break', quantity: 2 },
+      { id: 'grimoire_fragment', name: 'Grimoire Fragment', description: 'Encoded spells — advantage on Forbidden Lore checks', quantity: 1 },
+    ],
+    startingCredits: 70,
+    startingHp: 8,
+    startingAc: 12,
+    trait: {
+      name: 'Corruption Tap',
+      description: 'Once per day, channel corruption to auto-succeed one forbidden magic check or inflict a minor curse.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'schemer',
+    name: 'Schemer',
+    concept: 'Political Operative / Spy',
+    primaryStat: 'CHA',
+    proficiencies: ['Persuasion', 'Deception', 'Insight', 'Noble Etiquette'],
+    stats: { STR: 10, DEX: 12, CON: 12, INT: 13, WIS: 11, CHA: 17 },
+    startingInventory: [
+      { id: 'concealed_blade', name: 'Concealed Blade', description: 'Hidden on the body — rarely seen coming', quantity: 1, damage: '1d4' },
+      { id: 'forged_house_seal', name: 'Forged House Seal', description: 'Convincing credentials for restricted areas', quantity: 1 },
+      { id: 'blackmail_dossier', name: 'Blackmail Dossier', description: 'Leverage on one named NPC — single use', quantity: 1 },
+      { id: 'cipher_ledger', name: 'Cipher Ledger', description: 'Encoded contacts, favors owed, debts outstanding', quantity: 1 },
+    ],
+    startingCredits: 150,
+    startingHp: 8,
+    startingAc: 11,
+    trait: {
+      name: 'Silver Tongue',
+      description: 'Once per day, reroll a failed CHA check and take the higher result. Also grants +2 to initial NPC disposition.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'plague-doctor',
+    name: 'Plague Doctor',
+    concept: 'Battlefield Medic / Apothecary',
+    primaryStat: 'WIS',
+    proficiencies: ['Medicine', 'Perception', 'Survival', 'Apothecary'],
+    stats: { STR: 10, DEX: 13, CON: 14, INT: 13, WIS: 17, CHA: 10 },
+    startingInventory: [
+      { id: 'surgeons_lancet', name: "Surgeon's Lancet", description: 'Precise blade — DC 12 CON or minor infection', quantity: 1, damage: '1d4' },
+      { id: 'medicinal_tinctures', name: 'Medicinal Tinctures', description: 'Field medicine — heals 1d8+WIS HP', quantity: 1, effect: '1d8+WIS HP', charges: 3, maxCharges: 3 },
+      { id: 'antidote_kit_gd', name: 'Antidote Kit', description: 'Neutralize poisons, venoms, and early-stage contagion', quantity: 1, charges: 2, maxCharges: 2 },
+      { id: 'diagnostic_tools', name: 'Diagnostic Instruments', description: 'Assess condition, detect contagion, read symptoms', quantity: 1 },
+    ],
+    startingCredits: 80,
+    startingHp: 10,
+    startingAc: 13,
+    trait: {
+      name: 'Triage',
+      description: 'Once per day, stabilize a downed ally or gain advantage on Medicine checks as a bonus action.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+  {
+    id: 'outrider',
+    name: 'Outrider',
+    concept: 'Scout / Wilderness Skirmisher',
+    primaryStat: 'DEX',
+    proficiencies: ['Tracking', 'Sharpshooting', 'Acrobatics', 'Survival'],
+    stats: { STR: 10, DEX: 16, CON: 13, INT: 12, WIS: 13, CHA: 11 },
+    startingInventory: [
+      { id: 'war_bow', name: 'War Bow', description: 'Long-range precision', quantity: 1, damage: '1d10, range 120ft' },
+      { id: 'short_sword_gd', name: 'Short Sword', description: 'Reliable close-range backup', quantity: 1, damage: '1d6' },
+      { id: 'battered_leather', name: 'Battered Leather', description: 'Light armor, worn-in', quantity: 1 },
+      { id: 'grappling_hook_gd', name: 'Grappling Hook', description: 'Hook and rope, 60ft', quantity: 1 },
+    ],
+    startingCredits: 70,
+    startingHp: 10,
+    startingAc: 14,
+    trait: {
+      name: 'Eyes of the Wilds',
+      description: 'Once per day, treat one ranged attack as a critical hit (on a 19-20). Terrain expertise: advantage on all Survival and Tracking checks.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
+]
+
+const grimdarkTheme: GenreTheme = {
+  logo: '/logo_grimdark.png',
+  fontNarrative: "'Lora', Georgia, serif",
+  fontHeading: "'Lora', Georgia, serif",
+  background: 'oklch(0.10 0.02 35)',
+  foreground: 'oklch(0.88 0.02 75)',
+  card: 'oklch(0.13 0.02 35)',
+  cardForeground: 'oklch(0.88 0.02 75)',
+  primary: 'oklch(0.58 0.16 28)',
+  primaryForeground: 'oklch(0.95 0.01 90)',
+  secondary: 'oklch(0.20 0.02 35)',
+  secondaryForeground: 'oklch(0.82 0.02 75)',
+  muted: 'oklch(0.16 0.015 35)',
+  mutedForeground: 'oklch(0.52 0.02 70)',
+  accent: 'oklch(0.55 0.10 270)',
+  accentForeground: 'oklch(0.95 0.01 90)',
+  destructive: 'oklch(0.55 0.2 25)',
+  border: 'oklch(0.23 0.03 40)',
+  input: 'oklch(0.18 0.02 35)',
+  ring: 'oklch(0.58 0.16 28)',
+  narrative: 'oklch(0.88 0.02 75)',
+  meta: 'oklch(0.55 0.08 220)',
+  success: 'oklch(0.65 0.18 145)',
+  warning: 'oklch(0.75 0.15 85)',
+  titleGlow: '0 0 40px oklch(0.58 0.16 28 / 0.8), 0 0 80px oklch(0.58 0.16 28 / 0.4)',
+  actionGlow: '0 0 0 1px rgba(180,80,60,0.2), 0 0 15px -3px rgba(180,80,60,0.15)',
+  actionGlowHover: '0 0 0 1px rgba(180,80,60,0.4), 0 0 20px -3px rgba(180,80,60,0.3)',
+  scrollbarThumb: 'oklch(0.28 0.02 35)',
+  scrollbarThumbHover: 'oklch(0.33 0.02 35)',
+  backgroundEffect: 'mist',
+}
+
+const grimdarkConfig: GenreConfig = {
+  id: 'grimdark',
+  name: 'Grimdark',
+  tagline: 'Kingdoms rot from the inside. Someone has to survive it.',
+  available: true,
+  species: grimdarkSpecies,
+  speciesLabel: 'Bloodline',
+  classes: grimdarkClasses,
+  theme: grimdarkTheme,
+  currencyName: 'crowns',
+  currencyAbbrev: 'cr',
+  partyBaseName: 'Company',
+  settingNoun: 'world',
+  systemPromptFlavor: {
+    role: 'You are the Game Master of Storyforge — a solo text RPG set in a crumbling medieval world where empires rot and survival is political.',
+    setting: `The Five Kingdoms have held peace for a generation, but the Accord of Thorns is fraying. A plague spreads from the eastern marshes. Border lords raise private armies. The Church of the Pale Flame burns reformers and calls it salvation. Something stirs beneath the old ruins that predate every kingdom alive today.
+
+This is a world of moral compromise, political betrayal, hard winters, and bodies in the mud. The player commands a small mercenary company navigating a world where old allegiances mean less every week.
+
+Weapons: swords, axes, crossbows, bows, knives, polearms. No guns. Magic exists but is feared, costly, and rarely clean. No potions — medicinal tinctures, field dressings, antidote kits. Gold, not credits.
+
+Vocabulary (never use sci-fi terms; fantasy terms that imply heroism should be used sparingly):
+- Spell → hex / curse / forbidden working / corrupted craft
+- Potion → tincture / salve / kit / vial
+- Quest → contract / job / commission
+- Party → company / crew / band
+- Inn → tavern / waystation / camp
+- Temple → keep / monastery / shrine`,
+    vocabulary: `Consumable terminology: tinctures, field dressings, antidote kits, toxin vials.
+Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politically complex. Victories are never clean.`,
+    tutorialContext: 'Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
+  },
+  openingHooks: [
+    'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop.',
+    'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: retrieve something from a crypt three previous parties never returned from.',
+    'The company is camped outside a city under quarantine. Inside: a contact with critical intelligence. The gates are locked and the walls are watched.',
+    'A child walks into camp alone, carrying a signet ring from a dead lord. She won\'t say where she got it — only: "They said to find the Company."',
+    'The battle is over. The wrong side won. The company\'s employer is dead, and the victors are offering amnesty to surrendering mercenaries. The kind that ends with a noose.',
+    'A courier brings payment for a job the company didn\'t do. Someone is using the company\'s name — and whoever hired them wants a reckoning.',
+    'Mid-winter. The road north is blocked by snow. The only shelter: an abandoned monastery with fresh tracks going in and none coming out.',
+    'A lord hires the company to investigate missing grain shipments. The trail leads to the lord\'s own steward. Now the company knows too much.',
+  ],
+  initialChapterTitle: 'First Blood',
+  locationNames: [
+    'The Ashfang Company', 'The Iron Accord', 'The Pale March',
+    'The Thorn Company', 'The Last Warrant', 'The Grey Vanguard',
+    'The Ember Compact', 'The Broken Seal', 'The Hollow Banner', 'The Black Vigil',
+  ],
+}
+
 // ─── Stubs ────────────────────────────────────────────────────────────
 // Stub configs for genres not yet fully implemented. Available: false —
 // they show as "Soon" in the genre picker. No species/classes/hooks needed
@@ -860,6 +1130,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
 function makeStub(
   id: Genre,
   name: string,
+  tagline: string,
   currencyName: string,
   currencyAbbrev: string,
   partyBaseName: string,
@@ -867,13 +1138,16 @@ function makeStub(
   return {
     id,
     name,
+    tagline,
     available: false,
     species: [],
+    speciesLabel: 'Origin',
     classes: [],
     theme: { ...spaceOperaTheme },
     currencyName,
     currencyAbbrev,
     partyBaseName,
+    settingNoun: 'world',
     systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
     openingHooks: [],
     initialChapterTitle: 'New Horizons',
@@ -881,40 +1155,45 @@ function makeStub(
   }
 }
 
-const dndConfig       = makeStub('dnd',       'Classic D&D',   'gold',    'gp',  'Tavern')
-const westernConfig   = makeStub('western',    'Western',       'dollars', '$',   'Camp')
-const samuraiConfig   = makeStub('samurai',    'Samurai',       'mon',     '¥',   'Dojo')
-const mafiaConfig     = makeStub('mafia',      'Mafia',         'dollars', '$',   'The Family')
-const romeConfig      = makeStub('rome',       'Ancient Rome',  'denarii', 'dn',  'Garrison')
-const ww2Config       = makeStub('ww2',        'World War II',  'dollars', '$',   'Safehouse')
-const coldWarConfig   = makeStub('cold-war',   'Cold War',      'dollars', '$',   'Safe House')
+const dndConfig         = makeStub('dnd',          'Classic D&D',   'Roll for initiative. Try not to die.',                           'gold',    'gp',  'Tavern')
+const highFantasyConfig = makeStub('high-fantasy',  'High Fantasy',  'The age of heroes isn\'t over. Not yet.',                        'gold',    'gp',  'Quarters')
+const westernConfig     = makeStub('western',       'Western',       'The frontier doesn\'t ask where you came from.',                 'dollars', '$',   'Camp')
+const samuraiConfig     = makeStub('samurai',       'Samurai',       'Duty binds. Honor breaks. The blade decides.',                  'mon',     '¥',   'Dojo')
+const mafiaConfig       = makeStub('mafia',         'Mafia',         'Everyone\'s family until the money runs out.',                  'dollars', '$',   'The Family')
+const romeConfig        = makeStub('rome',          'Ancient Rome',  'The Republic promises glory. It collects in blood.',             'denarii', 'dn',  'Garrison')
+const ww2Config         = makeStub('ww2',           'World War II',  'Some wars don\'t end when the guns go quiet.',                  'dollars', '$',   'Safehouse')
+const coldWarConfig     = makeStub('cold-war',      'Cold War',      'No shots fired. Everyone\'s already compromised.',              'dollars', '$',   'Safe House')
 
 // ─── Registry ─────────────────────────────────────────────────────────
 
 const genreConfigs: Record<string, GenreConfig> = {
-  'space-opera': spaceOperaConfig,
-  'fantasy':     fantasyConfig,
-  'dnd':         dndConfig,
-  'cyberpunk':   cyberpunkConfig,
-  'western':     westernConfig,
-  'samurai':     samuraiConfig,
-  'mafia':       mafiaConfig,
-  'rome':        romeConfig,
-  'ww2':         ww2Config,
-  'cold-war':    coldWarConfig,
+  'space-opera':  spaceOperaConfig,
+  'fantasy':      fantasyConfig,
+  'grimdark':     grimdarkConfig,
+  'cyberpunk':    cyberpunkConfig,
+  'dnd':          dndConfig,
+  'high-fantasy': highFantasyConfig,
+  'western':      westernConfig,
+  'samurai':      samuraiConfig,
+  'mafia':        mafiaConfig,
+  'rome':         romeConfig,
+  'ww2':          ww2Config,
+  'cold-war':     coldWarConfig,
 }
 
 export const genres: { id: Genre; name: string; available: boolean }[] = [
-  { id: 'space-opera', name: 'Space Opera',  available: true  },
-  { id: 'fantasy',     name: 'Fantasy',       available: true  },
-  { id: 'dnd',         name: 'Classic D&D',   available: false },
-  { id: 'cyberpunk',   name: 'Cyberpunk',     available: true  },
-  { id: 'western',     name: 'Western',       available: false },
-  { id: 'samurai',     name: 'Samurai',       available: false },
-  { id: 'mafia',       name: 'Mafia',         available: false },
-  { id: 'rome',        name: 'Ancient Rome',  available: false },
-  { id: 'ww2',         name: 'World War II',  available: false },
-  { id: 'cold-war',    name: 'Cold War',      available: false },
+  { id: 'space-opera',  name: 'Space Opera',   available: true  },
+  { id: 'fantasy',      name: 'Fantasy',        available: true  },
+  { id: 'grimdark',     name: 'Grimdark',       available: true  },
+  { id: 'cyberpunk',    name: 'Cyberpunk',      available: true  },
+  { id: 'dnd',          name: 'Classic D&D',    available: false },
+  { id: 'high-fantasy', name: 'High Fantasy',   available: false },
+  { id: 'western',      name: 'Western',        available: false },
+  { id: 'samurai',      name: 'Samurai',        available: false },
+  { id: 'mafia',        name: 'Mafia',          available: false },
+  { id: 'rome',         name: 'Ancient Rome',   available: false },
+  { id: 'ww2',          name: 'World War II',   available: false },
+  { id: 'cold-war',     name: 'Cold War',       available: false },
 ]
 
 export function getGenreConfig(genre: Genre): GenreConfig {
