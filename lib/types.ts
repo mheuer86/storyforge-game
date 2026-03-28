@@ -62,6 +62,35 @@ export interface NPC {
   description: string
   lastSeen: string
   relationship?: string
+  role?: 'crew' | 'contact' | 'npc'
+  vulnerability?: string  // what hits this companion harder (used internally by cohesion system)
+}
+
+export interface CohesionLogEntry {
+  chapterNumber: number
+  companionName: string  // specific companion name, or 'crew' for general
+  change: number  // +1 or -1
+  reason: string
+  timestamp: string
+}
+
+export interface CrewCohesion {
+  score: number  // 1-5
+  log: CohesionLogEntry[]
+}
+
+export interface ShipSystem {
+  id: string
+  name: string
+  level: number  // 1-3
+  description: string
+}
+
+export interface ShipState {
+  hullCondition: number  // 0-100
+  systems: ShipSystem[]
+  combatOptions: string[]
+  upgradeLog: string[]
 }
 
 export interface Thread {
@@ -100,6 +129,8 @@ export interface WorldState {
   threads: Thread[]
   promises: Promise[]
   antagonist: Antagonist | null
+  crewCohesion: CrewCohesion
+  ship: ShipState | null
 }
 
 export interface Enemy {
@@ -139,12 +170,22 @@ export interface RollRecord {
   timestamp: string
 }
 
+export interface ChapterDebrief {
+  tactical: string      // letter grade or short rating
+  strategic: string     // letter grade or short rating
+  luckyBreaks: string[]
+  costsPaid: string[]
+  promisesKept: string[]
+  promisesBroken: string[]
+}
+
 export interface Chapter {
   number: number
   title: string
   status: 'complete' | 'in-progress'
   summary: string
   keyEvents: string[]
+  debrief?: ChapterDebrief
 }
 
 export interface HistoryState {
@@ -235,4 +276,17 @@ export interface SuggestActionsInput {
 
 export interface MetaResponseInput {
   content: string
+}
+
+export interface UpdateCohesionInput {
+  direction: 1 | -1
+  reason: string
+  companionName?: string
+}
+
+export interface UpdateShipInput {
+  hullConditionChange?: number
+  upgradeSystem?: { id: string; newLevel: number; description: string }
+  addCombatOption?: string
+  upgradeLogEntry?: string
 }

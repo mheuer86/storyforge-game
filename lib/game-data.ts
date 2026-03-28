@@ -85,6 +85,19 @@ export function createInitialGameState(
     threads: [],
     promises: [],
     antagonist: null,
+    crewCohesion: { score: 3, log: [] },
+    ship: genre === 'space-opera' ? {
+      hullCondition: 100,
+      systems: [
+        { id: 'engines', name: 'Engines', level: 1, description: 'Standard sublight drive. No piloting bonus.' },
+        { id: 'weapons', name: 'Weapons', level: 1, description: '1d8 ship attack.' },
+        { id: 'shields', name: 'Shields', level: 1, description: 'Standard deflectors. No damage reduction.' },
+        { id: 'sensors', name: 'Sensors', level: 1, description: 'Short-range passive scan.' },
+        { id: 'crew_quarters', name: 'Crew Quarters', level: 1, description: 'Functional. No cohesion bonus.' },
+      ],
+      combatOptions: [],
+      upgradeLog: [],
+    } : null,
   }
 
   return {

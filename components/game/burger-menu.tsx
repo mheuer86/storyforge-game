@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState, Antagonist } from '@/lib/types'
+import type { GameState, Antagonist, ShipState } from '@/lib/types'
 
 interface Character {
   name: string
@@ -44,15 +44,13 @@ interface Character {
 
 interface Ship {
   name: string
-  class: string
-  condition: string
-  systems: { name: string; description: string }[]
-  refitHistory: { chapter: number; upgrade: string }[]
+  state: ShipState | null
 }
 
 interface World {
   location: { name: string; description: string }
   factions: { name: string; stance: string }[]
+  companions: { name: string; description: string; lastSeen: string }[]
   npcs: { name: string; description: string; lastSeen: string }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }[]
@@ -182,7 +180,7 @@ export function BurgerMenu({
 
               {/* World Tab */}
               <TabsContent value="world" className="mt-0 p-4">
-                <WorldPanel world={world} />
+                <WorldPanel world={world} partyBaseName={genreConfig.partyBaseName} />
               </TabsContent>
 
               {/* Chapters Tab */}
@@ -412,35 +410,64 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
 }
 
 function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; partyBaseName: string }) {
-  if (genre === 'space-opera') {
+  if (genre === 'space-opera' && ship.state) {
+    const s = ship.state
+    const hullColor = s.hullCondition >= 70 ? 'text-success' : s.hullCondition >= 30 ? 'text-warning' : 'text-destructive'
+    const hullBarColor = s.hullCondition >= 70 ? 'bg-success' : s.hullCondition >= 30 ? 'bg-warning' : 'bg-destructive'
     return (
       <div className="flex flex-col gap-4 text-sm">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            {ship.name}{' '}
-            <span className="text-muted-foreground">— {ship.class}</span>
-          </h2>
-          <div className="mt-1 text-sm text-muted-foreground">
-            Condition: <span className="text-success">{ship.condition}</span>
+          <h2 className="text-lg font-semibold text-foreground">{ship.name}</h2>
+          <div className="mt-2">
+            <div className="mb-1 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Hull Condition</span>
+              <span className={hullColor}>{s.hullCondition}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/40">
+              <div className={cn('h-full rounded-full transition-all', hullBarColor)} style={{ width: `${s.hullCondition}%` }} />
+            </div>
           </div>
         </div>
+
         <div>
-          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Installed Systems</h3>
+          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Systems</h3>
           <div className="flex flex-col gap-2">
-            {ship.systems.map((system) => (
-              <div key={system.name} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                <div className="font-medium text-foreground">{system.name}</div>
-                <div className="text-xs text-muted-foreground">{system.description}</div>
+            {s.systems.map((sys) => (
+              <div key={sys.id} className="flex items-start gap-3 rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">{sys.name}</div>
+                  <div className="text-xs text-muted-foreground">{sys.description}</div>
+                </div>
+                <Badge
+                  variant={sys.level >= 3 ? 'default' : sys.level === 2 ? 'secondary' : 'outline'}
+                  className="shrink-0 text-[10px]"
+                >
+                  L{sys.level}
+                </Badge>
               </div>
             ))}
           </div>
         </div>
+
+        {s.combatOptions.length > 0 && (
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Combat Options</h3>
+            <div className="flex flex-wrap gap-1">
+              {s.combatOptions.map((opt, i) => (
+                <Badge key={i} variant="secondary" className="bg-primary/10 text-xs text-primary">
+                  {opt}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <h3 className="mb-2 text-xs uppercase text-muted-foreground">Refit History</h3>
-          {ship.refitHistory.length > 0 ? (
-            <ul className="list-inside list-disc text-foreground">
-              {ship.refitHistory.map((refit, i) => (
-                <li key={i}>Chapter {refit.chapter}: {refit.upgrade}</li>
+          {s.upgradeLog.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {s.upgradeLog.map((entry, i) => (
+                <li key={i} className="text-xs text-foreground">{entry}</li>
               ))}
             </ul>
           ) : (
@@ -469,7 +496,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
   )
 }
 
-function WorldPanel({ world }: { world: World }) {
+function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: string }) {
   const [view, setView] = useState<'now' | 'all'>('now')
 
   const activeThreads = world.threads.filter((t) => t.status !== 'resolved')
@@ -507,10 +534,42 @@ function WorldPanel({ world }: { world: World }) {
         <>
           {/* Location */}
           <div>
-            <h3 className="mb-1 text-xs uppercase text-muted-foreground">Current Location</h3>
-            <div className="font-medium text-foreground">{world.location.name}</div>
-            <div className="text-xs text-muted-foreground">{world.location.description}</div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Current Location</h3>
+            <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+              <div className="font-medium text-foreground">{world.location.name}</div>
+              <div className="text-xs text-muted-foreground">{world.location.description}</div>
+            </div>
           </div>
+
+          {/* Companions */}
+          {world.companions.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Companions</h3>
+              <div className="flex flex-col gap-2">
+                {world.companions.map((c, i) => (
+                  <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
+                    <div className="font-medium text-foreground">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">{c.description} · {c.lastSeen}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Known NPCs */}
+          {world.npcs.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
+              <div className="flex flex-col gap-2">
+                {world.npcs.map((npc, i) => (
+                  <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{npc.name}</div>
+                    <div className="text-xs text-muted-foreground">{npc.description} ({npc.lastSeen})</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Active Threads */}
           <div>
@@ -561,7 +620,7 @@ function WorldPanel({ world }: { world: World }) {
             {world.factions.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.factions.map((faction, i) => (
-                  <div key={`${i}-${faction.name}`}>
+                  <div key={`${i}-${faction.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
                     <div className="font-medium text-foreground">{faction.name}</div>
                     <div className="text-xs text-muted-foreground">{faction.stance}</div>
                   </div>
@@ -572,13 +631,30 @@ function WorldPanel({ world }: { world: World }) {
             )}
           </div>
 
+          {/* Companions */}
+          {world.companions.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Companions</h3>
+              <div className="flex flex-col gap-2">
+                {world.companions.map((c, i) => (
+                  <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
+                    <div className="font-medium text-foreground">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {c.description} · {c.lastSeen}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* NPCs */}
           <div>
             <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
             {world.npcs.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.npcs.map((npc, i) => (
-                  <div key={`${i}-${npc.name}`}>
+                  <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
                     <div className="font-medium text-foreground">{npc.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {npc.description} ({npc.lastSeen})

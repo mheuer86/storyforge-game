@@ -224,6 +224,8 @@ export const gameTools: Anthropic.Tool[] = [
               description: { type: 'string', description: 'Brief description of who they are' },
               lastSeen: { type: 'string', description: 'Current location or context' },
               relationship: { type: 'string', description: 'e.g. "hostile", "neutral", "ally", "contact"' },
+              role: { type: 'string', enum: ['crew', 'contact', 'npc'], description: 'Use "crew" for companions who travel with the player' },
+              vulnerability: { type: 'string', description: 'What this companion is most sensitive to (for crew only) — used to modulate cohesion changes' },
             },
             required: ['name', 'description', 'lastSeen'],
           },
@@ -236,6 +238,8 @@ export const gameTools: Anthropic.Tool[] = [
             description: { type: 'string' },
             lastSeen: { type: 'string' },
             relationship: { type: 'string' },
+            role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
+            vulnerability: { type: 'string' },
           },
           required: ['name'],
         },
@@ -357,6 +361,101 @@ export const gameTools: Anthropic.Tool[] = [
         },
       },
       required: ['action'],
+    },
+  },
+  {
+    name: 'generate_debrief',
+    description:
+      'Generate a chapter debrief immediately after calling close_chapter. Evaluate the player\'s performance using the concrete data from this chapter: roll outcomes, promises kept or broken, threads that worsened, cohesion changes. Be specific — reference actual events, not generic praise. Tactical = moment-to-moment decisions and roll choices. Strategic = how well they managed long-term threads, cohesion, and antagonist pressure.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        tactical: {
+          type: 'string',
+          description: 'Tactical rating — a letter grade (A/B/C/D/F) followed by a 1-sentence justification based on roll outcomes and combat decisions.',
+        },
+        strategic: {
+          type: 'string',
+          description: 'Strategic rating — a letter grade (A/B/C/D/F) followed by a 1-sentence justification based on thread management, promises, and antagonist handling.',
+        },
+        luckyBreaks: {
+          type: 'array',
+          description: 'Moments where the dice or circumstances favored the player unexpectedly (nat 20s, enemies who missed, threads that didn\'t worsen).',
+          items: { type: 'string' },
+        },
+        costsPaid: {
+          type: 'array',
+          description: 'Concrete costs incurred: HP lost, consumables spent, broken promises, threads that worsened, cohesion drops.',
+          items: { type: 'string' },
+        },
+        promisesKept: {
+          type: 'array',
+          description: 'Promises fulfilled this chapter.',
+          items: { type: 'string' },
+        },
+        promisesBroken: {
+          type: 'array',
+          description: 'Promises broken or left open past their implied deadline.',
+          items: { type: 'string' },
+        },
+      },
+      required: ['tactical', 'strategic', 'luckyBreaks', 'costsPaid', 'promisesKept', 'promisesBroken'],
+    },
+  },
+  {
+    name: 'update_cohesion',
+    description:
+      'Adjust crew/companion cohesion by +1 or -1. NEVER reveal the score or mention cohesion to the player — reflect it only through NPC behavior and narrative tone. Call this immediately when a trigger occurs, before continuing the narrative.\n\n+1 triggers: player acknowledges a companion by name after hardship, keeps a promise to them, chooses their safety over mission efficiency, gives them public credit.\n-1 triggers: uses companions as tools without acknowledgment, breaks a promise to them, dismisses a concern that proves valid, makes a unilateral decision that puts them at risk without explanation.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        direction: {
+          type: 'number',
+          enum: [1, -1],
+          description: '+1 to raise cohesion, -1 to lower it.',
+        },
+        reason: {
+          type: 'string',
+          description: 'Brief reason for the change — logged internally for chapter debrief, never shown to player.',
+        },
+        companionName: {
+          type: 'string',
+          description: 'Name of the specific companion this relates to (if applicable). Omit for crew-wide changes.',
+        },
+      },
+      required: ['direction', 'reason'],
+    },
+  },
+  {
+    name: 'update_ship',
+    description:
+      'Update ship state: hull condition changes, system upgrades, new combat options. Call when the ship takes damage, is repaired, or receives an upgrade. For chapter-end refits: propose 2-3 upgrade options in narrative dialogue (e.g. a dockmaster offers to upgrade engines or shields), then call this when the player chooses.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        hullConditionChange: {
+          type: 'number',
+          description: 'Hull condition change in percentage points. Negative for damage, positive for repairs. Ship combat hit: -15 to -25. Emergency field repair: +15 to +30. Full port refit: set to restore 100.',
+        },
+        upgradeSystem: {
+          type: 'object',
+          description: 'Upgrade a ship system to the next level.',
+          properties: {
+            id: { type: 'string', enum: ['engines', 'weapons', 'shields', 'sensors', 'crew_quarters'] },
+            newLevel: { type: 'number', description: 'New level (2 or 3).' },
+            description: { type: 'string', description: 'Updated description of what this system does at the new level.' },
+          },
+          required: ['id', 'newLevel', 'description'],
+        },
+        addCombatOption: {
+          type: 'string',
+          description: 'New ship combat option unlocked by an upgrade (e.g. "Torpedo salvo", "EMP burst", "Cloaking sprint"). These become available as quick actions in space encounters.',
+        },
+        upgradeLogEntry: {
+          type: 'string',
+          description: 'Brief narrative note to log (e.g. "Upgraded engines at Orja-9 drydock"). Shown in Ship tab refit history.',
+        },
+      },
     },
   },
   {

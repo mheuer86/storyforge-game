@@ -22,6 +22,8 @@ const requestSchema = z.object({
   }),
   isMetaQuestion: z.boolean(),
   isInitial: z.boolean(),
+  isConsistencyCheck: z.boolean().optional(),
+  flaggedMessage: z.string().optional(),
   // Phase 2: client-side roll result
   rollResolution: z.object({
     roll: z.number().min(1).max(20),
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const systemPrompt = buildSystemPrompt(gameState, isMetaQuestion)
+        const systemPrompt = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
 
         // ── Phase 2: client sent a roll result, continue from pending conversation ──
         if (rollResolution) {

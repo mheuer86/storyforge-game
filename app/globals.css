@@ -81,6 +81,15 @@
   --font-heading: 'Lora', Georgia, serif;
 }
 
+:root {
+  --narrative-font-size: 0.875rem; /* 14px default (text-sm) */
+}
+
+[data-genre="space-opera"],
+[data-genre="cyberpunk"] {
+  --narrative-font-size: 0.8125rem; /* 13px — mono reads larger than serif at same size */
+}
+
 /* Dark theme is the default for this app */
 .dark {
   --background: oklch(0.12 0.02 260);

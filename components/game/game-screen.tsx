@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
@@ -377,6 +377,74 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
           updated = { ...updated, world }
         }
+
+        if (result.tool === 'update_cohesion') {
+          const input = result.input as { direction: 1 | -1; reason: string; companionName?: string }
+          const cohesion = updated.world.crewCohesion
+          const newScore = Math.max(1, Math.min(5, cohesion.score + input.direction))
+          const logEntry: CohesionLogEntry = {
+            chapterNumber: updated.meta.chapterNumber,
+            companionName: input.companionName || 'crew',
+            change: input.direction,
+            reason: input.reason,
+            timestamp: new Date().toISOString(),
+          }
+          updated = {
+            ...updated,
+            world: {
+              ...updated.world,
+              crewCohesion: {
+                score: newScore,
+                log: [...cohesion.log, logEntry],
+              },
+            },
+          }
+          // Intentionally no statChange — cohesion is hidden from player
+        }
+
+        if (result.tool === 'update_ship') {
+          const input = result.input as UpdateShipInput
+          const ship = updated.world.ship
+          if (ship) {
+            let newShip = { ...ship }
+            if (input.hullConditionChange !== undefined) {
+              newShip.hullCondition = Math.max(0, Math.min(100, ship.hullCondition + input.hullConditionChange))
+              statChanges.push({
+                type: input.hullConditionChange > 0 ? 'gain' : 'loss',
+                label: `Hull: ${newShip.hullCondition}%`,
+              })
+            }
+            if (input.upgradeSystem) {
+              newShip.systems = ship.systems.map((s) =>
+                s.id === input.upgradeSystem!.id
+                  ? { ...s, level: input.upgradeSystem!.newLevel, description: input.upgradeSystem!.description }
+                  : s
+              )
+              const sysName = input.upgradeSystem.id.replace('_', ' ')
+              statChanges.push({ type: 'gain', label: `${sysName} → L${input.upgradeSystem.newLevel}` })
+            }
+            if (input.addCombatOption) {
+              newShip.combatOptions = [...ship.combatOptions, input.addCombatOption]
+              statChanges.push({ type: 'new', label: `Ship: ${input.addCombatOption}` })
+            }
+            if (input.upgradeLogEntry) {
+              newShip.upgradeLog = [...ship.upgradeLog, input.upgradeLogEntry]
+            }
+            updated = { ...updated, world: { ...updated.world, ship: newShip } }
+          }
+        }
+
+        if (result.tool === 'generate_debrief') {
+          const input = result.input as unknown as ChapterDebrief
+          // Attach debrief to the most recently completed chapter
+          const chapters = updated.history.chapters.map((ch) =>
+            ch.status === 'complete' && !ch.debrief
+              ? { ...ch, debrief: input }
+              : ch
+          )
+          updated = { ...updated, history: { ...updated.history, chapters } }
+          statChanges.push({ type: 'new', label: 'Chapter debrief ready' })
+        }
       }
 
       return updated
@@ -601,8 +669,23 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         pendingMessages: prompt.pendingMessages,
       }
 
+      const modifier = prompt.modifier
+      const total = roll + modifier
+      const result: 'critical' | 'success' | 'failure' | 'fumble' =
+        roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= prompt.dc ? 'success' : 'failure'
+
+      const rollMsgId = Date.now().toString()
       const gmMsgId = (Date.now() + 1).toString()
-      setMessages((prev) => [...prev, { id: gmMsgId, type: 'gm', content: '' }])
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: rollMsgId,
+          type: 'roll' as const,
+          content: '',
+          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason },
+        },
+        { id: gmMsgId, type: 'gm' as const, content: '' },
+      ])
 
       await streamRequest(
         { message: '', gameState: prompt.pendingState, isMetaQuestion: false, isInitial: false, rollResolution },
@@ -631,6 +714,48 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       )
     },
     [streamRequest]
+  )
+
+  const handleConsistencyCheck = useCallback(
+    async (flaggedContent: string) => {
+      if (isLoadingRef.current || !gameState) return
+      isLoadingRef.current = true
+      setIsLoading(true)
+      setLastStatChanges([])
+
+      const gmMsgId = (Date.now() + 1).toString()
+      setMessages((prev) => [...prev, { id: gmMsgId, type: 'meta-response', content: '' }])
+
+      await streamRequest(
+        {
+          message: '[CONSISTENCY CHECK]',
+          gameState,
+          isMetaQuestion: true,
+          isInitial: false,
+          isConsistencyCheck: true,
+          flaggedMessage: flaggedContent,
+        },
+        gmMsgId,
+        true,
+        gameState,
+        () => { isLoadingRef.current = false; setIsLoading(false) },
+        (finalState, statChanges) => {
+          setGameState(finalState)
+          saveGameState(finalState)
+          setLastStatChanges(statChanges)
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+        (msg) => {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: `[Error: ${msg}]` } : m))
+          )
+          isLoadingRef.current = false
+          setIsLoading(false)
+        },
+      )
+    },
+    [streamRequest, gameState]
   )
 
   // Load state and start campaign on mount
@@ -776,6 +901,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         content: message.content,
                         timestamp: new Date(),
                       }}
+                      onFlag={message.type === 'gm' ? handleConsistencyCheck : undefined}
                     />
                   </div>
                 )
@@ -908,15 +1034,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }}
         ship={{
           name: gameState.world.shipName,
-          class: 'Frigate',
-          condition: 'Operational',
-          systems: [],
-          refitHistory: [],
+          state: gameState.world.ship,
         }}
         world={{
           location: gameState.world.currentLocation,
           factions: gameState.world.factions,
-          npcs: gameState.world.npcs,
+          npcs: gameState.world.npcs.filter(n => n.role !== 'crew'),
+          companions: gameState.world.npcs.filter(n => n.role === 'crew'),
           threads: gameState.world.threads.map((t) => ({
             title: t.title,
             status: t.status,
@@ -932,7 +1056,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           summary: c.summary,
           keyEvents: c.keyEvents,
           rollLog: c.status === 'in-progress' ? gameState.history.rollLog : [],
-          debrief: null,
+          debrief: c.debrief ?? null,
         }))}
       />
     </div>
