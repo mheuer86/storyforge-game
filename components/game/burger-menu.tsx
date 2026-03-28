@@ -21,7 +21,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { getStatModifier, formatModifier } from '@/lib/game-data'
+import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
+import { getGenreConfig, type Genre } from '@/lib/genre-config'
+import type { GameState } from '@/lib/types'
 
 interface Character {
   name: string
@@ -62,7 +64,7 @@ interface Chapter {
   status: 'complete' | 'in-progress'
   summary: string
   keyEvents: string[]
-  rollLog: { check: string; dc: number; roll: number; modifier: number; result: 'success' | 'failure' | 'critical' }[]
+  rollLog: { check: string; dc: number; roll: number; modifier: number; result: 'success' | 'failure' | 'critical' | 'fumble' }[]
   debrief: {
     tactical: string
     strategic: string
@@ -80,6 +82,21 @@ interface BurgerMenuProps {
   ship: Ship
   world: World
   chapters: Chapter[]
+  genre: Genre
+  onSave: (slot: 1 | 2 | 3) => void
+  onLoad: (state: GameState) => void
+  onNewGame?: () => void
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
 }
 
 export function BurgerMenu({
@@ -89,18 +106,38 @@ export function BurgerMenu({
   ship,
   world,
   chapters,
+  genre,
+  onSave,
+  onLoad,
+  onNewGame,
 }: BurgerMenuProps) {
+  const genreConfig = getGenreConfig(genre)
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null)
-  const [showSaveModal, setShowSaveModal] = useState(false)
-  const [showLoadModal, setShowLoadModal] = useState(false)
+  const [saveMode, setSaveMode] = useState<'save' | 'load' | null>(null)
+  const [loadConfirm, setLoadConfirm] = useState<SaveSlotData | null>(null)
+  const [newGameConfirm, setNewGameConfirm] = useState(false)
+  const [slots, setSlots] = useState<(SaveSlotData | null)[]>([null, null, null])
+  const [savedSlot, setSavedSlot] = useState<number | null>(null)
 
-  const saveSlots = [
-    { id: 1, name: 'Quicksave', timestamp: '2024-01-15 10:30', chapter: 1, level: 1 },
-    { id: 2, name: 'Before Station', timestamp: '2024-01-14 21:15', chapter: 0, level: 1 },
-    { id: 3, name: null, timestamp: null, chapter: null, level: null },
-    { id: 4, name: null, timestamp: null, chapter: null, level: null },
-    { id: 5, name: null, timestamp: null, chapter: null, level: null },
-  ]
+  const openSaveLoad = (mode: 'save' | 'load') => {
+    setSlots([getSaveSlot(1), getSaveSlot(2), getSaveSlot(3)])
+    setSavedSlot(null)
+    setSaveMode(mode)
+  }
+
+  const handleSaveToSlot = (slot: 1 | 2 | 3) => {
+    onSave(slot)
+    setSavedSlot(slot)
+    setTimeout(() => setSaveMode(null), 800)
+  }
+
+  const handleLoadConfirm = () => {
+    if (!loadConfirm) return
+    onLoad(loadConfirm.gameState)
+    setLoadConfirm(null)
+    setSaveMode(null)
+    onOpenChange(false)
+  }
 
   return (
     <>
@@ -119,7 +156,7 @@ export function BurgerMenu({
                 Character
               </TabsTrigger>
               <TabsTrigger value="ship" className="text-xs">
-                Ship
+                {genreConfig.partyBaseName}
               </TabsTrigger>
               <TabsTrigger value="world" className="text-xs">
                 World
@@ -129,15 +166,15 @@ export function BurgerMenu({
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1" style={{ fontFamily: 'var(--font-narrative)' }}>
               {/* Character Tab */}
               <TabsContent value="character" className="mt-0 p-4">
-                <CharacterSheet character={character} />
+                <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} />
               </TabsContent>
 
               {/* Ship Tab */}
               <TabsContent value="ship" className="mt-0 p-4">
-                <ShipPanel ship={ship} />
+                <ShipPanel ship={ship} genre={genre} partyBaseName={genreConfig.partyBaseName} />
               </TabsContent>
 
               {/* World Tab */}
@@ -162,48 +199,124 @@ export function BurgerMenu({
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setShowSaveModal(true)}
-                className="flex-1 border-border/50 bg-secondary/30"
+                onClick={() => openSaveLoad('save')}
+                className="flex-1 border-border/50 bg-secondary/30 hover:bg-secondary/50"
               >
                 Save Game
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setShowLoadModal(true)}
-                className="flex-1 border-border/50 bg-secondary/30"
+                onClick={() => openSaveLoad('load')}
+                className="flex-1 border-border/50 bg-secondary/30 hover:bg-secondary/50"
               >
                 Load Game
               </Button>
             </div>
-            <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-              <button className="hover:text-foreground">Export</button>
-              <span>·</span>
-              <button className="hover:text-foreground">Import</button>
-            </div>
+            {onNewGame && (
+              <button
+                onClick={() => setNewGameConfirm(true)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Start new campaign
+              </button>
+            )}
           </SheetFooter>
         </SheetContent>
       </Sheet>
 
-      {/* Save/Load Modals */}
-      <SaveLoadModal
-        open={showSaveModal}
-        onOpenChange={setShowSaveModal}
-        mode="save"
-        slots={saveSlots}
-      />
-      <SaveLoadModal
-        open={showLoadModal}
-        onOpenChange={setShowLoadModal}
-        mode="load"
-        slots={saveSlots}
-      />
+      {/* Save / Load dialog */}
+      <Dialog open={saveMode !== null} onOpenChange={(o) => { if (!o) setSaveMode(null) }}>
+        <DialogContent className="border-border/50 bg-card sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{saveMode === 'save' ? 'Save Game' : 'Load Game'}</DialogTitle>
+            <DialogDescription>
+              {saveMode === 'save' ? 'Choose a slot to save your current session.' : 'Choose a save to load. Your current session will be replaced.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            {([1, 2, 3] as const).map((slot) => {
+              const s = slots[slot - 1]
+              const isSaved = savedSlot === slot
+              return (
+                <div key={slot} className="flex items-center gap-3 rounded-lg border border-border/40 bg-secondary/20 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    {s ? (
+                      <>
+                        <div className="font-medium text-foreground truncate">{s.characterName} — {s.characterClass}</div>
+                        <div className="text-xs text-muted-foreground">Ch. {s.chapterNumber}: {s.chapterTitle} · {timeAgo(s.savedAt)}</div>
+                      </>
+                    ) : (
+                      <div className="italic text-muted-foreground text-sm">Empty slot</div>
+                    )}
+                  </div>
+                  {saveMode === 'save' ? (
+                    <Button
+                      size="sm"
+                      variant={isSaved ? 'default' : 'outline'}
+                      className="shrink-0"
+                      onClick={() => handleSaveToSlot(slot)}
+                    >
+                      {isSaved ? 'Saved ✓' : 'Save here'}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0"
+                      disabled={!s}
+                      onClick={() => s && setLoadConfirm(s)}
+                    >
+                      Load
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load confirmation */}
+      <Dialog open={loadConfirm !== null} onOpenChange={(o) => { if (!o) setLoadConfirm(null) }}>
+        <DialogContent className="border-border/50 bg-card sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Load this save?</DialogTitle>
+            <DialogDescription>
+              Your current session will be replaced by{' '}
+              <span className="font-medium text-foreground">{loadConfirm?.characterName}</span>
+              {' '}— Chapter {loadConfirm?.chapterNumber}. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setLoadConfirm(null)}>Cancel</Button>
+            <Button className="flex-1" onClick={handleLoadConfirm}>Load</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Game confirmation */}
+      <Dialog open={newGameConfirm} onOpenChange={setNewGameConfirm}>
+        <DialogContent className="border-border/50 bg-card sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start a new campaign?</DialogTitle>
+            <DialogDescription>
+              Your current session will be cleared. Save first if you want to keep it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setNewGameConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={() => { setNewGameConfirm(false); onNewGame?.() }}>Start Over</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </>
   )
 }
 
-function CharacterSheet({ character }: { character: Character }) {
+function CharacterSheet({ character, currencyLabel }: { character: Character; currencyLabel: string }) {
   return (
-    <div className="flex flex-col gap-4 font-mono text-sm">
+    <div className="flex flex-col gap-4 text-sm">
       {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-foreground">
@@ -276,7 +389,7 @@ function CharacterSheet({ character }: { character: Character }) {
 
       {/* Credits */}
       <div className="rounded bg-secondary/30 px-3 py-2">
-        <span className="text-muted-foreground">Credits:</span>{' '}
+        <span className="text-muted-foreground capitalize">{currencyLabel}:</span>{' '}
         <span className="font-semibold text-warning">{character.credits}</span>
       </div>
 
@@ -295,52 +408,60 @@ function CharacterSheet({ character }: { character: Character }) {
   )
 }
 
-function ShipPanel({ ship }: { ship: Ship }) {
+function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; partyBaseName: string }) {
+  if (genre === 'space-opera') {
+    return (
+      <div className="flex flex-col gap-4 text-sm">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            {ship.name}{' '}
+            <span className="text-muted-foreground">— {ship.class}</span>
+          </h2>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Condition: <span className="text-success">{ship.condition}</span>
+          </div>
+        </div>
+        <div>
+          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Installed Systems</h3>
+          <div className="flex flex-col gap-2">
+            {ship.systems.map((system) => (
+              <div key={system.name} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                <div className="font-medium text-foreground">{system.name}</div>
+                <div className="text-xs text-muted-foreground">{system.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Refit History</h3>
+          {ship.refitHistory.length > 0 ? (
+            <ul className="list-inside list-disc text-foreground">
+              {ship.refitHistory.map((refit, i) => (
+                <li key={i}>Chapter {refit.chapter}: {refit.upgrade}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="italic text-muted-foreground">No upgrades yet</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4 text-sm">
-      {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground">
-          {ship.name}{' '}
-          <span className="text-muted-foreground">— {ship.class}</span>
-        </h2>
-        <div className="mt-1 text-sm text-muted-foreground">
-          Condition:{' '}
-          <span className="text-success">{ship.condition}</span>
+        <h2 className="text-lg font-semibold text-foreground">{partyBaseName}</h2>
+        <p className="mt-2 italic text-muted-foreground">
+          Not yet established. As your story unfolds, the GM will introduce a place to call your own.
+        </p>
+      </div>
+      {ship.name && (
+        <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+          <div className="text-xs uppercase text-muted-foreground">Reserved name</div>
+          <div className="mt-1 font-medium text-foreground">{ship.name}</div>
         </div>
-      </div>
-
-      {/* Systems */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Installed Systems</h3>
-        <div className="flex flex-col gap-2">
-          {ship.systems.map((system) => (
-            <div
-              key={system.name}
-              className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
-            >
-              <div className="font-medium text-foreground">{system.name}</div>
-              <div className="text-xs text-muted-foreground">{system.description}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Refit History */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Refit History</h3>
-        {ship.refitHistory.length > 0 ? (
-          <ul className="list-inside list-disc text-foreground">
-            {ship.refitHistory.map((refit, i) => (
-              <li key={i}>
-                Chapter {refit.chapter}: {refit.upgrade}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="italic text-muted-foreground">No upgrades yet</p>
-        )}
-      </div>
+      )}
     </div>
   )
 }

@@ -59,7 +59,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 p-4">
-          <p className="text-xs leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)' }}>
+          <p className="text-sm leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)' }}>
             {renderMarkdown(message.content)}
           </p>
         </div>
@@ -84,7 +84,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex justify-end">
         <div className="max-w-[70%] rounded-lg bg-primary/20 px-4 py-2 text-right">
-          <p className="text-sm text-foreground">{message.content}</p>
+          <p className="text-sm text-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>{message.content}</p>
         </div>
       </div>
     )
@@ -95,7 +95,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex justify-end">
         <div className="max-w-[70%] rounded-lg border border-info/30 bg-info/10 px-4 py-2 text-right">
-          <p className="text-sm italic text-info">{message.content}</p>
+          <p className="text-sm italic text-info" style={{ fontFamily: 'var(--font-narrative)' }}>{message.content}</p>
         </div>
       </div>
     )
@@ -109,7 +109,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <Info className="h-3 w-3 text-info" />
         </div>
         <div className="max-w-[80%] rounded-lg border border-info/30 bg-info/5 px-4 py-2">
-          <p className="text-sm text-meta">{message.content}</p>
+          <p className="text-sm text-meta" style={{ fontFamily: 'var(--font-narrative)' }}>{message.content}</p>
         </div>
       </div>
     )

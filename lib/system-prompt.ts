@@ -111,8 +111,9 @@ After these three moments have been introduced, play normally.
 - Call request_roll before resolving any skill check — never pre-decide the outcome
 - Call start_combat when a fight begins (include all enemies with stats)
 - Call end_combat when combat concludes (the narrative continues after, then suggest_actions)
-- Call update_world when: a new NPC is encountered (addNpcs), location changes (setLocation), a new thread opens (addThread), a thread status changes (updateThread), or a faction stance shifts (addFaction)
+- Call update_world when: a new NPC is encountered (addNpcs), location changes (setLocation), a new thread opens (addThread), a thread status changes (updateThread), a faction stance shifts (addFaction), the player makes a promise or takes on a debt (addPromise), or a promise is kept or broken (updatePromise)
 - For meta questions, call meta_response with the answer and nothing else
+- Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters
 
 **Output order in every response:**
 1. Narrative text
@@ -184,8 +185,21 @@ function compressGameState(gs: GameState): string {
     combatSection = `COMBAT: ACTIVE — Round ${combat.round}\nENEMIES: ${enemyLines}`
   }
 
-  const chapterLine = `Chapter ${gs.meta.chapterNumber}: ${gs.meta.chapterTitle}`
-  const partyLabel = config.partyBaseName === 'ship' ? 'SHIP' : 'COMPANY'
+  const chapterLine = `CURRENT CHAPTER (${gs.meta.chapterNumber}): ${gs.meta.chapterTitle}`
+  const partyLabel = config.partyBaseName.toUpperCase()
+
+  const completedChapters = gs.history.chapters.filter((ch) => ch.status === 'complete')
+  const historySection =
+    completedChapters.length > 0
+      ? '\nCOMPLETED CHAPTERS:\n' +
+        completedChapters
+          .map(
+            (ch) =>
+              `Chapter ${ch.number}: ${ch.title}\n  ${ch.summary}\n  Key events: ${ch.keyEvents.join(' · ')}`
+          )
+          .join('\n\n') +
+        '\n'
+      : ''
 
   return `CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus}
 STATS: ${statLine}
@@ -202,7 +216,7 @@ THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
 
 ${combatSection}
-
+${historySection}
 ${chapterLine}`
 }
 
@@ -235,7 +249,7 @@ export function buildInitialMessage(genre: Genre = 'space-opera'): string {
   const config = getGenreConfig(genre)
   const hooks = config.openingHooks
   const hook = hooks[Math.floor(Math.random() * hooks.length)]
-  const partyLabel = config.partyBaseName === 'ship' ? 'ship name' : 'company name'
+  const partyLabel = config.partyBaseName.toLowerCase()
 
   return `Begin the campaign. Opening hook: "${hook}"
 

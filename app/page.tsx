@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
 import { GameScreen } from '@/components/game/game-screen'
-import { loadGameState, createInitialGameState } from '@/lib/game-data'
+import { loadGameState, createInitialGameState, clearGameState } from '@/lib/game-data'
 import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 
@@ -56,11 +56,20 @@ export default function StoryforgeApp() {
       data.characterClass.id,
       setupData.genre
     )
+    applyGenreTheme(setupData.genre)
     setPendingGameState(initialState)
     setAppState('playing')
   }
 
   const handleBackToWorldSetup = () => {
+    setAppState('world-setup')
+  }
+
+  const handleNewGame = () => {
+    clearGameState()
+    setPendingGameState(null)
+    setSetupData({ genre: 'space-opera', characterName: '', species: null, characterClass: null })
+    applyGenreTheme('space-opera')
     setAppState('world-setup')
   }
 
@@ -86,5 +95,5 @@ export default function StoryforgeApp() {
     )
   }
 
-  return <GameScreen initialGameState={pendingGameState ?? undefined} />
+  return <GameScreen initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
 }

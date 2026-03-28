@@ -33,7 +33,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
             key={action}
             onClick={() => !disabled && onActionSelect(action)}
             disabled={disabled}
-            className="action-glow rounded-lg border border-border/50 bg-secondary/40 px-4 py-2 text-sm text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
+            className="action-glow rounded-lg border border-border/50 bg-secondary/40 px-4 py-2 text-xs text-foreground transition-all duration-200 hover:border-primary/50 hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {action}
           </button>
