@@ -77,6 +77,20 @@ export interface Promise {
   status: 'open' | 'fulfilled' | 'broken'
 }
 
+export interface AntagonistMove {
+  chapterNumber: number
+  description: string
+  timestamp: string
+}
+
+export interface Antagonist {
+  name: string
+  description: string
+  agenda: string
+  movedThisChapter: boolean
+  moves: AntagonistMove[]
+}
+
 export interface WorldState {
   shipName: string
   currentLocation: { name: string; description: string }
@@ -84,6 +98,7 @@ export interface WorldState {
   npcs: NPC[]
   threads: Thread[]
   promises: Promise[]
+  antagonist: Antagonist | null
 }
 
 export interface Enemy {

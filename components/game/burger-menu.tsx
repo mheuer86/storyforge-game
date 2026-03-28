@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState } from '@/lib/types'
+import type { GameState, Antagonist } from '@/lib/types'
 
 interface Character {
   name: string
@@ -56,6 +56,7 @@ interface World {
   npcs: { name: string; description: string; lastSeen: string }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }[]
+  antagonist: Antagonist | null
 }
 
 interface Chapter {
@@ -551,6 +552,43 @@ function WorldPanel({ world }: { world: World }) {
           </div>
         ) : (
           <p className="italic text-muted-foreground">No promises made yet</p>
+        )}
+      </div>
+
+      {/* Antagonist */}
+      <div>
+        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Primary Antagonist</h3>
+        {world.antagonist ? (
+          <div className="flex flex-col gap-2">
+            <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-medium text-foreground">{world.antagonist.name}</div>
+                {world.antagonist.movedThisChapter && (
+                  <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
+                )}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{world.antagonist.description}</div>
+              <div className="mt-1 text-xs text-foreground">
+                <span className="text-muted-foreground">Agenda: </span>
+                {world.antagonist.agenda}
+              </div>
+            </div>
+            {world.antagonist.moves.length > 0 && (
+              <div>
+                <h4 className="mb-1 text-xs uppercase text-muted-foreground">Their Moves</h4>
+                <div className="flex flex-col gap-1">
+                  {world.antagonist.moves.map((move, i) => (
+                    <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
+                      <span className="text-muted-foreground">Ch. {move.chapterNumber}: </span>
+                      <span className="text-foreground">{move.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="italic text-muted-foreground">Not yet identified</p>
         )}
       </div>
     </div>

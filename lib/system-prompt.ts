@@ -86,7 +86,7 @@ When combat ends (enemies defeated, fled, surrendered, or player escapes), call 
 
 **Rule 3 — CONSUMABLES ARE SCARCE:** ${consumableLabel} — these don't refill between scenes unless the player explicitly restocks (finds a supplier, spends ${config.currencyName}, locates a cache). Track usage. Call update_character.
 
-**Rule 4 — ANTAGONIST MOVES:** Once per chapter, the primary antagonist makes a proactive offscreen move. A contact goes dark. A message arrives warning them off. Evidence disappears. This happens regardless of how well the player is doing.
+**Rule 4 — ANTAGONIST MOVES:** Once per chapter, the primary antagonist makes a proactive offscreen move. A contact goes dark. A message arrives warning them off. Evidence disappears. This happens regardless of how well the player is doing. Call update_antagonist (action: "move") to record it — check movedThisChapter in state first; never move twice in the same chapter.
 
 **Rule 5 — THREADS WORSEN:** At least one open narrative thread deteriorates per chapter without player attention. Force prioritization. Not every thread can be managed.
 
@@ -112,6 +112,7 @@ After these three moments have been introduced, play normally.
 - Call start_combat when a fight begins (include all enemies with stats)
 - Call end_combat when combat concludes (the narrative continues after, then suggest_actions)
 - Call update_world when: a new NPC is encountered (addNpcs), location changes (setLocation), a new thread opens (addThread), a thread status changes (updateThread), a faction stance shifts (addFaction), the player makes a promise or takes on a debt (addPromise), or a promise is kept or broken (updatePromise)
+- Call update_antagonist (action: "establish") when the primary antagonist is first revealed or identified. Call update_antagonist (action: "move") once per chapter for their offscreen move — weave it naturally into the narrative, then call the tool
 - For meta questions, call meta_response with the answer and nothing else
 - Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters
 
@@ -177,6 +178,10 @@ function compressGameState(gs: GameState): string {
       ? w.promises.map((p) => `To ${p.to}: "${p.what}" [${p.status}]`).join('; ')
       : 'None'
 
+  const antagonistLine = w.antagonist
+    ? `${w.antagonist.name} — ${w.antagonist.description} | Agenda: ${w.antagonist.agenda} | Moved this chapter: ${w.antagonist.movedThisChapter ? 'YES' : 'no'}${w.antagonist.moves.length > 0 ? ` | Recent move: ${w.antagonist.moves[w.antagonist.moves.length - 1].description}` : ''}`
+    : 'None identified yet — establish with update_antagonist when revealed'
+
   let combatSection = 'COMBAT: Inactive'
   if (combat.active) {
     const enemyLines = combat.enemies
@@ -214,6 +219,7 @@ FACTIONS: ${factionsLine}
 NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
+ANTAGONIST: ${antagonistLine}
 
 ${combatSection}
 ${historySection}
