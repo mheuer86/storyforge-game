@@ -84,7 +84,7 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
                   >
                     <span className="text-sm font-medium leading-tight">{genre.name}</span>
                     {genreConfig && (
-                      <span className="text-[10px] leading-snug text-muted-foreground/70 italic">
+                      <span className="text-xs leading-snug text-muted-foreground/80 italic">
                         {genreConfig.tagline}
                       </span>
                     )}
