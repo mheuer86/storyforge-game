@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { PassphraseGate } from '@/components/setup/passphrase-gate'
 import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
 import { CampaignSelect } from '@/components/setup/campaign-select'
@@ -18,7 +19,7 @@ interface SetupData {
   characterClass: CharacterClass | null
 }
 
-export default function StoryforgeApp() {
+function AppContent() {
   const [appState, setAppState] = useState<AppState>('loading')
   const [pendingGameState, setPendingGameState] = useState<GameState | null>(null)
   const [autoSave, setAutoSave] = useState<GameState | null>(null)
@@ -130,4 +131,12 @@ export default function StoryforgeApp() {
   }
 
   return <GameScreen initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
+}
+
+export default function StoryforgeApp() {
+  return (
+    <PassphraseGate>
+      <AppContent />
+    </PassphraseGate>
+  )
 }
