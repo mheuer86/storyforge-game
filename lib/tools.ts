@@ -278,7 +278,53 @@ export const gameTools: Anthropic.Tool[] = [
           },
           required: ['name', 'stance'],
         },
+        addPromise: {
+          type: 'object',
+          description: 'Record a promise or debt the player has made.',
+          properties: {
+            id: { type: 'string', description: 'Unique ID (snake_case)' },
+            to: { type: 'string', description: 'Who the promise was made to' },
+            what: { type: 'string', description: 'What was promised' },
+            status: { type: 'string', enum: ['open', 'fulfilled', 'broken'] },
+          },
+          required: ['id', 'to', 'what', 'status'],
+        },
+        updatePromise: {
+          type: 'object',
+          description: 'Update the status of an existing promise (matched by id).',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'string', enum: ['open', 'fulfilled', 'broken'] },
+          },
+          required: ['id', 'status'],
+        },
       },
+    },
+  },
+  {
+    name: 'close_chapter',
+    description:
+      'Close the current chapter and open the next one. Call this at a natural narrative break — when a major arc resolves, a significant time jump occurs, or the story moves to a clearly new phase. The player\'s message history is windowed to the current chapter only — chapter summaries are the sole long-term narrative memory, so write them carefully.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        summary: {
+          type: 'string',
+          description: '2-3 sentence narrative summary: what happened, what was won or lost, how the world changed.',
+        },
+        keyEvents: {
+          type: 'array',
+          description: '3-5 key events from this chapter (decisions made, people met, consequences taken).',
+          items: { type: 'string' },
+          minItems: 2,
+          maxItems: 6,
+        },
+        nextTitle: {
+          type: 'string',
+          description: 'Title for the upcoming chapter.',
+        },
+      },
+      required: ['summary', 'keyEvents', 'nextTitle'],
     },
   },
   {

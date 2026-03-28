@@ -160,6 +160,46 @@ export function saveQuickActions(actions: string[]): void {
   localStorage.setItem(QUICK_ACTIONS_KEY, JSON.stringify(actions))
 }
 
+// ── Manual save slots ────────────────────────────────────────────────────────
+
+const SAVE_SLOT_KEY = (slot: 1 | 2 | 3) => `storyforge_save_${slot}`
+
+export interface SaveSlotData {
+  slot: 1 | 2 | 3
+  savedAt: string
+  characterName: string
+  characterClass: string
+  genre: string
+  chapterNumber: number
+  chapterTitle: string
+  gameState: GameState
+}
+
+export function getSaveSlot(slot: 1 | 2 | 3): SaveSlotData | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(SAVE_SLOT_KEY(slot))
+    return raw ? (JSON.parse(raw) as SaveSlotData) : null
+  } catch {
+    return null
+  }
+}
+
+export function saveToSlot(slot: 1 | 2 | 3, state: GameState): void {
+  if (typeof window === 'undefined') return
+  const data: SaveSlotData = {
+    slot,
+    savedAt: new Date().toISOString(),
+    characterName: state.character.name,
+    characterClass: state.character.class,
+    genre: state.meta.genre,
+    chapterNumber: state.meta.chapterNumber,
+    chapterTitle: state.meta.chapterTitle,
+    gameState: state,
+  }
+  localStorage.setItem(SAVE_SLOT_KEY(slot), JSON.stringify(data))
+}
+
 // Legacy type kept for UI component compatibility
 export interface ChatMessage {
   id: string

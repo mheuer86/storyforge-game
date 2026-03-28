@@ -2,7 +2,7 @@ import type { InventoryItem, Trait } from './types'
 
 // ─── Genre Config Interface ───────────────────────────────────────────
 
-export type Genre = 'space-opera' | 'fantasy' | 'cyberpunk' | 'western'
+export type Genre = 'space-opera' | 'fantasy' | 'dnd' | 'cyberpunk' | 'western' | 'samurai' | 'mafia' | 'rome' | 'ww2' | 'cold-war'
 
 export interface Species {
   id: string
@@ -35,6 +35,7 @@ export interface CharacterClass {
 export interface GenreTheme {
   logo: string
   fontNarrative: string
+  fontHeading: string
   background: string
   foreground: string
   card: string
@@ -262,7 +263,8 @@ const spaceOperaClasses: CharacterClass[] = [
 
 const spaceOperaTheme: GenreTheme = {
   logo: '/storyforge_logo.png',
-  fontNarrative: 'var(--font-geist-mono), monospace',
+  fontNarrative: "'Geist Mono', monospace",
+  fontHeading: "'Geist Mono', monospace",
   background: 'oklch(0.12 0.02 260)',
   foreground: 'oklch(0.92 0.01 90)',
   card: 'oklch(0.15 0.02 260)',
@@ -517,7 +519,8 @@ const fantasyClasses: CharacterClass[] = [
 
 const fantasyTheme: GenreTheme = {
   logo: '/logo_fantasy.png',
-  fontNarrative: "var(--font-lora), 'Lora', Georgia, serif",
+  fontNarrative: "'Lora', Georgia, serif",
+  fontHeading: "'Lora', Georgia, serif",
   background: 'oklch(0.12 0.02 45)',
   foreground: 'oklch(0.92 0.02 80)',
   card: 'oklch(0.15 0.02 45)',
@@ -555,7 +558,7 @@ const fantasyConfig: GenreConfig = {
   theme: fantasyTheme,
   currencyName: 'gold',
   currencyAbbrev: 'gp',
-  partyBaseName: 'company',
+  partyBaseName: 'Quarters',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a crumbling medieval fantasy world.',
     setting: `The Five Kingdoms have been at peace for a generation, but the Accord of Thorns is fraying. Border raids, a plague spreading from the eastern marshes, and whispers of something stirring beneath the old ruins threaten everything. The player leads a small company of companions, navigating a world where old alliances mean less every day.
@@ -593,18 +596,70 @@ Rest terminology: Short rest, Long rest.`,
   ],
 }
 
+// ─── Stubs ────────────────────────────────────────────────────────────
+// Stub configs for genres not yet fully implemented. Available: false —
+// they show as "Soon" in the genre picker. No species/classes/hooks needed
+// until the stub is promoted. Theme inherits from Space Opera until defined.
+
+function makeStub(
+  id: Genre,
+  name: string,
+  currencyName: string,
+  currencyAbbrev: string,
+  partyBaseName: string,
+): GenreConfig {
+  return {
+    id,
+    name,
+    available: false,
+    species: [],
+    classes: [],
+    theme: { ...spaceOperaTheme },
+    currencyName,
+    currencyAbbrev,
+    partyBaseName,
+    systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
+    openingHooks: [],
+    initialChapterTitle: 'New Horizons',
+    locationNames: ['Base'],
+  }
+}
+
+const dndConfig       = makeStub('dnd',       'Classic D&D',   'gold',    'gp',  'Tavern')
+const cyberpunkConfig = makeStub('cyberpunk',  'Cyberpunk',     'eddies',  '€$',  'Safehouse')
+const westernConfig   = makeStub('western',    'Western',       'dollars', '$',   'Camp')
+const samuraiConfig   = makeStub('samurai',    'Samurai',       'mon',     '¥',   'Dojo')
+const mafiaConfig     = makeStub('mafia',      'Mafia',         'dollars', '$',   'The Family')
+const romeConfig      = makeStub('rome',       'Ancient Rome',  'denarii', 'dn',  'Garrison')
+const ww2Config       = makeStub('ww2',        'World War II',  'dollars', '$',   'Safehouse')
+const coldWarConfig   = makeStub('cold-war',   'Cold War',      'dollars', '$',   'Safe House')
+
 // ─── Registry ─────────────────────────────────────────────────────────
 
 const genreConfigs: Record<string, GenreConfig> = {
   'space-opera': spaceOperaConfig,
-  'fantasy': fantasyConfig,
+  'fantasy':     fantasyConfig,
+  'dnd':         dndConfig,
+  'cyberpunk':   cyberpunkConfig,
+  'western':     westernConfig,
+  'samurai':     samuraiConfig,
+  'mafia':       mafiaConfig,
+  'rome':        romeConfig,
+  'ww2':         ww2Config,
+  'cold-war':    coldWarConfig,
 }
 
 export const genres: { id: Genre; name: string; available: boolean }[] = [
-  { id: 'space-opera', name: 'Space Opera', available: true },
-  { id: 'fantasy', name: 'Fantasy', available: true },
-  { id: 'cyberpunk', name: 'Cyberpunk', available: false },
-  { id: 'western', name: 'Western', available: false },
+  { id: 'space-opera', name: 'Space Opera',  available: true  },
+  { id: 'fantasy',     name: 'Fantasy',       available: true  },
+  { id: 'dnd',         name: 'Classic D&D',   available: false },
+  { id: 'cyberpunk',   name: 'Cyberpunk',     available: false },
+  { id: 'western',     name: 'Western',       available: false },
+  { id: 'samurai',     name: 'Samurai',       available: false },
+  { id: 'mafia',       name: 'Mafia',         available: false },
+  { id: 'rome',        name: 'Ancient Rome',  available: false },
+  { id: 'ww2',         name: 'World War II',  available: false },
+  { id: 'cold-war',    name: 'Cold War',      available: false },
 ]
 
 export function getGenreConfig(genre: Genre): GenreConfig {
@@ -643,6 +698,8 @@ export function applyGenreTheme(genre: Genre): void {
   root.style.setProperty('--scrollbar-thumb', theme.scrollbarThumb)
   root.style.setProperty('--scrollbar-thumb-hover', theme.scrollbarThumbHover)
   root.style.setProperty('--font-narrative', theme.fontNarrative)
+  root.style.setProperty('--font-heading', theme.fontHeading)
+  root.dataset.genre = genre
 
   // Toggle background effect classes
   const body = document.body

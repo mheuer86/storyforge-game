@@ -7,8 +7,9 @@ import { StateDiffBar } from './state-diff-bar'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { loadGameState, saveGameState, loadQuickActions, saveQuickActions } from '@/lib/game-data'
+import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, Enemy, InventoryItem, TempModifier } from '@/lib/types'
+import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
   id: string
@@ -32,6 +33,7 @@ interface StatChange {
 
 interface GameScreenProps {
   initialGameState?: GameState
+  onNewGame?: () => void
 }
 
 interface PendingRoll {
@@ -43,7 +45,7 @@ interface PendingRoll {
   finalActions: string[]
 }
 
-export function GameScreen({ initialGameState }: GameScreenProps) {
+export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [quickActions, setQuickActionsRaw] = useState<string[]>([])
@@ -213,6 +215,8 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
             addThread?: { id: string; title: string; status: string; deteriorating: boolean }
             updateThread?: { id: string; status: string; deteriorating?: boolean }
             addFaction?: { name: string; stance: string }
+            addPromise?: { id: string; to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }
+            updatePromise?: { id: string; status: 'open' | 'fulfilled' | 'broken' }
           }
           const world = { ...updated.world }
 
@@ -248,7 +252,60 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
               world.factions = [...world.factions, input.addFaction]
             }
           }
+          if (input.addPromise) {
+            world.promises = [...world.promises, input.addPromise]
+            statChanges.push({ type: 'new', label: `Promise to ${input.addPromise.to}` })
+          }
+          if (input.updatePromise) {
+            world.promises = world.promises.map((p) =>
+              p.id === input.updatePromise!.id ? { ...p, status: input.updatePromise!.status } : p
+            )
+          }
           updated = { ...updated, world }
+        }
+
+        if (result.tool === 'close_chapter') {
+          const input = result.input as {
+            summary: string
+            keyEvents: string[]
+            nextTitle: string
+          }
+          const currentNum = updated.meta.chapterNumber
+          const completedChapter = {
+            ...updated.history.chapters.find((ch) => ch.number === currentNum) ?? {
+              number: currentNum,
+              title: updated.meta.chapterTitle,
+              keyEvents: [],
+            },
+            status: 'complete' as const,
+            summary: input.summary,
+            keyEvents: input.keyEvents,
+          }
+          const nextNum = currentNum + 1
+          const nextChapter = {
+            number: nextNum,
+            title: input.nextTitle,
+            status: 'in-progress' as const,
+            summary: '',
+            keyEvents: [],
+          }
+          updated = {
+            ...updated,
+            meta: {
+              ...updated.meta,
+              chapterNumber: nextNum,
+              chapterTitle: input.nextTitle,
+            },
+            history: {
+              ...updated.history,
+              chapters: [
+                ...updated.history.chapters.filter((ch) => ch.number !== currentNum),
+                completedChapter,
+                nextChapter,
+              ],
+            },
+          }
+          statChanges.push({ type: 'neutral', label: `Chapter ${nextNum}: ${input.nextTitle}` })
         }
 
         if (result.tool === '_roll_record') {
@@ -587,6 +644,32 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
     return () => clearTimeout(t)
   }, [dicePhase, rollStreamComplete])
 
+  const handleSave = useCallback(
+    (slot: 1 | 2 | 3) => {
+      if (!gameState) return
+      saveToSlot(slot, gameState)
+    },
+    [gameState]
+  )
+
+  const handleLoad = useCallback(
+    (state: GameState) => {
+      saveGameState(state)
+      setGameState(state)
+      const displayMessages: DisplayMessage[] = state.history.messages.map((msg) => ({
+        id: msg.id,
+        type: msg.role as DisplayMessage['type'],
+        content: msg.content,
+      }))
+      setMessages(displayMessages)
+      setQuickActionsRaw([])
+      setLastStatChanges([])
+      setPendingRoll(null)
+      setDicePhase('idle')
+    },
+    [setQuickActionsRaw]
+  )
+
   const handleActionSelect = useCallback(
     (action: string) => {
       if (!gameState || isLoadingRef.current) return
@@ -615,7 +698,7 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
     <div className="flex min-h-screen flex-col">
       <TopBar
         chapterTitle={`Chapter ${gameState.meta.chapterNumber}: ${gameState.meta.chapterTitle}`}
-        genre={(gameState.meta.genre || 'space-opera') as 'space-opera' | 'fantasy'}
+        genre={(gameState.meta.genre || 'space-opera') as Genre}
         onMenuClick={() => setIsMenuOpen(true)}
         onChapterClick={() => setIsMenuOpen(true)}
       />
@@ -743,6 +826,10 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
       <BurgerMenu
         open={isMenuOpen}
         onOpenChange={setIsMenuOpen}
+        genre={(gameState.meta.genre || 'space-opera') as Genre}
+        onSave={handleSave}
+        onLoad={handleLoad}
+        onNewGame={onNewGame}
         character={{
           name: gameState.character.name,
           species: { name: gameState.character.species },
@@ -789,7 +876,7 @@ export function GameScreen({ initialGameState }: GameScreenProps) {
           status: c.status,
           summary: c.summary,
           keyEvents: c.keyEvents,
-          rollLog: [],
+          rollLog: c.status === 'in-progress' ? gameState.history.rollLog : [],
           debrief: null,
         }))}
       />
