@@ -43,6 +43,7 @@ export function createInitialGameState(
   speciesId: string,
   classId: string,
   genre: Genre = 'space-opera',
+  gender: 'he' | 'she' | 'they' = 'they',
 ): GameState {
   const config = getGenreConfig(genre)
   const selectedClass = config.classes.find((c) => c.id === classId)
@@ -58,6 +59,7 @@ export function createInitialGameState(
     name: characterName,
     species: selectedSpecies.name,
     class: selectedClass.name,
+    gender,
     level: 1,
     hp: { current: selectedClass.startingHp, max: selectedClass.startingHp },
     ac: selectedClass.startingAc,
@@ -119,12 +121,36 @@ export function createInitialGameState(
   }
 }
 
+function deduplicateNpcs(state: GameState): GameState {
+  const merged: typeof state.world.npcs = []
+  for (const npc of state.world.npcs) {
+    const nameLower = npc.name.toLowerCase()
+    const existingIdx = merged.findIndex((x) => {
+      const xLower = x.name.toLowerCase()
+      return xLower === nameLower || xLower.startsWith(nameLower) || nameLower.startsWith(xLower)
+    })
+    if (existingIdx >= 0) {
+      const existing = merged[existingIdx]
+      const canonical = existing.name.length <= npc.name.length ? existing.name : npc.name
+      merged[existingIdx] = { ...existing, ...npc, name: canonical }
+    } else {
+      merged.push(npc)
+    }
+  }
+  if (merged.length === state.world.npcs.length) return state
+  return { ...state, world: { ...state.world, npcs: merged } }
+}
+
 export function loadGameState(): GameState | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as GameState
+    const state = JSON.parse(raw) as GameState
+    const cleaned = deduplicateNpcs(state)
+    // Persist the cleanup immediately if anything changed
+    if (cleaned !== state) saveGameState(cleaned)
+    return cleaned
   } catch {
     return null
   }

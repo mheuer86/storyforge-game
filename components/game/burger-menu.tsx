@@ -152,22 +152,24 @@ export function BurgerMenu({
           </SheetHeader>
 
           <Tabs defaultValue="character" className="flex flex-1 flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-4 bg-secondary/30">
-              <TabsTrigger value="character" className="text-xs">
-                Character
-              </TabsTrigger>
-              <TabsTrigger value="ship" className="text-xs">
-                {genreConfig.partyBaseName}
-              </TabsTrigger>
-              <TabsTrigger value="world" className="text-xs">
-                World
-              </TabsTrigger>
-              <TabsTrigger value="chapters" className="text-xs">
-                Chapters
-              </TabsTrigger>
-            </TabsList>
+            <div className="shrink-0 overflow-x-auto">
+              <TabsList className="flex w-max min-w-full bg-secondary/30">
+                <TabsTrigger value="character" className="shrink-0 text-xs">
+                  Character
+                </TabsTrigger>
+                <TabsTrigger value="ship" className="shrink-0 text-xs">
+                  {genreConfig.partyBaseName}
+                </TabsTrigger>
+                <TabsTrigger value="world" className="shrink-0 text-xs">
+                  World
+                </TabsTrigger>
+                <TabsTrigger value="chapters" className="shrink-0 text-xs">
+                  Chapters
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <ScrollArea className="flex-1" style={{ fontFamily: 'var(--font-narrative)' }}>
+            <ScrollArea className="min-h-0 flex-1" style={{ fontFamily: 'var(--font-narrative)' }}>
               {/* Character Tab */}
               <TabsContent value="character" className="mt-0 p-4">
                 <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} />
@@ -468,129 +470,214 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 }
 
 function WorldPanel({ world }: { world: World }) {
+  const [view, setView] = useState<'now' | 'all'>('now')
+
+  const activeThreads = world.threads.filter((t) => t.status !== 'resolved')
+  const openPromises = world.promises.filter((p) => p.status === 'open')
+
   return (
     <div className="flex flex-col gap-4 text-sm">
-      {/* Current Location */}
-      <div>
-        <h3 className="mb-1 text-xs uppercase text-muted-foreground">Current Location</h3>
-        <div className="font-medium text-foreground">{world.location.name}</div>
-        <div className="text-xs text-muted-foreground">{world.location.description}</div>
+      {/* Sub-tab toggle */}
+      <div className="flex rounded-lg border border-border/40 bg-secondary/20 p-0.5">
+        <button
+          onClick={() => setView('now')}
+          className={cn(
+            'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+            view === 'now'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          Now
+        </button>
+        <button
+          onClick={() => setView('all')}
+          className={cn(
+            'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+            view === 'all'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          All
+        </button>
       </div>
 
-      {/* Known Factions */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known Factions</h3>
-        <div className="flex flex-col gap-1">
-          {world.factions.map((faction) => (
-            <div key={faction.name} className="text-foreground">
-              <span className="font-medium">{faction.name}</span>
-              <span className="text-muted-foreground"> — {faction.stance}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Known NPCs */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
-        <div className="flex flex-col gap-2">
-          {world.npcs.map((npc) => (
-            <div key={npc.name}>
-              <div className="font-medium text-foreground">{npc.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {npc.description} ({npc.lastSeen})
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Open Threads */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Open Threads</h3>
-        <div className="flex flex-col gap-2">
-          {world.threads.map((thread) => (
-            <div
-              key={thread.title}
-              className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">{thread.title}</span>
-                {thread.deteriorating && (
-                  <Badge variant="destructive" className="text-[10px]">
-                    Deteriorating
-                  </Badge>
-                )}
-              </div>
-              <div className="text-xs text-muted-foreground">{thread.status}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Promises & Debts */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Promises & Debts</h3>
-        {world.promises.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {world.promises.map((promise, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'rounded px-3 py-2',
-                  promise.status === 'open'
-                    ? 'border border-warning/30 bg-warning/5'
-                    : promise.status === 'fulfilled'
-                    ? 'border border-success/30 bg-success/5'
-                    : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'
-                )}
-              >
-                <div className="font-medium text-foreground">{promise.to}</div>
-                <div className="text-xs text-muted-foreground">{promise.what}</div>
-              </div>
-            ))}
+      {view === 'now' && (
+        <>
+          {/* Location */}
+          <div>
+            <h3 className="mb-1 text-xs uppercase text-muted-foreground">Current Location</h3>
+            <div className="font-medium text-foreground">{world.location.name}</div>
+            <div className="text-xs text-muted-foreground">{world.location.description}</div>
           </div>
-        ) : (
-          <p className="italic text-muted-foreground">No promises made yet</p>
-        )}
-      </div>
 
-      {/* Antagonist */}
-      <div>
-        <h3 className="mb-2 text-xs uppercase text-muted-foreground">Primary Antagonist</h3>
-        {world.antagonist ? (
-          <div className="flex flex-col gap-2">
-            <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="font-medium text-foreground">{world.antagonist.name}</div>
-                {world.antagonist.movedThisChapter && (
-                  <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
-                )}
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">{world.antagonist.description}</div>
-              <div className="mt-1 text-xs text-foreground">
-                <span className="text-muted-foreground">Agenda: </span>
-                {world.antagonist.agenda}
-              </div>
-            </div>
-            {world.antagonist.moves.length > 0 && (
-              <div>
-                <h4 className="mb-1 text-xs uppercase text-muted-foreground">Their Moves</h4>
-                <div className="flex flex-col gap-1">
-                  {world.antagonist.moves.map((move, i) => (
-                    <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
-                      <span className="text-muted-foreground">Ch. {move.chapterNumber}: </span>
-                      <span className="text-foreground">{move.description}</span>
+          {/* Active Threads */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Active Threads</h3>
+            {activeThreads.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {activeThreads.map((thread, i) => (
+                  <div
+                    key={`${i}-${thread.title}`}
+                    className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{thread.title}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <p className="italic text-muted-foreground">No active threads</p>
             )}
           </div>
-        ) : (
-          <p className="italic text-muted-foreground">Not yet identified</p>
-        )}
-      </div>
+
+          {/* Open Promises */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Open Promises</h3>
+            {openPromises.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {openPromises.map((promise, i) => (
+                  <div key={i} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
+                    <div className="font-medium text-foreground">{promise.to}</div>
+                    <div className="text-xs text-muted-foreground">{promise.what}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No open promises</p>
+            )}
+          </div>
+        </>
+      )}
+
+      {view === 'all' && (
+        <>
+          {/* Factions */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known Factions</h3>
+            {world.factions.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {world.factions.map((faction, i) => (
+                  <div key={`${i}-${faction.name}`}>
+                    <div className="font-medium text-foreground">{faction.name}</div>
+                    <div className="text-xs text-muted-foreground">{faction.stance}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No factions encountered</p>
+            )}
+          </div>
+
+          {/* NPCs */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
+            {world.npcs.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {world.npcs.map((npc, i) => (
+                  <div key={`${i}-${npc.name}`}>
+                    <div className="font-medium text-foreground">{npc.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {npc.description} ({npc.lastSeen})
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No NPCs encountered</p>
+            )}
+          </div>
+
+          {/* All Threads */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">All Threads</h3>
+            {world.threads.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {world.threads.map((thread, i) => (
+                  <div
+                    key={`${i}-${thread.title}`}
+                    className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{thread.title}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No threads yet</p>
+            )}
+          </div>
+
+          {/* All Promises */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Promises & Debts</h3>
+            {world.promises.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {world.promises.map((promise, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'rounded px-3 py-2',
+                      promise.status === 'open'
+                        ? 'border border-warning/30 bg-warning/5'
+                        : promise.status === 'fulfilled'
+                        ? 'border border-success/30 bg-success/5'
+                        : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'
+                    )}
+                  >
+                    <div className="font-medium text-foreground">{promise.to}</div>
+                    <div className="text-xs text-muted-foreground">{promise.what}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No promises made yet</p>
+            )}
+          </div>
+
+          {/* Antagonist */}
+          <div>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Primary Antagonist</h3>
+            {world.antagonist ? (
+              <div className="flex flex-col gap-2">
+                <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium text-foreground">{world.antagonist.name}</div>
+                    {world.antagonist.movedThisChapter && (
+                      <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">{world.antagonist.description}</div>
+                  <div className="mt-1 text-xs text-foreground">
+                    <span className="text-muted-foreground">Agenda: </span>
+                    {world.antagonist.agenda}
+                  </div>
+                </div>
+                {world.antagonist.moves.length > 0 && (
+                  <div>
+                    <h4 className="mb-1 text-xs uppercase text-muted-foreground">Their Moves</h4>
+                    <div className="flex flex-col gap-1">
+                      {world.antagonist.moves.map((move, i) => (
+                        <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
+                          <span className="text-muted-foreground">Ch. {move.chapterNumber}: </span>
+                          <span className="text-foreground">{move.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">Not yet identified</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

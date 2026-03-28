@@ -39,6 +39,7 @@ export interface CharacterState {
   name: string
   species: string
   class: string
+  gender: 'he' | 'she' | 'they'
   level: number
   hp: { current: number; max: number }
   ac: number
@@ -174,19 +175,29 @@ export interface GameState {
 export type StreamEvent =
   | { type: 'text'; content: string }
   | {
-      type: 'roll'
+      type: 'roll_prompt'
       check: string
       stat: string
       dc: number
-      roll: number
       modifier: number
-      total: number
-      result: 'critical' | 'success' | 'failure' | 'fumble'
       reason: string
+      toolUseId: string
+      pendingMessages: unknown[]
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
   | { type: 'error'; message: string }
+
+export interface RollResolution {
+  roll: number
+  check: string
+  stat: string
+  dc: number
+  modifier: number
+  reason: string
+  toolUseId: string
+  pendingMessages: unknown[]
+}
 
 export interface ToolCallResult {
   tool: string
