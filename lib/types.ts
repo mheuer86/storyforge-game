@@ -35,6 +35,11 @@ export interface Trait {
   usesRemaining: number
 }
 
+export interface SkillPoints {
+  available: number
+  log: string[]
+}
+
 export interface CharacterState {
   name: string
   species: string
@@ -50,6 +55,7 @@ export interface CharacterState {
   inventory: InventoryItem[]
   tempModifiers: TempModifier[]
   traits: Trait[]
+  skillPoints: SkillPoints
 }
 
 export interface Faction {
@@ -255,6 +261,9 @@ export interface UpdateCharacterInput {
   tempModifierAdd?: TempModifier
   tempModifierRemove?: string
   traitUpdate?: { name: string; usesRemaining: number }
+  levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
+  addProficiency?: string
+  upgradeToExpertise?: string
 }
 
 export interface RequestRollInput {

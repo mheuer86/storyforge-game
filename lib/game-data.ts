@@ -70,6 +70,7 @@ export function createInitialGameState(
     inventory: selectedClass.startingInventory.map((item) => ({ ...item })),
     tempModifiers: [],
     traits: [{ ...selectedClass.trait }],
+    skillPoints: { available: 0, log: [] },
   }
 
   const baseName = pickRandom(config.locationNames)
@@ -160,6 +161,10 @@ export function loadGameState(): GameState | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const state = JSON.parse(raw) as GameState
+    // Migrate saves that predate skillPoints
+    if (!state.character.skillPoints) {
+      state.character.skillPoints = { available: 0, log: [] }
+    }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
     if (cleaned !== state) saveGameState(cleaned)

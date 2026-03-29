@@ -96,6 +96,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             tempModifierAdd?: TempModifier
             tempModifierRemove?: string
             traitUpdate?: { name: string; usesRemaining: number }
+            levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
+            addProficiency?: string
+            upgradeToExpertise?: string
           }
 
           const char = { ...updated.character }
@@ -166,6 +169,36 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 ? { ...t, usesRemaining: input.traitUpdate!.usesRemaining }
                 : t
             )
+          }
+
+          if (input.levelUp) {
+            const { newLevel, hpIncrease, newProficiencyBonus } = input.levelUp
+            const newMax = char.hp.max + hpIncrease
+            statChanges.push({ type: 'gain', label: `Level ${newLevel}! HP max +${hpIncrease}` })
+            char.level = newLevel
+            char.hp = { max: newMax, current: newMax }
+            if (newProficiencyBonus !== undefined) {
+              char.proficiencyBonus = newProficiencyBonus
+              statChanges.push({ type: 'gain', label: `Proficiency +${newProficiencyBonus}` })
+            }
+          }
+
+          if (input.addProficiency) {
+            if (!char.proficiencies.includes(input.addProficiency)) {
+              char.proficiencies = [...char.proficiencies, input.addProficiency]
+              statChanges.push({ type: 'new', label: `Proficiency: ${input.addProficiency}` })
+            }
+          }
+
+          if (input.upgradeToExpertise) {
+            const expertiseLabel = `${input.upgradeToExpertise} (expertise)`
+            char.proficiencies = char.proficiencies.map((p) =>
+              p === input.upgradeToExpertise ? expertiseLabel : p
+            )
+            if (!char.proficiencies.includes(expertiseLabel)) {
+              char.proficiencies = [...char.proficiencies, expertiseLabel]
+            }
+            statChanges.push({ type: 'gain', label: `Expertise: ${input.upgradeToExpertise}` })
           }
 
           updated = { ...updated, character: char }
