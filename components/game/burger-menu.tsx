@@ -453,11 +453,11 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         {s.combatOptions.length > 0 && (
           <div>
             <h3 className="mb-2 text-xs uppercase text-muted-foreground">Combat Options</h3>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-col gap-1">
               {s.combatOptions.map((opt, i) => (
-                <Badge key={i} variant="secondary" className="bg-primary/10 text-xs text-primary">
+                <div key={i} className="rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
                   {opt}
-                </Badge>
+                </div>
               ))}
             </div>
           </div>
@@ -468,7 +468,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
           {s.upgradeLog.length > 0 ? (
             <ul className="flex flex-col gap-1">
               {s.upgradeLog.map((entry, i) => (
-                <li key={i} className="text-xs text-foreground">{entry}</li>
+                <li key={i} className="text-xs text-foreground break-words">{entry}</li>
               ))}
             </ul>
           ) : (
@@ -502,6 +502,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
   const activeThreads = world.threads.filter((t) => t.status !== 'resolved')
   const openPromises = world.promises.filter((p) => p.status === 'open')
+
+  const locationName = world.location.name.toLowerCase()
+  const inScene = (lastSeen: string) => lastSeen.toLowerCase().includes(locationName) || locationName.includes(lastSeen.toLowerCase())
+  const companionsHere = world.companions.filter((c) => inScene(c.lastSeen))
+  const npcsHere = world.npcs.filter((n) => inScene(n.lastSeen))
 
   return (
     <div className="flex flex-col gap-4 text-sm">
@@ -542,30 +547,30 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             </div>
           </div>
 
-          {/* Companions */}
-          {world.companions.length > 0 && (
+          {/* Companions in scene */}
+          {companionsHere.length > 0 && (
             <div>
               <h3 className="mb-2 text-xs uppercase text-muted-foreground">Companions</h3>
               <div className="flex flex-col gap-2">
-                {world.companions.map((c, i) => (
+                {companionsHere.map((c, i) => (
                   <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
                     <div className="font-medium text-foreground">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.description} · {c.lastSeen}</div>
+                    <div className="text-xs text-muted-foreground">{c.description}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Known NPCs */}
-          {world.npcs.length > 0 && (
+          {/* NPCs in scene */}
+          {npcsHere.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Present</h3>
               <div className="flex flex-col gap-2">
-                {world.npcs.map((npc, i) => (
+                {npcsHere.map((npc, i) => (
                   <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
                     <div className="font-medium text-foreground">{npc.name}</div>
-                    <div className="text-xs text-muted-foreground">{npc.description} ({npc.lastSeen})</div>
+                    <div className="text-xs text-muted-foreground">{npc.description}</div>
                   </div>
                 ))}
               </div>
