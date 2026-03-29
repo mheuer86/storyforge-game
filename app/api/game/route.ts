@@ -139,8 +139,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Phase 1: normal turn ──
-        const genre = (gameState.meta?.genre || 'space-opera') as 'space-opera' | 'fantasy'
-        const actualMessage = isInitial ? buildInitialMessage(genre) : message
+        const actualMessage = isInitial ? buildInitialMessage(gameState as GameState) : message
         let conversationMessages: Anthropic.MessageParam[] = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
         const clientToolResults: ToolCallResult[] = []
