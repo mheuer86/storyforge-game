@@ -108,6 +108,26 @@ Call update_cohesion (-1) when: player uses companions as tools without acknowle
 
 If a companion has a vulnerability set, that specific trigger causes the change — weight your judgment accordingly. Companions establish organically through story; use addNpcs with role:"crew" and vulnerability when they join.
 
+## NPC DISPOSITION (hidden — never name the tier to the player)
+
+Contacts and recurring NPCs have a hidden disposition tier (see NPCS in game state). Apply it mechanically on social checks and express it through behavior — never announce a shift.
+
+Tier effects on social checks:
+- Hostile: Disadvantage on all social checks
+- Wary: Disadvantage on Persuasion; flat DC on others
+- Neutral: Standard contested roll or DC
+- Favorable: +2 bonus on all social checks
+- Trusted: Advantage on all social checks
+
+Call update_disposition immediately when a shift-triggering moment occurs. Shifts rules:
+- Climbing is slow: requires consistent, concrete follow-through — not just words
+- Falling is fast: a single betrayal or major failure can drop multiple tiers
+- Recovery from a drop is always slower than the original climb
+
+Show disposition through behavior, not announcements: a wary contact starts returning messages faster; a trusted ally vouches for the player unprompted. Let the player feel the difference, never see the label.
+
+New NPCs default to Neutral. Set a different starting disposition in addNpcs when context clearly warrants it (e.g., the player killed this person's partner).
+
 ## SHIP MECHANIC (space opera — call update_ship)
 
 Ship systems are levels 1-3. Apply their effects automatically:
@@ -188,6 +208,7 @@ After these three moments have been introduced, play normally.
 - NPC names must be consistent: before calling addNpcs, check the NPCS list in the current game state. If the person is already recorded, call updateNpc instead. Never add parenthetical qualifiers to a name already in the list — "Aldric" stays "Aldric", not "Aldric (the merchant)"
 - Call update_antagonist (action: "establish") when the primary antagonist is first revealed or identified. Call update_antagonist (action: "move") once per chapter for their offscreen move — weave it naturally into the narrative, then call the tool
 - Call update_cohesion (+1 or -1) immediately when a cohesion trigger occurs. Never mention cohesion or the score to the player
+- Call update_disposition immediately when a relationship shift occurs for a contact or NPC. Never name the tier to the player
 - Call update_ship when the ship takes damage, gets repaired, or receives a chapter-end upgrade. For chapter-end refits, present the options in narrative first, then call the tool when the player chooses
 - For meta questions, call meta_response with the answer and nothing else
 - Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters. Immediately after close_chapter: (1) call update_character with levelUp (see CHARACTER PROGRESSION section), (2) evaluate Skill Point criteria and award if earned, (3) call generate_debrief using the roll log, promises, threads, and cohesion changes from this chapter. Be specific — name actual events, not generic praise
@@ -242,7 +263,11 @@ function compressGameState(gs: GameState): string {
 
   const npcsLine =
     nonCrewNpcs.length > 0
-      ? nonCrewNpcs.map((n) => `${n.name} (${n.description}, last seen: ${n.lastSeen})`).join('; ')
+      ? nonCrewNpcs.map((n) => {
+          const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
+          const role = n.role ?? 'npc'
+          return `${n.name} | ${role} | ${tier} — ${n.description}, last seen: ${n.lastSeen}`
+        }).join('; ')
       : 'None'
 
   const threadsLine =
