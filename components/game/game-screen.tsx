@@ -1010,10 +1010,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 )
               })}
               {isLoading && (
-                <div className="flex items-center gap-1.5 px-1 pt-1">
-                  <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0s]" />
-                  <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.15s]" />
-                  <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.3s]" />
+                <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0s]" />
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.15s]" />
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.3s]" />
+                  </div>
                 </div>
               )}
             </div>
