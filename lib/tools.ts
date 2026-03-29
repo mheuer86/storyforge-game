@@ -478,6 +478,55 @@ export const gameTools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'update_clock',
+    description:
+      'Manage tension clocks — hidden segmented threat tracks. Establish at chapter open or when a new threat crystallizes. Advance based on in-world conditions, never on whim. A triggered clock changes the situation irreversibly.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['establish', 'advance', 'trigger', 'resolve'],
+          description: 'establish: create a new clock. advance: fill segments. trigger: fire consequence (clock is now permanent). resolve: player defused it.',
+        },
+        id: {
+          type: 'string',
+          description: 'Unique snake_case identifier for this clock (e.g. "corsair_pursuit", "reactor_leak").',
+        },
+        name: {
+          type: 'string',
+          description: '[establish] Player-visible name shown in Pressures list (e.g. "Corsair pursuit", "Reactor integrity"). Keep it evocative, not mechanical.',
+        },
+        maxSegments: {
+          type: 'number',
+          enum: [4, 6],
+          description: '[establish] 4 for fast-burning threats; 6 for slow-burn pressures.',
+        },
+        triggerEffect: {
+          type: 'string',
+          description: '[establish] What happens when the clock fills — write it as a concrete in-world consequence.',
+        },
+        by: {
+          type: 'number',
+          description: '[advance] Number of segments to fill. Usually 1; 2 for a catastrophic failure or major escalation.',
+        },
+        reason: {
+          type: 'string',
+          description: '[advance] The in-world event that caused this advance.',
+        },
+        consequence: {
+          type: 'string',
+          description: '[trigger] The concrete consequence that fires — this is the moment that changes things permanently.',
+        },
+        how: {
+          type: 'string',
+          description: '[resolve] How the player defused this threat.',
+        },
+      },
+      required: ['action', 'id'],
+    },
+  },
+  {
     name: 'update_disposition',
     description:
       'Update the disposition tier of a contact or NPC. Call immediately when a shift-triggering moment occurs — sustained follow-through, a betrayal, a significant favor. Only for contacts and NPCs, not crew (use update_cohesion for crew).',

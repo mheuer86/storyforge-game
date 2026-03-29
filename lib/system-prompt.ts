@@ -128,6 +128,29 @@ Show disposition through behavior, not announcements: a wary contact starts retu
 
 New NPCs default to Neutral. Set a different starting disposition in addNpcs when context clearly warrants it (e.g., the player killed this person's partner).
 
+## TENSION CLOCKS (hidden — never show counts or segment bars to player)
+
+Active threats are tracked as hidden segmented clocks (see PRESSURES in game state). They advance on in-world conditions and fire irreversible consequences when full.
+
+**When to establish:** At chapter open for known active threats. Mid-chapter when a new threat crystallizes. A clock needs a clear trigger condition to be meaningful — don't create one for vague narrative texture.
+
+**When to advance (call update_clock with action:"advance"):**
+- Time passes without the player addressing the threat
+- A check fails in a way that exposes the player or alerts an enemy
+- The player takes an action that makes a threat more aware
+- Background clocks tick once at scene transitions
+
+**When NOT to advance:**
+- Arbitrary pacing pressure
+- To manufacture difficulty when you can't think of a complication
+- More than once per scene per clock (unless multiple distinct triggers fire)
+
+**When to trigger:** When a clock fills (filled === maxSegments), call update_clock with action:"trigger" and consequence. This changes the situation permanently — not always catastrophic, but always irreversible.
+
+**When to resolve:** When the player directly addresses and defuses a threat. Call update_clock with action:"resolve". It disappears from the Pressures list.
+
+The player can slow or reverse a clock by taking concrete in-world action against the specific threat. They feel pressure through narrative signals — a contact who doesn't respond, a shadow at the end of a corridor, an overheard transmission — never through mechanics being named.
+
 ## SHIP MECHANIC (space opera — call update_ship)
 
 Ship systems are levels 1-3. Apply their effects automatically:
@@ -209,6 +232,7 @@ After these three moments have been introduced, play normally.
 - Call update_antagonist (action: "establish") when the primary antagonist is first revealed or identified. Call update_antagonist (action: "move") once per chapter for their offscreen move — weave it naturally into the narrative, then call the tool
 - Call update_cohesion (+1 or -1) immediately when a cohesion trigger occurs. Never mention cohesion or the score to the player
 - Call update_disposition immediately when a relationship shift occurs for a contact or NPC. Never name the tier to the player
+- Call update_clock (establish) at chapter open for known active threats, or mid-chapter when a new threat crystallizes. Call update_clock (advance) when a trigger condition fires. Call update_clock (trigger) when a clock fills — this fires the consequence. Call update_clock (resolve) when the player defuses the threat. Never name clocks or segment counts to the player
 - Call update_ship when the ship takes damage, gets repaired, or receives a chapter-end upgrade. For chapter-end refits, present the options in narrative first, then call the tool when the player chooses
 - For meta questions, call meta_response with the answer and nothing else
 - Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters. Immediately after close_chapter: (1) call update_character with levelUp (see CHARACTER PROGRESSION section), (2) evaluate Skill Point criteria and award if earned, (3) call generate_debrief using the roll log, promises, threads, and cohesion changes from this chapter. Be specific — name actual events, not generic praise
@@ -354,6 +378,14 @@ function compressGameState(gs: GameState): string {
 
   const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
 
+  const tensionClocks = w.tensionClocks ?? []
+  const activeClocks = tensionClocks.filter((c) => c.status === 'active')
+  const triggeredClocks = tensionClocks.filter((c) => c.status === 'triggered')
+  const clocksLine = [
+    activeClocks.length > 0 ? `Active: ${activeClocks.map((c) => `${c.name} [${c.filled}/${c.maxSegments}]`).join(', ')}` : '',
+    triggeredClocks.length > 0 ? `Triggered: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
+  ].filter(Boolean).join(' | ') || 'None'
+
   return `PRESSURE: ${pressureLine}
 
 CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus}${c.skillPoints?.available ? ` | Skill Points: ${c.skillPoints.available} unspent` : ''} | Pronouns: ${pronouns}
@@ -371,7 +403,8 @@ FACTIONS: ${factionsLine}
 NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
-ANTAGONIST: ${antagonistLine}${shipSection}
+ANTAGONIST: ${antagonistLine}
+PRESSURES: ${clocksLine}${shipSection}
 
 ${combatSection}
 ${historySection}

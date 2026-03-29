@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
@@ -433,6 +433,62 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             },
           }
           // Intentionally no statChange — cohesion is hidden from player
+        }
+
+        if (result.tool === 'update_clock') {
+          const input = result.input as {
+            action: 'establish' | 'advance' | 'trigger' | 'resolve'
+            id: string
+            name?: string
+            maxSegments?: 4 | 6
+            triggerEffect?: string
+            by?: number
+            reason?: string
+            consequence?: string
+            how?: string
+          }
+          const clocks: TensionClock[] = [...(updated.world.tensionClocks ?? [])]
+
+          if (input.action === 'establish') {
+            if (!clocks.find((c) => c.id === input.id)) {
+              clocks.push({
+                id: input.id,
+                name: input.name!,
+                maxSegments: input.maxSegments ?? 4,
+                filled: 0,
+                status: 'active',
+                triggerEffect: input.triggerEffect!,
+              })
+            }
+          } else if (input.action === 'advance') {
+            const idx = clocks.findIndex((c) => c.id === input.id)
+            if (idx >= 0 && clocks[idx].status === 'active') {
+              clocks[idx] = {
+                ...clocks[idx],
+                filled: Math.min(clocks[idx].maxSegments, clocks[idx].filled + (input.by ?? 1)),
+              }
+            }
+          } else if (input.action === 'trigger') {
+            const idx = clocks.findIndex((c) => c.id === input.id)
+            if (idx >= 0) {
+              clocks[idx] = {
+                ...clocks[idx],
+                status: 'triggered',
+                triggerEffect: input.consequence ?? clocks[idx].triggerEffect,
+              }
+            }
+          } else if (input.action === 'resolve') {
+            const idx = clocks.findIndex((c) => c.id === input.id)
+            if (idx >= 0) {
+              clocks[idx] = { ...clocks[idx], status: 'resolved' }
+            }
+          }
+
+          updated = {
+            ...updated,
+            world: { ...updated.world, tensionClocks: clocks },
+          }
+          // Intentionally no statChange — clocks are hidden from player
         }
 
         if (result.tool === 'update_disposition') {
@@ -1095,6 +1151,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           })),
           promises: gameState.world.promises,
           antagonist: gameState.world.antagonist,
+          tensionClocks: (gameState.world.tensionClocks ?? []).filter((c) => c.status !== 'resolved'),
         }}
         chapters={gameState.history.chapters.map((c) => ({
           number: c.number,
