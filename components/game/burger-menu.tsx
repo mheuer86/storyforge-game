@@ -416,7 +416,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
     const hullColor = s.hullCondition >= 70 ? 'text-success' : s.hullCondition >= 30 ? 'text-warning' : 'text-destructive'
     const hullBarColor = s.hullCondition >= 70 ? 'bg-success' : s.hullCondition >= 30 ? 'bg-warning' : 'bg-destructive'
     return (
-      <div className="flex flex-col gap-4 text-sm">
+      <div className="flex min-w-0 flex-col gap-4 overflow-hidden text-sm">
         <div>
           <h2 className="text-lg font-semibold text-foreground">{ship.name}</h2>
           <div className="mt-2">
@@ -435,9 +435,9 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
           <div className="flex flex-col gap-2">
             {s.systems.map((sys) => (
               <div key={sys.id} className="flex items-start gap-3 rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="font-medium text-foreground">{sys.name}</div>
-                  <div className="text-xs text-muted-foreground">{sys.description}</div>
+                  <div className="break-words text-xs text-muted-foreground">{sys.description}</div>
                 </div>
                 <Badge
                   variant={sys.level >= 3 ? 'default' : sys.level === 2 ? 'secondary' : 'outline'}
@@ -455,7 +455,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
             <h3 className="mb-2 text-xs uppercase text-muted-foreground">Combat Options</h3>
             <div className="flex flex-col gap-1">
               {s.combatOptions.map((opt, i) => (
-                <div key={i} className="rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
+                <div key={i} className="break-words rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
                   {opt}
                 </div>
               ))}
