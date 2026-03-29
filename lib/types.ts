@@ -71,6 +71,7 @@ export interface NPC {
   lastSeen: string
   relationship?: string
   role?: 'crew' | 'contact' | 'npc'
+  subtype?: 'person' | 'vessel' | 'installation'  // vessels/installations shown separately from characters
   vulnerability?: string  // what hits this companion harder (used internally by cohesion system)
   disposition?: DispositionTier  // hidden relationship tier for contacts/npcs; never shown to player
 }
