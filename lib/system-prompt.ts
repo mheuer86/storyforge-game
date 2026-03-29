@@ -436,15 +436,30 @@ export function buildMessagesForClaude(
   return messages
 }
 
-export function buildInitialMessage(genre: Genre = 'space-opera'): string {
+export function buildInitialMessage(gameState: GameState): string {
+  const genre = (gameState.meta?.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
-  const hooks = config.openingHooks
-  const hook = hooks[Math.floor(Math.random() * hooks.length)]
-  const partyLabel = config.partyBaseName.toLowerCase()
+  const chapters = gameState.history?.chapters ?? []
+  const chapterNumber = gameState.meta?.chapterNumber ?? 1
+  const isNewGame = chapters.length === 0 && chapterNumber <= 1
 
-  return `Begin the campaign. Opening hook: "${hook}"
+  if (isNewGame) {
+    const hooks = config.openingHooks
+    const hook = hooks[Math.floor(Math.random() * hooks.length)]
+    const partyLabel = config.partyBaseName.toLowerCase()
+
+    return `Begin the campaign. Opening hook: "${hook}"
 
 Write the opening scene based on this hook. Adapt it to my character's species, class, and ${partyLabel} from the game state. Follow the tutorial-as-narrative structure for this first chapter.
 
 IMPORTANT: Use update_world to establish the starting location (setLocation), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
+  }
+
+  // Continuation: loaded save with existing world state
+  const location = gameState.world?.currentLocation?.name ?? 'current location'
+  const chapterTitle = gameState.meta?.chapterTitle ?? `Chapter ${chapterNumber}`
+
+  return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
+
+Current location: ${location}. Pick up from the world state — do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure. Write the scene as it would naturally continue from where we left off.`
 }
