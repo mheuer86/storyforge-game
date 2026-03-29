@@ -283,3 +283,9 @@
   from { background-position: 0 0, 100% 100%, 50% 50%; }
   to { background-position: 100px 50px, -80px -40px, 30px -20px; }
 }
+
+/* Fix: Radix ScrollArea wraps content in display:table which sizes to content.
+   Cap it at viewport width so text inside wraps instead of overflowing. */
+[data-radix-scroll-area-viewport] > div {
+  max-width: 100%;
+}

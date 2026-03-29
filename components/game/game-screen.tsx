@@ -244,8 +244,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
         if (result.tool === 'update_world') {
           const input = result.input as {
-            addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; vulnerability?: string; disposition?: DispositionTier }[]
-            updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; disposition?: DispositionTier }
+            addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier }[]
+            updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; disposition?: DispositionTier }
             setLocation?: { name: string; description: string }
             addThread?: { id: string; title: string; status: string; deteriorating: boolean }
             updateThread?: { id: string; status: string; deteriorating?: boolean }

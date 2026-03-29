@@ -51,7 +51,7 @@ interface World {
   location: { name: string; description: string }
   factions: { name: string; stance: string }[]
   companions: { name: string; description: string; lastSeen: string }[]
-  npcs: { name: string; description: string; lastSeen: string }[]
+  npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }[]
   antagonist: Antagonist | null
@@ -506,7 +506,9 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
   const locationName = world.location.name.toLowerCase()
   const inScene = (lastSeen: string) => lastSeen.toLowerCase().includes(locationName) || locationName.includes(lastSeen.toLowerCase())
   const companionsHere = world.companions.filter((c) => inScene(c.lastSeen))
-  const npcsHere = world.npcs.filter((n) => inScene(n.lastSeen))
+  const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
+  const npcsHere = world.npcs.filter((n) => inScene(n.lastSeen) && !isVessel(n))
+  const vesselsHere = world.npcs.filter((n) => inScene(n.lastSeen) && isVessel(n))
 
   return (
     <div className="flex flex-col gap-4 text-sm">
@@ -571,6 +573,21 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                   <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
                     <div className="font-medium text-foreground">{npc.name}</div>
                     <div className="text-xs text-muted-foreground">{npc.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vessels / installations in scene */}
+          {vesselsHere.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Vessels & Installations</h3>
+              <div className="flex flex-col gap-2">
+                {vesselsHere.map((v, i) => (
+                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{v.name}</div>
+                    <div className="text-xs text-muted-foreground">{v.description}</div>
                   </div>
                 ))}
               </div>
@@ -687,9 +704,9 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* NPCs */}
           <div>
             <h3 className="mb-2 text-xs uppercase text-muted-foreground">Known NPCs</h3>
-            {world.npcs.length > 0 ? (
+            {world.npcs.filter((n) => !isVessel(n)).length > 0 ? (
               <div className="flex flex-col gap-2">
-                {world.npcs.map((npc, i) => (
+                {world.npcs.filter((n) => !isVessel(n)).map((npc, i) => (
                   <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
                     <div className="font-medium text-foreground">{npc.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -702,6 +719,23 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
               <p className="italic text-muted-foreground">No NPCs encountered</p>
             )}
           </div>
+
+          {/* Vessels & Installations */}
+          {world.npcs.filter(isVessel).length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xs uppercase text-muted-foreground">Vessels & Installations</h3>
+              <div className="flex flex-col gap-2">
+                {world.npcs.filter(isVessel).map((v, i) => (
+                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{v.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {v.description} ({v.lastSeen})
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* All Threads */}
           <div>

@@ -243,6 +243,7 @@ export const gameTools: Anthropic.Tool[] = [
               lastSeen: { type: 'string', description: 'Current location or context' },
               relationship: { type: 'string', description: 'e.g. "hostile", "neutral", "ally", "contact"' },
               role: { type: 'string', enum: ['crew', 'contact', 'npc'], description: 'Use "crew" for companions who travel with the player' },
+              subtype: { type: 'string', enum: ['person', 'vessel', 'installation'], description: 'Use "vessel" for ships/freighters/shuttles, "installation" for stations/bases. Defaults to "person". Vessels and installations are displayed separately from characters.' },
               vulnerability: { type: 'string', description: 'What this companion is most sensitive to (for crew only) — used to modulate cohesion changes' },
               disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'], description: 'Starting disposition for contacts/npcs. Defaults to neutral if omitted.' },
             },
