@@ -11,7 +11,9 @@ interface ChatMessageProps {
 }
 
 function renderMarkdown(text: string) {
-  const lines = text.split('\n')
+  // Fix missing spaces after sentence-ending punctuation (e.g. "you.Not" → "you. Not")
+  const normalized = text.replace(/([.!?])([A-Z])/g, '$1 $2')
+  const lines = normalized.split('\n')
   return lines.map((line, i) => {
     const addBreak = i < lines.length - 1
 
