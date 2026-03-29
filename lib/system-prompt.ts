@@ -262,7 +262,7 @@ function compressGameState(gs: GameState): string {
     : 'None identified yet — establish with update_antagonist when revealed'
 
   const cohesionLabels = ['', 'Fractured', 'Strained', 'Functional', 'High', 'Full trust']
-  const cohesion = w.crewCohesion
+  const cohesion = w.crewCohesion ?? { score: 3, log: [] }
   const cohesionLabel = cohesionLabels[Math.max(1, Math.min(5, cohesion.score))]
   const recentCohesionChanges = cohesion.log.slice(-2).map(e => `${e.change > 0 ? '+1' : '-1'} (${e.reason})`).join(', ')
   const cohesionLine = `${cohesion.score}/5 — ${cohesionLabel}${recentCohesionChanges ? ` | Recent: ${recentCohesionChanges}` : ''}`

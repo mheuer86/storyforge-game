@@ -413,7 +413,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
         if (result.tool === 'update_cohesion') {
           const input = result.input as { direction: 1 | -1; reason: string; companionName?: string }
-          const cohesion = updated.world.crewCohesion
+          const cohesion = updated.world.crewCohesion ?? { score: 3, log: [] }
           const newScore = Math.max(1, Math.min(5, cohesion.score + input.direction))
           const logEntry: CohesionLogEntry = {
             chapterNumber: updated.meta.chapterNumber,
