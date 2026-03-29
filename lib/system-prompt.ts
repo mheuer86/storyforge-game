@@ -206,7 +206,7 @@ Never name the Skill Point mechanic to the player. It surfaces as earned growth,
 
 **Rule 5 — THREADS WORSEN:** At least one open narrative thread deteriorates per chapter without player attention. Force prioritization. Not every thread can be managed.
 
-## TUTORIAL-AS-NARRATIVE (first chapter only)
+${gameState.meta.chapterNumber <= 1 ? `## TUTORIAL-AS-NARRATIVE (first chapter only)
 
 The opening chapter is designed to onboard a player who has never played a tabletop RPG. Introduce mechanics one at a time through the story — not through instructions.
 
@@ -220,7 +220,7 @@ Frame everything in-character. Don't say "roll Stealth" — say the equivalent i
 
 After these three moments have been introduced, play normally.
 
-## TOOL USAGE (follow exactly)
+` : ''}## TOOL USAGE (follow exactly)
 
 - **EVERY** narrative response must end with a suggest_actions call (3-4 contextually appropriate options)
 - Call update_character immediately when HP, ${config.currencyName}, or inventory changes
@@ -285,12 +285,22 @@ function compressGameState(gs: GameState): string {
   const companions = w.npcs.filter(n => n.role === 'crew')
   const nonCrewNpcs = w.npcs.filter(n => n.role !== 'crew')
 
+  // Keep full details for recently-seen NPCs; trim old ones to name+disposition to save tokens
+  const recentChapters = gs.history.chapters.slice(-2).map(ch => ch.title.toLowerCase())
+  const isRecent = (n: { lastSeen: string }) =>
+    recentChapters.some(t => n.lastSeen.toLowerCase().includes(t)) ||
+    n.lastSeen.toLowerCase().includes(w.currentLocation.name.toLowerCase()) ||
+    w.currentLocation.name.toLowerCase().includes(n.lastSeen.toLowerCase())
+  const trimmedNpcs = nonCrewNpcs.slice(0, 15) // cap at 15 total
   const npcsLine =
-    nonCrewNpcs.length > 0
-      ? nonCrewNpcs.map((n) => {
+    trimmedNpcs.length > 0
+      ? trimmedNpcs.map((n) => {
           const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
           const role = n.role ?? 'npc'
-          return `${n.name} | ${role} | ${tier} — ${n.description}, last seen: ${n.lastSeen}`
+          if (isRecent(n)) {
+            return `${n.name} | ${role} | ${tier} — ${n.description}, last seen: ${n.lastSeen}`
+          }
+          return `${n.name} | ${role} | ${tier}`
         }).join('; ')
       : 'None'
 
@@ -364,15 +374,16 @@ function compressGameState(gs: GameState): string {
   const partyLabel = config.partyBaseName.toUpperCase()
 
   const completedChapters = gs.history.chapters.filter((ch) => ch.status === 'complete')
+  const RECENT_CHAPTERS = 3 // full detail
+  const recentFull = completedChapters.slice(-RECENT_CHAPTERS)
+  const olderCompressed = completedChapters.slice(0, -RECENT_CHAPTERS)
   const historySection =
     completedChapters.length > 0
       ? '\nCOMPLETED CHAPTERS:\n' +
-        completedChapters
-          .map(
-            (ch) =>
-              `Chapter ${ch.number}: ${ch.title}\n  ${ch.summary}\n  Key events: ${ch.keyEvents.join(' · ')}`
-          )
-          .join('\n\n') +
+        [
+          ...olderCompressed.map((ch) => `Chapter ${ch.number}: ${ch.title} — ${ch.summary}`),
+          ...recentFull.map((ch) => `Chapter ${ch.number}: ${ch.title}\n  ${ch.summary}\n  Key events: ${ch.keyEvents.join(' · ')}`),
+        ].join('\n\n') +
         '\n'
       : ''
 
@@ -416,7 +427,7 @@ export function buildMessagesForClaude(
   currentMessage: string,
   isMetaQuestion: boolean
 ): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const HISTORY_WINDOW = 15
+  const HISTORY_WINDOW = 10
   const recentMessages = gameState.history.messages.slice(-HISTORY_WINDOW)
 
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
