@@ -8,6 +8,7 @@ import type { ChatMessage as ChatMessageType } from '@/lib/game-data'
 interface ChatMessageProps {
   message: ChatMessageType
   onFlag?: (content: string) => void
+  onRetry?: () => void
 }
 
 function renderMarkdown(text: string) {
@@ -42,13 +43,28 @@ function renderMarkdown(text: string) {
   })
 }
 
-export function ChatMessage({ message, onFlag }: ChatMessageProps) {
+export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const handleFlagClick = () => {
     if (onFlag) {
       onFlag(message.content)
     }
+  }
+
+  // Error state (any message type)
+  if (onRetry) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <span className="flex-1">{message.content}</span>
+        <button
+          onClick={onRetry}
+          className="shrink-0 rounded px-3 py-1 text-xs font-medium border border-destructive/40 hover:bg-destructive/10 transition-colors"
+        >
+          Try again
+        </button>
+      </div>
+    )
   }
 
   // GM narrative message
