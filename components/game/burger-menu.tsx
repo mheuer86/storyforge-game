@@ -168,14 +168,14 @@ export function BurgerMenu({
               </TabsList>
             </div>
 
-            <ScrollArea className="min-h-0 flex-1" style={{ fontFamily: 'var(--font-narrative)' }}>
+            <ScrollArea className="min-h-0 flex-1 overflow-x-hidden" style={{ fontFamily: 'var(--font-narrative)' }}>
               {/* Character Tab */}
               <TabsContent value="character" className="mt-0 p-4">
                 <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} />
               </TabsContent>
 
               {/* Ship Tab */}
-              <TabsContent value="ship" className="mt-0 p-4">
+              <TabsContent value="ship" className="mt-0 w-full p-4">
                 <ShipPanel ship={ship} genre={genre} partyBaseName={genreConfig.partyBaseName} />
               </TabsContent>
 
