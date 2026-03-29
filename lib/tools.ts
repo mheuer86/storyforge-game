@@ -244,6 +244,7 @@ export const gameTools: Anthropic.Tool[] = [
               relationship: { type: 'string', description: 'e.g. "hostile", "neutral", "ally", "contact"' },
               role: { type: 'string', enum: ['crew', 'contact', 'npc'], description: 'Use "crew" for companions who travel with the player' },
               vulnerability: { type: 'string', description: 'What this companion is most sensitive to (for crew only) — used to modulate cohesion changes' },
+              disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'], description: 'Starting disposition for contacts/npcs. Defaults to neutral if omitted.' },
             },
             required: ['name', 'description', 'lastSeen'],
           },
@@ -474,6 +475,30 @@ export const gameTools: Anthropic.Tool[] = [
           description: 'Brief narrative note to log (e.g. "Upgraded engines at Orja-9 drydock"). Shown in Ship tab refit history.',
         },
       },
+    },
+  },
+  {
+    name: 'update_disposition',
+    description:
+      'Update the disposition tier of a contact or NPC. Call immediately when a shift-triggering moment occurs — sustained follow-through, a betrayal, a significant favor. Only for contacts and NPCs, not crew (use update_cohesion for crew).',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        npcName: {
+          type: 'string',
+          description: 'Name of the NPC or contact — must match the name in the NPCS list exactly.',
+        },
+        newDisposition: {
+          type: 'string',
+          enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'],
+          description: 'The new disposition tier.',
+        },
+        reason: {
+          type: 'string',
+          description: 'What triggered this shift.',
+        },
+      },
+      required: ['npcName', 'newDisposition', 'reason'],
     },
   },
   {

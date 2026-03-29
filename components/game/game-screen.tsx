@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 
 interface DisplayMessage {
@@ -244,8 +244,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
         if (result.tool === 'update_world') {
           const input = result.input as {
-            addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string }[]
-            updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string }
+            addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; vulnerability?: string; disposition?: DispositionTier }[]
+            updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; disposition?: DispositionTier }
             setLocation?: { name: string; description: string }
             addThread?: { id: string; title: string; status: string; deteriorating: boolean }
             updateThread?: { id: string; status: string; deteriorating?: boolean }
@@ -433,6 +433,20 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             },
           }
           // Intentionally no statChange — cohesion is hidden from player
+        }
+
+        if (result.tool === 'update_disposition') {
+          const input = result.input as { npcName: string; newDisposition: string; reason: string }
+          updated = {
+            ...updated,
+            world: {
+              ...updated.world,
+              npcs: updated.world.npcs.map((n) =>
+                n.name === input.npcName ? { ...n, disposition: input.newDisposition as DispositionTier } : n
+              ),
+            },
+          }
+          // Intentionally no statChange — disposition is hidden from player
         }
 
         if (result.tool === 'update_ship') {

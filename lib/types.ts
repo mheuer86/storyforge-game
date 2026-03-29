@@ -63,6 +63,8 @@ export interface Faction {
   stance: string
 }
 
+export type DispositionTier = 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted'
+
 export interface NPC {
   name: string
   description: string
@@ -70,6 +72,7 @@ export interface NPC {
   relationship?: string
   role?: 'crew' | 'contact' | 'npc'
   vulnerability?: string  // what hits this companion harder (used internally by cohesion system)
+  disposition?: DispositionTier  // hidden relationship tier for contacts/npcs; never shown to player
 }
 
 export interface CohesionLogEntry {
