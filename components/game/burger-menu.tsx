@@ -55,6 +55,7 @@ interface World {
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }[]
   antagonist: Antagonist | null
+  tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
 }
 
 interface Chapter {
@@ -570,6 +571,36 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
               </div>
             </div>
           )}
+
+          {/* Pressures */}
+          {(() => {
+            const activeClocks = world.tensionClocks.filter((c) => c.status === 'active')
+            const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
+            if (activeClocks.length === 0 && triggeredClocks.length === 0) return null
+            return (
+              <div>
+                <h3 className="mb-2 text-xs uppercase text-muted-foreground">Pressures</h3>
+                <div className="flex flex-col gap-2">
+                  {activeClocks.map((clock) => (
+                    <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
+                      <div className="font-medium text-foreground">{clock.name}</div>
+                    </div>
+                  ))}
+                  {triggeredClocks.length > 0 && (
+                    <>
+                      <h4 className="mt-1 text-xs uppercase text-muted-foreground">Consequences</h4>
+                      {triggeredClocks.map((clock) => (
+                        <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
+                          <div className="font-medium text-foreground">{clock.name}</div>
+                          <div className="text-xs text-muted-foreground">{clock.triggerEffect}</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Active Threads */}
           <div>

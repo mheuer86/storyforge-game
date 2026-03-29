@@ -99,6 +99,7 @@ export function createInitialGameState(
       combatOptions: [],
       upgradeLog: [],
     } : null,
+    tensionClocks: [],
   }
 
   return {
@@ -164,6 +165,10 @@ export function loadGameState(): GameState | null {
     // Migrate saves that predate skillPoints
     if (!state.character.skillPoints) {
       state.character.skillPoints = { available: 0, log: [] }
+    }
+    // Migrate saves that predate tensionClocks
+    if (!state.world.tensionClocks) {
+      state.world.tensionClocks = []
     }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed

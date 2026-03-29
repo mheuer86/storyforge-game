@@ -130,6 +130,15 @@ export interface Antagonist {
   moves: AntagonistMove[]
 }
 
+export interface TensionClock {
+  id: string
+  name: string
+  maxSegments: 4 | 6
+  filled: number
+  status: 'active' | 'triggered' | 'resolved'
+  triggerEffect: string
+}
+
 export interface WorldState {
   shipName: string
   currentLocation: { name: string; description: string }
@@ -140,6 +149,7 @@ export interface WorldState {
   antagonist: Antagonist | null
   crewCohesion: CrewCohesion
   ship: ShipState | null
+  tensionClocks: TensionClock[]
 }
 
 export interface Enemy {
