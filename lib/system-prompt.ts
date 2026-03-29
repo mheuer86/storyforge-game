@@ -123,6 +123,34 @@ Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) o
 
 Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.
 
+## CHARACTER PROGRESSION (mandatory — call at every chapter close)
+
+**Level-up (automatic, every chapter):**
+At chapter close, call update_character with levelUp immediately after close_chapter. Use these values:
+- newLevel: current level + 1
+- hpIncrease: hit die average + CON modifier (minimum 1). Hit die by class: Soldier/Gunslinger d10 (avg 6), Scout/Technician d8 (avg 5), Diplomat/Psion d6 (avg 4).
+- newProficiencyBonus: only include if it changes at this level (L5: 3, L9: 4, L13: 5). Omit otherwise.
+
+HP current is healed to the new max automatically.
+
+**Proficiency bonus table:**
+- Levels 1-4: +2
+- Levels 5-8: +3
+- Levels 9-12: +4
+- Levels 13+: +5
+
+**Skill Points (0-2 per chapter, earned — not automatic):**
+After the level-up, evaluate these criteria. Award 1 point per criterion met, max 2 per chapter:
+1. Solved a problem using a non-proficient skill creatively (the roll log shows the skill and that the character is not proficient in it)
+2. Completed a major objective with no failed primary checks
+3. A key decision had lasting strategic payoff across multiple scenes
+
+If 1-2 points are earned: weave the choice into narrative organically. Present 2-3 proficiency options that fit the story. When the player picks, call update_character with addProficiency or upgradeToExpertise.
+
+If 0 points earned: no mention. Do not create a moment that is not warranted.
+
+Never name the Skill Point mechanic to the player. It surfaces as earned growth, not a menu.
+
 ## GM DIFFICULTY ENGINE (mandatory rules, not optional flavor)
 
 **Rule 1 — FAIL WITH A COST:** Failed checks never simply block the player. Find the interesting complication: the lock resists AND the alarm trips. The lie fails AND the NPC is now suspicious. The jump falls short AND something drops. Progress continues, but it costs something.
@@ -162,7 +190,7 @@ After these three moments have been introduced, play normally.
 - Call update_cohesion (+1 or -1) immediately when a cohesion trigger occurs. Never mention cohesion or the score to the player
 - Call update_ship when the ship takes damage, gets repaired, or receives a chapter-end upgrade. For chapter-end refits, present the options in narrative first, then call the tool when the player chooses
 - For meta questions, call meta_response with the answer and nothing else
-- Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters. Immediately after close_chapter, call generate_debrief using the roll log, promises, threads, and cohesion changes from this chapter. Be specific — name actual events, not generic praise
+- Call close_chapter when the story reaches a natural chapter break (major arc resolved, significant time jump, clear new phase begins). Write a 2-3 sentence summary and 3-5 key events. The message history sent to you is windowed — chapter summaries are the only long-term narrative memory, so write them to capture what matters. Immediately after close_chapter: (1) call update_character with levelUp (see CHARACTER PROGRESSION section), (2) evaluate Skill Point criteria and award if earned, (3) call generate_debrief using the roll log, promises, threads, and cohesion changes from this chapter. Be specific — name actual events, not generic praise
 
 **Output order in every response:**
 1. Narrative text
@@ -303,7 +331,7 @@ function compressGameState(gs: GameState): string {
 
   return `PRESSURE: ${pressureLine}
 
-CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus} | Pronouns: ${pronouns}
+CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus}${c.skillPoints?.available ? ` | Skill Points: ${c.skillPoints.available} unspent` : ''} | Pronouns: ${pronouns}
 STATS: ${statLine}
 PROFICIENCIES: ${c.proficiencies.join(', ')}
 INVENTORY: ${inventoryLine || 'Empty'}

@@ -4,7 +4,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'update_character',
     description:
-      'Modify the character\'s game state: HP changes, credit changes, inventory additions/removals, temporary modifiers, or trait usage. Call this immediately whenever any of these values change — do not wait until the end of the response.',
+      'Modify the character\'s game state: HP changes, credit changes, inventory additions/removals, temporary modifiers, trait usage, or level-up progression. Call this immediately whenever any of these values change — do not wait until the end of the response.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -78,6 +78,24 @@ export const gameTools: Anthropic.Tool[] = [
             usesRemaining: { type: 'number' },
           },
           required: ['name', 'usesRemaining'],
+        },
+        levelUp: {
+          type: 'object',
+          description: 'Level up the character at chapter close. Increments level, increases HP max, updates proficiency bonus if threshold crossed. HP current is healed to new max. Call this immediately after close_chapter.',
+          properties: {
+            newLevel: { type: 'number', description: 'The new level (current level + 1).' },
+            hpIncrease: { type: 'number', description: 'Amount to add to HP max (hit die average + CON modifier, minimum 1).' },
+            newProficiencyBonus: { type: 'number', description: 'New proficiency bonus — only include if it changes at this level (L5: 3, L9: 4, L13: 5).' },
+          },
+          required: ['newLevel', 'hpIncrease'],
+        },
+        addProficiency: {
+          type: 'string',
+          description: 'Add a new skill proficiency earned via Skill Point (e.g. "Stealth"). Call after presenting the choice narratively.',
+        },
+        upgradeToExpertise: {
+          type: 'string',
+          description: 'Upgrade an existing proficiency to expertise via Skill Point. The proficiency must already exist in the list. Stored with "(expertise)" suffix.',
         },
       },
     },
