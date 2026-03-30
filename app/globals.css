@@ -285,7 +285,8 @@
 }
 
 /* Fix: Radix ScrollArea wraps content in display:table which sizes to content.
-   Cap it at viewport width so text inside wraps instead of overflowing. */
+   Override to block so the wrapper is constrained to the viewport width. */
 [data-radix-scroll-area-viewport] > div {
-  max-width: 100%;
+  display: block;
+  width: 100%;
 }
