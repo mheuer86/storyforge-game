@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { getGenreConfig } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 import type { SaveSlotData } from '@/lib/game-data'
+import { changelog } from '@/lib/changelog'
 
 interface CampaignSelectProps {
   autoSave: GameState | null
@@ -27,9 +29,14 @@ function timeAgo(iso: string): string {
   return `${days}d ago`
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewGame }: CampaignSelectProps) {
   const hasSlots = slots.some(Boolean)
   const config = getGenreConfig('space-opera')
+  const [showOlderUpdates, setShowOlderUpdates] = useState(false)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-12 p-8">
@@ -144,6 +151,35 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
 
         </CardContent>
       </Card>
+      {/* Changelog */}
+      {changelog.length > 0 && (
+        <div className="w-full max-w-lg">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">What's new</p>
+          <div className="flex flex-col gap-3">
+            {(showOlderUpdates ? changelog : changelog.slice(0, 1)).map((entry, i) => (
+              <div key={i} className="rounded-lg border border-border/30 bg-card/40 px-4 py-3">
+                <p className="mb-1.5 text-xs text-muted-foreground">{formatDate(entry.date)}</p>
+                <ul className="flex flex-col gap-1">
+                  {entry.changes.map((change, j) => (
+                    <li key={j} className="flex gap-2 text-xs text-foreground/70">
+                      <span className="mt-0.5 shrink-0 text-primary/50">·</span>
+                      <span>{change}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          {changelog.length > 1 && (
+            <button
+              onClick={() => setShowOlderUpdates(v => !v)}
+              className="mt-2 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+              {showOlderUpdates ? 'Show less' : `Show ${changelog.length - 1} older update${changelog.length - 1 > 1 ? 's' : ''}`}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
