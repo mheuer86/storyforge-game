@@ -328,7 +328,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'close_chapter',
     description:
-      'Close the current chapter and open the next one. Call this at a natural narrative break — when a major arc resolves, a significant time jump occurs, or the story moves to a clearly new phase. The player\'s message history is windowed to the current chapter only — chapter summaries are the sole long-term narrative memory, so write them carefully.',
+      'Close the current chapter and open the next one. Call at a natural narrative break — when a major arc resolves, a significant time jump occurs, or the story moves to a clearly new phase. Write the summary carefully: chapter summaries are the sole long-term narrative memory.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -425,7 +425,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'update_cohesion',
     description:
-      'Adjust crew/companion cohesion by +1 or -1. NEVER reveal the score or mention cohesion to the player — reflect it only through NPC behavior and narrative tone. Call this immediately when a trigger occurs, before continuing the narrative.\n\n+1 triggers: player acknowledges a companion by name after hardship, keeps a promise to them, chooses their safety over mission efficiency, gives them public credit.\n-1 triggers: uses companions as tools without acknowledgment, breaks a promise to them, dismisses a concern that proves valid, makes a unilateral decision that puts them at risk without explanation.',
+      'Adjust crew/companion cohesion by +1 or -1. Call immediately when a trigger occurs, before continuing the narrative. NEVER reveal the score or mention cohesion to the player. See COHESION MECHANIC in system prompt for triggers.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -481,7 +481,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'update_clock',
     description:
-      'Manage tension clocks — hidden segmented threat tracks. Establish at chapter open or when a new threat crystallizes. Advance based on in-world conditions, never on whim. A triggered clock changes the situation irreversibly.',
+      'Manage tension clocks — hidden segmented threat tracks. See TENSION CLOCKS in system prompt for when to establish, advance, trigger, and resolve.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -530,7 +530,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'update_disposition',
     description:
-      'Update the disposition tier of a contact or NPC. Call immediately when a shift-triggering moment occurs — sustained follow-through, a betrayal, a significant favor. Only for contacts and NPCs, not crew (use update_cohesion for crew).',
+      'Update the disposition tier of a contact or NPC. Only for contacts and NPCs, not crew (use update_cohesion for crew). See NPC DISPOSITION in system prompt for tier effects and shift rules.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -565,5 +565,6 @@ export const gameTools: Anthropic.Tool[] = [
       },
       required: ['content'],
     },
+    cache_control: { type: 'ephemeral' as const },
   },
 ]

@@ -156,7 +156,7 @@ Active threats are tracked as hidden segmented clocks (see PRESSURES in game sta
 
 The player can slow or reverse a clock by taking concrete in-world action against the specific threat. They feel pressure through narrative signals — a contact who doesn't respond, a shadow at the end of a corridor, an overheard transmission — never through mechanics being named.
 
-## SHIP MECHANIC (space opera — call update_ship)
+${genre === 'space-opera' ? `## SHIP MECHANIC (space opera — call update_ship)
 
 Ship systems are levels 1-3. Apply their effects automatically:
 - Engines L2: reduce all piloting DCs by 2. L3: reduce by 4, player can always escape space encounters.
@@ -169,7 +169,7 @@ Ship combat options (from combatOptions list) appear as quick actions in space e
 
 Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) or is repaired (+20 to +40 field repair, full restoration at port). Hull below 30%: impose disadvantage on piloting checks.
 
-Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.
+Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.` : ''}
 
 ## CHARACTER PROGRESSION (mandatory — call at every chapter close)
 
@@ -379,7 +379,7 @@ function compressGameState(gs: GameState): string {
   const partyLabel = config.partyBaseName.toUpperCase()
 
   const completedChapters = gs.history.chapters.filter((ch) => ch.status === 'complete')
-  const RECENT_CHAPTERS = 3 // full detail
+  const RECENT_CHAPTERS = 1 // full detail
   const recentFull = completedChapters.slice(-RECENT_CHAPTERS)
   const olderCompressed = completedChapters.slice(0, -RECENT_CHAPTERS)
   const historySection =
