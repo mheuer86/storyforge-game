@@ -11,6 +11,8 @@ export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean,
   const config = getGenreConfig(genre)
   const flavor = config.systemPromptFlavor
 
+  // These are appended to the dynamic block so the static instructions are truly immutable
+  // and always hit the prompt cache regardless of meta/consistency mode.
   const metaInstruction = isMetaQuestion
     ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question. Answer it directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.`
     : ''
@@ -243,10 +245,10 @@ After these three moments have been introduced, play normally.
 **Output order in every response:**
 1. Narrative text
 2. State mutation tool calls (update_character, start_combat, end_combat)
-3. Always: suggest_actions${metaInstruction}${consistencyInstruction}`,
+3. Always: suggest_actions`,
     `## CURRENT GAME STATE
 
-${compressedState}`
+${compressedState}${metaInstruction}${consistencyInstruction}`
   ]
 }
 
