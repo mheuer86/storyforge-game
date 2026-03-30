@@ -7,7 +7,7 @@ import { StateDiffBar } from './state-diff-bar'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
+import { loadGameState, saveGameState, saveToSlot, saveQuickActions } from '@/lib/game-data'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
@@ -926,11 +926,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }))
     setMessages(displayMessages)
 
-    // Restore quick actions from localStorage (they aren't part of game state)
-    const savedActions = loadQuickActions()
-    if (savedActions.length > 0) {
-      setQuickActionsRaw(savedActions)
-    }
+    setQuickActionsRaw([])
 
     if (state.history.messages.length === 0) {
       sendToGM('', state, false, true)
