@@ -474,8 +474,13 @@ IMPORTANT: Use update_world to establish the starting location (setLocation), at
   // Continuation: loaded save with existing world state
   const location = gameState.world?.currentLocation?.name ?? 'current location'
   const chapterTitle = gameState.meta?.chapterTitle ?? `Chapter ${chapterNumber}`
+  const completedChapters = chapters.filter((ch) => ch.status === 'complete')
+  const lastChapter = completedChapters[completedChapters.length - 1]
+  const narrativeAnchor = lastChapter
+    ? `\n\nThe previous chapter ended with: ${lastChapter.summary} Open directly from this moment — match the tone and momentum of what just happened.`
+    : ''
 
   return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
 
-Current location: ${location}. Pick up from the world state — do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure. Write the scene as it would naturally continue from where we left off.`
+Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}`
 }
