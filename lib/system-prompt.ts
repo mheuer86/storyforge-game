@@ -2,7 +2,10 @@ import type { GameState } from './types'
 import { getStatModifier, formatModifier } from './game-data'
 import { getGenreConfig, type Genre } from './genre-config'
 
-export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean, flaggedMessage?: string): string {
+/** Returns [staticInstructions, dynamicGameState] as two separate strings.
+ *  staticInstructions is safe to mark cache_control: ephemeral — it only changes when
+ *  meta/consistency mode is active (rare). dynamicGameState changes every turn. */
+export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean, flaggedMessage?: string): [string, string] {
   const compressedState = compressGameState(gameState)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
@@ -22,7 +25,7 @@ export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean,
 
   const partyLabel = config.partyBaseName
 
-  return `${flavor.role}
+  return [`${flavor.role}
 
 ## ROLE
 
@@ -240,11 +243,11 @@ After these three moments have been introduced, play normally.
 **Output order in every response:**
 1. Narrative text
 2. State mutation tool calls (update_character, start_combat, end_combat)
-3. Always: suggest_actions${metaInstruction}${consistencyInstruction}
-
-## CURRENT GAME STATE
+3. Always: suggest_actions${metaInstruction}${consistencyInstruction}`,
+    `## CURRENT GAME STATE
 
 ${compressedState}`
+  ]
 }
 
 function compressGameState(gs: GameState): string {
