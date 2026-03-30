@@ -7,6 +7,15 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2026-03-30',
     changes: [
+      'GM now requires a dice roll for any social moment where a reasonable NPC could say no — strong arguments lower the DC or grant advantage, but never skip the roll',
+      'Quick actions no longer bleed across campaigns when switching stories',
+      'Cyberpunk origins reworked — Undercity Born and Syndicate Blood replace Techie and Rogue Runner',
+      'Zombie Apocalypse and Post-Atomic Wasteland added to the coming soon genre picker',
+    ],
+  },
+  {
+    date: '2026-03-30',
+    changes: [
       'Story continuity fixed — save loads now pick up from the right narrative moment instead of jumping to a generic scene',
       'Ship tab text wrapping fixed — long system descriptions and combat options no longer overflow the panel',
       'Reduced API token usage ~20–25% per turn through tool caching, leaner chapter history, and genre-gating unused mechanics',
