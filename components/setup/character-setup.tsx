@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { track } from '@vercel/analytics'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -227,15 +228,16 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               Back
             </Button>
             <Button
-              onClick={() =>
-                canStart &&
+              onClick={() => {
+                if (!canStart) return
+                track('campaign_started', { genre, class: selectedClass!.id })
                 onStart({
                   name: characterName.trim(),
                   species: selectedSpecies!,
                   characterClass: selectedClass!,
                   gender: selectedGender,
                 })
-              }
+              }}
               disabled={!canStart}
               className="bg-primary px-8 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               style={{ boxShadow: 'var(--action-glow)' }}

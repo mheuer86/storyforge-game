@@ -2,7 +2,7 @@ import type { InventoryItem, Trait } from './types'
 
 // ─── Genre Config Interface ───────────────────────────────────────────
 
-export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'dnd' | 'cyberpunk' | 'western' | 'samurai' | 'mafia' | 'rome' | 'ww2' | 'cold-war' | 'high-fantasy'
+export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'dnd' | 'cyberpunk' | 'western' | 'samurai' | 'mafia' | 'zombie' | 'wasteland' | 'cold-war' | 'high-fantasy'
 
 export interface Species {
   id: string
@@ -627,16 +627,16 @@ const cyberpunkSpecies: Species[] = [
     lore: 'Clan loyalty is deep-wired — city people read it as suspicion. The badlands bred a different kind of toughness: no corpo safety net, no NCPD response time.',
   },
   {
-    id: 'techie',
-    name: 'Techie',
-    description: 'Grew up tearing apart and reassembling everything in the salvage districts.',
-    lore: 'Machines make more sense than people. A ripperdoc background means bodies are just another kind of machine.',
+    id: 'undercity-born',
+    name: 'Undercity Born',
+    description: 'Grew up in the maintenance warrens and black-market tunnels beneath the city\'s visible layers.',
+    lore: 'Invisible to corps, trusted by no one above ground — which is exactly the point. Knows routes, people, and systems that don\'t appear on any official map.',
   },
   {
-    id: 'rogue-runner',
-    name: 'Rogue Runner',
-    description: 'Ex-merc or ex-assassin. Too expensive for corps, too principled for the worst gangs.',
-    lore: 'Has the scars and the reputation. Both attract the wrong attention. Operates on a strict code — which in this city counts as an eccentricity.',
+    id: 'syndicate-blood',
+    name: 'Syndicate Blood',
+    description: 'Raised inside an organized crime family or gang hierarchy. Knows how authority actually works.',
+    lore: 'Understands the difference between power and the performance of power. Has obligations that don\'t expire — and contacts that open doors most people don\'t know exist.',
   },
 ]
 
@@ -1160,8 +1160,8 @@ const highFantasyConfig = makeStub('high-fantasy',  'High Fantasy',  'The age of
 const westernConfig     = makeStub('western',       'Western',       'The frontier doesn\'t ask where you came from.',                 'dollars', '$',   'Camp')
 const samuraiConfig     = makeStub('samurai',       'Samurai',       'Duty binds. Honor breaks. The blade decides.',                  'mon',     '¥',   'Dojo')
 const mafiaConfig       = makeStub('mafia',         'Mafia',         'Everyone\'s family until the money runs out.',                  'dollars', '$',   'The Family')
-const romeConfig        = makeStub('rome',          'Ancient Rome',  'The Republic promises glory. It collects in blood.',             'denarii', 'dn',  'Garrison')
-const ww2Config         = makeStub('ww2',           'World War II',  'Some wars don\'t end when the guns go quiet.',                  'dollars', '$',   'Safehouse')
+const zombieConfig      = makeStub('zombie',        'Zombie Apocalypse', 'The dead keep moving. The living keep making it worse.',    'supplies', 'sup', 'Enclave')
+const wastelandConfig   = makeStub('wasteland',     'Post-Atomic Wasteland', 'The bombs fell. Something stranger rose in their place.', 'caps',    'ƈ',   'Settlement')
 const coldWarConfig     = makeStub('cold-war',      'Cold War',      'No shots fired. Everyone\'s already compromised.',              'dollars', '$',   'Safe House')
 
 // ─── Registry ─────────────────────────────────────────────────────────
@@ -1176,8 +1176,8 @@ const genreConfigs: Record<string, GenreConfig> = {
   'western':      westernConfig,
   'samurai':      samuraiConfig,
   'mafia':        mafiaConfig,
-  'rome':         romeConfig,
-  'ww2':          ww2Config,
+  'zombie':       zombieConfig,
+  'wasteland':    wastelandConfig,
   'cold-war':     coldWarConfig,
 }
 
@@ -1191,8 +1191,8 @@ export const genres: { id: Genre; name: string; available: boolean }[] = [
   { id: 'western',      name: 'Western',        available: false },
   { id: 'samurai',      name: 'Samurai',        available: false },
   { id: 'mafia',        name: 'Mafia',          available: false },
-  { id: 'rome',         name: 'Ancient Rome',   available: false },
-  { id: 'ww2',          name: 'World War II',   available: false },
+  { id: 'zombie',       name: 'Zombie Apocalypse',      available: false },
+  { id: 'wasteland',    name: 'Post-Atomic Wasteland',  available: false },
   { id: 'cold-war',     name: 'Cold War',       available: false },
 ]
 
