@@ -73,7 +73,13 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const systemPrompt = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
+        const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
+        // Two-block system: static instructions are marked cacheable (10% token cost on cache hit);
+        // dynamic game state is never cached since it changes every turn.
+        const systemPrompt: Anthropic.TextBlockParam[] = [
+          { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: dynamicState },
+        ]
 
         // ── Phase 2: client sent a roll result, continue from pending conversation ──
         if (rollResolution) {
