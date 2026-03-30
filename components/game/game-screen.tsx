@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, loadQuickActions, saveQuickActions } from '@/lib/game-data'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
+import { track } from '@vercel/analytics'
 
 interface DisplayMessage {
   id: string
@@ -323,6 +324,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             nextTitle: string
           }
           const currentNum = updated.meta.chapterNumber
+          track('chapter_completed', { chapter: currentNum, genre: updated.meta.genre })
           const completedChapter = {
             ...updated.history.chapters.find((ch) => ch.number === currentNum) ?? {
               number: currentNum,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { track } from '@vercel/analytics'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -76,7 +77,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Current</p>
               <button
-                onClick={onContinue}
+                onClick={() => { track('campaign_continued', { genre: autoSave.meta.genre, chapter: autoSave.meta.chapterNumber }); onContinue() }}
                 className="w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-left transition-all duration-200 hover:border-primary/70 hover:bg-primary/10"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -111,7 +112,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
                   slot ? (
                     <button
                       key={i}
-                      onClick={() => onLoadSlot(slot)}
+                      onClick={() => { track('campaign_continued', { genre: slot.genre, chapter: slot.chapterNumber }); onLoadSlot(slot) }}
                       className="w-full rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 text-left transition-all duration-200 hover:border-primary/50 hover:bg-secondary/50"
                     >
                       <div className="flex items-center justify-between gap-3">
