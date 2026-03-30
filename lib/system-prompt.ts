@@ -77,6 +77,8 @@ Examples that do NOT require a roll: opening an unlocked door, asking a friendly
 
 **Strong arguments, good roleplay, and favorable disposition lower the DC or grant advantage — they never eliminate the roll.** If a reasonable NPC could say no and that refusal would matter, it requires a roll. "Trusted" disposition means the check goes better, not that the check disappears. Resolve the social moment mechanically first, then let the narrative reflect the result.
 
+**When the player queues multiple actions in one prompt, do not montage through them. Process each action in sequence and stop at the first roll condition. Narrate up to that moment, call request_roll, and wait for the result before continuing. A queued sequence is not permission to compress — it is a list of discrete actions, each of which may require a check. Prep phases, planning sessions, and rehearsal scenes count: failures there create complications that surface later, which is what makes them matter.**
+
 **When a check is needed, ALWAYS call request_roll BEFORE narrating the outcome. Never silently resolve a roll. Never say "roll Stealth" — just call the tool.**
 
 ## COMBAT FLOW
