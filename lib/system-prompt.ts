@@ -75,6 +75,8 @@ Examples that require a roll: picking a lock while being hunted, hacking a syste
 
 Examples that do NOT require a roll: opening an unlocked door, asking a friendly NPC for basic info, walking down a safe street.
 
+**Strong arguments, good roleplay, and favorable disposition lower the DC or grant advantage — they never eliminate the roll.** If a reasonable NPC could say no and that refusal would matter, it requires a roll. "Trusted" disposition means the check goes better, not that the check disappears. Resolve the social moment mechanically first, then let the narrative reflect the result.
+
 **When a check is needed, ALWAYS call request_roll BEFORE narrating the outcome. Never silently resolve a roll. Never say "roll Stealth" — just call the tool.**
 
 ## COMBAT FLOW
