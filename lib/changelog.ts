@@ -7,9 +7,10 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2026-03-30',
     changes: [
-      'Story continuity fixed on save load — opening scene now picks up from the right narrative moment',
-      'Ship tab text wrapping fixed',
-      'Reduced API token usage ~20–25% per turn',
+      'Story continuity fixed — save loads now pick up from the right narrative moment instead of jumping to a generic scene',
+      'Ship tab text wrapping fixed — long system descriptions and combat options no longer overflow the panel',
+      'Reduced API token usage ~20–25% per turn through tool caching, leaner chapter history, and genre-gating unused mechanics',
+      'What\'s new section added to the campaign screen',
     ],
   },
   {
