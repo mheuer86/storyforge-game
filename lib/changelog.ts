@@ -7,6 +7,14 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2026-03-31',
     changes: [
+      'Unique class traits — 10 traits reworked across all genres: Smuggler\'s Luck, Shadow Step, Diplomatic Immunity, Bardic Echo, Favor Owed, Leverage, Arcane Surge (wild magic), Deep Dive (cyberpsychosis risk), Divine Favor (deity alignment), Bitter Medicine (side effects)',
+      'Cyberpunk Solo class replaces Wheelman — CON-primary contract killer with "Dead Man Walking" (ignore one attack\'s damage)',
+      'Grimdark Inquisitor class replaces Outrider — INT-primary interrogator with "The Question" (force an NPC to reveal information)',
+      'Cyberpunk Tech Rig — personal neural interface with 5 upgradeable modules (Neurofence, Spectra, Redline, Panoptik, Skinweave), integrity mechanic, and chapter-end upgrades',
+      'Space Opera visual refresh — Event Horizon palette with deeper navy, brighter cyan, and gold accent',
+      'Dice colors fixed — success rolls now show green across all genres instead of using the genre primary color',
+      'Origin × class tension — the GM now creates narrative friction from insider/outsider dynamics in your background',
+      'Letter spacing fix — quoted text and italic passages no longer run into adjacent paragraphs',
       'Advantage & disadvantage — the GM now mechanically grants advantage (roll 2d20, take higher) or disadvantage (roll 2d20, take lower) based on gear, creative tactics, NPC disposition, crew cohesion, and environmental conditions',
       'Two-dice UI — when advantage or disadvantage is active, two dice animate and the kept die is highlighted while the discarded one is struck through',
     ],
