@@ -133,6 +133,16 @@ export const gameTools: Anthropic.Tool[] = [
           enum: ['advantage', 'disadvantage'],
           description: 'Set to "advantage" (roll 2d20, take higher) or "disadvantage" (roll 2d20, take lower) when conditions warrant it. Omit for a normal roll. See ADVANTAGE/DISADVANTAGE rules in system prompt.',
         },
+        contested: {
+          type: 'object',
+          description: 'For contested rolls where an NPC actively opposes the player. Both sides roll simultaneously. Omit for static DC checks.',
+          properties: {
+            npcName: { type: 'string', description: 'The opposing NPC\'s name (e.g. "Station Guard").' },
+            npcSkill: { type: 'string', description: 'The skill the NPC is using (e.g. "Perception").' },
+            npcModifier: { type: 'number', description: 'The NPC\'s total modifier for their roll.' },
+          },
+          required: ['npcName', 'npcSkill', 'npcModifier'],
+        },
       },
       required: ['checkType', 'stat', 'dc', 'modifier', 'reason'],
     },
