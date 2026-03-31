@@ -1123,18 +1123,20 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary/70">
-                        Roll required
+                      <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-primary/70">
+                        {rollPrompt.check} Check
                         {rollPrompt.advantage && (
                           <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
-                            ({rollPrompt.advantage})
+                            — {rollPrompt.advantage}
                           </span>
                         )}
                       </div>
-                      <div className="mt-0.5 font-mono text-base text-foreground">
-                        {rollPrompt.check} — DC {rollPrompt.dc}
+                      <div className="mt-1 flex items-center gap-3 font-system text-sm">
+                        <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
+                        <span className="text-muted-foreground/30">|</span>
+                        <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</span></span>
                       </div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
+                      <div className="mt-1 text-xs text-muted-foreground/70">
                         {rollPrompt.reason}
                       </div>
                     </div>
@@ -1164,7 +1166,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   hasAdv ? 'h-14 w-14 text-2xl' : 'h-16 w-16 text-3xl',
                   dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
                   !isKept && hasAdv ? 'border-border/30 bg-card/20 text-muted-foreground/40 line-through' :
-                  displayVal === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
+                  displayVal === 20 ? 'dice-crit' :
                   displayVal === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
                   (result === 'success' || result === 'critical') ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400' :
                   'border-orange-400/60 bg-orange-400/20 text-orange-400',
@@ -1172,7 +1174,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 return (
                   <div className={[
                     'rounded-lg border px-6 py-4 transition-all duration-500',
-                    dicePhase === 'revealed' && result === 'critical' ? 'border-yellow-400/60 bg-yellow-400/10'
+                    dicePhase === 'revealed' && result === 'critical' ? 'dice-crit-card'
                     : dicePhase === 'revealed' && result === 'success' ? 'border-emerald-400/60 bg-emerald-400/10'
                     : dicePhase === 'revealed' && result === 'fumble' ? 'border-red-500/60 bg-red-500/10'
                     : dicePhase === 'revealed' ? 'border-orange-400/60 bg-orange-400/10'
@@ -1180,8 +1182,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   ].join(' ')}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          {rollPrompt.check} — DC {rollPrompt.dc}
+                        <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          {rollPrompt.check} — {rollPrompt.stat}
                           {rollPrompt.advantage && dicePhase === 'revealed' && (
                             <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
                               {rollPrompt.advantage}
@@ -1189,11 +1191,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           )}
                         </div>
                         {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
-                          <div className="mt-1 font-mono text-sm text-foreground">
-                            {rolledValue} + {rollPrompt.modifier} = {total}
+                          <div className="mt-1 font-system text-sm text-foreground">
+                            {rolledValue} + {rollPrompt.modifier} = {total} <span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
                             {' '}
                             <span className={
-                              result === 'critical' ? 'text-yellow-400 font-bold' :
+                              result === 'critical' ? 'text-tertiary font-bold' :
                               result === 'success' ? 'text-emerald-400 font-bold' :
                               result === 'fumble' ? 'text-red-400 font-bold' :
                               'text-orange-400 font-bold'
@@ -1301,7 +1303,7 @@ function RollBadge({
   const hasAdv = !!rollData.advantage && !!rollData.rawRolls
 
   const cardClass = isCrit
-    ? 'border-yellow-400/60 bg-yellow-400/10'
+    ? 'dice-crit-card'
     : isSuccess
     ? 'border-emerald-400/60 bg-emerald-400/10'
     : isFumble
@@ -1309,7 +1311,7 @@ function RollBadge({
     : 'border-orange-400/60 bg-orange-400/10'
 
   const labelClass = isCrit
-    ? 'text-yellow-400 font-bold'
+    ? 'text-tertiary font-bold'
     : isSuccess
     ? 'text-emerald-400 font-bold'
     : isFumble
@@ -1317,7 +1319,7 @@ function RollBadge({
     : 'text-orange-400 font-bold'
 
   const keptDieClass = isCrit
-    ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300'
+    ? 'dice-crit'
     : isSuccess
     ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400'
     : isFumble
@@ -1330,22 +1332,22 @@ function RollBadge({
     <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {rollData.check} — DC {rollData.dc}
+          <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {rollData.check}
             {rollData.advantage && (
               <span className={rollData.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
                 {rollData.advantage}
               </span>
             )}
           </div>
-          <div className="mt-1 font-mono text-sm text-foreground">
+          <div className="mt-1 font-system text-sm text-foreground">
             {rollData.roll}
             {rollData.modifier !== 0 && (
               <span className="text-muted-foreground">
                 {' '}{rollData.modifier > 0 ? '+' : ''}{rollData.modifier}
               </span>
             )}
-            {' '}= {rollData.total}{' '}
+            {' '}= {rollData.total} <span className="text-muted-foreground">vs DC {rollData.dc}</span>{' '}
             <span className={labelClass}>{label}</span>
           </div>
         </div>

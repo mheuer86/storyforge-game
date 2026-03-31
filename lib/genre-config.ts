@@ -36,6 +36,7 @@ export interface GenreTheme {
   logo: string
   fontNarrative: string
   fontHeading: string
+  fontSystem: string
   background: string
   foreground: string
   card: string
@@ -269,7 +270,8 @@ const spaceOperaClasses: CharacterClass[] = [
 const spaceOperaTheme: GenreTheme = {
   logo: '/storyforge_logo.png',
   fontNarrative: "'Geist Mono', monospace",
-  fontHeading: "'Geist Mono', monospace",
+  fontHeading: "var(--font-space-grotesk), 'Space Grotesk', sans-serif",
+  fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.11 0.025 260)',
   foreground: 'oklch(0.92 0.02 250)',
   card: 'oklch(0.15 0.025 260)',
@@ -531,6 +533,7 @@ const fantasyTheme: GenreTheme = {
   logo: '/logo_fantasy.png',
   fontNarrative: "'Lora', Georgia, serif",
   fontHeading: "'Lora', Georgia, serif",
+  fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.12 0.02 45)',
   foreground: 'oklch(0.92 0.02 80)',
   card: 'oklch(0.15 0.02 45)',
@@ -790,7 +793,8 @@ const cyberpunkClasses: CharacterClass[] = [
 const cyberpunkTheme: GenreTheme = {
   logo: '/logo_cyberpunk.png',
   fontNarrative: "'Geist Mono', monospace",
-  fontHeading: "'Geist Mono', monospace",
+  fontHeading: "var(--font-space-grotesk), 'Space Grotesk', sans-serif",
+  fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.09 0.02 260)',
   foreground: 'oklch(0.90 0.01 80)',
   card: 'oklch(0.12 0.015 260)',
@@ -1052,6 +1056,7 @@ const grimdarkTheme: GenreTheme = {
   logo: '/logo_grimdark.png',
   fontNarrative: "'Lora', Georgia, serif",
   fontHeading: "'Lora', Georgia, serif",
+  fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.10 0.02 35)',
   foreground: 'oklch(0.88 0.02 75)',
   card: 'oklch(0.13 0.02 35)',
@@ -1245,6 +1250,7 @@ export function applyGenreTheme(genre: Genre): void {
   root.style.setProperty('--tertiary-foreground', theme.tertiaryForeground)
   root.style.setProperty('--font-narrative', theme.fontNarrative)
   root.style.setProperty('--font-heading', theme.fontHeading)
+  root.style.setProperty('--font-system', theme.fontSystem)
   root.dataset.genre = genre
 
   // Toggle background effect classes

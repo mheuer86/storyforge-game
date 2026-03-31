@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Lora, Roboto_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Lora, Roboto_Mono, Space_Grotesk } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
@@ -20,6 +20,10 @@ const lora = Lora({
 const robotoMono = Roboto_Mono({
   subsets: ['latin'],
   variable: '--font-roboto-mono',
+})
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
 })
 const geistPixel = localFont({
   src: './fonts/GeistPixel-Square.woff2',
@@ -62,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
         <div className="mist-bg hidden" aria-hidden="true" />

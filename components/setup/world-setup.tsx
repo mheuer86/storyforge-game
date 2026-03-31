@@ -50,7 +50,7 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
       <Card className="w-full max-w-2xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle
-            className="text-3xl tracking-wide text-primary/70"
+            className="font-heading text-3xl tracking-wide text-primary/70"
             style={{ textShadow: 'var(--title-glow)' }}
           >
             Choose Your Universe
@@ -62,7 +62,7 @@ export function WorldSetup({ onNext }: WorldSetupProps) {
         <CardContent className="flex flex-col gap-8">
           {/* Genre Selection */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <h3 className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
               Genre
             </h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
