@@ -36,7 +36,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
       <Card className="w-full max-w-4xl border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle
-            className="text-3xl tracking-wide text-primary/70"
+            className="font-heading text-3xl tracking-wide text-primary/70"
             style={{ textShadow: 'var(--title-glow)' }}
           >
             Create Your Character
@@ -48,7 +48,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
         <CardContent className="flex flex-col gap-8">
           {/* Character Name */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
               Character Name
             </label>
             <Input
@@ -61,7 +61,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
 
           {/* Gender / Pronouns */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
               Pronouns
             </label>
             <div className="flex gap-2">
@@ -88,7 +88,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
 
           {/* Species Selection */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
               {config.speciesLabel}
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2">
@@ -114,7 +114,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
 
           {/* Class Selection */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
               Class
             </label>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
@@ -160,7 +160,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
           {/* Stat Block Preview */}
           {selectedClass && (
             <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
-              <h4 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              <h4 className="mb-3 font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
                 Character Preview
               </h4>
               <div className="flex flex-col gap-4 text-sm">

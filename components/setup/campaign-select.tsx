@@ -65,7 +65,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
 
       <Card className="w-full max-w-lg border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl tracking-wide text-primary/70" style={{ textShadow: 'var(--title-glow)' }}>
+          <CardTitle className="font-heading text-2xl tracking-wide text-primary/70" style={{ textShadow: 'var(--title-glow)' }}>
             Your Campaigns
           </CardTitle>
           <CardDescription>Continue where you left off, or start something new</CardDescription>
@@ -75,7 +75,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
           {/* Auto-save — current campaign */}
           {autoSave && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Current</p>
+              <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">Current</p>
               <button
                 onClick={() => { track('campaign_continued', { genre: autoSave.meta.genre, chapter: autoSave.meta.chapterNumber }); onContinue() }}
                 className="w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-left transition-all duration-200 hover:border-primary/70 hover:bg-primary/10"
@@ -106,7 +106,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
           {/* Manual save slots */}
           {hasSlots && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Saved Campaigns</p>
+              <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">Saved Campaigns</p>
               <div className="flex flex-col gap-2">
                 {slots.map((slot, i) =>
                   slot ? (
@@ -155,7 +155,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
       {/* Changelog */}
       {changelog.length > 0 && (
         <div className="w-full max-w-lg">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">What's new</p>
+          <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">What's new</p>
           <div className="flex flex-col gap-3">
             {(showOlderUpdates ? changelog : changelog.slice(0, 1)).map((entry, i) => (
               <div key={i} className="rounded-lg border border-border/30 bg-card/40 px-4 py-3">

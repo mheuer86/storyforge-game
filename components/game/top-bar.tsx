@@ -30,7 +30,7 @@ export function TopBar({ chapterTitle, genre = 'space-opera', onMenuClick, onCha
         onClick={onChapterClick}
         className="group flex items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
       >
-        <span style={{ fontFamily: 'var(--font-heading)' }}>{chapterTitle}</span>
+        <span className="font-heading" style={{ color: 'var(--tertiary)' }}>{chapterTitle}</span>
         <span className="text-xs text-muted-foreground transition-colors group-hover:text-primary">
           (view history)
         </span>

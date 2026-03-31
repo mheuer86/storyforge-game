@@ -284,6 +284,34 @@
   to { background-position: 100px 50px, -80px -40px, 30px -20px; }
 }
 
+/* Typography utility classes */
+.font-heading {
+  font-family: var(--font-heading);
+}
+.font-system {
+  font-family: var(--font-system);
+}
+
+/* Tertiary color utilities (for critical hits, chapter titles) */
+.text-tertiary {
+  color: var(--tertiary);
+}
+.border-tertiary {
+  border-color: var(--tertiary);
+}
+.bg-tertiary {
+  background-color: var(--tertiary);
+}
+.dice-crit {
+  border-color: color-mix(in oklch, var(--tertiary) 60%, transparent);
+  background-color: color-mix(in oklch, var(--tertiary) 20%, transparent);
+  color: var(--tertiary);
+}
+.dice-crit-card {
+  border-color: color-mix(in oklch, var(--tertiary) 60%, transparent);
+  background-color: color-mix(in oklch, var(--tertiary) 10%, transparent);
+}
+
 /* Fix: Radix ScrollArea wraps content in display:table which sizes to content.
    Override to block so the wrapper is constrained to the viewport width. */
 [data-radix-scroll-area-viewport] > div {
