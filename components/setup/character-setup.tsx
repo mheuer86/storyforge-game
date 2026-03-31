@@ -97,7 +97,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   key={s.id}
                   onClick={() => setSelectedSpecies(s)}
                   className={cn(
-                    'flex min-w-[160px] flex-col gap-1 rounded-lg border p-3 transition-all duration-200',
+                    'flex min-w-[160px] flex-col gap-1 rounded-lg border p-3 text-left transition-all duration-200',
                     selectedSpecies?.id === s.id
                       ? 'border-primary bg-primary/10 shadow-[0_0_15px_-3px] shadow-primary/30'
                       : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-secondary/50'
