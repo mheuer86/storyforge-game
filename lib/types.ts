@@ -56,6 +56,7 @@ export interface CharacterState {
   tempModifiers: TempModifier[]
   traits: Trait[]
   skillPoints: SkillPoints
+  inspiration: boolean
 }
 
 export interface Faction {
@@ -284,6 +285,7 @@ export interface UpdateCharacterInput {
   levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
   addProficiency?: string
   upgradeToExpertise?: string
+  spendInspiration?: boolean
 }
 
 export interface RequestRollInput {
