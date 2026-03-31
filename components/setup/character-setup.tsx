@@ -38,7 +38,7 @@ function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
             'object-cover transition-all duration-500',
             isSelected ? 'grayscale-0 opacity-100' : 'grayscale opacity-50 group-hover/species:grayscale-0 group-hover/species:opacity-80'
           )}
-          sizes="170px"
+          sizes="200px"
         />
       ) : (
         <div className={cn(
@@ -130,7 +130,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   'px-4 py-1.5 text-xs font-medium transition-all',
                   selectedGender === opt.value
                     ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/10'
+                    : 'text-foreground/50 hover:text-foreground/70 hover:bg-secondary/10'
                 )}
               >
                 {opt.label}
@@ -154,7 +154,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                 <button
                   key={s.id}
                   onClick={() => setSelectedSpecies(s)}
-                  className="snap-start min-w-[170px] w-[170px] shrink-0 group/species text-left"
+                  className="snap-start min-w-[200px] w-[200px] shrink-0 group/species text-left"
                 >
                   {/* Portrait area — 3:4 aspect like the mock */}
                   <SpeciesPortrait
@@ -163,7 +163,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                     speciesName={s.name}
                     isSelected={isSelected}
                   />
-                  <p className="text-xs text-muted-foreground/50 leading-relaxed px-1">{s.description}</p>
+                  <p className="text-xs text-foreground/50 leading-relaxed px-1">{s.description}</p>
                 </button>
               )
             })}
@@ -197,8 +197,8 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                       <span className="text-primary text-xs">✓</span>
                     </div>
                   )}
-                  <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/80">{c.name}</div>
-                  <div className="text-[11px] text-muted-foreground/50 leading-snug">{c.concept}</div>
+                  <div className="text-sm font-medium text-foreground">{c.name}</div>
+                  <div className="text-xs text-foreground/50 leading-snug">{c.concept}</div>
                 </button>
               )
             })}
@@ -283,7 +283,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               {/* Class trait */}
               <div className="border-l-2 border-primary/30 pl-4">
                 <div className="text-sm font-medium text-primary/80">{selectedClass.trait.name}</div>
-                <div className="mt-1 text-xs text-muted-foreground/50 leading-relaxed">{selectedClass.trait.description}</div>
+                <div className="mt-1 text-xs text-foreground/50 leading-relaxed">{selectedClass.trait.description}</div>
               </div>
             </div>
           </div>
