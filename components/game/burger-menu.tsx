@@ -224,6 +224,14 @@ export function BurgerMenu({
                 Start new campaign
               </button>
             )}
+            <a
+              href="https://www.paypal.me/MartinHeuer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-center text-[11px] text-muted-foreground/40 hover:text-primary/60 transition-colors"
+            >
+              Every hero needs a patron. Fund the next chapter&nbsp;→
+            </a>
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -910,6 +918,20 @@ function ChaptersPanel({
                   </ul>
                 </div>
               )}
+              <div className="mt-2 rounded border border-border/20 bg-secondary/20 px-3 py-2.5 text-center">
+                <p className="text-xs text-muted-foreground">
+                  The forge burns real fuel. If this story&apos;s worth telling, keep the fires lit.
+                </p>
+                <a
+                  href="https://www.paypal.me/MartinHeuer"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1.5 inline-block text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  style={{ textShadow: 'var(--title-glow)' }}
+                >
+                  Buy the forgemaster a drink&nbsp;→
+                </a>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
