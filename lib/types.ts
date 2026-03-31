@@ -290,6 +290,7 @@ export interface UpdateCharacterInput {
   tempModifierRemove?: string
   traitUpdate?: { name: string; usesRemaining: number }
   levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
+  statIncrease?: { stat: string; amount: number }[]
   addProficiency?: string
   upgradeToExpertise?: string
   spendInspiration?: boolean
