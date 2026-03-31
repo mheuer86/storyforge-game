@@ -444,7 +444,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
           <h2 className="font-heading text-lg font-semibold text-foreground">{isCyberpunk ? 'Tech Rig' : ship.name}</h2>
           <div className="mt-2">
             <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{conditionLabel}</span>
+              <span className="text-foreground/50">{conditionLabel}</span>
               <span className={hullColor}>{s.hullCondition}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/40">
@@ -460,7 +460,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
               <div key={sys.id} className="flex items-start gap-3 rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-foreground">{sys.name}</div>
-                  <div className="break-words text-xs text-muted-foreground">{sys.description}</div>
+                  <div className="break-words text-xs text-foreground/60">{sys.description}</div>
                 </div>
                 <Badge
                   variant={sys.level >= 3 ? 'default' : sys.level === 2 ? 'secondary' : 'outline'}
@@ -495,7 +495,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
               ))}
             </ul>
           ) : (
-            <p className="italic text-muted-foreground">No upgrades yet</p>
+            <p className="italic text-foreground/30">No upgrades yet</p>
           )}
         </div>
       </div>
@@ -506,7 +506,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
     <div className="flex flex-col gap-4 text-sm">
       <div>
         <h2 className="font-heading text-lg font-semibold text-foreground">{partyBaseName}</h2>
-        <p className="mt-2 italic text-muted-foreground">
+        <p className="mt-2 italic text-foreground/30">
           Not yet established. As your story unfolds, the GM will introduce a place to call your own.
         </p>
       </div>
@@ -558,12 +558,12 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.companions.map((c, i) => (
                   <div key={`${i}-${c.name}`} className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.description}</div>
+                    <div className="text-xs text-foreground/60">{c.description}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No companions yet</p>
+              <p className="italic text-foreground/30">No companions yet</p>
             )}
           </div>
 
@@ -575,14 +575,14 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.npcs.filter((n) => !isVessel(n)).map((npc, i) => (
                   <div key={`${i}-${npc.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{npc.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-foreground/60">
                       {npc.description} ({npc.lastSeen})
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No one encountered yet</p>
+              <p className="italic text-foreground/30">No one encountered yet</p>
             )}
           </div>
 
@@ -594,12 +594,12 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.factions.map((faction, i) => (
                   <div key={`${i}-${faction.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{faction.name}</div>
-                    <div className="text-xs text-muted-foreground">{faction.stance}</div>
+                    <div className="text-xs text-foreground/60">{faction.stance}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No factions encountered</p>
+              <p className="italic text-foreground/30">No factions encountered</p>
             )}
           </div>
 
@@ -615,9 +615,9 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                       <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{world.antagonist.description}</div>
+                  <div className="mt-0.5 text-xs text-foreground/60">{world.antagonist.description}</div>
                   <div className="mt-1 text-xs text-foreground">
-                    <span className="text-muted-foreground">Agenda: </span>
+                    <span className="text-foreground/40">Agenda: </span>
                     {world.antagonist.agenda}
                   </div>
                 </div>
@@ -627,7 +627,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                     <div className="flex flex-col gap-1">
                       {world.antagonist.moves.map((move, i) => (
                         <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
-                          <span className="text-muted-foreground">Ch. {move.chapterNumber}: </span>
+                          <span className="text-foreground/40">Ch. {move.chapterNumber}: </span>
                           <span className="text-foreground">{move.description}</span>
                         </div>
                       ))}
@@ -636,7 +636,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 )}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">Not yet identified</p>
+              <p className="italic text-foreground/30">Not yet identified</p>
             )}
           </div>
         </>
@@ -653,12 +653,12 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {activeThreads.map((thread, i) => (
                   <div key={`${i}-${thread.title}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{thread.title}</div>
-                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                    <div className="text-xs text-foreground/50">{thread.status}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No active threads</p>
+              <p className="italic text-foreground/30">No active threads</p>
             )}
           </div>
 
@@ -682,14 +682,14 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                         {triggeredClocks.map((clock) => (
                           <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
                             <div className="font-medium text-foreground">{clock.name}</div>
-                            <div className="text-xs text-muted-foreground">{clock.triggerEffect}</div>
+                            <div className="text-xs text-foreground/60">{clock.triggerEffect}</div>
                           </div>
                         ))}
                       </>
                     )}
                   </div>
                 ) : (
-                  <p className="italic text-muted-foreground">No active pressures</p>
+                  <p className="italic text-foreground/30">No active pressures</p>
                 )}
               </div>
             )
@@ -713,12 +713,12 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                     )}
                   >
                     <div className="font-medium text-foreground">{promise.to}</div>
-                    <div className="text-xs text-muted-foreground">{promise.what}</div>
+                    <div className="text-xs text-foreground/60">{promise.what}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No promises made yet</p>
+              <p className="italic text-foreground/30">No promises made yet</p>
             )}
           </div>
 
@@ -730,7 +730,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.threads.filter((t) => t.status === 'resolved').map((thread, i) => (
                   <div key={`${i}-${thread.title}`} className="rounded border border-border/20 bg-secondary/10 px-3 py-2 opacity-60">
                     <div className="font-medium text-foreground">{thread.title}</div>
-                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                    <div className="text-xs text-foreground/50">{thread.status}</div>
                   </div>
                 ))}
               </div>
@@ -747,7 +747,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             <SectionLabel>Current Location</SectionLabel>
             <div className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
               <div className="font-medium text-foreground">{world.location.name}</div>
-              <div className="text-xs text-muted-foreground">{world.location.description}</div>
+              <div className="text-xs text-foreground/60">{world.location.description}</div>
             </div>
           </div>
 
@@ -759,7 +759,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.npcs.filter(isVessel).map((v, i) => (
                   <div key={`${i}-${v.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{v.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-foreground/60">
                       {v.description} ({v.lastSeen})
                     </div>
                   </div>
@@ -812,7 +812,7 @@ function ChaptersPanel({
 
             {expandedChapter === chapter.number && (
               <div className="border-t border-border/30 p-3">
-                <p className="mb-3 text-sm text-muted-foreground">{chapter.summary}</p>
+                <p className="mb-3 text-sm text-foreground/60">{chapter.summary}</p>
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
