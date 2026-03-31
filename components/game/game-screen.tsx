@@ -66,6 +66,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
   const [rollPrompt, setRollPrompt] = useState<RollPrompt | null>(null)
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string } | null>(null)
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
   const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
   const [diceDisplay, setDiceDisplay] = useState(1)
   const [diceDisplay2, setDiceDisplay2] = useState(1)
@@ -607,6 +608,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             const event = JSON.parse(line) as StreamEvent
 
             if (event.type === 'text') {
+              setRetryCountdown(null)
               gmText += event.content
               setMessages((prev) =>
                 prev.map((m) => (m.id === gmMsgId ? { ...m, content: gmText } : m))
@@ -654,6 +656,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             }
 
             if (event.type === 'done') {
+              setRetryCountdown(null)
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
               const finalState = {
                 ...stateWithChanges,
@@ -673,7 +676,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               onDone(finalState, statChanges)
             }
 
+            if (event.type === 'retrying') {
+              const totalSeconds = Math.ceil(event.delayMs / 1000)
+              setRetryCountdown(totalSeconds)
+              // Clear the GM message while retrying
+              setMessages((prev) =>
+                prev.map((m) => (m.id === gmMsgId ? { ...m, content: '' } : m))
+              )
+              gmText = ''
+              // Tick down every second
+              const interval = setInterval(() => {
+                setRetryCountdown((prev) => {
+                  if (prev === null || prev <= 1) { clearInterval(interval); return null }
+                  return prev - 1
+                })
+              }, 1000)
+            }
+
             if (event.type === 'error') {
+              setRetryCountdown(null)
               onError(event.message)
             }
           } catch {
@@ -1071,11 +1092,20 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               })}
               {isLoading && (
                 <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 px-4 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0s]" />
-                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.15s]" />
-                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.3s]" />
-                  </div>
+                  {retryCountdown !== null ? (
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-warning" />
+                      <span className="text-sm text-muted-foreground">
+                        Claude is taking a break — retrying in <span className="font-mono font-medium text-foreground">{retryCountdown}s</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0s]" />
+                      <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.15s]" />
+                      <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0.3s]" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

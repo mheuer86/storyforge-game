@@ -250,6 +250,7 @@ export type StreamEvent =
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
+  | { type: 'retrying'; delayMs: number; reason: string }
   | { type: 'error'; message: string }
 
 export interface RollResolution {

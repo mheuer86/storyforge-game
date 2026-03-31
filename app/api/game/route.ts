@@ -9,7 +9,7 @@ const client = new Anthropic()
 const MODEL = process.env.STORYFORGE_MODEL || 'claude-sonnet-4-6'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 90
 
 const requestSchema = z.object({
   message: z.string().max(2000),
@@ -53,6 +53,19 @@ function rollResultText(roll: number, modifier: number, dc: number, result: Roll
   if (result === 'fumble') return `Natural 1! Fumble${advNote}. Total: ${total} vs DC ${dc}. Failure with complication.`
   if (result === 'success') return `Success${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}.`
   return `Failure${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}. Apply the "fail with a cost" rule.`
+}
+
+const RETRY_DELAY_MS = 12_000
+
+function isOverloaded(error: unknown): boolean {
+  if (error instanceof Anthropic.APIError) {
+    return error.status === 529 || error.status === 503 || error.status === 502
+  }
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase()
+    return msg.includes('overload') || msg.includes('529') || msg.includes('503')
+  }
+  return false
 }
 
 export async function POST(req: NextRequest) {
@@ -230,9 +243,84 @@ export async function POST(req: NextRequest) {
         send({ type: 'done' })
         controller.close()
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error'
-        send({ type: 'error', message })
-        controller.close()
+        if (isOverloaded(error)) {
+          send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+          try {
+            // Rebuild and retry once
+            const [staticRetry, dynamicRetry] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
+            const retrySystem: Anthropic.TextBlockParam[] = [
+              { type: 'text', text: staticRetry, cache_control: { type: 'ephemeral' } },
+              { type: 'text', text: dynamicRetry },
+            ]
+            const retryMessages = rollResolution
+              ? [
+                  ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
+                  { role: 'user' as const, content: [{ type: 'tool_result' as const, tool_use_id: rollResolution.toolUseId, content: rollResultText(rollResolution.roll, rollResolution.modifier, rollResolution.dc, resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.dc), rollResolution.advantage, rollResolution.rawRolls) }] },
+                ]
+              : buildMessagesForClaude(gameState, isInitial ? buildInitialMessage(gameState) : message, isMetaQuestion)
+
+            const retryToolResults: ToolCallResult[] = []
+            let retryConv = retryMessages as Anthropic.MessageParam[]
+
+            for (let r = 0; r < 5; r++) {
+              const s = await client.messages.stream({
+                model: MODEL,
+                max_tokens: 2048,
+                system: retrySystem,
+                tools: gameTools,
+                messages: retryConv,
+              })
+
+              for await (const event of s) {
+                if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                  send({ type: 'text', content: event.delta.text })
+                }
+              }
+
+              const msg = await s.finalMessage()
+              const toolCalls = msg.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+
+              if (msg.stop_reason !== 'tool_use' || toolCalls.length === 0) break
+
+              let hitRoll = false
+              const toolResults: Anthropic.ToolResultBlockParam[] = []
+              for (const tc of toolCalls) {
+                if (tc.name === 'request_roll') {
+                  const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
+                  if (retryToolResults.length > 0) send({ type: 'tools', results: retryToolResults })
+                  send({ type: 'roll_prompt', check: input.checkType, stat: input.stat, dc: input.dc, modifier: input.modifier, reason: input.reason, toolUseId: tc.id, pendingMessages: [...retryConv, { role: 'assistant' as const, content: msg.content }], ...(input.advantage && { advantage: input.advantage }) })
+                  send({ type: 'done' })
+                  controller.close()
+                  hitRoll = true
+                  return
+                }
+                retryToolResults.push({ tool: tc.name, input: tc.input as Record<string, unknown> })
+                toolResults.push({ type: 'tool_result', tool_use_id: tc.id, content: 'OK' })
+              }
+              if (hitRoll) return
+
+              retryConv = [...retryConv, { role: 'assistant' as const, content: msg.content }, { role: 'user' as const, content: toolResults }]
+            }
+
+            if (rollResolution) {
+              const result = resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.dc)
+              retryToolResults.push({ tool: '_roll_record', input: { id: Date.now().toString(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
+            }
+
+            if (retryToolResults.length > 0) send({ type: 'tools', results: retryToolResults })
+            send({ type: 'done' })
+            controller.close()
+          } catch (retryError) {
+            const retryMsg = retryError instanceof Error ? retryError.message : 'Unknown error'
+            send({ type: 'error', message: retryMsg })
+            controller.close()
+          }
+        } else {
+          const message = error instanceof Error ? error.message : 'Unknown error'
+          send({ type: 'error', message })
+          controller.close()
+        }
       }
     },
   })
