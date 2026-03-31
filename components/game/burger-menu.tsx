@@ -779,7 +779,7 @@ function ChaptersPanel({
               className="flex w-full items-center justify-between p-3 text-left"
             >
               <div>
-                <div className="font-medium text-foreground">{chapter.title}</div>
+                <div className="font-heading font-medium text-foreground">{chapter.title}</div>
                 <Badge
                   variant={chapter.status === 'complete' ? 'secondary' : 'outline'}
                   className={cn(
