@@ -805,7 +805,7 @@ const cyberpunkTheme: GenreTheme = {
   secondaryForeground: 'oklch(0.82 0.01 80)',
   muted: 'oklch(0.14 0.01 260)',
   mutedForeground: 'oklch(0.50 0.01 80)',
-  accent: 'oklch(0.65 0.25 330)',
+  accent: 'oklch(0.75 0.22 145)',
   accentForeground: 'oklch(0.09 0.02 260)',
   destructive: 'oklch(0.55 0.22 25)',
   border: 'oklch(0.22 0.03 260)',
