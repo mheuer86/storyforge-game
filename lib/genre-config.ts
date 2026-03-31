@@ -270,7 +270,7 @@ const spaceOperaClasses: CharacterClass[] = [
 const spaceOperaTheme: GenreTheme = {
   logo: '/storyforge_logo.png',
   fontNarrative: "'Geist Mono', monospace",
-  fontHeading: "var(--font-space-grotesk), 'Space Grotesk', sans-serif",
+  fontHeading: "var(--font-space-grotesk), sans-serif",
   fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.11 0.025 260)',
   foreground: 'oklch(0.92 0.02 250)',
@@ -793,7 +793,7 @@ const cyberpunkClasses: CharacterClass[] = [
 const cyberpunkTheme: GenreTheme = {
   logo: '/logo_cyberpunk.png',
   fontNarrative: "'Geist Mono', monospace",
-  fontHeading: "var(--font-space-grotesk), 'Space Grotesk', sans-serif",
+  fontHeading: "var(--font-space-grotesk), sans-serif",
   fontSystem: "'Geist Mono', monospace",
   background: 'oklch(0.09 0.02 260)',
   foreground: 'oklch(0.90 0.01 80)',
@@ -815,7 +815,7 @@ const cyberpunkTheme: GenreTheme = {
   meta: 'oklch(0.55 0.08 220)',
   success: 'oklch(0.65 0.18 145)',
   warning: 'oklch(0.75 0.15 85)',
-  tertiary: 'oklch(0.65 0.25 330)',
+  tertiary: 'oklch(0.78 0.12 85)',
   tertiaryForeground: 'oklch(0.09 0.02 260)',
   titleGlow: '0 0 40px oklch(0.75 0.22 145 / 0.8), 0 0 80px oklch(0.75 0.22 145 / 0.4)',
   actionGlow: '0 0 0 1px rgba(80,220,120,0.2), 0 0 15px -3px rgba(80,220,120,0.15)',
@@ -1220,6 +1220,8 @@ export function getGenreConfig(genre: Genre): GenreConfig {
 export function applyGenreTheme(genre: Genre): void {
   const theme = getGenreConfig(genre).theme
   const root = document.documentElement
+  // Font vars also go on body where next/font CSS variables are defined
+  const bodyEl = document.body
 
   root.style.setProperty('--background', theme.background)
   root.style.setProperty('--foreground', theme.foreground)
@@ -1248,9 +1250,9 @@ export function applyGenreTheme(genre: Genre): void {
   root.style.setProperty('--scrollbar-thumb-hover', theme.scrollbarThumbHover)
   root.style.setProperty('--tertiary', theme.tertiary)
   root.style.setProperty('--tertiary-foreground', theme.tertiaryForeground)
-  root.style.setProperty('--font-narrative', theme.fontNarrative)
-  root.style.setProperty('--font-heading', theme.fontHeading)
-  root.style.setProperty('--font-system', theme.fontSystem)
+  bodyEl.style.setProperty('--font-narrative', theme.fontNarrative)
+  bodyEl.style.setProperty('--font-heading', theme.fontHeading)
+  bodyEl.style.setProperty('--font-system', theme.fontSystem)
   root.dataset.genre = genre
 
   // Toggle background effect classes
