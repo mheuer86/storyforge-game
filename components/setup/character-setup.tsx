@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
 import {
@@ -9,6 +10,51 @@ import {
 } from '@/lib/game-data'
 import { getGenreConfig, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import { WizardNav } from './wizard-nav'
+
+// Portrait paths: /portraits/{genre}/{species-id}.png
+// Falls back to letter placeholder if image doesn't exist
+const PORTRAIT_GENRES = new Set(['space-opera', 'fantasy', 'cyberpunk', 'grimdark'])
+
+function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
+  genre: Genre
+  speciesId: string
+  speciesName: string
+  isSelected: boolean
+}) {
+  const hasPortrait = PORTRAIT_GENRES.has(genre)
+  return (
+    <div className={cn(
+      'relative aspect-[3/4] rounded-xl overflow-hidden mb-3 border transition-all duration-300',
+      isSelected
+        ? 'border-primary/40'
+        : 'border-border/10 group-hover/species:border-primary/30'
+    )}>
+      {hasPortrait ? (
+        <Image
+          src={`/portraits/${genre}/${speciesId}.png`}
+          alt={speciesName}
+          fill
+          className={cn(
+            'object-cover transition-all duration-500',
+            isSelected ? 'grayscale-0 opacity-100' : 'grayscale opacity-50 group-hover/species:grayscale-0 group-hover/species:opacity-80'
+          )}
+          sizes="140px"
+        />
+      ) : (
+        <div className={cn(
+          'flex items-center justify-center w-full h-full text-3xl font-mono font-bold transition-colors',
+          isSelected ? 'bg-primary/10 text-primary' : 'bg-secondary/8 text-muted-foreground/15'
+        )}>
+          {speciesName[0]}
+        </div>
+      )}
+      {/* Name overlay at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/80 to-transparent">
+        <p className="text-[10px] font-bold tracking-wide uppercase text-foreground">{speciesName}</p>
+      </div>
+    </div>
+  )
+}
 
 interface CharacterSetupProps {
   genre: Genre
@@ -111,23 +157,12 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   className="snap-start min-w-[140px] w-[140px] shrink-0 group/species text-left"
                 >
                   {/* Portrait area — 3:4 aspect like the mock */}
-                  <div className={cn(
-                    'relative aspect-[3/4] rounded-xl overflow-hidden mb-3 border transition-all duration-300',
-                    isSelected
-                      ? 'border-primary/40'
-                      : 'border-border/10 group-hover/species:border-primary/30'
-                  )}>
-                    <div className={cn(
-                      'flex items-center justify-center w-full h-full text-3xl font-mono font-bold transition-colors',
-                      isSelected ? 'bg-primary/10 text-primary' : 'bg-secondary/8 text-muted-foreground/15'
-                    )}>
-                      {s.name[0]}
-                    </div>
-                    {/* Name overlay at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/80 to-transparent">
-                      <p className="text-[10px] font-bold tracking-wide uppercase text-foreground">{s.name}</p>
-                    </div>
-                  </div>
+                  <SpeciesPortrait
+                    genre={genre}
+                    speciesId={s.id}
+                    speciesName={s.name}
+                    isSelected={isSelected}
+                  />
                   <p className="text-xs text-muted-foreground/50 leading-relaxed px-1">{s.description}</p>
                 </button>
               )
