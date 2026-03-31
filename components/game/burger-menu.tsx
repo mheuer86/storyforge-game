@@ -156,9 +156,11 @@ export function BurgerMenu({
                 <TabsTrigger value="character" className="shrink-0 text-xs">
                   Character
                 </TabsTrigger>
-                <TabsTrigger value="ship" className="shrink-0 text-xs">
-                  {genre === 'cyberpunk' ? 'Rig' : genre === 'space-opera' ? 'Ship' : genreConfig.partyBaseName}
-                </TabsTrigger>
+                {ship.state && (
+                  <TabsTrigger value="ship" className="shrink-0 text-xs">
+                    {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="world" className="shrink-0 text-xs">
                   World
                 </TabsTrigger>
@@ -501,208 +503,51 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 }
 
 function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: string }) {
-  const [view, setView] = useState<'now' | 'all'>('now')
+  const [subtab, setSubtab] = useState<'people' | 'narrative' | 'locations'>('people')
 
+  const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
   const activeThreads = world.threads.filter((t) => t.status !== 'resolved')
   const openPromises = world.promises.filter((p) => p.status === 'open')
 
-  const locationName = world.location.name.toLowerCase()
-  const inScene = (lastSeen: string) => lastSeen.toLowerCase().includes(locationName) || locationName.includes(lastSeen.toLowerCase())
-  const companionsHere = world.companions.filter((c) => inScene(c.lastSeen))
-  const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
-  const npcsHere = world.npcs.filter((n) => inScene(n.lastSeen) && !isVessel(n))
-  const vesselsHere = world.npcs.filter((n) => inScene(n.lastSeen) && isVessel(n))
-
   return (
     <div className="flex flex-col gap-4 text-sm">
-      {/* Sub-tab toggle */}
+      {/* Subtab toggle */}
       <div className="flex rounded-lg border border-border/40 bg-secondary/20 p-0.5">
-        <button
-          onClick={() => setView('now')}
-          className={cn(
-            'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-            view === 'now'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Now
-        </button>
-        <button
-          onClick={() => setView('all')}
-          className={cn(
-            'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-            view === 'all'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          All
-        </button>
+        {(['people', 'narrative', 'locations'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setSubtab(tab)}
+            className={cn(
+              'flex-1 rounded-md px-3 py-1.5 text-xs font-medium font-heading uppercase tracking-wider transition-all',
+              subtab === tab
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {view === 'now' && (
+      {/* ── People ── */}
+      {subtab === 'people' && (
         <>
-          {/* Location */}
+          {/* Companions */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Current Location</h3>
-            <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-              <div className="font-medium text-foreground">{world.location.name}</div>
-              <div className="text-xs text-muted-foreground">{world.location.description}</div>
-            </div>
-          </div>
-
-          {/* Companions in scene */}
-          {companionsHere.length > 0 && (
-            <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
+            {world.companions.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {companionsHere.map((c, i) => (
+                {world.companions.map((c, i) => (
                   <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
                     <div className="font-medium text-foreground">{c.name}</div>
                     <div className="text-xs text-muted-foreground">{c.description}</div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* NPCs in scene */}
-          {npcsHere.length > 0 && (
-            <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Present</h3>
-              <div className="flex flex-col gap-2">
-                {npcsHere.map((npc, i) => (
-                  <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                    <div className="font-medium text-foreground">{npc.name}</div>
-                    <div className="text-xs text-muted-foreground">{npc.description}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Vessels / installations in scene */}
-          {vesselsHere.length > 0 && (
-            <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
-              <div className="flex flex-col gap-2">
-                {vesselsHere.map((v, i) => (
-                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                    <div className="font-medium text-foreground">{v.name}</div>
-                    <div className="text-xs text-muted-foreground">{v.description}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Pressures */}
-          {(() => {
-            const activeClocks = world.tensionClocks.filter((c) => c.status === 'active')
-            const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
-            if (activeClocks.length === 0 && triggeredClocks.length === 0) return null
-            return (
-              <div>
-                <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Pressures</h3>
-                <div className="flex flex-col gap-2">
-                  {activeClocks.map((clock) => (
-                    <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
-                      <div className="font-medium text-foreground">{clock.name}</div>
-                    </div>
-                  ))}
-                  {triggeredClocks.length > 0 && (
-                    <>
-                      <h4 className="mt-1 text-xs uppercase text-muted-foreground">Consequences</h4>
-                      {triggeredClocks.map((clock) => (
-                        <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
-                          <div className="font-medium text-foreground">{clock.name}</div>
-                          <div className="text-xs text-muted-foreground">{clock.triggerEffect}</div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })()}
-
-          {/* Active Threads */}
-          <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Active Threads</h3>
-            {activeThreads.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {activeThreads.map((thread, i) => (
-                  <div
-                    key={`${i}-${thread.title}`}
-                    className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{thread.title}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">{thread.status}</div>
-                  </div>
-                ))}
-              </div>
             ) : (
-              <p className="italic text-muted-foreground">No active threads</p>
+              <p className="italic text-muted-foreground">No companions yet</p>
             )}
           </div>
-
-          {/* Open Promises */}
-          <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Open Promises</h3>
-            {openPromises.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {openPromises.map((promise, i) => (
-                  <div key={i} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
-                    <div className="font-medium text-foreground">{promise.to}</div>
-                    <div className="text-xs text-muted-foreground">{promise.what}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="italic text-muted-foreground">No open promises</p>
-            )}
-          </div>
-        </>
-      )}
-
-      {view === 'all' && (
-        <>
-          {/* Factions */}
-          <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Known Factions</h3>
-            {world.factions.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {world.factions.map((faction, i) => (
-                  <div key={`${i}-${faction.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                    <div className="font-medium text-foreground">{faction.name}</div>
-                    <div className="text-xs text-muted-foreground">{faction.stance}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="italic text-muted-foreground">No factions encountered</p>
-            )}
-          </div>
-
-          {/* Companions */}
-          {world.companions.length > 0 && (
-            <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
-              <div className="flex flex-col gap-2">
-                {world.companions.map((c, i) => (
-                  <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
-                    <div className="font-medium text-foreground">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {c.description} · {c.lastSeen}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* NPCs */}
           <div>
@@ -719,79 +564,30 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No NPCs encountered</p>
+              <p className="italic text-muted-foreground">No one encountered yet</p>
             )}
           </div>
 
-          {/* Vessels & Installations */}
-          {world.npcs.filter(isVessel).length > 0 && (
-            <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
-              <div className="flex flex-col gap-2">
-                {world.npcs.filter(isVessel).map((v, i) => (
-                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-                    <div className="font-medium text-foreground">{v.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {v.description} ({v.lastSeen})
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* All Threads */}
+          {/* Factions */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">All Threads</h3>
-            {world.threads.length > 0 ? (
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Factions</h3>
+            {world.factions.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {world.threads.map((thread, i) => (
-                  <div
-                    key={`${i}-${thread.title}`}
-                    className="rounded border border-border/30 bg-secondary/20 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{thread.title}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                {world.factions.map((faction, i) => (
+                  <div key={`${i}-${faction.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{faction.name}</div>
+                    <div className="text-xs text-muted-foreground">{faction.stance}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="italic text-muted-foreground">No threads yet</p>
-            )}
-          </div>
-
-          {/* All Promises */}
-          <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Promises & Debts</h3>
-            {world.promises.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {world.promises.map((promise, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'rounded px-3 py-2',
-                      promise.status === 'open'
-                        ? 'border border-warning/30 bg-warning/5'
-                        : promise.status === 'fulfilled'
-                        ? 'border border-success/30 bg-success/5'
-                        : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'
-                    )}
-                  >
-                    <div className="font-medium text-foreground">{promise.to}</div>
-                    <div className="text-xs text-muted-foreground">{promise.what}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="italic text-muted-foreground">No promises made yet</p>
+              <p className="italic text-muted-foreground">No factions encountered</p>
             )}
           </div>
 
           {/* Antagonist */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Primary Antagonist</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Antagonist</h3>
             {world.antagonist ? (
               <div className="flex flex-col gap-2">
                 <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
@@ -825,6 +621,134 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
               <p className="italic text-muted-foreground">Not yet identified</p>
             )}
           </div>
+        </>
+      )}
+
+      {/* ── Narrative ── */}
+      {subtab === 'narrative' && (
+        <>
+          {/* Threads */}
+          <div>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Active Threads</h3>
+            {activeThreads.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {activeThreads.map((thread, i) => (
+                  <div key={`${i}-${thread.title}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{thread.title}</div>
+                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No active threads</p>
+            )}
+          </div>
+
+          {/* Pressures */}
+          {(() => {
+            const activeClocks = world.tensionClocks.filter((c) => c.status === 'active')
+            const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
+            return (
+              <div>
+                <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Pressures</h3>
+                {activeClocks.length > 0 || triggeredClocks.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {activeClocks.map((clock) => (
+                      <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
+                        <div className="font-medium text-foreground">{clock.name}</div>
+                      </div>
+                    ))}
+                    {triggeredClocks.length > 0 && (
+                      <>
+                        <h4 className="mt-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Consequences</h4>
+                        {triggeredClocks.map((clock) => (
+                          <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
+                            <div className="font-medium text-foreground">{clock.name}</div>
+                            <div className="text-xs text-muted-foreground">{clock.triggerEffect}</div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <p className="italic text-muted-foreground">No active pressures</p>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Promises */}
+          <div>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Promises & Debts</h3>
+            {world.promises.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {world.promises.map((promise, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'rounded px-3 py-2',
+                      promise.status === 'open'
+                        ? 'border border-warning/30 bg-warning/5'
+                        : promise.status === 'fulfilled'
+                        ? 'border border-success/30 bg-success/5'
+                        : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'
+                    )}
+                  >
+                    <div className="font-medium text-foreground">{promise.to}</div>
+                    <div className="text-xs text-muted-foreground">{promise.what}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-muted-foreground">No promises made yet</p>
+            )}
+          </div>
+
+          {/* Resolved Threads */}
+          {world.threads.filter((t) => t.status === 'resolved').length > 0 && (
+            <div>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Resolved Threads</h3>
+              <div className="flex flex-col gap-2">
+                {world.threads.filter((t) => t.status === 'resolved').map((thread, i) => (
+                  <div key={`${i}-${thread.title}`} className="rounded border border-border/20 bg-secondary/10 px-3 py-2 opacity-60">
+                    <div className="font-medium text-foreground">{thread.title}</div>
+                    <div className="text-xs text-muted-foreground">{thread.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Locations ── */}
+      {subtab === 'locations' && (
+        <>
+          {/* Current Location */}
+          <div>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Current Location</h3>
+            <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+              <div className="font-medium text-foreground">{world.location.name}</div>
+              <div className="text-xs text-muted-foreground">{world.location.description}</div>
+            </div>
+          </div>
+
+          {/* Vessels & Installations */}
+          {world.npcs.filter(isVessel).length > 0 && (
+            <div>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
+              <div className="flex flex-col gap-2">
+                {world.npcs.filter(isVessel).map((v, i) => (
+                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                    <div className="font-medium text-foreground">{v.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {v.description} ({v.lastSeen})
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
