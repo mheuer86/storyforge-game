@@ -1136,14 +1136,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   !isKept && hasAdv ? 'border-border/30 bg-card/20 text-muted-foreground/40 line-through' :
                   displayVal === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
                   displayVal === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
-                  (result === 'success' || result === 'critical') ? 'border-primary/60 bg-primary/20 text-primary' :
+                  (result === 'success' || result === 'critical') ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400' :
                   'border-orange-400/60 bg-orange-400/20 text-orange-400',
                 ].join(' ')
                 return (
                   <div className={[
                     'rounded-lg border px-6 py-4 transition-all duration-500',
                     dicePhase === 'revealed' && result === 'critical' ? 'border-yellow-400/60 bg-yellow-400/10'
-                    : dicePhase === 'revealed' && result === 'success' ? 'border-primary/60 bg-primary/10'
+                    : dicePhase === 'revealed' && result === 'success' ? 'border-emerald-400/60 bg-emerald-400/10'
                     : dicePhase === 'revealed' && result === 'fumble' ? 'border-red-500/60 bg-red-500/10'
                     : dicePhase === 'revealed' ? 'border-orange-400/60 bg-orange-400/10'
                     : 'border-border/50 bg-card/50',
@@ -1164,7 +1164,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                             {' '}
                             <span className={
                               result === 'critical' ? 'text-yellow-400 font-bold' :
-                              result === 'success' ? 'text-primary font-bold' :
+                              result === 'success' ? 'text-emerald-400 font-bold' :
                               result === 'fumble' ? 'text-red-400 font-bold' :
                               'text-orange-400 font-bold'
                             }>
@@ -1273,7 +1273,7 @@ function RollBadge({
   const cardClass = isCrit
     ? 'border-yellow-400/60 bg-yellow-400/10'
     : isSuccess
-    ? 'border-primary/60 bg-primary/10'
+    ? 'border-emerald-400/60 bg-emerald-400/10'
     : isFumble
     ? 'border-red-500/60 bg-red-500/10'
     : 'border-orange-400/60 bg-orange-400/10'
@@ -1281,7 +1281,7 @@ function RollBadge({
   const labelClass = isCrit
     ? 'text-yellow-400 font-bold'
     : isSuccess
-    ? 'text-primary font-bold'
+    ? 'text-emerald-400 font-bold'
     : isFumble
     ? 'text-red-400 font-bold'
     : 'text-orange-400 font-bold'
@@ -1289,7 +1289,7 @@ function RollBadge({
   const keptDieClass = isCrit
     ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300'
     : isSuccess
-    ? 'border-primary/60 bg-primary/20 text-primary'
+    ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400'
     : isFumble
     ? 'border-red-500/60 bg-red-500/20 text-red-400'
     : 'border-orange-400/60 bg-orange-400/20 text-orange-400'

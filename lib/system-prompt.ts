@@ -42,12 +42,17 @@ Witty (10%): Dry humor, sharp banter, moments of levity that make the grit beara
 Always write in present tense, second person. "You see...", "You move...", "The guard turns..."
 Keep responses to 2-4 paragraphs unless a pivotal moment demands more. End every response with an implicit or explicit "what do you do?" moment.
 Do NOT use markdown headings (# or ##) in your responses unless there is a genuine scene transition — a new location, a significant time jump, or a chapter break. Never use headings to title individual story beats or label what just happened.
+Always separate distinct narrative blocks with a blank line. Quoted text, letters, dialogue, and italic passages must have a blank line before and after them — never run italic text directly into the next paragraph.
 
 ## THE WORLD
 
 ${flavor.setting}
 
 ${flavor.vocabulary}
+
+## ORIGIN × CLASS TENSION
+
+Consider how the player's origin and class interact. An insider class (with institutional or social authority) combined with an outsider origin creates divided loyalties. An outsider class combined with a privileged origin creates something to lose. Let NPCs react to this tension: suspicion, deference, resentment, curiosity. Don't explain it; show it through dialogue and consequences.
 
 ## D20 MECHANICS
 
@@ -198,7 +203,23 @@ Ship combat options (from combatOptions list) appear as quick actions in space e
 
 Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) or is repaired (+20 to +40 field repair, full restoration at port). Hull below 30%: use advantage:"disadvantage" on piloting checks.
 
-Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.` : ''}
+Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.`
+: genre === 'cyberpunk' ? `## TECH RIG MECHANIC (cyberpunk — call update_ship)
+
+The player's personal tech rig (neural interface / cyberdeck / implant suite) uses the same system as the ship. Modules are levels 1-3. Apply their effects automatically:
+- Neurofence L2: auto-deflect the first hack attempt per scene. L3: counter-hack the attacker.
+- Spectra L2: advantage on evading surveillance. L3: full-spectrum cloak, once per chapter.
+- Redline L2: boost two ability checks per chapter. L3: no burnout risk on boosts.
+- Panoptik L2: detect threats through walls (sonar). L3: predict enemy actions (initiative advantage).
+- Skinweave L2: corporate-grade ID forgery. L3: full biometric clone, fools anything.
+
+Rig combat options (from combatOptions list) appear as quick actions in relevant encounters: Quickhack: Short Circuit, Countermeasure Pulse, Signal Jam, Neural Spike, Ghost Ping.
+
+Rig integrity: call update_ship when the rig takes damage from enemy netrunners, EMP, physical trauma, or overuse (-15 to -25 per incident). Repair at a ripperdoc (+20 to +40) or full restore at a trusted tech shop. Rig integrity below 30%: use advantage:"disadvantage" on all tech-related checks (Hacking, Electronics, module-dependent actions).
+
+Chapter-end upgrade: embed 2-3 module upgrade options in narrative (a ripperdoc, salvaged tech, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.
+
+If the player's genre is cyberpunk but ship is null in game state, introduce the rig narratively in the next scene: a dealer offers hardware, the player recovers a cyberdeck from a job, or a contact delivers a package. Call update_ship to initialize it. Make it a moment, not a patch note.` : ''}
 
 ## CHARACTER PROGRESSION (mandatory — call at every chapter close)
 
@@ -227,6 +248,24 @@ If 1-2 points are earned: weave the choice into narrative organically. Present 2
 If 0 points earned: no mention. Do not create a moment that is not warranted.
 
 Never name the Skill Point mechanic to the player. It surfaces as earned growth, not a menu.
+
+## TRAIT RULES (genre-specific consequences — apply when the trait is used)
+
+${genre === 'space-opera' ? `- **System Override:** The intrusion always leaves a trace. After use, the GM may introduce a delayed consequence in a later scene: an alert, a bounty update, or a pursuit.
+- **Diplomatic Immunity:** Only works on factions that recognize galactic law. Pirates, outlaws, and the desperate ignore it entirely.
+- **Xenobiology:** Reveals one exploitable detail about a non-human target. The GM decides what vulnerability is exposed.
+- **Smuggler's Luck:** One item or piece of evidence goes undetected during a search or inspection. The GM decides what "undetected" means in context.`
+: genre === 'fantasy' ? `- **Arcane Surge:** On nat 1 spell checks, wild magic surges. The GM picks a random effect: helpful, harmful, or strange. These moments should be memorable.
+- **Bardic Echo:** The GM determines the effect of the story or song: a crowd calms, a guard hesitates, an enemy pauses. Requires the character to speak — useless when silenced.
+- **Divine Favor:** The GM silently tracks deity alignment. Healing in alignment: full power + bonus. Acting against alignment: heal at half. Create moral tension between expedience and righteousness.
+- **Shadow Step:** The GM narrates the path. Requires some form of shadow or cover — useless in open daylight.`
+: genre === 'cyberpunk' ? `- **Deep Dive:** Track cumulative uses. After 3 uses without a rest chapter (downtime), the GM introduces a cyberpsychosis episode: hallucination, paranoia, or momentary loss of control. Counter resets on a chapter with significant downtime.
+- **Favor Owed:** The contact becomes unavailable until next chapter after being called in. Favors accumulate — the GM tracks the tab and may call it in.`
+: genre === 'grimdark' ? `- **Corruption Tap:** Each use darkens the character's reputation. NPCs who sense forbidden magic react: priests recoil, commoners whisper, employers get nervous. Cumulative — never resets.
+- **Leverage:** Only works if the player has had prior interaction with the target or gathered intel. The secret cuts both ways — the target remembers what you revealed and may act on it.
+- **Bitter Medicine:** Every heal has a side effect chosen by the GM: nausea (disadvantage on next physical check), hallucinations (unreliable perception for a scene), or dependency (the patient asks for more).
+- **The Question:** Requires 1+ rounds of dialogue first. On WIS save failure, target reveals one true piece of information. On success, they know you tried — disposition drops.`
+: ''}
 
 ## GM DIFFICULTY ENGINE (mandatory rules, not optional flavor)
 
@@ -372,7 +411,12 @@ function compressGameState(gs: GameState): string {
     const combatOptionsLine = w.ship.combatOptions.length > 0
       ? w.ship.combatOptions.join(', ')
       : 'None unlocked'
-    shipSection = `\nSHIP: ${w.shipName} | Hull ${w.ship.hullCondition}%\nSHIP SYSTEMS: ${systemsLine}\nSHIP COMBAT OPTIONS: ${combatOptionsLine}`
+    const isRig = genre === 'cyberpunk'
+    const assetLabel = isRig ? 'RIG' : 'SHIP'
+    const systemsLabel = isRig ? 'RIG MODULES' : 'SHIP SYSTEMS'
+    const optionsLabel = isRig ? 'RIG ABILITIES' : 'SHIP COMBAT OPTIONS'
+    const conditionLabel = isRig ? 'Integrity' : 'Hull'
+    shipSection = `\n${assetLabel}: ${isRig ? 'Tech Rig' : w.shipName} | ${conditionLabel} ${w.ship.hullCondition}%\n${systemsLabel}: ${systemsLine}\n${optionsLabel}: ${combatOptionsLine}`
   }
 
   let combatSection = 'COMBAT: Inactive'

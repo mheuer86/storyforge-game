@@ -157,7 +157,7 @@ export function BurgerMenu({
                   Character
                 </TabsTrigger>
                 <TabsTrigger value="ship" className="shrink-0 text-xs">
-                  {genreConfig.partyBaseName}
+                  {genre === 'cyberpunk' ? 'Rig' : genre === 'space-opera' ? 'Ship' : genreConfig.partyBaseName}
                 </TabsTrigger>
                 <TabsTrigger value="world" className="shrink-0 text-xs">
                   World
@@ -411,17 +411,20 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
 }
 
 function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; partyBaseName: string }) {
-  if (genre === 'space-opera' && ship.state) {
-    const s = ship.state
+  const isCyberpunk = genre === 'cyberpunk'
+  const hasRig = (genre === 'space-opera' || isCyberpunk) && ship.state
+  if (hasRig) {
+    const s = ship.state!
+    const conditionLabel = isCyberpunk ? 'Rig Integrity' : 'Hull Condition'
     const hullColor = s.hullCondition >= 70 ? 'text-success' : s.hullCondition >= 30 ? 'text-warning' : 'text-destructive'
     const hullBarColor = s.hullCondition >= 70 ? 'bg-success' : s.hullCondition >= 30 ? 'bg-warning' : 'bg-destructive'
     return (
       <div className="flex min-w-0 flex-col gap-4 overflow-hidden text-sm">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">{ship.name}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{isCyberpunk ? 'Tech Rig' : ship.name}</h2>
           <div className="mt-2">
             <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Hull Condition</span>
+              <span className="text-muted-foreground">{conditionLabel}</span>
               <span className={hullColor}>{s.hullCondition}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/40">
@@ -431,7 +434,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         </div>
 
         <div>
-          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Systems</h3>
+          <h3 className="mb-2 text-xs uppercase text-muted-foreground">{isCyberpunk ? 'Modules' : 'Systems'}</h3>
           <div className="flex flex-col gap-2">
             {s.systems.map((sys) => (
               <div key={sys.id} className="flex items-start gap-3 rounded border border-border/30 bg-secondary/20 px-3 py-2">
@@ -452,7 +455,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 
         {s.combatOptions.length > 0 && (
           <div>
-            <h3 className="mb-2 text-xs uppercase text-muted-foreground">Combat Options</h3>
+            <h3 className="mb-2 text-xs uppercase text-muted-foreground">{isCyberpunk ? 'Active Abilities' : 'Combat Options'}</h3>
             <div className="flex flex-col gap-1">
               {s.combatOptions.map((opt, i) => (
                 <div key={i} className="break-words rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
@@ -464,7 +467,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         )}
 
         <div>
-          <h3 className="mb-2 text-xs uppercase text-muted-foreground">Refit History</h3>
+          <h3 className="mb-2 text-xs uppercase text-muted-foreground">{isCyberpunk ? 'Mod History' : 'Refit History'}</h3>
           {s.upgradeLog.length > 0 ? (
             <ul className="flex flex-col gap-1">
               {s.upgradeLog.map((entry, i) => (
