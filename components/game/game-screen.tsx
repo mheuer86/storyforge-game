@@ -722,7 +722,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const playerDisplayMessage: DisplayMessage | null =
         !isInitial && playerMessage
           ? {
-              id: Date.now().toString(),
+              id: crypto.randomUUID(),
               type: isMetaQuestion ? 'meta-question' : 'player',
               content: playerMessage,
             }
@@ -751,7 +751,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
 
-      const gmMsgId = (Date.now() + 1).toString()
+      const gmMsgId = crypto.randomUUID()
       setMessages((prev) => [
         ...prev,
         { id: gmMsgId, type: isMetaQuestion ? 'meta-response' : 'gm', content: '' },
@@ -801,7 +801,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     const { playerMessage, state, isMetaQuestion, isInitial, gmMsgId } = retryContext
     setRetryContext(null)
     // Replace the error bubble with a fresh empty one, then re-stream
-    const newGmMsgId = Date.now().toString()
+    const newGmMsgId = crypto.randomUUID()
     setMessages((prev) =>
       prev.map((m) => (m.id === gmMsgId ? { ...m, id: newGmMsgId, content: '', isError: false } : m))
     )
@@ -851,8 +851,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const result: 'critical' | 'success' | 'failure' | 'fumble' =
         roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= prompt.dc ? 'success' : 'failure'
 
-      const rollMsgId = Date.now().toString()
-      const gmMsgId = (Date.now() + 1).toString()
+      const rollMsgId = crypto.randomUUID()
+      const gmMsgId = crypto.randomUUID()
       setMessages((prev) => [
         ...prev,
         {
@@ -900,7 +900,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setIsLoading(true)
       setLastStatChanges([])
 
-      const gmMsgId = (Date.now() + 1).toString()
+      const gmMsgId = crypto.randomUUID()
       setMessages((prev) => [...prev, { id: gmMsgId, type: 'meta-response', content: '' }])
 
       await streamRequest(
