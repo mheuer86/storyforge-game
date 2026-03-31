@@ -2,9 +2,6 @@
 
 import { useState, useEffect, type ReactNode } from 'react'
 
-const STORAGE_KEY = 'storyforge_access'
-const ACCESS_CODE = process.env.NEXT_PUBLIC_ACCESS_CODE
-
 interface PassphraseGateProps {
   children: ReactNode
 }
@@ -16,24 +13,31 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    // No access code set — bypass gate (local dev)
-    if (!ACCESS_CODE) {
-      setUnlocked(true)
-      setChecking(false)
-      return
-    }
-    if (localStorage.getItem(STORAGE_KEY) === ACCESS_CODE!.trim()) {
-      setUnlocked(true)
-    }
-    setChecking(false)
+    fetch('/api/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) setUnlocked(true)
+      })
+      .catch(() => {})
+      .finally(() => setChecking(false))
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim().toLowerCase() === ACCESS_CODE!.trim().toLowerCase()) {
-      localStorage.setItem(STORAGE_KEY, ACCESS_CODE!.trim())
-      setUnlocked(true)
-    } else {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: input.trim() }),
+      })
+      if (res.ok) {
+        setUnlocked(true)
+      } else {
+        setError(true)
+        setInput('')
+        setTimeout(() => setError(false), 1500)
+      }
+    } catch {
       setError(true)
       setInput('')
       setTimeout(() => setError(false), 1500)

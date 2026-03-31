@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { buildSystemPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
 import { gameTools } from '@/lib/tools'
+import { isAuthenticated } from '@/lib/auth'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
 
 const client = new Anthropic()
@@ -24,7 +25,6 @@ const requestSchema = z.object({
   isInitial: z.boolean(),
   isConsistencyCheck: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
-  // Phase 2: client-side roll result
   rollResolution: z.object({
     roll: z.number().min(1).max(20),
     check: z.string(),
@@ -56,6 +56,7 @@ function rollResultText(roll: number, modifier: number, dc: number, result: Roll
 }
 
 const RETRY_DELAY_MS = 12_000
+const MAX_TOOL_ROUNDS = 5
 
 function isOverloaded(error: unknown): boolean {
   if (error instanceof Anthropic.APIError) {
@@ -68,7 +69,109 @@ function isOverloaded(error: unknown): boolean {
   return false
 }
 
+type SendFn = (event: StreamEvent) => void
+
+interface ToolLoopResult {
+  toolResults: ToolCallResult[]
+  messages: Anthropic.MessageParam[]
+  hitRoll: boolean
+}
+
+/**
+ * Run the Claude streaming + tool loop. Shared by Phase 1, Phase 2, and retry.
+ *
+ * When `interceptRolls` is true, a `request_roll` tool call pauses the loop,
+ * sends a roll_prompt to the client, and closes the stream (hitRoll = true).
+ * When false (Phase 2, after a roll), request_roll is treated like any other tool.
+ */
+async function runToolLoop(
+  systemPrompt: Anthropic.TextBlockParam[],
+  initialMessages: Anthropic.MessageParam[],
+  send: SendFn,
+  interceptRolls: boolean,
+): Promise<ToolLoopResult> {
+  const toolResults: ToolCallResult[] = []
+  let messages = initialMessages
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const stream = await client.messages.stream({
+      model: MODEL,
+      max_tokens: 2048,
+      system: systemPrompt,
+      tools: gameTools,
+      messages,
+    })
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        send({ type: 'text', content: event.delta.text })
+      }
+    }
+
+    const completed = await stream.finalMessage()
+    const toolCalls = completed.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+
+    if (completed.stop_reason !== 'tool_use' || toolCalls.length === 0) break
+
+    const roundResults: Anthropic.ToolResultBlockParam[] = []
+
+    for (const tc of toolCalls) {
+      if (interceptRolls && tc.name === 'request_roll') {
+        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
+
+        // Flush accumulated tools before pausing for the roll
+        if (toolResults.length > 0) {
+          send({ type: 'tools', results: toolResults })
+        }
+
+        send({
+          type: 'roll_prompt',
+          check: input.checkType,
+          stat: input.stat,
+          dc: input.dc,
+          modifier: input.modifier,
+          reason: input.reason,
+          toolUseId: tc.id,
+          pendingMessages: [
+            ...messages,
+            { role: 'assistant' as const, content: completed.content },
+          ],
+          ...(input.advantage && { advantage: input.advantage }),
+        })
+
+        return { toolResults, messages, hitRoll: true }
+      }
+
+      toolResults.push({ tool: tc.name, input: tc.input as Record<string, unknown> })
+      roundResults.push({ type: 'tool_result', tool_use_id: tc.id, content: 'OK' })
+    }
+
+    messages = [
+      ...messages,
+      { role: 'assistant' as const, content: completed.content },
+      { role: 'user' as const, content: roundResults },
+    ]
+  }
+
+  return { toolResults, messages, hitRoll: false }
+}
+
+function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
+  const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
+  return [
+    { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: dynamicState },
+  ]
+}
+
 export async function POST(req: NextRequest) {
+  if (!(await isAuthenticated())) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const parsed = requestSchema.safeParse(await req.json())
   if (!parsed.success) {
     return new Response(JSON.stringify({ error: 'Invalid request', details: parsed.error.issues }), {
@@ -88,24 +191,23 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
       }
 
-      try {
-        const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
-        // Two-block system: static instructions are marked cacheable (10% token cost on cache hit);
-        // dynamic game state is never cached since it changes every turn.
-        const systemPrompt: Anthropic.TextBlockParam[] = [
-          { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
-          { type: 'text', text: dynamicState },
-        ]
+      function finish(toolResults: ToolCallResult[]) {
+        if (toolResults.length > 0) send({ type: 'tools', results: toolResults })
+        send({ type: 'done' })
+        controller.close()
+      }
 
-        // ── Phase 2: client sent a roll result, continue from pending conversation ──
+      try {
+        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+
         if (rollResolution) {
+          // ── Phase 2: continue from pending conversation after client roll ──
           const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls } = rollResolution
           const result = resolveRoll(roll, modifier, dc)
-          const total = roll + modifier
 
           const rollRecord: RollRecord = {
             id: Date.now().toString(),
-            check, stat, dc, roll, modifier, total, result, reason,
+            check, stat, dc, roll, modifier, total: roll + modifier, result, reason,
             timestamp: new Date().toISOString(),
             ...(advantage && { advantage }),
             ...(rawRolls && { rawRolls }),
@@ -119,140 +221,31 @@ export async function POST(req: NextRequest) {
             },
           ]
 
-          const clientTools: ToolCallResult[] = []
-          let phase2Messages = continuationMessages
-          const MAX_ROUNDS = 5
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, false)
+          loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+          finish(loopResult.toolResults)
+          return
+        }
 
-          for (let r = 0; r < MAX_ROUNDS; r++) {
-            const s = await client.messages.stream({
-              model: MODEL,
-              max_tokens: 2048,
-              system: systemPrompt,
-              tools: gameTools,
-              messages: phase2Messages,
-            })
+        // ── Phase 1: normal turn ──
+        const actualMessage = isInitial ? buildInitialMessage(gameState) : message
+        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
-            for await (const event of s) {
-              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-                send({ type: 'text', content: event.delta.text })
-              }
-            }
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true)
 
-            const msg = await s.finalMessage()
-            const toolCalls = msg.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
-
-            if (msg.stop_reason !== 'tool_use' || toolCalls.length === 0) break
-
-            const toolResults: Anthropic.ToolResultBlockParam[] = toolCalls.map((tc) => {
-              clientTools.push({ tool: tc.name, input: tc.input as Record<string, unknown> })
-              return { type: 'tool_result', tool_use_id: tc.id, content: 'OK' }
-            })
-
-            phase2Messages = [
-              ...phase2Messages,
-              { role: 'assistant' as const, content: msg.content },
-              { role: 'user' as const, content: toolResults },
-            ]
-          }
-
-          clientTools.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
-          send({ type: 'tools', results: clientTools })
+        if (loopResult.hitRoll) {
           send({ type: 'done' })
           controller.close()
           return
         }
 
-        // ── Phase 1: normal turn ──
-        const actualMessage = isInitial ? buildInitialMessage(gameState as GameState) : message
-        let conversationMessages: Anthropic.MessageParam[] = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
-
-        const clientToolResults: ToolCallResult[] = []
-        const MAX_TOOL_ROUNDS = 5
-
-        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-          const currentStream = await client.messages.stream({
-            model: MODEL,
-            max_tokens: 2048,
-            system: systemPrompt,
-            tools: gameTools,
-            messages: conversationMessages,
-          })
-
-          for await (const event of currentStream) {
-            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-              send({ type: 'text', content: event.delta.text })
-            }
-          }
-
-          const completedMessage = await currentStream.finalMessage()
-          const roundToolCalls = completedMessage.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
-
-          if (completedMessage.stop_reason !== 'tool_use' || roundToolCalls.length === 0) break
-
-          const toolResults: Anthropic.ToolResultBlockParam[] = []
-          let hitRollRequest = false
-
-          for (const tool of roundToolCalls) {
-            if (tool.name === 'request_roll') {
-              const input = tool.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
-
-              // Flush any tools accumulated so far before pausing
-              if (clientToolResults.length > 0) {
-                send({ type: 'tools', results: clientToolResults })
-              }
-
-              // Send roll prompt and let the client roll
-              send({
-                type: 'roll_prompt',
-                check: input.checkType,
-                stat: input.stat,
-                dc: input.dc,
-                modifier: input.modifier,
-                reason: input.reason,
-                toolUseId: tool.id,
-                pendingMessages: [
-                  ...conversationMessages,
-                  { role: 'assistant' as const, content: completedMessage.content },
-                ],
-                ...(input.advantage && { advantage: input.advantage }),
-              })
-
-              send({ type: 'done' })
-              controller.close()
-              hitRollRequest = true
-              return
-            }
-
-            clientToolResults.push({ tool: tool.name, input: tool.input as Record<string, unknown> })
-            toolResults.push({ type: 'tool_result', tool_use_id: tool.id, content: 'OK' })
-          }
-
-          if (hitRollRequest) return
-
-          conversationMessages = [
-            ...conversationMessages,
-            { role: 'assistant' as const, content: completedMessage.content },
-            { role: 'user' as const, content: toolResults },
-          ]
-        }
-
-        if (clientToolResults.length > 0) {
-          send({ type: 'tools', results: clientToolResults })
-        }
-
-        send({ type: 'done' })
-        controller.close()
+        finish(loopResult.toolResults)
       } catch (error) {
         if (isOverloaded(error)) {
           send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
           try {
-            // Rebuild and retry once
-            const [staticRetry, dynamicRetry] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
-            const retrySystem: Anthropic.TextBlockParam[] = [
-              { type: 'text', text: staticRetry, cache_control: { type: 'ephemeral' } },
-              { type: 'text', text: dynamicRetry },
-            ]
+            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
@@ -260,65 +253,26 @@ export async function POST(req: NextRequest) {
                 ]
               : buildMessagesForClaude(gameState, isInitial ? buildInitialMessage(gameState) : message, isMetaQuestion)
 
-            const retryToolResults: ToolCallResult[] = []
-            let retryConv = retryMessages as Anthropic.MessageParam[]
+            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true)
 
-            for (let r = 0; r < 5; r++) {
-              const s = await client.messages.stream({
-                model: MODEL,
-                max_tokens: 2048,
-                system: retrySystem,
-                tools: gameTools,
-                messages: retryConv,
-              })
-
-              for await (const event of s) {
-                if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-                  send({ type: 'text', content: event.delta.text })
-                }
-              }
-
-              const msg = await s.finalMessage()
-              const toolCalls = msg.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
-
-              if (msg.stop_reason !== 'tool_use' || toolCalls.length === 0) break
-
-              let hitRoll = false
-              const toolResults: Anthropic.ToolResultBlockParam[] = []
-              for (const tc of toolCalls) {
-                if (tc.name === 'request_roll') {
-                  const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
-                  if (retryToolResults.length > 0) send({ type: 'tools', results: retryToolResults })
-                  send({ type: 'roll_prompt', check: input.checkType, stat: input.stat, dc: input.dc, modifier: input.modifier, reason: input.reason, toolUseId: tc.id, pendingMessages: [...retryConv, { role: 'assistant' as const, content: msg.content }], ...(input.advantage && { advantage: input.advantage }) })
-                  send({ type: 'done' })
-                  controller.close()
-                  hitRoll = true
-                  return
-                }
-                retryToolResults.push({ tool: tc.name, input: tc.input as Record<string, unknown> })
-                toolResults.push({ type: 'tool_result', tool_use_id: tc.id, content: 'OK' })
-              }
-              if (hitRoll) return
-
-              retryConv = [...retryConv, { role: 'assistant' as const, content: msg.content }, { role: 'user' as const, content: toolResults }]
+            if (loopResult.hitRoll) {
+              send({ type: 'done' })
+              controller.close()
+              return
             }
 
             if (rollResolution) {
               const result = resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.dc)
-              retryToolResults.push({ tool: '_roll_record', input: { id: Date.now().toString(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
+              loopResult.toolResults.push({ tool: '_roll_record', input: { id: Date.now().toString(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
             }
 
-            if (retryToolResults.length > 0) send({ type: 'tools', results: retryToolResults })
-            send({ type: 'done' })
-            controller.close()
+            finish(loopResult.toolResults)
           } catch (retryError) {
-            const retryMsg = retryError instanceof Error ? retryError.message : 'Unknown error'
-            send({ type: 'error', message: retryMsg })
+            send({ type: 'error', message: retryError instanceof Error ? retryError.message : 'Unknown error' })
             controller.close()
           }
         } else {
-          const message = error instanceof Error ? error.message : 'Unknown error'
-          send({ type: 'error', message })
+          send({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' })
           controller.close()
         }
       }
