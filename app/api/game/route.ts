@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
           const result = resolveRoll(roll, modifier, dc)
 
           const rollRecord: RollRecord = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             check, stat, dc, roll, modifier, total: roll + modifier, result, reason,
             timestamp: new Date().toISOString(),
             ...(advantage && { advantage }),
@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
 
             if (rollResolution) {
               const result = resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.dc)
-              loopResult.toolResults.push({ tool: '_roll_record', input: { id: Date.now().toString(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
+              loopResult.toolResults.push({ tool: '_roll_record', input: { id: crypto.randomUUID(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
             }
 
             finish(loopResult.toolResults)

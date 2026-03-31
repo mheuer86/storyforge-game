@@ -6,6 +6,7 @@ import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
 import { CampaignSelect } from '@/components/setup/campaign-select'
 import { GameScreen } from '@/components/game/game-screen'
+import { GameErrorBoundary } from '@/components/error-boundary'
 import { loadGameState, createInitialGameState, clearGameState, getSaveSlot, saveGameState, type SaveSlotData } from '@/lib/game-data'
 import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
@@ -130,7 +131,11 @@ function AppContent() {
     )
   }
 
-  return <GameScreen initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
+  return (
+    <GameErrorBoundary onReset={handleNewGame}>
+      <GameScreen initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
+    </GameErrorBoundary>
+  )
 }
 
 export default function StoryforgeApp() {
