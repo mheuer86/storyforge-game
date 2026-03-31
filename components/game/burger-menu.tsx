@@ -360,7 +360,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
 
       {/* Proficiencies */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Proficiencies</h3>
+        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Proficiencies</h3>
         <div className="flex flex-wrap gap-1">
           {character.class.proficiencies.map((p) => (
             <Badge key={p.name} variant="secondary" className="bg-secondary/50 text-xs">
@@ -372,7 +372,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
 
       {/* Gear */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Gear</h3>
+        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Gear</h3>
         <ul className="list-inside list-disc text-foreground">
           {character.class.startingGear.map((item, i) => (
             <li key={`${item}-${i}`}>{item}</li>
@@ -382,7 +382,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
 
       {/* Traits */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Traits</h3>
+        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Traits</h3>
         <div className="text-foreground">
           <span className="text-primary">{character.class.trait.name}:</span>{' '}
           {character.class.trait.description}
@@ -398,7 +398,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
       {/* Temporary Effects */}
       {character.tempEffects.length > 0 && (
         <div>
-          <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Temporary Effects</h3>
+          <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Temporary Effects</h3>
           {character.tempEffects.map((effect, i) => (
             <div key={i} className="rounded bg-primary/10 px-2 py-1 text-foreground">
               {effect.name}: {effect.effect} — {effect.duration}
@@ -434,7 +434,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         </div>
 
         <div>
-          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">{isCyberpunk ? 'Modules' : 'Systems'}</h3>
+          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Modules' : 'Systems'}</h3>
           <div className="flex flex-col gap-2">
             {s.systems.map((sys) => (
               <div key={sys.id} className="flex items-start gap-3 rounded border border-border/30 bg-secondary/20 px-3 py-2">
@@ -455,7 +455,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 
         {s.combatOptions.length > 0 && (
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">{isCyberpunk ? 'Active Abilities' : 'Combat Options'}</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Active Abilities' : 'Combat Options'}</h3>
             <div className="flex flex-col gap-1">
               {s.combatOptions.map((opt, i) => (
                 <div key={i} className="break-words rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
@@ -467,7 +467,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         )}
 
         <div>
-          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">{isCyberpunk ? 'Mod History' : 'Refit History'}</h3>
+          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Mod History' : 'Refit History'}</h3>
           {s.upgradeLog.length > 0 ? (
             <ul className="flex flex-col gap-1">
               {s.upgradeLog.map((entry, i) => (
@@ -492,7 +492,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
       </div>
       {ship.name && (
         <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-          <div className="font-heading text-xs uppercase tracking-wider text-muted-foreground">Reserved name</div>
+          <div className="font-heading text-xs uppercase tracking-wider text-tertiary">Reserved name</div>
           <div className="mt-1 font-medium text-foreground">{ship.name}</div>
         </div>
       )}
@@ -545,7 +545,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
         <>
           {/* Location */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Current Location</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Current Location</h3>
             <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
               <div className="font-medium text-foreground">{world.location.name}</div>
               <div className="text-xs text-muted-foreground">{world.location.description}</div>
@@ -555,7 +555,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Companions in scene */}
           {companionsHere.length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Companions</h3>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
               <div className="flex flex-col gap-2">
                 {companionsHere.map((c, i) => (
                   <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
@@ -570,7 +570,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* NPCs in scene */}
           {npcsHere.length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Present</h3>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Present</h3>
               <div className="flex flex-col gap-2">
                 {npcsHere.map((npc, i) => (
                   <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
@@ -585,7 +585,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Vessels / installations in scene */}
           {vesselsHere.length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Vessels & Installations</h3>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
               <div className="flex flex-col gap-2">
                 {vesselsHere.map((v, i) => (
                   <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
@@ -604,7 +604,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             if (activeClocks.length === 0 && triggeredClocks.length === 0) return null
             return (
               <div>
-                <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Pressures</h3>
+                <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Pressures</h3>
                 <div className="flex flex-col gap-2">
                   {activeClocks.map((clock) => (
                     <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
@@ -629,7 +629,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Active Threads */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Active Threads</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Active Threads</h3>
             {activeThreads.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {activeThreads.map((thread, i) => (
@@ -651,7 +651,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Open Promises */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Open Promises</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Open Promises</h3>
             {openPromises.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {openPromises.map((promise, i) => (
@@ -672,7 +672,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
         <>
           {/* Factions */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Known Factions</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Known Factions</h3>
             {world.factions.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.factions.map((faction, i) => (
@@ -690,7 +690,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Companions */}
           {world.companions.length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Companions</h3>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
               <div className="flex flex-col gap-2">
                 {world.companions.map((c, i) => (
                   <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
@@ -706,7 +706,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* NPCs */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Known NPCs</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Known NPCs</h3>
             {world.npcs.filter((n) => !isVessel(n)).length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.npcs.filter((n) => !isVessel(n)).map((npc, i) => (
@@ -726,7 +726,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Vessels & Installations */}
           {world.npcs.filter(isVessel).length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Vessels & Installations</h3>
+              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
               <div className="flex flex-col gap-2">
                 {world.npcs.filter(isVessel).map((v, i) => (
                   <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
@@ -742,7 +742,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* All Threads */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">All Threads</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">All Threads</h3>
             {world.threads.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.threads.map((thread, i) => (
@@ -764,7 +764,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* All Promises */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Promises & Debts</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Promises & Debts</h3>
             {world.promises.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.promises.map((promise, i) => (
@@ -791,7 +791,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Antagonist */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-muted-foreground">Primary Antagonist</h3>
+            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Primary Antagonist</h3>
             {world.antagonist ? (
               <div className="flex flex-col gap-2">
                 <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
@@ -809,7 +809,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 </div>
                 {world.antagonist.moves.length > 0 && (
                   <div>
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Their Moves</h4>
+                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Their Moves</h4>
                     <div className="flex flex-col gap-1">
                       {world.antagonist.moves.map((move, i) => (
                         <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
@@ -874,7 +874,7 @@ function ChaptersPanel({
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Key Events</h4>
+                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Key Events</h4>
                     <ul className="list-inside list-disc text-sm text-foreground">
                       {chapter.keyEvents.map((event, i) => (
                         <li key={i}>{event}</li>
@@ -885,7 +885,7 @@ function ChaptersPanel({
 
                 {chapter.rollLog.length > 0 && (
                   <div className="mb-3">
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Roll Log</h4>
+                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Roll Log</h4>
                     <div className="overflow-x-auto">
                       <table className="w-full font-mono text-xs">
                         <thead>
@@ -968,7 +968,7 @@ function ChaptersPanel({
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>
-                  <h4 className="font-heading text-xs uppercase tracking-wider text-muted-foreground">Lucky Breaks</h4>
+                  <h4 className="font-heading text-xs uppercase tracking-wider text-tertiary">Lucky Breaks</h4>
                   <ul className="list-inside list-disc text-success">
                     {showDebrief.debrief.luckyBreaks.map((item, i) => (
                       <li key={i}>{item}</li>
@@ -978,7 +978,7 @@ function ChaptersPanel({
               )}
               {showDebrief.debrief.costsPaid.length > 0 && (
                 <div>
-                  <h4 className="font-heading text-xs uppercase tracking-wider text-muted-foreground">Costs Paid</h4>
+                  <h4 className="font-heading text-xs uppercase tracking-wider text-tertiary">Costs Paid</h4>
                   <ul className="list-inside list-disc text-destructive">
                     {showDebrief.debrief.costsPaid.map((item, i) => (
                       <li key={i}>{item}</li>
