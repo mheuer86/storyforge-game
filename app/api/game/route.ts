@@ -36,6 +36,9 @@ const requestSchema = z.object({
     pendingMessages: z.array(z.any()),
     advantage: z.enum(['advantage', 'disadvantage']).optional(),
     rawRolls: z.tuple([z.number().min(1).max(20), z.number().min(1).max(20)]).optional(),
+    contested: z.object({ npcName: z.string(), npcSkill: z.string(), npcModifier: z.number() }).optional(),
+    npcRoll: z.number().min(1).max(20).optional(),
+    npcTotal: z.number().optional(),
   }).optional(),
 })
 
@@ -46,13 +49,17 @@ function resolveRoll(roll: number, modifier: number, dc: number): RollRecord['re
   return 'failure'
 }
 
-function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number]): string {
+function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number): string {
   const total = roll + modifier
   const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
-  if (result === 'critical') return `Natural 20! Critical success${advNote}. Total: ${total} vs DC ${dc}. Exceptional outcome.`
-  if (result === 'fumble') return `Natural 1! Fumble${advNote}. Total: ${total} vs DC ${dc}. Failure with complication.`
-  if (result === 'success') return `Success${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}.`
-  return `Failure${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}. Apply the "fail with a cost" rule.`
+  const contestedNote = contested && npcRoll !== undefined && npcTotal !== undefined
+    ? ` Contested vs ${contested.npcName}'s ${contested.npcSkill}: NPC rolled ${npcRoll} + ${contested.npcModifier} = ${npcTotal}.`
+    : ''
+  const vsText = contested && npcTotal !== undefined ? `vs ${contested.npcName}'s ${npcTotal}` : `vs DC ${dc}`
+  if (result === 'critical') return `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.`
+  if (result === 'fumble') return `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.`
+  if (result === 'success') return `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.`
+  return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.`
 }
 
 const RETRY_DELAY_MS = 12_000
@@ -117,7 +124,7 @@ async function runToolLoop(
 
     for (const tc of toolCalls) {
       if (interceptRolls && tc.name === 'request_roll') {
-        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
+        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage'; contested?: { npcName: string; npcSkill: string; npcModifier: number } }
 
         // Flush accumulated tools before pausing for the roll
         if (toolResults.length > 0) {
@@ -137,6 +144,7 @@ async function runToolLoop(
             { role: 'assistant' as const, content: completed.content },
           ],
           ...(input.advantage && { advantage: input.advantage }),
+          ...(input.contested && { contested: input.contested }),
         })
 
         return { toolResults, messages, hitRoll: true }
@@ -202,8 +210,10 @@ export async function POST(req: NextRequest) {
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
-          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls } = rollResolution
-          const result = resolveRoll(roll, modifier, dc)
+          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal } = rollResolution
+          // For contested rolls, compare player total vs NPC total instead of static DC
+          const effectiveDC = npcTotal !== undefined ? npcTotal : dc
+          const result = resolveRoll(roll, modifier, effectiveDC)
 
           const rollRecord: RollRecord = {
             id: crypto.randomUUID(),
@@ -211,13 +221,15 @@ export async function POST(req: NextRequest) {
             timestamp: new Date().toISOString(),
             ...(advantage && { advantage }),
             ...(rawRolls && { rawRolls }),
+            ...(contested && { contested }),
+            ...(npcRoll !== undefined && { npcRoll, npcTotal }),
           }
 
           const continuationMessages: Anthropic.MessageParam[] = [
             ...(pendingMessages as Anthropic.MessageParam[]),
             {
               role: 'user',
-              content: [{ type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, dc, result, advantage, rawRolls) }],
+              content: [{ type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal) }],
             },
           ]
 
@@ -249,7 +261,7 @@ export async function POST(req: NextRequest) {
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
-                  { role: 'user' as const, content: [{ type: 'tool_result' as const, tool_use_id: rollResolution.toolUseId, content: rollResultText(rollResolution.roll, rollResolution.modifier, rollResolution.dc, resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.dc), rollResolution.advantage, rollResolution.rawRolls) }] },
+                  { role: 'user' as const, content: [{ type: 'tool_result' as const, tool_use_id: rollResolution.toolUseId, content: rollResultText(rollResolution.roll, rollResolution.modifier, rollResolution.npcTotal ?? rollResolution.dc, resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.npcTotal ?? rollResolution.dc), rollResolution.advantage, rollResolution.rawRolls, rollResolution.contested, rollResolution.npcRoll, rollResolution.npcTotal) }] },
                 ]
               : buildMessagesForClaude(gameState, isInitial ? buildInitialMessage(gameState) : message, isMetaQuestion)
 

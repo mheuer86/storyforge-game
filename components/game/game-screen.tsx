@@ -27,6 +27,9 @@ interface DisplayMessage {
     reason: string
     advantage?: 'advantage' | 'disadvantage'
     rawRolls?: [number, number]
+    contested?: { npcName: string; npcSkill: string; npcModifier: number }
+    npcRoll?: number
+    npcTotal?: number
   }
 }
 
@@ -51,6 +54,8 @@ interface RollPrompt {
   pendingState: GameState
   advantage?: 'advantage' | 'disadvantage'
   rawRolls?: [number, number]
+  contested?: { npcName: string; npcSkill: string; npcModifier: number }
+  npcRoll?: number
 }
 
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
@@ -643,6 +648,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 pendingMessages: event.pendingMessages,
                 pendingState: stateWithChanges,
                 advantage: event.advantage,
+                contested: event.contested,
               })
             }
 
@@ -850,6 +856,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setIsLoading(true)
       setLastStatChanges([])
 
+      const npcTotal = prompt.contested && prompt.npcRoll !== undefined
+        ? prompt.npcRoll + prompt.contested.npcModifier
+        : undefined
+
       const rollResolution: RollResolution = {
         roll,
         check: prompt.check,
@@ -861,12 +871,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         pendingMessages: prompt.pendingMessages,
         ...(prompt.advantage && { advantage: prompt.advantage }),
         ...(prompt.rawRolls && { rawRolls: prompt.rawRolls }),
+        ...(prompt.contested && { contested: prompt.contested }),
+        ...(prompt.npcRoll !== undefined && { npcRoll: prompt.npcRoll, npcTotal }),
       }
 
       const modifier = prompt.modifier
       const total = roll + modifier
+      // For contested rolls: compare player total vs NPC total. For static: compare vs DC.
+      const effectiveDC = npcTotal !== undefined ? npcTotal : prompt.dc
       const result: 'critical' | 'success' | 'failure' | 'fumble' =
-        roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= prompt.dc ? 'success' : 'failure'
+        roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= effectiveDC ? 'success' : 'failure'
 
       const rollMsgId = crypto.randomUUID()
       const gmMsgId = crypto.randomUUID()
@@ -876,7 +890,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           id: rollMsgId,
           type: 'roll' as const,
           content: '',
-          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls },
+          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal },
         },
         { id: gmMsgId, type: 'gm' as const, content: '' },
       ])
@@ -983,24 +997,32 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const handleDiceClick = useCallback(() => {
     if (!rollPrompt || dicePhase !== 'idle') return
     const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
+    const isContested = !!rollPrompt.contested
     const die1 = Math.floor(Math.random() * 20) + 1
-    const die2 = isAdvantage ? Math.floor(Math.random() * 20) + 1 : die1
+    const die2 = isAdvantage ? Math.floor(Math.random() * 20) + 1
+      : isContested ? Math.floor(Math.random() * 20) + 1  // NPC die
+      : die1
     const kept = rollPrompt.advantage === 'advantage' ? Math.max(die1, die2)
       : rollPrompt.advantage === 'disadvantage' ? Math.min(die1, die2)
       : die1
     setRolledValue(kept)
     if (isAdvantage) setRawRolls([die1, die2])
+    if (isContested) {
+      // Store NPC roll on the prompt so it flows through to sendContinuation
+      rollPrompt.npcRoll = die2
+    }
     setDicePhase('rolling')
 
     const interval = setInterval(() => {
       setDiceDisplay(Math.floor(Math.random() * 20) + 1)
-      if (isAdvantage) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
+      if (isAdvantage || isContested) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
     }, 50)
 
     setTimeout(() => {
       clearInterval(interval)
+      setDiceDisplay(isContested ? die2 : die1)  // For contested: display2 = NPC die, display1 used for player below
       setDiceDisplay(die1)
-      if (isAdvantage) setDiceDisplay2(die2)
+      if (isAdvantage || isContested) setDiceDisplay2(die2)
       setDicePhase('revealed')
     }, 700)
   }, [rollPrompt, dicePhase])
@@ -1138,65 +1160,144 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   onClick={handleDiceClick}
                   className="w-full rounded-lg border border-primary/40 bg-primary/10 px-6 py-4 text-left transition-all duration-200 hover:border-primary/70 hover:bg-primary/20 active:scale-[0.99]"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-primary/70">
-                        {rollPrompt.check} Check
-                        {rollPrompt.advantage && (
-                          <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
-                            — {rollPrompt.advantage}
-                          </span>
-                        )}
+                  {rollPrompt.contested ? (
+                    /* Contested roll — NPC left, player right */
+                    <>
+                      <div className="text-center font-heading text-xs font-medium uppercase tracking-wider text-primary/70 mb-3">
+                        Contested — {rollPrompt.check} vs {rollPrompt.contested.npcSkill}
                       </div>
-                      <div className="mt-1 flex items-center gap-3 font-system text-sm">
-                        <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
-                        <span className="text-muted-foreground/30">|</span>
-                        <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</span></span>
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground/70">
-                        {rollPrompt.reason}
-                      </div>
-                    </div>
-                    <div className="ml-4 flex items-center gap-1.5">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
-                        🎲
-                      </div>
-                      {rollPrompt.advantage && (
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
-                          🎲
+                      <div className="flex items-center justify-between">
+                        <div className="text-left">
+                          <div className="text-xs text-muted-foreground/60">{rollPrompt.contested.npcName}</div>
+                          <div className="font-system text-sm text-foreground/60">{rollPrompt.contested.npcSkill} {rollPrompt.contested.npcModifier >= 0 ? '+' : ''}{rollPrompt.contested.npcModifier}</div>
+                          <div className="mt-1 flex h-12 w-12 items-center justify-center rounded-lg border border-border/30 bg-card/30 text-2xl">🎲</div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-3 text-center text-xs text-primary/60">
-                    Tap to roll{rollPrompt.advantage ? ' 2d20' : ''}
-                  </div>
+                        <div className="text-xs text-muted-foreground/40 uppercase tracking-wider">vs</div>
+                        <div className="text-right">
+                          <div className="text-xs text-primary/60">You</div>
+                          <div className="font-system text-sm text-primary">{rollPrompt.check} {rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</div>
+                          <div className="mt-1 flex h-12 w-12 ml-auto items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">🎲</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground/50">{rollPrompt.reason}</div>
+                      <div className="mt-2 text-center text-xs text-primary/60">Tap to roll</div>
+                    </>
+                  ) : (
+                    /* Standard roll — DC check */
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-primary/70">
+                            {rollPrompt.check} Check
+                            {rollPrompt.advantage && (
+                              <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
+                                — {rollPrompt.advantage}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 flex items-center gap-3 font-system text-sm">
+                            <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
+                            <span className="text-muted-foreground/30">|</span>
+                            <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</span></span>
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground/70">
+                            {rollPrompt.reason}
+                          </div>
+                        </div>
+                        <div className="ml-4 flex items-center gap-1.5">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
+                            🎲
+                          </div>
+                          {rollPrompt.advantage && (
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
+                              🎲
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3 text-center text-xs text-primary/60">
+                        Tap to roll{rollPrompt.advantage ? ' 2d20' : ''}
+                      </div>
+                    </>
+                  )}
                 </button>
               ) : (() => {
                 const hasAdv = !!rollPrompt.advantage
+                const isContested = !!rollPrompt.contested
                 const total = rolledValue !== null ? rolledValue + rollPrompt.modifier : null
-                const result = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : total !== null && total >= rollPrompt.dc ? 'success' : 'failure'
+                const npcTot = isContested && rollPrompt.npcRoll !== undefined ? rollPrompt.npcRoll + rollPrompt.contested!.npcModifier : null
+                const effectiveDC = npcTot !== null ? npcTot : rollPrompt.dc
+                const result = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : total !== null && total >= effectiveDC ? 'success' : 'failure'
                 const die1Kept = dicePhase === 'revealed' && rawRolls && rolledValue === rawRolls[0]
                 const die2Kept = dicePhase === 'revealed' && rawRolls && rolledValue === rawRolls[1] && (!die1Kept || rawRolls[0] === rawRolls[1])
-                const dieStyle = (isKept: boolean | null, displayVal: number) => [
+                const resultColor = (r: string) =>
+                  r === 'critical' ? 'text-tertiary font-bold' :
+                  r === 'success' ? 'text-emerald-400 font-bold' :
+                  r === 'fumble' ? 'text-red-400 font-bold' :
+                  'text-orange-400 font-bold'
+                const resultLabel = (r: string) =>
+                  r === 'critical' ? 'CRITICAL!' : r === 'success' ? 'SUCCESS' : r === 'fumble' ? 'FUMBLE' : 'FAILURE'
+                const dieStyle = (isKept: boolean | null, displayVal: number, isNpc?: boolean) => [
                   'flex shrink-0 items-center justify-center rounded-lg border font-mono font-bold transition-all duration-200',
-                  hasAdv ? 'h-14 w-14 text-2xl' : 'h-16 w-16 text-3xl',
+                  hasAdv ? 'h-14 w-14 text-2xl' : 'h-14 w-14 text-2xl',
                   dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
                   !isKept && hasAdv ? 'border-border/30 bg-card/20 text-muted-foreground/40 line-through' :
+                  isNpc && isContested && dicePhase === 'revealed' && (result === 'success' || result === 'critical') ? 'border-border/30 bg-card/20 text-muted-foreground/40' :
+                  isNpc && isContested ? 'border-orange-400/60 bg-orange-400/20 text-orange-400' :
                   displayVal === 20 ? 'dice-crit' :
                   displayVal === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
                   (result === 'success' || result === 'critical') ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400' :
                   'border-orange-400/60 bg-orange-400/20 text-orange-400',
                 ].join(' ')
+
+                const cardColor = [
+                  'rounded-lg border px-6 py-4 transition-all duration-500',
+                  dicePhase === 'revealed' && result === 'critical' ? 'dice-crit-card'
+                  : dicePhase === 'revealed' && result === 'success' ? 'border-emerald-400/60 bg-emerald-400/10'
+                  : dicePhase === 'revealed' && result === 'fumble' ? 'border-red-500/60 bg-red-500/10'
+                  : dicePhase === 'revealed' ? 'border-orange-400/60 bg-orange-400/10'
+                  : 'border-border/50 bg-card/50',
+                ].join(' ')
+
+                if (isContested) {
+                  // Contested layout — NPC left, player right
+                  return (
+                    <div className={cardColor}>
+                      <div className="text-center font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-3">
+                        Contested — {rollPrompt.check} vs {rollPrompt.contested!.npcSkill}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-left">
+                          <div className="text-[10px] text-muted-foreground/50 mb-1">{rollPrompt.contested!.npcName}</div>
+                          <div className={dieStyle(null, diceDisplay, true)}>{diceDisplay}</div>
+                          {dicePhase === 'revealed' && rollPrompt.npcRoll !== undefined && (
+                            <div className="mt-1 font-system text-xs text-muted-foreground/60">
+                              {rollPrompt.npcRoll} + {rollPrompt.contested!.npcModifier} = {npcTot}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {dicePhase === 'revealed' && (
+                            <span className={resultColor(result)}>{resultLabel(result)}</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] text-primary/60 mb-1">You</div>
+                          <div className={[dieStyle(true, diceDisplay2), 'ml-auto'].join(' ')}>{diceDisplay2}</div>
+                          {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
+                            <div className="mt-1 font-system text-xs text-primary/80">
+                              {rolledValue} + {rollPrompt.modifier} = {total}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Standard roll layout
                 return (
-                  <div className={[
-                    'rounded-lg border px-6 py-4 transition-all duration-500',
-                    dicePhase === 'revealed' && result === 'critical' ? 'dice-crit-card'
-                    : dicePhase === 'revealed' && result === 'success' ? 'border-emerald-400/60 bg-emerald-400/10'
-                    : dicePhase === 'revealed' && result === 'fumble' ? 'border-red-500/60 bg-red-500/10'
-                    : dicePhase === 'revealed' ? 'border-orange-400/60 bg-orange-400/10'
-                    : 'border-border/50 bg-card/50',
-                  ].join(' ')}>
+                  <div className={cardColor}>
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -1211,14 +1312,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           <div className="mt-1 font-system text-sm text-foreground">
                             {rolledValue} + {rollPrompt.modifier} = {total} <span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
                             {' '}
-                            <span className={
-                              result === 'critical' ? 'text-tertiary font-bold' :
-                              result === 'success' ? 'text-emerald-400 font-bold' :
-                              result === 'fumble' ? 'text-red-400 font-bold' :
-                              'text-orange-400 font-bold'
-                            }>
-                              {result === 'critical' ? '— CRITICAL!' : result === 'success' ? '— SUCCESS' : result === 'fumble' ? '— FUMBLE' : '— FAILURE'}
-                            </span>
+                            <span className={resultColor(result)}>— {resultLabel(result)}</span>
                           </div>
                         )}
                       </div>

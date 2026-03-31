@@ -191,6 +191,9 @@ export interface RollRecord {
   timestamp: string
   advantage?: 'advantage' | 'disadvantage'
   rawRolls?: [number, number]
+  contested?: ContestedRollInfo
+  npcRoll?: number
+  npcTotal?: number
 }
 
 export interface ChapterDebrief {
@@ -248,6 +251,7 @@ export type StreamEvent =
       toolUseId: string
       pendingMessages: unknown[]
       advantage?: 'advantage' | 'disadvantage'
+      contested?: ContestedRollInfo
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
@@ -265,6 +269,9 @@ export interface RollResolution {
   pendingMessages: unknown[]
   advantage?: 'advantage' | 'disadvantage'
   rawRolls?: [number, number]
+  contested?: ContestedRollInfo
+  npcRoll?: number
+  npcTotal?: number
 }
 
 export interface ToolCallResult {
@@ -288,6 +295,12 @@ export interface UpdateCharacterInput {
   spendInspiration?: boolean
 }
 
+export interface ContestedRollInfo {
+  npcName: string
+  npcSkill: string
+  npcModifier: number
+}
+
 export interface RequestRollInput {
   checkType: string
   stat: keyof StatBlock
@@ -295,6 +308,7 @@ export interface RequestRollInput {
   modifier: number
   reason: string
   advantage?: 'advantage' | 'disadvantage'
+  contested?: ContestedRollInfo
 }
 
 export interface StartCombatInput {

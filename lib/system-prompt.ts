@@ -140,6 +140,22 @@ When something threatens the player and the outcome depends on the player's abil
 
 **In combat specifically:** When enemies act (step 3 of combat flow), call request_roll for any enemy attack that could reasonably be dodged, blocked, or resisted. Do NOT silently apply damage. The roll is the player's agency in the enemy phase. Exception: if multiple weak enemies attack simultaneously, batch them into one save (e.g., "a volley of blaster fire, DEX save DC 14 to find cover") rather than rolling individually.
 
+## CONTESTED ROLLS
+
+When an NPC is actively working against the player — not a static DC but a living person resisting, searching, or competing — use a contested roll. Call request_roll with the contested field:
+
+- contested.npcName: the NPC's name (e.g., "Station Guard")
+- contested.npcSkill: the skill they're using (e.g., "Perception")
+- contested.npcModifier: their total modifier
+
+The player and NPC roll simultaneously. Highest total wins. Ties go to the initiator.
+
+When to use contested vs static DC:
+- **Static DC:** environmental obstacles, security systems, locked doors, knowledge checks, general social encounters with no active resistance
+- **Contested:** NPC actively searching for the player (their Perception vs player's Stealth), NPC resisting persuasion/deception with reason to be on guard (their Insight vs player's Deception/Persuasion), direct physical contest (grapple, chase), any situation where the NPC is actively opposing
+
+When using a contested roll, still provide dc and modifier as usual (dc is used as a fallback). The contested field adds the NPC side.
+
 ## PASSIVE PERCEPTION
 
 Passive WIS (Perception) = 10 + WIS modifier (shown in the state block). Use this as the player's baseline awareness.
