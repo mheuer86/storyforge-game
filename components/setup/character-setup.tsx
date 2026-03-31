@@ -38,7 +38,7 @@ function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
             'object-cover transition-all duration-500',
             isSelected ? 'grayscale-0 opacity-100' : 'grayscale opacity-50 group-hover/species:grayscale-0 group-hover/species:opacity-80'
           )}
-          sizes="140px"
+          sizes="170px"
         />
       ) : (
         <div className={cn(
@@ -154,7 +154,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                 <button
                   key={s.id}
                   onClick={() => setSelectedSpecies(s)}
-                  className="snap-start min-w-[140px] w-[140px] shrink-0 group/species text-left"
+                  className="snap-start min-w-[170px] w-[170px] shrink-0 group/species text-left"
                 >
                   {/* Portrait area — 3:4 aspect like the mock */}
                   <SpeciesPortrait
