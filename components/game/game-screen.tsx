@@ -1065,10 +1065,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onChapterClick={() => setIsMenuOpen(true)}
       />
 
-      <main className="flex flex-1 flex-col pt-14">
+      <main className="flex flex-1 flex-col pt-12">
         <ScrollArea className="flex-1">
           <div className="mx-auto max-w-[720px] px-4 py-6">
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {messages.map((message, index) => {
                 const isLast = index === messages.length - 1
                 return message.type === 'roll' && message.rollData ? (
@@ -1091,7 +1091,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 )
               })}
               {isLoading && (
-                <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 px-4 py-3">
+                <div className="max-w-[85%] border-l border-secondary/20 bg-card/20 rounded-r-lg pl-4 pr-4 py-3">
                   {retryCountdown !== null ? (
                     <div className="flex items-center gap-3">
                       <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-warning" />

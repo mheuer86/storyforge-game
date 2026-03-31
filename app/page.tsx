@@ -118,7 +118,8 @@ function AppContent() {
   }
 
   if (appState === 'world-setup') {
-    return <WorldSetup onNext={handleWorldSetupComplete} />
+    const hasSaves = autoSave || saveSlots.some(Boolean)
+    return <WorldSetup onNext={handleWorldSetupComplete} onBack={hasSaves ? () => setAppState('campaign-select') : undefined} />
   }
 
   if (appState === 'character-setup') {

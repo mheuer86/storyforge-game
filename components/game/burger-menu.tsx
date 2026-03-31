@@ -142,7 +142,7 @@ export function BurgerMenu({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="flex w-full flex-col overflow-hidden border-border/50 bg-card/95 backdrop-blur-sm sm:max-w-md">
+        <SheetContent className="flex w-full flex-col overflow-hidden border-0 bg-background/95 backdrop-blur-xl sm:max-w-md">
           <SheetHeader>
             <SheetTitle className="sr-only">Game Menu</SheetTitle>
             <SheetDescription className="sr-only">
@@ -151,20 +151,20 @@ export function BurgerMenu({
           </SheetHeader>
 
           <Tabs defaultValue="character" className="flex flex-1 flex-col overflow-hidden">
-            <div className="shrink-0 overflow-x-auto">
-              <TabsList className="flex w-max min-w-full bg-secondary/30">
-                <TabsTrigger value="character" className="shrink-0 text-xs">
+            <div className="shrink-0 overflow-x-auto border-b border-border/10 pb-2">
+              <TabsList className="flex w-max min-w-full bg-transparent gap-1">
+                <TabsTrigger value="character" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
                   Character
                 </TabsTrigger>
                 {ship.state && (
-                  <TabsTrigger value="ship" className="shrink-0 text-xs">
+                  <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
                     {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="world" className="shrink-0 text-xs">
+                <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
                   World
                 </TabsTrigger>
-                <TabsTrigger value="chapters" className="shrink-0 text-xs">
+                <TabsTrigger value="chapters" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
                   Chapters
                 </TabsTrigger>
               </TabsList>
@@ -199,19 +199,19 @@ export function BurgerMenu({
             </ScrollArea>
           </Tabs>
 
-          <SheetFooter className="flex-col gap-2 border-t border-border/30 pt-4">
+          <SheetFooter className="flex-col gap-2 border-t border-border/10 pt-4">
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => openSaveLoad('save')}
-                className="flex-1 border-border/50 bg-secondary/30 hover:bg-secondary/50"
+                className="flex-1 border-border/15 bg-secondary/10 hover:bg-secondary/20 text-xs"
               >
                 Save Game
               </Button>
               <Button
                 variant="outline"
                 onClick={() => openSaveLoad('load')}
-                className="flex-1 border-border/50 bg-secondary/30 hover:bg-secondary/50"
+                className="flex-1 border-border/15 bg-secondary/10 hover:bg-secondary/20 text-xs"
               >
                 Load Game
               </Button>
@@ -326,94 +326,104 @@ export function BurgerMenu({
   )
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-2">
+      <div className="w-6 h-px bg-primary/30" />
+      <h3 className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">{children}</h3>
+    </div>
+  )
+}
+
 function CharacterSheet({ character, currencyLabel }: { character: Character; currencyLabel: string }) {
   return (
-    <div className="flex flex-col gap-4 text-sm">
+    <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
       <div>
         <h2 className="font-heading text-lg font-semibold text-foreground">
-          {character.name}{' '}
-          <span className="text-muted-foreground">
-            — {character.species.name} {character.class.name}
-          </span>
+          {character.name}
         </h2>
-        <div className="mt-1 flex gap-3 text-sm">
-          <span>
-            <span className="text-muted-foreground">Level</span>{' '}
-            <span className="text-foreground">{character.level}</span>
-          </span>
-          <span>
-            <span className="text-muted-foreground">HP:</span>{' '}
-            <span className="text-foreground">
-              {character.hp.current}/{character.hp.max}
-            </span>
-          </span>
-          <span>
-            <span className="text-muted-foreground">AC:</span>{' '}
-            <span className="text-foreground">{character.ac}</span>
-          </span>
-        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground/60">
+          {character.species.name} {character.class.name} · Level {character.level}
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-2">
-        {Object.entries(character.class.stats).map(([stat, value]) => (
-          <div key={stat} className="rounded bg-secondary/30 px-2 py-1 text-center">
-            <div className="text-xs text-muted-foreground">{stat}</div>
-            <div className="text-foreground">
-              {value}{' '}
-              <span className="text-primary">({formatModifier(getStatModifier(value))})</span>
-            </div>
+      {/* Vitals — key-value rows */}
+      <div className="flex flex-col">
+        {[
+          { label: 'HP', value: `${character.hp.current} / ${character.hp.max}` },
+          { label: 'AC', value: String(character.ac) },
+          { label: currencyLabel, value: String(character.credits) },
+        ].map((row) => (
+          <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
+            <span className="text-xs text-muted-foreground/50 capitalize">{row.label}</span>
+            <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
           </div>
         ))}
       </div>
 
-      {/* Proficiencies */}
+      {/* Stats — terminal cards */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Proficiencies</h3>
-        <div className="flex flex-wrap gap-1">
-          {character.class.proficiencies.map((p) => (
-            <Badge key={p.name} variant="secondary" className="bg-secondary/50 text-xs">
-              {p.name}
-            </Badge>
+        <SectionLabel>Stats</SectionLabel>
+        <div className="grid grid-cols-3 gap-2">
+          {Object.entries(character.class.stats).map(([stat, value]) => (
+            <div key={stat} className="rounded-lg border border-border/10 bg-secondary/5 p-2 text-center">
+              <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/50">{stat}</div>
+              <div className="font-mono text-lg font-semibold text-foreground">{value}</div>
+              <div className="font-mono text-[10px] text-primary/70">
+                {formatModifier(getStatModifier(value))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Gear */}
+      {/* Proficiencies */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Gear</h3>
-        <ul className="list-inside list-disc text-foreground">
+        <SectionLabel>Proficiencies</SectionLabel>
+        <div className="flex flex-wrap gap-1.5">
+          {character.class.proficiencies.map((p) => (
+            <span key={p.name} className="rounded border border-border/10 bg-secondary/5 px-2 py-0.5 text-[10px] text-muted-foreground/70">
+              {p.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Gear — accent-dotted list */}
+      <div>
+        <SectionLabel>Gear</SectionLabel>
+        <ul className="flex flex-col gap-1.5">
           {character.class.startingGear.map((item, i) => (
-            <li key={`${item}-${i}`}>{item}</li>
+            <li key={`${item}-${i}`} className="flex items-start gap-2 text-xs">
+              <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+              <span className="text-foreground/70">{item}</span>
+            </li>
           ))}
         </ul>
       </div>
 
-      {/* Traits */}
+      {/* Trait — left accent border */}
       <div>
-        <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Traits</h3>
-        <div className="text-foreground">
-          <span className="text-primary">{character.class.trait.name}:</span>{' '}
-          {character.class.trait.description}
+        <SectionLabel>Class Trait</SectionLabel>
+        <div className="border-l-2 border-primary/30 pl-3">
+          <div className="text-sm font-medium text-primary/80">{character.class.trait.name}</div>
+          <div className="mt-1 text-xs text-muted-foreground/50 leading-relaxed">{character.class.trait.description}</div>
         </div>
-      </div>
-
-      {/* Credits */}
-      <div className="rounded bg-secondary/30 px-3 py-2">
-        <span className="text-muted-foreground capitalize">{currencyLabel}:</span>{' '}
-        <span className="font-semibold text-warning">{character.credits}</span>
       </div>
 
       {/* Temporary Effects */}
       {character.tempEffects.length > 0 && (
         <div>
-          <h3 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Temporary Effects</h3>
-          {character.tempEffects.map((effect, i) => (
-            <div key={i} className="rounded bg-primary/10 px-2 py-1 text-foreground">
-              {effect.name}: {effect.effect} — {effect.duration}
-            </div>
-          ))}
+          <SectionLabel>Temporary Effects</SectionLabel>
+          <div className="flex flex-col gap-1.5">
+            {character.tempEffects.map((effect, i) => (
+              <div key={i} className="border-l-2 border-warning/30 pl-3 py-1">
+                <div className="text-xs font-medium text-foreground">{effect.name}</div>
+                <div className="text-[11px] text-muted-foreground/50">{effect.effect} — {effect.duration}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -444,10 +454,10 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         </div>
 
         <div>
-          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Modules' : 'Systems'}</h3>
+          <SectionLabel>{isCyberpunk ? 'Modules' : 'Systems'}</SectionLabel>
           <div className="flex flex-col gap-2">
             {s.systems.map((sys) => (
-              <div key={sys.id} className="flex items-start gap-3 rounded border border-border/30 bg-secondary/20 px-3 py-2">
+              <div key={sys.id} className="flex items-start gap-3 rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-foreground">{sys.name}</div>
                   <div className="break-words text-xs text-muted-foreground">{sys.description}</div>
@@ -465,7 +475,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 
         {s.combatOptions.length > 0 && (
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Active Abilities' : 'Combat Options'}</h3>
+            <SectionLabel>{isCyberpunk ? 'Active Abilities' : 'Combat Options'}</SectionLabel>
             <div className="flex flex-col gap-1">
               {s.combatOptions.map((opt, i) => (
                 <div key={i} className="break-words rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
@@ -477,7 +487,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         )}
 
         <div>
-          <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">{isCyberpunk ? 'Mod History' : 'Refit History'}</h3>
+          <SectionLabel>{isCyberpunk ? 'Mod History' : 'Refit History'}</SectionLabel>
           {s.upgradeLog.length > 0 ? (
             <ul className="flex flex-col gap-1">
               {s.upgradeLog.map((entry, i) => (
@@ -501,8 +511,8 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
         </p>
       </div>
       {ship.name && (
-        <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
-          <div className="font-heading text-xs uppercase tracking-wider text-tertiary">Reserved name</div>
+        <div className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
+          <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Reserved name</div>
           <div className="mt-1 font-medium text-foreground">{ship.name}</div>
         </div>
       )}
@@ -520,16 +530,16 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
   return (
     <div className="flex flex-col gap-4 text-sm">
       {/* Subtab toggle */}
-      <div className="flex rounded-lg border border-border/40 bg-secondary/20 p-0.5">
+      <div className="flex gap-4">
         {(['people', 'narrative', 'locations'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setSubtab(tab)}
             className={cn(
-              'flex-1 rounded-md px-3 py-1.5 text-xs font-medium font-heading uppercase tracking-wider transition-all',
+              'text-[10px] font-medium uppercase tracking-[0.15em] transition-colors pb-1',
               subtab === tab
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'text-primary border-b border-primary/40'
+                : 'text-muted-foreground/40 hover:text-muted-foreground/60'
             )}
           >
             {tab}
@@ -542,11 +552,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
         <>
           {/* Companions */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Companions</h3>
+            <SectionLabel>Companions</SectionLabel>
             {world.companions.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.companions.map((c, i) => (
-                  <div key={`${i}-${c.name}`} className="rounded border border-primary/20 bg-primary/5 px-3 py-2">
+                  <div key={`${i}-${c.name}`} className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{c.name}</div>
                     <div className="text-xs text-muted-foreground">{c.description}</div>
                   </div>
@@ -559,11 +569,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* NPCs */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Known NPCs</h3>
+            <SectionLabel>Known NPCs</SectionLabel>
             {world.npcs.filter((n) => !isVessel(n)).length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.npcs.filter((n) => !isVessel(n)).map((npc, i) => (
-                  <div key={`${i}-${npc.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                  <div key={`${i}-${npc.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{npc.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {npc.description} ({npc.lastSeen})
@@ -578,11 +588,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Factions */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Factions</h3>
+            <SectionLabel>Factions</SectionLabel>
             {world.factions.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.factions.map((faction, i) => (
-                  <div key={`${i}-${faction.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                  <div key={`${i}-${faction.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{faction.name}</div>
                     <div className="text-xs text-muted-foreground">{faction.stance}</div>
                   </div>
@@ -595,7 +605,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Antagonist */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Antagonist</h3>
+            <SectionLabel>Antagonist</SectionLabel>
             {world.antagonist ? (
               <div className="flex flex-col gap-2">
                 <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
@@ -613,7 +623,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 </div>
                 {world.antagonist.moves.length > 0 && (
                   <div>
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Their Moves</h4>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Their Moves</span></div>
                     <div className="flex flex-col gap-1">
                       {world.antagonist.moves.map((move, i) => (
                         <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
@@ -637,11 +647,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
         <>
           {/* Threads */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Active Threads</h3>
+            <SectionLabel>Active Threads</SectionLabel>
             {activeThreads.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {activeThreads.map((thread, i) => (
-                  <div key={`${i}-${thread.title}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                  <div key={`${i}-${thread.title}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{thread.title}</div>
                     <div className="text-xs text-muted-foreground">{thread.status}</div>
                   </div>
@@ -658,7 +668,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
             return (
               <div>
-                <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Pressures</h3>
+                <SectionLabel>Pressures</SectionLabel>
                 {activeClocks.length > 0 || triggeredClocks.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {activeClocks.map((clock) => (
@@ -668,7 +678,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                     ))}
                     {triggeredClocks.length > 0 && (
                       <>
-                        <h4 className="mt-1 font-heading text-xs uppercase tracking-wider text-muted-foreground">Consequences</h4>
+                        <div className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Consequences</div>
                         {triggeredClocks.map((clock) => (
                           <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
                             <div className="font-medium text-foreground">{clock.name}</div>
@@ -687,7 +697,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 
           {/* Promises */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Promises & Debts</h3>
+            <SectionLabel>Promises & Debts</SectionLabel>
             {world.promises.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.promises.map((promise, i) => (
@@ -715,7 +725,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Resolved Threads */}
           {world.threads.filter((t) => t.status === 'resolved').length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Resolved Threads</h3>
+              <SectionLabel>Resolved Threads</SectionLabel>
               <div className="flex flex-col gap-2">
                 {world.threads.filter((t) => t.status === 'resolved').map((thread, i) => (
                   <div key={`${i}-${thread.title}`} className="rounded border border-border/20 bg-secondary/10 px-3 py-2 opacity-60">
@@ -734,8 +744,8 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
         <>
           {/* Current Location */}
           <div>
-            <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Current Location</h3>
-            <div className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+            <SectionLabel>Current Location</SectionLabel>
+            <div className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
               <div className="font-medium text-foreground">{world.location.name}</div>
               <div className="text-xs text-muted-foreground">{world.location.description}</div>
             </div>
@@ -744,10 +754,10 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
           {/* Vessels & Installations */}
           {world.npcs.filter(isVessel).length > 0 && (
             <div>
-              <h3 className="mb-2 font-heading text-xs uppercase tracking-wider text-tertiary">Vessels & Installations</h3>
+              <SectionLabel>Vessels & Installations</SectionLabel>
               <div className="flex flex-col gap-2">
                 {world.npcs.filter(isVessel).map((v, i) => (
-                  <div key={`${i}-${v.name}`} className="rounded border border-border/30 bg-secondary/20 px-3 py-2">
+                  <div key={`${i}-${v.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{v.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {v.description} ({v.lastSeen})
@@ -806,7 +816,7 @@ function ChaptersPanel({
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Key Events</h4>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Key Events</span></div>
                     <ul className="list-inside list-disc text-sm text-foreground">
                       {chapter.keyEvents.map((event, i) => (
                         <li key={i}>{event}</li>
@@ -817,7 +827,7 @@ function ChaptersPanel({
 
                 {chapter.rollLog.length > 0 && (
                   <div className="mb-3">
-                    <h4 className="mb-1 font-heading text-xs uppercase tracking-wider text-tertiary">Roll Log</h4>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Roll Log</span></div>
                     <div className="overflow-x-auto">
                       <table className="w-full font-mono text-xs">
                         <thead>
@@ -900,7 +910,7 @@ function ChaptersPanel({
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>
-                  <h4 className="font-heading text-xs uppercase tracking-wider text-tertiary">Lucky Breaks</h4>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Lucky Breaks</span></div>
                   <ul className="list-inside list-disc text-success">
                     {showDebrief.debrief.luckyBreaks.map((item, i) => (
                       <li key={i}>{item}</li>
@@ -910,7 +920,7 @@ function ChaptersPanel({
               )}
               {showDebrief.debrief.costsPaid.length > 0 && (
                 <div>
-                  <h4 className="font-heading text-xs uppercase tracking-wider text-tertiary">Costs Paid</h4>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Costs Paid</span></div>
                   <ul className="list-inside list-disc text-destructive">
                     {showDebrief.debrief.costsPaid.map((item, i) => (
                       <li key={i}>{item}</li>

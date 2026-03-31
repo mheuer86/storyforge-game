@@ -2,11 +2,7 @@
 
 import { useState } from 'react'
 import { track } from '@vercel/analytics'
-import Image from 'next/image'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { getGenreConfig } from '@/lib/genre-config'
+import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 import type { SaveSlotData } from '@/lib/game-data'
 import { changelog } from '@/lib/changelog'
@@ -34,153 +30,195 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function genreAccentColor(genre: string): string {
+  const map: Record<string, string> = {
+    'space-opera': 'oklch(0.82 0.15 175)',
+    'fantasy': 'oklch(0.72 0.14 75)',
+    'cyberpunk': 'oklch(0.75 0.22 145)',
+    'grimdark': 'oklch(0.58 0.16 28)',
+  }
+  return map[genre] || map['space-opera']
+}
+
 export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewGame }: CampaignSelectProps) {
   const hasSlots = slots.some(Boolean)
-  const config = getGenreConfig('space-opera')
   const [showOlderUpdates, setShowOlderUpdates] = useState(false)
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-12 p-8">
-      {/* Wordmark */}
-      <div className="text-center">
-        <div className="flex flex-col items-center gap-3">
-          <Image
-            src={config.theme.logo}
-            alt="Storyforge"
-            width={120}
-            height={120}
-            className="opacity-90"
-          />
+    <div className="flex min-h-screen flex-col items-center px-6 py-16 pb-24">
+      <div className="w-full max-w-xl flex flex-col gap-14">
+
+        {/* Wordmark */}
+        <div className="text-center">
           <div
-            className="font-roboto-mono text-5xl text-primary/70"
-            style={{ fontVariant: 'small-caps', textShadow: 'var(--title-glow)' }}
+            className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground/60"
           >
             storyforge
           </div>
         </div>
-        <div className="mt-1 text-sm tracking-widest text-muted-foreground uppercase">
-          Text-based action RPG
-        </div>
-      </div>
 
-      <Card className="w-full max-w-lg border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="font-heading text-2xl tracking-wide text-primary/70" style={{ textShadow: 'var(--title-glow)' }}>
-            Your Campaigns
-          </CardTitle>
-          <CardDescription>Continue where you left off, or start something new</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-
-          {/* Auto-save — current campaign */}
-          {autoSave && (
+        {/* Active campaign — hero treatment */}
+        {autoSave && (() => {
+          const genre = autoSave.meta.genre as Genre
+          const genreName = getGenreConfig(genre).name
+          const accent = genreAccentColor(genre)
+          return (
             <div>
-              <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">Current</p>
+              <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
+                Active Campaign
+              </div>
               <button
-                onClick={() => { track('campaign_continued', { genre: autoSave.meta.genre, chapter: autoSave.meta.chapterNumber }); onContinue() }}
-                className="w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-left transition-all duration-200 hover:border-primary/70 hover:bg-primary/10"
+                onClick={() => { track('campaign_continued', { genre, chapter: autoSave.meta.chapterNumber }); onContinue() }}
+                className="group relative w-full text-left"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-medium text-foreground">
-                      {autoSave.character.name}
-                      <span className="ml-2 text-muted-foreground font-normal">— {autoSave.character.class}</span>
-                    </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground truncate">
-                      Ch. {autoSave.meta.chapterNumber}: {autoSave.meta.chapterTitle}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">
-                      {getGenreConfig(autoSave.meta.genre as Parameters<typeof getGenreConfig>[0]).name}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground">
-                      {autoSave.meta.lastSaved ? timeAgo(autoSave.meta.lastSaved) : ''}
+                {/* Ambient glow behind card */}
+                <div
+                  className="absolute -inset-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[60px]"
+                  style={{ background: accent, opacity: 0.05 }}
+                />
+                <div
+                  className="relative rounded-xl border-l-2 px-5 py-5 transition-all duration-300"
+                  style={{ borderColor: `color-mix(in oklch, ${accent} 40%, transparent)` }}
+                >
+                  {/* Genre tag + chapter breadcrumb */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <span
+                      className="text-[10px] font-medium uppercase tracking-[0.15em] px-2 py-0.5 rounded-sm"
+                      style={{ color: accent, backgroundColor: `color-mix(in oklch, ${accent} 10%, transparent)` }}
+                    >
+                      {genreName}
                     </span>
+                    <span className="text-[10px] text-muted-foreground/40">
+                      Chapter {autoSave.meta.chapterNumber}
+                    </span>
+                    {autoSave.meta.lastSaved && (
+                      <span className="text-[10px] text-muted-foreground/30 ml-auto">
+                        {timeAgo(autoSave.meta.lastSaved)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Chapter title — hero element */}
+                  <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground mb-1.5 sm:text-4xl">
+                    {autoSave.meta.chapterTitle}
+                  </h2>
+
+                  {/* Character info */}
+                  <p className="text-base text-foreground/70">
+                    {autoSave.character.name}
+                    <span className="text-muted-foreground/50"> — {autoSave.character.class}</span>
+                  </p>
+
+                  {/* Continue link */}
+                  <div
+                    className="mt-4 text-sm font-medium transition-colors group-hover:translate-x-1 transition-transform duration-200"
+                    style={{ color: accent }}
+                  >
+                    Continue Story →
                   </div>
                 </div>
               </button>
             </div>
-          )}
+          )
+        })()}
 
-          {/* Manual save slots */}
-          {hasSlots && (
-            <div>
-              <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">Saved Campaigns</p>
-              <div className="flex flex-col gap-2">
-                {slots.map((slot, i) =>
-                  slot ? (
-                    <button
-                      key={i}
-                      onClick={() => { track('campaign_continued', { genre: slot.genre, chapter: slot.chapterNumber }); onLoadSlot(slot) }}
-                      className="w-full rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 text-left transition-all duration-200 hover:border-primary/50 hover:bg-secondary/50"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground">
-                            {slot.characterName}
-                            <span className="ml-2 text-muted-foreground font-normal">— {slot.characterClass}</span>
-                          </div>
-                          <div className="mt-0.5 text-xs text-muted-foreground truncate">
-                            Ch. {slot.chapterNumber}: {slot.chapterTitle}
-                          </div>
+        {/* Saved campaigns — minimal rows */}
+        {hasSlots && (
+          <div>
+            <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
+              Archived Echoes
+            </div>
+            <div className="flex flex-col gap-1">
+              {slots.map((slot, i) => {
+                if (!slot) return null
+                const genre = slot.genre as Genre
+                const genreName = getGenreConfig(genre).name
+                const accent = genreAccentColor(genre)
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { track('campaign_continued', { genre, chapter: slot.chapterNumber }); onLoadSlot(slot) }}
+                    className="group w-full rounded-lg px-4 py-3.5 text-left transition-all duration-200 hover:bg-secondary/10"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="text-base font-medium text-foreground">
+                          {slot.characterName}
                         </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          <Badge variant="secondary" className="text-[10px]">
-                            {getGenreConfig(slot.genre as Parameters<typeof getGenreConfig>[0]).name}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">{timeAgo(slot.savedAt)}</span>
+                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground/60">
+                          <span>{slot.characterClass}</span>
+                          <span className="text-muted-foreground/20">·</span>
+                          <span>Ch. {slot.chapterNumber}</span>
                         </div>
                       </div>
-                    </button>
-                  ) : null
-                )}
-              </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span
+                          className="text-[10px] font-medium uppercase tracking-[0.1em]"
+                          style={{ color: accent }}
+                        >
+                          {genreName}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/30">{timeAgo(slot.savedAt)}</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
-          )}
-
-          {/* New campaign */}
-          <div className="pt-1">
-            <Button
-              onClick={onNewGame}
-              variant="outline"
-              className="w-full border-border/50 bg-secondary/20 hover:bg-secondary/40"
-            >
-              Start New Campaign
-            </Button>
           </div>
+        )}
 
-        </CardContent>
-      </Card>
-      {/* Changelog */}
-      {changelog.length > 0 && (
-        <div className="w-full max-w-lg">
-          <p className="mb-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">What's new</p>
-          <div className="flex flex-col gap-3">
-            {(showOlderUpdates ? changelog : changelog.slice(0, 1)).map((entry, i) => (
-              <div key={i} className="rounded-lg border border-border/30 bg-card/40 px-4 py-3">
-                <p className="mb-1.5 text-xs text-muted-foreground">{formatDate(entry.date)}</p>
-                <ul className="flex flex-col gap-1">
-                  {entry.changes.map((change, j) => (
-                    <li key={j} className="flex gap-2 text-xs text-foreground/70">
-                      <span className="mt-0.5 shrink-0 text-primary/50">·</span>
-                      <span>{change}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          {changelog.length > 1 && (
-            <button
-              onClick={() => setShowOlderUpdates(v => !v)}
-              className="mt-2 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-            >
-              {showOlderUpdates ? 'Show less' : `Show ${changelog.length - 1} older update${changelog.length - 1 > 1 ? 's' : ''}`}
-            </button>
-          )}
+        {/* New campaign — centered outline button */}
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={onNewGame}
+            className="rounded-lg border border-border/30 px-10 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary/40 hover:text-foreground hover:bg-primary/5"
+          >
+            Start New Campaign
+          </button>
         </div>
-      )}
+
+        {/* Decorative dots */}
+        <div className="flex justify-center gap-1.5">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/20" />
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/15" />
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/10" />
+        </div>
+
+        {/* Changelog — vertical accent line */}
+        {changelog.length > 0 && (
+          <div>
+            <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
+              What's New
+            </div>
+            <div className="flex flex-col gap-4">
+              {(showOlderUpdates ? changelog : changelog.slice(0, 1)).map((entry, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-[2px] shrink-0 rounded-full bg-secondary/30" />
+                  <div>
+                    <p className="mb-1.5 text-[10px] text-muted-foreground/40">{formatDate(entry.date)}</p>
+                    <ul className="flex flex-col gap-1">
+                      {entry.changes.map((change, j) => (
+                        <li key={j} className="text-xs text-foreground/50 leading-relaxed">
+                          {change}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {changelog.length > 1 && (
+              <button
+                onClick={() => setShowOlderUpdates(v => !v)}
+                className="mt-3 text-[10px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+              >
+                {showOlderUpdates ? 'Show less' : `Show ${changelog.length - 1} older update${changelog.length - 1 > 1 ? 's' : ''}`}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

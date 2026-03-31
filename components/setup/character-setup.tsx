@@ -2,16 +2,13 @@
 
 import { useState } from 'react'
 import { track } from '@vercel/analytics'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   getStatModifier,
   formatModifier,
 } from '@/lib/game-data'
 import { getGenreConfig, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
+import { WizardNav } from './wizard-nav'
 
 interface CharacterSetupProps {
   genre: Genre
@@ -31,222 +28,249 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
 
   const canStart = characterName.trim() && selectedSpecies && selectedClass
 
+  const stepLabels = ['World', 'Identity']
+
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
-      <Card className="w-full max-w-4xl border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle
-            className="font-heading text-3xl tracking-wide text-primary/70"
-            style={{ textShadow: 'var(--title-glow)' }}
-          >
-            Create Your Character
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Define who you are in this {config.settingNoun}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-8">
-          {/* Character Name */}
-          <div className="flex flex-col gap-3">
-            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Character Name
-            </label>
-            <Input
-              value={characterName}
-              onChange={(e) => setCharacterName(e.target.value)}
-              placeholder="Enter your character's name..."
-              className="border-border/50 bg-secondary/30 text-foreground placeholder:text-muted-foreground/50 focus:border-primary"
-            />
-          </div>
+    <div className="flex min-h-screen flex-col items-center px-6 pt-12 pb-28">
+      <div className="w-full max-w-2xl flex flex-col gap-10">
 
-          {/* Gender / Pronouns */}
-          <div className="flex flex-col gap-3">
-            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Pronouns
-            </label>
-            <div className="flex gap-2">
-              {([
-                { value: 'he', label: 'He / Him' },
-                { value: 'she', label: 'She / Her' },
-                { value: 'they', label: 'They / Them' },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setSelectedGender(opt.value)}
-                  className={cn(
-                    'flex-1 rounded-lg border px-3 py-2 text-sm transition-all duration-200',
-                    selectedGender === opt.value
-                      ? 'border-primary bg-primary/10 text-foreground shadow-[0_0_15px_-3px] shadow-primary/30'
-                      : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+        {/* Header: Wordmark + step indicator */}
+        <div className="text-center flex flex-col gap-4">
+          <div className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground/60">
+            storyforge
           </div>
+          <div className="flex items-center justify-center gap-6">
+            {stepLabels.map((label, i) => (
+              <span
+                key={label}
+                className={cn(
+                  'text-[10px] font-medium uppercase tracking-[0.15em] transition-colors',
+                  i === 1 ? 'text-primary' : 'text-muted-foreground/40 cursor-pointer hover:text-muted-foreground/60'
+                )}
+                onClick={i === 0 ? onBack : undefined}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
 
-          {/* Species Selection */}
-          <div className="flex flex-col gap-3">
-            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        {/* Character name — full width, bottom border only */}
+        <div>
+          <input
+            value={characterName}
+            onChange={(e) => setCharacterName(e.target.value)}
+            placeholder="Name your character..."
+            className="w-full bg-transparent border-0 border-b border-border/20 pb-3 text-2xl font-mono tracking-wider text-foreground placeholder:text-muted-foreground/25 focus:border-primary/40 focus:outline-none transition-colors sm:text-3xl"
+          />
+        </div>
+
+        {/* Pronouns — compact segmented control */}
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-px bg-primary/30 shrink-0" />
+          <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50 shrink-0">
+            Pronouns
+          </span>
+          <div className="flex rounded-lg border border-border/20 overflow-hidden">
+            {([
+              { value: 'he', label: 'He/Him' },
+              { value: 'she', label: 'She/Her' },
+              { value: 'they', label: 'They/Them' },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSelectedGender(opt.value)}
+                className={cn(
+                  'px-4 py-1.5 text-xs font-medium transition-all',
+                  selectedGender === opt.value
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/10'
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Species — horizontal scroll with accent line label */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-px bg-primary/30" />
+            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
               {config.speciesLabel}
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {genreSpecies.map((s) => (
+            </span>
+          </div>
+          <div className="flex items-start gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
+            {genreSpecies.map((s) => {
+              const isSelected = selectedSpecies?.id === s.id
+              return (
                 <button
                   key={s.id}
                   onClick={() => setSelectedSpecies(s)}
-                  className={cn(
-                    'flex min-w-[160px] flex-col gap-1 rounded-lg border p-3 text-left transition-all duration-200',
-                    selectedSpecies?.id === s.id
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_-3px] shadow-primary/30'
-                      : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-secondary/50'
-                  )}
+                  className="snap-start min-w-[140px] w-[140px] shrink-0 group/species text-left"
                 >
-                  <span className="text-sm font-medium text-foreground">{s.name}</span>
-                  <span className="text-left text-xs leading-tight text-muted-foreground">
-                    {s.description}
-                  </span>
+                  {/* Portrait area — 3:4 aspect like the mock */}
+                  <div className={cn(
+                    'relative aspect-[3/4] rounded-xl overflow-hidden mb-3 border transition-all duration-300',
+                    isSelected
+                      ? 'border-primary/40'
+                      : 'border-border/10 group-hover/species:border-primary/30'
+                  )}>
+                    <div className={cn(
+                      'flex items-center justify-center w-full h-full text-3xl font-mono font-bold transition-colors',
+                      isSelected ? 'bg-primary/10 text-primary' : 'bg-secondary/8 text-muted-foreground/15'
+                    )}>
+                      {s.name[0]}
+                    </div>
+                    {/* Name overlay at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/80 to-transparent">
+                      <p className="text-[10px] font-bold tracking-wide uppercase text-foreground">{s.name}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground/50 leading-relaxed px-1">{s.description}</p>
                 </button>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Class Selection */}
-          <div className="flex flex-col gap-3">
-            <label className="font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        {/* Class — grid with accent line label */}
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-px bg-primary/30" />
+            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
               Class
-            </label>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-              {genreClasses.map((c) => (
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+            {genreClasses.map((c) => {
+              const isSelected = selectedClass?.id === c.id
+              return (
                 <button
                   key={c.id}
                   onClick={() => setSelectedClass(c)}
                   className={cn(
-                    'flex flex-col gap-2 rounded-lg border p-4 text-left transition-all duration-200',
-                    selectedClass?.id === c.id
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_-3px] shadow-primary/30'
-                      : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-secondary/50'
+                    'relative flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-all duration-300',
+                    isSelected
+                      ? 'border-primary/50 bg-primary/8 shadow-[0_0_20px_-5px] shadow-primary/15'
+                      : 'border-border/15 bg-secondary/5 hover:border-border/30'
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-medium text-foreground">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">{c.concept}</div>
+                  {isSelected && (
+                    <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-primary text-xs">✓</span>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 border-primary/50 bg-primary/10 text-xs text-primary"
-                    >
-                      {c.primaryStat}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {c.proficiencies.map((p) => (
-                      <Badge
-                        key={p}
-                        variant="secondary"
-                        className="bg-secondary/50 text-[10px] text-secondary-foreground"
-                      >
-                        {p}
-                      </Badge>
-                    ))}
-                  </div>
+                  )}
+                  <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/80">{c.name}</div>
+                  <div className="text-[11px] text-muted-foreground/50 leading-snug">{c.concept}</div>
                 </button>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Stat Block Preview */}
-          {selectedClass && (
-            <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
-              <h4 className="mb-3 font-heading text-sm font-medium uppercase tracking-wider text-muted-foreground">
-                Character Preview
-              </h4>
-              <div className="flex flex-col gap-4 text-sm">
-                {/* Stats */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-foreground">
-                  {Object.entries(selectedClass.stats).map(([stat, value]) => (
-                    <span key={stat}>
-                      <span className="text-muted-foreground">{stat}</span>{' '}
-                      <span className="font-semibold">{value}</span>
-                      <span className="text-primary">
-                        {' '}
-                        ({formatModifier(getStatModifier(value))})
-                      </span>
-                    </span>
-                  ))}
+        {/* Character preview — terminal dossier */}
+        {selectedClass && (
+          <div className="rounded-xl border border-border/15 overflow-hidden">
+            {/* Header bar */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border-b border-border/10">
+              <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
+                Profile Analysis
+              </span>
+              <span className="font-mono text-[9px] text-muted-foreground/30">
+                SF-{genre.toUpperCase().slice(0, 3)}-{selectedClass.id.slice(0, 4).toUpperCase()}
+              </span>
+            </div>
+
+            <div className="p-5 flex flex-col gap-5">
+              {/* Stat grid */}
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {Object.entries(selectedClass.stats).map(([stat, value]) => {
+                  const isPrimary = stat === selectedClass.primaryStat
+                  return (
+                    <div
+                      key={stat}
+                      className={cn(
+                        'rounded-lg border p-2.5 text-center transition-colors',
+                        isPrimary
+                          ? 'border-primary/30 bg-primary/8'
+                          : 'border-border/10 bg-secondary/5'
+                      )}
+                    >
+                      <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/50">{stat}</div>
+                      <div className="font-mono text-lg font-semibold text-foreground">{value}</div>
+                      <div className={cn(
+                        'font-mono text-[10px]',
+                        isPrimary ? 'text-primary' : 'text-muted-foreground/50'
+                      )}>
+                        {formatModifier(getStatModifier(value))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Vitals — key-value rows */}
+              <div className="flex flex-col">
+                {[
+                  { label: 'HP', value: `${selectedClass.startingHp} / ${selectedClass.startingHp}` },
+                  { label: 'AC', value: String(selectedClass.startingAc) },
+                  { label: config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1), value: `${selectedClass.startingCredits} ${config.currencyAbbrev}` },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
+                    <span className="text-xs text-muted-foreground/50">{row.label}</span>
+                    <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Starting inventory */}
+              <div>
+                <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40 mb-2">
+                  Starting Gear
                 </div>
-
-                {/* HP & AC */}
-                <div className="flex gap-4 text-foreground">
-                  <span>
-                    <span className="text-muted-foreground">HP:</span>{' '}
-                    <span className="font-mono font-semibold">{selectedClass.startingHp}/{selectedClass.startingHp}</span>
-                  </span>
-                  <span>
-                    <span className="text-muted-foreground">AC:</span>{' '}
-                    <span className="font-mono font-semibold">{selectedClass.startingAc}</span>
-                  </span>
-                  <span>
-                    <span className="text-muted-foreground">{config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1)}:</span>{' '}
-                    <span className="font-mono font-semibold">{selectedClass.startingCredits}{config.currencyAbbrev}</span>
-                  </span>
-                </div>
-
-                {/* Starting Gear */}
-                <div>
-                  <span className="text-muted-foreground">Starting Gear:</span>
-                  <ul className="mt-1 list-inside list-disc text-foreground">
-                    {selectedClass.startingInventory.map((item) => (
-                      <li key={item.id}>
+                <ul className="flex flex-col gap-1.5">
+                  {selectedClass.startingInventory.map((item) => (
+                    <li key={item.id} className="flex items-start gap-2 text-xs">
+                      <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+                      <span className="text-foreground/70">
                         {item.name}
                         {item.damage && (
-                          <span className="ml-1 font-mono text-xs text-muted-foreground">({item.damage})</span>
+                          <span className="ml-1 font-mono text-[10px] text-muted-foreground/40">({item.damage})</span>
                         )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                {/* Trait */}
-                <div>
-                  <span className="font-medium text-primary">{selectedClass.trait.name}:</span>{' '}
-                  <span className="text-muted-foreground">{selectedClass.trait.description}</span>
-                </div>
+              {/* Class trait */}
+              <div className="border-l-2 border-primary/30 pl-4">
+                <div className="text-sm font-medium text-primary/80">{selectedClass.trait.name}</div>
+                <div className="mt-1 text-xs text-muted-foreground/50 leading-relaxed">{selectedClass.trait.description}</div>
               </div>
             </div>
-          )}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-4">
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Back
-            </Button>
-            <Button
-              onClick={() => {
-                if (!canStart) return
-                track('campaign_started', { genre, class: selectedClass!.id })
-                onStart({
-                  name: characterName.trim(),
-                  species: selectedSpecies!,
-                  characterClass: selectedClass!,
-                  gender: selectedGender,
-                })
-              }}
-              disabled={!canStart}
-              className="bg-primary px-8 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              style={{ boxShadow: 'var(--action-glow)' }}
-            >
-              Begin Campaign
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {/* Fixed bottom nav */}
+      <WizardNav
+        onBack={onBack}
+        onNext={() => {
+          if (!canStart) return
+          track('campaign_started', { genre, class: selectedClass!.id })
+          onStart({
+            name: characterName.trim(),
+            species: selectedSpecies!,
+            characterClass: selectedClass!,
+            gender: selectedGender,
+          })
+        }}
+        nextLabel="Begin Campaign"
+        nextDisabled={!canStart}
+      />
     </div>
   )
 }

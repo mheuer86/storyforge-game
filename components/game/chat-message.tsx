@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Flag, Info } from 'lucide-react'
+import { Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage as ChatMessageType } from '@/lib/game-data'
 
@@ -67,7 +67,7 @@ export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
     )
   }
 
-  // GM narrative message
+  // GM narrative message — left accent border, no full card outline
   if (message.type === 'gm') {
     return (
       <div
@@ -75,7 +75,7 @@ export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="max-w-[85%] rounded-lg border border-border/30 bg-card/50 p-4">
+        <div className="max-w-[85%] border-l border-secondary/20 bg-card/30 rounded-r-lg pl-4 pr-4 py-4">
           <p className="leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>
             {renderMarkdown(message.content)}
           </p>
@@ -96,38 +96,34 @@ export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
     )
   }
 
-  // Player action message
+  // Player action message — softer accent tint
   if (message.type === 'player') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[70%] rounded-lg bg-primary/20 px-4 py-2 text-right">
-          <p className="text-foreground" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
+        <div className="max-w-[70%] rounded-lg bg-primary/8 border border-primary/20 px-4 py-2 text-right shadow-[0_0_15px_-5px] shadow-primary/10">
+          <p className="text-foreground/80" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
         </div>
       </div>
     )
   }
 
-  // Meta question from player
+  // Meta question from player — no card border, just tinted text
   if (message.type === 'meta-question') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[70%] rounded-lg border border-info/30 bg-info/10 px-4 py-2 text-right">
-          <p className="italic text-info" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
+        <div className="max-w-[70%] px-4 py-2 text-right">
+          <p className="italic text-info/70" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
         </div>
       </div>
     )
   }
 
-  // Meta response from GM
+  // Meta response from GM — dot prefix, no card border
   if (message.type === 'meta-response') {
     return (
-      <div className="flex items-start gap-2">
-        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-info/20">
-          <Info className="h-3 w-3 text-info" />
-        </div>
-        <div className="max-w-[80%] rounded-lg border border-info/30 bg-info/5 px-4 py-2">
-          <p className="text-meta" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
-        </div>
+      <div className="flex items-start gap-2.5 max-w-[80%]">
+        <div className="mt-2 w-1.5 h-1.5 rounded-full bg-info shrink-0" />
+        <p className="text-meta leading-relaxed" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
       </div>
     )
   }

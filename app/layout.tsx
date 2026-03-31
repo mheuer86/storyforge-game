@@ -70,6 +70,9 @@ export default function RootLayout({
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
         <div className="mist-bg hidden" aria-hidden="true" />
+        <div className="grain-overlay" aria-hidden="true" />
+        <div className="ambient-orb ambient-orb-1" aria-hidden="true" />
+        <div className="ambient-orb ambient-orb-2" aria-hidden="true" />
         <div className="relative z-10 min-h-screen">
           {children}
         </div>
