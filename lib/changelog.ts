@@ -5,6 +5,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-04-01',
+    changes: [
+      'Major UI redesign — all wizard screens rebuilt with cinematic, typography-led layouts. Campaign select shows your active story as a hero card with genre-colored accents. Genre selection uses spacious 2-column tiles with hover glows. Character creation features horizontal species portraits, a compact class grid, and a terminal-style dossier preview',
+      'Game screen polish — slimmer top bar (wordmark only, no logo), left-border GM messages, player messages with primary glow, dot-prefix meta responses, wider message spacing, and a cleaner contained action bar',
+      'Burger menu refresh — transparent surface, uppercase label tabs, accent-line section headers, terminal-style stat cards, and accent-dotted gear lists',
+      'Visual atmosphere — grain texture overlay and ambient blur orbs across all screens',
+      'Defensive saves — enemy attacks, traps, poisons, and psychic effects now trigger a dice roll before damage is applied. No more silent damage from the GM',
+      'Shared wizard navigation — fixed bottom bar with genre-colored Back/Next buttons and step indicator breadcrumbs',
+    ],
+  },
+  {
     date: '2026-03-31',
     changes: [
       'World tab restructured — People, Narrative, and Locations subtabs replace the old Now/All toggle for cleaner navigation',
