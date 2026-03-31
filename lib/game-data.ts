@@ -71,6 +71,7 @@ export function createInitialGameState(
     tempModifiers: [],
     traits: [{ ...selectedClass.trait }],
     skillPoints: { available: 0, log: [] },
+    inspiration: false,
   }
 
   const baseName = pickRandom(config.locationNames)

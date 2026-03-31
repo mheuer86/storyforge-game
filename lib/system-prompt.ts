@@ -165,6 +165,21 @@ Combat is narrative-first. Don't list damage in isolation. Weave it into the des
 When combat starts, call start_combat.
 When combat ends (enemies defeated, fled, surrendered, or player escapes), call end_combat.
 
+## INSPIRATION
+
+Inspiration is a reward for compelling play. Award it (call award_inspiration) when the player:
+- Makes a decision that is tactically risky but narratively compelling
+- Stays in character when it costs them something
+- Honors a promise at a bad time
+- Chooses the harder right over the easier wrong
+
+Rules:
+- The player can hold only one Inspiration at a time. Earning a second while holding one means it's lost.
+- Spending Inspiration rerolls any single die. When the player says "I use Inspiration" (or similar) after a roll, call request_roll again with the same parameters. The new result stands even if worse.
+- After spending, set inspiration to false via update_character with spendInspiration: true.
+- Inspiration does not carry across chapters — reset it in close_chapter if the player still has it. Use it or lose it.
+- Award sparingly. Once per chapter is about right. Twice if the player is exceptional. Always include a brief narrative note explaining why.
+
 ## DOWNTIME & TRANSIT PACING
 
 Don't compress transit, downtime, or waiting periods into pure summary. These are character scenes. If the crew is stuck together for hours or days (on a ship, in a safehouse, waiting for a contact), play at least one scene with dialogue, interaction, or a skill check before summarizing the rest.
@@ -535,7 +550,7 @@ function compressGameState(gs: GameState): string {
 
   return `PRESSURE: ${pressureLine}
 
-CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus} | Passive Perception ${10 + getStatModifier(c.stats.WIS)}${c.skillPoints?.available ? ` | Skill Points: ${c.skillPoints.available} unspent` : ''} | Pronouns: ${pronouns}
+CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus} | Passive Perception ${10 + getStatModifier(c.stats.WIS)} | Inspiration: ${c.inspiration ? 'YES' : 'no'}${c.skillPoints?.available ? ` | Skill Points: ${c.skillPoints.available} unspent` : ''} | Pronouns: ${pronouns}
 STATS: ${statLine}
 PROFICIENCIES: ${c.proficiencies.join(', ')}
 INVENTORY: ${inventoryLine || 'Empty'}

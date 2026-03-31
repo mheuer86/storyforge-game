@@ -211,6 +211,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             statChanges.push({ type: 'gain', label: `Expertise: ${input.upgradeToExpertise}` })
           }
 
+          if ((input as Record<string, unknown>).spendInspiration) {
+            char.inspiration = false
+            statChanges.push({ type: 'loss', label: 'Used Inspiration' })
+          }
+
           updated = { ...updated, character: char }
         }
 
@@ -514,6 +519,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             },
           }
           // Intentionally no statChange — disposition is hidden from player
+        }
+
+        if (result.tool === 'award_inspiration') {
+          const input = result.input as { reason: string }
+          const hadIt = updated.character.inspiration
+          updated = {
+            ...updated,
+            character: { ...updated.character, inspiration: true },
+          }
+          if (!hadIt) {
+            statChanges.push({ type: 'gain', label: `Inspiration: ${input.reason}` })
+          }
         }
 
         if (result.tool === 'update_ship') {
@@ -1253,6 +1270,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           hp: gameState.character.hp,
           ac: gameState.character.ac,
           credits: gameState.character.credits,
+          inspiration: gameState.character.inspiration ?? false,
           tempEffects: gameState.character.tempModifiers.map((m) => ({
             name: m.name,
             effect: `+${m.value} ${m.stat}`,

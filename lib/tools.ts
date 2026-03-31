@@ -557,6 +557,21 @@ export const gameTools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'award_inspiration',
+    description:
+      'Award Inspiration when the player makes a narratively compelling, tactically risky decision. The player can hold only one at a time — if they already have it, the award is lost. They spend it to reroll any die.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        reason: {
+          type: 'string',
+          description: 'Brief narrative note explaining why Inspiration was awarded (shown to player).',
+        },
+      },
+      required: ['reason'],
+    },
+  },
+  {
     name: 'meta_response',
     description:
       'Answer an out-of-character question from the player. Use this ONLY when the message is prefixed with [META]. Answer directly from game state. Do not advance the story.',

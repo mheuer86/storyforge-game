@@ -39,6 +39,7 @@ interface Character {
   hp: { current: number; max: number }
   ac: number
   credits: number
+  inspiration: boolean
   tempEffects: { name: string; effect: string; duration: string }[]
 }
 
@@ -354,6 +355,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
           { label: 'HP', value: `${character.hp.current} / ${character.hp.max}` },
           { label: 'AC', value: String(character.ac) },
           { label: currencyLabel, value: String(character.credits) },
+          { label: 'Inspiration', value: character.inspiration ? '◆ Ready' : '◇ —' },
         ].map((row) => (
           <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
             <span className="text-xs text-muted-foreground/50 capitalize">{row.label}</span>
