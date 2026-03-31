@@ -7,6 +7,10 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2026-03-31',
     changes: [
+      'World tab restructured — People, Narrative, and Locations subtabs replace the old Now/All toggle for cleaner navigation',
+      'Ship/Rig tab now hidden in genres without one (Fantasy, Grimdark)',
+      'Typography refresh — Space Grotesk headings for sci-fi genres, Lora Bold for fantasy, genre-colored section labels',
+      'Auto-retry on overload — instead of an error, you see a countdown ("Claude is taking a break — retrying in 12s") and it tries again automatically',
       'Unique class traits — 10 traits reworked across all genres: Smuggler\'s Luck, Shadow Step, Diplomatic Immunity, Bardic Echo, Favor Owed, Leverage, Arcane Surge (wild magic), Deep Dive (cyberpsychosis risk), Divine Favor (deity alignment), Bitter Medicine (side effects)',
       'Cyberpunk Solo class replaces Wheelman — CON-primary contract killer with "Dead Man Walking" (ignore one attack\'s damage)',
       'Grimdark Inquisitor class replaces Outrider — INT-primary interrogator with "The Question" (force an NPC to reveal information)',
