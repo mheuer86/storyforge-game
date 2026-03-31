@@ -188,6 +188,8 @@ export interface RollRecord {
   result: 'critical' | 'success' | 'failure' | 'fumble'
   reason: string
   timestamp: string
+  advantage?: 'advantage' | 'disadvantage'
+  rawRolls?: [number, number]
 }
 
 export interface ChapterDebrief {
@@ -244,6 +246,7 @@ export type StreamEvent =
       reason: string
       toolUseId: string
       pendingMessages: unknown[]
+      advantage?: 'advantage' | 'disadvantage'
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
@@ -258,6 +261,8 @@ export interface RollResolution {
   reason: string
   toolUseId: string
   pendingMessages: unknown[]
+  advantage?: 'advantage' | 'disadvantage'
+  rawRolls?: [number, number]
 }
 
 export interface ToolCallResult {
@@ -286,6 +291,7 @@ export interface RequestRollInput {
   dc: number
   modifier: number
   reason: string
+  advantage?: 'advantage' | 'disadvantage'
 }
 
 export interface StartCombatInput {

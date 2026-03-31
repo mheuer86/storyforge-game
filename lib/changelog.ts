@@ -5,6 +5,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-03-31',
+    changes: [
+      'Advantage & disadvantage — the GM now mechanically grants advantage (roll 2d20, take higher) or disadvantage (roll 2d20, take lower) based on gear, creative tactics, NPC disposition, crew cohesion, and environmental conditions',
+      'Two-dice UI — when advantage or disadvantage is active, two dice animate and the kept die is highlighted while the discarded one is struck through',
+    ],
+  },
+  {
     date: '2026-03-30',
     changes: [
       'GM now requires a dice roll for any social moment where a reasonable NPC could say no — strong arguments lower the DC or grant advantage, but never skip the roll',

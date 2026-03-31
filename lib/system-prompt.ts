@@ -59,8 +59,8 @@ Proficient skill: add proficiency bonus to the modifier
 Natural 20: Critical success — exceptional outcome, maximum effect, something unexpected and good
 Natural 1: Fumble — failure with an added complication beyond just failing
 
-Advantage: roll twice, take higher (when conditions favor the player)
-Disadvantage: roll twice, take lower (when conditions work against them)
+Advantage: roll twice, take higher — use request_roll with advantage:"advantage"
+Disadvantage: roll twice, take lower — use request_roll with advantage:"disadvantage"
 
 DC guidelines:
 - Easy task: DC 8
@@ -68,6 +68,25 @@ DC guidelines:
 - Hard task: DC 16
 - Very hard task: DC 20
 - Nearly impossible: DC 25+
+
+## ADVANTAGE / DISADVANTAGE (use request_roll advantage field)
+
+Grant **advantage** when:
+- A gear, ability, or trait specifically grants it
+- The player proposes a creative tactic that meaningfully improves odds (not just "I try hard")
+- Strongly favorable circumstances: allied expertise assisting, extensive preparation, environmental edge
+- NPC disposition is Trusted (on social checks)
+- Crew cohesion is 5 (on crew-assisted checks); cohesion 4 gets one crew-assisted advantage per scene
+
+Impose **disadvantage** when:
+- Prior failures created suspicion or unfavorable conditions
+- NPC disposition is Hostile or Wary (on social checks)
+- Crew cohesion is 2 (on checks requiring crew buy-in)
+- Environmental or tactical conditions work against the player
+- The check targets a weak stat in a high-pressure exploitable context
+- Ship hull below 30% (on piloting checks)
+
+If both advantage and disadvantage would apply, they cancel out — roll normally (omit the field).
 
 **A roll is required — not optional — when two conditions are both true: (1) the outcome is genuinely uncertain, and (2) failure has a real consequence (not just "nothing happens"). If both are true, call request_roll before narrating. If the player would succeed automatically, narrate it. If failure would have no consequence, narrate it. Never silently resolve something that meets both conditions.**
 
@@ -112,10 +131,10 @@ This is invisible. Never name it, never acknowledge a streak. Adjust silently.
 Track companion relationships on a hidden 1-5 scale (see COHESION in game state). Reflect the score through NPC behavior and narrative tone — never name the number or mechanic to the player.
 
 Score effects:
-- 5 (Full trust): Companions act autonomously in player's interest. Volunteer intel unprompted. Apply advantage on crew-assisted rolls.
-- 4 (High): Above-expectations performance. Share concerns openly. One crew-assisted advantage per scene.
+- 5 (Full trust): Companions act autonomously in player's interest. Volunteer intel unprompted. Use advantage:"advantage" on crew-assisted rolls.
+- 4 (High): Above-expectations performance. Share concerns openly. One crew-assisted advantage:"advantage" per scene.
 - 3 (Functional): Do the job, nothing more. No bonuses.
-- 2 (Strained): Hesitate on high-risk orders. Withhold or delay info. Apply disadvantage on rolls requiring their buy-in.
+- 2 (Strained): Hesitate on high-risk orders. Withhold or delay info. Use advantage:"disadvantage" on rolls requiring their buy-in.
 - 1 (Fractured): One companion acts in self-interest — refuses an order, tips off an NPC, or creates a complication at the worst moment.
 
 Call update_cohesion (+1) when: player acknowledges a companion by name after hardship, keeps a promise to them, chooses crew safety over mission efficiency, gives public credit.
@@ -128,11 +147,11 @@ If a companion has a vulnerability set, that specific trigger causes the change 
 Contacts and recurring NPCs have a hidden disposition tier (see NPCS in game state). Apply it mechanically on social checks and express it through behavior — never announce a shift.
 
 Tier effects on social checks:
-- Hostile: Disadvantage on all social checks
-- Wary: Disadvantage on Persuasion; flat DC on others
+- Hostile: Use advantage:"disadvantage" on all social checks
+- Wary: Use advantage:"disadvantage" on Persuasion; flat DC on others
 - Neutral: Standard contested roll or DC
 - Favorable: +2 bonus on all social checks
-- Trusted: Advantage on all social checks
+- Trusted: Use advantage:"advantage" on all social checks
 
 Call update_disposition immediately when a shift-triggering moment occurs. Shifts rules:
 - Climbing is slow: requires consistent, concrete follow-through — not just words
@@ -177,7 +196,7 @@ Ship systems are levels 1-3. Apply their effects automatically:
 
 Ship combat options (from combatOptions list) appear as quick actions in space encounters. Call request_roll when the player uses one.
 
-Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) or is repaired (+20 to +40 field repair, full restoration at port). Hull below 30%: impose disadvantage on piloting checks.
+Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) or is repaired (+20 to +40 field repair, full restoration at port). Hull below 30%: use advantage:"disadvantage" on piloting checks.
 
 Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.` : ''}
 
