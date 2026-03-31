@@ -128,6 +128,11 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'Brief in-narrative reason for the check (shown to the player).',
         },
+        advantage: {
+          type: 'string',
+          enum: ['advantage', 'disadvantage'],
+          description: 'Set to "advantage" (roll 2d20, take higher) or "disadvantage" (roll 2d20, take lower) when conditions warrant it. Omit for a normal roll. See ADVANTAGE/DISADVANTAGE rules in system prompt.',
+        },
       },
       required: ['checkType', 'stat', 'dc', 'modifier', 'reason'],
     },

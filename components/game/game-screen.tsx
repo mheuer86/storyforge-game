@@ -25,6 +25,8 @@ interface DisplayMessage {
     total: number
     result: 'critical' | 'success' | 'failure' | 'fumble'
     reason: string
+    advantage?: 'advantage' | 'disadvantage'
+    rawRolls?: [number, number]
   }
 }
 
@@ -47,6 +49,8 @@ interface RollPrompt {
   toolUseId: string
   pendingMessages: unknown[]
   pendingState: GameState
+  advantage?: 'advantage' | 'disadvantage'
+  rawRolls?: [number, number]
 }
 
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
@@ -64,7 +68,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string } | null>(null)
   const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
   const [diceDisplay, setDiceDisplay] = useState(1)
+  const [diceDisplay2, setDiceDisplay2] = useState(1)
   const [rolledValue, setRolledValue] = useState<number | null>(null)
+  const [rawRolls, setRawRolls] = useState<[number, number] | null>(null)
   const lastMessageRef = useRef<HTMLDivElement>(null)
   const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
@@ -617,6 +623,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 toolUseId: event.toolUseId,
                 pendingMessages: event.pendingMessages,
                 pendingState: stateWithChanges,
+                advantage: event.advantage,
               })
             }
 
@@ -814,6 +821,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         reason: prompt.reason,
         toolUseId: prompt.toolUseId,
         pendingMessages: prompt.pendingMessages,
+        ...(prompt.advantage && { advantage: prompt.advantage }),
+        ...(prompt.rawRolls && { rawRolls: prompt.rawRolls }),
       }
 
       const modifier = prompt.modifier
@@ -829,7 +838,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           id: rollMsgId,
           type: 'roll' as const,
           content: '',
-          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason },
+          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls },
         },
         { id: gmMsgId, type: 'gm' as const, content: '' },
       ])
@@ -935,17 +944,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
   const handleDiceClick = useCallback(() => {
     if (!rollPrompt || dicePhase !== 'idle') return
-    const roll = Math.floor(Math.random() * 20) + 1
-    setRolledValue(roll)
+    const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
+    const die1 = Math.floor(Math.random() * 20) + 1
+    const die2 = isAdvantage ? Math.floor(Math.random() * 20) + 1 : die1
+    const kept = rollPrompt.advantage === 'advantage' ? Math.max(die1, die2)
+      : rollPrompt.advantage === 'disadvantage' ? Math.min(die1, die2)
+      : die1
+    setRolledValue(kept)
+    if (isAdvantage) setRawRolls([die1, die2])
     setDicePhase('rolling')
 
     const interval = setInterval(() => {
       setDiceDisplay(Math.floor(Math.random() * 20) + 1)
+      if (isAdvantage) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
     }, 50)
 
     setTimeout(() => {
       clearInterval(interval)
-      setDiceDisplay(roll)
+      setDiceDisplay(die1)
+      if (isAdvantage) setDiceDisplay2(die2)
       setDicePhase('revealed')
     }, 700)
   }, [rollPrompt, dicePhase])
@@ -954,16 +971,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   useEffect(() => {
     if (dicePhase !== 'revealed' || rolledValue === null || !rollPrompt) return
     const t = setTimeout(() => {
-      const capturedPrompt = rollPrompt
+      const capturedPrompt = { ...rollPrompt, rawRolls: rawRolls ?? undefined }
       const capturedRoll = rolledValue
       setRollPrompt(null)
       setDicePhase('idle')
       setDiceDisplay(1)
+      setDiceDisplay2(1)
       setRolledValue(null)
+      setRawRolls(null)
       sendContinuation(capturedRoll, capturedPrompt)
     }, 1400)
     return () => clearTimeout(t)
-  }, [dicePhase, rolledValue, rollPrompt, sendContinuation])
+  }, [dicePhase, rolledValue, rollPrompt, rawRolls, sendContinuation])
 
   const handleSave = useCallback(
     (slot: 1 | 2 | 3) => {
@@ -1074,8 +1093,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-medium uppercase tracking-wider text-primary/70">
+                      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary/70">
                         Roll required
+                        {rollPrompt.advantage && (
+                          <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
+                            ({rollPrompt.advantage})
+                          </span>
+                        )}
                       </div>
                       <div className="mt-0.5 font-mono text-base text-foreground">
                         {rollPrompt.check} — DC {rollPrompt.dc}
@@ -1084,17 +1108,37 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         {rollPrompt.reason}
                       </div>
                     </div>
-                    <div className="ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
-                      🎲
+                    <div className="ml-4 flex items-center gap-1.5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
+                        🎲
+                      </div>
+                      {rollPrompt.advantage && (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
+                          🎲
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 text-center text-xs text-primary/60">
-                    Tap to roll
+                    Tap to roll{rollPrompt.advantage ? ' 2d20' : ''}
                   </div>
                 </button>
               ) : (() => {
+                const hasAdv = !!rollPrompt.advantage
                 const total = rolledValue !== null ? rolledValue + rollPrompt.modifier : null
                 const result = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : total !== null && total >= rollPrompt.dc ? 'success' : 'failure'
+                const die1Kept = dicePhase === 'revealed' && rawRolls && rolledValue === rawRolls[0]
+                const die2Kept = dicePhase === 'revealed' && rawRolls && rolledValue === rawRolls[1] && (!die1Kept || rawRolls[0] === rawRolls[1])
+                const dieStyle = (isKept: boolean | null, displayVal: number) => [
+                  'flex shrink-0 items-center justify-center rounded-lg border font-mono font-bold transition-all duration-200',
+                  hasAdv ? 'h-14 w-14 text-2xl' : 'h-16 w-16 text-3xl',
+                  dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
+                  !isKept && hasAdv ? 'border-border/30 bg-card/20 text-muted-foreground/40 line-through' :
+                  displayVal === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
+                  displayVal === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
+                  (result === 'success' || result === 'critical') ? 'border-primary/60 bg-primary/20 text-primary' :
+                  'border-orange-400/60 bg-orange-400/20 text-orange-400',
+                ].join(' ')
                 return (
                   <div className={[
                     'rounded-lg border px-6 py-4 transition-all duration-500',
@@ -1106,8 +1150,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   ].join(' ')}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                           {rollPrompt.check} — DC {rollPrompt.dc}
+                          {rollPrompt.advantage && dicePhase === 'revealed' && (
+                            <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
+                              {rollPrompt.advantage}
+                            </span>
+                          )}
                         </div>
                         {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
                           <div className="mt-1 font-mono text-sm text-foreground">
@@ -1124,15 +1173,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           </div>
                         )}
                       </div>
-                      <div className={[
-                        'ml-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold transition-all duration-200',
-                        dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
-                        diceDisplay === 20 ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300' :
-                        diceDisplay === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
-                        (result === 'success' || result === 'critical') ? 'border-primary/60 bg-primary/20 text-primary' :
-                        'border-orange-400/60 bg-orange-400/20 text-orange-400',
-                      ].join(' ')}>
-                        {diceDisplay}
+                      <div className="ml-4 flex items-center gap-1.5">
+                        <div className={dieStyle(hasAdv ? die1Kept : true, diceDisplay)}>
+                          {diceDisplay}
+                        </div>
+                        {hasAdv && (
+                          <div className={dieStyle(die2Kept, diceDisplay2)}>
+                            {diceDisplay2}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1213,12 +1262,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 function RollBadge({
   rollData,
 }: {
-  rollData: NonNullable<{ check: string; dc: number; roll: number; modifier: number; total: number; result: string; reason: string }>
+  rollData: NonNullable<{ check: string; dc: number; roll: number; modifier: number; total: number; result: string; reason: string; advantage?: 'advantage' | 'disadvantage'; rawRolls?: [number, number] }>
 }) {
   const isCrit = rollData.result === 'critical'
   const isFumble = rollData.result === 'fumble'
   const isSuccess = rollData.result === 'success' || isCrit
   const label = isCrit ? '— CRITICAL!' : isFumble ? '— FUMBLE' : isSuccess ? '— SUCCESS' : '— FAILURE'
+  const hasAdv = !!rollData.advantage && !!rollData.rawRolls
 
   const cardClass = isCrit
     ? 'border-yellow-400/60 bg-yellow-400/10'
@@ -1236,7 +1286,7 @@ function RollBadge({
     ? 'text-red-400 font-bold'
     : 'text-orange-400 font-bold'
 
-  const dieClass = isCrit
+  const keptDieClass = isCrit
     ? 'border-yellow-400/60 bg-yellow-400/20 text-yellow-300'
     : isSuccess
     ? 'border-primary/60 bg-primary/20 text-primary'
@@ -1244,12 +1294,19 @@ function RollBadge({
     ? 'border-red-500/60 bg-red-500/20 text-red-400'
     : 'border-orange-400/60 bg-orange-400/20 text-orange-400'
 
+  const discardedDieClass = 'border-border/30 bg-card/20 text-muted-foreground/40 line-through'
+
   return (
     <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {rollData.check} — DC {rollData.dc}
+            {rollData.advantage && (
+              <span className={rollData.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
+                {rollData.advantage}
+              </span>
+            )}
           </div>
           <div className="mt-1 font-mono text-sm text-foreground">
             {rollData.roll}
@@ -1262,8 +1319,21 @@ function RollBadge({
             <span className={labelClass}>{label}</span>
           </div>
         </div>
-        <div className={`ml-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold ${dieClass}`}>
-          {rollData.roll}
+        <div className="ml-4 flex items-center gap-1.5">
+          {hasAdv ? (
+            <>
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ${rollData.rawRolls![0] === rollData.roll ? keptDieClass : discardedDieClass}`}>
+                {rollData.rawRolls![0]}
+              </div>
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ${rollData.rawRolls![1] === rollData.roll && (rollData.rawRolls![0] !== rollData.roll || rollData.rawRolls![0] === rollData.rawRolls![1]) ? keptDieClass : discardedDieClass}`}>
+                {rollData.rawRolls![1]}
+              </div>
+            </>
+          ) : (
+            <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold ${keptDieClass}`}>
+              {rollData.roll}
+            </div>
+          )}
         </div>
       </div>
     </div>

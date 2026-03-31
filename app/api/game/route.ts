@@ -34,6 +34,8 @@ const requestSchema = z.object({
     reason: z.string(),
     toolUseId: z.string(),
     pendingMessages: z.array(z.any()),
+    advantage: z.enum(['advantage', 'disadvantage']).optional(),
+    rawRolls: z.tuple([z.number().min(1).max(20), z.number().min(1).max(20)]).optional(),
   }).optional(),
 })
 
@@ -44,12 +46,13 @@ function resolveRoll(roll: number, modifier: number, dc: number): RollRecord['re
   return 'failure'
 }
 
-function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result']): string {
+function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number]): string {
   const total = roll + modifier
-  if (result === 'critical') return `Natural 20! Critical success. Total: ${total} vs DC ${dc}. Exceptional outcome.`
-  if (result === 'fumble') return `Natural 1! Fumble. Total: ${total} vs DC ${dc}. Failure with complication.`
-  if (result === 'success') return `Success. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}.`
-  return `Failure. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}. Apply the "fail with a cost" rule.`
+  const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
+  if (result === 'critical') return `Natural 20! Critical success${advNote}. Total: ${total} vs DC ${dc}. Exceptional outcome.`
+  if (result === 'fumble') return `Natural 1! Fumble${advNote}. Total: ${total} vs DC ${dc}. Failure with complication.`
+  if (result === 'success') return `Success${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}.`
+  return `Failure${advNote}. Roll: ${roll} + ${modifier} modifier = ${total} vs DC ${dc}. Apply the "fail with a cost" rule.`
 }
 
 export async function POST(req: NextRequest) {
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
 
         // ── Phase 2: client sent a roll result, continue from pending conversation ──
         if (rollResolution) {
-          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId } = rollResolution
+          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls } = rollResolution
           const result = resolveRoll(roll, modifier, dc)
           const total = roll + modifier
 
@@ -91,13 +94,15 @@ export async function POST(req: NextRequest) {
             id: Date.now().toString(),
             check, stat, dc, roll, modifier, total, result, reason,
             timestamp: new Date().toISOString(),
+            ...(advantage && { advantage }),
+            ...(rawRolls && { rawRolls }),
           }
 
           const continuationMessages: Anthropic.MessageParam[] = [
             ...(pendingMessages as Anthropic.MessageParam[]),
             {
               role: 'user',
-              content: [{ type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, dc, result) }],
+              content: [{ type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, dc, result, advantage, rawRolls) }],
             },
           ]
 
@@ -176,7 +181,7 @@ export async function POST(req: NextRequest) {
 
           for (const tool of roundToolCalls) {
             if (tool.name === 'request_roll') {
-              const input = tool.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string }
+              const input = tool.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage' }
 
               // Flush any tools accumulated so far before pausing
               if (clientToolResults.length > 0) {
@@ -196,6 +201,7 @@ export async function POST(req: NextRequest) {
                   ...conversationMessages,
                   { role: 'assistant' as const, content: completedMessage.content },
                 ],
+                ...(input.advantage && { advantage: input.advantage }),
               })
 
               send({ type: 'done' })
