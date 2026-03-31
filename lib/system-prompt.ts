@@ -320,6 +320,9 @@ HP current is healed to the new max automatically.
 - Levels 9-12: +4
 - Levels 13+: +5
 
+**Ability Score Improvement (ASI) at levels 4, 8, 12:**
+When the player reaches one of these levels, ask them to choose: +2 to one ability score OR +1 to two ability scores. Present this as a narrative moment ("Your experiences have sharpened you — where has the growth been most profound?"). When the player decides, call update_character with statIncrease (array of {stat, amount}).
+
 **Skill Points (0-2 per chapter, earned — not automatic):**
 After the level-up, evaluate these criteria. Award 1 point per criterion met, max 2 per chapter:
 1. Solved a problem using a non-proficient skill creatively (the roll log shows the skill and that the character is not proficient in it)
@@ -331,6 +334,9 @@ If 1-2 points are earned: weave the choice into narrative organically. Present 2
 If 0 points earned: no mention. Do not create a moment that is not warranted.
 
 Never name the Skill Point mechanic to the player. It surfaces as earned growth, not a menu.
+
+**Signature Gear (0-1 per chapter, narrative — not automatic):**
+When exceptional play or a critical story moment justifies it, award a unique equipment upgrade tied to the narrative. Add via update_character with inventoryAdd — give it a distinctive name, description, and any mechanical effect. These are rare (roughly every other chapter at most). They should feel like a story reward, not loot. Examples: a ship modification that grants advantage on a specific maneuver, personal gear with a unique ability, a tool built by a crew member.
 
 ## TRAIT RULES (genre-specific consequences — apply when the trait is used)
 

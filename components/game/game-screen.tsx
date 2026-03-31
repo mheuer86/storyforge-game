@@ -198,6 +198,19 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             }
           }
 
+          if ((input as Record<string, unknown>).statIncrease) {
+            const increases = (input as Record<string, unknown>).statIncrease as { stat: string; amount: number }[]
+            const newStats = { ...char.stats }
+            for (const inc of increases) {
+              const key = inc.stat as keyof typeof newStats
+              if (key in newStats) {
+                newStats[key] += inc.amount
+                statChanges.push({ type: 'gain', label: `${inc.stat} +${inc.amount} → ${newStats[key]}` })
+              }
+            }
+            char.stats = newStats
+          }
+
           if (input.addProficiency) {
             if (!char.proficiencies.includes(input.addProficiency)) {
               char.proficiencies = [...char.proficiencies, input.addProficiency]

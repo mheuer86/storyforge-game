@@ -89,6 +89,18 @@ export const gameTools: Anthropic.Tool[] = [
           },
           required: ['newLevel', 'hpIncrease'],
         },
+        statIncrease: {
+          type: 'array',
+          description: 'Ability Score Improvement at levels 4, 8, 12. Array of stat increases: [{stat: "CHA", amount: 2}] for +2 to one stat, or [{stat: "CHA", amount: 1}, {stat: "WIS", amount: 1}] for +1 to two stats. Ask the player which stats before calling.',
+          items: {
+            type: 'object',
+            properties: {
+              stat: { type: 'string', enum: ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] },
+              amount: { type: 'number', description: '1 or 2' },
+            },
+            required: ['stat', 'amount'],
+          },
+        },
         addProficiency: {
           type: 'string',
           description: 'Add a new skill proficiency earned via Skill Point (e.g. "Stealth"). Call after presenting the choice narratively.',
