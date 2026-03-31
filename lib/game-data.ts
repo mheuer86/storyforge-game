@@ -181,6 +181,21 @@ export function loadGameState(): GameState | null {
     if (!state.world.tensionClocks) {
       state.world.tensionClocks = []
     }
+    // Migrate cyberpunk saves that predate the tech rig
+    if (state.meta.genre === 'cyberpunk' && !state.world.ship) {
+      state.world.ship = {
+        hullCondition: 100,
+        systems: [
+          { id: 'neurofence', name: 'Neurofence', level: 1, description: 'Basic intrusion detection.' },
+          { id: 'spectra', name: 'Spectra', level: 1, description: 'Passive ECM, reduces electronic signature.' },
+          { id: 'redline', name: 'Redline', level: 1, description: 'Boost one ability check per chapter (risk of burnout).' },
+          { id: 'panoptik', name: 'Panoptik', level: 1, description: 'Detect armed hostiles and surveillance in area.' },
+          { id: 'skinweave', name: 'Skinweave', level: 1, description: 'Basic identity bypass for low-security.' },
+        ],
+        combatOptions: [],
+        upgradeLog: [],
+      }
+    }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
     if (cleaned !== state) saveGameState(cleaned)
