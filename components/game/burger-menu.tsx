@@ -619,15 +619,11 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                       <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-foreground/60">{world.antagonist.description}</div>
-                  <div className="mt-1 text-xs text-foreground">
-                    <span className="text-foreground/40">Agenda: </span>
-                    {world.antagonist.agenda}
-                  </div>
+                  <div className="mt-0.5 text-sm text-foreground/60">{world.antagonist.description}</div>
                 </div>
                 {world.antagonist.moves.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Their Moves</span></div>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Their Moves</span></div>
                     <div className="flex flex-col gap-1">
                       {world.antagonist.moves.map((move, i) => (
                         <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
@@ -682,7 +678,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                     ))}
                     {triggeredClocks.length > 0 && (
                       <>
-                        <div className="mt-1 text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Consequences</div>
+                        <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Consequences</div>
                         {triggeredClocks.map((clock) => (
                           <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
                             <div className="font-medium text-foreground">{clock.name}</div>
@@ -822,7 +818,7 @@ function ChaptersPanel({
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Key Events</span></div>
+                    <div className="flex items-center gap-2 mb-2"><div className="w-4 h-px bg-primary/40" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Key Events</span></div>
                     <ul className="list-inside list-disc text-sm text-foreground">
                       {chapter.keyEvents.map((event, i) => (
                         <li key={i}>{event}</li>
@@ -833,11 +829,11 @@ function ChaptersPanel({
 
                 {chapter.rollLog.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Roll Log</span></div>
+                    <div className="flex items-center gap-2 mb-2"><div className="w-4 h-px bg-primary/40" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Roll Log</span></div>
                     <div className="overflow-x-auto">
-                      <table className="w-full font-mono text-xs">
+                      <table className="w-full font-mono text-sm">
                         <thead>
-                          <tr className="text-muted-foreground">
+                          <tr className="text-foreground/40">
                             <th className="py-1 text-left">Check</th>
                             <th className="py-1 text-center">DC</th>
                             <th className="py-1 text-center">Roll</th>
@@ -848,7 +844,7 @@ function ChaptersPanel({
                           {chapter.rollLog.map((entry, i) => (
                             <tr key={i}>
                               <td className="py-1 text-foreground">{entry.check}</td>
-                              <td className="py-1 text-center text-muted-foreground">{entry.dc}</td>
+                              <td className="py-1 text-center text-foreground/50">{entry.dc}</td>
                               <td className="py-1 text-center text-foreground">
                                 {entry.roll}+{entry.modifier}
                               </td>
@@ -916,7 +912,7 @@ function ChaptersPanel({
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Lucky Breaks</span></div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Lucky Breaks</span></div>
                   <ul className="list-inside list-disc text-success">
                     {showDebrief.debrief.luckyBreaks.map((item, i) => (
                       <li key={i}>{item}</li>
@@ -926,7 +922,7 @@ function ChaptersPanel({
               )}
               {showDebrief.debrief.costsPaid.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Costs Paid</span></div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Costs Paid</span></div>
                   <ul className="list-inside list-disc text-destructive">
                     {showDebrief.debrief.costsPaid.map((item, i) => (
                       <li key={i}>{item}</li>
