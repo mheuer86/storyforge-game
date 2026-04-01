@@ -54,7 +54,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
   const [rollPrompt, setRollPrompt] = useState<RollPrompt | null>(null)
-  const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string } | null>(null)
+  const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string; rollResolution?: RollResolution } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
   const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
   const [diceDisplay, setDiceDisplay] = useState(1)
@@ -328,7 +328,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
   const handleRetry = useCallback(() => {
     if (!retryContext || isLoadingRef.current) return
-    const { playerMessage, state, isMetaQuestion, isInitial, gmMsgId } = retryContext
+    const { playerMessage, state, isMetaQuestion, isInitial, gmMsgId, rollResolution } = retryContext
     setRetryContext(null)
     // Replace the error bubble with a fresh empty one, then re-stream
     const newGmMsgId = crypto.randomUUID()
@@ -337,9 +337,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     )
     isLoadingRef.current = true
     setIsLoading(true)
-    setRetryContext({ playerMessage, state, isMetaQuestion, isInitial, gmMsgId: newGmMsgId })
+    setRetryContext({ playerMessage, state, isMetaQuestion, isInitial, gmMsgId: newGmMsgId, rollResolution })
     streamRequest(
-      { message: playerMessage, gameState: state, isMetaQuestion, isInitial },
+      { message: playerMessage, gameState: state, isMetaQuestion, isInitial, ...(rollResolution && { rollResolution }) },
       newGmMsgId,
       isMetaQuestion,
       state,
@@ -439,9 +439,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setIsLoading(false)
         },
         (msg) => {
+          const is504 = msg.includes('504')
+          const is529 = msg.includes('529') || msg.toLowerCase().includes('overload')
+          const friendlyMsg = is504 ? 'Request timed out — please try again' : is529 ? 'Claude is overloaded right now — please try again in a moment' : `Something went wrong (${msg})`
           setMessages((prev) =>
-            prev.map((m) => (m.id === gmMsgId ? { ...m, content: `[Error: ${msg}]` } : m))
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: friendlyMsg, isError: true } : m))
           )
+          setRetryContext({ playerMessage: '', state: stateWithRoll, isMetaQuestion: false, isInitial: false, gmMsgId, rollResolution })
           isLoadingRef.current = false
           setIsLoading(false)
         },

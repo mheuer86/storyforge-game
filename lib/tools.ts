@@ -620,13 +620,17 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'add_clue',
     description:
-      'Add a discovered clue to the notebook. Call this whenever the player discovers a meaningful piece of information through investigation, conversation, or observation. Tags are hidden from the player and used to determine which clues can connect.',
+      'Add or update a clue in the notebook. Call this whenever the player discovers meaningful information. If updating an existing clue with new details, pass the existing clueId to merge rather than creating a duplicate.',
     input_schema: {
       type: 'object' as const,
       properties: {
+        clueId: {
+          type: 'string',
+          description: 'ID of an existing clue to update with new details. Check NOTEBOOK in game state for existing clue IDs before adding. Omit to create a new clue.',
+        },
         content: {
           type: 'string',
-          description: 'What the player learned — the factual content of the clue.',
+          description: 'What the player learned — the factual content of the clue. When updating, this replaces the previous content.',
         },
         source: {
           type: 'string',
@@ -634,7 +638,7 @@ export const gameTools: Anthropic.Tool[] = [
         },
         tags: {
           type: 'array',
-          description: 'Hidden categorical tags for linking clues (e.g. "financial", "timeline", "alias"). 1-4 tags.',
+          description: 'Hidden categorical tags for linking clues (e.g. "financial", "timeline", "alias"). 1-4 tags. When updating, tags are merged with existing.',
           items: { type: 'string' },
         },
         isRedHerring: {

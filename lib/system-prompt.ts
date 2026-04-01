@@ -504,7 +504,7 @@ function buildToolUsage(currencyName: string): string {
 
 **Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
 
-**Notebook:** add_clue when the player discovers meaningful information (active investigation, passive perception, NPC volunteering). Include hidden tags for linking. connect_clues after a successful Investigation check confirms a player's connection proposal.
+**Notebook:** add_clue when the player discovers meaningful information (active investigation, passive perception, NPC volunteering). Include hidden tags for linking. **Before adding a new clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clueId to update it with the new details instead of creating a duplicate.** connect_clues after a successful Investigation check confirms a player's connection proposal.
 
 **Meta:** meta_response only.
 
