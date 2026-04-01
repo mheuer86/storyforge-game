@@ -46,11 +46,20 @@ Frame everything in-character. Don't name check types — just call request_roll
 `
     : ''
 
-  // Context-conditional sections — only ship relevant mechanical blocks
+  // Context-conditional sections — only ship relevant mechanical blocks.
+  // Omitted sections get one-line fallback summaries so the model knows they exist.
   const combatSection = context === 'combat' ? SECTION_COMBAT : ''
   const infiltrationSection = context === 'infiltration' ? SECTION_INFILTRATION : ''
   const downtimeSection = (context === 'downtime' || context === 'social' || context === 'exploration') ? SECTION_DOWNTIME : ''
   const assetSection = ps.assetMechanic && context !== 'downtime' ? ps.assetMechanic : ''
+
+  const fallbacks: string[] = []
+  if (!combatSection) fallbacks.push('Combat flow (turn order: player → enemies → new situation; batch enemy actions; start_combat/end_combat)')
+  if (!infiltrationSection) fallbacks.push('Infiltration flow (escalating detection model; cover identity checks scale by NPC awareness; extraction is always a scene)')
+  if (!downtimeSection) fallbacks.push('Downtime pacing (play character scenes during transit/waiting; NPC texture: habit, dialogue, unexpected moment)')
+  const fallbackSection = fallbacks.length > 0
+    ? `\n## AVAILABLE BUT NOT LOADED (context: ${context})\nThe following rule sections exist but are omitted for this context. If the scene shifts, they apply from the next turn:\n- ${fallbacks.join('\n- ')}\n`
+    : ''
 
   const staticPrompt = `${ps.role}
 
@@ -75,7 +84,7 @@ ${ps.vocabulary}
 
 ## NPC VOICE
 
-Every recurring NPC should have a recognizable speech pattern — not accents or catchphrases, but rhythm. Establish each NPC's pattern in their first significant scene and maintain it.
+Every recurring NPC should have a recognizable speech pattern — not accents or catchphrases, but rhythm. Establish each NPC's pattern in their first significant scene and maintain it. The player should identify who's talking without dialogue tags.
 
 ${ps.npcVoiceGuide}
 
@@ -91,7 +100,10 @@ ${infiltrationSection}
 
 ${downtimeSection}
 
+${fallbackSection}
 ${SECTION_NARRATIVE_GUIDANCE}
+
+${SECTION_EXAMPLE_FLOW}
 
 ${SECTION_HIDDEN_SYSTEMS}
 
@@ -220,7 +232,9 @@ Recovery: one level per long rest (8+ hours safe). Medical treatment: one additi
 
 At 0 HP, the player is unconscious and dying. Companions or circumstances may stabilize (fate roll DC 10). If no help, death saves begin: d20 each round, no modifiers. 10+ is a success, 9 or below is a failure. Three successes → stabilize at 0 HP. Three failures → death. Nat 20 → conscious with 1 HP. Nat 1 → two failures.
 
-Death should be rare but real. Total party defeat (captured, overwhelmed, forced to flee) is a valid outcome that redirects the campaign, not ends it.`
+Death should be rare but real. If the player dies, narrate a meaningful conclusion to the character, then discuss out of character: new character in the same world, or rewind to a decision point. If death can't happen, stakes are hollow.
+
+Total party defeat (captured, overwhelmed, forced to flee) is a valid outcome that doesn't end the campaign — it redirects it. Capture leads to escape scenarios. Forced retreat leads to regrouping.`
 
 // ============================================================
 // CONTEXT-CONDITIONAL SECTIONS
@@ -260,6 +274,40 @@ Don't compress transit or waiting into pure summary. Play at least one scene wit
 When the player asks to skip ahead, compress logistics but deliver one brief scene. Ask if they want to engage or move on.`
 
 // ============================================================
+// EXAMPLE FLOW — anchors correct behavior better than rules alone
+// ============================================================
+
+const SECTION_EXAMPLE_FLOW = `## EXAMPLE: WELL-EXECUTED TURN SEQUENCE
+
+This shows the correct pattern for a single player action. Study the rhythm.
+
+**Player says:** "I try to slip past the guard while he's checking the manifest."
+
+**GM does:**
+1. Narrates TO the moment of uncertainty — the guard's position, the gap in attention, the distance to cover. Stops before resolving.
+2. Calls request_roll (DEX Stealth, DC 14, +5 modifier). Waits for result.
+3. Result is 11 (total 16, pass by 2) → narrates success: the player ghosts past, hears a snippet of conversation as they pass. No bonus discovery (passed by 2, not 5+).
+4. If result were 8 (total 13, fail by 1) → narrates fail-forward: the player makes it past but the guard's head turns, a half-second of eye contact. Not caught yet — but the guard remembers the face. Disadvantage on future checks here. Clock ticks.
+5. Calls suggest_actions with meaningfully different options.
+
+**What NOT to do:**
+- Write three paragraphs of the player successfully sneaking past, then call request_roll decoratively.
+- Skip the roll because "the guard is distracted" — distraction lowers the DC, it doesn't remove the roll.
+- Offer four suggest_actions that are all variations of "continue sneaking."
+
+## EXAMPLE: NPC VOICE DIFFERENTIATION
+
+Two NPCs deliver the same information — notice the difference is rhythm, not accent.
+
+**Military officer (Kessrin):** "Pinnacle is the target. We go in eight days. I need your plan on my desk by morning."
+
+**Intelligence analyst (Renn):** "The data points to Pinnacle. There are... complications. I'd rather walk you through them in person before you commit to a timeline."
+
+**Engineer (Torr):** "Pinnacle. Yeah. The charge'll work on their junction conduit — standard gauge, same as the relay. Ten seconds to plant if nobody's watching."
+
+Same briefing. Three people. Three rhythms. The player knows who's talking without being told.`
+
+// ============================================================
 // NARRATIVE GUIDANCE — always included
 // ============================================================
 
@@ -269,7 +317,7 @@ Each chapter should have a recognizable dramatic shape: a **hook** that establis
 
 ## STRONG SUCCESS REWARDS
 
-Strong successes (5+ over DC or nat 20) should grant something beyond the stated objective: unexpected information, a moment of clarity, an NPC reaction that opens a new door, a tactical advantage that persists. Success by the minimum is just success. Success by a wide margin is an opportunity.
+Strong successes (5+ over DC or nat 20) should grant something beyond the stated objective: an unexpected piece of information, a moment of clarity, an NPC reaction that opens a new door, a tactical advantage that persists into the next scene. Success by the minimum is just success. Success by a wide margin is an opportunity. Reward strong rolls with narrative generosity — this is the "yes, and" that balances the "yes, but" of fail-forward.
 
 ## INFORMATION ASYMMETRY
 
@@ -277,11 +325,11 @@ Narrate information the player character wouldn't know — enemy movements, NPC 
 
 ## SUGGEST_ACTIONS QUALITY
 
-Each suggested action should represent a meaningfully different approach: one cautious, one bold, one lateral-thinking. The fourth slot should be something the player might not have considered. Always leave room for "something else."
+Each suggested action should represent a meaningfully different approach, not variations on the same idea. Include: one cautious option, one bold option, one lateral-thinking option. The fourth slot (if used) should be something the player might not have considered — a thread to pull, an NPC to engage, an angle that reframes the situation. Always leave implicit room for "something else." These are prompts, not a menu.
 
 ## SCOPE ESCALATION
 
-When strategic scope expands beyond what the player can personally affect, refocus on what they can: the next operation, the next relationship, the next decision. Keep the camera on their hands, not the war map. NPCs handle the parts the player can't reach.`
+When strategic scope expands beyond what the player can personally affect, refocus on what they can: the next operation, the next relationship, the next decision. The player defeats the fleet by stealing the plans, not commanding the counter-armada. Keep the camera on their hands, not the war map. NPCs handle the parts the player can't reach. The player's job is the thing only they can do.`
 
 // ============================================================
 // HIDDEN SYSTEMS — always included
@@ -312,8 +360,8 @@ Climbing slow (consistent follow-through). Falling fast (single betrayal, multip
 
 ## PROMISE CONSEQUENCE SYSTEM
 
-Active → Strained: deferred twice, conditions worsened, significant time without progress.
-Strained → Broken: third deferral, direct contradiction, tolerance exceeded. Cohesion -1.
+Active → Strained: deferred twice, conditions worsened, significant time without progress. Effect: no cohesion bonus, possible disadvantage.
+Strained → Broken: third deferral, direct contradiction, tolerance exceeded. Effect: cohesion -1, NPC may withdraw/act in self-interest.
 Strained → Active: player takes concrete visible action (not just words).
 Broken → Recovery (rare): only with high prior trust, requires overdelivery.
 
