@@ -915,7 +915,7 @@ function ChaptersPanel({
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2"><div className="w-4 h-px bg-primary/40" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Roll Log</span></div>
                     <div className="overflow-x-auto">
-                      <table className="w-full font-mono text-sm">
+                      <table className="w-full font-mono text-xs">
                         <thead>
                           <tr className="text-foreground/40">
                             <th className="py-1 text-left">Check</th>
