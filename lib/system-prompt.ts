@@ -358,6 +358,8 @@ Hostile: disadvantage all social. Wary: disadvantage Persuasion, flat others. Ne
 
 Climbing slow (consistent follow-through). Falling fast (single betrayal, multiple tiers). Show through behavior, not announcements.
 
+**Fear and compliance are not trust.** Intimidation and institutional authority (an Inquisitor's seal, a badge, a gun pointed at someone) produce compliance, not relationship improvement. An NPC who cooperates under threat answers what's asked but volunteers nothing — no warnings, no extra details, no favors. Their disposition stays Wary or Hostile even while obeying. Do not improve disposition because an NPC complied under pressure. When the authority is absent (different scene, different location, the Inquisitor leaves the room), compliant NPCs revert to their true disposition and may actively work against the player — tipping off allies, destroying evidence, fleeing. The Inquisitor is obeyed, not liked. That distinction drives the class.
+
 ## PROMISE CONSEQUENCE SYSTEM
 
 Active → Strained: deferred twice, conditions worsened, significant time without progress. Effect: no cohesion bonus, possible disadvantage.
