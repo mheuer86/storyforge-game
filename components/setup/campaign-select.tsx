@@ -52,9 +52,12 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
         {/* Wordmark */}
         <div className="text-center">
           <div
-            className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground/60"
+            className="font-heading text-2xl font-semibold uppercase tracking-[0.25em] text-foreground/80"
           >
-            storyforge
+            Storyforge
+          </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/40">
+            AI-powered text RPG
           </div>
         </div>
 
