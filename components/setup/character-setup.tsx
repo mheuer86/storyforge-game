@@ -13,7 +13,7 @@ import { WizardNav } from './wizard-nav'
 
 // Portrait paths: /portraits/{genre}/{species-id}.png
 // Falls back to letter placeholder if image doesn't exist
-const PORTRAIT_GENRES = new Set(['space-opera', 'fantasy', 'cyberpunk', 'grimdark'])
+const PORTRAIT_GENRES = new Set(['space-opera', 'fantasy', 'cyberpunk', 'grimdark', 'noire'])
 
 function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
   genre: Genre
@@ -114,7 +114,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
         {/* Pronouns — compact segmented control */}
         <div className="flex items-center gap-4">
           <div className="w-8 h-px bg-primary/30 shrink-0" />
-          <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50 shrink-0">
+          <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70 shrink-0">
             Pronouns
           </span>
           <div className="flex rounded-lg border border-border/20 overflow-hidden">
@@ -143,7 +143,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-px bg-primary/30" />
-            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
+            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
               {config.speciesLabel}
             </span>
           </div>
@@ -174,7 +174,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-px bg-primary/30" />
-            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
+            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
               Class
             </span>
           </div>
@@ -209,12 +209,9 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
         {selectedClass && (
           <div className="rounded-xl border border-border/15 overflow-hidden">
             {/* Header bar */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border-b border-border/10">
+            <div className="flex items-center px-4 py-2.5 bg-primary/5 border-b border-border/10">
               <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
                 Profile Analysis
-              </span>
-              <span className="font-mono text-[9px] text-muted-foreground/30">
-                SF-{genre.toUpperCase().slice(0, 3)}-{selectedClass.id.slice(0, 4).toUpperCase()}
               </span>
             </div>
 
@@ -233,11 +230,11 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                           : 'border-border/10 bg-secondary/5'
                       )}
                     >
-                      <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/50">{stat}</div>
-                      <div className="font-mono text-lg font-semibold text-foreground">{value}</div>
+                      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">{stat}</div>
+                      <div className="font-mono text-2xl font-semibold text-foreground">{value}</div>
                       <div className={cn(
-                        'font-mono text-[10px]',
-                        isPrimary ? 'text-primary' : 'text-muted-foreground/50'
+                        'font-mono text-xs',
+                        isPrimary ? 'text-primary' : 'text-muted-foreground/60'
                       )}>
                         {formatModifier(getStatModifier(value))}
                       </div>
@@ -254,7 +251,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   { label: config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1), value: `${selectedClass.startingCredits} ${config.currencyAbbrev}` },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
-                    <span className="text-xs text-muted-foreground/50">{row.label}</span>
+                    <span className="text-xs text-foreground/70">{row.label}</span>
                     <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
                   </div>
                 ))}
@@ -262,7 +259,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
 
               {/* Starting inventory */}
               <div>
-                <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40 mb-2">
+                <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-primary/70 mb-2">
                   Starting Gear
                 </div>
                 <ul className="flex flex-col gap-1.5">

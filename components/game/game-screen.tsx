@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { TopBar } from './top-bar'
 import { ChatMessage } from './chat-message'
-import { StateDiffBar } from './state-diff-bar'
+import { RollBadge } from './roll-badge'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions } from '@/lib/game-data'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock } from '@/lib/types'
+import { applyToolResults, type StatChange } from '@/lib/tool-processor'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, TensionClock } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
 
@@ -17,25 +18,8 @@ interface DisplayMessage {
   type: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll' | 'scene-break'
   content: string
   isError?: boolean
-  rollData?: {
-    check: string
-    dc: number
-    roll: number
-    modifier: number
-    total: number
-    result: 'critical' | 'success' | 'failure' | 'fumble'
-    reason: string
-    advantage?: 'advantage' | 'disadvantage'
-    rawRolls?: [number, number]
-    contested?: { npcName: string; npcSkill: string; npcModifier: number }
-    npcRoll?: number
-    npcTotal?: number
-  }
-}
-
-interface StatChange {
-  type: 'gain' | 'loss' | 'new' | 'neutral'
-  label: string
+  statChanges?: StatChange[]
+  rollData?: RollDisplayData
 }
 
 interface GameScreenProps {
@@ -94,532 +78,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     lastMessageRef.current?.scrollIntoView({ behavior, block })
   }, [messages])
 
-
-  const applyToolResults = useCallback(
+  const applyTools = useCallback(
     (results: ToolCallResult[], currentState: GameState, statChanges: StatChange[]): GameState & { _sceneBreaks?: string[] } => {
-      let updated = { ...currentState }
-      const sceneBreaks: string[] = []
-
-      for (const result of results) {
-        if (result.tool === 'update_character') {
-          const input = result.input as {
-            hpChange?: number
-            hpSet?: number
-            creditsChange?: number
-            inventoryAdd?: InventoryItem[]
-            inventoryRemove?: string[]
-            inventoryUse?: { id: string }
-            tempModifierAdd?: TempModifier
-            tempModifierRemove?: string
-            traitUpdate?: { name: string; usesRemaining: number }
-            levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
-            addProficiency?: string
-            upgradeToExpertise?: string
-          }
-
-          const char = { ...updated.character }
-
-          if (input.hpChange !== undefined) {
-            const newHp = Math.max(0, Math.min(char.hp.max, char.hp.current + input.hpChange))
-            if (input.hpChange < 0) {
-              statChanges.push({ type: 'loss', label: `HP ${char.hp.current} → ${newHp}` })
-            } else if (input.hpChange > 0) {
-              statChanges.push({ type: 'gain', label: `HP ${char.hp.current} → ${newHp}` })
-            }
-            char.hp = { ...char.hp, current: newHp }
-          }
-
-          if (input.hpSet !== undefined) {
-            const newHp = Math.max(0, Math.min(char.hp.max, input.hpSet))
-            statChanges.push({ type: newHp < char.hp.current ? 'loss' : 'gain', label: `HP → ${newHp}` })
-            char.hp = { ...char.hp, current: newHp }
-          }
-
-          if (input.creditsChange !== undefined) {
-            const newCredits = char.credits + input.creditsChange
-            if (input.creditsChange < 0) {
-              statChanges.push({ type: 'loss', label: `${char.credits}cr → ${newCredits}cr` })
-            } else {
-              statChanges.push({ type: 'gain', label: `+${input.creditsChange}cr` })
-            }
-            char.credits = newCredits
-          }
-
-          if (input.inventoryAdd) {
-            char.inventory = [...char.inventory, ...input.inventoryAdd]
-            input.inventoryAdd.forEach((item) => {
-              statChanges.push({ type: 'new', label: `+${item.name}` })
-            })
-          }
-
-          if (input.inventoryRemove) {
-            const removedIds = new Set(input.inventoryRemove)
-            char.inventory = char.inventory.filter((item) => !removedIds.has(item.id))
-          }
-
-          if (input.inventoryUse) {
-            char.inventory = char.inventory.map((item) => {
-              if (item.id === input.inventoryUse!.id) {
-                const newCharges = (item.charges ?? 1) - 1
-                if (newCharges <= 0 && item.charges !== undefined) {
-                  statChanges.push({ type: 'loss', label: `${item.name} depleted` })
-                }
-                return { ...item, charges: Math.max(0, newCharges) }
-              }
-              return item
-            })
-          }
-
-          if (input.tempModifierAdd) {
-            char.tempModifiers = [...char.tempModifiers, input.tempModifierAdd]
-            statChanges.push({ type: 'new', label: `Effect: ${input.tempModifierAdd.name}` })
-          }
-
-          if (input.tempModifierRemove) {
-            char.tempModifiers = char.tempModifiers.filter((m) => m.id !== input.tempModifierRemove)
-          }
-
-          if (input.traitUpdate) {
-            char.traits = char.traits.map((t) =>
-              t.name === input.traitUpdate!.name
-                ? { ...t, usesRemaining: input.traitUpdate!.usesRemaining }
-                : t
-            )
-          }
-
-          if (input.levelUp) {
-            const { newLevel, hpIncrease, newProficiencyBonus } = input.levelUp
-            const newMax = char.hp.max + hpIncrease
-            statChanges.push({ type: 'gain', label: `Level ${newLevel}! HP max +${hpIncrease}` })
-            char.level = newLevel
-            char.hp = { max: newMax, current: newMax }
-            if (newProficiencyBonus !== undefined) {
-              char.proficiencyBonus = newProficiencyBonus
-              statChanges.push({ type: 'gain', label: `Proficiency +${newProficiencyBonus}` })
-            }
-          }
-
-          if ((input as Record<string, unknown>).statIncrease) {
-            const increases = (input as Record<string, unknown>).statIncrease as { stat: string; amount: number }[]
-            const newStats = { ...char.stats }
-            for (const inc of increases) {
-              const key = inc.stat as keyof typeof newStats
-              if (key in newStats) {
-                newStats[key] += inc.amount
-                statChanges.push({ type: 'gain', label: `${inc.stat} +${inc.amount} → ${newStats[key]}` })
-              }
-            }
-            char.stats = newStats
-          }
-
-          if (input.addProficiency) {
-            if (!char.proficiencies.includes(input.addProficiency)) {
-              char.proficiencies = [...char.proficiencies, input.addProficiency]
-              statChanges.push({ type: 'new', label: `Proficiency: ${input.addProficiency}` })
-            }
-          }
-
-          if (input.upgradeToExpertise) {
-            const expertiseLabel = `${input.upgradeToExpertise} (expertise)`
-            char.proficiencies = char.proficiencies.map((p) =>
-              p === input.upgradeToExpertise ? expertiseLabel : p
-            )
-            if (!char.proficiencies.includes(expertiseLabel)) {
-              char.proficiencies = [...char.proficiencies, expertiseLabel]
-            }
-            statChanges.push({ type: 'gain', label: `Expertise: ${input.upgradeToExpertise}` })
-          }
-
-          if ((input as Record<string, unknown>).spendInspiration) {
-            char.inspiration = false
-            statChanges.push({ type: 'loss', label: 'Used Inspiration' })
-          }
-
-          if ((input as Record<string, unknown>).exhaustionChange !== undefined) {
-            const change = (input as Record<string, unknown>).exhaustionChange as number
-            const prev = char.exhaustion ?? 0
-            char.exhaustion = Math.max(0, Math.min(6, prev + change))
-            if (change > 0) {
-              const labels = ['', 'Exhaustion 1: disadvantage on checks', 'Exhaustion 2: slowed', 'Exhaustion 3: disadvantage on attacks/saves', 'Exhaustion 4: HP halved', 'Exhaustion 5: immobilized', 'Exhaustion 6: death']
-              statChanges.push({ type: 'loss', label: labels[char.exhaustion] || `Exhaustion ${char.exhaustion}` })
-            } else {
-              statChanges.push({ type: 'gain', label: char.exhaustion === 0 ? 'Exhaustion cleared' : `Exhaustion reduced to ${char.exhaustion}` })
-            }
-          }
-
-          updated = { ...updated, character: char }
-        }
-
-        if (result.tool === 'start_combat') {
-          const input = result.input as { enemies: Enemy[]; description: string }
-          updated = {
-            ...updated,
-            combat: {
-              active: true,
-              round: 1,
-              enemies: input.enemies,
-              log: [input.description],
-            },
-          }
-          statChanges.push({ type: 'new', label: 'Combat started' })
-        }
-
-        if (result.tool === 'end_combat') {
-          const input = result.input as {
-            outcome: string
-            loot?: InventoryItem[]
-            creditsGained?: number
-          }
-          if (input.loot && input.loot.length > 0) {
-            const char = { ...updated.character }
-            char.inventory = [...char.inventory, ...input.loot]
-            input.loot.forEach((item) => statChanges.push({ type: 'gain', label: `Looted: ${item.name}` }))
-            updated = { ...updated, character: char }
-          }
-          if (input.creditsGained) {
-            const char = { ...updated.character, credits: updated.character.credits + input.creditsGained }
-            statChanges.push({ type: 'gain', label: `+${input.creditsGained}cr` })
-            updated = { ...updated, character: char }
-          }
-          updated = {
-            ...updated,
-            combat: { active: false, round: 0, enemies: [], log: [] },
-          }
-          statChanges.push({ type: 'neutral', label: `Combat: ${input.outcome}` })
-        }
-
-        if (result.tool === 'update_world') {
-          const input = result.input as {
-            addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier }[]
-            updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; disposition?: DispositionTier }
-            setLocation?: { name: string; description: string }
-            addThread?: { id: string; title: string; status: string; deteriorating: boolean }
-            updateThread?: { id: string; status: string; deteriorating?: boolean }
-            addFaction?: { name: string; stance: string }
-            addPromise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
-            updatePromise?: { id: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
-            setCurrentTime?: string
-          }
-          const world = { ...updated.world }
-
-          if (input.addNpcs) {
-            for (const n of input.addNpcs) {
-              const nameLower = n.name.toLowerCase()
-              const existing = world.npcs.find((x) => {
-                const xLower = x.name.toLowerCase()
-                return xLower === nameLower || xLower.startsWith(nameLower) || nameLower.startsWith(xLower)
-              })
-              if (existing) {
-                // Merge into the existing entry, keep the shorter/established name
-                const canonical = existing.name.length <= n.name.length ? existing.name : n.name
-                world.npcs = world.npcs.map((x) =>
-                  x.name === existing.name ? { ...x, ...n, name: canonical } : x
-                )
-              } else {
-                world.npcs = [...world.npcs, n]
-                statChanges.push({ type: 'new', label: `Met: ${n.name}` })
-              }
-            }
-          }
-          if (input.updateNpc) {
-            world.npcs = world.npcs.map((n) =>
-              n.name === input.updateNpc!.name ? { ...n, ...input.updateNpc } : n
-            )
-          }
-          if (input.setCurrentTime) {
-            world.currentTime = input.setCurrentTime
-          }
-          if (input.setLocation) {
-            world.currentLocation = input.setLocation
-            // Insert a scene break header into the message stream
-            const timeStr = input.setCurrentTime || world.currentTime
-            const sceneLabel = timeStr ? `${input.setLocation.name} · ${timeStr}` : input.setLocation.name
-            sceneBreaks.push(sceneLabel)
-          }
-          if (input.addThread) {
-            world.threads = [...world.threads, input.addThread]
-            statChanges.push({ type: 'new', label: `Thread: ${input.addThread.title}` })
-          }
-          if (input.updateThread) {
-            world.threads = world.threads.map((t) =>
-              t.id === input.updateThread!.id ? { ...t, ...input.updateThread } : t
-            )
-          }
-          if (input.addFaction) {
-            const exists = world.factions.find((f) => f.name === input.addFaction!.name)
-            if (exists) {
-              world.factions = world.factions.map((f) =>
-                f.name === input.addFaction!.name ? { ...f, stance: input.addFaction!.stance } : f
-              )
-            } else {
-              world.factions = [...world.factions, input.addFaction]
-            }
-          }
-          if (input.addPromise) {
-            world.promises = [...world.promises, input.addPromise]
-            statChanges.push({ type: 'new', label: `Promise to ${input.addPromise.to}` })
-          }
-          if (input.updatePromise) {
-            world.promises = world.promises.map((p) =>
-              p.id === input.updatePromise!.id ? { ...p, status: input.updatePromise!.status } : p
-            )
-          }
-          updated = { ...updated, world }
-        }
-
-        if (result.tool === 'close_chapter') {
-          const input = result.input as {
-            summary: string
-            keyEvents: string[]
-            nextTitle: string
-          }
-          const currentNum = updated.meta.chapterNumber
-          track('chapter_completed', { chapter: currentNum, genre: updated.meta.genre })
-          const completedChapter = {
-            ...updated.history.chapters.find((ch) => ch.number === currentNum) ?? {
-              number: currentNum,
-              title: updated.meta.chapterTitle,
-              keyEvents: [],
-            },
-            status: 'complete' as const,
-            summary: input.summary,
-            keyEvents: input.keyEvents,
-          }
-          const nextNum = currentNum + 1
-          const nextChapter = {
-            number: nextNum,
-            title: input.nextTitle,
-            status: 'in-progress' as const,
-            summary: '',
-            keyEvents: [],
-          }
-          updated = {
-            ...updated,
-            meta: {
-              ...updated.meta,
-              chapterNumber: nextNum,
-              chapterTitle: input.nextTitle,
-            },
-            history: {
-              ...updated.history,
-              chapters: [
-                ...updated.history.chapters.filter((ch) => ch.number !== currentNum),
-                completedChapter,
-                nextChapter,
-              ],
-            },
-            // Reset antagonist's per-chapter move tracker
-            world: updated.world.antagonist
-              ? { ...updated.world, antagonist: { ...updated.world.antagonist, movedThisChapter: false } }
-              : updated.world,
-          }
-          statChanges.push({ type: 'neutral', label: `Chapter ${nextNum}: ${input.nextTitle}` })
-        }
-
-        if (result.tool === '_roll_record') {
-          const rollRecord = result.input as unknown as RollRecord
-          updated = {
-            ...updated,
-            history: {
-              ...updated.history,
-              rollLog: [...updated.history.rollLog, rollRecord],
-            },
-          }
-        }
-
-        if (result.tool === 'update_antagonist') {
-          const input = result.input as {
-            action: 'establish' | 'move'
-            name?: string
-            description?: string
-            agenda?: string
-            moveDescription?: string
-          }
-          const world = { ...updated.world }
-
-          if (input.action === 'establish' && input.name && input.description && input.agenda) {
-            world.antagonist = {
-              name: input.name,
-              description: input.description,
-              agenda: input.agenda,
-              movedThisChapter: false,
-              moves: [],
-            }
-            statChanges.push({ type: 'new', label: `Antagonist: ${input.name}` })
-          }
-
-          if (input.action === 'move' && world.antagonist && input.moveDescription) {
-            const move: AntagonistMove = {
-              chapterNumber: updated.meta.chapterNumber,
-              description: input.moveDescription,
-              timestamp: new Date().toISOString(),
-            }
-            world.antagonist = {
-              ...world.antagonist,
-              movedThisChapter: true,
-              moves: [...world.antagonist.moves, move],
-            }
-            statChanges.push({ type: 'neutral', label: `Antagonist moves` })
-          }
-
-          updated = { ...updated, world }
-        }
-
-        if (result.tool === 'update_cohesion') {
-          const input = result.input as { direction: 1 | -1; reason: string; companionName?: string }
-          const cohesion = updated.world.crewCohesion ?? { score: 3, log: [] }
-          const newScore = Math.max(1, Math.min(5, cohesion.score + input.direction))
-          const logEntry: CohesionLogEntry = {
-            chapterNumber: updated.meta.chapterNumber,
-            companionName: input.companionName || 'crew',
-            change: input.direction,
-            reason: input.reason,
-            timestamp: new Date().toISOString(),
-          }
-          updated = {
-            ...updated,
-            world: {
-              ...updated.world,
-              crewCohesion: {
-                score: newScore,
-                log: [...cohesion.log, logEntry],
-              },
-            },
-          }
-          // Intentionally no statChange — cohesion is hidden from player
-        }
-
-        if (result.tool === 'update_clock') {
-          const input = result.input as {
-            action: 'establish' | 'advance' | 'trigger' | 'resolve'
-            id: string
-            name?: string
-            maxSegments?: 4 | 6
-            triggerEffect?: string
-            by?: number
-            reason?: string
-            consequence?: string
-            how?: string
-          }
-          const clocks: TensionClock[] = [...(updated.world.tensionClocks ?? [])]
-
-          if (input.action === 'establish') {
-            if (!clocks.find((c) => c.id === input.id)) {
-              clocks.push({
-                id: input.id,
-                name: input.name!,
-                maxSegments: input.maxSegments ?? 4,
-                filled: 0,
-                status: 'active',
-                triggerEffect: input.triggerEffect!,
-              })
-            }
-          } else if (input.action === 'advance') {
-            const idx = clocks.findIndex((c) => c.id === input.id)
-            if (idx >= 0 && clocks[idx].status === 'active') {
-              clocks[idx] = {
-                ...clocks[idx],
-                filled: Math.min(clocks[idx].maxSegments, clocks[idx].filled + (input.by ?? 1)),
-              }
-            }
-          } else if (input.action === 'trigger') {
-            const idx = clocks.findIndex((c) => c.id === input.id)
-            if (idx >= 0) {
-              clocks[idx] = {
-                ...clocks[idx],
-                status: 'triggered',
-                triggerEffect: input.consequence ?? clocks[idx].triggerEffect,
-              }
-            }
-          } else if (input.action === 'resolve') {
-            const idx = clocks.findIndex((c) => c.id === input.id)
-            if (idx >= 0) {
-              clocks[idx] = { ...clocks[idx], status: 'resolved' }
-            }
-          }
-
-          updated = {
-            ...updated,
-            world: { ...updated.world, tensionClocks: clocks },
-          }
-          // Intentionally no statChange — clocks are hidden from player
-        }
-
-        if (result.tool === 'update_disposition') {
-          const input = result.input as { npcName: string; newDisposition: string; reason: string }
-          updated = {
-            ...updated,
-            world: {
-              ...updated.world,
-              npcs: updated.world.npcs.map((n) =>
-                n.name === input.npcName ? { ...n, disposition: input.newDisposition as DispositionTier } : n
-              ),
-            },
-          }
-          // Intentionally no statChange — disposition is hidden from player
-        }
-
-        if (result.tool === 'award_inspiration') {
-          const input = result.input as { reason: string }
-          const hadIt = updated.character.inspiration
-          updated = {
-            ...updated,
-            character: { ...updated.character, inspiration: true },
-          }
-          if (!hadIt) {
-            statChanges.push({ type: 'gain', label: `Inspiration: ${input.reason}` })
-          }
-        }
-
-        if (result.tool === 'update_ship') {
-          const input = result.input as UpdateShipInput
-          const ship = updated.world.ship
-          if (ship) {
-            let newShip = { ...ship }
-            if (input.hullConditionChange !== undefined) {
-              newShip.hullCondition = Math.max(0, Math.min(100, ship.hullCondition + input.hullConditionChange))
-              statChanges.push({
-                type: input.hullConditionChange > 0 ? 'gain' : 'loss',
-                label: `Hull: ${newShip.hullCondition}%`,
-              })
-            }
-            if (input.upgradeSystem) {
-              newShip.systems = ship.systems.map((s) =>
-                s.id === input.upgradeSystem!.id
-                  ? { ...s, level: input.upgradeSystem!.newLevel, description: input.upgradeSystem!.description }
-                  : s
-              )
-              const sysName = input.upgradeSystem.id.replace('_', ' ')
-              statChanges.push({ type: 'gain', label: `${sysName} → L${input.upgradeSystem.newLevel}` })
-            }
-            if (input.addCombatOption) {
-              newShip.combatOptions = [...ship.combatOptions, input.addCombatOption]
-              statChanges.push({ type: 'new', label: `Ship: ${input.addCombatOption}` })
-            }
-            if (input.upgradeLogEntry) {
-              newShip.upgradeLog = [...ship.upgradeLog, input.upgradeLogEntry]
-            }
-            updated = { ...updated, world: { ...updated.world, ship: newShip } }
-          }
-        }
-
-        if (result.tool === 'generate_debrief') {
-          const input = result.input as unknown as ChapterDebrief
-          // Attach debrief to the most recently completed chapter
-          const chapters = updated.history.chapters.map((ch) =>
-            ch.status === 'complete' && !ch.debrief
-              ? { ...ch, debrief: input }
-              : ch
-          )
-          updated = { ...updated, history: { ...updated.history, chapters } }
-          statChanges.push({ type: 'new', label: 'Chapter debrief ready' })
-        }
-      }
-
-      if (sceneBreaks.length > 0) {
-        (updated as GameState & { _sceneBreaks?: string[] })._sceneBreaks = sceneBreaks
-      }
-      return updated
+      return applyToolResults(results, currentState, statChanges, track)
     },
     []
   )
@@ -710,7 +171,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
               )
               if (otherResults.length > 0) {
-                stateWithChanges = applyToolResults(otherResults, stateWithChanges, statChanges)
+                stateWithChanges = applyTools(otherResults, stateWithChanges, statChanges)
                 // Insert scene break headers if any location changes occurred
                 const breaks = (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
                 if (breaks && breaks.length > 0) {
@@ -774,7 +235,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Something went wrong')
     }
-  }, [applyToolResults, setQuickActions])
+  }, [applyTools, setQuickActions])
 
   const sendToGM = useCallback(
     async (
@@ -930,19 +391,38 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
       const rollMsgId = crypto.randomUUID()
       const gmMsgId = crypto.randomUUID()
+      const rollDisplayData = { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal }
       setMessages((prev) => [
         ...prev,
         {
           id: rollMsgId,
           type: 'roll' as const,
           content: '',
-          rollData: { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal },
+          rollData: rollDisplayData,
         },
         { id: gmMsgId, type: 'gm' as const, content: '' },
       ])
 
+      // Persist the roll message to history so it survives reload
+      const stateWithRoll = {
+        ...prompt.pendingState,
+        history: {
+          ...prompt.pendingState.history,
+          messages: [
+            ...prompt.pendingState.history.messages,
+            {
+              id: rollMsgId,
+              role: 'roll' as const,
+              content: '',
+              timestamp: new Date().toISOString(),
+              rollData: rollDisplayData,
+            },
+          ],
+        },
+      }
+
       await streamRequest(
-        { message: '', gameState: prompt.pendingState, isMetaQuestion: false, isInitial: false, rollResolution },
+        { message: '', gameState: stateWithRoll, isMetaQuestion: false, isInitial: false, rollResolution },
         gmMsgId,
         false,
         prompt.pendingState,
@@ -1030,6 +510,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       id: msg.id,
       type: msg.role as DisplayMessage['type'],
       content: msg.content,
+      ...(msg.rollData && { rollData: msg.rollData }),
     }))
     setMessages(displayMessages)
 
@@ -1089,6 +570,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }, 1400)
     return () => clearTimeout(t)
   }, [dicePhase, rolledValue, rollPrompt, rawRolls, sendContinuation])
+
+  // Attach stat changes to the last GM message as inline tags
+  useEffect(() => {
+    if (lastStatChanges.length === 0) return
+    setMessages((prev) => {
+      const lastGmIdx = prev.findLastIndex((m) => m.type === 'gm' && !m.isError)
+      if (lastGmIdx === -1) return prev
+      const updated = [...prev]
+      updated[lastGmIdx] = { ...updated[lastGmIdx], statChanges: lastStatChanges }
+      return updated
+    })
+  }, [lastStatChanges])
 
   const handleSave = useCallback(
     (slot: 1 | 2 | 3) => {
@@ -1152,7 +645,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
       <main className="flex flex-1 flex-col pt-12">
         <ScrollArea className="flex-1">
-          <div className="mx-auto max-w-[720px] px-4 py-6">
+          <div className="mx-auto max-w-[720px] px-4 py-6 overflow-hidden">
             <div className="flex flex-col gap-6">
               {messages.map((message, index) => {
                 const isLast = index === messages.length - 1
@@ -1160,7 +653,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   return (
                     <div key={message.id} ref={isLast ? lastMessageRef : undefined} className="flex items-center gap-3 py-2">
                       <div className="h-px flex-1 bg-border/15" />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary whitespace-nowrap">{message.content}</span>
+                      <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary text-center">{message.content}</span>
                       <div className="h-px flex-1 bg-border/15" />
                     </div>
                   )
@@ -1178,6 +671,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         content: message.content,
                         timestamp: new Date(),
                       }}
+                      statChanges={message.statChanges}
                       onFlag={message.type === 'gm' && !message.isError ? handleConsistencyCheck : undefined}
                       onRetry={message.isError ? handleRetry : undefined}
                     />
@@ -1207,7 +701,6 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         </ScrollArea>
 
         <div className="mx-auto w-full max-w-[720px]">
-          <StateDiffBar changes={lastStatChanges} />
           {rollPrompt && (
             <div className="border-t border-border/30 bg-background/80 px-4 pt-4 pb-2 backdrop-blur-sm">
               {dicePhase === 'idle' ? (
@@ -1444,6 +937,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           promises: gameState.world.promises,
           antagonist: gameState.world.antagonist,
           tensionClocks: (gameState.world.tensionClocks ?? []).filter((c) => c.status !== 'resolved'),
+          notebook: gameState.world.notebook ?? null,
         }}
         chapters={gameState.history.chapters.map((c) => ({
           number: c.number,
@@ -1459,83 +953,3 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   )
 }
 
-function RollBadge({
-  rollData,
-}: {
-  rollData: NonNullable<{ check: string; dc: number; roll: number; modifier: number; total: number; result: string; reason: string; advantage?: 'advantage' | 'disadvantage'; rawRolls?: [number, number] }>
-}) {
-  const isCrit = rollData.result === 'critical'
-  const isFumble = rollData.result === 'fumble'
-  const isSuccess = rollData.result === 'success' || isCrit
-  const label = isCrit ? '— CRITICAL!' : isFumble ? '— FUMBLE' : isSuccess ? '— SUCCESS' : '— FAILURE'
-  const hasAdv = !!rollData.advantage && !!rollData.rawRolls
-
-  const cardClass = isCrit
-    ? 'dice-crit-card'
-    : isSuccess
-    ? 'border-emerald-400/60 bg-emerald-400/10'
-    : isFumble
-    ? 'border-red-500/60 bg-red-500/10'
-    : 'border-orange-400/60 bg-orange-400/10'
-
-  const labelClass = isCrit
-    ? 'text-tertiary font-bold'
-    : isSuccess
-    ? 'text-emerald-400 font-bold'
-    : isFumble
-    ? 'text-red-400 font-bold'
-    : 'text-orange-400 font-bold'
-
-  const keptDieClass = isCrit
-    ? 'dice-crit'
-    : isSuccess
-    ? 'border-emerald-400/60 bg-emerald-400/20 text-emerald-400'
-    : isFumble
-    ? 'border-red-500/60 bg-red-500/20 text-red-400'
-    : 'border-orange-400/60 bg-orange-400/20 text-orange-400'
-
-  const discardedDieClass = 'border-border/30 bg-card/20 text-muted-foreground/40 line-through'
-
-  return (
-    <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {rollData.check}
-            {rollData.advantage && (
-              <span className={rollData.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
-                {rollData.advantage}
-              </span>
-            )}
-          </div>
-          <div className="mt-1 font-system text-sm text-foreground">
-            {rollData.roll}
-            {rollData.modifier !== 0 && (
-              <span className="text-muted-foreground">
-                {' '}{rollData.modifier > 0 ? '+' : ''}{rollData.modifier}
-              </span>
-            )}
-            {' '}= {rollData.total} <span className="text-muted-foreground">vs DC {rollData.dc}</span>{' '}
-            <span className={labelClass}>{label}</span>
-          </div>
-        </div>
-        <div className="ml-4 flex items-center gap-1.5">
-          {hasAdv ? (
-            <>
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ${rollData.rawRolls![0] === rollData.roll ? keptDieClass : discardedDieClass}`}>
-                {rollData.rawRolls![0]}
-              </div>
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ${rollData.rawRolls![1] === rollData.roll && (rollData.rawRolls![0] !== rollData.roll || rollData.rawRolls![0] === rollData.rawRolls![1]) ? keptDieClass : discardedDieClass}`}>
-                {rollData.rawRolls![1]}
-              </div>
-            </>
-          ) : (
-            <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold ${keptDieClass}`}>
-              {rollData.roll}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}

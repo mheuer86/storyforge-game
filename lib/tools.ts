@@ -617,4 +617,56 @@ export const gameTools: Anthropic.Tool[] = [
     },
     cache_control: { type: 'ephemeral' as const },
   },
+  {
+    name: 'add_clue',
+    description:
+      'Add a discovered clue to the notebook. Call this whenever the player discovers a meaningful piece of information through investigation, conversation, or observation. Tags are hidden from the player and used to determine which clues can connect.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        content: {
+          type: 'string',
+          description: 'What the player learned — the factual content of the clue.',
+        },
+        source: {
+          type: 'string',
+          description: 'Where the clue came from — a person, place, document, or observation.',
+        },
+        tags: {
+          type: 'array',
+          description: 'Hidden categorical tags for linking clues (e.g. "financial", "timeline", "alias"). 1-4 tags.',
+          items: { type: 'string' },
+        },
+        isRedHerring: {
+          type: 'boolean',
+          description: 'Whether this clue is intentionally misleading. Hidden from player.',
+        },
+        threadTitle: {
+          type: 'string',
+          description: 'The case or investigation thread this clue belongs to. Sets the notebook title if not already set.',
+        },
+      },
+      required: ['content', 'source', 'tags'],
+    },
+  },
+  {
+    name: 'connect_clues',
+    description:
+      'Record a confirmed connection between clues after a successful Investigation check. The revelation is the new information that the connection reveals.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        clueIds: {
+          type: 'array',
+          description: 'IDs of the clues being connected (typically 2).',
+          items: { type: 'string' },
+        },
+        revelation: {
+          type: 'string',
+          description: 'The new information revealed by connecting these clues.',
+        },
+      },
+      required: ['clueIds', 'revelation'],
+    },
+  },
 ]

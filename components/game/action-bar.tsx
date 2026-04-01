@@ -25,15 +25,15 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
 
   return (
     <div className="flex flex-col gap-3 bg-background/60 p-4 backdrop-blur-xl border-t border-border/10">
-      {/* Quick Actions — centered */}
+      {/* Quick Actions */}
       {quickActions.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-col gap-2">
           {quickActions.map((action, index) => (
             <button
               key={`${index}-${action}`}
               onClick={() => !disabled && onActionSelect(action)}
               disabled={disabled}
-              className="rounded-lg bg-secondary/10 border border-secondary/20 px-4 py-2 text-xs text-primary transition-all duration-200 hover:bg-secondary/20 hover:border-secondary/30 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg bg-primary/5 border border-primary/15 px-4 py-2.5 text-xs text-foreground/80 text-left transition-all duration-200 hover:bg-primary/10 hover:border-primary/25 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {action}
             </button>
@@ -72,7 +72,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
                 ? "Ask the GM a question (won't affect the story)..."
                 : 'Or type your own action...'
           }
-          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         {/* Send Button */}

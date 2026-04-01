@@ -36,6 +36,7 @@ function genreAccentColor(genre: string): string {
     'fantasy': 'oklch(0.72 0.14 75)',
     'cyberpunk': 'oklch(0.75 0.22 145)',
     'grimdark': 'oklch(0.58 0.16 28)',
+    'noire': 'oklch(0.48 0.20 22)',
   }
   return map[genre] || map['space-opera']
 }

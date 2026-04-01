@@ -114,6 +114,7 @@ export function createInitialGameState(
     } : null,
     tensionClocks: [],
     currentTime: '',
+    notebook: null,
   }
 
   return {
@@ -184,6 +185,10 @@ export function loadGameState(): GameState | null {
     if (!state.world.tensionClocks) {
       state.world.tensionClocks = []
     }
+    // Migrate saves that predate notebook
+    if (state.world.notebook === undefined) {
+      state.world.notebook = null
+    }
     // Migrate cyberpunk saves that predate the tech rig
     if (state.meta.genre === 'cyberpunk' && !state.world.ship) {
       state.world.ship = {
@@ -212,6 +217,15 @@ export function saveGameState(state: GameState): void {
   if (typeof window === 'undefined') return
   const updated = { ...state, meta: { ...state.meta, lastSaved: new Date().toISOString() } }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+  // Mirror auto-save to the matching save slot (by character name + genre)
+  for (const slot of [1, 2, 3] as const) {
+    const existing = getSaveSlot(slot)
+    if (existing && existing.characterName === state.character.name && existing.genre === state.meta.genre) {
+      saveToSlot(slot, updated)
+      break
+    }
+  }
 }
 
 export function clearGameState(): void {
