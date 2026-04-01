@@ -330,9 +330,9 @@ export function BurgerMenu({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 mb-2">
-      <div className="w-6 h-px bg-primary/30" />
-      <h3 className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">{children}</h3>
+    <div className="flex items-center gap-2.5 mb-3">
+      <div className="w-6 h-px bg-primary/40" />
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">{children}</h3>
     </div>
   )
 }
@@ -345,7 +345,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         <h2 className="font-heading text-lg font-semibold text-foreground">
           {character.name}
         </h2>
-        <p className="mt-0.5 text-xs text-muted-foreground/60">
+        <p className="mt-0.5 text-sm text-foreground/50">
           {character.species.name} {character.class.name} · Level {character.level}
         </p>
       </div>
@@ -360,7 +360,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
           ...(character.exhaustion > 0 ? [{ label: 'Exhaustion', value: `Level ${character.exhaustion}` }] : []),
         ].map((row) => (
           <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
-            <span className="text-xs text-muted-foreground/50 capitalize">{row.label}</span>
+            <span className="text-sm text-foreground/40 capitalize">{row.label}</span>
             <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
           </div>
         ))}
@@ -372,9 +372,9 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         <div className="grid grid-cols-3 gap-2">
           {Object.entries(character.class.stats).map(([stat, value]) => (
             <div key={stat} className="rounded-lg border border-border/10 bg-secondary/5 p-2 text-center">
-              <div className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/50">{stat}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40">{stat}</div>
               <div className="font-mono text-lg font-semibold text-foreground">{value}</div>
-              <div className="font-mono text-[10px] text-primary/70">
+              <div className="font-mono text-xs text-primary/80">
                 {formatModifier(getStatModifier(value))}
               </div>
             </div>
@@ -387,7 +387,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         <SectionLabel>Proficiencies</SectionLabel>
         <div className="flex flex-wrap gap-1.5">
           {character.class.proficiencies.map((p) => (
-            <span key={p.name} className="rounded border border-border/10 bg-secondary/5 px-2 py-0.5 text-[10px] text-muted-foreground/70">
+            <span key={p.name} className="rounded border border-border/15 bg-secondary/8 px-2.5 py-1 text-xs text-foreground/60">
               {p.name}
             </span>
           ))}
@@ -399,8 +399,8 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         <SectionLabel>Gear</SectionLabel>
         <ul className="flex flex-col gap-1.5">
           {character.class.startingGear.map((item, i) => (
-            <li key={`${item}-${i}`} className="flex items-start gap-2 text-xs">
-              <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+            <li key={`${item}-${i}`} className="flex items-start gap-2.5 text-sm">
+              <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <span className="text-foreground/70">{item}</span>
             </li>
           ))}
@@ -411,8 +411,8 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
       <div>
         <SectionLabel>Class Trait</SectionLabel>
         <div className="border-l-2 border-primary/30 pl-3">
-          <div className="text-sm font-medium text-primary/80">{character.class.trait.name}</div>
-          <div className="mt-1 text-xs text-muted-foreground/50 leading-relaxed">{character.class.trait.description}</div>
+          <div className="text-sm font-medium text-primary">{character.class.trait.name}</div>
+          <div className="mt-1 text-sm text-foreground/50 leading-relaxed">{character.class.trait.description}</div>
         </div>
       </div>
 
@@ -627,7 +627,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 </div>
                 {world.antagonist.moves.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Their Moves</span></div>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Their Moves</span></div>
                     <div className="flex flex-col gap-1">
                       {world.antagonist.moves.map((move, i) => (
                         <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
@@ -682,7 +682,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                     ))}
                     {triggeredClocks.length > 0 && (
                       <>
-                        <div className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Consequences</div>
+                        <div className="mt-1 text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Consequences</div>
                         {triggeredClocks.map((clock) => (
                           <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
                             <div className="font-medium text-foreground">{clock.name}</div>
@@ -822,7 +822,7 @@ function ChaptersPanel({
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Key Events</span></div>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Key Events</span></div>
                     <ul className="list-inside list-disc text-sm text-foreground">
                       {chapter.keyEvents.map((event, i) => (
                         <li key={i}>{event}</li>
@@ -833,7 +833,7 @@ function ChaptersPanel({
 
                 {chapter.rollLog.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Roll Log</span></div>
+                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Roll Log</span></div>
                     <div className="overflow-x-auto">
                       <table className="w-full font-mono text-xs">
                         <thead>
@@ -916,7 +916,7 @@ function ChaptersPanel({
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Lucky Breaks</span></div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Lucky Breaks</span></div>
                   <ul className="list-inside list-disc text-success">
                     {showDebrief.debrief.luckyBreaks.map((item, i) => (
                       <li key={i}>{item}</li>
@@ -926,7 +926,7 @@ function ChaptersPanel({
               )}
               {showDebrief.debrief.costsPaid.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[9px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">Costs Paid</span></div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[10px] font-medium uppercase tracking-[0.15em] text-foreground/35">Costs Paid</span></div>
                   <ul className="list-inside list-disc text-destructive">
                     {showDebrief.debrief.costsPaid.map((item, i) => (
                       <li key={i}>{item}</li>
