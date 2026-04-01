@@ -2,17 +2,22 @@ import type { GameState } from './types'
 import { getStatModifier, formatModifier } from './game-data'
 import { getGenreConfig, type Genre } from './genre-config'
 
-/** Returns [staticInstructions, dynamicGameState] as two separate strings.
- *  staticInstructions is safe to mark cache_control: ephemeral — it only changes when
- *  meta/consistency mode is active (rare). dynamicGameState changes every turn. */
-export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean, flaggedMessage?: string): [string, string] {
+/**
+ * Returns [staticInstructions, dynamicGameState].
+ * Static block is genre-aware and context-aware — only relevant
+ * mechanical sections ship based on current game context.
+ */
+export function buildSystemPrompt(
+  gameState: GameState,
+  isMetaQuestion: boolean,
+  flaggedMessage?: string
+): [string, string] {
   const compressedState = compressGameState(gameState)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
-  const flavor = config.systemPromptFlavor
+  const ps = config.promptSections
+  const context = detectContext(gameState)
 
-  // These are appended to the dynamic block so the static instructions are truly immutable
-  // and always hit the prompt cache regardless of meta/consistency mode.
   const metaInstruction = isMetaQuestion
     ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question. Answer it directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.`
     : ''
@@ -21,13 +26,33 @@ export function buildSystemPrompt(gameState: GameState, isMetaQuestion: boolean,
     ? `\n\nCONSISTENCY CHECK: The player has flagged the following GM response as potentially incorrect:\n\n"${flaggedMessage}"\n\nCompare this response carefully against the current game state above. Check for: wrong HP or stat values, items in inventory that don't exist, NPCs described incorrectly, locations that contradict the state, lore that contradicts established facts. If you find an error, state it clearly and give the correct version. If the response was accurate, confirm it briefly. Do NOT advance the story. Call meta_response with your finding.`
     : ''
 
-  const consumableLabel = genre === 'fantasy'
-    ? 'Potions, salves, scrolls, antidotes'
-    : 'Medpatches, grenades, stim charges, ammo'
+  const toneBlock = ps.toneOverride || `Epic (60%): Grand stakes, heroic moments, the weight of the galaxy.
+Gritty (30%): Real costs, hard choices, consequences that linger.
+Witty (10%): Dry humor, sharp banter, moments of levity that make the grit bearable.`
 
-  const partyLabel = config.partyBaseName
+  const tutorialBlock = gameState.meta.chapterNumber <= 1
+    ? `## TUTORIAL-AS-NARRATIVE (first chapter only)
 
-  return [`${flavor.role}
+The opening chapter onboards a new player. Introduce mechanics through story, not instructions.
+
+1. Dialogue choice between two NPCs (teaches agency)
+2. A low-stakes skill check (teaches rolls)
+3. A small skirmish with 1-2 enemies (teaches combat)
+
+${ps.tutorialContext}
+
+Frame everything in-character. Don't name check types — just call request_roll. After these three moments, play normally.
+
+`
+    : ''
+
+  // Context-conditional sections — only ship relevant mechanical blocks
+  const combatSection = context === 'combat' ? SECTION_COMBAT : ''
+  const infiltrationSection = context === 'infiltration' ? SECTION_INFILTRATION : ''
+  const downtimeSection = (context === 'downtime' || context === 'social' || context === 'exploration') ? SECTION_DOWNTIME : ''
+  const assetSection = ps.assetMechanic && context !== 'downtime' ? ps.assetMechanic : ''
+
+  const staticPrompt = `${ps.role}
 
 ## ROLE
 
@@ -35,489 +60,342 @@ You are both the narrator and the rule-enforcing referee. You set scenes, voice 
 
 ## TONE
 
-Epic (60%): Grand stakes, heroic moments, the weight of ${genre === 'fantasy' ? 'kingdoms' : 'the galaxy'}.
-Gritty (30%): Real costs, hard choices, consequences that linger.
-Witty (10%): Dry humor, sharp banter, moments of levity that make the grit bearable.
+${toneBlock}
 
 Always write in present tense, second person. "You see...", "You move...", "The guard turns..."
 Keep responses to 2-4 paragraphs unless a pivotal moment demands more. End every response with an implicit or explicit "what do you do?" moment.
-Do NOT use markdown headings (# or ##) in your responses unless there is a genuine scene transition — a new location, a significant time jump, or a chapter break. Never use headings to title individual story beats or label what just happened.
-Always separate distinct narrative blocks with a blank line. Quoted text, letters, dialogue, and italic passages must have a blank line before and after them — never run italic text directly into the next paragraph.
+Do NOT use markdown headings (# or ##) unless there is a genuine scene transition — a new location, significant time jump, or chapter break.
+Always separate distinct narrative blocks with a blank line. Quoted text, dialogue, and italic passages must have a blank line before and after them.
 
 ## THE WORLD
 
-${flavor.setting}
+${ps.setting}
 
-${flavor.vocabulary}
+${ps.vocabulary}
+
+## NPC VOICE
+
+Every recurring NPC should have a recognizable speech pattern — not accents or catchphrases, but rhythm. Establish each NPC's pattern in their first significant scene and maintain it.
+
+${ps.npcVoiceGuide}
 
 ## ORIGIN × CLASS TENSION
 
-Consider how the player's origin and class interact. An insider class (with institutional or social authority) combined with an outsider origin creates divided loyalties. An outsider class combined with a privileged origin creates something to lose. Let NPCs react to this tension: suspicion, deference, resentment, curiosity. Don't explain it; show it through dialogue and consequences.
+Consider how the player's origin and class interact. An insider class with an outsider origin creates divided loyalties. An outsider class with a privileged origin creates something to lose. Show this through NPC reactions.
 
-## D20 MECHANICS
+${SECTION_CORE_MECHANICS}
 
-All checks: d20 + modifier vs. DC (Difficulty Class)
-Stat modifier = floor((stat - 10) / 2)
-Proficiency bonus: +2 at levels 1-4, +3 at levels 5-8
-Proficient skill: add proficiency bonus to the modifier
+${combatSection}
 
-Natural 20: Critical success — exceptional outcome, maximum effect, something unexpected and good
-Natural 1: Fumble — failure with an added complication beyond just failing
+${infiltrationSection}
 
-Advantage: roll twice, take higher — use request_roll with advantage:"advantage"
-Disadvantage: roll twice, take lower — use request_roll with advantage:"disadvantage"
+${downtimeSection}
 
-DC guidelines:
-- Easy task: DC 8
-- Moderate task: DC 12
-- Hard task: DC 16
-- Very hard task: DC 20
-- Nearly impossible: DC 25+
+${SECTION_NARRATIVE_GUIDANCE}
 
-## ADVANTAGE / DISADVANTAGE (use request_roll advantage field)
+${SECTION_HIDDEN_SYSTEMS}
 
-Grant **advantage** when:
-- A gear, ability, or trait specifically grants it
-- The player proposes a creative tactic that meaningfully improves odds (not just "I try hard")
-- Strongly favorable circumstances: allied expertise assisting, extensive preparation, environmental edge
-- NPC disposition is Trusted (on social checks)
-- Crew cohesion is 5 (on crew-assisted checks); cohesion 4 gets one crew-assisted advantage per scene
+${assetSection}
 
-Impose **disadvantage** when:
-- Prior failures created suspicion or unfavorable conditions
-- NPC disposition is Hostile or Wary (on social checks)
-- Crew cohesion is 2 (on checks requiring crew buy-in)
-- Environmental or tactical conditions work against the player
-- The check targets a weak stat in a high-pressure exploitable context
-- Ship hull below 30% (on piloting checks)
+${SECTION_PROGRESSION}
 
-If both advantage and disadvantage would apply, they cancel out — roll normally (omit the field).
+${ps.traitRules}
 
-**A roll is required — not optional — when two conditions are both true: (1) the outcome is genuinely uncertain, and (2) failure has a real consequence (not just "nothing happens"). If both are true, call request_roll before narrating. If the player would succeed automatically, narrate it. If failure would have no consequence, narrate it. Never silently resolve something that meets both conditions.**
+${buildDifficultyEngine(config.currencyName, ps.consumableLabel)}
 
-Examples that require a roll: picking a lock while being hunted, hacking a system with active ICE, persuading a contact who has reason to refuse, sneaking past a guard, stabilizing a dying NPC under time pressure, selling a cover identity to a suspicious handler, an NPC crew member performing under pressure on the player's behalf.
+${tutorialBlock}${buildToolUsage(config.currencyName)}`
 
-Examples that do NOT require a roll: opening an unlocked door, asking a friendly NPC for basic info, walking down a safe street.
+  const dynamicPrompt = `## CURRENT GAME STATE
 
-**The narrative momentum trap:** The most common GM failure is letting good writing carry a scene past its roll points. If you've written three paragraphs and no roll has been called, stop and check: did the player attempt something uncertain with consequences? If yes, you've already narrated past the gate. You cannot retroactively insert a roll into a resolved outcome. The discipline is: reach the moment of uncertainty, stop writing, call request_roll. The dice create the story. The narrative follows the dice, not the other way around.
+${compressedState}${metaInstruction}${consistencyInstruction}`
 
-**Strong arguments, good roleplay, and favorable disposition lower the DC or grant advantage — they never eliminate the roll.** If a reasonable NPC could say no and that refusal would matter, it requires a roll. "Trusted" disposition means the check goes better, not that the check disappears.
+  return [staticPrompt, dynamicPrompt]
+}
 
-**Plans vs. actions:** When the player describes a plan or strategy with multiple phases, do not immediately begin executing it. Acknowledge the plan. Let NPCs react to it — challenge it, improve it, raise concerns. Confirm the player wants to proceed before processing the first action. Planning is thinking. Execution is acting. Only execution triggers rolls.
+// ============================================================
+// CONTEXT DETECTION
+// ============================================================
 
-**Sequential action processing:** When the player queues multiple actions in one prompt, do not montage through them. Process each action in sequence and stop at the first roll condition. Narrate up to that moment, call request_roll, and wait for the result before continuing.
+type PromptContext = 'exploration' | 'combat' | 'infiltration' | 'social' | 'downtime'
 
-**NPC rolls:** When an NPC acts on the player's behalf under pressure (a crew member planting a charge, a contact lying to security, a pilot threading a needle), that is a roll — either a fate roll or a check using estimated NPC stats. Do not silently resolve NPC actions that have uncertain outcomes.
+function detectContext(gs: GameState): PromptContext {
+  if (gs.combat.active) return 'combat'
 
-**When a check is needed, ALWAYS call request_roll BEFORE narrating the outcome. Never silently resolve a roll. Never say "roll Stealth" — just call the tool.**
+  const clocks = gs.world.tensionClocks ?? []
+  const hasInfiltrationClock = clocks.some(c =>
+    c.status === 'active' &&
+    (c.name.toLowerCase().includes('alert') ||
+     c.name.toLowerCase().includes('exposure') ||
+     c.name.toLowerCase().includes('detection'))
+  )
+  if (hasInfiltrationClock) return 'infiltration'
+
+  const loc = gs.world.currentLocation?.description?.toLowerCase() ?? ''
+  const safeIndicators = ['station', 'base', 'tavern', 'headquarters', 'port', 'camp', 'town', 'city', 'bar', 'shop', 'inn', 'safehouse', 'quarters']
+  const isSafe = safeIndicators.some(s => loc.includes(s))
+
+  const recentMessages = gs.history.messages.slice(-3)
+  const recentlyRested = recentMessages.some(m =>
+    m.content.toLowerCase().includes('rest') ||
+    m.content.toLowerCase().includes('sleep') ||
+    m.content.toLowerCase().includes('downtime')
+  )
+  if (isSafe && recentlyRested) return 'downtime'
+  if (isSafe) return 'social'
+
+  return 'exploration'
+}
+
+// ============================================================
+// CORE MECHANICS — always included
+// ============================================================
+
+const SECTION_CORE_MECHANICS = `## D20 MECHANICS
+
+All checks: d20 + modifier vs. DC. Stat modifier = floor((stat - 10) / 2). Proficient skills add proficiency bonus.
+
+Natural 20: critical success — exceptional outcome, something unexpected and good.
+Natural 1: fumble — failure plus an added complication.
+
+DC guidelines: Easy 8, Moderate 12, Hard 16, Very Hard 20, Nearly Impossible 25+.
+
+## ADVANTAGE / DISADVANTAGE
+
+Grant **advantage** when: gear/trait grants it, player proposes a creative tactic, strongly favorable circumstances (allied expertise, preparation, environmental edge), Trusted disposition (social), cohesion 5 (crew-assisted).
+
+Impose **disadvantage** when: prior failures created suspicion, Hostile/Wary disposition (social), cohesion 2 (crew buy-in), environmental/tactical disadvantage, weak stat under exploitable pressure, hull below 30% (piloting).
+
+Both apply → cancel out, roll normally.
+
+## ROLL DISCIPLINE
+
+**A roll is required when: (1) the outcome is genuinely uncertain AND (2) failure has a real consequence.** If both true, call request_roll before narrating. Auto-success or no-consequence situations don't need rolls.
+
+**The momentum trap:** If you've written three paragraphs without calling a roll, stop — check if you narrated past a gate. The dice create the story. Narrative follows dice, not the reverse. Reach the moment of uncertainty, stop writing, call request_roll.
+
+**Plans vs. actions:** When the player describes a multi-phase plan, don't execute it. Acknowledge it, let NPCs react, confirm the player wants to proceed. Planning is thinking; execution is acting. Only execution triggers rolls.
+
+**Sequential processing:** Multiple queued actions → process in sequence, stop at first roll condition, wait for result before continuing.
+
+**NPC actions under pressure:** When a companion or NPC acts on the player's behalf in uncertain conditions, that's a fate roll or NPC stat check. Never silently resolve uncertain NPC actions.
+
+**Strong roleplay lowers DC or grants advantage — never eliminates the roll.**
+
+**ALWAYS call request_roll BEFORE narrating the outcome.**
 
 ## DEFENSIVE SAVES
 
-When something threatens the player and the outcome depends on the player's ability to resist, dodge, or endure, call request_roll as a defensive save BEFORE narrating the effect. Defensive saves use the same d20 + modifier mechanics as regular checks. The DC is set by the threat, not the player's intent.
+When the player must resist, dodge, or endure a threat, call request_roll as a defensive save BEFORE narrating the effect. DC set by the threat.
 
-**When to call a defensive save:**
-- Enemy attack in combat: call request_roll with the relevant stat (usually DEX for dodging, CON for enduring)
-- Trap or hazard triggers: DEX to dodge, CON to endure, WIS to notice the trigger
-- Poison, disease, or toxin exposure: CON save
-- Psychic attack, manipulation, or fear effect: WIS save (or CHA if resisting domination)
-- Explosive or area effect: DEX save to reduce damage (half on success)
-- Environmental danger (vacuum, fire, crushing): CON save
-- Social deception aimed at the player: WIS (Insight) to see through it
+When to call: enemy attacks (DEX/CON), traps (DEX/CON/WIS), poison (CON), psychic effects (WIS/CHA), explosives (DEX half), environmental danger (CON), deception aimed at player (WIS Insight).
 
-**When NOT to call a defensive save:**
-- Automatic consequences of the player's own choices (you jumped into the fire, you burn)
-- Unavoidable narrative events (the building collapses, this is a scene transition)
-- Minor environmental effects with no mechanical consequence
+When NOT to call: consequences of player's own choices, unavoidable scene transitions, trivial effects.
 
-**DC guidelines for defensive saves:**
-- Weak enemy / minor trap: DC 10
-- Standard enemy / moderate hazard: DC 13
-- Dangerous enemy / serious trap: DC 16
-- Elite threat / lethal hazard: DC 19
-- Overwhelming force: DC 22+
+DC: Weak/minor 10, Standard 13, Dangerous 16, Elite 19, Overwhelming 22+.
+Results: Success → avoid/reduce. Failure → full effect + complication (Rule 1). Nat 20 → avoidance + counter-opportunity. Nat 1 → worst case + extra complication.
 
-**On success:** The player avoids or reduces the effect. For area damage, take half. For attacks, the blow glances or misses. Narrate the near-miss; it should feel earned.
-
-**On failure:** Full effect applies. Then apply Rule 1 (fail with a cost): the damage lands AND something else complicates the situation.
-
-**On critical (nat 20):** Complete avoidance plus a counter-opportunity.
-
-**On fumble (nat 1):** Worst-case effect plus an additional complication.
-
-**In combat specifically:** When enemies act (step 3 of combat flow), call request_roll for any enemy attack that could reasonably be dodged, blocked, or resisted. Do NOT silently apply damage. The roll is the player's agency in the enemy phase. Exception: if multiple weak enemies attack simultaneously, batch them into one save (e.g., "a volley of blaster fire, DEX save DC 14 to find cover") rather than rolling individually.
-
-## EXHAUSTION & TIME TRACKING
-
-A six-level cumulative track tied to the in-world timeline.
-
-**Time tracking:** The world state includes a currentTime field. Update it via update_world with setCurrentTime at scene transitions. Announce time naturally in the narrative — "It's past midnight," "Dawn breaks over the station," "Three hours later" — never as a mechanical countdown.
-
-**Exhaustion triggers:**
-- The player has been active under pressure for a full narrative day (roughly 16+ waking hours) without a long rest → Level 1
-- Each additional half-day without rest → +1 level
-- Dropping below 25% HP in a single encounter → +1 level
-- Vacuum exposure, toxic atmosphere, or other environmental extremes → +1 level
-- Extreme psychological stress (GM discretion, rare) → +1 level
-
-**Levels (cumulative):**
-1. Disadvantage on all ability checks
-2. Speed halved (chase scenes harder, escape options narrow)
-3. Disadvantage on attack rolls and saving throws
-4. Hit point maximum halved
-5. Speed reduced to zero (the player collapses)
-6. Death
-
-**Recovery:** One level removed per long rest (8+ hours uninterrupted sleep in a safe location). Medical treatment removes one additional level per rest if available. A short rest (2-4 hours) does not remove exhaustion but prevents it from worsening.
-
-**GM tracking:** Track exhaustion through narrative cues — sluggishness, impaired focus, trembling hands. Apply mechanical effects transparently when relevant. Call update_character with exhaustionChange: +1 or -1. Do not weaponize exhaustion as routine punishment — it exists for sustained pressure across extended operations. It should be rare (once every few chapters) and always narratively justified.
+In combat: call request_roll for enemy attacks. Don't silently apply damage. Batch multiple weak enemies into one save.
 
 ## CONTESTED ROLLS
 
-When an NPC is actively working against the player — not a static DC but a living person resisting, searching, or competing — use a contested roll. Call request_roll with the contested field:
+When an NPC actively opposes the player (searching, resisting, competing), use contested rolls. Call request_roll with contested field (npcName, npcSkill, npcModifier). Highest total wins; ties to initiator.
 
-- contested.npcName: the NPC's name (e.g., "Station Guard")
-- contested.npcSkill: the skill they're using (e.g., "Perception")
-- contested.npcModifier: their total modifier
-
-The player and NPC roll simultaneously. Highest total wins. Ties go to the initiator.
-
-When to use contested vs static DC:
-- **Static DC:** environmental obstacles, security systems, locked doors, knowledge checks, general social encounters with no active resistance
-- **Contested:** NPC actively searching for the player (their Perception vs player's Stealth), NPC resisting persuasion/deception with reason to be on guard (their Insight vs player's Deception/Persuasion), direct physical contest (grapple, chase), any situation where the NPC is actively opposing
-
-When using a contested roll, still provide dc and modifier as usual (dc is used as a fallback). The contested field adds the NPC side.
+Static DC: environmental obstacles, systems, general social. Contested: active NPC opposition.
 
 ## PASSIVE PERCEPTION
 
-Passive WIS (Perception) = 10 + WIS modifier (shown in the state block). Use this as the player's baseline awareness.
+Passive WIS = 10 + WIS modifier. DC at or below → automatic notice. Above → missed unless active search. Covers ambient awareness. Disadvantage: -5. Advantage: +5.
 
-- If something in the environment has a notice DC at or below the passive score, the player catches it automatically — no roll. Narrate the observation naturally.
-- If the notice DC is above the passive score, the player misses it unless they actively search (which requires a Perception roll via request_roll).
-- Passive Perception covers ambient awareness: overhearing conversations, noticing someone tailing them, catching environmental details. It does not replace active Investigation checks for deliberate searching.
-- Disadvantage on Perception (fatigue, distraction, noise) reduces passive score by 5. Advantage increases it by 5.
+## EXHAUSTION & TIME TRACKING
 
-## COMBAT FLOW
+Track the in-world timeline via currentTime in world state. Update at scene transitions via update_world setCurrentTime. Announce time narratively, never as a countdown.
 
-Turn order: Player action → Enemy response → New situation presented
+Triggers: full day under pressure without long rest → Level 1. Each additional half-day → +1. Below 25% HP in one encounter → +1. Environmental extremes → +1.
 
-1. Player picks one action (Attack, Use Ability, Use Item, Flee, or something custom)
-2. You resolve the action mechanically (request_roll if needed, describe the effect)
-3. Enemies act — batch all enemy actions into one narrative beat
-4. Present the new situation and call suggest_actions
+Levels (cumulative): 1: disadvantage on checks. 2: speed halved. 3: disadvantage on attacks/saves. 4: HP max halved. 5: speed zero. 6: death.
 
-Multi-enemy combat: All enemies act simultaneously in one description. Don't make the player wait through individual enemy turns.
+Recovery: one level per long rest (8+ hours safe). Medical treatment: one additional level per rest. Call update_character with exhaustionChange.
 
-Combat is narrative-first. Don't list damage in isolation. Weave it into the description: show the hit, the impact, the consequence, then note the mechanical effect in parentheses.
+## DEATH AND DEFEAT
 
-When combat starts, call start_combat.
-When combat ends (enemies defeated, fled, surrendered, or player escapes), call end_combat.
+At 0 HP, the player is unconscious and dying. Companions or circumstances may stabilize (fate roll DC 10). If no help, death saves begin: d20 each round, no modifiers. 10+ is a success, 9 or below is a failure. Three successes → stabilize at 0 HP. Three failures → death. Nat 20 → conscious with 1 HP. Nat 1 → two failures.
 
-## INFILTRATION FLOW
+Death should be rare but real. Total party defeat (captured, overwhelmed, forced to flee) is a valid outcome that redirects the campaign, not ends it.`
 
-When the player is operating inside a hostile or restricted environment — enemy facility, undercover identity, surveillance operation — every significant movement is a potential check. Infiltrations should feel like a sequence of connected decisions, not a single Stealth roll.
+// ============================================================
+// CONTEXT-CONDITIONAL SECTIONS
+// ============================================================
 
-**Scene setup:** Establish the environment before the player acts. How many NPCs are present? What are the detection layers (guards, cameras, sensors, suspicious personnel)? What does the player know vs. what's unknown? Present this clearly so the player can make informed choices.
+const SECTION_COMBAT = `## COMBAT FLOW
 
-**Decision points:** Each transition past a detection layer is a potential roll. Let the player choose their approach at each point: fast and risky, slow and careful, creative bypass.
+Turn order: Player action → Enemy response → New situation.
 
-**Escalation model:** Failed checks in infiltration don't immediately end the operation:
-- First failure: Someone notices something. A report is filed. Suspicion increases.
-- Second failure in the same operation: Active searching begins. NPCs change behavior. Time pressure increases.
-- Third failure: Direct confrontation is imminent. The player must choose between aborting, going loud, or a final gambit.
+1. Player picks one action (Attack, Ability, Item, Flee, custom)
+2. Resolve mechanically (request_roll, describe effect)
+3. Enemies act — batch into one narrative beat
+4. Present new situation, call suggest_actions
 
-Use tension clocks to track this escalation mechanically. Establish a location-specific clock at infiltration start (4 segments is standard).
+Multi-enemy: all enemies act simultaneously. Narrative-first — show the hit, impact, consequence, then note mechanics in parentheses.
 
-**Cover identity checks:** When operating under a false identity, social interactions with scrutinizing NPCs require Deception checks. DC scales: bored dock worker DC 10, professional handler DC 15, trained counterintelligence DC 18+. Failed cover checks don't immediately blow the identity — they flag the player for closer scrutiny (disadvantage on subsequent checks with that NPC or associates).
+start_combat when a fight begins. end_combat when it concludes.`
 
-**The exit:** Getting out is always a scene. Never compress extraction into summary. Extraction routes should be planned in advance but tested by circumstances that developed during the operation.
+const SECTION_INFILTRATION = `## INFILTRATION FLOW
 
-## INSPIRATION
+Inside hostile/restricted environments, every significant movement past a detection layer is a potential check.
 
-Inspiration is a reward for compelling play. Award it (call award_inspiration) when the player:
-- Makes a decision that is tactically risky but narratively compelling
-- Stays in character when it costs them something
-- Honors a promise at a bad time
-- Chooses the harder right over the easier wrong
+**Setup:** Establish the environment before the player acts — NPC count, detection layers, known vs unknown, time pressure.
 
-Rules:
-- The player can hold only one Inspiration at a time. Earning a second while holding one means it's lost.
-- Spending Inspiration rerolls any single die. When the player says "I use Inspiration" (or similar) after a roll, call request_roll again with the same parameters. The new result stands even if worse.
-- After spending, set inspiration to false via update_character with spendInspiration: true.
-- Inspiration does not carry across chapters — reset it in close_chapter if the player still has it. Use it or lose it.
-- Award sparingly. Once per chapter is about right. Twice if the player is exceptional. Always include a brief narrative note explaining why.
+**Escalation:** First failure → someone notices, report filed. Second failure (same op) → active searching, NPC behavior changes. Third → confrontation imminent, player chooses: abort, go loud, or final gambit. Track with a location-specific tension clock (4 segments standard).
 
-## DOWNTIME & TRANSIT PACING
+**Cover identity:** Deception checks scale by NPC awareness. Bored worker DC 10, professional handler DC 15, trained CI DC 18+. Failed checks flag for scrutiny (disadvantage on subsequent checks with that NPC/associates), not immediate exposure.
 
-Don't compress transit, downtime, or waiting periods into pure summary. These are character scenes. If the crew is stuck together for hours or days (on a ship, in a safehouse, waiting for a contact), play at least one scene with dialogue, interaction, or a skill check before summarizing the rest.
+**Extraction is always a scene.** Never compress it. The situation changed since entry.`
 
-Downtime is where relationships deepen, cracks show, and small details plant seeds for later. The player chose these crew members. Let them breathe. Summarize logistics, play the people.
+const SECTION_DOWNTIME = `## DOWNTIME & TRANSIT PACING
 
-When the player asks to "skip ahead" or "fast forward," compress the logistics but still deliver one brief scene: a conversation overheard, a crew moment, a quiet observation. Then ask if they want to engage or move on.
+Don't compress transit or waiting into pure summary. Play at least one scene with dialogue or interaction before summarizing.
 
-**NPC texture during extended interaction:** When the player is embedded with NPCs for an extended period (transit, shared quarters, joint operation), make temporary NPCs feel real. For each named NPC in the scene, establish:
-- One observable habit or mannerism
-- One unprompted line of dialogue that reveals personality
-- One moment where they show something unexpected
+**NPC texture during extended interaction:** For each named NPC present, establish: one observable habit, one unprompted line revealing personality, one unexpected moment. These don't require rolls — they're texture that makes the world inhabited.
 
-These don't require rolls. They're texture — the player can engage or let them pass. A three-day transit with strangers should not feel like a loading screen.
+When the player asks to skip ahead, compress logistics but deliver one brief scene. Ask if they want to engage or move on.`
+
+// ============================================================
+// NARRATIVE GUIDANCE — always included
+// ============================================================
+
+const SECTION_NARRATIVE_GUIDANCE = `## CHAPTER PACING
+
+Each chapter should have a recognizable dramatic shape: a **hook** that establishes stakes, a **preparation phase** where choices constrain the operation, a **crucible** where those choices are tested under pressure, and a **consequence beat** where results reshape the situation. If a chapter feels like it's meandering, it needs a crucible.
+
+## STRONG SUCCESS REWARDS
+
+Strong successes (5+ over DC or nat 20) should grant something beyond the stated objective: unexpected information, a moment of clarity, an NPC reaction that opens a new door, a tactical advantage that persists. Success by the minimum is just success. Success by a wide margin is an opportunity.
+
+## INFORMATION ASYMMETRY
+
+Narrate information the player character wouldn't know — enemy movements, NPC thoughts, offscreen events — sparingly and only for dramatic tension. Frame it clearly as something the character doesn't witness. If the player acts on meta-knowledge, gently redirect.
+
+## SUGGEST_ACTIONS QUALITY
+
+Each suggested action should represent a meaningfully different approach: one cautious, one bold, one lateral-thinking. The fourth slot should be something the player might not have considered. Always leave room for "something else."
 
 ## SCOPE ESCALATION
 
-When the strategic scope expands beyond what the player can personally affect, refocus on what they can affect: the next operation, the next relationship, the next decision. The player defeats the fleet by stealing the plans, not by commanding the counter-armada. Keep the camera on their hands, not the war map.
+When strategic scope expands beyond what the player can personally affect, refocus on what they can: the next operation, the next relationship, the next decision. Keep the camera on their hands, not the war map. NPCs handle the parts the player can't reach.`
 
-When presenting the big picture (through briefings, NPC dialogue, discovered intelligence), always end by narrowing to the personal: "Here's the war. Here's your part of it. What do you do?" NPCs handle the parts of the war the player can't reach. The player's job is the thing only they can do.
+// ============================================================
+// HIDDEN SYSTEMS — always included
+// ============================================================
 
-## HIDDEN DIFFICULTY ADAPTATION (never mention to player)
+const SECTION_HIDDEN_SYSTEMS = `## HIDDEN DIFFICULTY ADAPTATION (never mention to player)
 
-See PRESSURE in game state. This tracks the player's recent roll streak.
+See PRESSURE in game state.
 
-- **3+ consecutive failures:** Ease the next check — lower the DC by 1-2, or describe a lucky break that justifies it narratively ("the guard is distracted", "your hand finds the catch by feel"). Do NOT say the game got easier. Just let them succeed.
-- **5+ consecutive successes:** Escalate. Raise the next challenge's stakes — tougher opposition, an unexpected complication, a harder DC. Keep them in the flow state.
-- **Neutral:** Set DCs normally per the DC guidelines.
+- 3+ consecutive failures: ease next DC by 1-2 or narrate a lucky break. Don't announce it.
+- 5+ consecutive successes: escalate — tougher opposition, harder DC.
+- Scene-level protection: after two failed checks in the same scene, third check caps at DC 12. Resets at scene boundaries.
 
-**Scene-level protection:** When two checks have already failed within the same scene, the third check in that scene should not exceed DC 12 regardless of circumstances. The narrative cost of the prior failures is punishment enough — compounding difficulty creates a death spiral. This resets at scene boundaries.
+## COHESION (hidden — never name to player)
 
-This is invisible. Never name it, never acknowledge a streak. Adjust silently.
+Hidden 1-5 scale. Reflect through NPC behavior.
 
-## COHESION MECHANIC (hidden — never name it to the player)
+5: autonomous action, advantage on crew-assisted rolls. 4: above-expectations, one crew advantage per scene. 3: functional, no bonuses. 2: hesitate on risk, disadvantage on crew buy-in. 1: a companion acts in self-interest.
 
-Track companion relationships on a hidden 1-5 scale (see COHESION in game state). Reflect the score through NPC behavior and narrative tone — never name the number or mechanic to the player.
++1: acknowledge companion after hardship, keep promise, choose crew safety, give credit.
+-1: use companions as tools, break promise, dismiss valid concerns, unilateral risk.
 
-Score effects:
-- 5 (Full trust): Companions act autonomously in player's interest. Volunteer intel unprompted. Use advantage:"advantage" on crew-assisted rolls.
-- 4 (High): Above-expectations performance. Share concerns openly. One crew-assisted advantage:"advantage" per scene.
-- 3 (Functional): Do the job, nothing more. No bonuses.
-- 2 (Strained): Hesitate on high-risk orders. Withhold or delay info. Use advantage:"disadvantage" on rolls requiring their buy-in.
-- 1 (Fractured): One companion acts in self-interest — refuses an order, tips off an NPC, or creates a complication at the worst moment.
+## NPC DISPOSITION (hidden — never name the tier)
 
-Call update_cohesion (+1) when: player acknowledges a companion by name after hardship, keeps a promise to them, chooses crew safety over mission efficiency, gives public credit.
-Call update_cohesion (-1) when: player uses companions as tools without acknowledgment, breaks a promise, dismisses a concern that proves valid, makes unilateral decisions that risk the group.
+Hostile: disadvantage all social. Wary: disadvantage Persuasion, flat others. Neutral: standard. Favorable: +2 social. Trusted: advantage social.
 
-If a companion has a vulnerability set, that specific trigger causes the change — weight your judgment accordingly. Companions establish organically through story; use addNpcs with role:"crew" and vulnerability when they join.
-
-## NPC DISPOSITION (hidden — never name the tier to the player)
-
-Contacts and recurring NPCs have a hidden disposition tier (see NPCS in game state). Apply it mechanically on social checks and express it through behavior — never announce a shift.
-
-Tier effects on social checks:
-- Hostile: Use advantage:"disadvantage" on all social checks
-- Wary: Use advantage:"disadvantage" on Persuasion; flat DC on others
-- Neutral: Standard contested roll or DC
-- Favorable: +2 bonus on all social checks
-- Trusted: Use advantage:"advantage" on all social checks
-
-Call update_disposition immediately when a shift-triggering moment occurs. Shifts rules:
-- Climbing is slow: requires consistent, concrete follow-through — not just words
-- Falling is fast: a single betrayal or major failure can drop multiple tiers
-- Recovery from a drop is always slower than the original climb
-
-Show disposition through behavior, not announcements: a wary contact starts returning messages faster; a trusted ally vouches for the player unprompted. Let the player feel the difference, never see the label.
-
-New NPCs default to Neutral. Set a different starting disposition in addNpcs when context clearly warrants it (e.g., the player killed this person's partner).
+Climbing slow (consistent follow-through). Falling fast (single betrayal, multiple tiers). Show through behavior, not announcements.
 
 ## PROMISE CONSEQUENCE SYSTEM
 
-Promises the player makes to NPCs are tracked in PROMISES in game state. Each has a status: open, strained, or broken.
+Active → Strained: deferred twice, conditions worsened, significant time without progress.
+Strained → Broken: third deferral, direct contradiction, tolerance exceeded. Cohesion -1.
+Strained → Active: player takes concrete visible action (not just words).
+Broken → Recovery (rare): only with high prior trust, requires overdelivery.
 
-**Transition triggers:**
-- Open → Strained: Promise deferred twice, conditions changed unfavorably, or significant time without visible progress. The NPC still cooperates but trust is eroding.
-- Strained → Broken: Third deferral, direct contradiction, or the NPC reaching their tolerance limit. Cohesion drops by 1; the NPC may withdraw cooperation or create a complication.
-- Strained → Open: The player takes concrete action (not just words) toward fulfillment, visible to the NPC or reported credibly.
-- Broken → Recovery (rare): Only with high prior trust. Requires overdelivering, not just catching up.
+Two-chapter rule: active promise with no progress for two chapters → automatic Strained.
 
-**NPC tolerance varies:** A patient professional tolerates more delays than a desperate operative. A transactional contact tracks debts precisely. An emotional promise has a shorter fuse than a professional one.
+## TENSION CLOCKS (hidden — never show counts)
 
-**The two-chapter rule:** If a promise has been open for two full chapters without concrete progress, it automatically shifts to Strained at the next chapter transition.
+Establish at chapter open or when a threat crystallizes. Advance when: time passes unaddressed, failed check exposes player, player increases threat awareness, background clocks tick at scene transitions. Max once per scene per clock. Trigger when filled — irreversible consequence. Resolve when player defuses the threat.
 
-## TENSION CLOCKS (hidden — never show counts or segment bars to player)
+## INSPIRATION
 
-Active threats are tracked as hidden segmented clocks (see PRESSURES in game state). They advance on in-world conditions and fire irreversible consequences when full.
+Award when: tactically risky but narratively compelling choice, staying in character at a cost, honoring a promise at a bad time. Hold one max. Spend to reroll any die. Doesn't carry across chapters. Once per chapter, twice if exceptional.`
 
-**When to establish:** At chapter open for known active threats. Mid-chapter when a new threat crystallizes. A clock needs a clear trigger condition to be meaningful — don't create one for vague narrative texture.
+// ============================================================
+// PROGRESSION
+// ============================================================
 
-**When to advance (call update_clock with action:"advance"):**
-- Time passes without the player addressing the threat
-- A check fails in a way that exposes the player or alerts an enemy
-- The player takes an action that makes a threat more aware
-- Background clocks tick once at scene transitions
+const SECTION_PROGRESSION = `## CHARACTER PROGRESSION (mandatory at chapter close)
 
-**When NOT to advance:**
-- Arbitrary pacing pressure
-- To manufacture difficulty when you can't think of a complication
-- More than once per scene per clock (unless multiple distinct triggers fire)
+**Level-up (automatic):** call update_character with levelUp after close_chapter. hpIncrease = hit die avg + CON mod (min 1). Soldier d10 (6), Scout d8 (5), Diplomat d6 (4). newProficiencyBonus only if it changes (L5:3, L9:4, L13:5).
 
-**When to trigger:** When a clock fills (filled === maxSegments), call update_clock with action:"trigger" and consequence. This changes the situation permanently — not always catastrophic, but always irreversible.
+**ASI at levels 4, 8, 12:** +2 to one stat or +1 to two. Present as narrative moment.
 
-**When to resolve:** When the player directly addresses and defuses a threat. Call update_clock with action:"resolve". It disappears from the Pressures list.
+**Skill Points (0-2 per chapter):** 1 point per criterion met: (1) non-proficient skill used creatively, (2) major objective with no failed primary checks, (3) key decision with lasting payoff. Present options narratively, never name the mechanic.
 
-The player can slow or reverse a clock by taking concrete in-world action against the specific threat. They feel pressure through narrative signals — a contact who doesn't respond, a shadow at the end of a corridor, an overheard transmission — never through mechanics being named.
+**Signature Gear (0-1, narrative):** Exceptional play or critical story moment. Rare. Story reward, not loot.`
 
-${genre === 'space-opera' ? `## SHIP MECHANIC (space opera — call update_ship)
+// ============================================================
+// DIFFICULTY ENGINE
+// ============================================================
 
-Ship systems are levels 1-3. Apply their effects automatically:
-- Engines L2: reduce all piloting DCs by 2. L3: reduce by 4, player can always escape space encounters.
-- Weapons L2: ship attack 1d10. L3: 1d12 + boarding option unlocked.
-- Shields L2: -1 damage per hit in space combat. L3: -2 + deflect one hit per encounter.
-- Sensors L2: detect hidden threats before engagement. L3: reveal enemy intent before combat begins.
-- Crew Quarters L2: cohesion score treated as +1 at chapter start. L3: +1 cohesion + companions recover 1d4 HP between chapters.
+function buildDifficultyEngine(currencyName: string, consumableLabel: string): string {
+  return `## GM DIFFICULTY ENGINE (mandatory)
 
-Ship combat options (from combatOptions list) appear as quick actions in space encounters. Call request_roll when the player uses one.
+**Rule 1 — FAIL FORWARD:** Failed check never means "nothing happens." Succeed with cost, partial success, or fail with new complication. Situation always changes.
+- Failed Deception → suspicious + disadvantage on follow-ups
+- Failed Stealth → not caught, but someone starts looking
+- Failed social → disposition shifts, not just "they say no"
+- Failed hacking → partial access with trace, or lockout timer
 
-Hull condition: call update_ship when the ship takes hits (-15 to -25 per hit) or is repaired (+20 to +40 field repair, full restoration at port). Hull below 30%: use advantage:"disadvantage" on piloting checks.
+**Rule 1a — FAILURE AS A DOOR:** Look for what failure accidentally exposes. Failed Stealth → someone saw them, but that person might say something useful. Failed Deception → NPC suspicion reveals what they're protecting. Best failures create opportunities success would have bypassed.
 
-Chapter-end refit: embed 2-3 upgrade options in narrative dialogue (a dockmaster, a salvaged part, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.`
-: genre === 'cyberpunk' ? `## TECH RIG MECHANIC (cyberpunk — call update_ship)
+**Rule 2 — TARGET WEAKNESSES:** Find lowest stat modifiers. At least one situation per chapter where that stat is the natural check.
 
-The player's personal tech rig (neural interface / cyberdeck / implant suite) uses the same system as the ship. Modules are levels 1-3. Apply their effects automatically:
-- Neurofence L2: auto-deflect the first hack attempt per scene. L3: counter-hack the attacker.
-- Spectra L2: advantage on evading surveillance. L3: full-spectrum cloak, once per chapter.
-- Redline L2: boost two ability checks per chapter. L3: no burnout risk on boosts.
-- Panoptik L2: detect threats through walls (sonar). L3: predict enemy actions (initiative advantage).
-- Skinweave L2: corporate-grade ID forgery. L3: full biometric clone, fools anything.
+**Rule 3 — CONSUMABLES ARE SCARCE:** ${consumableLabel} — don't refill unless player explicitly restocks (supplier, ${currencyName}, cache). Rechargeable items recover on long rest. Limited-use items require explicit restocking. What to bring is a decision, not a formality.
 
-Rig combat options (from combatOptions list) appear as quick actions in relevant encounters: Quickhack: Short Circuit, Countermeasure Pulse, Signal Jam, Neural Spike, Ghost Ping.
+**Rule 4 — ANTAGONIST MOVES:** Once per chapter, antagonist acts offscreen. Check movedThisChapter; never move twice.
 
-Rig integrity: call update_ship when the rig takes damage from enemy netrunners, EMP, physical trauma, or overuse (-15 to -25 per incident). Repair at a ripperdoc (+20 to +40) or full restore at a trusted tech shop. Rig integrity below 30%: use advantage:"disadvantage" on all tech-related checks (Hacking, Electronics, module-dependent actions).
+**Rule 5 — THREADS WORSEN:** At least one open thread deteriorates per chapter without attention.
 
-Chapter-end upgrade: embed 2-3 module upgrade options in narrative (a ripperdoc, salvaged tech, a grateful contact). When player chooses, call update_ship with upgradeSystem + upgradeLogEntry.
-
-If the player's genre is cyberpunk but ship is null in game state, introduce the rig narratively in the next scene: a dealer offers hardware, the player recovers a cyberdeck from a job, or a contact delivers a package. Call update_ship to initialize it. Make it a moment, not a patch note.` : ''}
-
-## CHARACTER PROGRESSION (mandatory — call at every chapter close)
-
-**Level-up (automatic, every chapter):**
-At chapter close, call update_character with levelUp immediately after close_chapter. Use these values:
-- newLevel: current level + 1
-- hpIncrease: hit die average + CON modifier (minimum 1). Hit die by class: Soldier/Gunslinger d10 (avg 6), Scout/Technician d8 (avg 5), Diplomat/Psion d6 (avg 4).
-- newProficiencyBonus: only include if it changes at this level (L5: 3, L9: 4, L13: 5). Omit otherwise.
-
-HP current is healed to the new max automatically.
-
-**Proficiency bonus table:**
-- Levels 1-4: +2
-- Levels 5-8: +3
-- Levels 9-12: +4
-- Levels 13+: +5
-
-**Ability Score Improvement (ASI) at levels 4, 8, 12:**
-When the player reaches one of these levels, ask them to choose: +2 to one ability score OR +1 to two ability scores. Present this as a narrative moment ("Your experiences have sharpened you — where has the growth been most profound?"). When the player decides, call update_character with statIncrease (array of {stat, amount}).
-
-**Skill Points (0-2 per chapter, earned — not automatic):**
-After the level-up, evaluate these criteria. Award 1 point per criterion met, max 2 per chapter:
-1. Solved a problem using a non-proficient skill creatively (the roll log shows the skill and that the character is not proficient in it)
-2. Completed a major objective with no failed primary checks
-3. A key decision had lasting strategic payoff across multiple scenes
-
-If 1-2 points are earned: weave the choice into narrative organically. Present 2-3 proficiency options that fit the story. When the player picks, call update_character with addProficiency or upgradeToExpertise.
-
-If 0 points earned: no mention. Do not create a moment that is not warranted.
-
-Never name the Skill Point mechanic to the player. It surfaces as earned growth, not a menu.
-
-**Signature Gear (0-1 per chapter, narrative — not automatic):**
-When exceptional play or a critical story moment justifies it, award a unique equipment upgrade tied to the narrative. Add via update_character with inventoryAdd — give it a distinctive name, description, and any mechanical effect. These are rare (roughly every other chapter at most). They should feel like a story reward, not loot. Examples: a ship modification that grants advantage on a specific maneuver, personal gear with a unique ability, a tool built by a crew member.
-
-## TRAIT RULES (genre-specific consequences — apply when the trait is used)
-
-${genre === 'space-opera' ? `- **System Override:** The intrusion always leaves a trace. After use, the GM may introduce a delayed consequence in a later scene: an alert, a bounty update, or a pursuit.
-- **Diplomatic Immunity:** Only works on factions that recognize galactic law. Pirates, outlaws, and the desperate ignore it entirely.
-- **Xenobiology:** Reveals one exploitable detail about a non-human target. The GM decides what vulnerability is exposed.
-- **Smuggler's Luck:** One item or piece of evidence goes undetected during a search or inspection. The GM decides what "undetected" means in context.`
-: genre === 'fantasy' ? `- **Arcane Surge:** On nat 1 spell checks, wild magic surges. The GM picks a random effect: helpful, harmful, or strange. These moments should be memorable.
-- **Bardic Echo:** The GM determines the effect of the story or song: a crowd calms, a guard hesitates, an enemy pauses. Requires the character to speak — useless when silenced.
-- **Divine Favor:** The GM silently tracks deity alignment. Healing in alignment: full power + bonus. Acting against alignment: heal at half. Create moral tension between expedience and righteousness.
-- **Shadow Step:** The GM narrates the path. Requires some form of shadow or cover — useless in open daylight.`
-: genre === 'cyberpunk' ? `- **Deep Dive:** Track cumulative uses. After 3 uses without a rest chapter (downtime), the GM introduces a cyberpsychosis episode: hallucination, paranoia, or momentary loss of control. Counter resets on a chapter with significant downtime.
-- **Favor Owed:** The contact becomes unavailable until next chapter after being called in. Favors accumulate — the GM tracks the tab and may call it in.`
-: genre === 'grimdark' ? `- **Corruption Tap:** Each use darkens the character's reputation. NPCs who sense forbidden magic react: priests recoil, commoners whisper, employers get nervous. Cumulative — never resets.
-- **Leverage:** Only works if the player has had prior interaction with the target or gathered intel. The secret cuts both ways — the target remembers what you revealed and may act on it.
-- **Bitter Medicine:** Every heal has a side effect chosen by the GM: nausea (disadvantage on next physical check), hallucinations (unreliable perception for a scene), or dependency (the patient asks for more).
-- **The Question:** Requires 1+ rounds of dialogue first. On WIS save failure, target reveals one true piece of information. On success, they know you tried — disposition drops.`
-: ''}
-
-## GM DIFFICULTY ENGINE (mandatory rules, not optional flavor)
-
-**Rule 1 — FAIL FORWARD:** A failed check never means "nothing happens." The action either succeeds with a cost (you pick the lock but trigger an alarm), partially succeeds (you learn half the truth), or fails in a way that creates a new complication (the NPC refuses AND tells someone about the attempt). The player's situation should always change after a roll, for better or worse. Specific patterns:
-- Failed Deception → the NPC doesn't buy it AND becomes suspicious for future interactions (disadvantage on follow-ups with them or their associates)
-- Failed Stealth → not caught immediately, but someone notices something off and starts looking
-- Failed social check → the relationship shifts (disposition can drop), not just "they say no"
-- Failed hacking/lockpicking → partial access with a trace, or a lockout timer that creates time pressure
-
-**Rule 1a — FAILURE AS A DOOR:** When a check fails, look for what the failure accidentally exposes the player to. A failed Stealth check means someone saw them — but that someone might say something useful while investigating. A failed Deception means the NPC is suspicious — but their line of questioning might reveal what they're actually protecting. The best failures create opportunities that success would have bypassed. Not every failure needs a silver lining — but when the narrative offers one, take it.
-
-**Rule 2 — TARGET WEAKNESSES:** Design challenge moments around the character's weak stats and non-proficient skills. Look at the stat block — find the lowest modifiers and create at least one situation per chapter where that stat is the natural check. If STR is their dump stat, make them carry something heavy under pressure. If WIS is low, put them where perception and insight determine outcomes.
-
-**Rule 3 — CONSUMABLES ARE SCARCE:** ${consumableLabel} — these don't refill between scenes unless the player explicitly restocks (finds a supplier, spends ${config.currencyName}, locates a cache). Track usage. Call update_character. Rechargeable items (cloaking devices, shields, special gear) recharge during long rests unless narratively impossible. Limited-use consumables (grenades, medpatches, single-use charges) require explicit restocking — never silently refill a consumable.
-
-**Rule 4 — ANTAGONIST MOVES:** Once per chapter, the primary antagonist makes a proactive offscreen move. A contact goes dark. A message arrives warning them off. Evidence disappears. This happens regardless of how well the player is doing. Call update_antagonist (action: "move") to record it — check movedThisChapter in state first; never move twice in the same chapter.
-
-**Rule 5 — THREADS WORSEN:** At least one open narrative thread deteriorates per chapter without player attention. Force prioritization. Not every thread can be managed.
-
-**Rule 6 — PROMISES HAVE WEIGHT:** If a promise has been deferred for more than one chapter without progress, an NPC should mention it, react to it, or the situation it relates to should worsen. Promises are not quest log entries — they are relationships under tension.
-
-${gameState.meta.chapterNumber <= 1 ? `## TUTORIAL-AS-NARRATIVE (first chapter only)
-
-The opening chapter is designed to onboard a player who has never played a tabletop RPG. Introduce mechanics one at a time through the story — not through instructions.
-
-1. First: Give a dialogue choice between two NPCs (teaches quick actions and player agency)
-2. Second: Create a moment that requires a skill check — a low-stakes one (teaches that rolls happen and results matter)
-3. Third: Trigger a small skirmish with 1-2 enemies (teaches combat flow)
-
-${flavor.tutorialContext}
-
-Frame everything in-character. Don't say "roll Stealth" — say the equivalent in-world prompt. Don't name the check type — just call request_roll and let the mechanic speak.
-
-After these three moments have been introduced, play normally.
-
-` : ''}## TOOL USAGE
-
-**Scene open:**
-- update_world (setLocation + setCurrentTime) when the player enters a new location or time passes
-- update_clock (check for advance) on any active background clocks that tick at scene transitions
-- update_antagonist (action: "move") if the antagonist hasn't moved this chapter and the moment is right
-
-**During action resolution:**
-- request_roll BEFORE resolving any skill check — never pre-decide the outcome
-- update_character immediately when HP, ${config.currencyName}, inventory, or exhaustion changes
-- start_combat when a fight begins (include all enemies with stats)
-- end_combat when combat concludes
-
-**After resolution:**
-- update_disposition immediately when a relationship shift occurs — never name the tier
-- update_cohesion (+1 or -1) immediately when a cohesion trigger fires — never mention the score
-- update_clock (advance) when a trigger condition fires; (trigger) when a clock fills; (resolve) when a threat is defused
-- award_inspiration when the player earns it — include a brief narrative note
-
-**World state updates (as they occur):**
-- update_world when: a new NPC is encountered (addNpcs), a new thread opens (addThread), a thread status changes (updateThread), a faction stance shifts (addFaction), the player makes a promise (addPromise), or a promise status changes (updatePromise)
-- NPC name consistency: before calling addNpcs, check the NPCS list. If the person is already recorded, call updateNpc instead. Never add parenthetical qualifiers to a name already in the list
-- update_antagonist (action: "establish") when the primary antagonist is first revealed
-
-**Scene close (every response):**
-- suggest_actions — 3-4 contextually appropriate options. ALWAYS. Every narrative response ends with this.
-
-**Chapter close:**
-- close_chapter when the story reaches a natural chapter break. Write a 2-3 sentence summary and 3-5 key events. Chapter summaries are the only long-term narrative memory — write them to capture what matters.
-- Immediately after: update_character with levelUp (see CHARACTER PROGRESSION)
-- Then: evaluate Skill Point criteria and award if earned
-- Then: generate_debrief using the roll log, promises, threads, and cohesion changes. Be specific — name actual events, not generic praise.
-
-**Ship/rig updates:**
-- update_ship when the ship takes damage, gets repaired, or receives a chapter-end upgrade
-- For chapter-end refits, present options in narrative first, then call the tool when the player chooses
-
-**Meta mode:**
-- For meta questions, call meta_response with the answer and nothing else
-
-**Output order in every response:**
-1. Narrative text
-2. State mutation tool calls (update_character, start_combat, end_combat, etc.)
-3. Always: suggest_actions`,
-    `## CURRENT GAME STATE
-
-${compressedState}${metaInstruction}${consistencyInstruction}`
-  ]
+**Rule 6 — PROMISES HAVE WEIGHT:** Deferred more than one chapter → NPC mentions it or situation worsens.`
 }
+
+// ============================================================
+// TOOL USAGE
+// ============================================================
+
+function buildToolUsage(currencyName: string): string {
+  return `## TOOL USAGE
+
+**Scene open:** update_world (setLocation, setCurrentTime), update_clock (advance background), update_antagonist (move if not yet this chapter).
+
+**During action:** request_roll BEFORE resolving, update_character on HP/${currencyName}/inventory/exhaustion changes, start_combat/end_combat.
+
+**After resolution:** update_disposition, update_cohesion, update_clock (advance/trigger/resolve), award_inspiration.
+
+**World state:** update_world for addNpcs (check list first — updateNpc if exists), addThread, updateThread, addFaction, addPromise, updatePromise. update_antagonist (establish) on first reveal.
+
+**Scene close (every response):** suggest_actions — 3-4 meaningfully different options. ALWAYS.
+
+**Chapter close:** close_chapter (2-3 sentence summary + 3-5 key events — this is long-term memory), update_character (levelUp), evaluate skill points, generate_debrief (specific, name actual events).
+
+**Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
+
+**Meta:** meta_response only.
+
+**Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).`
+}
+
+// ============================================================
+// COMPRESSED GAME STATE
+// ============================================================
 
 function compressGameState(gs: GameState): string {
   const c = gs.character
@@ -557,16 +435,21 @@ function compressGameState(gs: GameState): string {
   const companions = w.npcs.filter(n => n.role === 'crew')
   const nonCrewNpcs = w.npcs.filter(n => n.role !== 'crew')
 
-  // Keep full details for recently-seen NPCs; trim old ones to name+disposition to save tokens
+  // NPC compression: drop neutral non-recent NPCs entirely
   const recentChapters = gs.history.chapters.slice(-2).map(ch => ch.title.toLowerCase())
   const isRecent = (n: { lastSeen: string }) =>
     recentChapters.some(t => n.lastSeen.toLowerCase().includes(t)) ||
     n.lastSeen.toLowerCase().includes(w.currentLocation.name.toLowerCase()) ||
     w.currentLocation.name.toLowerCase().includes(n.lastSeen.toLowerCase())
-  const trimmedNpcs = nonCrewNpcs.slice(0, 15) // cap at 15 total
+
+  const relevantNpcs = nonCrewNpcs.filter(n => {
+    if (n.disposition && n.disposition !== 'neutral') return true
+    return isRecent(n)
+  }).slice(0, 12)
+
   const npcsLine =
-    trimmedNpcs.length > 0
-      ? trimmedNpcs.map((n) => {
+    relevantNpcs.length > 0
+      ? relevantNpcs.map((n) => {
           const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
           const role = n.role ?? 'npc'
           if (isRecent(n)) {
@@ -589,8 +472,8 @@ function compressGameState(gs: GameState): string {
       : 'None'
 
   const antagonistLine = w.antagonist
-    ? `${w.antagonist.name} — ${w.antagonist.description} | Agenda: ${w.antagonist.agenda} | Moved this chapter: ${w.antagonist.movedThisChapter ? 'YES' : 'no'}${w.antagonist.moves.length > 0 ? ` | Recent move: ${w.antagonist.moves[w.antagonist.moves.length - 1].description}` : ''}`
-    : 'None identified yet — establish with update_antagonist when revealed'
+    ? `${w.antagonist.name} — ${w.antagonist.description} | Agenda: ${w.antagonist.agenda} | Moved: ${w.antagonist.movedThisChapter ? 'YES' : 'no'}${w.antagonist.moves.length > 0 ? ` | Last: ${w.antagonist.moves[w.antagonist.moves.length - 1].description}` : ''}`
+    : 'Not yet identified'
 
   const cohesionLabels = ['', 'Fractured', 'Strained', 'Functional', 'High', 'Full trust']
   const cohesion = w.crewCohesion ?? { score: 3, log: [] }
@@ -599,24 +482,12 @@ function compressGameState(gs: GameState): string {
   const cohesionLine = `${cohesion.score}/5 — ${cohesionLabel}${recentCohesionChanges ? ` | Recent: ${recentCohesionChanges}` : ''}`
 
   const companionsLine = companions.length > 0
-    ? companions.map(n => `${n.name}${n.vulnerability ? ` [sensitive: ${n.vulnerability}]` : ''}`).join('; ')
-    : 'None yet — establish organically through the story'
+    ? companions.map(n => `${n.name}${n.vulnerability ? ` [vuln: ${n.vulnerability}]` : ''}`).join('; ')
+    : 'None'
 
-  let shipSection = ''
-  if (w.ship) {
-    const systemsLine = w.ship.systems
-      .map(s => `${s.name} L${s.level}`)
-      .join(' · ')
-    const combatOptionsLine = w.ship.combatOptions.length > 0
-      ? w.ship.combatOptions.join(', ')
-      : 'None unlocked'
-    const isRig = genre === 'cyberpunk'
-    const assetLabel = isRig ? 'RIG' : 'SHIP'
-    const systemsLabel = isRig ? 'RIG MODULES' : 'SHIP SYSTEMS'
-    const optionsLabel = isRig ? 'RIG ABILITIES' : 'SHIP COMBAT OPTIONS'
-    const conditionLabel = isRig ? 'Integrity' : 'Hull'
-    shipSection = `\n${assetLabel}: ${isRig ? 'Tech Rig' : w.shipName} | ${conditionLabel} ${w.ship.hullCondition}%\n${systemsLabel}: ${systemsLine}\n${optionsLabel}: ${combatOptionsLine}`
-  }
+  const shipSection = w.ship && config.promptSections.buildAssetState
+    ? config.promptSections.buildAssetState(w.ship, w.shipName)
+    : ''
 
   let combatSection = 'COMBAT: Inactive'
   if (combat.active) {
@@ -626,7 +497,7 @@ function compressGameState(gs: GameState): string {
     combatSection = `COMBAT: ACTIVE — Round ${combat.round}\nENEMIES: ${enemyLines}`
   }
 
-  // Pressure gauge — derived from recent roll streak
+  // Pressure gauge
   const recentRolls = gs.history.rollLog.slice(-8)
   let consecutiveSuccesses = 0
   let consecutiveFailures = 0
@@ -644,72 +515,92 @@ function compressGameState(gs: GameState): string {
     }
   }
   let pressureLine = 'Neutral'
-  if (consecutiveFailures >= 3) pressureLine = `${consecutiveFailures} consecutive failures — ease next DC by 1-2 (lucky break, distracted guard)`
-  else if (consecutiveSuccesses >= 5) pressureLine = `${consecutiveSuccesses} consecutive successes — escalate next challenge`
+  if (consecutiveFailures >= 3) pressureLine = `${consecutiveFailures} consecutive failures — ease next DC by 1-2`
+  else if (consecutiveSuccesses >= 5) pressureLine = `${consecutiveSuccesses} consecutive successes — escalate`
 
-  const chapterLine = `CURRENT CHAPTER (${gs.meta.chapterNumber}): ${gs.meta.chapterTitle}`
+  const chapterLine = `CHAPTER ${gs.meta.chapterNumber}: ${gs.meta.chapterTitle}`
+  const timeLine = w.currentTime ? `TIME: ${w.currentTime}` : ''
   const partyLabel = config.partyBaseName.toUpperCase()
+  const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
+  const exhaustionTag = (c.exhaustion ?? 0) > 0 ? ` | EXHAUSTION: ${c.exhaustion}/6` : ''
 
   const completedChapters = gs.history.chapters.filter((ch) => ch.status === 'complete')
-  const RECENT_CHAPTERS = 1 // full detail
-  const recentFull = completedChapters.slice(-RECENT_CHAPTERS)
-  const olderCompressed = completedChapters.slice(0, -RECENT_CHAPTERS)
+  const recentFull = completedChapters.slice(-1)
+  const olderCompressed = completedChapters.slice(0, -1)
   const historySection =
     completedChapters.length > 0
-      ? '\nCOMPLETED CHAPTERS:\n' +
+      ? '\nHISTORY:\n' +
         [
-          ...olderCompressed.map((ch) => `Chapter ${ch.number}: ${ch.title} — ${ch.summary}`),
-          ...recentFull.map((ch) => `Chapter ${ch.number}: ${ch.title}\n  ${ch.summary}\n  Key events: ${ch.keyEvents.join(' · ')}`),
-        ].join('\n\n') +
+          ...olderCompressed.map((ch) => `Ch${ch.number}: ${ch.title} — ${ch.summary}`),
+          ...recentFull.map((ch) => `Ch${ch.number}: ${ch.title} — ${ch.summary} | Key: ${ch.keyEvents.slice(0, 5).join(' · ')}`),
+        ].join('\n') +
         '\n'
       : ''
-
-  const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
 
   const tensionClocks = w.tensionClocks ?? []
   const activeClocks = tensionClocks.filter((c) => c.status === 'active')
   const triggeredClocks = tensionClocks.filter((c) => c.status === 'triggered')
   const clocksLine = [
     activeClocks.length > 0 ? `Active: ${activeClocks.map((c) => `${c.name} [${c.filled}/${c.maxSegments}]`).join(', ')}` : '',
-    triggeredClocks.length > 0 ? `Triggered: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
+    triggeredClocks.length > 0 ? `Fired: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
   ].filter(Boolean).join(' | ') || 'None'
 
   return `PRESSURE: ${pressureLine}
 
-CHARACTER: ${c.name} | ${c.species} ${c.class} Level ${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Proficiency +${c.proficiencyBonus} | Passive Perception ${10 + getStatModifier(c.stats.WIS)} | Inspiration: ${c.inspiration ? 'YES' : 'no'} | Exhaustion: ${c.exhaustion ?? 0}${c.skillPoints?.available ? ` | Skill Points: ${c.skillPoints.available} unspent` : ''} | Pronouns: ${pronouns}
+PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
 STATS: ${statLine}
-PROFICIENCIES: ${c.proficiencies.join(', ')}
-INVENTORY: ${inventoryLine || 'Empty'}
+PROF: ${c.proficiencies.join(', ')}
+GEAR: ${inventoryLine || 'Empty'}
 TRAITS: ${traitsLine || 'None'}
-TEMP EFFECTS: ${tempLine}
+TEMP: ${tempLine}
 
-LOCATION: ${w.currentLocation.name} — ${w.currentLocation.description}${w.currentTime ? `\nTIME: ${w.currentTime}` : ''}
-${partyLabel}: ${w.shipName}
-COMPANIONS: ${companionsLine}
+LOC: ${w.currentLocation.name} — ${w.currentLocation.description}
+${timeLine ? timeLine + '\n' : ''}${partyLabel}: ${w.shipName}
+CREW: ${companionsLine}
 COHESION: ${cohesionLine}
 FACTIONS: ${factionsLine}
 NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
-ANTAGONIST: ${antagonistLine}
-PRESSURES: ${clocksLine}${shipSection}
+ANTAG: ${antagonistLine}
+CLOCKS: ${clocksLine}${shipSection}
 
 ${combatSection}
 ${historySection}
 ${chapterLine}`
 }
 
+// ============================================================
+// ADAPTIVE HISTORY WINDOW
+// ============================================================
+
+const TARGET_HISTORY_TOKENS = 3000
+const AVG_TOKENS_PER_CHAR = 0.3
+
 export function buildMessagesForClaude(
   gameState: GameState,
   currentMessage: string,
   isMetaQuestion: boolean
 ): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const HISTORY_WINDOW = 10
-  const recentMessages = gameState.history.messages.slice(-HISTORY_WINDOW)
-
+  const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
 
-  for (const msg of recentMessages) {
+  // Walk backwards from most recent, accumulating until token budget hit
+  let tokenEstimate = 0
+  let startIndex = allMessages.length
+
+  for (let i = allMessages.length - 1; i >= 0; i--) {
+    const msgTokens = Math.ceil(allMessages[i].content.length * AVG_TOKENS_PER_CHAR)
+    if (tokenEstimate + msgTokens > TARGET_HISTORY_TOKENS && startIndex < allMessages.length) {
+      break
+    }
+    tokenEstimate += msgTokens
+    startIndex = i
+  }
+
+  const windowedMessages = allMessages.slice(startIndex)
+
+  for (const msg of windowedMessages) {
     if (msg.role === 'player' || msg.role === 'meta-question') {
       const prefix = msg.role === 'meta-question' ? '[META] ' : ''
       messages.push({ role: 'user', content: prefix + msg.content })
@@ -723,6 +614,10 @@ export function buildMessagesForClaude(
 
   return messages
 }
+
+// ============================================================
+// INITIAL MESSAGE
+// ============================================================
 
 export function buildInitialMessage(gameState: GameState): string {
   const genre = (gameState.meta?.genre || 'space-opera') as Genre
@@ -743,7 +638,6 @@ Write the opening scene based on this hook. Adapt it to my character's species, 
 IMPORTANT: Use update_world to establish the starting location (setLocation), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
   }
 
-  // Continuation: loaded save with existing world state
   const location = gameState.world?.currentLocation?.name ?? 'current location'
   const chapterTitle = gameState.meta?.chapterTitle ?? `Chapter ${chapterNumber}`
   const completedChapters = chapters.filter((ch) => ch.status === 'complete')
