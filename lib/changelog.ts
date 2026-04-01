@@ -26,6 +26,13 @@ export const changelog: ChangelogEntry[] = [
       'Failure as a door — failed checks now expose the player to accidental opportunities that success would have bypassed',
       'Scene-level failure protection — after two failures in the same scene, the third check caps at DC 12',
       'Scope escalation guidance — the GM keeps the camera on your hands as the war gets bigger, not the war map',
+      'Prompt architecture overhaul — genre-specific sections (ship/rig mechanics, trait rules, voice guides) now pre-built per genre, saving 400-600 tokens per request',
+      'Context-aware prompt — combat flow only ships during combat, infiltration flow during infiltrations, downtime pacing during safe scenes',
+      'Adaptive history window — token-budget approach instead of fixed 10-message window. Short combat exchanges get more turns of context',
+      'NPC voice differentiation — genre-specific dialogue guides for military, street, noble, clergy, and tech archetypes',
+      'Chapter pacing structure — hook → preparation → crucible → consequence. If a chapter meanders, it needs a crucible',
+      'Death saves — d20 at 0 HP, three successes to stabilize, three failures to die. Nat 20 revives with 1 HP',
+      'Strong success rewards — rolls that beat DC by 5+ grant something beyond the stated objective',
     ],
   },
   {

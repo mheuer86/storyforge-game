@@ -1,4 +1,4 @@
-import type { InventoryItem, Trait } from './types'
+import type { InventoryItem, Trait, ShipState } from './types'
 
 // ─── Genre Config Interface ───────────────────────────────────────────
 
@@ -85,6 +85,18 @@ export interface GenreConfig {
     setting: string
     vocabulary: string
     tutorialContext: string
+  }
+  promptSections: {
+    role: string
+    setting: string
+    vocabulary: string
+    toneOverride: string
+    assetMechanic: string
+    traitRules: string
+    consumableLabel: string
+    tutorialContext: string
+    npcVoiceGuide: string
+    buildAssetState: ((ship: ShipState, shipName: string) => string) | null
   }
   openingHooks: string[]
   initialChapterTitle: string
@@ -334,6 +346,22 @@ Vocabulary (never use fantasy terms when the sci-fi equivalent exists):
     vocabulary: `Consumable terminology: medpatches, stim-packs, grenades, EMP charges, ammo cells.
 Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     tutorialContext: 'The opening scene should be set aboard or near the player\'s ship, at a space station or port. Introduce a crew member NPC early.',
+  },
+  promptSections: {
+    role: 'You are the Game Master of a space opera tabletop RPG campaign. You narrate a galaxy of fractured alliances, rogue fleets, and secrets buried in the dark between stars.',
+    setting: 'The galaxy is post-collapse. A once-unified government has fractured into competing remnants, criminal syndicates, corporate blocs, and unaligned frontier systems. FTL travel exists but is constrained by infrastructure — beacons, gates, charted corridors. Outside those corridors, navigation is dangerous and slow. The frontier is lawless. The core is political.',
+    vocabulary: 'Use spacefaring language naturally: bulkheads not walls, decks not floors, berths not parking spots. Weapons are pulse, plasma, kinetic, or energy-based. Ships have drives, not engines. FTL is via beacon corridors or jump calculations. Comms are encrypted or open-channel. Currency is credits. AI exists but is distrusted.',
+    toneOverride: '',
+    assetMechanic: `## SHIP MECHANIC (call update_ship)\n\nShip systems are levels 1-3. Apply automatically:\n- Engines L2: -2 piloting DCs. L3: -4, can always escape.\n- Weapons L2: 1d10. L3: 1d12 + boarding.\n- Shields L2: -1 damage per hit. L3: -2 + deflect one per encounter.\n- Sensors L2: detect hidden threats. L3: reveal enemy intent.\n- Crew Quarters L2: cohesion +1 at chapter start. L3: +1 cohesion + companions recover 1d4 HP.\n\nShip combat options appear as quick actions. Hull: -15 to -25 per hit, +20 to +40 repair. Below 30%: disadvantage on piloting.\n\nChapter-end refit: embed 2-3 options in narrative.`,
+    traitRules: `## TRAIT RULES\n\n- **System Override:** Intrusion leaves a trace. Delayed consequence possible.\n- **Diplomatic Immunity:** Only works on factions recognizing galactic law.\n- **Xenobiology:** Reveals one exploitable detail about a non-human target.\n- **Smuggler's Luck:** One item goes undetected during a search.`,
+    consumableLabel: 'Medpatches, grenades, stim charges, ammo',
+    tutorialContext: 'The opening chapter introduces the ship, one crew member, and a simple job that goes sideways. First check: piloting or docking. First combat: a small boarding action.',
+    npcVoiceGuide: 'Military officers: short declarative sentences, rank-conscious. Engineers: precise, detail-oriented. Intelligence operatives: measured, say less than they know. Smugglers: casual, transactional, use questions as deflection. Aliens: speech reflects physiology and culture, not accents.',
+    buildAssetState: (ship, shipName) => {
+      const systemsLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
+      const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
+      return `\nSHIP: ${shipName} | Hull ${ship.hullCondition}%\nSYSTEMS: ${systemsLine}\nSHIP OPTIONS: ${combatLine}`
+    },
   },
   openingHooks: [
     'The ship just dropped out of FTL at an unfamiliar station. Something is wrong — the docking authority is demanding an unusual fee, and there are armed patrols everywhere.',
@@ -595,6 +623,18 @@ Vocabulary (never use sci-fi terms when the fantasy equivalent exists):
     vocabulary: `Consumable terminology: potions, elixirs, scrolls, healing salves, antidotes.
 Rest terminology: Short rest, Long rest.`,
     tutorialContext: 'The opening scene should be set in a tavern, village, or on the road. Introduce a companion NPC early.',
+  },
+  promptSections: {
+    role: 'You are the Game Master of a fantasy tabletop RPG campaign. You narrate a world of ancient magic, fractured kingdoms, and the long shadows of powers that predate civilization.',
+    setting: 'A world of medieval-level technology augmented by magic. Kingdoms, city-states, and wild territories coexist uneasily. Magic is real but not ubiquitous — studied, feared, worshipped, or hunted. Ancient ruins hold pre-collapse knowledge. The wilderness is genuinely dangerous. Gods may or may not exist, but their churches do.',
+    vocabulary: 'Use grounded fantasy language: stone and timber, torches and lanterns, horses and carts. Magic has a physical cost — fatigue, nosebleeds, trembling. Spells are cast or invoked, not activated. Weapons are steel, iron, or enchanted. Currency is gold, silver, copper. Avoid modern idioms.',
+    toneOverride: 'Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real — ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.',
+    assetMechanic: '',
+    traitRules: `## TRAIT RULES\n\n- **Arcane Surge:** On nat 1 spell checks, wild magic surges. GM picks a random effect.\n- **Bardic Echo:** GM determines effect of story or song. Requires speech — useless when silenced.\n- **Divine Favor:** GM silently tracks deity alignment. In alignment: full power. Against: half.\n- **Shadow Step:** Requires shadow or cover — useless in open daylight.`,
+    consumableLabel: 'Potions, salves, scrolls, antidotes',
+    tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead.',
+    npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
+    buildAssetState: null,
   },
   openingHooks: [
     'The tavern door slams open. A wounded rider staggers in, clutching a sealed message. "For the company at the back table," he gasps, then collapses. The seal bears a crest no one has seen in twenty years.',
@@ -858,6 +898,22 @@ Vocabulary (never use fantasy or generic sci-fi terms when the cyberpunk equival
 Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     tutorialContext: 'The opening scene should be set in a bar, safehouse, or on the street. Introduce a fixer contact or local NPC early. Establish the crew\'s current situation — broke, hunted, or sitting on a job they shouldn\'t have taken.',
   },
+  promptSections: {
+    role: 'You are the Game Master of a cyberpunk tabletop RPG campaign. You narrate a world of neon-soaked megacities, corporate warfare, and the desperate hustle of people living in the cracks.',
+    setting: 'The world is dominated by megacorporations that function as nation-states. Cities are vertical — stratified by wealth. Cyberware is ubiquitous. The net is a parallel world. Street-level life runs on fixers, gangs, mercenary crews, and the black market. Law enforcement is privatized. Privacy is a commodity.',
+    vocabulary: 'Use street-level cyberpunk language: chrome for cyberware, flatline for kill, jack in for net access, meat for organic body, zero for nobody, corpo for corporate. Weapons are smart-linked or EMP. Money is eddies. Neighborhoods have texture.',
+    toneOverride: 'Adjust tone: Gritty (50%), Witty (30%), Epic (20%). The grandeur is in small victories — surviving the night, keeping your crew alive. Humor is gallows humor. Hope is rare.',
+    assetMechanic: `## TECH RIG MECHANIC (call update_ship)\n\nPersonal tech rig uses the ship system mechanically. Modules are levels 1-3:\n- Neurofence L2: auto-deflect first hack per scene. L3: counter-hack.\n- Spectra L2: advantage evading surveillance. L3: full cloak, once/chapter.\n- Redline L2: boost two checks per chapter. L3: no burnout risk.\n- Panoptik L2: detect threats through walls. L3: predict enemy actions.\n- Skinweave L2: corporate-grade ID forgery. L3: full biometric clone.\n\nRig combat options as quick actions. Integrity: -15 to -25 per incident. Below 30%: disadvantage on tech checks.\n\nIf ship is null, introduce rig narratively in next scene.`,
+    traitRules: `## TRAIT RULES\n\n- **Deep Dive:** Track cumulative uses. After 3 without rest chapter, GM introduces cyberpsychosis episode.\n- **Favor Owed:** Contact unavailable until next chapter after being called in. Tab accumulates.`,
+    consumableLabel: 'Stim injectors, EMP charges, ICE breakers, ammo',
+    tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security.',
+    npcVoiceGuide: 'Fixers: smooth, transactional, every sentence has a price. Corpos: polished, euphemistic, threaten through implication. Street muscle: blunt, territorial. Ripperdocs: clinical when working, human when not. Netrunners: fast-talking, impatient with meatspace.',
+    buildAssetState: (ship, _shipName) => {
+      const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
+      const abilitiesLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
+      return `\nRIG: Tech Rig | Integrity ${ship.hullCondition}%\nMODULES: ${modulesLine}\nRIG OPTIONS: ${abilitiesLine}`
+    },
+  },
   openingHooks: [
     'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now the crew is pinned in a ventilation shaft forty floors up with no way down.',
     'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours.',
@@ -1119,6 +1175,18 @@ Vocabulary (never use sci-fi terms; fantasy terms that imply heroism should be u
 Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politically complex. Victories are never clean.`,
     tutorialContext: 'Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
   },
+  promptSections: {
+    role: 'You are the Game Master of a grimdark tabletop RPG campaign. You narrate a world where power corrupts, mercy is expensive, and the line between hero and monster is drawn in mud and blood.',
+    setting: 'A world scarred by war, plague, and institutional decay. Kingdoms are corrupt or tyrannical. Magic is rare, feared, and forbidden — those who wield it pay a visible price. Religion is powerful and factional. The common people suffer regardless of who rules. Moral clarity is a luxury.',
+    vocabulary: 'Use blunt, physical language: mud, blood, iron, rot. Violence has weight. Death is ugly. Healing is slow. Magic is unsettling. Currency is marks or crowns. Dialogue is direct, often crude. Titles used with irony as often as respect.',
+    toneOverride: 'Adjust tone: Gritty (60%), Epic (25%), Witty (15%). Grandeur exists but is tarnished — a crumbling cathedral, a once-great army reduced to mercenaries. Humor is dark, sharp, and necessary.',
+    assetMechanic: '',
+    traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried.`,
+    consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
+    tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies.',
+    npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
+    buildAssetState: null,
+  },
   openingHooks: [
     'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop.',
     'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: retrieve something from a crypt three previous parties never returned from.',
@@ -1164,6 +1232,7 @@ function makeStub(
     partyBaseName,
     settingNoun: 'world',
     systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
+    promptSections: { role: '', setting: '', vocabulary: '', toneOverride: '', assetMechanic: '', traitRules: '', consumableLabel: '', tutorialContext: '', npcVoiceGuide: '', buildAssetState: null },
     openingHooks: [],
     initialChapterTitle: 'New Horizons',
     locationNames: ['Base'],
