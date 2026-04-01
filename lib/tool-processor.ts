@@ -529,6 +529,7 @@ export function applyToolResults(
 
     if (result.tool === 'add_clue') {
       const input = result.input as {
+        clueId?: string
         content: string
         source: string
         tags: string[]
@@ -537,22 +538,42 @@ export function applyToolResults(
       }
       const world = { ...updated.world }
       const notebook = world.notebook ?? { activeThreadTitle: '', clues: [], connections: [] }
-      const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-      notebook.clues = [...notebook.clues, {
-        id: clueId,
-        content: input.content,
-        source: input.source,
-        tags: input.tags,
-        discoveredChapter: updated.meta.chapterNumber,
-        connected: [],
-        isRedHerring: input.isRedHerring ?? false,
-      }]
+
+      if (input.clueId) {
+        // Update existing clue
+        const existingIdx = notebook.clues.findIndex(c => c.id === input.clueId)
+        if (existingIdx >= 0) {
+          const existing = notebook.clues[existingIdx]
+          notebook.clues = notebook.clues.map(c =>
+            c.id === input.clueId
+              ? { ...c, content: input.content, source: input.source, tags: [...new Set([...c.tags, ...input.tags])] }
+              : c
+          )
+          statChanges.push({ type: 'new', label: `Clue updated: ${input.content.slice(0, 35)}...` })
+        } else {
+          // Fallback: clueId not found, create new
+          const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+          notebook.clues = [...notebook.clues, {
+            id: clueId, content: input.content, source: input.source, tags: input.tags,
+            discoveredChapter: updated.meta.chapterNumber, connected: [], isRedHerring: input.isRedHerring ?? false,
+          }]
+          statChanges.push({ type: 'new', label: `Clue: ${input.content.slice(0, 40)}...` })
+        }
+      } else {
+        // New clue
+        const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+        notebook.clues = [...notebook.clues, {
+          id: clueId, content: input.content, source: input.source, tags: input.tags,
+          discoveredChapter: updated.meta.chapterNumber, connected: [], isRedHerring: input.isRedHerring ?? false,
+        }]
+        statChanges.push({ type: 'new', label: `Clue: ${input.content.slice(0, 40)}...` })
+      }
+
       if (input.threadTitle && !notebook.activeThreadTitle) {
         notebook.activeThreadTitle = input.threadTitle
       }
       world.notebook = notebook
       updated = { ...updated, world }
-      statChanges.push({ type: 'new', label: `Clue: ${input.content.slice(0, 40)}...` })
     }
 
     if (result.tool === 'connect_clues') {
