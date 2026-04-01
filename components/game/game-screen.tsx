@@ -7,7 +7,7 @@ import { RollBadge } from './roll-badge'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { loadGameState, saveGameState, saveToSlot, saveQuickActions } from '@/lib/game-data'
+import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, TensionClock } from '@/lib/types'
 import { type Genre } from '@/lib/genre-config'
@@ -514,7 +514,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }))
     setMessages(displayMessages)
 
-    setQuickActionsRaw([])
+    setQuickActionsRaw(state.history.messages.length > 0 ? loadQuickActions() : [])
 
     if (state.history.messages.length === 0) {
       sendToGM('', state, false, true)
