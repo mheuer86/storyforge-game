@@ -57,6 +57,7 @@ export interface CharacterState {
   traits: Trait[]
   skillPoints: SkillPoints
   inspiration: boolean
+  exhaustion: number  // 0-6
 }
 
 export interface Faction {
@@ -115,7 +116,7 @@ export interface Promise {
   id: string
   to: string
   what: string
-  status: 'open' | 'fulfilled' | 'broken'
+  status: 'open' | 'strained' | 'fulfilled' | 'broken'
 }
 
 export interface AntagonistMove {
@@ -152,6 +153,7 @@ export interface WorldState {
   crewCohesion: CrewCohesion
   ship: ShipState | null
   tensionClocks: TensionClock[]
+  currentTime: string  // narrative timeline e.g. "Day 3, evening" or "Late afternoon"
 }
 
 export interface Enemy {
@@ -291,6 +293,7 @@ export interface UpdateCharacterInput {
   traitUpdate?: { name: string; usesRemaining: number }
   levelUp?: { newLevel: number; hpIncrease: number; newProficiencyBonus?: number }
   statIncrease?: { stat: string; amount: number }[]
+  exhaustionChange?: number  // +1 to add, -1 to remove a level
   addProficiency?: string
   upgradeToExpertise?: string
   spendInspiration?: boolean
