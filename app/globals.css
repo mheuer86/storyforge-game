@@ -82,6 +82,11 @@
   --font-heading: 'Lora', Georgia, serif;
 }
 
+[data-genre="noire"] {
+  --font-narrative: 'Lora', Georgia, serif;
+  --font-heading: 'Newsreader', Georgia, serif;
+}
+
 :root {
   --narrative-font-size: 0.875rem; /* 14px default (text-sm) */
 }

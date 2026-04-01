@@ -5,8 +5,14 @@ import { Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage as ChatMessageType } from '@/lib/game-data'
 
+interface StatChange {
+  type: 'gain' | 'loss' | 'new' | 'neutral'
+  label: string
+}
+
 interface ChatMessageProps {
   message: ChatMessageType
+  statChanges?: StatChange[]
   onFlag?: (content: string) => void
   onRetry?: () => void
 }
@@ -43,7 +49,16 @@ function renderMarkdown(text: string) {
   })
 }
 
-export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
+function getChangeColor(type: StatChange['type']) {
+  switch (type) {
+    case 'gain': return 'text-success/70 border-success/20 bg-success/5'
+    case 'loss': return 'text-destructive/70 border-destructive/20 bg-destructive/5'
+    case 'new': return 'text-muted-foreground/70 border-border/20 bg-secondary/5'
+    case 'neutral': default: return 'text-muted-foreground/50 border-border/15 bg-secondary/5'
+  }
+}
+
+export function ChatMessage({ message, statChanges, onFlag, onRetry }: ChatMessageProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const handleFlagClick = () => {
@@ -75,10 +90,19 @@ export function ChatMessage({ message, onFlag, onRetry }: ChatMessageProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="max-w-[85%] border-l border-secondary/20 bg-card/30 rounded-r-lg pl-4 pr-4 py-4">
+        <div className="max-w-[85%] border-l border-primary/15 bg-card/30 rounded-r-lg pl-4 pr-4 py-4">
           <p className="leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>
             {renderMarkdown(message.content)}
           </p>
+          {statChanges && statChanges.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {statChanges.map((change, i) => (
+                <span key={i} className={cn('inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px]', getChangeColor(change.type))}>
+                  {change.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         {/* Flag button on hover */}
         <button

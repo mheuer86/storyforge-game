@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState, Antagonist, ShipState } from '@/lib/types'
+import type { GameState, Antagonist, ShipState, Notebook } from '@/lib/types'
 
 interface Character {
   name: string
@@ -58,6 +58,7 @@ interface World {
   promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
+  notebook: Notebook | null
 }
 
 interface Chapter {
@@ -163,6 +164,11 @@ export function BurgerMenu({
                     {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
                   </TabsTrigger>
                 )}
+                {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
+                  <TabsTrigger value="notebook" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                    {genreConfig.notebookLabel}
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
                   World
                 </TabsTrigger>
@@ -198,6 +204,20 @@ export function BurgerMenu({
                   }
                 />
               </TabsContent>
+
+              {/* Notebook Tab */}
+              {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
+                <TabsContent value="notebook" className="mt-0 p-4">
+                  {world.notebook && world.notebook.clues.length > 0 ? (
+                    <NotebookPanel notebook={world.notebook} notebookLabel={genreConfig.notebookLabel} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <h2 className="font-heading text-lg font-semibold text-foreground/50">{genreConfig.notebookLabel}</h2>
+                      <p className="mt-2 text-sm text-muted-foreground/50 max-w-[240px]">No evidence yet. Ask questions, search rooms, follow leads.</p>
+                    </div>
+                  )}
+                </TabsContent>
+              )}
             </ScrollArea>
           </Tabs>
 
@@ -770,6 +790,70 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             </div>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebookLabel: string }) {
+  return (
+    <div className="flex flex-col gap-5 text-sm">
+      {/* Header */}
+      <div>
+        <h2 className="font-heading text-lg font-semibold text-foreground">
+          {notebook.activeThreadTitle || notebookLabel}
+        </h2>
+        <div className="mt-1 text-xs text-muted-foreground">
+          {notebook.clues.length} {notebook.clues.length === 1 ? 'clue' : 'clues'} discovered
+          {notebook.connections.length > 0 && ` · ${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'}`}
+        </div>
+      </div>
+
+      {/* Clues */}
+      <div>
+        <SectionLabel>Evidence</SectionLabel>
+        <div className="flex flex-col gap-3 mt-2">
+          {notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0).map((clue) => (
+            <div
+              key={clue.id}
+              className={cn(
+                'rounded-lg border px-3 py-2.5',
+                clue.connected.length > 0
+                  ? 'border-primary/20 bg-primary/5'
+                  : 'border-border/10 bg-secondary/5'
+              )}
+            >
+              <div className="text-foreground/80 leading-relaxed">{clue.content}</div>
+              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/60">
+                <span>{clue.source}</span>
+                <span>·</span>
+                <span>Ch. {clue.discoveredChapter}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Connections */}
+      {notebook.connections.length > 0 && (
+        <div>
+          <SectionLabel>Connections</SectionLabel>
+          <div className="flex flex-col gap-3 mt-2">
+            {notebook.connections.map((conn, i) => {
+              const linkedClues = conn.clueIds
+                .map(id => notebook.clues.find(c => c.id === id))
+                .filter(Boolean)
+              return (
+                <div key={i} className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
+                  <div className="text-xs text-primary/70 mb-1.5">
+                    {linkedClues.map(c => c!.content.slice(0, 30) + '...').join(' + ')}
+                  </div>
+                  <div className="text-foreground/80 leading-relaxed">{conn.revelation}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
     </div>
   )

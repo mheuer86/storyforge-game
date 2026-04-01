@@ -53,10 +53,24 @@ Frame everything in-character. Don't name check types — just call request_roll
   const downtimeSection = (context === 'downtime' || context === 'social' || context === 'exploration') ? SECTION_DOWNTIME : ''
   const assetSection = ps.assetMechanic && context !== 'downtime' ? ps.assetMechanic : ''
 
+  // Investigation section: always loaded for noire, context-conditional for other genres
+  const isNoireGenre = genre === 'noire'
+  const hasInvestigationThreads = gameState.world.threads.some(t =>
+    t.title.toLowerCase().includes('case') ||
+    t.title.toLowerCase().includes('investigation') ||
+    t.title.toLowerCase().includes('mystery') ||
+    t.title.toLowerCase().includes('clue') ||
+    t.title.toLowerCase().includes('evidence')
+  )
+  const investigationSection = (isNoireGenre || hasInvestigationThreads) && context !== 'combat'
+    ? buildInvestigationSection(config.notebookLabel, ps.investigationGuide)
+    : ''
+
   const fallbacks: string[] = []
   if (!combatSection) fallbacks.push('Combat flow (turn order: player → enemies → new situation; batch enemy actions; start_combat/end_combat)')
   if (!infiltrationSection) fallbacks.push('Infiltration flow (escalating detection model; cover identity checks scale by NPC awareness; extraction is always a scene)')
   if (!downtimeSection) fallbacks.push('Downtime pacing (play character scenes during transit/waiting; NPC texture: habit, dialogue, unexpected moment)')
+  if (!investigationSection && ps.investigationGuide) fallbacks.push(`Investigation mechanics (${config.notebookLabel}: clue discovery, connection proposals, case structure)`)
   const fallbackSection = fallbacks.length > 0
     ? `\n## AVAILABLE BUT NOT LOADED (context: ${context})\nThe following rule sections exist but are omitted for this context. If the scene shifts, they apply from the next turn:\n- ${fallbacks.join('\n- ')}\n`
     : ''
@@ -86,6 +100,8 @@ ${ps.vocabulary}
 
 Every recurring NPC should have a recognizable speech pattern — not accents or catchphrases, but rhythm. Establish each NPC's pattern in their first significant scene and maintain it. The player should identify who's talking without dialogue tags.
 
+**Name variety:** Avoid overused AI-default names (Aldric, Kael, Voss, Thorne, Sable, Zara, Ash, etc.). Draw from the genre's cultural register — noir uses ordinary names (Frank, Dolores, Eddie, Margaret), fantasy uses culturally varied names, sci-fi uses names that reflect the species' culture. No two NPCs in the same campaign should have names that sound alike.
+
 ${ps.npcVoiceGuide}
 
 ## ORIGIN × CLASS TENSION
@@ -108,6 +124,8 @@ ${SECTION_EXAMPLE_FLOW}
 ${SECTION_HIDDEN_SYSTEMS}
 
 ${assetSection}
+
+${investigationSection}
 
 ${SECTION_PROGRESSION}
 
@@ -274,6 +292,54 @@ Don't compress transit or waiting into pure summary. Play at least one scene wit
 When the player asks to skip ahead, compress logistics but deliver one brief scene. Ask if they want to engage or move on.`
 
 // ============================================================
+// INVESTIGATION MECHANICS
+// ============================================================
+
+function buildInvestigationSection(notebookLabel: string, genreGuide: string): string {
+  if (!genreGuide) return ''
+  return `## INVESTIGATION — ${notebookLabel.toUpperCase()}
+
+${genreGuide}
+
+### CLUE DISCOVERY
+
+Clues enter play through three channels:
+
+**Active investigation.** The player searches, examines, questions. Call request_roll (Investigation, Perception, or social skill depending on the source). Success yields a clear clue. Failure yields a partial clue (missing context, ambiguous meaning) or a clue that costs something — the witness talks but now knows you're asking, the search takes too long and someone notices. Never "nothing happens."
+
+**Passive perception.** If the player's passive score (10 + WIS mod) meets the DC, they notice something without searching. Narrate it as ambient detail — a headline, an overheard conversation, a detail in a room. The player may or may not recognize it as significant. This seeds clues the player doesn't know they have yet.
+
+**NPC volunteering.** Contacts and NPCs offer information based on disposition tier. Neutral: surface-level. Favorable: relevant details. Trusted: brings you something unprompted. Better relationships produce better intelligence. Track this through existing disposition mechanics.
+
+### CONNECTION PROPOSALS
+
+When the player proposes that two or more pieces of information are related ("I think the bank withdrawal and the shipping manifest are connected"), evaluate the reasoning:
+
+**Strong connection (reasoning is sound):** Call request_roll for INT Investigation. DC scales by obscurity: obvious 10, moderate 14, deep 18. Success reveals new information — this is the payoff, the moment the case advances. Strong success (5+ over DC) reveals an additional detail the player didn't ask about. Failure reveals nothing but doesn't consume the trait use.
+
+**Weak connection (plausible but not quite right):** Same check, but success reveals a partial truth — the connection exists but not the way the player thought. This redirects without dead-ending.
+
+**No connection (reasoning is a stretch):** Don't call a roll. Narrate the player trying to make it fit and coming up empty. No mechanical penalty, but narrative time passes (clocks may tick). Offer a nudge toward a real connection.
+
+### INFORMATION QUALITY BY DISPOSITION
+
+- **Hostile/Wary:** Lies, misdirection, or silence. Information gained requires verification.
+- **Neutral:** Surface facts. "Yeah, she came in sometimes."
+- **Favorable:** Relevant context. "She came in three nights in a row last week. Kept watching the back door."
+- **Trusted:** Active help. "She asked me to hold something for her. I still have it."
+
+### FAIL-FORWARD IN INVESTIGATION
+
+Failed investigation checks never mean "no information." They mean:
+- The clue is **misleading** (points in a plausible wrong direction)
+- The clue is **partial** (missing critical context that changes its meaning)
+- The clue **costs something** (someone noticed you looking, a clock ticks, a contact is burned)
+- The search **takes too long** (time-based consequences advance)
+
+The trail never goes completely cold — but it can go in the wrong direction.`
+}
+
+// ============================================================
 // EXAMPLE FLOW — anchors correct behavior better than rules alone
 // ============================================================
 
@@ -438,6 +504,8 @@ function buildToolUsage(currencyName: string): string {
 
 **Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
 
+**Notebook:** add_clue when the player discovers meaningful information (active investigation, passive perception, NPC volunteering). Include hidden tags for linking. connect_clues after a successful Investigation check confirms a player's connection proposal.
+
 **Meta:** meta_response only.
 
 **Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).`
@@ -587,6 +655,22 @@ function compressGameState(gs: GameState): string {
         '\n'
       : ''
 
+  const nb = w.notebook
+  const notebookSection = nb && nb.clues.length > 0
+    ? `\nNOTEBOOK${nb.activeThreadTitle ? ` — ${nb.activeThreadTitle}` : ''}:\n` +
+      nb.clues.map(c => {
+        const tags = c.tags.join(',')
+        const herring = c.isRedHerring ? ' [RED HERRING]' : ''
+        const linked = c.connected.length > 0 ? ` → ${c.connected.join(',')}` : ''
+        return `- [${c.id}] ${c.content.slice(0, 80)} (src: ${c.source}) tags:${tags}${herring}${linked}`
+      }).join('\n') +
+      (nb.connections.length > 0
+        ? `\nCONNECTIONS:\n` + nb.connections.map(conn =>
+            `${conn.clueIds.join(' + ')} = ${conn.revelation.slice(0, 80)}`
+          ).join('\n')
+        : '')
+    : ''
+
   const tensionClocks = w.tensionClocks ?? []
   const activeClocks = tensionClocks.filter((c) => c.status === 'active')
   const triggeredClocks = tensionClocks.filter((c) => c.status === 'triggered')
@@ -613,7 +697,7 @@ NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
 ANTAG: ${antagonistLine}
-CLOCKS: ${clocksLine}${shipSection}
+CLOCKS: ${clocksLine}${shipSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
@@ -685,7 +769,7 @@ export function buildInitialMessage(gameState: GameState): string {
 
 Write the opening scene based on this hook. Adapt it to my character's species, class, and ${partyLabel} from the game state. Follow the tutorial-as-narrative structure for this first chapter.
 
-IMPORTANT: Use update_world to establish the starting location (setLocation), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
+IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
   }
 
   const location = gameState.world?.currentLocation?.name ?? 'current location'

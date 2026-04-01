@@ -33,7 +33,10 @@ const requestSchema = z.object({
     modifier: z.number(),
     reason: z.string(),
     toolUseId: z.string(),
-    pendingMessages: z.array(z.any()),
+    pendingMessages: z.array(z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.union([z.string(), z.array(z.any())]),
+    })),
     advantage: z.enum(['advantage', 'disadvantage']).optional(),
     rawRolls: z.tuple([z.number().min(1).max(20), z.number().min(1).max(20)]).optional(),
     contested: z.object({ npcName: z.string(), npcSkill: z.string(), npcModifier: z.number() }).optional(),

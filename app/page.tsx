@@ -7,7 +7,7 @@ import { CharacterSetup } from '@/components/setup/character-setup'
 import { CampaignSelect } from '@/components/setup/campaign-select'
 import { GameScreen } from '@/components/game/game-screen'
 import { GameErrorBoundary } from '@/components/error-boundary'
-import { loadGameState, createInitialGameState, clearGameState, getSaveSlot, saveGameState, type SaveSlotData } from '@/lib/game-data'
+import { loadGameState, createInitialGameState, clearGameState, getSaveSlot, saveGameState, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 
@@ -81,6 +81,11 @@ function AppContent() {
       data.gender
     )
     applyGenreTheme(setupData.genre)
+    // Auto-save new game to first empty slot
+    const firstEmpty = ([1, 2, 3] as const).find(s => !getSaveSlot(s))
+    if (firstEmpty) {
+      saveToSlot(firstEmpty, initialState)
+    }
     setPendingGameState(initialState)
     setAppState('playing')
   }

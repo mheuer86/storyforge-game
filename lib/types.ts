@@ -142,6 +142,27 @@ export interface TensionClock {
   triggerEffect: string
 }
 
+export interface Clue {
+  id: string
+  content: string
+  source: string
+  tags: string[]
+  discoveredChapter: number
+  connected: string[]
+  isRedHerring: boolean
+}
+
+export interface ClueConnection {
+  clueIds: string[]
+  revelation: string
+}
+
+export interface Notebook {
+  activeThreadTitle: string
+  clues: Clue[]
+  connections: ClueConnection[]
+}
+
 export interface WorldState {
   shipName: string
   currentLocation: { name: string; description: string }
@@ -154,6 +175,7 @@ export interface WorldState {
   ship: ShipState | null
   tensionClocks: TensionClock[]
   currentTime: string  // narrative timeline e.g. "Day 3, evening" or "Late afternoon"
+  notebook: Notebook | null
 }
 
 export interface Enemy {
@@ -173,11 +195,27 @@ export interface CombatState {
   log: string[]
 }
 
+export interface RollDisplayData {
+  check: string
+  dc: number
+  roll: number
+  modifier: number
+  total: number
+  result: 'critical' | 'success' | 'failure' | 'fumble'
+  reason: string
+  advantage?: 'advantage' | 'disadvantage'
+  rawRolls?: [number, number]
+  contested?: { npcName: string; npcSkill: string; npcModifier: number }
+  npcRoll?: number
+  npcTotal?: number
+}
+
 export interface ChatMessage {
   id: string
-  role: 'gm' | 'player' | 'meta-question' | 'meta-response'
+  role: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll'
   content: string
   timestamp: string
+  rollData?: RollDisplayData
 }
 
 export interface RollRecord {
