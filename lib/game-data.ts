@@ -72,6 +72,7 @@ export function createInitialGameState(
     traits: [{ ...selectedClass.trait }],
     skillPoints: { available: 0, log: [] },
     inspiration: false,
+    exhaustion: 0,
   }
 
   const baseName = pickRandom(config.locationNames)
@@ -112,6 +113,7 @@ export function createInitialGameState(
       upgradeLog: [],
     } : null,
     tensionClocks: [],
+    currentTime: '',
   }
 
   return {

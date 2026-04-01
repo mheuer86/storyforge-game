@@ -14,7 +14,7 @@ import { track } from '@vercel/analytics'
 
 interface DisplayMessage {
   id: string
-  type: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll'
+  type: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll' | 'scene-break'
   content: string
   isError?: boolean
   rollData?: {
@@ -96,8 +96,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
 
   const applyToolResults = useCallback(
-    (results: ToolCallResult[], currentState: GameState, statChanges: StatChange[]): GameState => {
+    (results: ToolCallResult[], currentState: GameState, statChanges: StatChange[]): GameState & { _sceneBreaks?: string[] } => {
       let updated = { ...currentState }
+      const sceneBreaks: string[] = []
 
       for (const result of results) {
         if (result.tool === 'update_character') {
@@ -234,6 +235,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             statChanges.push({ type: 'loss', label: 'Used Inspiration' })
           }
 
+          if ((input as Record<string, unknown>).exhaustionChange !== undefined) {
+            const change = (input as Record<string, unknown>).exhaustionChange as number
+            const prev = char.exhaustion ?? 0
+            char.exhaustion = Math.max(0, Math.min(6, prev + change))
+            if (change > 0) {
+              const labels = ['', 'Exhaustion 1: disadvantage on checks', 'Exhaustion 2: slowed', 'Exhaustion 3: disadvantage on attacks/saves', 'Exhaustion 4: HP halved', 'Exhaustion 5: immobilized', 'Exhaustion 6: death']
+              statChanges.push({ type: 'loss', label: labels[char.exhaustion] || `Exhaustion ${char.exhaustion}` })
+            } else {
+              statChanges.push({ type: 'gain', label: char.exhaustion === 0 ? 'Exhaustion cleared' : `Exhaustion reduced to ${char.exhaustion}` })
+            }
+          }
+
           updated = { ...updated, character: char }
         }
 
@@ -283,8 +296,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             addThread?: { id: string; title: string; status: string; deteriorating: boolean }
             updateThread?: { id: string; status: string; deteriorating?: boolean }
             addFaction?: { name: string; stance: string }
-            addPromise?: { id: string; to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }
-            updatePromise?: { id: string; status: 'open' | 'fulfilled' | 'broken' }
+            addPromise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
+            updatePromise?: { id: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
+            setCurrentTime?: string
           }
           const world = { ...updated.world }
 
@@ -312,9 +326,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               n.name === input.updateNpc!.name ? { ...n, ...input.updateNpc } : n
             )
           }
+          if (input.setCurrentTime) {
+            world.currentTime = input.setCurrentTime
+          }
           if (input.setLocation) {
             world.currentLocation = input.setLocation
-            statChanges.push({ type: 'neutral', label: `Location: ${input.setLocation.name}` })
+            // Insert a scene break header into the message stream
+            const timeStr = input.setCurrentTime || world.currentTime
+            const sceneLabel = timeStr ? `${input.setLocation.name} · ${timeStr}` : input.setLocation.name
+            sceneBreaks.push(sceneLabel)
           }
           if (input.addThread) {
             world.threads = [...world.threads, input.addThread]
@@ -596,6 +616,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
 
+      if (sceneBreaks.length > 0) {
+        (updated as GameState & { _sceneBreaks?: string[] })._sceneBreaks = sceneBreaks
+      }
       return updated
     },
     []
@@ -688,6 +711,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               )
               if (otherResults.length > 0) {
                 stateWithChanges = applyToolResults(otherResults, stateWithChanges, statChanges)
+                // Insert scene break headers if any location changes occurred
+                const breaks = (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
+                if (breaks && breaks.length > 0) {
+                  setMessages((prev) => [
+                    ...prev.filter(m => m.id !== gmMsgId),  // remove the empty GM placeholder temporarily
+                    ...breaks.map(label => ({ id: crypto.randomUUID(), type: 'scene-break' as const, content: label })),
+                    { id: gmMsgId, type: 'gm' as const, content: gmText },
+                  ])
+                  delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
+                }
               }
             }
 
@@ -1123,6 +1156,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             <div className="flex flex-col gap-6">
               {messages.map((message, index) => {
                 const isLast = index === messages.length - 1
+                if (message.type === 'scene-break') {
+                  return (
+                    <div key={message.id} ref={isLast ? lastMessageRef : undefined} className="flex items-center gap-3 py-2">
+                      <div className="h-px flex-1 bg-border/15" />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary whitespace-nowrap">{message.content}</span>
+                      <div className="h-px flex-1 bg-border/15" />
+                    </div>
+                  )
+                }
                 return message.type === 'roll' && message.rollData ? (
                   <div key={message.id} ref={isLast ? lastMessageRef : undefined}>
                     <RollBadge rollData={message.rollData} />
@@ -1378,6 +1420,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           ac: gameState.character.ac,
           credits: gameState.character.credits,
           inspiration: gameState.character.inspiration ?? false,
+          exhaustion: gameState.character.exhaustion ?? 0,
           tempEffects: gameState.character.tempModifiers.map((m) => ({
             name: m.name,
             effect: `+${m.value} ${m.stat}`,

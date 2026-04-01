@@ -40,6 +40,7 @@ interface Character {
   ac: number
   credits: number
   inspiration: boolean
+  exhaustion: number
   tempEffects: { name: string; effect: string; duration: string }[]
 }
 
@@ -54,7 +55,7 @@ interface World {
   companions: { name: string; description: string; lastSeen: string }[]
   npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
-  promises: { to: string; what: string; status: 'open' | 'fulfilled' | 'broken' }[]
+  promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
 }
@@ -356,6 +357,7 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
           { label: 'AC', value: String(character.ac) },
           { label: currencyLabel, value: String(character.credits) },
           { label: 'Inspiration', value: character.inspiration ? '◆ Ready' : '◇ —' },
+          ...(character.exhaustion > 0 ? [{ label: 'Exhaustion', value: `Level ${character.exhaustion}` }] : []),
         ].map((row) => (
           <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
             <span className="text-xs text-muted-foreground/50 capitalize">{row.label}</span>
@@ -709,6 +711,8 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                       'rounded px-3 py-2',
                       promise.status === 'open'
                         ? 'border border-warning/30 bg-warning/5'
+                        : promise.status === 'strained'
+                        ? 'border border-orange-400/30 bg-orange-400/5'
                         : promise.status === 'fulfilled'
                         ? 'border border-success/30 bg-success/5'
                         : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'

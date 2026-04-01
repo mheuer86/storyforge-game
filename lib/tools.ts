@@ -101,6 +101,10 @@ export const gameTools: Anthropic.Tool[] = [
             required: ['stat', 'amount'],
           },
         },
+        exhaustionChange: {
+          type: 'number',
+          description: 'Change exhaustion level: +1 to add a level (sustained pressure, severe injury), -1 to remove a level (long rest, medical treatment). Range 0-6.',
+        },
         addProficiency: {
           type: 'string',
           description: 'Add a new skill proficiency earned via Skill Point (e.g. "Stealth"). Call after presenting the choice narratively.',
@@ -292,12 +296,16 @@ export const gameTools: Anthropic.Tool[] = [
         },
         setLocation: {
           type: 'object',
-          description: 'Update the current location.',
+          description: 'Update the current location. Triggers a scene break header in the UI.',
           properties: {
             name: { type: 'string' },
             description: { type: 'string' },
           },
           required: ['name', 'description'],
+        },
+        setCurrentTime: {
+          type: 'string',
+          description: 'Update the in-world timeline at scene transitions. e.g. "Day 3, evening", "Late afternoon", "0347 hours". Announce time naturally in the narrative — never as a mechanical countdown.',
         },
         addThread: {
           type: 'object',
@@ -336,7 +344,7 @@ export const gameTools: Anthropic.Tool[] = [
             id: { type: 'string', description: 'Unique ID (snake_case)' },
             to: { type: 'string', description: 'Who the promise was made to' },
             what: { type: 'string', description: 'What was promised' },
-            status: { type: 'string', enum: ['open', 'fulfilled', 'broken'] },
+            status: { type: 'string', enum: ['open', 'strained', 'fulfilled', 'broken'] },
           },
           required: ['id', 'to', 'what', 'status'],
         },
@@ -345,7 +353,7 @@ export const gameTools: Anthropic.Tool[] = [
           description: 'Update the status of an existing promise (matched by id).',
           properties: {
             id: { type: 'string' },
-            status: { type: 'string', enum: ['open', 'fulfilled', 'broken'] },
+            status: { type: 'string', enum: ['open', 'strained', 'fulfilled', 'broken'] },
           },
           required: ['id', 'status'],
         },

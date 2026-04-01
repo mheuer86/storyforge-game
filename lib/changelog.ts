@@ -19,6 +19,13 @@ export const changelog: ChangelogEntry[] = [
       'Downtime pacing — transit and waiting periods now include character scenes instead of being compressed to summary. Relationships deepen between missions',
       'Fail forward — failed checks now produce specific cascading consequences (suspicion, traces, disposition drops) instead of generic blocks',
       'Promise pressure — promises deferred more than one chapter now trigger NPC reactions and complications',
+      'Exhaustion system — sustained pressure without rest imposes cumulative penalties (disadvantage → slowed → HP halved → collapse). Long rests remove one level',
+      'Scene headers — location and time markers appear in tertiary color at scene transitions',
+      'Infiltration flow — stealth/undercover operations now follow a structured escalation (suspicion → active searching → confrontation), with cover identity DC scaling',
+      'NPC texture — temporary NPCs in extended scenes get observable habits, unprompted dialogue, and unexpected moments',
+      'Failure as a door — failed checks now expose the player to accidental opportunities that success would have bypassed',
+      'Scene-level failure protection — after two failures in the same scene, the third check caps at DC 12',
+      'Scope escalation guidance — the GM keeps the camera on your hands as the war gets bigger, not the war map',
     ],
   },
   {
