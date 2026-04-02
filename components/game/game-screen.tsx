@@ -21,6 +21,7 @@ interface DisplayMessage {
   isError?: boolean
   statChanges?: StatChange[]
   rollData?: RollDisplayData
+  sceneBreak?: string  // location/time header attached to this GM message
 }
 
 interface GameScreenProps {
@@ -182,11 +183,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 // Insert scene break headers if any location changes occurred
                 const breaks = (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
                 if (breaks && breaks.length > 0) {
-                  setMessages((prev) => [
-                    ...prev.filter(m => m.id !== gmMsgId),  // remove the empty GM placeholder temporarily
-                    ...breaks.map(label => ({ id: crypto.randomUUID(), type: 'scene-break' as const, content: label })),
-                    { id: gmMsgId, type: 'gm' as const, content: gmText },
-                  ])
+                  // Prepend scene break as a header on the current GM message (avoids late pop-in)
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === gmMsgId ? { ...m, sceneBreak: breaks[breaks.length - 1] } : m
+                    )
+                  )
                   delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
                 }
               }
@@ -833,6 +835,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   </div>
                 ) : (
                   <div key={message.id} ref={isLast ? lastMessageRef : undefined}>
+                    {message.sceneBreak && (
+                      <div className="flex items-center gap-3 py-2 mb-1">
+                        <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary">{message.sceneBreak}</span>
+                        <div className="h-px flex-1 bg-tertiary/20" />
+                      </div>
+                    )}
                     <ChatMessage
                       message={{
                         id: message.id,
