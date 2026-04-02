@@ -451,36 +451,36 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'generate_debrief',
     description:
-      'Generate a chapter debrief immediately after calling close_chapter. Evaluate the player\'s performance using the concrete data from this chapter: roll outcomes, promises kept or broken, threads that worsened, cohesion changes. Be specific — reference actual events, not generic praise. Tactical = moment-to-moment decisions and roll choices. Strategic = how well they managed long-term threads, cohesion, and antagonist pressure.',
+      'Generate a chapter debrief. Drop the GM voice — be direct, analytical, honest. Like two collaborators discussing a shared project. Generic praise is worthless; name actual events, rolls, NPCs, and consequences.\n\nThe tool captures structured data. Alongside the tool call, deliver sections 4 (Mechanical State) and 6 (GM Transparency) as narrative text.',
     input_schema: {
       type: 'object' as const,
       properties: {
         tactical: {
           type: 'string',
-          description: 'Tactical assessment — 2-3 sentences evaluating moment-to-moment decisions. Reference specific rolls and their consequences. E.g. "The cold-drift approach was textbook, but the double 2s on the guard check forced an improvised takedown that started the alert clock. Recovery was clean — the blast door bypass showed strong adaptability under time pressure."',
+          description: 'Combines three analyses:\n\n1. THE DICE TOLD A STORY: Analyze the roll log. What patterns emerged (stat streaks, hot/cold runs)? Which 2-3 rolls most shaped the narrative? Name the one roll that defined the chapter and explain what the other result would have meant.\n\n2. WHAT WORKED: 2-3 player decisions with meaningful positive impact. Focus on decisions, not dice. Show causation chains: "Choosing X led to Y, which created Z." Note any moments where failure accidentally created better outcomes.\n\n3. WHAT COST YOU: The chapter\'s real costs — not just HP. Relationship damage, burned covers, closed options, strained promises. Be honest but not punishing: "here\'s what the chapter cost you, and why that makes the story richer."',
         },
         strategic: {
           type: 'string',
-          description: 'Strategic assessment — 2-3 sentences evaluating long-term play. Reference thread management, promise progress, cohesion impact, and antagonist positioning. E.g. "Chose intelligence over assault — preserved surveillance assets and gained actionable data. But the Carren flags created an exposure thread that will cost time to manage. Dray integration was well-handled; the direct honesty paid off."',
+          description: 'THREADS AND PRESSURE: Assess the open thread landscape. Which threads advanced, worsened from neglect, or newly opened? What is most urgent next chapter? What has the player been ignoring that is about to become urgent? Frame as strategic awareness, not instructions — the player decides priorities.',
         },
         luckyBreaks: {
           type: 'array',
-          description: 'Specific moments where dice or circumstances favored the player. Reference actual rolls. E.g. "Nat 20 on the maintenance tech — avoided discovery at the worst possible junction."',
+          description: 'Specific moments where dice or circumstances favored the player. Reference actual rolls and what would have happened otherwise.',
           items: { type: 'string' },
         },
         costsPaid: {
           type: 'array',
-          description: 'Concrete costs incurred this chapter. Be specific. E.g. "Holo-cloak spent during extraction", "Cover identity Harko potentially burned", "Pinnacle Exposure clock at 3/4".',
+          description: 'Concrete permanent costs: consumables spent, covers burned, clocks advanced, relationships damaged, options closed.',
           items: { type: 'string' },
         },
         promisesKept: {
           type: 'array',
-          description: 'Promises fulfilled this chapter.',
+          description: 'Promises fulfilled or meaningfully advanced this chapter.',
           items: { type: 'string' },
         },
         promisesBroken: {
           type: 'array',
-          description: 'Promises broken or left open past their implied deadline.',
+          description: 'Promises broken, strained, or left past their implied deadline.',
           items: { type: 'string' },
         },
       },
