@@ -673,20 +673,49 @@ export function applyToolResults(
       const world = { ...updated.world }
       if (world.notebook) {
         const notebook = { ...world.notebook }
-        notebook.connections = [...notebook.connections, {
-          clueIds: input.clueIds,
-          title: input.title,
-          revelation: input.revelation,
-          ...(input.status ? { status: input.status } : {}),
-        }]
+        // Check if this connection already exists (match by title or same clue IDs)
+        const normTitle = (s: string) => s.replace(/[^a-z0-9 ]/gi, '').toLowerCase().trim()
+        const existingIdx = notebook.connections.findIndex(c =>
+          normTitle(c.title) === normTitle(input.title) ||
+          (input.clueIds.length > 0 && input.clueIds.every(id => c.clueIds.includes(id)) && c.clueIds.every(id => input.clueIds.includes(id)))
+        )
+        if (existingIdx >= 0) {
+          // Update existing connection
+          notebook.connections = notebook.connections.map((c, i) =>
+            i === existingIdx ? { ...c, ...input } : c
+          )
+          statChanges.push({ type: 'neutral', label: `Connection updated: ${input.title}` })
+        } else {
+          // New connection
+          notebook.connections = [...notebook.connections, {
+            clueIds: input.clueIds,
+            title: input.title,
+            revelation: input.revelation,
+            ...(input.status ? { status: input.status } : {}),
+          }]
+          statChanges.push({ type: 'new', label: 'Connection discovered' })
+        }
         notebook.clues = notebook.clues.map(c =>
           input.clueIds.includes(c.id)
             ? { ...c, connected: [...new Set([...c.connected, ...input.clueIds.filter(id => id !== c.id)])] }
             : c
         )
+        // Deduplicate connections by normalized title (keep the one with status if set)
+        const seen = new Map<string, number>()
+        notebook.connections = notebook.connections.filter((c, i) => {
+          const key = normTitle(c.title)
+          if (!seen.has(key)) { seen.set(key, i); return true }
+          // Keep the one with a status, drop the one without
+          const prevIdx = seen.get(key)!
+          if (c.status && !notebook.connections[prevIdx].status) {
+            // Replace previous with this one
+            notebook.connections[prevIdx] = c
+            return false
+          }
+          return false
+        })
         world.notebook = notebook
         updated = { ...updated, world }
-        statChanges.push({ type: 'new', label: 'Connection discovered' })
       }
     }
   }
