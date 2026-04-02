@@ -41,6 +41,7 @@ interface RollPrompt {
   rawRolls?: [number, number]
   contested?: { npcName: string; npcSkill: string; npcModifier: number }
   npcRoll?: number
+  priorToolResults?: unknown[]
 }
 
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
@@ -151,6 +152,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 pendingState: stateWithChanges,
                 advantage: event.advantage,
                 contested: event.contested,
+                priorToolResults: event.priorToolResults,
               })
             }
 
@@ -254,6 +256,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       isMetaQuestion: boolean,
       isInitial: boolean
     ) => {
+      // Auto-detect forge:dev prefix as meta question
+      if (playerMessage.toLowerCase().startsWith('forge:dev')) {
+        isMetaQuestion = true
+      }
       if (isLoadingRef.current) return
       isLoadingRef.current = true
       setIsLoading(true)
@@ -390,6 +396,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         ...(prompt.rawRolls && { rawRolls: prompt.rawRolls }),
         ...(prompt.contested && { contested: prompt.contested }),
         ...(prompt.npcRoll !== undefined && { npcRoll: prompt.npcRoll, npcTotal }),
+        ...(prompt.priorToolResults && prompt.priorToolResults.length > 0 && { priorToolResults: prompt.priorToolResults }),
       }
 
       const modifier = prompt.modifier
@@ -879,7 +886,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="text-left">
-                          <div className="text-xs text-muted-foreground/60">{rollPrompt.contested.npcName}</div>
+                          <div className="text-xs font-medium text-foreground/60">{rollPrompt.contested.npcName}</div>
                           <div className="font-system text-sm text-foreground/60">{rollPrompt.contested.npcSkill} {rollPrompt.contested.npcModifier >= 0 ? '+' : ''}{rollPrompt.contested.npcModifier}</div>
                           <div className="mt-1 flex h-12 w-12 items-center justify-center rounded-lg border border-border/30 bg-card/30 text-2xl">🎲</div>
                         </div>
@@ -971,12 +978,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   'text-orange-400 font-bold'
                 const resultLabel = (r: string) =>
                   r === 'critical' ? 'CRITICAL!' : r === 'success' ? 'SUCCESS' : r === 'fumble' ? 'FUMBLE' : 'FAILURE'
+                const playerWins = result === 'success' || result === 'critical'
                 const dieStyle = (isKept: boolean | null, displayVal: number, isNpc?: boolean) => [
                   'flex shrink-0 items-center justify-center rounded-lg border font-mono font-bold transition-all duration-200',
-                  hasAdv ? 'h-14 w-14 text-2xl' : 'h-14 w-14 text-2xl',
+                  'h-14 w-14 text-2xl',
                   dicePhase === 'rolling' ? 'border-border/50 bg-card/50 text-muted-foreground animate-pulse' :
                   !isKept && hasAdv ? 'border-border/30 bg-card/20 text-muted-foreground/40 line-through' :
-                  isNpc && isContested && dicePhase === 'revealed' && (result === 'success' || result === 'critical') ? 'border-border/30 bg-card/20 text-muted-foreground/40' :
+                  // Contested: grey out the loser
+                  isNpc && isContested && dicePhase === 'revealed' && playerWins ? 'border-border/30 bg-card/20 text-muted-foreground/40' :
+                  !isNpc && isContested && dicePhase === 'revealed' && !playerWins ? 'border-border/30 bg-card/20 text-muted-foreground/40' :
                   isNpc && isContested ? 'border-orange-400/60 bg-orange-400/20 text-orange-400' :
                   displayVal === 20 ? 'dice-crit' :
                   displayVal === 1 ? 'border-red-500/60 bg-red-500/20 text-red-400' :
@@ -995,6 +1005,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
                 if (isContested) {
                   // Contested layout — NPC left, player right
+                  // diceDisplay = die1 (player), diceDisplay2 = die2 (NPC)
                   return (
                     <div className={cardColor}>
                       <div className="text-center font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-3">
@@ -1002,8 +1013,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="text-left">
-                          <div className="text-[10px] text-muted-foreground/50 mb-1">{rollPrompt.contested!.npcName}</div>
-                          <div className={dieStyle(null, diceDisplay, true)}>{diceDisplay}</div>
+                          <div className="text-xs font-medium text-foreground/60 mb-1">{rollPrompt.contested!.npcName}</div>
+                          <div className={dieStyle(null, diceDisplay2, true)}>{diceDisplay2}</div>
                           {dicePhase === 'revealed' && rollPrompt.npcRoll !== undefined && (
                             <div className="mt-1 font-system text-xs text-muted-foreground/60">
                               {rollPrompt.npcRoll} + {rollPrompt.contested!.npcModifier} = {npcTot}
@@ -1016,8 +1027,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] text-primary/60 mb-1">You</div>
-                          <div className={[dieStyle(true, diceDisplay2), 'ml-auto'].join(' ')}>{diceDisplay2}</div>
+                          <div className="text-xs font-medium text-foreground/70 mb-1">You</div>
+                          <div className={[dieStyle(true, diceDisplay, false), 'ml-auto'].join(' ')}>{diceDisplay}</div>
                           {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
                             <div className="mt-1 font-system text-xs text-primary/80">
                               {rolledValue} + {rollPrompt.modifier} = {total}

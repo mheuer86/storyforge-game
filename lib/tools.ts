@@ -712,6 +712,11 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'The new information revealed by connecting these clues.',
         },
+        status: {
+          type: 'string',
+          enum: ['active', 'solved', 'archived'],
+          description: 'Set to "solved" when the connection\'s mystery is fully resolved, or "archived" when no longer relevant. Defaults to "active".',
+        },
       },
       required: ['clueIds', 'title', 'revelation'],
     },

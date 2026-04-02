@@ -42,6 +42,7 @@ const requestSchema = z.object({
     contested: z.object({ npcName: z.string(), npcSkill: z.string(), npcModifier: z.number() }).optional(),
     npcRoll: z.number().min(1).max(20).optional(),
     npcTotal: z.number().optional(),
+    priorToolResults: z.array(z.any()).optional(),
   }).optional(),
 })
 
@@ -134,6 +135,15 @@ async function runToolLoop(
           send({ type: 'tools', results: toolResults })
         }
 
+        // Build pending messages — include assistant content but NOT partial tool_results yet.
+        // The prior tool_results (roundResults) will be merged with the roll result in the continuation.
+        const pendingMessages: Anthropic.MessageParam[] = [
+          ...messages,
+          { role: 'assistant' as const, content: completed.content },
+        ]
+        // Stash prior tool_results so the continuation can merge them with the roll result
+        const priorToolResults = [...roundResults]
+
         send({
           type: 'roll_prompt',
           check: input.checkType,
@@ -142,10 +152,8 @@ async function runToolLoop(
           modifier: input.modifier,
           reason: input.reason,
           toolUseId: tc.id,
-          pendingMessages: [
-            ...messages,
-            { role: 'assistant' as const, content: completed.content },
-          ],
+          pendingMessages,
+          priorToolResults,
           ...(input.advantage && { advantage: input.advantage }),
           ...(input.contested && { contested: input.contested }),
         })
@@ -213,7 +221,7 @@ export async function POST(req: NextRequest) {
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
-          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal } = rollResolution
+          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal, priorToolResults: priorResults } = rollResolution
           // For contested rolls, compare player total vs NPC total instead of static DC
           const effectiveDC = npcTotal !== undefined ? npcTotal : dc
           const result = resolveRoll(roll, modifier, effectiveDC)
@@ -228,12 +236,15 @@ export async function POST(req: NextRequest) {
             ...(npcRoll !== undefined && { npcRoll, npcTotal }),
           }
 
+          // Merge any prior tool_results (from tools called before the roll in the same batch) with the roll result
+          const allToolResults: Anthropic.ToolResultBlockParam[] = [
+            ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
+            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal) },
+          ]
+
           const continuationMessages: Anthropic.MessageParam[] = [
             ...(pendingMessages as Anthropic.MessageParam[]),
-            {
-              role: 'user',
-              content: [{ type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal) }],
-            },
+            { role: 'user', content: allToolResults },
           ]
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, false)

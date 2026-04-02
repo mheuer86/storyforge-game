@@ -33,6 +33,43 @@ export function RollBadge({ rollData }: { rollData: RollDisplayData }) {
 
   const discardedDieClass = 'border-border/30 bg-card/20 text-muted-foreground/40 line-through'
 
+  const isContested = !!rollData.contested && rollData.npcRoll !== undefined
+  const loserDieClass = 'border-border/30 bg-card/20 text-muted-foreground/40'
+
+  if (isContested) {
+    const npcTotal = rollData.npcRoll! + rollData.contested!.npcModifier
+    return (
+      <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
+        <div className="text-center font-heading text-xs font-medium uppercase tracking-wider text-foreground/70 mb-3">
+          Contested — {rollData.check} vs {rollData.contested!.npcSkill}
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-left">
+            <div className="text-xs font-medium text-foreground/60 mb-1">{rollData.contested!.npcName}</div>
+            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ${isSuccess ? loserDieClass : 'border-orange-400/60 bg-orange-400/20 text-orange-400'}`}>
+              {rollData.npcRoll}
+            </div>
+            <div className="mt-1 font-system text-xs text-foreground/50">
+              {rollData.npcRoll} + {rollData.contested!.npcModifier} = {npcTotal}
+            </div>
+          </div>
+          <div className="text-center">
+            <span className={labelClass}>{label.replace('— ', '')}</span>
+          </div>
+          <div className="text-right">
+            <div className="text-xs font-medium text-foreground/70 mb-1">You</div>
+            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border font-mono text-2xl font-bold ml-auto ${!isSuccess ? loserDieClass : keptDieClass}`}>
+              {rollData.roll}
+            </div>
+            <div className="mt-1 font-system text-xs text-foreground/70">
+              {rollData.roll} + {rollData.modifier} = {rollData.total}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (rollData.isOriginal) {
     // Dimmed original roll before inspiration reroll
     return (

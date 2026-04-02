@@ -161,6 +161,7 @@ export interface ClueConnection {
   clueIds: string[]
   title: string  // descriptive summary of what the connection means (e.g. "Financial Desperation")
   revelation: string
+  status?: 'active' | 'solved' | 'archived'
 }
 
 export interface Notebook {
@@ -301,6 +302,7 @@ export type StreamEvent =
       pendingMessages: unknown[]
       advantage?: 'advantage' | 'disadvantage'
       contested?: ContestedRollInfo
+      priorToolResults?: unknown[]
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
@@ -321,6 +323,7 @@ export interface RollResolution {
   contested?: ContestedRollInfo
   npcRoll?: number
   npcTotal?: number
+  priorToolResults?: unknown[]
 }
 
 export interface ToolCallResult {

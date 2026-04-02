@@ -933,6 +933,29 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebookLabel: string }) {
   const visibleClues = notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0)
 
+  // Resolve clue IDs — exact match first, then slug-to-title fallback (GM sometimes uses slugs instead of auto-IDs)
+  const normalize = (s: string) => s.replace(/[_\-]/g, ' ').replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const resolveClue = (id: string) => {
+    const exact = notebook.clues.find(c => c.id === id)
+    if (exact) return exact
+    const norm = normalize(id)
+    const byTitle = notebook.clues.find(c => c.title && normalize(c.title) === norm)
+    if (byTitle) return byTitle
+    const byTitlePartial = notebook.clues.find(c => c.title && normalize(c.title).includes(norm))
+    if (byTitlePartial) return byTitlePartial
+    const byContent = notebook.clues.find(c => normalize(c.content).includes(norm))
+    if (byContent) return byContent
+    // Last resort: check if any word overlap between slug and title
+    const slugWords = norm.split(' ').filter(w => w.length > 3)
+    const byWords = notebook.clues.find(c => {
+      if (!c.title) return false
+      const titleNorm = normalize(c.title)
+      return slugWords.filter(w => titleNorm.includes(w)).length >= 2
+    })
+    console.log('[SF] resolveClue:', id, '→ norm:', norm, '→ clue titles:', notebook.clues.map(c => c.title), '→ found:', byWords?.title ?? 'NONE')
+    return byWords ?? null
+  }
+
   return (
     <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
@@ -941,48 +964,68 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
           {notebook.activeThreadTitle || notebookLabel}
         </h2>
         <div className="mt-1 text-xs text-muted-foreground">
+          {notebook.connections.length > 0 && `${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'} · `}
           {notebook.clues.length} {notebook.clues.length === 1 ? 'clue' : 'clues'} discovered
-          {notebook.connections.length > 0 && ` · ${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'}`}
         </div>
       </div>
 
-      {/* Connections — on top, with linked clues nested inside */}
-      {notebook.connections.length > 0 && (
-        <div>
-          <SectionLabel>Connections</SectionLabel>
-          <div className="flex flex-col gap-3 mt-2">
-            {notebook.connections.map((conn, i) => {
-              const linkedClues = conn.clueIds
-                .map(id => notebook.clues.find(c => c.id === id))
-                .filter(Boolean)
-              return (
-                <div key={i} className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-                  <div className="font-medium text-foreground">{conn.title || 'Connection'}</div>
-                  <div className="mt-0.5 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>
-                  <div className="mt-2 border-t border-primary/10 pt-2 flex flex-col gap-1.5">
-                    {linkedClues.map(c => (
-                      <div key={c!.id} className="text-xs text-foreground/50">
-                        <span className="text-primary/40">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
-                        <span className="text-muted-foreground/40 ml-1">— {c!.source}</span>
-                      </div>
-                    ))}
-                  </div>
+      {/* Connections — active on top */}
+      {(() => {
+        const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
+        const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived')
+
+        const ConnectionCard = ({ conn, dimmed }: { conn: typeof notebook.connections[0]; dimmed?: boolean }) => {
+          const linkedClues = conn.clueIds.map(resolveClue).filter(Boolean)
+          return (
+            <div className={cn(
+              'rounded-lg border px-3 py-2.5',
+              dimmed ? 'border-border/20 bg-secondary/10' : 'border-primary/20 bg-primary/5'
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-foreground">{conn.title || 'Connection'}</div>
+                {dimmed && (
+                  <span className={cn(
+                    'text-[10px] uppercase tracking-wider',
+                    conn.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
+                  )}>
+                    {conn.status === 'solved' ? 'Solved' : 'Archived'}
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>
+              {linkedClues.length > 0 && (
+                <div className="mt-2 border-t border-primary/10 pt-2 flex flex-col gap-1.5">
+                  {linkedClues.map(c => (
+                    <div key={c!.id} className="text-xs text-foreground/50">
+                      <span className="text-primary/40">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
+                      <span className="text-muted-foreground/40 ml-1">— {c!.source}</span>
+                    </div>
+                  ))}
                 </div>
-              )
-            })}
+              )}
+            </div>
+          )
+        }
+
+        return activeConns.length > 0 ? (
+          <div>
+            <SectionLabel>Connections</SectionLabel>
+            <div className="flex flex-col gap-3 mt-2">
+              {activeConns.map((conn, i) => <ConnectionCard key={`ac-${i}`} conn={conn} />)}
+            </div>
           </div>
-        </div>
-      )}
+        ) : null
+      })()}
 
       {/* Active evidence */}
       {(() => {
         const active = [...visibleClues].filter(c => !c.status || c.status === 'active').reverse()
-        const solved = [...visibleClues].filter(c => c.status === 'solved' || c.status === 'archived').reverse()
+        const connectedIds = new Set(notebook.connections.flatMap(c => c.clueIds.map(id => resolveClue(id)?.id).filter(Boolean)))
 
         const ClueCard = ({ clue }: { clue: typeof visibleClues[0] }) => (
           <div className={cn(
             'rounded-lg border px-3 py-2',
-            clue.connected.length > 0 ? 'border-primary/15 bg-primary/5' : 'border-border/10 bg-secondary/5'
+            connectedIds.has(clue.id) ? 'border-border/10 bg-secondary/5 opacity-50' : 'border-border/10 bg-secondary/5'
           )}>
             {clue.title && <div className="font-medium text-foreground mb-0.5">{clue.title}</div>}
             <div className="text-xs text-foreground/60 leading-relaxed">{clue.content}</div>
@@ -994,38 +1037,66 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
           </div>
         )
 
+        return active.length > 0 ? (
+          <div>
+            <SectionLabel>Evidence</SectionLabel>
+            <div className="flex flex-col gap-2 mt-2">
+              {active.map((clue) => <ClueCard key={clue.id} clue={clue} />)}
+            </div>
+          </div>
+        ) : null
+      })()}
+
+      {/* Unified Resolved section — connections + evidence */}
+      {(() => {
+        const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived')
+        const resolvedClues = [...visibleClues].filter(c => c.status === 'solved' || c.status === 'archived').reverse()
+        if (resolvedConns.length === 0 && resolvedClues.length === 0) return null
+
         return (
-          <>
-            {active.length > 0 && (
-              <div>
-                <SectionLabel>Evidence</SectionLabel>
-                <div className="flex flex-col gap-2 mt-2">
-                  {active.map((clue) => <ClueCard key={clue.id} clue={clue} />)}
-                </div>
-              </div>
-            )}
-            {solved.length > 0 && (
-              <div className="mt-2 border-t border-border/10 pt-3">
-                <SectionLabel>Resolved</SectionLabel>
-                <div className="flex flex-col gap-2 mt-2 opacity-60">
-                  {solved.map((clue) => (
-                    <div key={clue.id} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-foreground">{clue.title || clue.content.slice(0, 40) + '...'}</div>
-                        <span className={cn(
-                          'text-[10px] uppercase tracking-wider',
-                          clue.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
-                        )}>
-                          {clue.status === 'solved' ? 'Solved' : 'Archived'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-foreground/50 leading-relaxed">{clue.content}</div>
+          <div className="mt-2 border-t border-border/10 pt-3">
+            <SectionLabel>Resolved</SectionLabel>
+            <div className="flex flex-col gap-2 mt-2 opacity-60">
+              {resolvedConns.map((conn, i) => {
+                const linkedClues = conn.clueIds.map(resolveClue).filter(Boolean)
+                return (
+                  <div key={`rc-${i}`} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-foreground">{conn.title || 'Connection'}</div>
+                      <span className={cn(
+                        'text-[10px] uppercase tracking-wider',
+                        conn.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
+                      )}>
+                        {conn.status === 'solved' ? 'Solved' : 'Archived'}
+                      </span>
                     </div>
-                  ))}
+                    <div className="mt-0.5 text-xs text-foreground/50 leading-relaxed">{conn.revelation}</div>
+                    <div className="mt-1.5 flex flex-col gap-1">
+                      {linkedClues.map(c => (
+                        <div key={c!.id} className="text-xs text-foreground/40">
+                          <span className="text-foreground/30">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+              {resolvedClues.map((clue) => (
+                <div key={clue.id} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-foreground">{clue.title || clue.content.slice(0, 40) + '...'}</div>
+                    <span className={cn(
+                      'text-[10px] uppercase tracking-wider',
+                      clue.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
+                    )}>
+                      {clue.status === 'solved' ? 'Solved' : 'Archived'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-foreground/50 leading-relaxed">{clue.content}</div>
                 </div>
-              </div>
-            )}
-          </>
+              ))}
+            </div>
+          </div>
         )
       })()}
     </div>
