@@ -668,6 +668,7 @@ export function applyToolResults(
         clueIds: string[]
         title: string
         revelation: string
+        status?: 'active' | 'solved' | 'archived'
       }
       const world = { ...updated.world }
       if (world.notebook) {
@@ -676,6 +677,7 @@ export function applyToolResults(
           clueIds: input.clueIds,
           title: input.title,
           revelation: input.revelation,
+          ...(input.status ? { status: input.status } : {}),
         }]
         notebook.clues = notebook.clues.map(c =>
           input.clueIds.includes(c.id)
