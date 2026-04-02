@@ -76,6 +76,8 @@ export interface NPC {
   subtype?: 'person' | 'vessel' | 'installation'  // vessels/installations shown separately from characters
   vulnerability?: string  // what hits this companion harder (used internally by cohesion system)
   disposition?: DispositionTier  // hidden relationship tier for contacts/npcs; never shown to player
+  affiliation?: string  // faction or group name — used to group NPCs in the UI
+  status?: 'active' | 'dead' | 'defeated' | 'gone'  // gone = left the story permanently
 }
 
 export interface CohesionLogEntry {
@@ -131,6 +133,7 @@ export interface Antagonist {
   agenda: string
   movedThisChapter: boolean
   moves: AntagonistMove[]
+  status?: 'active' | 'defeated' | 'dead' | 'fled'
 }
 
 export interface TensionClock {
@@ -176,6 +179,7 @@ export interface WorldState {
   tensionClocks: TensionClock[]
   currentTime: string  // narrative timeline e.g. "Day 3, evening" or "Late afternoon"
   notebook: Notebook | null
+  sceneSnapshot?: string  // persistent spatial/situational context: who is where, injuries, environment state
 }
 
 export interface Enemy {
@@ -208,14 +212,16 @@ export interface RollDisplayData {
   contested?: { npcName: string; npcSkill: string; npcModifier: number }
   npcRoll?: number
   npcTotal?: number
+  isOriginal?: boolean  // true = this was the original roll before an inspiration reroll (shown dimmed)
 }
 
 export interface ChatMessage {
   id: string
-  role: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll'
+  role: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll' | 'scene-break'
   content: string
   timestamp: string
   rollData?: RollDisplayData
+  statChanges?: { type: 'gain' | 'loss' | 'new' | 'neutral'; label: string }[]
 }
 
 export interface RollRecord {
@@ -367,7 +373,7 @@ export interface MetaResponseInput {
 }
 
 export interface UpdateCohesionInput {
-  direction: 1 | -1
+  direction: 1 | 0 | -1
   reason: string
   companionName?: string
 }

@@ -52,12 +52,12 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
         {/* Wordmark */}
         <div className="text-center">
           <div
-            className="font-heading text-2xl font-semibold uppercase tracking-[0.25em] text-foreground/80"
+            className="font-heading text-2xl font-semibold uppercase tracking-[0.25em] text-primary"
           >
             Storyforge
           </div>
-          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/40">
-            AI-powered text RPG
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+            The dice shape everything
           </div>
         </div>
 
@@ -68,8 +68,9 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
           const accent = genreAccentColor(genre)
           return (
             <div>
-              <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
-                Active Campaign
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-6 h-px bg-primary/40" />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Active Campaign</span>
               </div>
               <button
                 onClick={() => { track('campaign_continued', { genre, chapter: autoSave.meta.chapterNumber }); onContinue() }}
@@ -96,7 +97,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
                       Chapter {autoSave.meta.chapterNumber}
                     </span>
                     {autoSave.meta.lastSaved && (
-                      <span className="text-[10px] text-muted-foreground/30 ml-auto">
+                      <span className="text-[10px] text-muted-foreground ml-auto">
                         {timeAgo(autoSave.meta.lastSaved)}
                       </span>
                     )}
@@ -129,8 +130,9 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
         {/* Saved campaigns — minimal rows */}
         {hasSlots && (
           <div>
-            <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
-              Archived Echoes
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-6 h-px bg-primary/40" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Archived Echoes</span>
             </div>
             <div className="flex flex-col gap-1">
               {slots.map((slot, i) => {
@@ -162,7 +164,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
                         >
                           {genreName}
                         </span>
-                        <span className="text-[10px] text-muted-foreground/30">{timeAgo(slot.savedAt)}</span>
+                        <span className="text-[10px] text-muted-foreground">{timeAgo(slot.savedAt)}</span>
                       </div>
                     </div>
                   </button>
@@ -176,7 +178,7 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
         <div className="flex justify-center pt-2">
           <button
             onClick={onNewGame}
-            className="rounded-lg border border-border/30 px-10 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary/40 hover:text-foreground hover:bg-primary/5"
+            className="rounded-lg border border-primary/25 px-10 py-3 text-sm font-medium text-foreground/70 transition-all hover:border-primary/40 hover:text-foreground hover:bg-primary/5"
           >
             Start New Campaign
           </button>
@@ -192,8 +194,9 @@ export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewG
         {/* Changelog — vertical accent line */}
         {changelog.length > 0 && (
           <div>
-            <div className="mb-4 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/50">
-              What's New
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-6 h-px bg-primary/40" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">What&apos;s New</span>
             </div>
             <div className="flex flex-col gap-4">
               {(showOlderUpdates ? changelog : changelog.slice(0, 1)).map((entry, i) => (

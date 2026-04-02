@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { TopBar } from './top-bar'
 import { ChatMessage } from './chat-message'
 import { RollBadge } from './roll-badge'
@@ -10,8 +10,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, TensionClock } from '@/lib/types'
-import { type Genre } from '@/lib/genre-config'
+import { type Genre, applyGenreTheme } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
+import { cn } from '@/lib/utils'
 
 interface DisplayMessage {
   id: string
@@ -61,6 +62,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [diceDisplay2, setDiceDisplay2] = useState(1)
   const [rolledValue, setRolledValue] = useState<number | null>(null)
   const [rawRolls, setRawRolls] = useState<[number, number] | null>(null)
+  const [selectedItemBonus, setSelectedItemBonus] = useState<{ name: string; bonus: number } | null>(null)
+  const [inspirationOffered, setInspirationOffered] = useState(false)
+  const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
+  const originalRollRef = useRef<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const lastMessageRef = useRef<HTMLDivElement>(null)
   const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
@@ -187,6 +192,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
             if (event.type === 'done') {
               setRetryCountdown(null)
+              // Clear stale quick actions if the GM didn't provide new ones
+              if (finalActions.length === 0) {
+                setQuickActions([])
+              }
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
               const finalState = {
                 ...stateWithChanges,
@@ -199,6 +208,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       role: gmRole as 'gm' | 'meta-response',
                       content: gmText,
                       timestamp: new Date().toISOString(),
+                      ...(statChanges.length > 0 && { statChanges }),
                     },
                   ],
                 },
@@ -392,8 +402,27 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const rollMsgId = crypto.randomUUID()
       const gmMsgId = crypto.randomUUID()
       const rollDisplayData = { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal }
+
+      // If this is a reroll after inspiration, inject the original failed roll first
+      const origRoll = originalRollRef.current
+      const inspirationMessages: DisplayMessage[] = origRoll ? [
+        {
+          id: crypto.randomUUID(),
+          type: 'roll' as const,
+          content: '',
+          rollData: { ...origRoll.displayData, isOriginal: true },
+        },
+        {
+          id: crypto.randomUUID(),
+          type: 'scene-break' as const,
+          content: '◆ Inspiration — Reroll',
+        },
+      ] : []
+      originalRollRef.current = null
+
       setMessages((prev) => [
         ...prev,
+        ...inspirationMessages,
         {
           id: rollMsgId,
           type: 'roll' as const,
@@ -410,6 +439,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           ...prompt.pendingState.history,
           messages: [
             ...prompt.pendingState.history.messages,
+            // If inspiration reroll, persist original roll + scene break
+            ...(origRoll ? [
+              {
+                id: crypto.randomUUID(),
+                role: 'roll' as const,
+                content: '',
+                timestamp: new Date().toISOString(),
+                rollData: { ...origRoll.displayData, isOriginal: true },
+              },
+              {
+                id: crypto.randomUUID(),
+                role: 'scene-break' as const,
+                content: '◆ Inspiration — Reroll',
+                timestamp: new Date().toISOString(),
+              },
+            ] : []),
             {
               id: rollMsgId,
               role: 'roll' as const,
@@ -425,7 +470,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         { message: '', gameState: stateWithRoll, isMetaQuestion: false, isInitial: false, rollResolution },
         gmMsgId,
         false,
-        prompt.pendingState,
+        stateWithRoll,
         () => {
           // nested rolls not expected — treat as error
           isLoadingRef.current = false
@@ -515,6 +560,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       type: msg.role as DisplayMessage['type'],
       content: msg.content,
       ...(msg.rollData && { rollData: msg.rollData }),
+      ...(msg.statChanges && { statChanges: msg.statChanges }),
     }))
     setMessages(displayMessages)
 
@@ -525,8 +571,28 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [sendToGM, initialGameState])
 
+  // Find inventory items whose effect matches the current roll check
+  const relevantItems = useMemo(() => {
+    if (!rollPrompt || !gameState) return []
+    const check = rollPrompt.check.toLowerCase()
+    return gameState.character.inventory.filter((item) => {
+      if (!item.effect) return false
+      const effect = item.effect.toLowerCase()
+      // Match if the effect mentions the check type or the stat
+      return effect.includes(check) || effect.includes(rollPrompt.stat.toLowerCase())
+    }).map((item) => {
+      // Try to extract bonus number from effect string (e.g. "+2 to Interrogation")
+      const match = item.effect?.match(/[+-](\d+)/)
+      return { name: item.name, bonus: match ? parseInt(match[1]) : 0, effect: item.effect || '' }
+    }).filter((item) => item.bonus > 0)
+  }, [rollPrompt, gameState])
+
   const handleDiceClick = useCallback(() => {
     if (!rollPrompt || dicePhase !== 'idle') return
+    // Apply item bonus to modifier before rolling
+    if (selectedItemBonus) {
+      rollPrompt.modifier += selectedItemBonus.bonus
+    }
     const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
     const isContested = !!rollPrompt.contested
     const die1 = Math.floor(Math.random() * 20) + 1
@@ -542,6 +608,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       // Store NPC roll on the prompt so it flows through to sendContinuation
       rollPrompt.npcRoll = die2
     }
+    setInspirationOffered(false)
     setDicePhase('rolling')
 
     const interval = setInterval(() => {
@@ -556,11 +623,97 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       if (isAdvantage || isContested) setDiceDisplay2(die2)
       setDicePhase('revealed')
     }, 700)
-  }, [rollPrompt, dicePhase])
+  }, [rollPrompt, dicePhase, selectedItemBonus])
+
+  const handleInspirationReroll = useCallback(() => {
+    if (!rollPrompt || !gameState || rolledValue === null) return
+    // Save original roll for display
+    const origTotal = rolledValue + rollPrompt.modifier
+    const origEffDC = rollPrompt.contested && rollPrompt.npcRoll !== undefined
+      ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : rollPrompt.dc
+    const origResult = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : origTotal >= origEffDC ? 'success' : 'failure'
+    const origDisplayData: RollDisplayData = {
+      check: rollPrompt.check, dc: rollPrompt.dc, roll: rolledValue, modifier: rollPrompt.modifier,
+      total: origTotal, result: origResult as RollDisplayData['result'], reason: rollPrompt.reason,
+      advantage: rollPrompt.advantage, rawRolls: rawRolls ?? undefined,
+      contested: rollPrompt.contested, npcRoll: rollPrompt.npcRoll,
+      npcTotal: rollPrompt.contested && rollPrompt.npcRoll !== undefined ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : undefined,
+    }
+    const origData = { value: rolledValue, total: origTotal, result: origResult, displayData: origDisplayData }
+    setOriginalRoll(origData)
+    originalRollRef.current = origData
+
+    // Consume inspiration — update both live state and the pending state on the roll prompt
+    const updated = {
+      ...gameState,
+      character: { ...gameState.character, inspiration: false },
+    }
+    setGameState(updated)
+    saveGameState(updated)
+    // Update pendingState so the consumed inspiration persists through sendContinuation
+    rollPrompt.pendingState = {
+      ...rollPrompt.pendingState,
+      character: { ...rollPrompt.pendingState.character, inspiration: false },
+    }
+
+    // Immediately reroll
+    const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
+    const newDie1 = Math.floor(Math.random() * 20) + 1
+    const newDie2 = isAdvantage ? Math.floor(Math.random() * 20) + 1 : newDie1
+    const newKept = rollPrompt.advantage === 'advantage' ? Math.max(newDie1, newDie2)
+      : rollPrompt.advantage === 'disadvantage' ? Math.min(newDie1, newDie2)
+      : newDie1
+    setRolledValue(newKept)
+    if (isAdvantage) setRawRolls([newDie1, newDie2])
+    setInspirationOffered(false)
+    setDicePhase('rolling')
+
+    const interval = setInterval(() => {
+      setDiceDisplay(Math.floor(Math.random() * 20) + 1)
+      if (isAdvantage) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
+    }, 50)
+
+    setTimeout(() => {
+      clearInterval(interval)
+      setDiceDisplay(newDie1)
+      if (isAdvantage) setDiceDisplay2(newDie2)
+      setDicePhase('revealed')
+    }, 700)
+  }, [rollPrompt, gameState, rolledValue])
+
+  const handleDeclineInspiration = useCallback(() => {
+    if (!rollPrompt || rolledValue === null) return
+    setInspirationOffered(false)
+    // Continue with the failed roll
+    const capturedPrompt = { ...rollPrompt, rawRolls: rawRolls ?? undefined }
+    const capturedRoll = rolledValue
+    setRollPrompt(null)
+    setDicePhase('idle')
+    setDiceDisplay(1)
+    setDiceDisplay2(1)
+    setRolledValue(null)
+    setRawRolls(null)
+    setSelectedItemBonus(null)
+    sendContinuation(capturedRoll, capturedPrompt)
+  }, [rollPrompt, rolledValue, rawRolls, sendContinuation])
 
   // After revealing the dice result, auto-continue to phase 2
+  // Unless: roll failed and player has inspiration → offer reroll
   useEffect(() => {
     if (dicePhase !== 'revealed' || rolledValue === null || !rollPrompt) return
+    const total = rolledValue + rollPrompt.modifier
+    const npcTot = rollPrompt.contested && rollPrompt.npcRoll !== undefined
+      ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : null
+    const effectiveDC = npcTot !== null ? npcTot : rollPrompt.dc
+    const isFail = rolledValue !== 20 && (rolledValue === 1 || total < effectiveDC)
+    const hasInspiration = gameState?.character.inspiration ?? false
+
+    if (isFail && hasInspiration && !originalRoll) {
+      // Don't auto-continue — show inspiration reroll option (only on first roll, not after reroll)
+      if (!inspirationOffered) setInspirationOffered(true)
+      return  // Always return — never set timeout while inspiration is available
+    }
+
     const t = setTimeout(() => {
       const capturedPrompt = { ...rollPrompt, rawRolls: rawRolls ?? undefined }
       const capturedRoll = rolledValue
@@ -570,10 +723,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setDiceDisplay2(1)
       setRolledValue(null)
       setRawRolls(null)
+      setSelectedItemBonus(null)
+      setInspirationOffered(false)
+      setOriginalRoll(null)
       sendContinuation(capturedRoll, capturedPrompt)
-    }, 1400)
+    }, originalRoll ? 2000 : 1400)  // slightly longer pause when showing inspiration comparison
     return () => clearTimeout(t)
-  }, [dicePhase, rolledValue, rollPrompt, rawRolls, sendContinuation])
+  }, [dicePhase, rolledValue, rollPrompt, rawRolls, sendContinuation, gameState, inspirationOffered, originalRoll])
 
   // Attach stat changes to the last GM message as inline tags
   useEffect(() => {
@@ -599,19 +755,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     (state: GameState) => {
       saveGameState(state)
       setGameState(state)
+      applyGenreTheme(state.meta.genre as Genre)
       const displayMessages: DisplayMessage[] = state.history.messages.map((msg) => ({
         id: msg.id,
         type: msg.role as DisplayMessage['type'],
         content: msg.content,
+        ...(msg.rollData && { rollData: msg.rollData }),
+        ...(msg.statChanges && { statChanges: msg.statChanges }),
       }))
       setMessages(displayMessages)
-      setQuickActionsRaw([])
+      setQuickActions([])
       setLastStatChanges([])
       setRollPrompt(null)
       setDicePhase('idle')
       setRolledValue(null)
     },
-    [setQuickActionsRaw]
+    [setQuickActions]
   )
 
   const handleActionSelect = useCallback(
@@ -656,9 +815,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 if (message.type === 'scene-break') {
                   return (
                     <div key={message.id} ref={isLast ? lastMessageRef : undefined} className="flex items-center gap-3 py-2">
-                      <div className="h-px flex-1 bg-border/15" />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary text-center">{message.content}</span>
-                      <div className="h-px flex-1 bg-border/15" />
+                      <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary">{message.content}</span>
+                      <div className="h-px flex-1 bg-tertiary/20" />
                     </div>
                   )
                 }
@@ -706,8 +864,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
         <div className="mx-auto w-full max-w-[720px]">
           {rollPrompt && (
-            <div className="border-t border-border/30 bg-background/80 px-4 pt-4 pb-2 backdrop-blur-sm">
+            <div className="border-t border-border/30 px-4 pt-4 pb-2">
               {dicePhase === 'idle' ? (
+                <>
                 <button
                   onClick={handleDiceClick}
                   className="w-full rounded-lg border border-primary/40 bg-primary/10 px-6 py-4 text-left transition-all duration-200 hover:border-primary/70 hover:bg-primary/20 active:scale-[0.99]"
@@ -750,7 +909,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           <div className="mt-1 flex items-center gap-3 font-system text-sm">
                             <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
                             <span className="text-muted-foreground/30">|</span>
-                            <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</span></span>
+                            <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{(rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)) >= 0 ? '+' : ''}{rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)}</span>{selectedItemBonus && <span className="text-primary/50 ml-1">({selectedItemBonus.name})</span>}</span>
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground/70">
                             {rollPrompt.reason}
@@ -773,6 +932,29 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     </>
                   )}
                 </button>
+                {/* Pre-roll: relevant item toggles */}
+                {relevantItems.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {relevantItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedItemBonus(selectedItemBonus?.name === item.name ? null : item)
+                        }}
+                        className={cn(
+                          'rounded-lg border px-3 py-1.5 text-xs font-mono transition-all',
+                          selectedItemBonus?.name === item.name
+                            ? 'border-primary/50 bg-primary/15 text-primary'
+                            : 'border-border/20 bg-secondary/10 text-foreground/50 hover:border-primary/30'
+                        )}
+                      >
+                        {item.name} <span className="text-primary">+{item.bonus}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                </>
               ) : (() => {
                 const hasAdv = !!rollPrompt.advantage
                 const isContested = !!rollPrompt.contested
@@ -849,36 +1031,70 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
                 // Standard roll layout
                 return (
-                  <div className={cardColor}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          {rollPrompt.check} — {rollPrompt.stat}
-                          {rollPrompt.advantage && dicePhase === 'revealed' && (
-                            <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
-                              {rollPrompt.advantage}
-                            </span>
+                  <div>
+                    {/* Original roll (shown dimmed when inspiration reroll happened) */}
+                    {originalRoll && dicePhase === 'revealed' && (
+                      <>
+                        <div className="rounded-lg border border-border/20 bg-card/20 px-6 py-3 opacity-50">
+                          <div className="font-system text-sm text-foreground/60">
+                            {originalRoll.value} + {rollPrompt.modifier} = {originalRoll.total} <span className="text-muted-foreground/60">vs DC {rollPrompt.dc}</span>
+                            {' '}
+                            <span className="text-orange-400/60 line-through">{resultLabel(originalRoll.result)}</span>
+                          </div>
+                        </div>
+                        <div className="my-2 text-center text-[10px] font-semibold uppercase tracking-wider text-tertiary">
+                          ◆ Inspiration used — Reroll
+                        </div>
+                      </>
+                    )}
+                    <div className={cardColor}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            {rollPrompt.check} — {rollPrompt.stat}
+                            {rollPrompt.advantage && dicePhase === 'revealed' && (
+                              <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
+                                {rollPrompt.advantage}
+                              </span>
+                            )}
+                          </div>
+                          {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
+                            <div className="mt-1 font-system text-sm text-foreground">
+                              {rolledValue} + {rollPrompt.modifier} = {total} <span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
+                              {' '}
+                              <span className={resultColor(result)}>— {resultLabel(result)}</span>
+                            </div>
                           )}
                         </div>
-                        {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
-                          <div className="mt-1 font-system text-sm text-foreground">
-                            {rolledValue} + {rollPrompt.modifier} = {total} <span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
-                            {' '}
-                            <span className={resultColor(result)}>— {resultLabel(result)}</span>
+                        <div className="ml-4 flex items-center gap-1.5">
+                          <div className={dieStyle(hasAdv ? die1Kept : true, diceDisplay)}>
+                            {diceDisplay}
                           </div>
-                        )}
-                      </div>
-                      <div className="ml-4 flex items-center gap-1.5">
-                        <div className={dieStyle(hasAdv ? die1Kept : true, diceDisplay)}>
-                          {diceDisplay}
+                          {hasAdv && (
+                            <div className={dieStyle(die2Kept, diceDisplay2)}>
+                              {diceDisplay2}
+                            </div>
+                          )}
                         </div>
-                        {hasAdv && (
-                          <div className={dieStyle(die2Kept, diceDisplay2)}>
-                            {diceDisplay2}
-                          </div>
-                        )}
                       </div>
                     </div>
+                    {/* Post-roll: Inspiration reroll offer */}
+                    {inspirationOffered && dicePhase === 'revealed' && (
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={handleInspirationReroll}
+                          className="flex-1 rounded-lg border border-tertiary/50 bg-tertiary/10 px-4 py-2.5 text-xs font-medium text-tertiary transition-all hover:bg-tertiary/20"
+                        >
+                          Reroll — use Inspiration
+                        </button>
+                        <button
+                          onClick={handleDeclineInspiration}
+                          className="rounded-lg border border-border/40 bg-secondary/10 px-4 py-2.5 text-xs text-foreground/50 transition-all hover:bg-secondary/20"
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })()}
@@ -907,7 +1123,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             name: gameState.character.class,
             proficiencies: gameState.character.proficiencies.map((p) => ({ name: p })),
             stats: gameState.character.stats as unknown as Record<string, number>,
-            startingGear: gameState.character.inventory.map((i) => i.name),
+            gear: gameState.character.inventory.map((i) => ({
+              name: i.name,
+              description: i.description,
+              damage: i.damage,
+              effect: i.effect,
+              charges: i.charges,
+              maxCharges: i.maxCharges,
+            })),
             trait: gameState.character.traits[0]
               ? { name: gameState.character.traits[0].name, description: gameState.character.traits[0].description }
               : { name: '', description: '' },

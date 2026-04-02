@@ -65,6 +65,7 @@ export interface GenreTheme {
   scrollbarThumb: string
   scrollbarThumbHover: string
   backgroundEffect: 'starfield' | 'mist'
+  fontScale?: number  // multiplier for base font sizes — 1.0 is default, 0.9 = 90%
 }
 
 export interface GenreConfig {
@@ -314,6 +315,7 @@ const spaceOperaTheme: GenreTheme = {
   scrollbarThumb: 'oklch(0.3 0.02 260)',
   scrollbarThumbHover: 'oklch(0.35 0.02 260)',
   backgroundEffect: 'starfield',
+  fontScale: 0.85,
 }
 
 const spaceOperaConfig: GenreConfig = {
@@ -870,6 +872,7 @@ const cyberpunkTheme: GenreTheme = {
   scrollbarThumb: 'oklch(0.25 0.02 260)',
   scrollbarThumbHover: 'oklch(0.30 0.02 260)',
   backgroundEffect: 'starfield',
+  fontScale: 0.85,
 }
 
 const cyberpunkConfig: GenreConfig = {
@@ -1584,6 +1587,7 @@ export function applyGenreTheme(genre: Genre): void {
   bodyEl.style.setProperty('--font-narrative', theme.fontNarrative)
   bodyEl.style.setProperty('--font-heading', theme.fontHeading)
   bodyEl.style.setProperty('--font-system', theme.fontSystem)
+  bodyEl.style.setProperty('--font-scale', String(theme.fontScale ?? 1))
   root.dataset.genre = genre
 
   // Toggle background effect classes

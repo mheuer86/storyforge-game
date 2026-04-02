@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, Antagonist, ShipState, Notebook } from '@/lib/types'
+import { debugLog } from '@/lib/tool-processor'
 
 interface Character {
   name: string
@@ -32,7 +33,7 @@ interface Character {
     name: string
     stats: Record<string, number>
     proficiencies: { name: string }[]
-    startingGear: string[]
+    gear: { name: string; description: string; damage?: string; effect?: string; charges?: number; maxCharges?: number }[]
     trait: { name: string; description: string }
   }
   level: number
@@ -53,7 +54,7 @@ interface World {
   location: { name: string; description: string }
   factions: { name: string; stance: string }[]
   companions: { name: string; description: string; lastSeen: string }[]
-  npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation' }[]
+  npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation'; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
   antagonist: Antagonist | null
@@ -156,29 +157,29 @@ export function BurgerMenu({
           <Tabs defaultValue="character" className="flex flex-1 flex-col overflow-hidden">
             <div className="shrink-0 overflow-x-auto border-b border-border/10 pb-2">
               <TabsList className="flex w-max min-w-full bg-transparent gap-1">
-                <TabsTrigger value="character" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                <TabsTrigger value="character" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                   Character
                 </TabsTrigger>
                 {ship.state && (
-                  <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                  <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                     {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
                   </TabsTrigger>
                 )}
                 {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
-                  <TabsTrigger value="notebook" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                  <TabsTrigger value="notebook" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                     {genreConfig.notebookLabel}
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                   World
                 </TabsTrigger>
-                <TabsTrigger value="chapters" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none">
+                <TabsTrigger value="chapters" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                   Chapters
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <ScrollArea className="min-h-0 flex-1 overflow-x-hidden" style={{ fontFamily: 'var(--font-narrative)' }}>
+            <ScrollArea className="min-h-0 flex-1 overflow-x-hidden" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'calc(1rem * var(--font-scale, 1))' }}>
               {/* Character Tab */}
               <TabsContent value="character" className="mt-0 p-4">
                 <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} />
@@ -239,21 +240,23 @@ export function BurgerMenu({
               </Button>
             </div>
             {onNewGame && (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setNewGameConfirm(true)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="w-full border-border/15 bg-secondary/10 hover:bg-secondary/20 text-xs"
               >
                 Start new campaign
-              </button>
+              </Button>
             )}
             <a
               href="https://www.paypal.me/MartinHeuer"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-center text-[11px] text-muted-foreground/40 hover:text-primary/60 transition-colors"
+              className="text-center text-xs text-muted-foreground/60 hover:text-primary transition-colors"
             >
               Every hero needs a patron. Fund the next chapter&nbsp;→
             </a>
+            <DebugPanel />
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -414,14 +417,38 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         </div>
       </div>
 
-      {/* Gear — accent-dotted list */}
+      {/* Gear — name + description left, effect badges right */}
       <div>
         <SectionLabel>Gear</SectionLabel>
-        <ul className="flex flex-col gap-1.5">
-          {character.class.startingGear.map((item, i) => (
-            <li key={`${item}-${i}`} className="flex items-start gap-2.5 text-sm">
+        <ul className="flex flex-col gap-2.5">
+          {character.class.gear.map((item, i) => (
+            <li key={`${item.name}-${i}`} className="flex items-start gap-2.5 text-sm">
               <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
-              <span className="text-foreground/70">{item}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-foreground/70">{item.name}</span>
+                {item.description && (
+                  <p className="text-xs text-foreground/40 leading-relaxed mt-0.5">{item.description}</p>
+                )}
+              </div>
+              {(item.damage || item.effect || item.charges != null) && (
+                <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                  {item.damage && (
+                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
+                      <div className="font-mono text-xs font-semibold text-foreground/70">{item.damage}</div>
+                    </div>
+                  )}
+                  {item.effect && (
+                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
+                      <div className="font-mono text-xs font-semibold text-primary/80">{item.effect}</div>
+                    </div>
+                  )}
+                  {item.charges != null && (
+                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
+                      <div className="font-mono text-[10px] font-semibold text-foreground/60">{item.charges}/{item.maxCharges}</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -431,8 +458,8 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
       <div>
         <SectionLabel>Class Trait</SectionLabel>
         <div className="border-l-2 border-primary/30 pl-3">
-          <div className="text-sm font-medium text-primary">{character.class.trait.name}</div>
-          <div className="mt-1 text-sm text-foreground/50 leading-relaxed">{character.class.trait.description}</div>
+          <div className="text-xs font-medium text-primary">{character.class.trait.name}</div>
+          <div className="mt-1 text-xs text-foreground/50 leading-relaxed">{character.class.trait.description}</div>
         </div>
       </div>
 
@@ -548,7 +575,8 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
   const [subtab, setSubtab] = useState<'people' | 'narrative' | 'locations'>('people')
 
   const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
-  const activeThreads = world.threads.filter((t) => t.status !== 'resolved')
+  const isResolved = (s: string) => s.toLowerCase() === 'resolved'
+  const activeThreads = world.threads.filter((t) => !isResolved(t.status))
   const openPromises = world.promises.filter((p) => p.status === 'open')
 
   return (
@@ -591,24 +619,38 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             )}
           </div>
 
-          {/* NPCs */}
-          <div>
-            <SectionLabel>Known NPCs</SectionLabel>
-            {world.npcs.filter((n) => !isVessel(n)).length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {world.npcs.filter((n) => !isVessel(n)).map((npc, i) => (
-                  <div key={`${i}-${npc.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
-                    <div className="font-medium text-foreground">{npc.name}</div>
-                    <div className="text-xs text-foreground/60">
-                      {npc.description} ({npc.lastSeen})
-                    </div>
+          {/* Antagonist — only show if active */}
+          {(!world.antagonist || !world.antagonist.status || world.antagonist.status === 'active') && (
+            <div>
+              <SectionLabel>Antagonist</SectionLabel>
+              {world.antagonist ? (
+                <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium text-foreground">{world.antagonist.name}</div>
+                    {world.antagonist.movedThisChapter && (
+                      <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="italic text-foreground/30">No one encountered yet</p>
-            )}
-          </div>
+                  <div className="mt-0.5 text-xs text-foreground/60">{world.antagonist.description}</div>
+                  {world.antagonist.moves.length > 0 && (
+                    <div className="mt-2.5 border-t border-destructive/15 pt-2">
+                      <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/40">Their Moves</div>
+                      <div className="flex flex-col gap-1.5">
+                        {world.antagonist.moves.map((move, i) => (
+                          <div key={i} className="text-xs">
+                            <span className="text-foreground/40">Ch. {move.chapterNumber}: </span>
+                            <span className="text-foreground/60">{move.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="italic text-foreground/30">Not yet identified</p>
+              )}
+            </div>
+          )}
 
           {/* Factions */}
           <div>
@@ -627,45 +669,101 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             )}
           </div>
 
-          {/* Antagonist */}
-          <div>
-            <SectionLabel>Antagonist</SectionLabel>
-            {world.antagonist ? (
-              <div className="flex flex-col gap-2">
-                <div className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-medium text-foreground">{world.antagonist.name}</div>
-                    {world.antagonist.movedThisChapter && (
-                      <Badge variant="destructive" className="shrink-0 text-[10px]">Moved</Badge>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-sm text-foreground/60">{world.antagonist.description}</div>
-                </div>
-                {world.antagonist.moves.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Their Moves</span></div>
-                    <div className="flex flex-col gap-1">
-                      {world.antagonist.moves.map((move, i) => (
-                        <div key={i} className="rounded bg-secondary/20 px-3 py-1.5 text-xs">
-                          <span className="text-foreground/40">Ch. {move.chapterNumber}: </span>
-                          <span className="text-foreground">{move.description}</span>
+          {/* NPCs — grouped by affiliation */}
+          {(() => {
+            const isFallen = (n: { status?: string }) => n.status === 'dead' || n.status === 'defeated' || n.status === 'gone'
+            const people = world.npcs.filter((n) => !isVessel(n) && !isFallen(n))
+            const fallen = world.npcs.filter((n) => !isVessel(n) && isFallen(n))
+
+            const affiliated = people.filter((n) => n.affiliation)
+            const unaffiliated = people.filter((n) => !n.affiliation)
+            const groups = Array.from(new Set(affiliated.map((n) => n.affiliation!)))
+
+            const statusLabel = (s?: string) => s === 'dead' ? 'Dead' : s === 'defeated' ? 'Defeated' : 'Gone'
+
+            return (
+              <>
+                <div>
+                  <SectionLabel>Known NPCs</SectionLabel>
+                  {people.length === 0 ? (
+                    <p className="italic text-foreground/30">No one encountered yet</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {groups.map((group) => (
+                        <div key={group}>
+                          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/40">{group}</div>
+                          <div className="flex flex-col gap-2">
+                            {affiliated.filter((n) => n.affiliation === group).map((npc, i) => (
+                              <div key={`${i}-${npc.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
+                                <div className="font-medium text-foreground">{npc.name}</div>
+                                <div className="text-xs text-foreground/60">{npc.description}</div>
+                                <div className="mt-1 text-[10px] text-muted-foreground">{npc.lastSeen}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       ))}
+                      {unaffiliated.length > 0 && (
+                        <div>
+                          {groups.length > 0 && <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/40">Unaffiliated</div>}
+                          <div className="flex flex-col gap-2">
+                            {unaffiliated.map((npc, i) => (
+                              <div key={`${i}-${npc.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
+                                <div className="font-medium text-foreground">{npc.name}</div>
+                                <div className="text-xs text-foreground/60">{npc.description}</div>
+                                <div className="mt-1 text-[10px] text-muted-foreground">{npc.lastSeen}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="italic text-foreground/30">Not yet identified</p>
-            )}
-          </div>
+                  )}
+                </div>
+
+                {/* Fallen — dead, defeated, gone NPCs + defeated antagonist */}
+                {(() => {
+                  const fallenAntagonist = world.antagonist && world.antagonist.status && world.antagonist.status !== 'active' ? world.antagonist : null
+                  const hasFallen = fallen.length > 0 || fallenAntagonist
+                  if (!hasFallen) return null
+                  return (
+                    <div className="mt-2 border-t border-border/10 pt-3">
+                      <SectionLabel>Fallen</SectionLabel>
+                      <div className="flex flex-col gap-2 opacity-60">
+                        {fallenAntagonist && (
+                          <div className="rounded border border-destructive/20 bg-destructive/5 px-3 py-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-foreground">{fallenAntagonist.name}</div>
+                              <span className="text-[10px] uppercase tracking-wider text-destructive/70">
+                                {fallenAntagonist.status === 'dead' ? 'Dead' : fallenAntagonist.status === 'fled' ? 'Fled' : 'Defeated'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-foreground/50">{fallenAntagonist.description}</div>
+                          </div>
+                        )}
+                        {fallen.map((npc, i) => (
+                          <div key={`fallen-${i}-${npc.name}`} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-foreground">{npc.name}</div>
+                              <span className="text-[10px] uppercase tracking-wider text-destructive/70">{statusLabel(npc.status)}</span>
+                            </div>
+                            <div className="text-xs text-foreground/50">{npc.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
+            )
+          })()}
         </>
       )}
 
       {/* ── Narrative ── */}
       {subtab === 'narrative' && (
         <>
-          {/* Threads */}
+          {/* Active Threads */}
           <div>
             <SectionLabel>Active Threads</SectionLabel>
             {activeThreads.length > 0 ? (
@@ -682,82 +780,120 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             )}
           </div>
 
-          {/* Pressures */}
+          {/* Active Pressures */}
           {(() => {
             const activeClocks = world.tensionClocks.filter((c) => c.status === 'active')
-            const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
-            return (
+            return activeClocks.length > 0 ? (
               <div>
                 <SectionLabel>Pressures</SectionLabel>
-                {activeClocks.length > 0 || triggeredClocks.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {activeClocks.map((clock) => (
+                    <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
+                      <div className="font-medium text-foreground">{clock.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+          })()}
+
+          {/* Promises — show all non-settled */}
+          {(() => {
+            const activePromises = world.promises.filter((p) => p.status !== 'fulfilled' && p.status !== 'broken')
+            return (
+              <div>
+                <SectionLabel>Promises & Debts</SectionLabel>
+                {activePromises.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    {activeClocks.map((clock) => (
-                      <div key={clock.id} className="rounded border border-warning/30 bg-warning/5 px-3 py-2">
-                        <div className="font-medium text-foreground">{clock.name}</div>
+                    {activePromises.map((promise, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'rounded px-3 py-2',
+                          promise.status === 'strained'
+                            ? 'border border-orange-400/30 bg-orange-400/5'
+                            : 'border border-warning/30 bg-warning/5'
+                        )}
+                      >
+                        <div className="font-medium text-foreground">{promise.to}</div>
+                        <div className="text-xs text-foreground/60">{promise.what}</div>
                       </div>
                     ))}
-                    {triggeredClocks.length > 0 && (
-                      <>
-                        <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Consequences</div>
-                        {triggeredClocks.map((clock) => (
-                          <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
-                            <div className="font-medium text-foreground">{clock.name}</div>
-                            <div className="text-xs text-foreground/60">{clock.triggerEffect}</div>
-                          </div>
-                        ))}
-                      </>
-                    )}
                   </div>
                 ) : (
-                  <p className="italic text-foreground/30">No active pressures</p>
+                  <p className="italic text-foreground/30">No promises made yet</p>
                 )}
               </div>
             )
           })()}
 
-          {/* Promises */}
-          <div>
-            <SectionLabel>Promises & Debts</SectionLabel>
-            {world.promises.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {world.promises.map((promise, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'rounded px-3 py-2',
-                      promise.status === 'open'
-                        ? 'border border-warning/30 bg-warning/5'
-                        : promise.status === 'strained'
-                        ? 'border border-orange-400/30 bg-orange-400/5'
-                        : promise.status === 'fulfilled'
-                        ? 'border border-success/30 bg-success/5'
-                        : 'border border-destructive/30 bg-destructive/5 line-through opacity-70'
-                    )}
-                  >
-                    <div className="font-medium text-foreground">{promise.to}</div>
-                    <div className="text-xs text-foreground/60">{promise.what}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="italic text-foreground/30">No promises made yet</p>
-            )}
-          </div>
+          {/* Archive — resolved threads, triggered/resolved clocks, fulfilled/broken promises */}
+          {(() => {
+            const resolvedThreads = world.threads.filter((t) => isResolved(t.status))
+            const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
+            const resolvedClocks = world.tensionClocks.filter((c) => c.status === 'resolved')
+            const settledPromises = world.promises.filter((p) => p.status === 'fulfilled' || p.status === 'broken')
+            const hasArchive = resolvedThreads.length > 0 || triggeredClocks.length > 0 || resolvedClocks.length > 0 || settledPromises.length > 0
 
-          {/* Resolved Threads */}
-          {world.threads.filter((t) => t.status === 'resolved').length > 0 && (
-            <div>
-              <SectionLabel>Resolved Threads</SectionLabel>
-              <div className="flex flex-col gap-2">
-                {world.threads.filter((t) => t.status === 'resolved').map((thread, i) => (
-                  <div key={`${i}-${thread.title}`} className="rounded border border-border/20 bg-secondary/10 px-3 py-2 opacity-60">
-                    <div className="font-medium text-foreground">{thread.title}</div>
-                    <div className="text-xs text-foreground/50">{thread.status}</div>
-                  </div>
-                ))}
+            return hasArchive ? (
+              <div className="mt-2 border-t border-border/10 pt-3">
+                <SectionLabel>Archive</SectionLabel>
+                <div className="flex flex-col gap-2 opacity-60">
+                  {/* Triggered clocks — lost (destructive) */}
+                  {triggeredClocks.map((clock) => (
+                    <div key={clock.id} className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{clock.name}</div>
+                        <span className="text-[10px] uppercase tracking-wider text-destructive/70">Triggered</span>
+                      </div>
+                      <div className="text-xs text-foreground/50">{clock.triggerEffect}</div>
+                    </div>
+                  ))}
+                  {/* Resolved threads — won (green) */}
+                  {resolvedThreads.map((thread, i) => (
+                    <div key={`t-${i}`} className="rounded border border-emerald-400/20 bg-emerald-400/5 px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{thread.title}</div>
+                        <span className="text-[10px] uppercase tracking-wider text-emerald-400/70">Resolved</span>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Defused clocks — won (green) */}
+                  {resolvedClocks.map((clock) => (
+                    <div key={clock.id} className="rounded border border-emerald-400/20 bg-emerald-400/5 px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{clock.name}</div>
+                        <span className="text-[10px] uppercase tracking-wider text-emerald-400/70">Defused</span>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Settled promises — fulfilled (green) / broken (destructive) */}
+                  {settledPromises.map((promise, i) => (
+                    <div
+                      key={`p-${i}`}
+                      className={cn(
+                        'rounded px-3 py-2',
+                        promise.status === 'fulfilled'
+                          ? 'border border-emerald-400/20 bg-emerald-400/5'
+                          : 'border border-destructive/30 bg-destructive/5'
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{promise.to}</div>
+                        <span className={cn(
+                          'text-[10px] uppercase tracking-wider',
+                          promise.status === 'fulfilled' ? 'text-emerald-400/70' : 'text-destructive/70'
+                        )}>
+                          {promise.status === 'fulfilled' ? 'Kept' : 'Broken'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-foreground/50">{promise.what}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ) : null
+          })()}
         </>
       )}
 
@@ -781,9 +917,8 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
                 {world.npcs.filter(isVessel).map((v, i) => (
                   <div key={`${i}-${v.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{v.name}</div>
-                    <div className="text-xs text-foreground/60">
-                      {v.description} ({v.lastSeen})
-                    </div>
+                    <div className="text-xs text-foreground/60">{v.description}</div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">{v.lastSeen}</div>
                   </div>
                 ))}
               </div>
@@ -796,6 +931,21 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 }
 
 function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebookLabel: string }) {
+  const visibleClues = notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0)
+  const connectedIds = new Set(notebook.connections.flatMap(c => c.clueIds))
+  const unconnected = [...visibleClues].filter(c => !connectedIds.has(c.id)).reverse()
+
+  const ClueCard = ({ clue, compact }: { clue: typeof visibleClues[0]; compact?: boolean }) => (
+    <div className={cn('rounded-lg border px-3 py-2', compact ? 'border-border/10 bg-secondary/5' : 'border-border/10 bg-secondary/5')}>
+      <div className="text-xs text-foreground/80 leading-relaxed">{clue.content}</div>
+      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+        <span className="min-w-0">{clue.source}</span>
+        <span className="shrink-0">·</span>
+        <span className="shrink-0 whitespace-nowrap">Ch. {clue.discoveredChapter}</span>
+      </div>
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
@@ -809,32 +959,7 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
         </div>
       </div>
 
-      {/* Clues */}
-      <div>
-        <SectionLabel>Evidence</SectionLabel>
-        <div className="flex flex-col gap-3 mt-2">
-          {notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0).map((clue) => (
-            <div
-              key={clue.id}
-              className={cn(
-                'rounded-lg border px-3 py-2.5',
-                clue.connected.length > 0
-                  ? 'border-primary/20 bg-primary/5'
-                  : 'border-border/10 bg-secondary/5'
-              )}
-            >
-              <div className="text-foreground/80 leading-relaxed">{clue.content}</div>
-              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/60">
-                <span>{clue.source}</span>
-                <span>·</span>
-                <span>Ch. {clue.discoveredChapter}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Connections */}
+      {/* Connections — on top, with linked clues nested inside */}
       {notebook.connections.length > 0 && (
         <div>
           <SectionLabel>Connections</SectionLabel>
@@ -844,14 +969,31 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
                 .map(id => notebook.clues.find(c => c.id === id))
                 .filter(Boolean)
               return (
-                <div key={i} className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
-                  <div className="text-xs text-primary/70 mb-1.5">
-                    {linkedClues.map(c => c!.content.slice(0, 30) + '...').join(' + ')}
+                <div key={i} className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                  <div className="text-xs text-foreground/80 leading-relaxed font-medium">{conn.revelation}</div>
+                  <div className="mt-2 border-t border-primary/10 pt-2 flex flex-col gap-1.5">
+                    {linkedClues.map(c => (
+                      <div key={c!.id} className="text-[10px] text-foreground/50 leading-relaxed">
+                        <span className="text-primary/40">●</span> {c!.content.length > 80 ? c!.content.slice(0, 80) + '...' : c!.content}
+                        <span className="text-muted-foreground/40 ml-1">— {c!.source}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="text-foreground/80 leading-relaxed">{conn.revelation}</div>
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Unconnected evidence */}
+      {unconnected.length > 0 && (
+        <div>
+          <SectionLabel>{notebook.connections.length > 0 ? 'Unconnected Evidence' : 'Evidence'}</SectionLabel>
+          <div className="flex flex-col gap-2 mt-2">
+            {unconnected.map((clue) => (
+              <ClueCard key={clue.id} clue={clue} />
+            ))}
           </div>
         </div>
       )}
@@ -898,12 +1040,12 @@ function ChaptersPanel({
 
             {expandedChapter === chapter.number && (
               <div className="border-t border-border/30 p-3">
-                <p className="mb-3 text-sm text-foreground/60">{chapter.summary}</p>
+                <p className="mb-3 text-sm text-foreground/60 leading-relaxed">{chapter.summary}</p>
 
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2"><div className="w-4 h-px bg-primary/40" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Key Events</span></div>
-                    <ul className="list-inside list-disc text-sm text-foreground">
+                    <ul className="list-inside list-disc text-sm text-foreground/80">
                       {chapter.keyEvents.map((event, i) => (
                         <li key={i}>{event}</li>
                       ))}
@@ -974,47 +1116,73 @@ function ChaptersPanel({
       {/* Debrief Modal */}
       {showDebrief && showDebrief.debrief && (
         <Dialog open={!!showDebrief} onOpenChange={() => setShowDebrief(null)}>
-          <DialogContent className="max-w-md border-border/50 bg-card/95">
+          <DialogContent className="max-w-sm border-border/50 bg-card/95" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'calc(1rem * var(--font-scale, 1))' }}>
             <DialogHeader>
-              <DialogTitle>{showDebrief.title} — Debrief</DialogTitle>
+              <DialogTitle className="font-heading text-base">{showDebrief.title} — Debrief</DialogTitle>
               <DialogDescription className="sr-only">Chapter performance summary</DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col gap-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded bg-secondary/30 p-3 text-center">
-                  <div className="text-xs text-muted-foreground">Tactical Rating</div>
-                  <div className="text-2xl font-bold text-primary">
-                    {showDebrief.debrief.tactical}
-                  </div>
-                </div>
-                <div className="rounded bg-secondary/30 p-3 text-center">
-                  <div className="text-xs text-muted-foreground">Strategic Rating</div>
-                  <div className="text-2xl font-bold text-primary">
-                    {showDebrief.debrief.strategic}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-3 text-sm max-h-[70vh] overflow-y-auto">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Tactical</span></div>
+                <p className="text-sm text-foreground/70 leading-relaxed">{showDebrief.debrief.tactical}</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1.5"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Strategic</span></div>
+                <p className="text-sm text-foreground/70 leading-relaxed">{showDebrief.debrief.strategic}</p>
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Lucky Breaks</span></div>
-                  <ul className="list-inside list-disc text-success">
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Lucky Breaks</span></div>
+                  <ul className="flex flex-col gap-1">
                     {showDebrief.debrief.luckyBreaks.map((item, i) => (
-                      <li key={i}>{item}</li>
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground/60">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/50 shrink-0" />
+                        {item}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
               {showDebrief.debrief.costsPaid.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70">Costs Paid</span></div>
-                  <ul className="list-inside list-disc text-destructive">
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Costs Paid</span></div>
+                  <ul className="flex flex-col gap-1">
                     {showDebrief.debrief.costsPaid.map((item, i) => (
-                      <li key={i}>{item}</li>
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground/60">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/50 shrink-0" />
+                        {item}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
-              <div className="mt-2 rounded border border-border/20 bg-secondary/20 px-3 py-2.5 text-center">
+              {showDebrief.debrief.promisesKept && showDebrief.debrief.promisesKept.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Promises Kept</span></div>
+                  <ul className="flex flex-col gap-1">
+                    {showDebrief.debrief.promisesKept.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground/60">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/50 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {showDebrief.debrief.promisesBroken && showDebrief.debrief.promisesBroken.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Promises Broken</span></div>
+                  <ul className="flex flex-col gap-1">
+                    {showDebrief.debrief.promisesBroken.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground/60">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/50 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-1 rounded border border-border/20 bg-secondary/20 px-3 py-2.5 text-center">
                 <p className="text-xs text-muted-foreground">
                   The forge burns real fuel. If this story&apos;s worth telling, keep the fires lit.
                 </p>
@@ -1033,6 +1201,28 @@ function ChaptersPanel({
         </Dialog>
       )}
     </>
+  )
+}
+
+function DebugPanel() {
+  const [open, setOpen] = useState(false)
+  if (debugLog.length === 0) return null
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="text-[10px] text-muted-foreground/30 hover:text-muted-foreground/50 transition-colors"
+      >
+        {open ? '▾ hide debug' : '▸ debug log'}
+      </button>
+      {open && (
+        <div className="mt-1 rounded border border-border/10 bg-black/30 p-2 font-mono text-[9px] text-foreground/40 max-h-40 overflow-y-auto">
+          {debugLog.map((entry, i) => (
+            <div key={i} className="break-all">{entry}</div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -18,12 +18,17 @@ interface ChatMessageProps {
 }
 
 function renderMarkdown(text: string) {
-  // Fix missing spaces after sentence-ending punctuation (e.g. "you.Not" → "you. Not")
-  const normalized = text.replace(/([.!?])([A-Z])/g, '$1 $2')
+  // Fix missing spaces after sentence-ending punctuation (e.g. "you.Not" → "you. Not", 'heads."Sera' → 'heads." Sera')
+  // Also fix horizontal rules glued to text (e.g. "one.---" → "one.\n---", "---Tactical" → "---\nTactical")
+  const normalized = text.replace(/([.!?]["']?)([A-Z])/g, '$1 $2').replace(/([^\n])---/g, '$1\n---').replace(/---([^\n])/g, '---\n$1')
   const lines = normalized.split('\n')
   return lines.map((line, i) => {
     const addBreak = i < lines.length - 1
 
+    // --- horizontal rule
+    if (line.trim() === '---') {
+      return <hr key={i} className="my-3 border-t border-border/20" />
+    }
     // ## heading
     if (line.startsWith('## ')) {
       return <span key={i} className="block mt-3 mb-1 font-mono text-xs font-semibold uppercase tracking-widest text-primary/70">{line.slice(3)}{addBreak && <br />}</span>
@@ -33,18 +38,29 @@ function renderMarkdown(text: string) {
       return <span key={i} className="block mt-4 mb-1 font-mono text-sm font-bold uppercase tracking-widest text-primary/80">{line.slice(2)}{addBreak && <br />}</span>
     }
 
+    // Numbered list item (e.g. "1. text" or "1) text")
+    const listMatch = line.match(/^(\d+)[.)]\s+(.*)/)
+    // Bullet list item (e.g. "- text")
+    const bulletMatch = !listMatch && line.match(/^[-•]\s+(.*)/)
+    const lineContent = listMatch ? listMatch[2] : bulletMatch ? bulletMatch[1] : line
+    const listPrefix = listMatch ? `${listMatch[1]}. ` : bulletMatch ? '• ' : null
+
     const parts: React.ReactNode[] = []
     const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g
     let last = 0
     let match
     let key = 0
-    while ((match = regex.exec(line)) !== null) {
+    while ((match = regex.exec(lineContent)) !== null) {
       if (match.index > last) parts.push(match.input.slice(last, match.index))
       if (match[1] !== undefined) parts.push(<strong key={key++}>{match[1]}</strong>)
       else if (match[2] !== undefined) parts.push(<em key={key++}>{match[2]}</em>)
       last = match.index + match[0].length
     }
-    if (last < line.length) parts.push(line.slice(last))
+    if (last < lineContent.length) parts.push(lineContent.slice(last))
+
+    if (listPrefix) {
+      return <span key={i} className="block pl-4 -indent-4 mt-1"><span className="text-muted-foreground/60">{listPrefix}</span>{parts}{addBreak && <br />}</span>
+    }
     return <span key={i}>{parts}{addBreak && <br />}</span>
   })
 }
@@ -147,7 +163,7 @@ export function ChatMessage({ message, statChanges, onFlag, onRetry }: ChatMessa
     return (
       <div className="flex items-start gap-2.5 max-w-[80%]">
         <div className="mt-2 w-1.5 h-1.5 rounded-full bg-info shrink-0" />
-        <p className="text-meta leading-relaxed" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
+        <p className="text-meta leading-relaxed" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{renderMarkdown(message.content)}</p>
       </div>
     )
   }

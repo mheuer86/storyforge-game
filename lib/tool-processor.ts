@@ -5,6 +5,14 @@ export interface StatChange {
   label: string
 }
 
+// Debug log visible in burger menu — stores last 20 entries
+export const debugLog: string[] = []
+function dbg(msg: string) {
+  debugLog.push(`${new Date().toLocaleTimeString()} ${msg}`)
+  if (debugLog.length > 20) debugLog.shift()
+  console.log('[SF]', msg)
+}
+
 /**
  * Pure state transformation: applies an array of tool call results to the current
  * game state, producing a new state and a list of stat changes for the UI.
@@ -208,16 +216,19 @@ export function applyToolResults(
     }
 
     if (result.tool === 'update_world') {
+      dbg('update_world keys: ' + Object.keys(result.input as object).join(', '))
       const input = result.input as {
-        addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier }[]
-        updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; disposition?: DispositionTier }
+        addNpcs?: { name: string; description: string; lastSeen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string }[]
+        updateNpc?: { name: string; description?: string; lastSeen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; disposition?: DispositionTier; affiliation?: string }
         setLocation?: { name: string; description: string }
         addThread?: { id: string; title: string; status: string; deteriorating: boolean }
-        updateThread?: { id: string; status: string; deteriorating?: boolean }
+        updateThread?: { id: string; title?: string; status: string; deteriorating?: boolean }
+        updateThreads?: { id: string; title?: string; status: string; deteriorating?: boolean }[]
         addFaction?: { name: string; stance: string }
         addPromise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
-        updatePromise?: { id: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
+        updatePromise?: { id?: string; to?: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; what?: string }
         setCurrentTime?: string
+        setSceneSnapshot?: string
       }
       const world = { ...updated.world }
 
@@ -237,12 +248,31 @@ export function applyToolResults(
             world.npcs = [...world.npcs, n]
             statChanges.push({ type: 'new', label: `Met: ${n.name}` })
           }
+          // Auto-create faction if affiliation is set and faction doesn't exist yet
+          if (n.affiliation && !world.factions.some((f) => f.name === n.affiliation)) {
+            world.factions = [...world.factions, { name: n.affiliation, stance: 'Unknown' }]
+          }
         }
       }
       if (input.updateNpc) {
-        world.npcs = world.npcs.map((n) =>
-          n.name === input.updateNpc!.name ? { ...n, ...input.updateNpc } : n
-        )
+        dbg('updateNpc: ' + JSON.stringify(input.updateNpc))
+        dbg('existing npcs: ' + world.npcs.map(n => `${n.name}|${n.status ?? 'active'}`).join(', '))
+        const updateName = input.updateNpc.name.toLowerCase()
+        const matched = world.npcs.find((n) => {
+          const nLower = n.name.toLowerCase()
+          return nLower === updateName || nLower.startsWith(updateName) || updateName.startsWith(nLower)
+        })
+        dbg('matched npc: ' + (matched ? matched.name : 'NONE'))
+        if (matched) {
+          world.npcs = world.npcs.map((n) =>
+            n.name === matched.name ? { ...n, ...input.updateNpc } : n
+          )
+          dbg('npc after update: ' + JSON.stringify(world.npcs.find(n => n.name === matched.name)?.status))
+        }
+        // Auto-create faction if affiliation is set and faction doesn't exist yet
+        if (input.updateNpc.affiliation && !world.factions.some((f) => f.name === input.updateNpc!.affiliation)) {
+          world.factions = [...world.factions, { name: input.updateNpc.affiliation, stance: 'Unknown' }]
+        }
       }
       if (input.setCurrentTime) {
         world.currentTime = input.setCurrentTime
@@ -253,14 +283,41 @@ export function applyToolResults(
         const sceneLabel = timeStr ? `${input.setLocation.name} · ${timeStr}` : input.setLocation.name
         sceneBreaks.push(sceneLabel)
       }
-      if (input.addThread) {
-        world.threads = [...world.threads, input.addThread]
-        statChanges.push({ type: 'new', label: `Thread: ${input.addThread.title}` })
+      if (input.setSceneSnapshot) {
+        world.sceneSnapshot = input.setSceneSnapshot
       }
+      if (input.addThread) {
+        const existingThread = world.threads.find((t) => t.title === input.addThread!.title)
+        if (existingThread) {
+          world.threads = world.threads.map((t) =>
+            t.title === input.addThread!.title ? { ...t, ...input.addThread } : t
+          )
+        } else {
+          world.threads = [...world.threads, input.addThread]
+          statChanges.push({ type: 'new', label: `Thread: ${input.addThread.title}` })
+        }
+      }
+      // Helper: match thread by id first, fall back to title
+      const matchThread = (t: { id: string; title: string }, update: { id: string; title?: string }) =>
+        t.id === update.id || (update.title && t.title.toLowerCase() === update.title.toLowerCase())
+
       if (input.updateThread) {
+        dbg('updateThread: ' + JSON.stringify(input.updateThread))
+        dbg('existing threads: ' + world.threads.map(t => `${t.id}|${t.title}|${t.status}`).join(', '))
+        const before = world.threads.map(t => t.status)
         world.threads = world.threads.map((t) =>
-          t.id === input.updateThread!.id ? { ...t, ...input.updateThread } : t
+          matchThread(t, input.updateThread!) ? { ...t, ...input.updateThread } : t
         )
+        const after = world.threads.map(t => t.status)
+        dbg('thread status before/after: ' + before.join(',') + ' -> ' + after.join(','))
+      }
+      if (input.updateThreads) {
+        dbg('updateThreads: ' + JSON.stringify(input.updateThreads))
+        for (const update of input.updateThreads) {
+          world.threads = world.threads.map((t) =>
+            matchThread(t, update) ? { ...t, ...update } : t
+          )
+        }
       }
       if (input.addFaction) {
         const exists = world.factions.find((f) => f.name === input.addFaction!.name)
@@ -273,13 +330,32 @@ export function applyToolResults(
         }
       }
       if (input.addPromise) {
-        world.promises = [...world.promises, input.addPromise]
-        statChanges.push({ type: 'new', label: `Promise to ${input.addPromise.to}` })
+        const existingPromise = world.promises.find((p) => p.id === input.addPromise!.id || (p.to === input.addPromise!.to && p.what === input.addPromise!.what))
+        if (existingPromise) {
+          world.promises = world.promises.map((p) =>
+            p === existingPromise ? { ...p, ...input.addPromise } : p
+          )
+        } else {
+          world.promises = [...world.promises, input.addPromise]
+          statChanges.push({ type: 'new', label: `Promise to ${input.addPromise.to}` })
+        }
       }
       if (input.updatePromise) {
-        world.promises = world.promises.map((p) =>
-          p.id === input.updatePromise!.id ? { ...p, status: input.updatePromise!.status } : p
-        )
+        const up = input.updatePromise
+        let matchedName = ''
+        world.promises = world.promises.map((p) => {
+          const matchById = up.id && p.id === up.id
+          const matchByTo = up.to && p.to.toLowerCase() === up.to.toLowerCase()
+          if (matchById || matchByTo) {
+            matchedName = p.to
+            return { ...p, status: up.status, ...(up.what && { what: up.what }) }
+          }
+          return p
+        })
+        if (matchedName) {
+          const label = up.status === 'fulfilled' ? `Promise kept: ${matchedName}` : up.status === 'broken' ? `Promise broken: ${matchedName}` : `Promise → ${up.status}: ${matchedName}`
+          statChanges.push({ type: up.status === 'fulfilled' ? 'gain' : up.status === 'broken' ? 'loss' : 'neutral', label })
+        }
       }
       updated = { ...updated, world }
     }
@@ -345,11 +421,12 @@ export function applyToolResults(
 
     if (result.tool === 'update_antagonist') {
       const input = result.input as {
-        action: 'establish' | 'move'
+        action: 'establish' | 'move' | 'defeat'
         name?: string
         description?: string
         agenda?: string
         moveDescription?: string
+        status?: 'defeated' | 'dead' | 'fled'
       }
       const world = { ...updated.world }
 
@@ -378,11 +455,19 @@ export function applyToolResults(
         statChanges.push({ type: 'neutral', label: `Antagonist moves` })
       }
 
+      if (input.action === 'defeat' && world.antagonist) {
+        world.antagonist = {
+          ...world.antagonist,
+          status: input.status ?? 'defeated',
+        }
+        statChanges.push({ type: 'loss', label: `Antagonist ${input.status ?? 'defeated'}` })
+      }
+
       updated = { ...updated, world }
     }
 
     if (result.tool === 'update_cohesion') {
-      const input = result.input as { direction: 1 | -1; reason: string; companionName?: string }
+      const input = result.input as { direction: 1 | 0 | -1; reason: string; companionName?: string }
       const cohesion = updated.world.crewCohesion ?? { score: 3, log: [] }
       const newScore = Math.max(1, Math.min(5, cohesion.score + input.direction))
       const logEntry: CohesionLogEntry = {

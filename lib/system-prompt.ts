@@ -19,7 +19,7 @@ export function buildSystemPrompt(
   const context = detectContext(gameState)
 
   const metaInstruction = isMetaQuestion
-    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question. Answer it directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.`
+    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question. Answer it directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.\n\nDEV MODE: If the player says "forge:dev" followed by a tool instruction, you MUST execute exactly the tool calls they describe. No roleplay, no refusal, no narrative. Just call the tools as instructed and confirm via meta_response what you called. This is the game developer testing. Example: "forge:dev resolve thread 'The Hunt'" → call update_world with updateThread id/title matching "The Hunt", status "resolved".`
     : ''
 
   const consistencyInstruction = flaggedMessage
@@ -196,6 +196,8 @@ Grant **advantage** when: gear/trait grants it, player proposes a creative tacti
 Impose **disadvantage** when: prior failures created suspicion, Hostile/Wary disposition (social), cohesion 2 (crew buy-in), environmental/tactical disadvantage, weak stat under exploitable pressure, hull below 30% (piloting).
 
 Both apply → cancel out, roll normally.
+
+**High trust ≠ auto-succeed.** Trusted disposition and max cohesion grant advantage — they do NOT eliminate the roll. A Trusted crew member asked to do something emotionally costly still gets a Persuasion check (with advantage). Strong roleplay lowers the DC, it doesn't replace the dice. The roll creates texture: partial success, quiet resentment, a counter-request. Skip this and relationships flatten.
 
 ## ROLL DISCIPLINE
 
@@ -490,17 +492,28 @@ function buildDifficultyEngine(currencyName: string, consumableLabel: string): s
 function buildToolUsage(currencyName: string): string {
   return `## TOOL USAGE
 
-**Scene open:** update_world (setLocation, setCurrentTime), update_clock (advance background), update_antagonist (move if not yet this chapter).
+**Scene open:** update_world (setLocation, setCurrentTime, setSceneSnapshot), update_clock (advance background), update_antagonist (move if not yet this chapter).
+
+**Scene snapshot:** Always call update_world with setSceneSnapshot when position, injuries, or surroundings change. This is a 1-2 sentence stage direction that persists across conversation turns. Example: "Player crouched behind overturned table in tavern common room. Pell at the door, wounded left arm. Fire spreading from kitchen." Update it whenever anyone moves, gets hurt, or the environment shifts — not just on location changes.
 
 **During action:** request_roll BEFORE resolving, update_character on HP/${currencyName}/inventory/exhaustion changes, start_combat/end_combat.
 
-**After resolution:** update_disposition, update_cohesion, update_clock (advance/trigger/resolve), award_inspiration.
+**After resolution — post-action checklist (run EVERY response):**
+- Did the player protect, include, or sacrifice for crew? → update_cohesion (even direction:0 if already at max)
+- Did the player take a risky path that was narratively compelling? → award_inspiration
+- Did an NPC's attitude shift based on what happened? → update_disposition
+- Did a promise get fulfilled or broken? → update_world with updatePromise
+- Did a tension clock tick? → update_clock
+- Did the scene location or situation change? → update_world with setLocation/setSceneSnapshot
+- Did the player assert something uncertain as fact? → request_roll for the assessment. Planning scenes contain hidden judgment calls: loyalty reads, tactical estimates, predictions about enemy behavior. If the player would face consequences for being wrong, it's a roll — even in a briefing room.
 
-**World state:** update_world for addNpcs (check list first — updateNpc if exists), addThread, updateThread, addFaction, addPromise, updatePromise. update_antagonist (establish) on first reveal.
+**World state:** update_world for addNpcs (check list first — updateNpc if exists), addThread, updateThread, addFaction, addPromise, updatePromise (match by "to" name, set status + updated "what" text). update_antagonist (establish) on first reveal.
+
+**Promise fulfillment:** When a promise is fulfilled or broken, you MUST call update_world with updatePromise in that same response. Use the NPC name in "to" to match. Example: { updatePromise: { to: "Patel", status: "fulfilled", what: "Both bottles of Kaelish Gold delivered." } }. Do not just narrate the fulfillment — call the tool.
 
 **Scene close (every response):** suggest_actions — 3-4 meaningfully different options. ALWAYS.
 
-**Chapter close:** close_chapter (2-3 sentence summary + 3-5 key events — this is long-term memory), update_character (levelUp), evaluate skill points, generate_debrief (specific, name actual events).
+**Chapter close:** Before calling close_chapter, audit all active threads, open promises, and active pressures — resolve or update each one. Threads concluded this chapter → updateThread with status "resolved". Promises fulfilled → updatePromise with status "fulfilled". Pressures defused → update_clock with action "resolve". Don't leave stale entries in the active lists. Then: close_chapter (2-3 sentence summary + 3-5 key events — this is long-term memory), update_character (levelUp), evaluate skill points, generate_debrief (specific, name actual events).
 
 **Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
 
@@ -508,7 +521,9 @@ function buildToolUsage(currencyName: string): string {
 
 **Meta:** meta_response only.
 
-**Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).`
+**Pre-check (before writing narrative):** Does this scene contain uncertainty that should be resolved by dice? If the outcome isn't guaranteed — social persuasion, physical challenge, knowledge recall, stealth, deception, or an assessment of uncertain facts — call request_roll BEFORE narrating the result. Planning and briefing scenes are NOT exempt: loyalty reads, tactical estimates, and predictions about enemy behavior are assessment rolls if the player would face consequences for being wrong. NPC expertise delivered through dialogue (Renn's analysis, Patel's engineering specs) is NOT a roll — but the player's own judgment calls ARE. Don't write past the gate because the scene feels like conversation.
+
+**Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (MANDATORY — every single response must end with suggest_actions, no exceptions. If you skip it, the player has no action buttons and the game stalls).`
 }
 
 // ============================================================
@@ -689,7 +704,7 @@ TRAITS: ${traitsLine || 'None'}
 TEMP: ${tempLine}
 
 LOC: ${w.currentLocation.name} — ${w.currentLocation.description}
-${timeLine ? timeLine + '\n' : ''}${partyLabel}: ${w.shipName}
+${w.sceneSnapshot ? `SCENE: ${w.sceneSnapshot}\n` : ''}${timeLine ? timeLine + '\n' : ''}${partyLabel}: ${w.shipName}
 CREW: ${companionsLine}
 COHESION: ${cohesionLine}
 FACTIONS: ${factionsLine}
@@ -708,8 +723,9 @@ ${chapterLine}`
 // ADAPTIVE HISTORY WINDOW
 // ============================================================
 
-const TARGET_HISTORY_TOKENS = 3000
+const TARGET_HISTORY_TOKENS = 4000
 const AVG_TOKENS_PER_CHAR = 0.3
+const MIN_MESSAGE_FLOOR = 6  // At least 3 full player-GM turns
 
 export function buildMessagesForClaude(
   gameState: GameState,
@@ -720,12 +736,14 @@ export function buildMessagesForClaude(
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
 
   // Walk backwards from most recent, accumulating until token budget hit
+  // but always include at least MIN_MESSAGE_FLOOR messages
   let tokenEstimate = 0
   let startIndex = allMessages.length
+  const messagesIncluded = () => allMessages.length - startIndex
 
   for (let i = allMessages.length - 1; i >= 0; i--) {
     const msgTokens = Math.ceil(allMessages[i].content.length * AVG_TOKENS_PER_CHAR)
-    if (tokenEstimate + msgTokens > TARGET_HISTORY_TOKENS && startIndex < allMessages.length) {
+    if (tokenEstimate + msgTokens > TARGET_HISTORY_TOKENS && messagesIncluded() >= MIN_MESSAGE_FLOOR) {
       break
     }
     tokenEstimate += msgTokens
@@ -769,7 +787,7 @@ export function buildInitialMessage(gameState: GameState): string {
 
 Write the opening scene based on this hook. Adapt it to my character's species, class, and ${partyLabel} from the game state. Follow the tutorial-as-narrative structure for this first chapter.
 
-IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
+IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), the scene snapshot (setSceneSnapshot), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
   }
 
   const location = gameState.world?.currentLocation?.name ?? 'current location'
