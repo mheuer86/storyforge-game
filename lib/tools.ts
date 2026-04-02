@@ -259,7 +259,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'update_world',
     description:
-      'Update world state: add or update NPCs, change current location, add/update factions, add/update narrative threads. Call this whenever the player encounters a new NPC, moves to a new location, or a thread changes.',
+      'Update world state: add or update NPCs, change current location, add/update factions, add/update narrative threads, update scene snapshot. Call this whenever the player encounters a new NPC, moves to a new location, a thread changes, or the physical situation changes (movement, injuries, environment shifts).',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -270,13 +270,15 @@ export const gameTools: Anthropic.Tool[] = [
             type: 'object',
             properties: {
               name: { type: 'string' },
-              description: { type: 'string', description: 'Brief description of who they are' },
+              description: { type: 'string', description: 'Who they are + one personality detail or behavioral habit. Not just role/stance — include something observable. E.g. "Senior intel officer. Efficient, dry, brings her own tea to briefings." not just "Intelligence officer."' },
               lastSeen: { type: 'string', description: 'Current location or context' },
               relationship: { type: 'string', description: 'e.g. "hostile", "neutral", "ally", "contact"' },
               role: { type: 'string', enum: ['crew', 'contact', 'npc'], description: 'Use "crew" for companions who travel with the player' },
               subtype: { type: 'string', enum: ['person', 'vessel', 'installation'], description: 'Use "vessel" for ships/freighters/shuttles, "installation" for stations/bases. Defaults to "person". Vessels and installations are displayed separately from characters.' },
               vulnerability: { type: 'string', description: 'What this companion is most sensitive to (for crew only) — used to modulate cohesion changes' },
               disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'], description: 'Starting disposition for contacts/npcs. Defaults to neutral if omitted.' },
+              affiliation: { type: 'string', description: 'Faction or group this NPC belongs to. Must match an existing faction name exactly (e.g. "The Inquisition", "Merchant Guild"). Used to group NPCs under their faction in the UI.' },
+              status: { type: 'string', enum: ['active', 'dead', 'defeated', 'gone'], description: 'Set to "dead", "defeated", or "gone" when an NPC is permanently removed from play. Moves them to a "Fallen" section in the UI. Defaults to "active".' },
             },
             required: ['name', 'description', 'lastSeen'],
           },
@@ -291,6 +293,8 @@ export const gameTools: Anthropic.Tool[] = [
             relationship: { type: 'string' },
             role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
             vulnerability: { type: 'string' },
+            affiliation: { type: 'string', description: 'Faction or group name. Must match an existing faction name exactly.' },
+            status: { type: 'string', enum: ['active', 'dead', 'defeated', 'gone'], description: 'Set when an NPC is permanently removed from play.' },
           },
           required: ['name'],
         },
@@ -307,6 +311,10 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'Update the in-world timeline at scene transitions. e.g. "Day 3, evening", "Late afternoon", "0347 hours". Announce time naturally in the narrative — never as a mechanical countdown.',
         },
+        setSceneSnapshot: {
+          type: 'string',
+          description: 'Stage direction: who is where, physical state, injuries, environment. Update whenever position, injuries, or surroundings change. 1-2 sentences max. e.g. "Player crouched behind overturned table in tavern common room. Pell at the door, wounded (left arm). Fire spreading from kitchen. Two guards approaching from the street."',
+        },
         addThread: {
           type: 'object',
           description: 'Add a new narrative thread.',
@@ -320,13 +328,28 @@ export const gameTools: Anthropic.Tool[] = [
         },
         updateThread: {
           type: 'object',
-          description: 'Update an existing thread status (matched by id).',
+          description: 'Update a single thread. Matched by id first, then by title if id not found.',
           properties: {
             id: { type: 'string' },
+            title: { type: 'string', description: 'Thread title — used as fallback if id does not match.' },
             status: { type: 'string' },
             deteriorating: { type: 'boolean' },
           },
           required: ['id', 'status'],
+        },
+        updateThreads: {
+          type: 'array',
+          description: 'Batch-update multiple threads at once (e.g. resolve several at chapter close). Each entry matched by id first, then by title.',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              status: { type: 'string' },
+              deteriorating: { type: 'boolean' },
+            },
+            required: ['id', 'status'],
+          },
         },
         addFaction: {
           type: 'object',
@@ -350,12 +373,14 @@ export const gameTools: Anthropic.Tool[] = [
         },
         updatePromise: {
           type: 'object',
-          description: 'Update the status of an existing promise (matched by id).',
+          description: 'Update an existing promise. Match by id or by the NPC name (to field). Can update status and/or description.',
           properties: {
-            id: { type: 'string' },
+            id: { type: 'string', description: 'Promise id. Optional if "to" is provided.' },
+            to: { type: 'string', description: 'NPC name the promise is to. Used as fallback match if id is unknown.' },
             status: { type: 'string', enum: ['open', 'strained', 'fulfilled', 'broken'] },
+            what: { type: 'string', description: 'Updated description of the promise. Use when the situation has changed.' },
           },
-          required: ['id', 'status'],
+          required: ['status'],
         },
       },
     },
@@ -395,8 +420,13 @@ export const gameTools: Anthropic.Tool[] = [
       properties: {
         action: {
           type: 'string',
-          enum: ['establish', 'move'],
-          description: '"establish" sets up the antagonist identity (call once, early in the story). "move" records one offscreen action this chapter.',
+          enum: ['establish', 'move', 'defeat'],
+          description: '"establish" sets up the antagonist identity (call once, early in the story). "move" records one offscreen action this chapter. "defeat" marks the antagonist as defeated/dead/fled — moves them to Fallen in the UI.',
+        },
+        status: {
+          type: 'string',
+          enum: ['defeated', 'dead', 'fled'],
+          description: '[defeat] How the antagonist was removed from play.',
         },
         name: {
           type: 'string',
@@ -427,20 +457,20 @@ export const gameTools: Anthropic.Tool[] = [
       properties: {
         tactical: {
           type: 'string',
-          description: 'Tactical rating — a letter grade (A/B/C/D/F) followed by a 1-sentence justification based on roll outcomes and combat decisions.',
+          description: 'Tactical assessment — 2-3 sentences evaluating moment-to-moment decisions. Reference specific rolls and their consequences. E.g. "The cold-drift approach was textbook, but the double 2s on the guard check forced an improvised takedown that started the alert clock. Recovery was clean — the blast door bypass showed strong adaptability under time pressure."',
         },
         strategic: {
           type: 'string',
-          description: 'Strategic rating — a letter grade (A/B/C/D/F) followed by a 1-sentence justification based on thread management, promises, and antagonist handling.',
+          description: 'Strategic assessment — 2-3 sentences evaluating long-term play. Reference thread management, promise progress, cohesion impact, and antagonist positioning. E.g. "Chose intelligence over assault — preserved surveillance assets and gained actionable data. But the Carren flags created an exposure thread that will cost time to manage. Dray integration was well-handled; the direct honesty paid off."',
         },
         luckyBreaks: {
           type: 'array',
-          description: 'Moments where the dice or circumstances favored the player unexpectedly (nat 20s, enemies who missed, threads that didn\'t worsen).',
+          description: 'Specific moments where dice or circumstances favored the player. Reference actual rolls. E.g. "Nat 20 on the maintenance tech — avoided discovery at the worst possible junction."',
           items: { type: 'string' },
         },
         costsPaid: {
           type: 'array',
-          description: 'Concrete costs incurred: HP lost, consumables spent, broken promises, threads that worsened, cohesion drops.',
+          description: 'Concrete costs incurred this chapter. Be specific. E.g. "Holo-cloak spent during extraction", "Cover identity Harko potentially burned", "Pinnacle Exposure clock at 3/4".',
           items: { type: 'string' },
         },
         promisesKept: {
@@ -466,12 +496,12 @@ export const gameTools: Anthropic.Tool[] = [
       properties: {
         direction: {
           type: 'number',
-          enum: [1, -1],
-          description: '+1 to raise cohesion, -1 to lower it.',
+          enum: [1, 0, -1],
+          description: '+1 to raise, -1 to lower, 0 to log a significant moment without changing the score (e.g. acknowledging crew at max cohesion, or a moment that deepens trust without mechanical effect).',
         },
         reason: {
           type: 'string',
-          description: 'Brief reason for the change — logged internally for chapter debrief, never shown to player.',
+          description: 'Brief reason — logged internally for chapter debrief, never shown to player. For direction 0, describe what happened and why it matters for the relationship.',
         },
         companionName: {
           type: 'string',
@@ -504,7 +534,7 @@ export const gameTools: Anthropic.Tool[] = [
         },
         addCombatOption: {
           type: 'string',
-          description: 'New ship combat option unlocked by an upgrade (e.g. "Torpedo salvo", "EMP burst", "Cloaking sprint"). These become available as quick actions in space encounters.',
+          description: 'A tactical action the player can choose in space encounters. Use short verb phrases, not system descriptions. Good: "Nose cannon volley", "EW jamming burst", "Chaff deployment (4 charges)". Bad: "Active Cloaking — 12m40s invisibility, 6hr recharge".',
         },
         upgradeLogEntry: {
           type: 'string',

@@ -24,7 +24,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
   }
 
   return (
-    <div className="flex flex-col gap-3 bg-background/60 p-4 backdrop-blur-xl border-t border-border/10">
+    <div className="flex flex-col gap-3 p-4 border-t border-border/10">
       {/* Quick Actions */}
       {quickActions.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -42,7 +42,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
       )}
 
       {/* Custom Input — contained area */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-0 rounded-xl bg-secondary/8 border border-border/10 overflow-hidden">
+      <form onSubmit={handleSubmit} className="flex items-center gap-0 rounded-xl bg-primary/[0.06] border-2 border-primary/25 overflow-hidden shadow-[0_0_12px_-3px] shadow-primary/15">
         {/* Meta Question Toggle */}
         <button
           type="button"
@@ -72,7 +72,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
                 ? "Ask the GM a question (won't affect the story)..."
                 : 'Or type your own action...'
           }
-          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-primary/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         {/* Send Button */}
@@ -80,7 +80,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
           type="submit"
           disabled={!inputValue.trim()}
           className={cn(
-            'shrink-0 mx-1.5 rounded-lg p-2 transition-colors disabled:opacity-30',
+            'shrink-0 mx-1.5 rounded-lg p-2 transition-colors disabled:opacity-50',
             isMetaMode
               ? 'bg-info text-white hover:bg-info/90'
               : 'bg-primary text-primary-foreground hover:bg-primary/90'

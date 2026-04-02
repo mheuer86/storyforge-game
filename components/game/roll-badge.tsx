@@ -33,6 +33,20 @@ export function RollBadge({ rollData }: { rollData: RollDisplayData }) {
 
   const discardedDieClass = 'border-border/30 bg-card/20 text-muted-foreground/40 line-through'
 
+  if (rollData.isOriginal) {
+    // Dimmed original roll before inspiration reroll
+    return (
+      <div className="rounded-lg border border-border/20 bg-card/20 px-6 py-3 opacity-50">
+        <div className="font-system text-sm text-foreground/60">
+          {rollData.roll}
+          {rollData.modifier !== 0 && <span> {rollData.modifier > 0 ? '+' : ''}{rollData.modifier}</span>}
+          {' '}= {rollData.total} <span className="text-muted-foreground/60">vs DC {rollData.dc}</span>
+          {' '}<span className="text-orange-400/60 line-through">{label}</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`rounded-lg border px-6 py-4 ${cardClass}`}>
       <div className="flex items-center justify-between">
