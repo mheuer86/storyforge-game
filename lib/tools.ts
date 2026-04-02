@@ -658,6 +658,10 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'ID of an existing clue to update with new details. Check NOTEBOOK in game state for existing clue IDs before adding. Omit to create a new clue.',
         },
+        title: {
+          type: 'string',
+          description: 'Short descriptive label for this evidence (2-5 words). Shown as the clue heading in the notebook. E.g. "Betting Slip", "Dockside Witness", "Forged Transit Papers".',
+        },
         content: {
           type: 'string',
           description: 'What the player learned — the factual content of the clue. When updating, this replaces the previous content.',
@@ -679,8 +683,13 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'The case or investigation thread this clue belongs to. Sets the notebook title if not already set.',
         },
+        status: {
+          type: 'string',
+          enum: ['active', 'solved', 'archived'],
+          description: 'Set to "solved" when the clue has been fully explained or its mystery resolved. Set to "archived" when it is no longer relevant. Only use when updating existing clues via clueId.',
+        },
       },
-      required: ['content', 'source', 'tags'],
+      required: ['title', 'content', 'source', 'tags'],
     },
   },
   {
@@ -695,12 +704,16 @@ export const gameTools: Anthropic.Tool[] = [
           description: 'IDs of the clues being connected (typically 2).',
           items: { type: 'string' },
         },
+        title: {
+          type: 'string',
+          description: 'Descriptive summary of what this connection means (3-8 words). Shown as the connection heading. E.g. "Financial Desperation", "Voss Controls the Docks".',
+        },
         revelation: {
           type: 'string',
           description: 'The new information revealed by connecting these clues.',
         },
       },
-      required: ['clueIds', 'revelation'],
+      required: ['clueIds', 'title', 'revelation'],
     },
   },
 ]

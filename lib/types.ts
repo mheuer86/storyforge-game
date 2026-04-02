@@ -147,16 +147,19 @@ export interface TensionClock {
 
 export interface Clue {
   id: string
+  title?: string  // short descriptive label (e.g. "Betting Slip", "Pawn Receipt")
   content: string
   source: string
   tags: string[]
   discoveredChapter: number
   connected: string[]
   isRedHerring: boolean
+  status?: 'active' | 'solved' | 'archived'  // solved = resolved/explained, archived = no longer relevant
 }
 
 export interface ClueConnection {
   clueIds: string[]
+  title: string  // descriptive summary of what the connection means (e.g. "Financial Desperation")
   revelation: string
 }
 
