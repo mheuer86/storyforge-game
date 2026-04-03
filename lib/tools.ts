@@ -745,9 +745,13 @@ export const gameTools: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
+        connectionId: {
+          type: 'string',
+          description: 'ID of an existing connection to update. Check CONNECTIONS in the NOTEBOOK for existing IDs. Omit to create a new connection.',
+        },
         sourceIds: {
           type: 'array',
-          description: 'IDs of the items being connected (exactly 2). Can be clue IDs or connection IDs from the NOTEBOOK in game state.',
+          description: 'IDs of the items being connected (exactly 2). Can be clue IDs or connection IDs from the NOTEBOOK in game state. Required when creating a new connection.',
           items: { type: 'string' },
         },
         title: {
@@ -764,7 +768,7 @@ export const gameTools: Anthropic.Tool[] = [
           description: 'Set to "solved" when the connection\'s mystery is fully resolved, "archived" when no longer relevant, or "disproven" when invalidated by new evidence. Defaults to "active".',
         },
       },
-      required: ['sourceIds', 'title', 'revelation'],
+      required: ['title'],
     },
   },
 ]
