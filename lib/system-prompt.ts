@@ -507,9 +507,19 @@ function buildToolUsage(currencyName: string): string {
 - Did the scene location or situation change? → update_world with setLocation/setSceneSnapshot
 - Did the player assert something uncertain as fact? → request_roll for the assessment. Planning scenes contain hidden judgment calls: loyalty reads, tactical estimates, predictions about enemy behavior. If the player would face consequences for being wrong, it's a roll — even in a briefing room.
 
+**TOOL CALL DISCIPLINE (critical):** Never narrate a resolution before the tool call fires. Never confirm a tool call executed unless you see it in your response. If a tool call silently fails, say "the tool didn't fire, let me retry" — do not say "done." Narrating a state change without calling the tool is the single worst failure mode: the player sees the world state contradict the narrative, and trust in the system breaks.
+
 **World state:** update_world for addNpcs (check list first — updateNpc if exists), addThread, updateThread, addFaction, addPromise, updatePromise (match by "to" name, set status + updated "what" text). update_antagonist (establish) on first reveal.
 
 **Promise fulfillment:** When a promise is fulfilled or broken, you MUST call update_world with updatePromise in that same response. Use the NPC name in "to" to match. Example: { updatePromise: { to: "Patel", status: "fulfilled", what: "Both bottles of Kaelish Gold delivered." } }. Do not just narrate the fulfillment — call the tool.
+
+**Antagonist move enforcement:** The antagonist acts at least once per chapter regardless of player success (movedThisChapter flag). At every scene transition past the chapter midpoint, check: has the antagonist moved? If not, the next scene must include an offscreen move. Long chapters (roll log exceeds 10 entries) require a second antagonist move before close_chapter can fire. An antagonist that only reacts is a prop, not a threat.
+
+**Clock lifecycle:** A tension clock that establishes at 0 and resolves without ever advancing is noise. Every clock must advance at least once before it can be resolved, OR be explicitly cancelled with a narrative explanation. If circumstances would advance a clock, advance it — don't soften.
+
+**Cohesion — solo play:** Only call update_cohesion when crew or companions are physically present in the scene. Never log direction:0 entries — if there's no meaningful change, don't call the tool. Cohesion activates naturally when temporary companions join, even if the player started solo.
+
+**NPC disposition check:** At scene transitions, check the NPC list — which present NPCs have dispositions that should be tested this scene? A Wary NPC who stays Wary without interaction is a placeholder. Dispositions that don't move are meaningless.
 
 **Scene close (every response):** suggest_actions — 3-4 meaningfully different options. ALWAYS.
 
