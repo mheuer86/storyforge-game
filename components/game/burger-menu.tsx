@@ -933,7 +933,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
 }
 
 function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Notebook; notebookLabel: string; onConnect?: () => void }) {
-  const visibleClues = notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0)
+  const visibleClues = notebook.clues.filter(c => !c.isRedHerring || c.connectionIds.length > 0)
 
   // Resolve clue IDs — exact match first, then slug-to-title fallback (GM sometimes uses slugs instead of auto-IDs)
   const normalize = (s: string) => s.replace(/[_\-]/g, ' ').replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
@@ -987,7 +987,7 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
         const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived')
 
         const ConnectionCard = ({ conn, dimmed }: { conn: typeof notebook.connections[0]; dimmed?: boolean }) => {
-          const linkedClues = conn.clueIds.map(resolveClue).filter(Boolean)
+          const linkedClues = conn.sourceIds.map(resolveClue).filter(Boolean)
           return (
             <div className={cn(
               'rounded-lg border px-3 py-2.5',
@@ -1031,7 +1031,7 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
       {/* Active evidence */}
       {(() => {
         const active = [...visibleClues].filter(c => !c.status || c.status === 'active').reverse()
-        const connectedIds = new Set(notebook.connections.flatMap(c => c.clueIds.map(id => resolveClue(id)?.id).filter(Boolean)))
+        const connectedIds = new Set(notebook.connections.flatMap(c => c.sourceIds.map(id => resolveClue(id)?.id).filter(Boolean)))
 
         const ClueCard = ({ clue }: { clue: typeof visibleClues[0] }) => (
           <div className={cn(
@@ -1069,7 +1069,7 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
             <SectionLabel>Resolved</SectionLabel>
             <div className="flex flex-col gap-2 mt-2 opacity-60">
               {resolvedConns.map((conn, i) => {
-                const linkedClues = conn.clueIds.map(resolveClue).filter(Boolean)
+                const linkedClues = conn.sourceIds.map(resolveClue).filter(Boolean)
                 return (
                   <div key={`rc-${i}`} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2.5">
                     <div className="flex items-center justify-between">

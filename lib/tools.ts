@@ -741,13 +741,13 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'connect_clues',
     description:
-      'Record a confirmed connection between clues after a successful Investigation check. The revelation is the new information that the connection reveals.',
+      'Record a confirmed connection between evidence items. Can connect clues to clues (produces a lead), leads to clues (enriches a lead), or leads to leads (produces a breakthrough). The revelation is the new information revealed by connecting these items. NPCs with analytical expertise may call this directly without a player roll.',
     input_schema: {
       type: 'object' as const,
       properties: {
-        clueIds: {
+        sourceIds: {
           type: 'array',
-          description: 'IDs of the clues being connected (typically 2).',
+          description: 'IDs of the items being connected (exactly 2). Can be clue IDs or connection IDs from the NOTEBOOK in game state.',
           items: { type: 'string' },
         },
         title: {
@@ -756,15 +756,15 @@ export const gameTools: Anthropic.Tool[] = [
         },
         revelation: {
           type: 'string',
-          description: 'The new information revealed by connecting these clues.',
+          description: 'The new information revealed by connecting these items. Scale quality by combination: clue+clue opens inquiry; lead+clue confirms/sharpens; lead+lead reframes the case.',
         },
         status: {
           type: 'string',
-          enum: ['active', 'solved', 'archived'],
-          description: 'Set to "solved" when the connection\'s mystery is fully resolved, or "archived" when no longer relevant. Defaults to "active".',
+          enum: ['active', 'solved', 'archived', 'disproven'],
+          description: 'Set to "solved" when the connection\'s mystery is fully resolved, "archived" when no longer relevant, or "disproven" when invalidated by new evidence. Defaults to "active".',
         },
       },
-      required: ['clueIds', 'title', 'revelation'],
+      required: ['sourceIds', 'title', 'revelation'],
     },
   },
 ]

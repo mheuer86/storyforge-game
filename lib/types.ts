@@ -152,16 +152,25 @@ export interface Clue {
   source: string
   tags: string[]
   discoveredChapter: number
-  connected: string[]
+  connectionIds: string[]  // IDs of connections this clue participates in
   isRedHerring: boolean
   status?: 'active' | 'solved' | 'archived'  // solved = resolved/explained, archived = no longer relevant
+  /** @deprecated Use connectionIds. Kept for migration compatibility. */
+  connected?: string[]
 }
 
+export type ConnectionTier = 'lead' | 'breakthrough'
+
 export interface ClueConnection {
-  clueIds: string[]
+  id: string
+  sourceIds: string[]  // clue IDs or connection IDs
   title: string  // descriptive summary of what the connection means (e.g. "Financial Desperation")
   revelation: string
-  status?: 'active' | 'solved' | 'archived'
+  tier: ConnectionTier  // derived: clue+clue=lead, lead+lead=breakthrough, etc.
+  tainted: boolean  // true if any source has isRedHerring — hidden from player, visible to GM
+  status?: 'active' | 'solved' | 'archived' | 'disproven'
+  /** @deprecated Use sourceIds. Kept for migration compatibility. */
+  clueIds?: string[]
 }
 
 export interface Notebook {

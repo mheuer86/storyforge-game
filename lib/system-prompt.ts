@@ -938,12 +938,12 @@ function compressGameState(gs: GameState): string {
       nb.clues.map(c => {
         const tags = c.tags.join(',')
         const herring = c.isRedHerring ? ' [RED HERRING]' : ''
-        const linked = c.connected.length > 0 ? ` → ${c.connected.join(',')}` : ''
-        return `- [${c.id}] ${c.content.slice(0, 80)} (src: ${c.source}) tags:${tags}${herring}${linked}`
+        const linked = c.connectionIds.length > 0 ? ` (in ${c.connectionIds.length} connections)` : ''
+        return `- [${c.id}] ${c.title || c.content.slice(0, 60)} (src: ${c.source}) tags:${tags}${herring}${linked}`
       }).join('\n') +
       (nb.connections.length > 0
         ? `\nCONNECTIONS:\n` + nb.connections.map(conn =>
-            `${conn.clueIds.join(' + ')} = ${conn.revelation.slice(0, 80)}`
+            `[${conn.id}] ${conn.tier.toUpperCase()}: ${conn.title} — ${conn.sourceIds.join(' + ')} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
           ).join('\n')
         : '')
     : ''
