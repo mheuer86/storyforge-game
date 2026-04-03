@@ -694,19 +694,45 @@ export function applyToolResults(
     if (result.tool === 'connect_clues') {
       // Accept both sourceIds (new) and clueIds (legacy) for backwards compatibility
       const raw = result.input as Record<string, unknown>
-      const inputSourceIds = (raw.sourceIds ?? raw.clueIds) as string[]
+      const inputConnectionId = raw.connectionId as string | undefined
+      const inputSourceIds = (raw.sourceIds ?? raw.clueIds) as string[] | undefined
       const input = {
+        connectionId: inputConnectionId,
         sourceIds: inputSourceIds,
         title: raw.title as string,
-        revelation: raw.revelation as string,
+        revelation: raw.revelation as string | undefined,
         status: raw.status as 'active' | 'solved' | 'archived' | 'disproven' | undefined,
       }
       const world = { ...updated.world }
       if (world.notebook) {
         const notebook = { ...world.notebook }
 
+        // Update existing connection by ID
+        if (input.connectionId) {
+          const idx = notebook.connections.findIndex(c => c.id === input.connectionId)
+          if (idx >= 0) {
+            notebook.connections = notebook.connections.map((c, i) =>
+              i === idx ? {
+                ...c,
+                ...(input.title ? { title: input.title } : {}),
+                ...(input.revelation ? { revelation: input.revelation } : {}),
+                ...(input.status ? { status: input.status } : {}),
+                ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}),
+              } : c
+            )
+            statChanges.push({ type: 'neutral', label: `Connection updated: ${input.title || notebook.connections[idx].title}` })
+          }
+          world.notebook = notebook
+          updated = { ...updated, world }
+          continue
+        }
+
+        // New connection — sourceIds required
+        if (!input.sourceIds || input.sourceIds.length === 0) continue
+        const sourceIds = input.sourceIds
+
         // Derive tier from source types: are any sources connections (vs clues)?
-        const sourceIsConnection = input.sourceIds.map(id => notebook.connections.some(c => c.id === id))
+        const sourceIsConnection = sourceIds.map(id => notebook.connections.some(c => c.id === id))
         const hasConnectionSource = sourceIsConnection.some(Boolean)
         const allConnectionSources = sourceIsConnection.every(Boolean)
         // lead+lead or breakthrough+anything = breakthrough; otherwise lead
@@ -714,8 +740,7 @@ export function applyToolResults(
         if (allConnectionSources) {
           tier = 'breakthrough'
         } else if (hasConnectionSource) {
-          // Check if any source connection is already a breakthrough
-          const anyBreakthrough = input.sourceIds.some(id => {
+          const anyBreakthrough = sourceIds.some(id => {
             const conn = notebook.connections.find(c => c.id === id)
             return conn?.tier === 'breakthrough'
           })
@@ -723,7 +748,7 @@ export function applyToolResults(
         }
 
         // Derive tainted flag: any source clue isRedHerring, or any source connection tainted
-        const tainted = input.sourceIds.some(id => {
+        const tainted = sourceIds.some(id => {
           const clue = notebook.clues.find(c => c.id === id)
           if (clue) return clue.isRedHerring
           const conn = notebook.connections.find(c => c.id === id)
@@ -734,7 +759,7 @@ export function applyToolResults(
         const normTitle = (s: string) => s.replace(/[^a-z0-9 ]/gi, '').toLowerCase().trim()
         const existingIdx = notebook.connections.findIndex(c =>
           normTitle(c.title) === normTitle(input.title) ||
-          (input.sourceIds.length > 0 && input.sourceIds.every(id => c.sourceIds.includes(id)) && c.sourceIds.every(id => input.sourceIds.includes(id)))
+          (sourceIds.length > 0 && sourceIds.every(id => c.sourceIds.includes(id)) && c.sourceIds.every(id => sourceIds.includes(id)))
         )
 
         const connId = `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
@@ -742,16 +767,16 @@ export function applyToolResults(
         if (existingIdx >= 0) {
           // Update existing connection (preserve ID)
           notebook.connections = notebook.connections.map((c, i) =>
-            i === existingIdx ? { ...c, sourceIds: input.sourceIds, title: input.title, revelation: input.revelation, tier, tainted, ...(input.status ? { status: input.status } : {}) } : c
+            i === existingIdx ? { ...c, sourceIds, title: input.title, revelation: input.revelation ?? c.revelation, tier, tainted, ...(input.status ? { status: input.status } : {}) } : c
           )
           statChanges.push({ type: 'neutral', label: `Connection updated: ${input.title}` })
         } else {
           // New connection
           notebook.connections = [...notebook.connections, {
             id: connId,
-            sourceIds: input.sourceIds,
+            sourceIds,
             title: input.title,
-            revelation: input.revelation,
+            revelation: input.revelation ?? '',
             tier,
             tainted,
             ...(input.status ? { status: input.status } : {}),
@@ -762,7 +787,7 @@ export function applyToolResults(
         // Update connectionIds on source clues
         const finalConnId = existingIdx >= 0 ? notebook.connections[existingIdx].id : connId
         notebook.clues = notebook.clues.map(c =>
-          input.sourceIds.includes(c.id)
+          sourceIds.includes(c.id)
             ? { ...c, connectionIds: [...new Set([...c.connectionIds, finalConnId])] }
             : c
         )
