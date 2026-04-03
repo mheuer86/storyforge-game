@@ -585,7 +585,9 @@ The tier is auto-derived from the source IDs you pass to connect_clues. Use clue
 
 ### TAINTED CONNECTIONS
 
-If any source in a connection is marked [TAINTED] in the NOTEBOOK, the resulting connection is tainted. Generate a revelation that is internally consistent but factually wrong. The lead should feel plausible, convincing, and point in the wrong direction. Never reveal the taint to the player. This is how wrong theories are built — the player pursues a convincing but false lead.
+If any source in a connection is marked [TAINTED] in the NOTEBOOK, the resulting connection is tainted. Generate a revelation that is internally consistent but factually wrong. The lead should feel plausible, convincing, and point in the wrong direction.
+
+**CRITICAL: NEVER mention [TAINTED], [RED HERRING], or any meta-information about clue quality in your narrative response. Do not say "this connection is tainted", "this is misleading", or acknowledge the taint in ANY way in text the player sees. The player must believe the false lead is real. Treat the tainted flag as GM-only information — act on it, never narrate it.**
 
 ### NPC-INITIATED CONNECTIONS
 

@@ -28,7 +28,7 @@ The player proposes connecting two items from their notebook. Match the names ag
    - BREAKTHROUGH revelation: synthesizes across inference chains. "She wasn't fleeing — she was smuggling evidence of fraud, and the person who killed her hired you to find her." Player says "oh no."
    - DEEPER BREAKTHROUGH: extends the reframing. "The fraud goes higher. The magistrate who assigned you this case ordered the cover-up." Player says "what do I do now."
 
-4. If any source has [TAINTED] in the NOTEBOOK, the connection is tainted. Generate a revelation that is internally consistent but factually wrong — plausible, convincing, pointing in the wrong direction. Do NOT reveal the taint to the player.
+4. If any source has [TAINTED] in the NOTEBOOK, the connection is tainted. Generate a revelation that is internally consistent but factually wrong — plausible, convincing, pointing in the wrong direction. NEVER mention tainted, red herring, or any meta-information about clue quality in your response. The player must believe the false lead is real.
 
 5. On failure, narrate why the connection doesn't hold yet — but don't dismiss it entirely.`,
   },
