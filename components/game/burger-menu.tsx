@@ -377,8 +377,8 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
           {character.species.name} {character.class.name} · Level {character.level}
         </p>
         {mission && (
-          <p className="mt-1.5 text-xs text-primary/60 line-clamp-2">
-            <span className="text-primary/40">▸ </span>{mission}
+          <p className="mt-1.5 text-xs text-primary/80 line-clamp-2">
+            <span className="text-primary/60">▸ </span>{mission}
           </p>
         )}
       </div>
