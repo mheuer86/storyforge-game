@@ -1,4 +1,4 @@
-import type { GameState, CharacterState, WorldState } from './types'
+import type { GameState, CharacterState, WorldState, ClueConnection } from './types'
 import { getGenreConfig, genres as genreList, type Genre, type Species, type CharacterClass } from './genre-config'
 
 // Re-export types and data from genre-config so existing imports still work
@@ -207,6 +207,54 @@ export function loadGameState(): GameState | null {
         ],
         combatOptions: [],
         upgradeLog: [],
+      }
+    }
+    // Migrate notebook: add IDs to connections, rename clueIds→sourceIds, connected→connectionIds
+    if (state.world.notebook) {
+      const nb = state.world.notebook
+      let migrated = false
+      // Migrate connections: add id, sourceIds, tier, tainted
+      nb.connections = nb.connections.map((conn) => {
+        const c = conn as unknown as Record<string, unknown>
+        if (!c.id) {
+          migrated = true
+          const sourceIds = (c.sourceIds ?? c.clueIds ?? []) as string[]
+          const tainted = sourceIds.some(id => {
+            const clue = nb.clues.find(cl => cl.id === id)
+            return clue?.isRedHerring ?? false
+          })
+          return {
+            id: `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            sourceIds,
+            title: c.title as string,
+            revelation: c.revelation as string,
+            tier: 'lead' as const,
+            tainted,
+            ...(c.status ? { status: c.status as ClueConnection['status'] } : {}),
+          }
+        }
+        // Ensure sourceIds exists (may have clueIds from partial migration)
+        if (!c.sourceIds && c.clueIds) {
+          migrated = true
+          return { ...conn, sourceIds: c.clueIds as string[] }
+        }
+        return conn
+      })
+      // Migrate clues: connected→connectionIds
+      nb.clues = nb.clues.map((clue) => {
+        const c = clue as unknown as Record<string, unknown>
+        if (c.connectionIds === undefined) {
+          migrated = true
+          // Build connectionIds from connections that reference this clue
+          const connIds = nb.connections
+            .filter(conn => conn.sourceIds.includes(clue.id))
+            .map(conn => conn.id)
+          return { ...clue, connectionIds: connIds }
+        }
+        return clue
+      })
+      if (migrated) {
+        state.world.notebook = nb
       }
     }
     const cleaned = deduplicateNpcs(state)
