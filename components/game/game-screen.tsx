@@ -1302,6 +1302,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         open={isMenuOpen}
         onOpenChange={setIsMenuOpen}
         genre={(gameState.meta.genre || 'space-opera') as Genre}
+        chapterMission={gameState.chapterFrame}
         onSave={handleSave}
         onLoad={handleLoad}
         onNewGame={onNewGame}
