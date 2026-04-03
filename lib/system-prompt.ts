@@ -963,12 +963,18 @@ function compressGameState(gs: GameState): string {
         const tags = c.tags.join(',')
         const herring = c.isRedHerring ? ' [RED HERRING]' : ''
         const linked = c.connectionIds.length > 0 ? ` (in ${c.connectionIds.length} connections)` : ''
-        return `- [${c.id}] ${c.title || c.content.slice(0, 60)} (src: ${c.source}) tags:${tags}${herring}${linked}`
+        return `- "${c.title || c.content.slice(0, 60)}" (id:${c.id} src:${c.source}) tags:${tags}${herring}${linked}`
       }).join('\n') +
       (nb.connections.length > 0
-        ? `\nCONNECTIONS:\n` + nb.connections.map(conn =>
-            `[${conn.id}] ${conn.tier.toUpperCase()}: ${conn.title} — ${conn.sourceIds.join(' + ')} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
-          ).join('\n')
+        ? `\nCONNECTIONS:\n` + nb.connections.map(conn => {
+            const sourceLabels = conn.sourceIds.map(id => {
+              const clue = nb.clues.find(c => c.id === id)
+              if (clue) return `"${clue.title || clue.content.slice(0, 40)}"`
+              const c = nb.connections.find(c => c.id === id)
+              return c ? `Lead:"${c.title}"` : id
+            }).join(' + ')
+            return `${conn.tier.toUpperCase()}: "${conn.title}" (id:${conn.id}) — ${sourceLabels} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
+          }).join('\n')
         : '')
     : ''
 
