@@ -41,11 +41,13 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Handle prefill from external trigger (e.g. evidence Connect button)
-  if (prefill && inputValue !== prefill) {
-    setInputValue(prefill)
-    setShowSlashMenu(false)  // Don't show autocomplete — command is already selected
-    onPrefillConsumed?.()
-  }
+  useEffect(() => {
+    if (prefill && inputValue !== prefill) {
+      setInputValue(prefill)
+      setShowSlashMenu(false)
+      onPrefillConsumed?.()
+    }
+  }, [prefill]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter commands for autocomplete — computed before handlers that reference it
   const typed = inputValue.startsWith('/') ? inputValue.slice(1).split(' ')[0].toLowerCase() : ''
