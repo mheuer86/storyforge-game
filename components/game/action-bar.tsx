@@ -208,7 +208,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
     setShowSlashMenu(false)
   }
 
-  const isSlashMode = inputValue.startsWith('/')
+  const isSlashMode = inputValue.startsWith('/') && !pickerActive
 
   return (
     <div className="relative flex flex-col gap-3 p-4 border-t border-border/10">
