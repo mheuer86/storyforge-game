@@ -1130,34 +1130,40 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           )}
                         </div>
                       </div>
+                      {/* Item bonus toggles — inside the card */}
+                      {relevantItems.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {relevantItems.map((item) => {
+                            const active = selectedItemBonus?.name === item.name
+                            return (
+                              <div
+                                key={item.name}
+                                role="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedItemBonus(active ? null : item)
+                                }}
+                                className={cn(
+                                  'flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-mono transition-all cursor-pointer',
+                                  active
+                                    ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
+                                    : 'border-border/15 bg-secondary/5 text-foreground/40 hover:border-primary/25 hover:text-foreground/60'
+                                )}
+                              >
+                                <span>{active ? '◆' : '◇'}</span>
+                                <span>{item.name}</span>
+                                <span className={active ? 'text-emerald-400 ml-auto' : 'text-primary/60 ml-auto'}>+{item.bonus}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                       <div className="mt-3 text-center text-xs text-primary/60">
                         Tap to roll{rollPrompt.advantage ? ' 2d20' : ''}
                       </div>
                     </>
                   )}
                 </button>
-                {/* Pre-roll: relevant item toggles */}
-                {relevantItems.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {relevantItems.map((item) => (
-                      <button
-                        key={item.name}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedItemBonus(selectedItemBonus?.name === item.name ? null : item)
-                        }}
-                        className={cn(
-                          'rounded-lg border px-3 py-1.5 text-xs font-mono transition-all',
-                          selectedItemBonus?.name === item.name
-                            ? 'border-primary/50 bg-primary/15 text-primary'
-                            : 'border-border/20 bg-secondary/10 text-foreground/50 hover:border-primary/30'
-                        )}
-                      >
-                        {item.name} <span className="text-primary">+{item.bonus}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
                 </>
               ) : (() => {
                 const hasAdv = !!rollPrompt.advantage

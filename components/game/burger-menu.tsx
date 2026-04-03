@@ -427,7 +427,7 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
         </div>
       </div>
 
-      {/* Gear — name + description left, effect badges right */}
+      {/* Gear — name + tags on one line, description full-width below */}
       <div>
         <SectionLabel>Gear</SectionLabel>
         <ul className="flex flex-col gap-2.5">
@@ -435,30 +435,22 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
             <li key={`${item.name}-${i}`} className="flex items-start gap-2.5 text-sm">
               <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-foreground/70">{item.name}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-foreground/70">{item.name}</span>
+                  {item.damage && (
+                    <span className="rounded border border-primary/20 bg-primary/5 px-1.5 py-0.5 font-mono text-[10px] text-primary/70">{item.damage}</span>
+                  )}
+                  {item.effect && (
+                    <span className="rounded border border-primary/20 bg-primary/5 px-1.5 py-0.5 font-mono text-[10px] text-primary/70">{item.effect}</span>
+                  )}
+                  {item.charges != null && (
+                    <span className="rounded border border-border/20 bg-secondary/5 px-1.5 py-0.5 font-mono text-[10px] text-foreground/50">{item.charges}/{item.maxCharges}</span>
+                  )}
+                </div>
                 {item.description && (
                   <p className="text-xs text-foreground/40 leading-relaxed mt-0.5">{item.description}</p>
                 )}
               </div>
-              {(item.damage || item.effect || item.charges != null) && (
-                <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                  {item.damage && (
-                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
-                      <div className="font-mono text-xs font-semibold text-foreground/70">{item.damage}</div>
-                    </div>
-                  )}
-                  {item.effect && (
-                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
-                      <div className="font-mono text-xs font-semibold text-primary/80">{item.effect}</div>
-                    </div>
-                  )}
-                  {item.charges != null && (
-                    <div className="rounded-lg border border-border/30 bg-secondary/5 px-2 py-1 text-center min-w-[3.5rem]">
-                      <div className="font-mono text-[10px] font-semibold text-foreground/60">{item.charges}/{item.maxCharges}</div>
-                    </div>
-                  )}
-                </div>
-              )}
             </li>
           ))}
         </ul>
