@@ -264,6 +264,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
             {pickerItems.map((item, i) => (
               <button
                 key={item.id}
+                ref={i === pickerIndex ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
                 type="button"
                 onClick={() => {
                   if (!pickerFirst) {
