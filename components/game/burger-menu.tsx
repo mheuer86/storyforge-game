@@ -967,8 +967,13 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
     return null
   }
 
-  // Upward counts: how many connections reference each item
-  const upwardCount = (id: string) => notebook.connections.filter(c => c.sourceIds.includes(id)).length
+  // Upward counts: how many connections reference each item, and their highest tier
+  const upwardInfo = (id: string) => {
+    const refs = notebook.connections.filter(c => c.sourceIds.includes(id) && (!c.status || c.status === 'active'))
+    if (refs.length === 0) return null
+    const hasBreakthrough = refs.some(c => c.tier === 'breakthrough')
+    return { count: refs.length, label: hasBreakthrough ? 'breakthrough' : 'lead' }
+  }
 
   // Categorize connections by tier
   const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
@@ -1053,12 +1058,12 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
             {leads.map(conn => {
               const expanded = expandedId === conn.id
               const sources = conn.sourceIds.map(resolveSource).filter(Boolean)
-              const up = upwardCount(conn.id)
+              const up = upwardInfo(conn.id)
               return (
                 <div key={conn.id} role="button" onClick={() => toggle(conn.id)} className="cursor-pointer rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 transition-colors hover:bg-primary/10">
                   <div className="flex items-center justify-between">
                     <div className="font-medium text-foreground">{conn.title}</div>
-                    {up > 0 && <span className="font-mono text-[9px] text-destructive/70">→ {up} breakthrough{up !== 1 ? 's' : ''}</span>}
+                    {up && <span className={cn('font-mono text-[9px]', up.label === 'breakthrough' ? 'text-destructive/70' : 'text-primary/60')}>→ {up.count} {up.label}{up.count !== 1 ? 's' : ''}</span>}
                   </div>
                   {expanded && <div className="mt-1 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>}
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -1086,7 +1091,7 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
             {activeClues.map(clue => {
               const expanded = expandedId === clue.id
               const isConnected = connectedClueIds.has(clue.id)
-              const up = upwardCount(clue.id)
+              const up = upwardInfo(clue.id)
               return (
                 <div key={clue.id} role="button" onClick={() => toggle(clue.id)} className={cn(
                   'cursor-pointer rounded-lg border border-border/10 px-3 py-2 transition-colors hover:bg-secondary/10',
@@ -1098,7 +1103,7 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
                       <span className="font-medium text-foreground text-xs">{clue.title || clue.content.slice(0, 40) + '...'}</span>
                     </div>
                     <span className="font-mono text-[9px] text-foreground/40 shrink-0 ml-2">
-                      {up > 0 ? `→ ${up} lead${up !== 1 ? 's' : ''}` : `Ch.${clue.discoveredChapter}`}
+                      {up ? `→ ${up.count} ${up.label}${up.count !== 1 ? 's' : ''}` : `Ch.${clue.discoveredChapter}`}
                     </span>
                   </div>
                   {expanded && (
