@@ -242,6 +242,87 @@ This is provisional — the narrative GM will confirm or adjust it in the first 
   return [instructions, compressedState]
 }
 
+/**
+ * Build a lightweight audit prompt for state hygiene.
+ * Fires every ~5 player turns. Reads compressed state + recent messages,
+ * corrects drift silently via tool calls. Uses Haiku for cost/speed.
+ */
+export function buildAuditPrompt(gameState: GameState): [string, string] {
+  const compressedState = compressGameState(gameState)
+  const genre = (gameState.meta.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+
+  // Include recent message history so the auditor can cross-reference
+  const recentMessages = gameState.history.messages.slice(-12)
+  const messageLog = recentMessages
+    .map((m) => `[${m.role}] ${m.content.slice(0, 200)}`)
+    .join('\n')
+
+  const instructions = `You are the state auditor for a ${config.name} RPG. You are NOT the narrative GM. Your job is mechanical: verify game state accuracy and fix drift.
+
+## YOUR TASK
+
+Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepancies where the narrative described something happening but the state wasn't updated, or where state values don't match what should have occurred.
+
+## CHECKS (in order)
+
+### 1. CONSUMABLES
+- Were items used in recent messages (potions, medpatches, ammo) but charges not decremented?
+- Were items picked up or dropped but inventory not updated?
+- Fix with update_character (inventoryUse, inventoryAdd, inventoryRemove).
+
+### 2. HP & RESOURCES
+- Does HP reflect damage taken and healing received in recent messages?
+- Do ${config.currencyAbbrev} reflect transactions mentioned?
+- Fix with update_character (hpChange or hpSet, creditsChange).
+
+### 3. TEMPORARY EFFECTS
+- Are there expired temp modifiers still listed? (Check duration descriptions against scene progression.)
+- Fix with update_character (removeTempModifier).
+
+### 4. LOCATION & SCENE
+- Does the current location match where the narrative says the player is?
+- Is the scene snapshot stale (describes a scene that's clearly over)?
+- Fix with update_world (location, sceneSnapshot).
+
+### 5. NPC STATUS
+- Were any NPCs killed, captured, or departed in recent messages but still marked active?
+- Did any NPC's disposition clearly change based on recent interactions?
+- Fix with update_world (npcs) or update_disposition.
+
+### 6. TRAIT USES
+- Were class traits used but usesRemaining not decremented?
+- Fix with update_character (traitUse).
+
+### 7. PROMISES
+- Were any promises fulfilled in recent messages but still marked "open"? (Player delivered, NPC acknowledged.)
+- Were any promises clearly broken? (Player did the opposite, or deadline passed in narrative.)
+- Fix with update_world (promises — set status to "fulfilled" or "broken").
+
+### 8. THREADS
+- Did any thread clearly resolve in recent messages but is still marked "open"?
+- Did any thread worsen (deteriorating flag should be true) based on neglect or escalation?
+- Fix with update_world (threads — set status or deteriorating flag).
+
+### 9. CLOCKS
+- Should any tension clock have advanced based on recent events?
+- Fix with update_clock (advance, trigger, or resolve).
+
+## RULES
+- Be conservative. Only fix clear discrepancies, not ambiguous ones.
+- Do NOT generate any narrative text. Your only output is tool calls.
+- If everything looks correct, output nothing (no tool calls needed).
+- Do NOT call suggest_actions, request_roll, or any narrative tool.
+- Reference the specific message or event that justifies each correction.`
+
+  const dynamicBlock = `${compressedState}
+
+RECENT MESSAGES:
+${messageLog}`
+
+  return [instructions, dynamicBlock]
+}
+
 // ============================================================
 // CONTEXT DETECTION
 // ============================================================

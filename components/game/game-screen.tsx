@@ -70,6 +70,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [inspirationOffered, setInspirationOffered] = useState(false)
   const [closeInProgress, setCloseInProgress] = useState(false)
   const [actionBarPrefill, setActionBarPrefill] = useState<string | undefined>(undefined)
+  const auditInFlightRef = useRef(false)
   // chapterClosed is derived from game state, not React state — survives reload
   const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const originalRollRef = useRef<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
@@ -103,6 +104,58 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     },
     []
   )
+
+  /** Silent background audit — fires every AUDIT_INTERVAL player turns. */
+  const runAudit = useCallback(async (state: GameState) => {
+    if (auditInFlightRef.current) return
+    auditInFlightRef.current = true
+    try {
+      const response = await fetch('/api/game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: '',
+          gameState: state,
+          isMetaQuestion: false,
+          isInitial: false,
+          isAudit: true,
+        }),
+      })
+      if (!response.ok || !response.body) return
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      const statChanges: StatChange[] = []
+      let auditedState = state
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line) as StreamEvent
+            if (event.type === 'tools') {
+              const corrections = event.results.filter(
+                (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
+              )
+              if (corrections.length > 0) {
+                auditedState = applyToolResults(corrections, auditedState, statChanges, track)
+              }
+            }
+          } catch { /* skip malformed */ }
+        }
+      }
+      if (statChanges.length > 0) {
+        setGameState(auditedState)
+        saveGameState(auditedState)
+      }
+    } catch { /* audit failure is non-critical */ } finally {
+      auditInFlightRef.current = false
+    }
+  }, [])
 
   const streamRequest = useCallback(async (
     body: Record<string, unknown>,
@@ -349,6 +402,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setRetryContext(null)
           isLoadingRef.current = false
           setIsLoading(false)
+          // Trigger background audit every 5 player turns (non-blocking)
+          const AUDIT_INTERVAL = 5
+          if (!isInitial && !isMetaQuestion) {
+            const playerTurns = finalState.history.messages.filter(m => m.role === 'player').length
+            if (playerTurns > 0 && playerTurns % AUDIT_INTERVAL === 0) {
+              runAudit(finalState)
+            }
+          }
         },
         (msg) => {
           const is504 = msg.includes('504')
@@ -366,7 +427,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         },
       )
     },
-    [streamRequest]
+    [streamRequest, runAudit]
   )
 
   const handleRetry = useCallback(() => {
