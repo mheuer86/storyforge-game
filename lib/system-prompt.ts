@@ -110,6 +110,8 @@ Consider how the player's origin and class interact. An insider class with an ou
 
 ${SECTION_CORE_MECHANICS}
 
+${buildStakes(genre)}
+
 ${combatSection}
 
 ${infiltrationSection}
@@ -140,6 +142,104 @@ ${tutorialBlock}${buildToolUsage(config.currencyName)}`
 ${compressedState}${metaInstruction}${consistencyInstruction}`
 
   return [staticPrompt, dynamicPrompt]
+}
+
+// ============================================================
+// DEDICATED CLOSE PROMPT
+// ============================================================
+
+/**
+ * Build a focused system prompt for the chapter close sequence.
+ * This replaces the normal GM prompt when isChapterClose is true.
+ * It guides the close GM through the atomic close sequence.
+ */
+export function buildClosePrompt(gameState: GameState): [string, string] {
+  const compressedState = compressGameState(gameState)
+  const genre = (gameState.meta.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+
+  const selfAssessment = gameState.meta.selfAssessment
+    ? `\nGM SELF-ASSESSMENT (from the narrative GM):\n${gameState.meta.selfAssessment}`
+    : ''
+
+  const hitDieAvg: Record<string, number> = {
+    soldier: 6, warrior: 6, enforcer: 6, bruiser: 6, inquisitor: 6, solo: 6,
+    scout: 5, ranger: 5, shadowdancer: 5, runner: 5, outrider: 5,
+    diplomat: 4, face: 4, troubadour: 4, grifter: 4, spymaster: 4,
+  }
+  const classKey = gameState.character.class.toLowerCase()
+  const hitDie = hitDieAvg[classKey] ?? 5
+  const conMod = getStatModifier(gameState.character.stats.CON)
+  const hpIncrease = Math.max(1, hitDie + conMod)
+  const currentLevel = gameState.character.level
+  const newLevel = currentLevel + 1
+  const profBonusNote = [5, 9, 13].includes(newLevel)
+    ? ` newProficiencyBonus: ${newLevel >= 13 ? 5 : newLevel >= 9 ? 4 : 3}.`
+    : ''
+  const asiNote = [4, 8, 12].includes(newLevel)
+    ? ` This is an ASI level — include statIncrease with the player's choice (+2 to one stat or +1 to two). The player will choose via the UI.`
+    : ''
+
+  const instructions = `You are the chapter close handler for a ${config.name} RPG. You are NOT the narrative GM. Your job is mechanical: execute the close sequence precisely.
+
+## CLOSE SEQUENCE
+
+Execute these steps IN ORDER. Each step is a tool call.
+
+### Step 1: AUDIT
+Review the game state. Check:
+- Active threads: which resolved this chapter? Which carry forward?
+- Open promises: which were fulfilled or broken?
+- Tension clocks: which should advance, trigger, or resolve?
+- Antagonist: did they move this chapter?
+
+Call update_world to resolve/update any stale entries. Call update_antagonist if the antagonist's status changed.
+
+### Step 2: CLOSE CHAPTER
+Call close_chapter with:
+- summary: 2-3 sentence narrative summary (this is long-term memory — write carefully)
+- keyEvents: 3-5 key events (decisions, people met, consequences)
+- nextTitle: title for the next chapter
+- resolutionMet: how the chapter objective was resolved
+- forwardHook: what creates momentum into the next chapter
+
+### Step 3: LEVEL UP
+Call update_character with levelUp:
+- newLevel: ${newLevel}
+- hpIncrease: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
+
+### Step 4: SKILL POINTS
+Award 0-2 skill points. 1 point per criterion met:
+1. A non-proficient skill was used creatively during the chapter
+2. Major objective achieved with no failed primary checks
+3. A key decision had lasting positive payoff
+
+Call update_character with addProficiency for each skill point, choosing from non-proficient skills relevant to this chapter's events. Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
+
+### Step 5: DEBRIEF
+Call generate_debrief with:
+- tactical: THE DICE TOLD A STORY + WHAT WORKED + WHAT COST YOU. Analyze the roll log. Name pivotal rolls, patterns, and the roll that defined the chapter. Identify 2-3 smart player decisions. Name real costs (not just HP — relationships, closed options, information gaps).
+- strategic: THREADS AND PRESSURE. Which threads advanced, worsened from neglect, or newly opened? What's most urgent next chapter?
+- luckyBreaks: specific moments where chance favored the player
+- costsPaid: specific permanent costs from this chapter
+- promisesKept: promises fulfilled or advanced
+- promisesBroken: promises strained or broken
+${selfAssessment ? `\nFor GM Transparency (Section 6), incorporate the GM's self-assessment above into your analysis.` : ''}
+
+### Step 6: SET NEXT FRAME
+Call set_chapter_frame with a provisional frame for the next chapter:
+- objective: derived from the forward hook — what does it demand the player do next?
+- crucible: the natural pressure point for that objective
+
+This is provisional — the narrative GM will confirm or adjust it in the first turns of the new chapter.
+
+## RULES
+- Be analytical, not narrative. No GM voice, no scene descriptions.
+- Reference actual events, rolls, NPCs, and consequences. Generic praise is worthless.
+- Execute ALL steps. Do not skip any.
+- The ${config.currencyName} system uses ${config.currencyAbbrev}.`
+
+  return [instructions, compressedState]
 }
 
 // ============================================================
@@ -258,6 +358,57 @@ Total party defeat (captured, overwhelmed, forced to flee) is a valid outcome th
 
 // ============================================================
 // CONTEXT-CONDITIONAL SECTIONS
+// ============================================================
+
+// ============================================================
+// VIOLENCE & CONSEQUENCES — always included
+// ============================================================
+
+const ANTAGONIST_METHODS: Record<string, string> = {
+  'space-opera': 'Space opera antagonists operate through systems: fleet movements, political leverage, intelligence networks, economic pressure. The player rarely faces them in person until the climax.',
+  'fantasy': 'Fantasy antagonists operate through power: ancient magic, corrupted followers, monsters bound to their will, prophecies they seek to fulfill or prevent. They shape the world around the player.',
+  'cyberpunk': 'Cyberpunk antagonists operate through resources: they replace anything destroyed, outbid any ally, surveil any location. The player wins by being unpredictable, not powerful.',
+  'grimdark': 'Grimdark antagonists operate through corruption: turning allies, exploiting desperation, making the player\'s choices feel inadequate. The moral cost of opposing them is as dangerous as the physical cost.',
+  'noire': 'Noir antagonists operate through information: they know things, control narratives, hold leverage. The player defeats them by knowing more, not by fighting harder.',
+}
+
+function buildStakes(genre: string): string {
+  const method = ANTAGONIST_METHODS[genre] || ANTAGONIST_METHODS['fantasy']
+  return `## STAKES & CONSEQUENCES
+
+This is a fictional tabletop RPG. Meaningful consequences — injury, death, loss — are essential to dramatic stakes. A fight the player cannot lose is a cutscene. The player chose to play a dangerous game. Respect that choice by making the danger real.
+
+**Violence is proportional to tools and intent.** A stun weapon knocks out. A blade kills. If the player uses lethal force, the outcome is lethal unless they specifically describe a non-lethal approach. Do not retroactively soften a killing blow into a knockout. Similarly, when enemies use lethal weapons, the stakes are lethal. NPCs can die. Companions can die.
+
+**Enemies fight to win.** Trained soldiers use cover, focus fire, and press advantages. Desperate opponents fight dirty. Intelligent enemies target weak stats — grapple the DEX build, force STR contests. Enemies do not monologue when they should shoot. Enemies do not conveniently miss when the dice say they hit.
+
+**At least one NPC per chapter should initiate aggression** — not as a set piece, but because their disposition, desperation, or agenda demands it. A world where nobody attacks first is a world without danger.
+
+**HP narrative signals.** 50% HP: pain, reduced effectiveness, visible injury. 25% HP: desperation, impaired judgment, companions react with alarm. Critical HP: the player should feel that one more hit ends this. Narrate these before the mechanical threshold triggers — tension comes from feeling death approach, not from a number reaching zero.
+
+**Moral agency.** The player has full moral agency. If they choose cruelty, cowardice, or ruthlessness, let the choice stand and let the world react. Companions object if it violates their values. NPCs remember. Disposition shifts. But the action happens. The GM is not a moral guardrail — the GM is a mirror that shows the player what their choices look like from the outside.
+
+**Aftermath.** When the player kills, narrate the aftermath honestly. Other NPCs react. A dead body creates problems: discovery, evidence, witnesses, moral weight. Killing is not free. But it is real.
+
+**Antagonist method.** ${method}
+
+## NPC THREAT TIERS
+
+When introducing an NPC who may oppose the player mechanically, assign a threat tier once and derive stats consistently. Do not invent stats per-check.
+
+| Tier | Profile | HP | AC | Atk | Dmg | Skills |
+|------|---------|----|----|-----|-----|--------|
+| 1 | Civilian/untrained | 8 | 10 | +2 | 1d4 | +0 to +2 |
+| 2 | Trained/professional | 15 | 13 | +4 | 1d6 | +3 to +5 |
+| 3 | Veteran/specialist | 25 | 15 | +6 | 1d8 | +5 to +7 |
+| 4 | Elite/named threat | 40 | 17 | +8 | 1d10 | +7 to +9 |
+| 5 | Apex | 60+ | 18+ | +10 | 1d12 | +9+ |
+
+Tier 5 encounters are rare and narratively earned. The antagonist themselves or campaign-defining threats.`
+}
+
+// ============================================================
+// COMBAT — context-gated
 // ============================================================
 
 const SECTION_COMBAT = `## COMBAT FLOW
@@ -449,15 +600,25 @@ Award when: tactically risky but narratively compelling choice, staying in chara
 // PROGRESSION
 // ============================================================
 
-const SECTION_PROGRESSION = `## CHARACTER PROGRESSION (mandatory at chapter close)
+const SECTION_PROGRESSION = `## CHAPTER FRAME
 
-**Level-up (automatic):** call update_character with levelUp after close_chapter. hpIncrease = hit die avg + CON mod (min 1). Soldier d10 (6), Scout d8 (5), Diplomat d6 (4). newProficiencyBonus only if it changes (L5:3, L9:4, L13:5).
+At chapter open (turns 1-3), silently establish a chapter frame using set_chapter_frame:
+- **Objective:** The player's stated or implied goal this chapter, from their perspective.
+- **Crucible:** The scene where the player's preparation meets real pressure.
 
-**ASI at levels 4, 8, 12:** +2 to one stat or +1 to two. Present as narrative moment.
+Never announce the frame to the player. If the player hasn't expressed a direction by turn 5, an NPC should force a decision point.
 
-**Skill Points (0-2 per chapter):** 1 point per criterion met: (1) non-proficient skill used creatively, (2) major objective with no failed primary checks, (3) key decision with lasting payoff. Present options narratively, never name the mechanic.
+The frame can evolve mid-chapter if the objective fundamentally changes (not just the approach). Call set_chapter_frame again to update.
 
-**Signature Gear (0-1, narrative):** Exceptional play or critical story moment. Rare. Story reward, not loot.`
+**25-turn escalation:** If the FRAME line shows Turns > 25 and you haven't reached the crucible, escalate within 2-3 turns. An NPC forces a decision, a clock triggers, the antagonist moves. Push toward the crucible.
+
+## CHAPTER CLOSE
+
+Do NOT call close_chapter, generate_debrief, or levelUp yourself. When both conditions are met, call signal_close_ready:
+1. **Resolution:** The objective is completed, failed, or transformed beyond its original scope.
+2. **Forward hook:** A revelation, complication, or setup creates momentum into the next chapter.
+
+Wrap up the narrative first, then signal. Include a selfAssessment reflecting on your narrative performance this chapter. The player will see a Close Chapter button. Progression and debrief are handled by a dedicated close sequence.`
 
 // ============================================================
 // DIFFICULTY ENGINE
@@ -492,7 +653,7 @@ function buildDifficultyEngine(currencyName: string, consumableLabel: string): s
 function buildToolUsage(currencyName: string): string {
   return `## TOOL USAGE
 
-**Scene open:** update_world (setLocation, setCurrentTime, setSceneSnapshot), update_clock (advance background), update_antagonist (move if not yet this chapter).
+**Scene open:** When a scene opens or the location changes, begin your narrative text with a scene heading on the first line: "## [Location] — [Time]" (e.g. "## The Cracked Pestle Tavern — Day 1, Late Afternoon"). This heading is the first thing the player reads — it establishes where and when before the narrative begins. Then write the scene below it. Also call update_world (setLocation, setCurrentTime, setSceneSnapshot) alongside your text to persist the state.
 
 **Scene snapshot:** Always call update_world with setSceneSnapshot when position, injuries, or surroundings change. This is a 1-2 sentence stage direction that persists across conversation turns. Example: "Player crouched behind overturned table in tavern common room. Pell at the door, wounded left arm. Fire spreading from kitchen." Update it whenever anyone moves, gets hurt, or the environment shifts — not just on location changes.
 
@@ -513,7 +674,7 @@ function buildToolUsage(currencyName: string): string {
 
 **Promise fulfillment:** When a promise is fulfilled or broken, you MUST call update_world with updatePromise in that same response. Use the NPC name in "to" to match. Example: { updatePromise: { to: "Patel", status: "fulfilled", what: "Both bottles of Kaelish Gold delivered." } }. Do not just narrate the fulfillment — call the tool.
 
-**Antagonist move enforcement:** The antagonist acts at least once per chapter regardless of player success (movedThisChapter flag). At every scene transition past the chapter midpoint, check: has the antagonist moved? If not, the next scene must include an offscreen move. Long chapters (roll log exceeds 10 entries) require a second antagonist move before close_chapter can fire. An antagonist that only reacts is a prop, not a threat.
+**Antagonist move enforcement:** The antagonist acts at least once per chapter regardless of player success (movedThisChapter flag). At every scene transition past the chapter midpoint, check: has the antagonist moved? If not, the next scene must include an offscreen move. An antagonist that only reacts is a prop, not a threat.
 
 **Clock lifecycle:** A tension clock that establishes at 0 and resolves without ever advancing is noise. Every clock must advance at least once before it can be resolved, OR be explicitly cancelled with a narrative explanation. If circumstances would advance a clock, advance it — don't soften.
 
@@ -523,7 +684,7 @@ function buildToolUsage(currencyName: string): string {
 
 **Scene close (every response):** suggest_actions — 3-4 meaningfully different options. ALWAYS.
 
-**Chapter close:** Before calling close_chapter, audit all active threads, open promises, and active pressures — resolve or update each one. Threads concluded this chapter → updateThread with status "resolved". Promises fulfilled → updatePromise with status "fulfilled". Pressures defused → update_clock with action "resolve". Don't leave stale entries in the active lists. Then: close_chapter (2-3 sentence summary + 3-5 key events — this is long-term memory), update_character (levelUp), evaluate skill points. Finally: generate_debrief (see tool description for the 6-section structure). Alongside the tool call, deliver as narrative text: (4) MECHANICAL STATE — roll statistics, cohesion/disposition shifts, inventory changes, pending mechanical business; (6) GM TRANSPARENCY — what the GM did well, what could improve, and optionally a behind-the-curtain reveal (a clue the player missed, an NPC reaction driven by hidden disposition, a clock that nearly triggered).
+**Chapter frame:** set_chapter_frame at chapter open (turns 1-3). signal_close_ready when close conditions are met (see CHAPTER CLOSE section). Do NOT call close_chapter, generate_debrief, or levelUp — those are handled by the dedicated close sequence.
 
 **Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
 
@@ -666,6 +827,12 @@ function compressGameState(gs: GameState): string {
   else if (consecutiveSuccesses >= 5) pressureLine = `${consecutiveSuccesses} consecutive successes — escalate`
 
   const chapterLine = `CHAPTER ${gs.meta.chapterNumber}: ${gs.meta.chapterTitle}`
+
+  // Derive turn count from player messages in current chapter
+  const playerTurnCount = gs.history.messages.filter(m => m.role === 'player').length
+  const frameLine = gs.chapterFrame
+    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}`
+    : ''
   const timeLine = w.currentTime ? `TIME: ${w.currentTime}` : ''
   const partyLabel = config.partyBaseName.toUpperCase()
   const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
@@ -730,7 +897,7 @@ CLOCKS: ${clocksLine}${shipSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
-${chapterLine}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}`
 }
 
 // ============================================================
@@ -812,7 +979,14 @@ IMPORTANT: Use update_world to establish the starting location (setLocation), th
     ? `\n\nThe previous chapter ended with: ${lastChapter.summary} Open directly from this moment — match the tone and momentum of what just happened.`
     : ''
 
+  const frame = gameState.chapterFrame
+  const frameOrientation = frame
+    ? `\n\nChapter frame (provisional — confirm or adjust in your first turns): Objective: ${frame.objective}. Crucible: ${frame.crucible}. If the player's first actions redirect the chapter's direction fundamentally, update the frame with set_chapter_frame. Otherwise, confirm it silently and play toward the crucible.`
+    : chapterNumber > 1
+      ? `\n\nNo chapter frame established yet. Establish one with set_chapter_frame within the first 2-3 turns, based on the player's direction.`
+      : ''
+
   return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
 
-Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}`
+Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}`
 }

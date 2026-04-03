@@ -17,7 +17,7 @@ interface ChatMessageProps {
   onRetry?: () => void
 }
 
-function renderMarkdown(text: string) {
+export function renderMarkdown(text: string) {
   // Fix missing spaces after sentence-ending punctuation (e.g. "you.Not" → "you. Not", 'heads."Sera' → 'heads." Sera')
   // Also fix horizontal rules glued to text (e.g. "one.---" → "one.\n---", "---Tactical" → "---\nTactical")
   const normalized = text.replace(/([.!?]["']?)([A-Z])/g, '$1 $2').replace(/([^\n])---/g, '$1\n---').replace(/---([^\n])/g, '---\n$1')
@@ -29,9 +29,16 @@ function renderMarkdown(text: string) {
     if (line.trim() === '---') {
       return <hr key={i} className="my-3 border-t border-border/20" />
     }
-    // ## heading
+    // ## heading — if Claude merges heading with narrative (no newline), split them apart
     if (line.startsWith('## ')) {
-      return <span key={i} className="block mt-3 mb-1 font-mono text-xs font-semibold uppercase tracking-widest text-primary/70">{line.slice(3)}{addBreak && <br />}</span>
+      const headingRaw = line.slice(3)
+      // Detect merged content: look for a sentence start after time-like patterns (e.g. "AfternoonThe" or "0200You")
+      const splitMatch = headingRaw.match(/^(.+?(?:Morning|Afternoon|Evening|Night|Dawn|Dusk|Midnight|Hours|\d{4}|\d{1,2}:\d{2}))\s*(.+)$/i)
+      if (splitMatch && splitMatch[2] && splitMatch[2].length > 10) {
+        // Heading + narrative were merged — render heading, then narrative as normal text
+        return <span key={i}><span className="block mt-3 mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-primary/70">{splitMatch[1]}</span><span>{splitMatch[2]}{addBreak && <br />}</span></span>
+      }
+      return <span key={i} className="block mt-3 mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-primary/70">{headingRaw}</span>
     }
     // # heading
     if (line.startsWith('# ')) {
@@ -107,9 +114,9 @@ export function ChatMessage({ message, statChanges, onFlag, onRetry }: ChatMessa
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="max-w-[85%] border-l border-primary/15 bg-card/30 rounded-r-lg pl-4 pr-4 py-4">
-          <p className="leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>
+          <div className="leading-relaxed text-narrative" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>
             {renderMarkdown(message.content)}
-          </p>
+          </div>
           {statChanges && statChanges.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {statChanges.map((change, i) => (
@@ -163,7 +170,7 @@ export function ChatMessage({ message, statChanges, onFlag, onRetry }: ChatMessa
     return (
       <div className="flex items-start gap-2.5 max-w-[80%]">
         <div className="mt-2 w-1.5 h-1.5 rounded-full bg-info shrink-0" />
-        <p className="text-meta leading-relaxed" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{renderMarkdown(message.content)}</p>
+        <div className="text-meta leading-relaxed" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{renderMarkdown(message.content)}</div>
       </div>
     )
   }

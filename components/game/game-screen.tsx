@@ -6,6 +6,7 @@ import { ChatMessage } from './chat-message'
 import { RollBadge } from './roll-badge'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
+import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overlay'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils'
 
 interface DisplayMessage {
   id: string
-  type: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll' | 'scene-break'
+  type: 'gm' | 'player' | 'meta-question' | 'meta-response' | 'roll' | 'scene-break' | 'chapter-header'
   content: string
   isError?: boolean
   statChanges?: StatChange[]
@@ -66,6 +67,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [rawRolls, setRawRolls] = useState<[number, number] | null>(null)
   const [selectedItemBonus, setSelectedItemBonus] = useState<{ name: string; bonus: number } | null>(null)
   const [inspirationOffered, setInspirationOffered] = useState(false)
+  const [closeInProgress, setCloseInProgress] = useState(false)
+  // chapterClosed is derived from game state, not React state — survives reload
   const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const originalRollRef = useRef<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const lastMessageRef = useRef<HTMLDivElement>(null)
@@ -73,12 +76,19 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const hasStarted = useRef(false)
   const isLoadingRef = useRef(false)
 
+  const prevLastMsgIdRef = useRef<string | null>(null)
   useEffect(() => {
     const prev = prevMessageCountRef.current
     const curr = messages.length
     if (curr === prev) return
     prevMessageCountRef.current = curr
     if (curr === 0) return
+    const lastMsg = messages[messages.length - 1]
+    const lastId = lastMsg?.id ?? null
+    // Only scroll when the LAST message changes (new message added at end).
+    // Scene breaks inserted mid-array change length but not the last message.
+    if (lastId === prevLastMsgIdRef.current && prev > 0) return
+    prevLastMsgIdRef.current = lastId
     // Initial load: scroll to end so history shows bottom; new messages: anchor to top
     const block: ScrollLogicalPosition = prev <= 0 ? 'end' : 'start'
     const behavior: ScrollBehavior = prev === -1 ? 'instant' : 'smooth'
@@ -167,12 +177,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               const metaTool = event.results.find((r) => r.tool === 'meta_response')
               if (metaTool) {
                 const metaContent = (metaTool.input as { content: string }).content
+                // Only use tool content as fallback — if Claude streamed text, that's the real answer.
+                // The tool often carries a brief summary while the full response is in the stream.
+                if (!gmText.trim()) {
+                  gmText = metaContent
+                }
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === gmMsgId ? { ...m, type: 'meta-response', content: metaContent } : m
+                    m.id === gmMsgId ? { ...m, type: 'meta-response', content: gmText } : m
                   )
                 )
-                gmText = metaContent
               }
 
               const otherResults = event.results.filter(
@@ -183,12 +197,19 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 // Insert scene break headers if any location changes occurred
                 const breaks = (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
                 if (breaks && breaks.length > 0) {
-                  // Prepend scene break as a header on the current GM message (avoids late pop-in)
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === gmMsgId ? { ...m, sceneBreak: breaks[breaks.length - 1] } : m
-                    )
-                  )
+                  // Insert as a standalone message right before the GM message
+                  const breakMsg: DisplayMessage = {
+                    id: crypto.randomUUID(),
+                    type: 'scene-break',
+                    content: breaks[breaks.length - 1],
+                  }
+                  setMessages((prev) => {
+                    const gmIdx = prev.findIndex((m) => m.id === gmMsgId)
+                    if (gmIdx === -1) return [...prev, breakMsg]
+                    const updated = [...prev]
+                    updated.splice(gmIdx, 0, breakMsg)
+                      return updated
+                  })
                   delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
                 }
               }
@@ -576,6 +597,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setQuickActionsRaw(state.history.messages.length > 0 ? loadQuickActions() : [])
 
     if (state.history.messages.length === 0) {
+      // Show chapter header before first GM message
+      const headerMsg: DisplayMessage = {
+        id: crypto.randomUUID(),
+        type: 'chapter-header',
+        content: `Chapter ${state.meta.chapterNumber}: ${state.meta.chapterTitle}`,
+      }
+      setMessages([headerMsg])
       sendToGM('', state, false, true)
     }
   }, [sendToGM, initialGameState])
@@ -793,10 +821,132 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const handleCustomAction = useCallback(
     (action: string, isMetaQuestion: boolean) => {
       if (!gameState || isLoadingRef.current) return
+      // closeReady stays on game state — the button reappears after the GM responds.
+      // The player typing means "one more thing before I close", not "cancel the close".
       sendToGM(action, gameState, isMetaQuestion, false)
     },
     [gameState, sendToGM]
   )
+
+  const handleDismissClose = useCallback(() => {
+    if (!gameState) return
+    const dismissedState = {
+      ...gameState,
+      meta: { ...gameState.meta, closeReady: false, closeReason: undefined },
+    }
+    setGameState(dismissedState)
+    saveGameState(dismissedState)
+  }, [gameState])
+
+  const handleCloseChapter = useCallback(async () => {
+    if (!gameState || isLoadingRef.current) return
+    isLoadingRef.current = true
+    setIsLoading(true)
+    setLastStatChanges([])
+
+    setCloseInProgress(true)
+    const preCloseState = gameState
+    const gmMsgId = crypto.randomUUID()
+    // Don't add a message — the overlay replaces the text stream.
+    // streamRequest will try to update a message with this ID but find nothing, which is fine.
+
+    await streamRequest(
+      {
+        message: '',
+        gameState,
+        isMetaQuestion: false,
+        isInitial: false,
+        isChapterClose: true,
+      },
+      gmMsgId,
+      true,
+      gameState,
+      () => { /* no roll prompt expected */ },
+      (finalState, statChanges) => {
+        // Build close data from pre/post state comparison
+        const completedChapter = finalState.history.chapters.find(
+          ch => ch.number === preCloseState.meta.chapterNumber && ch.status === 'complete'
+        )
+        const newProfs = finalState.character.proficiencies.filter(
+          p => !preCloseState.character.proficiencies.includes(p)
+        )
+        const closeData: import('@/lib/types').CloseData = {
+          completedChapterNumber: preCloseState.meta.chapterNumber,
+          completedChapterTitle: preCloseState.meta.chapterTitle,
+          nextChapterTitle: finalState.meta.chapterTitle,
+          resolutionMet: '',  // not easily extracted from state diff, but visible in debrief
+          forwardHook: '',
+          levelUp: {
+            oldLevel: preCloseState.character.level,
+            newLevel: finalState.character.level,
+            hpIncrease: finalState.character.hp.max - preCloseState.character.hp.max,
+            oldHpMax: preCloseState.character.hp.max,
+            newHpMax: finalState.character.hp.max,
+            newProficiencyBonus: finalState.character.proficiencyBonus !== preCloseState.character.proficiencyBonus
+              ? finalState.character.proficiencyBonus : undefined,
+          },
+          skillPointsAwarded: newProfs,
+          debrief: completedChapter?.debrief ?? null,
+          nextFrame: finalState.chapterFrame,
+        }
+        const closedState = {
+          ...finalState,
+          meta: { ...finalState.meta, chapterClosed: true, closeData },
+        }
+        setGameState(closedState)
+        saveGameState(closedState)
+        setLastStatChanges(statChanges)
+        setCloseInProgress(false)
+        isLoadingRef.current = false
+        setIsLoading(false)
+      },
+      () => {
+        setCloseInProgress(false)
+        isLoadingRef.current = false
+        setIsLoading(false)
+      },
+    )
+  }, [gameState, streamRequest])
+
+  const handleStartNextChapter = useCallback(() => {
+    if (!gameState) return
+    // Archive current messages to the most recently completed chapter
+    const completedChapters = gameState.history.chapters.filter(ch => ch.status === 'complete')
+    const lastCompleted = completedChapters[completedChapters.length - 1]
+    if (lastCompleted) {
+      const archivedChapters = gameState.history.chapters.map(ch =>
+        ch.number === lastCompleted.number
+          ? { ...ch, messages: gameState.history.messages.map(m => ({ ...m })) }
+          : ch
+      )
+      const newState: GameState = {
+        ...gameState,
+        meta: { ...gameState.meta, chapterClosed: false, closeData: undefined },
+        history: {
+          ...gameState.history,
+          chapters: archivedChapters,
+          messages: [],
+          rollLog: [],
+        },
+      }
+      setGameState(newState)
+      saveGameState(newState)
+
+      // Clear chat and show chapter header
+      const subtitle = newState.chapterFrame?.objective
+      const headerMsg: DisplayMessage = {
+        id: crypto.randomUUID(),
+        type: 'chapter-header',
+        content: `Chapter ${newState.meta.chapterNumber}: ${newState.meta.chapterTitle}`,
+        sceneBreak: subtitle, // reuse sceneBreak field for the objective subtitle
+      }
+      setMessages([headerMsg])
+      setQuickActions([])
+
+      // Send initial message for the new chapter
+      sendToGM('', newState, false, true)
+    }
+  }, [gameState, sendToGM, setQuickActions])
 
   if (!gameState) {
     return (
@@ -821,6 +971,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             <div className="flex flex-col gap-6">
               {messages.map((message, index) => {
                 const isLast = index === messages.length - 1
+                if (message.type === 'chapter-header') {
+                  return (
+                    <div key={message.id} ref={isLast ? lastMessageRef : undefined} className="flex flex-col items-center gap-2 py-6">
+                      <div className="h-px w-16 bg-primary/20" />
+                      <h2 className="text-center font-heading text-lg font-medium italic text-primary/80" style={{ fontFamily: 'var(--font-narrative)' }}>
+                        {message.content}
+                      </h2>
+                      {message.sceneBreak && (
+                        <p className="text-center text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70 max-w-[80%]">
+                          {message.sceneBreak}
+                        </p>
+                      )}
+                      <div className="h-px w-16 bg-primary/20" />
+                    </div>
+                  )
+                }
                 if (message.type === 'scene-break') {
                   return (
                     <div key={message.id} ref={isLast ? lastMessageRef : undefined} className="flex items-center gap-3 py-2">
@@ -1124,6 +1290,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             onActionSelect={handleActionSelect}
             onCustomAction={handleCustomAction}
             disabled={isLoading}
+            closeReady={!!gameState.meta.closeReady}
+            closeReason={gameState.meta.closeReason}
+            onCloseChapter={handleCloseChapter}
+            onDismissClose={handleDismissClose}
           />
         </div>
       </main>
@@ -1195,6 +1365,20 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           debrief: c.debrief ?? null,
         }))}
       />
+
+      {/* Chapter Close Loading */}
+      {closeInProgress && (
+        <ChapterCloseLoading chapterTitle={gameState.meta.chapterTitle} />
+      )}
+
+      {/* Chapter Close Overlay */}
+      {!closeInProgress && gameState.meta.chapterClosed && gameState.meta.closeData && (
+        <ChapterCloseOverlay
+          closeData={gameState.meta.closeData}
+          characterName={gameState.character.name}
+          onStartNextChapter={handleStartNextChapter}
+        />
+      )}
     </div>
   )
 }

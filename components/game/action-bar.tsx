@@ -9,9 +9,13 @@ interface ActionBarProps {
   onActionSelect: (action: string) => void
   onCustomAction: (action: string, isMetaQuestion: boolean) => void
   disabled?: boolean
+  closeReady?: boolean
+  closeReason?: string
+  onCloseChapter?: () => void
+  onDismissClose?: () => void
 }
 
-export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabled = false }: ActionBarProps) {
+export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabled = false, closeReady, closeReason, onCloseChapter }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
 
@@ -25,8 +29,24 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, disabl
 
   return (
     <div className="flex flex-col gap-3 p-4 border-t border-border/10">
-      {/* Quick Actions */}
-      {quickActions.length > 0 && (
+      {/* Close Chapter Button */}
+      {closeReady && onCloseChapter && (
+        <div className="flex flex-col gap-2">
+          {closeReason && (
+            <p className="text-[11px] text-muted-foreground/60 px-1 leading-relaxed">{closeReason}</p>
+          )}
+          <button
+            onClick={onCloseChapter}
+            disabled={disabled}
+            className="rounded-lg bg-primary/10 border border-primary/30 px-4 py-3 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {disabled ? 'Closing chapter...' : 'Close Chapter'}
+          </button>
+        </div>
+      )}
+
+      {/* Quick Actions — hidden when close is ready */}
+      {quickActions.length > 0 && !closeReady && (
         <div className="flex flex-col gap-2">
           {quickActions.map((action, index) => (
             <button
