@@ -92,6 +92,7 @@ interface BurgerMenuProps {
   onSave: (slot: 1 | 2 | 3) => void
   onLoad: (state: GameState) => void
   onNewGame?: () => void
+  onConnectEvidence?: () => void
 }
 
 function timeAgo(iso: string): string {
@@ -117,6 +118,7 @@ export function BurgerMenu({
   onSave,
   onLoad,
   onNewGame,
+  onConnectEvidence,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null)
@@ -213,7 +215,7 @@ export function BurgerMenu({
               {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
                 <TabsContent value="notebook" className="mt-0 p-4">
                   {world.notebook && world.notebook.clues.length > 0 ? (
-                    <NotebookPanel notebook={world.notebook} notebookLabel={genreConfig.notebookLabel} />
+                    <NotebookPanel notebook={world.notebook} notebookLabel={genreConfig.notebookLabel} onConnect={onConnectEvidence} />
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                       <h2 className="font-heading text-lg font-semibold text-foreground/50">{genreConfig.notebookLabel}</h2>
@@ -367,7 +369,7 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
   return (
     <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
-      <div>
+      <div className="min-w-0 overflow-hidden">
         <h2 className="font-heading text-lg font-semibold text-foreground">
           {character.name}
         </h2>
@@ -375,7 +377,7 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
           {character.species.name} {character.class.name} · Level {character.level}
         </p>
         {mission && (
-          <p className="mt-1.5 text-xs text-primary/60 leading-snug">
+          <p className="mt-1.5 text-xs text-primary/60 line-clamp-2">
             <span className="text-primary/40">▸ </span>{mission}
           </p>
         )}
@@ -938,7 +940,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
   )
 }
 
-function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebookLabel: string }) {
+function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Notebook; notebookLabel: string; onConnect?: () => void }) {
   const visibleClues = notebook.clues.filter(c => !c.isRedHerring || c.connected.length > 0)
 
   // Resolve clue IDs — exact match first, then slug-to-title fallback (GM sometimes uses slugs instead of auto-IDs)
@@ -971,9 +973,19 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
         <h2 className="font-heading text-lg font-semibold text-foreground">
           {notebook.activeThreadTitle || notebookLabel}
         </h2>
-        <div className="mt-1 text-xs text-muted-foreground">
-          {notebook.connections.length > 0 && `${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'} · `}
-          {notebook.clues.length} {notebook.clues.length === 1 ? 'clue' : 'clues'} discovered
+        <div className="mt-1 flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">
+            {notebook.connections.length > 0 && `${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'} · `}
+            {notebook.clues.length} {notebook.clues.length === 1 ? 'clue' : 'clues'} discovered
+          </span>
+          {onConnect && notebook.clues.length >= 2 && (
+            <button
+              onClick={onConnect}
+              className="text-[10px] font-medium uppercase tracking-wider text-primary/60 hover:text-primary transition-colors"
+            >
+              Connect evidence
+            </button>
+          )}
         </div>
       </div>
 
@@ -1006,7 +1018,6 @@ function NotebookPanel({ notebook, notebookLabel }: { notebook: Notebook; notebo
                   {linkedClues.map(c => (
                     <div key={c!.id} className="text-xs text-foreground/50">
                       <span className="text-primary/40">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
-                      <span className="text-muted-foreground/40 ml-1">— {c!.source}</span>
                     </div>
                   ))}
                 </div>
