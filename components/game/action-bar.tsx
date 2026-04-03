@@ -211,7 +211,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
   const isSlashMode = inputValue.startsWith('/')
 
   return (
-    <div className="flex flex-col gap-3 p-4 border-t border-border/10">
+    <div className="relative flex flex-col gap-3 p-4 border-t border-border/10">
       {/* Close Chapter Button */}
       {closeReady && onCloseChapter && (
         <div className="flex flex-col gap-2">
@@ -244,9 +244,9 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
         </div>
       )}
 
-      {/* Evidence Picker */}
+      {/* Evidence Picker — floats above action bar */}
       {pickerActive && pickerItems.length > 0 && (
-        <div className="flex flex-col rounded-lg border border-primary/20 bg-card/95 backdrop-blur-sm overflow-hidden max-h-[50vh]">
+        <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 flex flex-col rounded-lg border border-primary/20 bg-card/95 backdrop-blur-sm overflow-hidden max-h-[50vh] shadow-lg z-10">
           {/* Picker header */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border/10">
             <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Connect</span>
