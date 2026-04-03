@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { HelpCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { slashCommands } from '@/lib/slash-commands'
+import type { Notebook, ClueConnection, Clue } from '@/lib/types'
+
+interface PickerItem {
+  id: string
+  type: 'clue' | 'connection'
+  label: string
+  subtitle: string
+  tag: string
+}
 
 interface ActionBarProps {
   quickActions: string[]
@@ -16,13 +25,20 @@ interface ActionBarProps {
   onCloseChapter?: () => void
   prefill?: string
   onPrefillConsumed?: () => void
+  notebook?: Notebook | null
 }
 
-export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed }: ActionBarProps) {
+export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashIndex, setSlashIndex] = useState(0)
+
+  // Evidence picker state
+  const [pickerActive, setPickerActive] = useState(false)
+  const [pickerFirst, setPickerFirst] = useState<PickerItem | null>(null)
+  const [pickerIndex, setPickerIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Handle prefill from external trigger (e.g. evidence Connect button)
   if (prefill && inputValue !== prefill) {
@@ -36,6 +52,65 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
   const matchingCommands = showSlashMenu
     ? slashCommands.filter(c => c.name.startsWith(typed))
     : []
+
+  // Build picker items from notebook
+  const pickerItems: PickerItem[] = (() => {
+    if (!notebook || !pickerActive) return []
+    const conns = notebook.connections.filter(c => !c.status || c.status === 'active')
+    const clues = notebook.clues.filter(c => !c.isRedHerring || c.connectionIds.length > 0)
+      .filter(c => !c.status || c.status === 'active')
+
+    // Existing pairs for dedup prevention
+    const existingPairs = new Set(conns.map(c => [...c.sourceIds].sort().join('|')))
+
+    const items: PickerItem[] = [
+      // Leads/breakthroughs first
+      ...conns.map(c => {
+        const up = conns.filter(other => other.sourceIds.includes(c.id)).length
+        return {
+          id: c.id,
+          type: 'connection' as const,
+          label: c.title,
+          subtitle: c.revelation.slice(0, 60) + (c.revelation.length > 60 ? '...' : ''),
+          tag: up > 0 ? `→ ${up} breakthrough${up !== 1 ? 's' : ''}` : c.tier.toUpperCase(),
+        }
+      }),
+      // Then evidence
+      ...clues.map(c => {
+        const up = conns.filter(conn => conn.sourceIds.includes(c.id)).length
+        return {
+          id: c.id,
+          type: 'clue' as const,
+          label: c.title || c.content.slice(0, 40) + '...',
+          subtitle: c.content.slice(0, 60) + (c.content.length > 60 ? '...' : ''),
+          tag: up > 0 ? `→ ${up} lead${up !== 1 ? 's' : ''}` : `Ch.${c.discoveredChapter}`,
+        }
+      }),
+    ]
+
+    // If first is selected, filter out items already paired with it
+    if (pickerFirst) {
+      return items.filter(item => {
+        if (item.id === pickerFirst.id) return false
+        const pair = [pickerFirst.id, item.id].sort().join('|')
+        return !existingPairs.has(pair)
+      })
+    }
+    return items
+  })()
+
+  // Activate picker when input is "/connect " (with trailing space)
+  useEffect(() => {
+    const isConnect = inputValue.toLowerCase().startsWith('/connect ') && inputValue.trim() === '/connect'
+    if (isConnect && notebook && notebook.clues.length >= 2) {
+      setPickerActive(true)
+      setPickerFirst(null)
+      setPickerIndex(0)
+    } else if (!inputValue.startsWith('/connect')) {
+      setPickerActive(false)
+      setPickerFirst(null)
+    }
+  }, [inputValue, notebook])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
@@ -54,6 +129,45 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Evidence picker keyboard nav
+    if (pickerActive && pickerItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setPickerIndex(i => (i + 1) % pickerItems.length)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setPickerIndex(i => (i - 1 + pickerItems.length) % pickerItems.length)
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        const selected = pickerItems[pickerIndex]
+        if (!selected) return
+        if (!pickerFirst) {
+          // First selection
+          setPickerFirst(selected)
+          setPickerIndex(0)
+        } else {
+          // Second selection — submit
+          const display = `/${`connect`} ${pickerFirst.label} and ${selected.label}`
+          const args = `${pickerFirst.label} and ${selected.label}`
+          setPickerActive(false)
+          setPickerFirst(null)
+          setInputValue('')
+          onSlashCommand?.('connect', args)
+        }
+      } else if (e.key === 'Backspace' && pickerFirst && inputValue === '/connect ') {
+        e.preventDefault()
+        setPickerFirst(null)
+        setPickerIndex(0)
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setPickerActive(false)
+        setPickerFirst(null)
+        setInputValue('')
+      }
+      return
+    }
+
+    // Slash command autocomplete keyboard nav
     if (!showSlashMenu || matchingCommands.length === 0) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -128,8 +242,66 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
         </div>
       )}
 
+      {/* Evidence Picker */}
+      {pickerActive && pickerItems.length > 0 && (
+        <div className="flex flex-col rounded-lg border border-primary/20 bg-card/95 backdrop-blur-sm overflow-hidden max-h-[50vh]">
+          {/* Picker header */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-border/10">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Connect</span>
+            {pickerFirst ? (
+              <span className="rounded border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-mono text-[10px] text-emerald-400">
+                {pickerFirst.type === 'connection' ? '◆' : '◇'} {pickerFirst.label}
+              </span>
+            ) : (
+              <span className="font-mono text-[10px] text-foreground/40">select first</span>
+            )}
+            {pickerFirst && <span className="font-mono text-[10px] text-foreground/30">↔ ?</span>}
+          </div>
+          {/* Picker items */}
+          <div className="overflow-y-auto max-h-[40vh] p-1.5 flex flex-col gap-0.5">
+            {pickerItems.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (!pickerFirst) {
+                    setPickerFirst(item)
+                    setPickerIndex(0)
+                  } else {
+                    onSlashCommand?.('connect', `${pickerFirst.label} and ${item.label}`)
+                    setPickerActive(false)
+                    setPickerFirst(null)
+                    setInputValue('')
+                  }
+                }}
+                className={cn(
+                  'flex items-start gap-2 rounded px-2.5 py-2 text-left transition-colors',
+                  i === pickerIndex ? 'bg-primary/10 border border-emerald-400/30' : 'border border-transparent hover:bg-primary/5'
+                )}
+              >
+                <span className="text-xs text-foreground/40 mt-0.5 shrink-0">{item.type === 'connection' ? '◆' : '◇'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
+                    <span className="font-mono text-[9px] text-foreground/40 shrink-0">{item.tag}</span>
+                  </div>
+                  <div className="text-[10px] text-foreground/40 truncate mt-0.5">{item.subtitle}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          {/* Picker footer */}
+          <div className="flex items-center gap-4 px-3 py-1.5 border-t border-border/10">
+            <span className="font-mono text-[9px] text-foreground/30">↑↓ navigate</span>
+            <span className="font-mono text-[9px] text-foreground/30">Enter select</span>
+            {pickerFirst && <span className="font-mono text-[9px] text-foreground/30">⌫ undo</span>}
+            <span className="font-mono text-[9px] text-foreground/30 ml-auto">Esc cancel</span>
+          </div>
+        </div>
+      )}
+
       {/* Slash Command Autocomplete */}
-      {matchingCommands.length > 0 && (
+      {matchingCommands.length > 0 && !pickerActive && (
         <div className="flex flex-col gap-1 rounded-lg border border-primary/20 bg-card/90 p-2">
           {matchingCommands.map((cmd, i) => (
             <button
