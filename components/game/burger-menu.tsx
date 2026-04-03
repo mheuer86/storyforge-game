@@ -958,6 +958,40 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
     return byWords ?? null
   }
 
+  // Resolve a source ID to either a clue or a connection
+  const resolveSource = (id: string) => {
+    const clue = resolveClue(id)
+    if (clue) return { type: 'clue' as const, label: clue.title || clue.content.slice(0, 50) + '...' }
+    const conn = notebook.connections.find(c => c.id === id)
+    if (conn) return { type: 'connection' as const, label: conn.title }
+    return null
+  }
+
+  // Upward counts: how many connections reference each item
+  const upwardCount = (id: string) => notebook.connections.filter(c => c.sourceIds.includes(id)).length
+
+  // Categorize connections by tier
+  const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
+  const breakthroughs = activeConns.filter(c => c.tier === 'breakthrough')
+  const leads = activeConns.filter(c => c.tier === 'lead')
+  const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived' || c.status === 'disproven')
+
+  // Evidence: active clues
+  const activeClues = [...visibleClues].filter(c => !c.status || c.status === 'active').reverse()
+  const connectedClueIds = new Set(notebook.connections.flatMap(c => c.sourceIds.filter(id => notebook.clues.some(cl => cl.id === id))))
+  const resolvedClues = [...visibleClues].filter(c => c.status === 'solved' || c.status === 'archived').reverse()
+
+  // Stats
+  const stats = [
+    breakthroughs.length > 0 && `${breakthroughs.length} breakthrough${breakthroughs.length !== 1 ? 's' : ''}`,
+    leads.length > 0 && `${leads.length} lead${leads.length !== 1 ? 's' : ''}`,
+    `${notebook.clues.length} clue${notebook.clues.length !== 1 ? 's' : ''}`,
+  ].filter(Boolean).join(' · ')
+
+  // Expandable item state
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const toggle = (id: string) => setExpandedId(prev => prev === id ? null : id)
+
   return (
     <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
@@ -965,11 +999,8 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
         <h2 className="font-heading text-lg font-semibold text-foreground">
           {notebook.activeThreadTitle || notebookLabel}
         </h2>
-        <div className="mt-1 flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
-            {notebook.connections.length > 0 && `${notebook.connections.length} ${notebook.connections.length === 1 ? 'connection' : 'connections'} · `}
-            {notebook.clues.length} {notebook.clues.length === 1 ? 'clue' : 'clues'} discovered
-          </span>
+        <div className="mt-1 flex items-center justify-between">
+          <span className="font-mono text-[10px] text-muted-foreground">{stats}</span>
           {onConnect && notebook.clues.length >= 2 && (
             <button
               onClick={onConnect}
@@ -981,135 +1012,146 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
         </div>
       </div>
 
-      {/* Connections — active on top */}
-      {(() => {
-        const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
-        const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived')
-
-        const ConnectionCard = ({ conn, dimmed }: { conn: typeof notebook.connections[0]; dimmed?: boolean }) => {
-          const linkedClues = conn.sourceIds.map(resolveClue).filter(Boolean)
-          return (
-            <div className={cn(
-              'rounded-lg border px-3 py-2.5',
-              dimmed ? 'border-border/20 bg-secondary/10' : 'border-primary/20 bg-primary/5'
-            )}>
-              <div className="flex items-center justify-between">
-                <div className="font-medium text-foreground">{conn.title || 'Connection'}</div>
-                {dimmed && (
-                  <span className={cn(
-                    'text-[10px] uppercase tracking-wider',
-                    conn.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
-                  )}>
-                    {conn.status === 'solved' ? 'Solved' : 'Archived'}
-                  </span>
-                )}
-              </div>
-              <div className="mt-0.5 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>
-              {linkedClues.length > 0 && (
-                <div className="mt-2 border-t border-primary/10 pt-2 flex flex-col gap-1.5">
-                  {linkedClues.map(c => (
-                    <div key={c!.id} className="text-xs text-foreground/50">
-                      <span className="text-primary/40">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        }
-
-        return activeConns.length > 0 ? (
-          <div>
-            <SectionLabel>Connections</SectionLabel>
-            <div className="flex flex-col gap-3 mt-2">
-              {activeConns.map((conn, i) => <ConnectionCard key={`ac-${i}`} conn={conn} />)}
-            </div>
+      {/* Breakthroughs */}
+      {breakthroughs.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-destructive">Breakthroughs</span>
+            <div className="h-px flex-1 bg-destructive/20" />
           </div>
-        ) : null
-      })()}
-
-      {/* Active evidence */}
-      {(() => {
-        const active = [...visibleClues].filter(c => !c.status || c.status === 'active').reverse()
-        const connectedIds = new Set(notebook.connections.flatMap(c => c.sourceIds.map(id => resolveClue(id)?.id).filter(Boolean)))
-
-        const ClueCard = ({ clue }: { clue: typeof visibleClues[0] }) => (
-          <div className={cn(
-            'rounded-lg border px-3 py-2',
-            connectedIds.has(clue.id) ? 'border-border/10 bg-secondary/5 opacity-50' : 'border-border/10 bg-secondary/5'
-          )}>
-            {clue.title && <div className="font-medium text-foreground mb-0.5">{clue.title}</div>}
-            <div className="text-xs text-foreground/60 leading-relaxed">{clue.content}</div>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <span className="min-w-0">{clue.source}</span>
-              <span className="shrink-0">·</span>
-              <span className="shrink-0 whitespace-nowrap">Ch. {clue.discoveredChapter}</span>
-            </div>
-          </div>
-        )
-
-        return active.length > 0 ? (
-          <div>
-            <SectionLabel>Evidence</SectionLabel>
-            <div className="flex flex-col gap-2 mt-2">
-              {active.map((clue) => <ClueCard key={clue.id} clue={clue} />)}
-            </div>
-          </div>
-        ) : null
-      })()}
-
-      {/* Unified Resolved section — connections + evidence */}
-      {(() => {
-        const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived')
-        const resolvedClues = [...visibleClues].filter(c => c.status === 'solved' || c.status === 'archived').reverse()
-        if (resolvedConns.length === 0 && resolvedClues.length === 0) return null
-
-        return (
-          <div className="mt-2 border-t border-border/10 pt-3">
-            <SectionLabel>Resolved</SectionLabel>
-            <div className="flex flex-col gap-2 mt-2 opacity-60">
-              {resolvedConns.map((conn, i) => {
-                const linkedClues = conn.sourceIds.map(resolveClue).filter(Boolean)
-                return (
-                  <div key={`rc-${i}`} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-foreground">{conn.title || 'Connection'}</div>
-                      <span className={cn(
-                        'text-[10px] uppercase tracking-wider',
-                        conn.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
-                      )}>
-                        {conn.status === 'solved' ? 'Solved' : 'Archived'}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 text-xs text-foreground/50 leading-relaxed">{conn.revelation}</div>
-                    <div className="mt-1.5 flex flex-col gap-1">
-                      {linkedClues.map(c => (
-                        <div key={c!.id} className="text-xs text-foreground/40">
-                          <span className="text-foreground/30">●</span> {c!.title || c!.content.slice(0, 50) + '...'}
-                        </div>
-                      ))}
-                    </div>
+          <div className="flex flex-col gap-3">
+            {breakthroughs.map(conn => {
+              const expanded = expandedId === conn.id
+              const sources = conn.sourceIds.map(resolveSource).filter(Boolean)
+              return (
+                <div key={conn.id} role="button" onClick={() => toggle(conn.id)} className="cursor-pointer rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 transition-colors hover:bg-destructive/10">
+                  <div className="font-medium text-foreground">{conn.title}</div>
+                  {expanded && <div className="mt-1 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>}
+                  <div className={cn('mt-2 flex flex-col gap-1 border-t pt-2', expanded ? 'border-destructive/15' : 'border-destructive/10')}>
+                    {sources.map((s, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-xs text-foreground/70">
+                        <span className="text-destructive/50">{s!.type === 'connection' ? '◆' : '◇'}</span>
+                        <span>{s!.type === 'connection' ? 'Lead: ' : ''}{s!.label}</span>
+                      </div>
+                    ))}
                   </div>
-                )
-              })}
-              {resolvedClues.map((clue) => (
-                <div key={clue.id} className="rounded-lg border border-border/20 bg-secondary/10 px-3 py-2">
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Leads */}
+      {leads.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">Leads</span>
+            <div className="h-px flex-1 bg-primary/20" />
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {leads.map(conn => {
+              const expanded = expandedId === conn.id
+              const sources = conn.sourceIds.map(resolveSource).filter(Boolean)
+              const up = upwardCount(conn.id)
+              return (
+                <div key={conn.id} role="button" onClick={() => toggle(conn.id)} className="cursor-pointer rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 transition-colors hover:bg-primary/10">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium text-foreground">{clue.title || clue.content.slice(0, 40) + '...'}</div>
-                    <span className={cn(
-                      'text-[10px] uppercase tracking-wider',
-                      clue.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
-                    )}>
-                      {clue.status === 'solved' ? 'Solved' : 'Archived'}
+                    <div className="font-medium text-foreground">{conn.title}</div>
+                    {up > 0 && <span className="font-mono text-[9px] text-destructive/70">→ {up} breakthrough{up !== 1 ? 's' : ''}</span>}
+                  </div>
+                  {expanded && <div className="mt-1 text-xs text-foreground/60 leading-relaxed">{conn.revelation}</div>}
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {sources.map((s, i) => (
+                      <span key={i} className="rounded border border-border/15 bg-secondary/10 px-1.5 py-0.5 font-mono text-[10px] text-foreground/50">
+                        {s!.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Evidence */}
+      {activeClues.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-foreground/50">Evidence</span>
+            <div className="h-px flex-1 bg-border/15" />
+          </div>
+          <div className="flex flex-col gap-1">
+            {activeClues.map(clue => {
+              const expanded = expandedId === clue.id
+              const isConnected = connectedClueIds.has(clue.id)
+              const up = upwardCount(clue.id)
+              return (
+                <div key={clue.id} role="button" onClick={() => toggle(clue.id)} className={cn(
+                  'cursor-pointer rounded-lg border border-border/10 px-3 py-2 transition-colors hover:bg-secondary/10',
+                  isConnected ? 'opacity-60' : ''
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-foreground/30 text-xs">◇</span>
+                      <span className="font-medium text-foreground text-xs">{clue.title || clue.content.slice(0, 40) + '...'}</span>
+                    </div>
+                    <span className="font-mono text-[9px] text-foreground/40 shrink-0 ml-2">
+                      {up > 0 ? `→ ${up} lead${up !== 1 ? 's' : ''}` : `Ch.${clue.discoveredChapter}`}
                     </span>
                   </div>
-                  <div className="text-xs text-foreground/50 leading-relaxed">{clue.content}</div>
+                  {expanded && (
+                    <div className="mt-1.5 pl-5">
+                      <div className="text-xs text-foreground/60 leading-relaxed">{clue.content}</div>
+                      <div className="mt-1 font-mono text-[10px] text-foreground/30">{clue.source} · Ch.{clue.discoveredChapter}</div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Resolved section — collapsed by default */}
+      {(resolvedConns.length > 0 || resolvedClues.length > 0) && (
+        <div className="border-t border-border/10 pt-3">
+          <button onClick={() => toggle('__resolved')} className="flex items-center justify-between w-full group">
+            <SectionLabel>Resolved ({resolvedConns.length + resolvedClues.length})</SectionLabel>
+            <span className="text-foreground/30 text-xs group-hover:text-foreground/50 transition-colors">{expandedId === '__resolved' ? '▲' : '▼'}</span>
+          </button>
+          {expandedId === '__resolved' && (
+            <div className="flex flex-col gap-2 mt-2 opacity-50">
+              {resolvedConns.map(conn => (
+                <div key={conn.id} className={cn(
+                  'rounded-lg border px-3 py-2',
+                  conn.status === 'disproven' ? 'border-destructive/15 bg-destructive/5' : 'border-border/15 bg-secondary/5'
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className={cn('font-medium text-foreground text-xs', conn.status === 'disproven' && 'line-through text-foreground/50')}>{conn.title}</div>
+                    <span className={cn(
+                      'font-mono text-[9px] uppercase tracking-wider',
+                      conn.status === 'solved' ? 'text-emerald-400/70' : conn.status === 'disproven' ? 'text-destructive/70' : 'text-foreground/30'
+                    )}>{conn.status}</span>
+                  </div>
+                </div>
+              ))}
+              {resolvedClues.map(clue => (
+                <div key={clue.id} className="rounded-lg border border-border/15 bg-secondary/5 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-foreground text-xs">{clue.title || clue.content.slice(0, 40) + '...'}</div>
+                    <span className={cn(
+                      'font-mono text-[9px] uppercase tracking-wider',
+                      clue.status === 'solved' ? 'text-emerald-400/70' : 'text-foreground/30'
+                    )}>{clue.status}</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )
-      })()}
+          )}
+        </div>
+      )}
     </div>
   )
 }
