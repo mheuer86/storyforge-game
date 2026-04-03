@@ -1386,6 +1386,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             onCloseChapter={handleCloseChapter}
             prefill={actionBarPrefill}
             onPrefillConsumed={() => setActionBarPrefill(undefined)}
+            notebook={gameState.world.notebook}
           />
         </div>
       </main>
