@@ -223,11 +223,15 @@ export function loadGameState(): GameState | null {
             const clue = nb.clues.find(cl => cl.id === id)
             return clue?.isRedHerring ?? false
           })
+          const rawTitle = c.title as string | undefined
+          const rawRevelation = (c.revelation ?? '') as string
+          // Generate title from revelation if missing
+          const title = rawTitle || (rawRevelation.length > 0 ? rawRevelation.split(/[.!?—]/)[0].trim().slice(0, 60) : 'Connection')
           return {
             id: `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
             sourceIds,
-            title: c.title as string,
-            revelation: c.revelation as string,
+            title,
+            revelation: rawRevelation,
             tier: 'lead' as const,
             tainted,
             ...(c.status ? { status: c.status as ClueConnection['status'] } : {}),
@@ -237,6 +241,13 @@ export function loadGameState(): GameState | null {
         if (!c.sourceIds && c.clueIds) {
           migrated = true
           return { ...conn, sourceIds: c.clueIds as string[] }
+        }
+        // Backfill missing titles on already-migrated connections
+        if (!c.title || (c.title as string).trim() === '') {
+          migrated = true
+          const rev = (c.revelation ?? '') as string
+          const title = rev.length > 0 ? rev.split(/[.!?—]/)[0].trim().slice(0, 60) : 'Connection'
+          return { ...conn, title }
         }
         return conn
       })
