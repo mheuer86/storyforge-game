@@ -59,8 +59,8 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
   const pickerItems: PickerItem[] = (() => {
     if (!notebook || !pickerActive) return []
     const conns = notebook.connections.filter(c => !c.status || c.status === 'active')
-    const clues = notebook.clues.filter(c => !c.isRedHerring || c.connectionIds.length > 0)
-      .filter(c => !c.status || c.status === 'active')
+    // Show ALL active clues in picker — player doesn't know which are red herrings
+    const clues = notebook.clues.filter(c => !c.status || c.status === 'active')
 
     // Existing pairs for dedup prevention
     const existingPairs = new Set(conns.map(c => [...c.sourceIds].sort().join('|')))
