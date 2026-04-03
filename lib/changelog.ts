@@ -5,6 +5,20 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-04-03',
+    changes: [
+      'Chapter Frame — the GM now silently plans each chapter with an objective and crucible. Your mission appears in the character sheet so you always know what you\'re working toward',
+      'Chapter Close — when the story reaches its turning point, a Close Chapter button appears. The GM wraps up, you choose when to close, and a dedicated close sequence handles level-ups, skill points, and a full analytical debrief',
+      'End-of-chapter overlay — a proper curtain call. Level progression, new proficiencies, a six-section debrief that names the roll that defined your chapter, and a preview of what\'s next. All in one card',
+      'Clean chapter starts — clicking Start Next Chapter archives your conversation and opens a fresh page with a chapter header. Old chapters are preserved in history',
+      'Slash commands — type / for structured GM instructions. /challenge forces a mechanical moment, /inspect actively searches, /roll requests a specific check, /use activates an item, /connect proposes evidence links. Arrow keys navigate, Enter selects',
+      'Evidence connections — a Connect button in the notebook closes the sidebar and pre-fills /connect so you can name the clues to link',
+      'The dice got real — enemies now fight to win, violence has proportional consequences, and at least one NPC per chapter will pick a fight. A five-tier threat system keeps enemy stats consistent, and each genre shapes how its antagonist operates',
+      'Scene headings — locations and time now appear as the first line the GM writes, not as a header that pops in after the narrative starts',
+      'Loading animation — the chapter close sequence shows a step-by-step progress card while the GM works through the audit, level-up, and debrief',
+    ],
+  },
+  {
     date: '2026-04-01',
     changes: [
       'Noire genre — a fifth playable genre built around investigation, social leverage, and desperate violence. Five origins (Ex-Cop, Street, Old Money, Veteran, Immigrant), five classes (Private Investigator, Fixer, Bruiser, Grifter, Reporter), Sin City-inspired visuals, and four opening hooks',

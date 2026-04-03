@@ -14,6 +14,7 @@ import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
+import { slashCommands as slashCommandDefs } from '@/lib/slash-commands'
 
 interface DisplayMessage {
   id: string
@@ -68,6 +69,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [selectedItemBonus, setSelectedItemBonus] = useState<{ name: string; bonus: number } | null>(null)
   const [inspirationOffered, setInspirationOffered] = useState(false)
   const [closeInProgress, setCloseInProgress] = useState(false)
+  const [actionBarPrefill, setActionBarPrefill] = useState<string | undefined>(undefined)
   // chapterClosed is derived from game state, not React state — survives reload
   const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const originalRollRef = useRef<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
@@ -277,7 +279,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       playerMessage: string,
       currentState: GameState,
       isMetaQuestion: boolean,
-      isInitial: boolean
+      isInitial: boolean,
+      displayOverride?: string  // show this in chat instead of the raw message (for slash commands)
     ) => {
       // Auto-detect forge:dev prefix as meta question
       if (playerMessage.toLowerCase().startsWith('forge:dev')) {
@@ -288,12 +291,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setIsLoading(true)
       setLastStatChanges([])
 
+      const displayContent = displayOverride || playerMessage
       const playerDisplayMessage: DisplayMessage | null =
-        !isInitial && playerMessage
+        !isInitial && displayContent
           ? {
               id: crypto.randomUUID(),
               type: isMetaQuestion ? 'meta-question' : 'player',
-              content: playerMessage,
+              content: displayContent,
             }
           : null
 
@@ -312,7 +316,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               {
                 id: playerDisplayMessage.id,
                 role: playerDisplayMessage.type as 'player' | 'meta-question',
-                content: playerMessage,
+                content: displayContent,
                 timestamp: new Date().toISOString(),
               },
             ],
@@ -828,6 +832,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     [gameState, sendToGM]
   )
 
+  const handleConnectEvidence = useCallback(() => {
+    setIsMenuOpen(false)
+    setActionBarPrefill('/connect ')
+  }, [])
+
+  const handleSlashCommand = useCallback(
+    (commandName: string, args: string) => {
+      if (!gameState || isLoadingRef.current) return
+      const cmd = slashCommandDefs.find(c => c.name === commandName)
+      if (!cmd) return
+      const instruction = cmd.buildInstruction(args)
+      // Send as a normal player message with the instruction injected
+      // The player sees their slash command, the GM gets the instruction
+      const displayText = args ? `/${commandName} ${args}` : `/${commandName}`
+      sendToGM(instruction, gameState, false, false, displayText)
+    },
+    [gameState, sendToGM]
+  )
+
   const handleDismissClose = useCallback(() => {
     if (!gameState) return
     const dismissedState = {
@@ -1064,14 +1087,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           <div className="font-system text-sm text-foreground/60">{rollPrompt.contested.npcSkill} {rollPrompt.contested.npcModifier >= 0 ? '+' : ''}{rollPrompt.contested.npcModifier}</div>
                           <div className="mt-1 flex h-12 w-12 items-center justify-center rounded-lg border border-border/30 bg-card/30 text-2xl">🎲</div>
                         </div>
-                        <div className="text-xs text-muted-foreground/40 uppercase tracking-wider">vs</div>
+                        <div className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium">vs</div>
                         <div className="text-right">
                           <div className="text-xs text-primary/60">You</div>
                           <div className="font-system text-sm text-primary">{rollPrompt.check} {rollPrompt.modifier >= 0 ? '+' : ''}{rollPrompt.modifier}</div>
                           <div className="mt-1 flex h-12 w-12 ml-auto items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">🎲</div>
                         </div>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground/50">{rollPrompt.reason}</div>
+                      <div className="mt-2 text-xs text-foreground/50 italic leading-relaxed">{rollPrompt.reason}</div>
                       <div className="mt-2 text-center text-xs text-primary/60">Tap to roll</div>
                     </>
                   ) : (
@@ -1092,7 +1115,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                             <span className="text-muted-foreground/30">|</span>
                             <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{(rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)) >= 0 ? '+' : ''}{rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)}</span>{selectedItemBonus && <span className="text-primary/50 ml-1">({selectedItemBonus.name})</span>}</span>
                           </div>
-                          <div className="mt-1 text-xs text-muted-foreground/70">
+                          <div className="mt-1 text-xs text-foreground/50 italic leading-relaxed">
                             {rollPrompt.reason}
                           </div>
                         </div>
@@ -1289,11 +1312,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             quickActions={rollPrompt ? [] : quickActions}
             onActionSelect={handleActionSelect}
             onCustomAction={handleCustomAction}
+            onSlashCommand={handleSlashCommand}
             disabled={isLoading}
             closeReady={!!gameState.meta.closeReady}
             closeReason={gameState.meta.closeReason}
             onCloseChapter={handleCloseChapter}
-            onDismissClose={handleDismissClose}
+            prefill={actionBarPrefill}
+            onPrefillConsumed={() => setActionBarPrefill(undefined)}
           />
         </div>
       </main>
@@ -1303,6 +1328,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onOpenChange={setIsMenuOpen}
         genre={(gameState.meta.genre || 'space-opera') as Genre}
         chapterMission={gameState.chapterFrame}
+        onConnectEvidence={handleConnectEvidence}
         onSave={handleSave}
         onLoad={handleLoad}
         onNewGame={onNewGame}

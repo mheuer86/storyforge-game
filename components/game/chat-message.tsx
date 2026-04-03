@@ -143,12 +143,25 @@ export function ChatMessage({ message, statChanges, onFlag, onRetry }: ChatMessa
     )
   }
 
-  // Player action message — softer accent tint
+  // Player action message — softer accent tint; slash commands get mono + tertiary accent
   if (message.type === 'player') {
+    const isSlash = message.content.startsWith('/')
     return (
       <div className="flex justify-end">
-        <div className="max-w-[70%] rounded-lg bg-primary/8 border border-primary/20 px-4 py-2 text-right shadow-[0_0_15px_-5px] shadow-primary/10">
-          <p className="text-foreground/80" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
+        <div className={cn(
+          'max-w-[70%] rounded-lg px-4 py-2 text-right',
+          isSlash
+            ? 'bg-tertiary/8 border border-tertiary/25'
+            : 'bg-primary/8 border border-primary/20 shadow-[0_0_15px_-5px] shadow-primary/10'
+        )}>
+          {isSlash ? (
+            <p className="font-mono text-xs">
+              <span className="text-tertiary">{message.content.split(' ')[0]}</span>
+              {message.content.includes(' ') && <span className="text-foreground/60"> {message.content.slice(message.content.indexOf(' ') + 1)}</span>}
+            </p>
+          ) : (
+            <p className="text-foreground/80" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}>{message.content}</p>
+          )}
         </div>
       </div>
     )
