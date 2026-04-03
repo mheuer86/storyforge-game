@@ -8,10 +8,29 @@ export interface SlashCommand {
 export const slashCommands: SlashCommand[] = [
   {
     name: 'connect',
-    description: 'Propose a connection between clues',
-    args: '[clue] and [clue]',
+    description: 'Propose a connection between evidence',
+    args: '[item] and [item]',
     buildInstruction: (args) =>
-      `PLAYER COMMAND: /connect ${args}\nThe player proposes connecting these clues. Call request_roll for an Investigation check. If successful, call connect_clues with a title and revelation. If failed, narrate why the connection doesn't hold yet — but don't dismiss it entirely. Match the clue names against the NOTEBOOK in game state.`,
+      `PLAYER COMMAND: /connect ${args}
+The player proposes connecting two items from their notebook. Match the names against NOTEBOOK in game state (items can be clues or existing connections).
+
+1. Identify the combination type from the sources:
+   - Clue + Clue → LEAD (opens a new line of inquiry)
+   - Lead + Clue → ENRICHED LEAD (confirms or sharpens an existing inference)
+   - Lead + Lead → BREAKTHROUGH (reframes the case — this is the big moment)
+   - Breakthrough + anything → DEEPER BREAKTHROUGH (escalates stakes)
+
+2. Call request_roll for an Investigation check. Set DC based on how obscure the connection is.
+
+3. On success, call connect_clues with sourceIds (use the IDs from NOTEBOOK, not the names). Scale the revelation quality by combination type:
+   - LEAD revelation: connects two facts into an inference. "The withdrawal and the manifest suggest she was moving something out." Player says "interesting."
+   - ENRICHED LEAD revelation: confirms with new evidence. "The warehouse receipt confirms the financial trail — she wasn't just in debt, she was laundering." Player says "I knew it."
+   - BREAKTHROUGH revelation: synthesizes across inference chains. "She wasn't fleeing — she was smuggling evidence of fraud, and the person who killed her hired you to find her." Player says "oh no."
+   - DEEPER BREAKTHROUGH: extends the reframing. "The fraud goes higher. The magistrate who assigned you this case ordered the cover-up." Player says "what do I do now."
+
+4. If any source has [TAINTED] in the NOTEBOOK, the connection is tainted. Generate a revelation that is internally consistent but factually wrong — plausible, convincing, pointing in the wrong direction. Do NOT reveal the taint to the player.
+
+5. On failure, narrate why the connection doesn't hold yet — but don't dismiss it entirely.`,
   },
   {
     name: 'inspect',

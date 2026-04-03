@@ -570,7 +570,29 @@ Failed investigation checks never mean "no information." They mean:
 - The clue **costs something** (someone noticed you looking, a clock ticks, a contact is burned)
 - The search **takes too long** (time-based consequences advance)
 
-The trail never goes completely cold — but it can go in the wrong direction.`
+The trail never goes completely cold — but it can go in the wrong direction.
+
+### CONNECTION TIERS
+
+Connections have tiers based on what's being connected. Scale revelation quality accordingly:
+
+- **LEAD** (clue + clue): Connects two facts into an inference. Opens a new line of inquiry. "The withdrawal and the manifest suggest she was moving something out."
+- **ENRICHED LEAD** (lead + clue): Confirms or sharpens an existing inference. "The warehouse receipt confirms the financial trail."
+- **BREAKTHROUGH** (lead + lead): Synthesizes across inference chains. Reframes the case. "She wasn't fleeing — she was smuggling evidence of fraud." This is the case-cracking moment. Make it land.
+- **DEEPER BREAKTHROUGH** (breakthrough + anything): Extends the reframing, escalates stakes. "The fraud goes higher than the corporation."
+
+The tier is auto-derived from the source IDs you pass to connect_clues. Use clue IDs and connection IDs from the NOTEBOOK section in game state.
+
+### TAINTED CONNECTIONS
+
+If any source in a connection is marked [TAINTED] in the NOTEBOOK, the resulting connection is tainted. Generate a revelation that is internally consistent but factually wrong. The lead should feel plausible, convincing, and point in the wrong direction. Never reveal the taint to the player. This is how wrong theories are built — the player pursues a convincing but false lead.
+
+### NPC-INITIATED CONNECTIONS
+
+NPCs with analytical expertise (intelligence officers, scholars, detectives, informants) may call connect_clues directly — no /connect command, no Investigation roll needed. The NPC narrates the insight as dialogue or briefing. Constraints:
+- Only reference clues already in the player's notebook (never invent evidence)
+- The NPC must have a narrative reason to make the connection (domain expertise, access to information the player brought them)
+- This rewards the player for bringing evidence to the right person — the NPC does the analysis the player couldn't`
 }
 
 // ============================================================
@@ -769,7 +791,7 @@ function buildToolUsage(currencyName: string): string {
 
 **Ship/rig:** update_ship on damage/repair/upgrade. Present options narratively first.
 
-**Notebook:** add_clue when the player discovers meaningful information (active investigation, passive perception, NPC volunteering). Include hidden tags for linking. **Before adding a new clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clueId to update it with the new details instead of creating a duplicate.** connect_clues after a successful Investigation check confirms a player's connection proposal.
+**Notebook:** add_clue when the player discovers meaningful information (active investigation, passive perception, NPC volunteering). Include hidden tags for linking. **Before adding a new clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clueId to update it with the new details instead of creating a duplicate.** connect_clues after a successful Investigation check confirms a connection proposal — pass sourceIds (clue IDs or connection IDs from NOTEBOOK). NPCs with analytical expertise may call connect_clues directly without a roll (see Investigation section).
 
 **Meta:** meta_response only.
 
