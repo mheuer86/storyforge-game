@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildClosePrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
-import { gameTools } from '@/lib/tools'
+import { buildSystemPrompt, buildClosePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
+import { gameTools, auditTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
 
@@ -25,6 +25,7 @@ const requestSchema = z.object({
   isInitial: z.boolean(),
   isConsistencyCheck: z.boolean().optional(),
   isChapterClose: z.boolean().optional(),
+  isAudit: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
   rollResolution: z.object({
     roll: z.number().min(1).max(20),
@@ -101,16 +102,17 @@ async function runToolLoop(
   initialMessages: Anthropic.MessageParam[],
   send: SendFn,
   interceptRolls: boolean,
+  options?: { model?: string; tools?: Anthropic.Tool[] },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const stream = await client.messages.stream({
-      model: MODEL,
+      model: options?.model || MODEL,
       max_tokens: 2048,
       system: systemPrompt,
-      tools: gameTools,
+      tools: options?.tools || gameTools,
       messages,
     })
 
@@ -200,7 +202,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, isAudit, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -250,6 +252,22 @@ export async function POST(req: NextRequest) {
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, false)
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Audit: lightweight state hygiene check (Haiku) ──
+        if (isAudit) {
+          const AUDIT_MODEL = 'claude-haiku-4-5-20251001'
+          const [auditInstructions, auditState] = buildAuditPrompt(gameState)
+          const auditSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: auditInstructions },
+            { type: 'text', text: auditState },
+          ]
+          const auditMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Audit the current game state now.' },
+          ]
+          const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools })
           finish(loopResult.toolResults)
           return
         }

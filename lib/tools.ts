@@ -768,3 +768,8 @@ export const gameTools: Anthropic.Tool[] = [
     },
   },
 ]
+
+/** Subset of tools available to the audit prompt — state mutation only, no narrative tools. */
+export const auditTools: Anthropic.Tool[] = gameTools.filter((t) =>
+  ['update_character', 'update_world', 'update_antagonist', 'update_cohesion', 'update_ship', 'update_clock', 'update_disposition'].includes(t.name)
+)
