@@ -88,6 +88,7 @@ interface BurgerMenuProps {
   world: World
   chapters: Chapter[]
   genre: Genre
+  chapterMission?: { objective: string; crucible: string } | null
   onSave: (slot: 1 | 2 | 3) => void
   onLoad: (state: GameState) => void
   onNewGame?: () => void
@@ -112,6 +113,7 @@ export function BurgerMenu({
   world,
   chapters,
   genre,
+  chapterMission,
   onSave,
   onLoad,
   onNewGame,
@@ -183,7 +185,7 @@ export function BurgerMenu({
             <ScrollArea className="min-h-0 flex-1 overflow-x-hidden" style={{ fontFamily: 'var(--font-narrative)', fontSize: 'calc(1rem * var(--font-scale, 1))' }}>
               {/* Character Tab */}
               <TabsContent value="character" className="mt-0 p-4">
-                <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} />
+                <CharacterSheet character={character} currencyLabel={genreConfig.currencyName} mission={chapterMission?.objective} />
               </TabsContent>
 
               {/* Ship Tab */}
@@ -361,7 +363,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function CharacterSheet({ character, currencyLabel }: { character: Character; currencyLabel: string }) {
+function CharacterSheet({ character, currencyLabel, mission }: { character: Character; currencyLabel: string; mission?: string | null }) {
   return (
     <div className="flex flex-col gap-5 text-sm">
       {/* Header */}
@@ -372,6 +374,11 @@ function CharacterSheet({ character, currencyLabel }: { character: Character; cu
         <p className="mt-0.5 text-sm text-foreground/50">
           {character.species.name} {character.class.name} · Level {character.level}
         </p>
+        {mission && (
+          <p className="mt-1.5 text-xs text-primary/60 leading-snug">
+            <span className="text-primary/40">▸ </span>{mission}
+          </p>
+        )}
       </div>
 
       {/* Vitals — key-value rows */}

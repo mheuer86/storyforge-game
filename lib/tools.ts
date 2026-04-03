@@ -648,7 +648,7 @@ export const gameTools: Anthropic.Tool[] = [
       properties: {
         objective: {
           type: 'string',
-          description: 'The player\'s stated or implied goal this chapter, from their perspective.',
+          description: 'Short action phrase for the chapter goal, from the player\'s perspective. Under 10 words. E.g. "Sabotage the Pinnacle facility" or "Find out what Renn discovered".',
         },
         crucible: {
           type: 'string',
