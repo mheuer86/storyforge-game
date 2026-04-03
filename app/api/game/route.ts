@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
+import { buildSystemPrompt, buildClosePrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
 import { gameTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
@@ -24,6 +24,7 @@ const requestSchema = z.object({
   isMetaQuestion: z.boolean(),
   isInitial: z.boolean(),
   isConsistencyCheck: z.boolean().optional(),
+  isChapterClose: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
   rollResolution: z.object({
     roll: z.number().min(1).max(20),
@@ -199,7 +200,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -249,6 +250,21 @@ export async function POST(req: NextRequest) {
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, false)
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Chapter close: dedicated close prompt ──
+        if (isChapterClose) {
+          const [closeInstructions, closeState] = buildClosePrompt(gameState)
+          const closeSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: closeInstructions, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: closeState },
+          ]
+          const closeMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Execute the chapter close sequence now.' },
+          ]
+          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false)
           finish(loopResult.toolResults)
           return
         }

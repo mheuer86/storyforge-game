@@ -388,7 +388,7 @@ export const gameTools: Anthropic.Tool[] = [
   {
     name: 'close_chapter',
     description:
-      'Close the current chapter and open the next one. Call at a natural narrative break — when a major arc resolves, a significant time jump occurs, or the story moves to a clearly new phase. Write the summary carefully: chapter summaries are the sole long-term narrative memory.',
+      'Close the current chapter and open the next one. Write the summary carefully: chapter summaries are the sole long-term narrative memory. Both resolutionMet and forwardHook are required — do not call unless both are genuinely satisfied.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -407,8 +407,16 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'Title for the upcoming chapter.',
         },
+        resolutionMet: {
+          type: 'string',
+          description: 'How the chapter objective was resolved — completed, failed, or transformed beyond its original scope.',
+        },
+        forwardHook: {
+          type: 'string',
+          description: 'The revelation, complication, or setup that creates momentum into the next chapter.',
+        },
       },
-      required: ['summary', 'keyEvents', 'nextTitle'],
+      required: ['summary', 'keyEvents', 'nextTitle', 'resolutionMet', 'forwardHook'],
     },
   },
   {
@@ -626,6 +634,44 @@ export const gameTools: Anthropic.Tool[] = [
         reason: {
           type: 'string',
           description: 'Brief narrative note explaining why Inspiration was awarded (shown to player).',
+        },
+      },
+      required: ['reason'],
+    },
+  },
+  {
+    name: 'set_chapter_frame',
+    description:
+      'Silently establish the chapter\'s structural skeleton. Call at chapter open (turns 1-3) with the player\'s objective and the crucible scene. Can be called again to update if the objective fundamentally changes. Never announce the frame to the player.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        objective: {
+          type: 'string',
+          description: 'The player\'s stated or implied goal this chapter, from their perspective.',
+        },
+        crucible: {
+          type: 'string',
+          description: 'The scene where the player\'s preparation meets real pressure — where plans are tested and dice matter most.',
+        },
+      },
+      required: ['objective', 'crucible'],
+    },
+  },
+  {
+    name: 'signal_close_ready',
+    description:
+      'Signal that the chapter\'s close conditions are met. Call AFTER wrapping up the narrative. The player will see a Close Chapter button. Do NOT call close_chapter, generate_debrief, or levelUp yourself — those are handled by the close sequence.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        reason: {
+          type: 'string',
+          description: 'Brief explanation of why the chapter is ready to close (objective resolved, forward hook established).',
+        },
+        selfAssessment: {
+          type: 'string',
+          description: 'Reflect on your narrative performance this chapter: what scenes landed, what dragged, what you\'d do differently. This feeds into the debrief\'s GM Transparency section.',
         },
       },
       required: ['reason'],

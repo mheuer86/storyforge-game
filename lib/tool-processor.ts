@@ -360,11 +360,36 @@ export function applyToolResults(
       updated = { ...updated, world }
     }
 
+    if (result.tool === 'set_chapter_frame') {
+      const input = result.input as { objective: string; crucible: string }
+      updated = {
+        ...updated,
+        chapterFrame: { objective: input.objective, crucible: input.crucible },
+      }
+      // Silent — no stat change shown to player
+    }
+
+    if (result.tool === 'signal_close_ready') {
+      const input = result.input as { reason: string; selfAssessment?: string }
+      updated = {
+        ...updated,
+        meta: {
+          ...updated.meta,
+          closeReady: true,
+          closeReason: input.reason,
+          ...(input.selfAssessment && { selfAssessment: input.selfAssessment }),
+        },
+      }
+      // No stat change — the client handles the UI transition
+    }
+
     if (result.tool === 'close_chapter') {
       const input = result.input as {
         summary: string
         keyEvents: string[]
         nextTitle: string
+        resolutionMet?: string
+        forwardHook?: string
       }
       const currentNum = updated.meta.chapterNumber
       trackEvent?.('chapter_completed', { chapter: currentNum, genre: updated.meta.genre })
@@ -392,7 +417,11 @@ export function applyToolResults(
           ...updated.meta,
           chapterNumber: nextNum,
           chapterTitle: input.nextTitle,
+          closeReady: false,
+          closeReason: undefined,
+          selfAssessment: undefined,
         },
+        chapterFrame: null,
         history: {
           ...updated.history,
           chapters: [

@@ -262,6 +262,24 @@ export interface Chapter {
   summary: string
   keyEvents: string[]
   debrief?: ChapterDebrief
+  messages?: ChatMessage[]  // archived chat messages for completed chapters
+}
+
+export interface ChapterFrame {
+  objective: string
+  crucible: string
+}
+
+export interface CloseData {
+  completedChapterNumber: number
+  completedChapterTitle: string
+  nextChapterTitle: string
+  resolutionMet: string
+  forwardHook: string
+  levelUp: { oldLevel: number; newLevel: number; hpIncrease: number; oldHpMax: number; newHpMax: number; newProficiencyBonus?: number }
+  skillPointsAwarded: string[]  // proficiency names added
+  debrief: ChapterDebrief | null
+  nextFrame: ChapterFrame | null
 }
 
 export interface HistoryState {
@@ -278,6 +296,11 @@ export interface MetaState {
   chapterTitle: string
   genre: string
   sessionCount: number
+  closeReady?: boolean
+  closeReason?: string
+  selfAssessment?: string
+  chapterClosed?: boolean
+  closeData?: CloseData
 }
 
 export interface GameState {
@@ -286,6 +309,7 @@ export interface GameState {
   world: WorldState
   combat: CombatState
   history: HistoryState
+  chapterFrame: ChapterFrame | null
 }
 
 // API streaming event types

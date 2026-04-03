@@ -864,7 +864,7 @@ const cyberpunkTheme: GenreTheme = {
   meta: 'oklch(0.55 0.08 220)',
   success: 'oklch(0.65 0.18 145)',
   warning: 'oklch(0.75 0.15 85)',
-  tertiary: 'oklch(0.78 0.12 85)',
+  tertiary: 'oklch(0.68 0.16 55)',
   tertiaryForeground: 'oklch(0.09 0.02 260)',
   titleGlow: '0 0 40px oklch(0.75 0.22 145 / 0.8), 0 0 80px oklch(0.75 0.22 145 / 0.4)',
   actionGlow: '0 0 0 1px rgba(80,220,120,0.2), 0 0 15px -3px rgba(80,220,120,0.15)',

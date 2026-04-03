@@ -25,6 +25,7 @@ import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlot
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, Antagonist, ShipState, Notebook } from '@/lib/types'
 import { debugLog } from '@/lib/tool-processor'
+import { renderMarkdown } from './chat-message'
 
 interface Character {
   name: string
@@ -1226,11 +1227,11 @@ function ChaptersPanel({
             <div className="flex flex-col gap-3 text-sm max-h-[70vh] overflow-y-auto">
               <div>
                 <div className="flex items-center gap-2 mb-1.5"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Tactical</span></div>
-                <p className="text-sm text-foreground/70 leading-relaxed">{showDebrief.debrief.tactical}</p>
+                <div className="text-sm text-foreground/70 leading-relaxed">{renderMarkdown(showDebrief.debrief.tactical)}</div>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1.5"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Strategic</span></div>
-                <p className="text-sm text-foreground/70 leading-relaxed">{showDebrief.debrief.strategic}</p>
+                <div className="text-sm text-foreground/70 leading-relaxed">{renderMarkdown(showDebrief.debrief.strategic)}</div>
               </div>
               {showDebrief.debrief.luckyBreaks.length > 0 && (
                 <div>

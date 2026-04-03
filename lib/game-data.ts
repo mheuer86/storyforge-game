@@ -148,6 +148,7 @@ export function createInitialGameState(
       ],
       rollLog: [],
     },
+    chapterFrame: null,
   }
 }
 
@@ -188,6 +189,10 @@ export function loadGameState(): GameState | null {
     // Migrate saves that predate notebook
     if (state.world.notebook === undefined) {
       state.world.notebook = null
+    }
+    // Migrate saves that predate chapterFrame
+    if (state.chapterFrame === undefined) {
+      state.chapterFrame = null
     }
     // Migrate cyberpunk saves that predate the tech rig
     if (state.meta.genre === 'cyberpunk' && !state.world.ship) {
