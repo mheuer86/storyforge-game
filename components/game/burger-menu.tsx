@@ -1155,9 +1155,12 @@ function ChaptersPanel({
                 {chapter.keyEvents.length > 0 && (
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2"><div className="w-4 h-px bg-primary/40" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Key Events</span></div>
-                    <ul className="list-inside list-disc text-sm text-foreground/80">
+                    <ul className="flex flex-col gap-1">
                       {chapter.keyEvents.map((event, i) => (
-                        <li key={i}>{event}</li>
+                        <li key={i} className="flex items-start gap-2 text-sm text-foreground/60 leading-relaxed">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+                          {event}
+                        </li>
                       ))}
                     </ul>
                   </div>
