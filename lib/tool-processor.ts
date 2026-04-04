@@ -253,6 +253,10 @@ export function applyToolResults(
         setSceneSnapshot?: string
         setOperationState?: import('./types').OperationState | null
         setExplorationState?: import('./types').ExplorationState | null
+        addTimer?: { id: string; description: string; deadline: string }
+        updateTimer?: { id: string; status: 'active' | 'expired' | 'completed' }
+        updateHeat?: { faction: string; level: 'none' | 'low' | 'medium' | 'high' | 'critical'; reason: string }
+        addLedgerEntry?: { amount: number; description: string; day: string }
       }
       const world = { ...updated.world }
 
@@ -388,6 +392,35 @@ export function applyToolResults(
         } else {
           statChanges.push({ type: 'neutral', label: 'Exited facility' })
         }
+      }
+      if (input.addTimer) {
+        world.timers = [...(world.timers || []), { ...input.addTimer, status: 'active' as const }]
+        statChanges.push({ type: 'new', label: `Timer: ${input.addTimer.description}` })
+      }
+      if (input.updateTimer) {
+        world.timers = (world.timers || []).map(t =>
+          t.id === input.updateTimer!.id ? { ...t, status: input.updateTimer!.status } : t
+        )
+        statChanges.push({ type: 'neutral', label: `Timer ${input.updateTimer.status}: ${input.updateTimer.id}` })
+      }
+      if (input.updateHeat) {
+        const existing = (world.heat || []).find(h => h.faction === input.updateHeat!.faction)
+        if (existing) {
+          world.heat = world.heat.map(h =>
+            h.faction === input.updateHeat!.faction
+              ? { ...h, level: input.updateHeat!.level, reasons: [...h.reasons, input.updateHeat!.reason] }
+              : h
+          )
+        } else {
+          world.heat = [...(world.heat || []), { faction: input.updateHeat.faction, level: input.updateHeat.level, reasons: [input.updateHeat.reason] }]
+        }
+        const label = input.updateHeat.level === 'none' ? 'Heat cleared' : `Heat: ${input.updateHeat.faction} → ${input.updateHeat.level}`
+        statChanges.push({ type: input.updateHeat.level === 'critical' ? 'loss' : 'neutral', label })
+      }
+      if (input.addLedgerEntry) {
+        world.ledger = [...(world.ledger || []), input.addLedgerEntry]
+        const sign = input.addLedgerEntry.amount > 0 ? '+' : ''
+        statChanges.push({ type: input.addLedgerEntry.amount < 0 ? 'loss' : 'gain', label: `${sign}${input.addLedgerEntry.amount} (${input.addLedgerEntry.description})` })
       }
       if (input.setOperationState !== undefined) {
         if (input.setOperationState) {

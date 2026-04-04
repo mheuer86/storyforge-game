@@ -216,6 +216,25 @@ export interface ExplorationState {
   alertLevel?: string       // narrative description of facility awareness
 }
 
+export interface Timer {
+  id: string
+  description: string      // "Renn trigger package ready"
+  deadline: string          // "Day 27, 0600"
+  status: 'active' | 'expired' | 'completed'
+}
+
+export interface HeatTracker {
+  faction: string           // "Helix" / "Vasek"
+  level: 'none' | 'low' | 'medium' | 'high' | 'critical'
+  reasons: string[]         // ["Pinnacle breach", "Carren flag"]
+}
+
+export interface LedgerEntry {
+  amount: number            // negative = spending, positive = earning
+  description: string       // "Kaelish Gold for Patel"
+  day: string               // "Day 24"
+}
+
 export interface WorldState {
   shipName: string
   currentLocation: { name: string; description: string }
@@ -232,6 +251,28 @@ export interface WorldState {
   sceneSnapshot?: string  // persistent spatial/situational context: who is where, injuries, environment state
   operationState: OperationState | null  // multi-phase plan persistence
   explorationState: ExplorationState | null  // spatial exploration tracking
+  timers: Timer[]               // hard calendar deadlines
+  heat: HeatTracker[]           // aggregate exposure per faction
+  ledger: LedgerEntry[]         // recent transaction history
+}
+
+export interface CombatAbility {
+  name: string            // "Mind Blast"
+  effect: string          // "INT save DC 16 or stunned 1 round"
+  range?: string          // "30ft cone" / "melee"
+  cooldown?: string       // "recharge on 5-6" / "1/encounter"
+}
+
+export interface CombatPosition {
+  entity: string          // "Rix" / "Mind Flayer" / "Pit trap"
+  position: string        // "center, behind pillar (half cover)"
+  status?: string         // "stunned round 2 of 3"
+}
+
+export interface CombatSpatialState {
+  environment: string     // "Chamber 40x30ft, pillar center, pit south"
+  positions: CombatPosition[]
+  exits: string[]         // "East door (locked, Thrall B adjacent)"
 }
 
 export interface Enemy {
@@ -242,6 +283,7 @@ export interface Enemy {
   attackBonus: number
   damage: string
   description?: string
+  abilities?: CombatAbility[]
 }
 
 export interface CombatState {
@@ -249,6 +291,7 @@ export interface CombatState {
   round: number
   enemies: Enemy[]
   log: string[]
+  spatialState?: CombatSpatialState
 }
 
 export interface RollDisplayData {
