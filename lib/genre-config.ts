@@ -104,6 +104,7 @@ export interface GenreConfig {
   intelTabLabel: string        // top-level tab: Intel, Case Board, Recon, Lore, Dossier
   intelNotebookLabel: string   // sub-tab for evidence: Intelligence, Evidence, Data, Research
   intelOperationLabel: string  // sub-tab for operations: Operation, The Play, The Run, Quest, Scheme
+  explorationLabel: string     // exploration card header prefix: Facility, Dungeon, Scene, Network, Ground
   openingHooks: string[]
   initialChapterTitle: string
   locationNames: string[]
@@ -375,6 +376,7 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
   intelTabLabel: 'Intel',
   intelNotebookLabel: 'Intelligence',
   intelOperationLabel: 'Operation',
+  explorationLabel: 'Facility',
   openingHooks: [
     'The ship just dropped out of FTL at an unfamiliar station. Something is wrong — the docking authority is demanding an unusual fee, and there are armed patrols everywhere.',
     'A distress signal pulled the ship off-course to a derelict freighter drifting in an asteroid belt. The cargo bay doors are open. No life signs.',
@@ -654,6 +656,7 @@ Rest terminology: Short rest, Long rest.`,
   intelTabLabel: 'Lore',
   intelNotebookLabel: 'Research',
   intelOperationLabel: 'Quest',
+  explorationLabel: 'Dungeon',
   openingHooks: [
     'The tavern door slams open. A wounded rider staggers in, clutching a sealed message. "For the company at the back table," he gasps, then collapses. The seal bears a crest no one has seen in twenty years.',
     'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the cart is heavier than it should be, and the merchant keeps looking over his shoulder.',
@@ -938,6 +941,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
   intelTabLabel: 'Recon',
   intelNotebookLabel: 'Data',
   intelOperationLabel: 'The Run',
+  explorationLabel: 'Network',
   openingHooks: [
     'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now the crew is pinned in a ventilation shaft forty floors up with no way down.',
     'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours.',
@@ -1217,6 +1221,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
   intelTabLabel: 'Dossier',
   intelNotebookLabel: 'Evidence',
   intelOperationLabel: 'Scheme',
+  explorationLabel: 'Ground',
   openingHooks: [
     'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop.',
     'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: retrieve something from a crypt three previous parties never returned from.',
@@ -1483,6 +1488,7 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
   intelTabLabel: 'Case Board',
   intelNotebookLabel: 'Evidence',
   intelOperationLabel: 'The Play',
+  explorationLabel: 'Scene',
   openingHooks: [
     'A woman you\'ve never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names — four of them are still alive.',
     'Your client wants you to find their missing spouse. Simple enough. Then you find the spouse, and they beg you to say you didn\'t.',
@@ -1529,6 +1535,7 @@ function makeStub(
     intelTabLabel: 'Intel',
     intelNotebookLabel: 'Evidence',
     intelOperationLabel: 'Operation',
+    explorationLabel: 'Location',
     openingHooks: [],
     initialChapterTitle: 'New Horizons',
     locationNames: ['Base'],

@@ -1454,6 +1454,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           tensionClocks: (gameState.world.tensionClocks ?? []).filter((c) => c.status !== 'resolved'),
           notebook: gameState.world.notebook ?? null,
           operationState: gameState.world.operationState ?? null,
+          explorationState: gameState.world.explorationState ?? null,
         }}
         chapters={gameState.history.chapters.map((c) => ({
           number: c.number,

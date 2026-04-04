@@ -20,7 +20,7 @@ interface ChatMessageProps {
 export function renderMarkdown(text: string) {
   // Fix missing spaces after sentence-ending punctuation (e.g. "you.Not" → "you. Not", 'heads."Sera' → 'heads." Sera')
   // Also fix horizontal rules glued to text (e.g. "one.---" → "one.\n---", "---Tactical" → "---\nTactical")
-  const normalized = text.replace(/([.!?]["']?)([A-Z])/g, '$1 $2').replace(/([^\n])---/g, '$1\n---').replace(/---([^\n])/g, '---\n$1')
+  const normalized = text.replace(/([.!?:]["']?)([A-Z])/g, '$1 $2').replace(/([^\n])---/g, '$1\n---').replace(/---([^\n])/g, '---\n$1')
   const lines = normalized.split('\n')
   return lines.map((line, i) => {
     const addBreak = i < lines.length - 1

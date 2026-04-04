@@ -45,9 +45,10 @@ export const gameTools: Anthropic.Tool[] = [
         },
         inventoryUse: {
           type: 'object',
-          description: 'Use one charge/unit of a consumable item.',
+          description: 'Use a consumable item. Decrements charges by 1 by default, or set charges directly if multiple were used at once.',
           properties: {
-            id: { type: 'string', description: 'Item ID to consume one unit of' },
+            id: { type: 'string', description: 'Item ID or name to consume' },
+            setCharges: { type: 'number', description: 'Set charges to this exact value instead of decrementing by 1. Use when multiple charges were spent at once.' },
           },
           required: ['id'],
         },
