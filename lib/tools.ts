@@ -190,6 +190,20 @@ export const gameTools: Anthropic.Tool[] = [
               attackBonus: { type: 'number', description: 'Bonus added to their attack rolls' },
               damage: { type: 'string', description: 'Damage dice, e.g. "1d6+2"' },
               description: { type: 'string', description: 'Brief visual description' },
+              abilities: {
+                type: 'array',
+                description: 'Special abilities declared at combat start. Canonical — do not change mid-fight.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string', description: 'Ability name, e.g. "Mind Blast"' },
+                    effect: { type: 'string', description: 'Mechanic, e.g. "INT save DC 16 or stunned 1 round"' },
+                    range: { type: 'string', description: 'Range/area, e.g. "30ft cone", "melee"' },
+                    cooldown: { type: 'string', description: 'Recharge, e.g. "recharge on 5-6", "1/encounter"' },
+                  },
+                  required: ['name', 'effect'],
+                },
+              },
             },
             required: ['id', 'name', 'hp', 'ac', 'attackBonus', 'damage'],
           },
@@ -499,6 +513,45 @@ export const gameTools: Anthropic.Tool[] = [
             what: { type: 'string', description: 'Updated description of the promise. Use when the situation has changed.' },
           },
           required: ['status'],
+        },
+        addTimer: {
+          type: 'object',
+          description: 'Add a hard calendar deadline. Timers are visible in state every turn — do not narrate past a deadline without acknowledging it.',
+          properties: {
+            id: { type: 'string', description: 'Unique snake_case identifier' },
+            description: { type: 'string', description: 'What happens at the deadline' },
+            deadline: { type: 'string', description: 'In-world time, e.g. "Day 27, 0600"' },
+          },
+          required: ['id', 'description', 'deadline'],
+        },
+        updateTimer: {
+          type: 'object',
+          description: 'Update a timer status. Match by id.',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'string', enum: ['active', 'expired', 'completed'] },
+          },
+          required: ['id', 'status'],
+        },
+        updateHeat: {
+          type: 'object',
+          description: 'Set or update faction heat level. High heat = tighter security, suspicious NPCs, constrained freedom.',
+          properties: {
+            faction: { type: 'string', description: 'Faction name — must match existing faction' },
+            level: { type: 'string', enum: ['none', 'low', 'medium', 'high', 'critical'] },
+            reason: { type: 'string', description: 'What caused this heat change' },
+          },
+          required: ['faction', 'level', 'reason'],
+        },
+        addLedgerEntry: {
+          type: 'object',
+          description: 'Record a financial transaction. Use last transaction as pricing anchor for future purchases.',
+          properties: {
+            amount: { type: 'number', description: 'Negative for spending, positive for earning' },
+            description: { type: 'string' },
+            day: { type: 'string', description: 'In-world day, e.g. "Day 24"' },
+          },
+          required: ['amount', 'description', 'day'],
         },
       },
     },

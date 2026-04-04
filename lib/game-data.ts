@@ -117,6 +117,9 @@ export function createInitialGameState(
     notebook: null,
     operationState: null,
     explorationState: null,
+    timers: [],
+    heat: [],
+    ledger: [],
   }
 
   return {
@@ -204,6 +207,10 @@ export function loadGameState(): GameState | null {
     if (state.world.explorationState === undefined) {
       state.world.explorationState = null
     }
+    // Migrate saves that predate timers/heat/ledger
+    if (!state.world.timers) state.world.timers = []
+    if (!state.world.heat) state.world.heat = []
+    if (!state.world.ledger) state.world.ledger = []
     // Migrate cyberpunk saves that predate the tech rig
     if (state.meta.genre === 'cyberpunk' && !state.world.ship) {
       state.world.ship = {

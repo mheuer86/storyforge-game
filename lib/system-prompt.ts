@@ -327,6 +327,14 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 - Are resources consumed in recent messages but not reflected?
 - Fix with update_world (setExplorationState — update zones/resources, or set to null if exited).
 
+### 12. TIMERS
+- Has an active timer's deadline passed based on currentTime? Set to expired.
+- Fix with update_world (updateTimer).
+
+### 13. HEAT
+- Did recent actions increase faction exposure but heat wasn't updated?
+- Fix with update_world (updateHeat).
+
 ## RULES
 - Be conservative. Only fix clear discrepancies, not ambiguous ones.
 - Do NOT generate any narrative text. Your only output is tool calls.
@@ -541,12 +549,18 @@ Turn order: Player action → Enemy response → New situation.
 
 1. Player picks one action (Attack, Ability, Item, Flee, custom)
 2. Resolve mechanically (request_roll, describe effect)
-3. Enemies act — batch into one narrative beat
+3. Enemies act — batch into one narrative beat, call defensive save for dodgeable attacks
 4. Present new situation, call suggest_actions
 
 Multi-enemy: all enemies act simultaneously. Narrative-first — show the hit, impact, consequence, then note mechanics in parentheses.
 
-start_combat when a fight begins. end_combat when it concludes.`
+start_combat when a fight begins (include enemies with stats AND declared abilities). end_combat when it concludes.
+
+**Spatial tracking:** In complex environments, maintain positions for all combatants, hazards, and exits in the scene snapshot. Update each round. Do not teleport combatants — movement should be consistent. The player needs relative distances and cover.
+
+**Environmental combat:** suggest_actions MUST include at least one environmental interaction when the scene contains usable terrain. Pit → suggest shoving. Chandelier → suggest cutting the chain. Unstable wall → suggest collapsing it. The environment is a weapon.
+
+**Special abilities:** Declare at start_combat. Name, mechanic, save/DC, range, cooldown. These are canonical — do not change mid-fight. Use the signature ability in rounds 1-2.`
 
 const SECTION_INFILTRATION = `## INFILTRATION FLOW
 
@@ -780,6 +794,18 @@ Two-chapter rule: active promise with no progress for two chapters → automatic
 ## TENSION CLOCKS (hidden — never show counts)
 
 Establish at chapter open or when a threat crystallizes. Advance when: time passes unaddressed, failed check exposes player, player increases threat awareness, background clocks tick at scene transitions. Max once per scene per clock. Trigger when filled — irreversible consequence. Resolve when player defuses the threat.
+
+## TIMERS
+
+Hard calendar deadlines tracked in TIMERS. Read each turn. Do not narrate past a deadline without acknowledging it. When a timer expires, the situation changes whether the player is ready or not. Add via update_world(addTimer), update status via updateTimer.
+
+## HEAT
+
+Read HEAT in state. High heat → NPCs more suspicious, security tighter, freedom of movement constrained. Show through world reaction, never announce levels. Update via update_world(updateHeat) when the player's actions increase or decrease faction exposure.
+
+## ECONOMY
+
+Read LEDGER in state. Use the last transaction as a pricing anchor — if the player paid 150 for Kaelish Gold, similar luxury items cost in that range. Track every purchase via update_world(addLedgerEntry) alongside the update_character credits change.
 
 ## INSPIRATION
 
@@ -1023,10 +1049,23 @@ function compressGameState(gs: GameState): string {
 
   let combatSection = 'COMBAT: Inactive'
   if (combat.active) {
-    const enemyLines = combat.enemies
-      .map((e) => `${e.name} HP ${e.hp.current}/${e.hp.max} AC ${e.ac}`)
-      .join(', ')
+    const enemyLines = combat.enemies.map((e) => {
+      let line = `${e.name} HP ${e.hp.current}/${e.hp.max} AC ${e.ac}`
+      if (e.abilities && e.abilities.length > 0) {
+        line += ' | ' + e.abilities.map(a =>
+          `${a.name} (${a.range ? a.range + ' ' : ''}${a.effect}${a.cooldown ? ' ' + a.cooldown : ''})`
+        ).join(' | ')
+      }
+      return line
+    }).join(', ')
     combatSection = `COMBAT: ACTIVE — Round ${combat.round}\nENEMIES: ${enemyLines}`
+    if (combat.spatialState) {
+      const sp = combat.spatialState
+      const posLines = sp.positions.map(p =>
+        `- ${p.entity}: ${p.position}${p.status ? ` (${p.status})` : ''}`
+      ).join('\n')
+      combatSection += `\nMAP: ${sp.environment}\n${posLines}\nEXITS: ${sp.exits.join(', ')}`
+    }
   }
 
   // Pressure gauge
@@ -1105,11 +1144,30 @@ function compressGameState(gs: GameState): string {
     triggeredClocks.length > 0 ? `Fired: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
   ].filter(Boolean).join(' | ') || 'None'
 
-  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState|setExplorationState) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
+  // --- Timers ---
+  const activeTimers = (w.timers ?? []).filter(t => t.status === 'active')
+  const timersLine = activeTimers.length > 0
+    ? `\nTIMERS: ${activeTimers.map(t => `${t.description} [${t.deadline}]`).join(' | ')}`
+    : ''
+
+  // --- Heat ---
+  const heatEntries = (w.heat ?? []).filter(h => h.level !== 'none')
+  const heatLine = heatEntries.length > 0
+    ? `\nHEAT: ${heatEntries.map(h => `${h.faction}=${h.level} (${h.reasons.join(',')})`).join(' | ')}`
+    : ''
+
+  // --- Ledger ---
+  const ledger = w.ledger ?? []
+  const lastTx = ledger.length > 0 ? ledger[ledger.length - 1] : null
+  const ledgerSuffix = lastTx
+    ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
+    : ''
+
+  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState|setExplorationState|addTimer|updateTimer|updateHeat|addLedgerEntry) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
 
   return `PRESSURE: ${pressureLine}
 
-PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
+PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
 STATS: ${statLine}
 PROF: ${c.proficiencies.join(', ')}
 GEAR: ${inventoryLine || 'Empty'}
@@ -1125,7 +1183,7 @@ NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
 ANTAG: ${antagonistLine}
-CLOCKS: ${clocksLine}${shipSection}${operationSection}${explorationSection}${notebookSection}
+CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${explorationSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
