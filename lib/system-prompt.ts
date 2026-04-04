@@ -912,10 +912,12 @@ function compressGameState(gs: GameState): string {
       ? relevantNpcs.map((n) => {
           const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
           const role = n.role ?? 'npc'
+          const voice = n.voiceNote ? `|Voice:${n.voiceNote}` : ''
+          const cbt = n.combatTier ? `|T${n.combatTier}${n.combatNotes ? ' ' + n.combatNotes : ''}` : ''
           if (isRecent(n)) {
-            return `${n.name} | ${role} | ${tier} — ${n.description}, last seen: ${n.lastSeen}`
+            return `${n.name}|${role}|${tier}${voice}${cbt} — ${n.description}, last:${n.lastSeen}`
           }
-          return `${n.name} | ${role} | ${tier}`
+          return `${n.name}|${role}|${tier}${voice}${cbt}`
         }).join('; ')
       : 'None'
 
@@ -942,7 +944,11 @@ function compressGameState(gs: GameState): string {
   const cohesionLine = `${cohesion.score}/5 — ${cohesionLabel}${recentCohesionChanges ? ` | Recent: ${recentCohesionChanges}` : ''}`
 
   const companionsLine = companions.length > 0
-    ? companions.map(n => `${n.name}${n.vulnerability ? ` [vuln: ${n.vulnerability}]` : ''}`).join('; ')
+    ? companions.map(n => {
+        const voice = n.voiceNote ? `|Voice:${n.voiceNote}` : ''
+        const vuln = n.vulnerability ? `[vuln:${n.vulnerability}]` : ''
+        return `${n.name}${voice}${vuln}`
+      }).join('; ')
     : 'None'
 
   const shipSection = w.ship && config.promptSections.buildAssetState

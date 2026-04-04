@@ -78,6 +78,9 @@ export interface NPC {
   disposition?: DispositionTier  // hidden relationship tier for contacts/npcs; never shown to player
   affiliation?: string  // faction or group name — used to group NPCs in the UI
   status?: 'active' | 'dead' | 'defeated' | 'gone'  // gone = left the story permanently
+  voiceNote?: string      // speech rhythm: "Short sentences. Grunts. Mechanical metaphors."
+  combatTier?: 1 | 2 | 3 | 4 | 5  // stat derivation tier, set once per NPC
+  combatNotes?: string    // fighting style: "tactical, focuses fire, won't fight alone"
 }
 
 export interface CohesionLogEntry {
