@@ -230,6 +230,7 @@ export function applyToolResults(
         setCurrentTime?: string
         setSceneSnapshot?: string
         setOperationState?: import('./types').OperationState | null
+        setExplorationState?: import('./types').ExplorationState | null
       }
       const world = { ...updated.world }
 
@@ -356,6 +357,14 @@ export function applyToolResults(
         if (matchedName) {
           const label = up.status === 'fulfilled' ? `Promise kept: ${matchedName}` : up.status === 'broken' ? `Promise broken: ${matchedName}` : `Promise → ${up.status}: ${matchedName}`
           statChanges.push({ type: up.status === 'fulfilled' ? 'gain' : up.status === 'broken' ? 'loss' : 'neutral', label })
+        }
+      }
+      if (input.setExplorationState !== undefined) {
+        world.explorationState = input.setExplorationState
+        if (input.setExplorationState) {
+          statChanges.push({ type: 'new', label: `Exploring: ${input.setExplorationState.facilityName}` })
+        } else {
+          statChanges.push({ type: 'neutral', label: 'Exited facility' })
         }
       }
       if (input.setOperationState !== undefined) {

@@ -50,6 +50,7 @@ Frame everything in-character. Don't name check types — just call request_roll
   // Omitted sections get one-line fallback summaries so the model knows they exist.
   const combatSection = context === 'combat' ? SECTION_COMBAT : ''
   const infiltrationSection = context === 'infiltration' ? SECTION_INFILTRATION : ''
+  const explorationPromptSection = (context === 'infiltration' || context === 'exploration' || context === 'combat') ? SECTION_EXPLORATION : ''
   const downtimeSection = (context === 'downtime' || context === 'social' || context === 'exploration') ? SECTION_DOWNTIME : ''
   const assetSection = ps.assetMechanic && context !== 'downtime' ? ps.assetMechanic : ''
 
@@ -69,6 +70,7 @@ Frame everything in-character. Don't name check types — just call request_roll
   const fallbacks: string[] = []
   if (!combatSection) fallbacks.push('Combat flow (turn order: player → enemies → new situation; batch enemy actions; start_combat/end_combat)')
   if (!infiltrationSection) fallbacks.push('Infiltration flow (escalating detection model; cover identity checks scale by NPC awareness; extraction is always a scene)')
+  if (!explorationPromptSection) fallbacks.push('Exploration state (zone tracking, resource depletion, rest-in-hostile-territory rules)')
   if (!downtimeSection) fallbacks.push('Downtime pacing (play character scenes during transit/waiting; NPC texture: habit, dialogue, unexpected moment)')
   if (!investigationSection && ps.investigationGuide) fallbacks.push(`Investigation mechanics (${config.notebookLabel}: clue discovery, connection proposals, case structure)`)
   const fallbackSection = fallbacks.length > 0
@@ -115,6 +117,8 @@ ${buildStakes(genre)}
 ${combatSection}
 
 ${infiltrationSection}
+
+${explorationPromptSection}
 
 ${downtimeSection}
 
@@ -195,6 +199,7 @@ Review the game state. Check:
 - Tension clocks: which should advance, trigger, or resolve?
 - Antagonist: did they move this chapter?
 - Operation state: clear it (setOperationState: null) if the operation completed.
+- Exploration state: clear it (setExplorationState: null) if the player exited the facility.
 
 Call update_world to resolve/update any stale entries. Call update_antagonist if the antagonist's status changed.
 
@@ -316,6 +321,12 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 - Were any objectives clearly achieved or failed in recent messages but still marked "active"?
 - Fix with update_world (setOperationState — update phase or objective status, or set to null if operation is over).
 
+### 11. EXPLORATION STATE
+- Is there an active exploration state but the player clearly left the facility?
+- Is the current zone wrong based on recent movement?
+- Are resources consumed in recent messages but not reflected?
+- Fix with update_world (setExplorationState — update zones/resources, or set to null if exited).
+
 ## RULES
 - Be conservative. Only fix clear discrepancies, not ambiguous ones.
 - Do NOT generate any narrative text. Your only output is tool calls.
@@ -348,6 +359,9 @@ function detectContext(gs: GameState): PromptContext {
      c.name.toLowerCase().includes('detection'))
   )
   if (hasInfiltrationClock) return 'infiltration'
+
+  // Exploration state is an explicit infiltration signal
+  if (gs.world.explorationState) return 'infiltration'
 
   // Active/extraction phase of an operation implies infiltration context
   const op = gs.world.operationState
@@ -553,6 +567,24 @@ Don't compress transit or waiting into pure summary. Play at least one scene wit
 **NPC texture during extended interaction:** For each named NPC present, establish: one observable habit, one unprompted line revealing personality, one unexpected moment. These don't require rolls — they're texture that makes the world inhabited.
 
 When the player asks to skip ahead, compress logistics but deliver one brief scene. Ask if they want to engage or move on.`
+
+// ============================================================
+// EXPLORATION STATE — context-gated
+// ============================================================
+
+const SECTION_EXPLORATION = `## EXPLORATION STATE
+
+When the player enters a hostile facility, dungeon, crime scene, or any environment with connected spaces to explore, initialize exploration state via update_world(setExplorationState).
+
+**Update at every zone transition:** Move current to explored, set new current, add newly visible areas to unexplored with sensory hints.
+
+**Track resources actively:** Every consumable used during exploration must be reflected. The resource line creates gameplay tension — when resources hit critical (last torch, last charge), narrate the weight of it.
+
+**Rest in hostile territory:** When the player attempts to rest during exploration, call a fate roll (DC 10-14 based on position security). Failure means interruption. Partial benefit only. Safe rest in hostile territory should feel earned.
+
+**Dungeon rhythm:** Explore → observe → interact → encounter → move. Not every room needs combat, but every room should have something — a detail, a clue, a decision, a resource.
+
+**Clear when exiting:** Set to null when the player leaves the facility. The exploration is over.`
 
 // ============================================================
 // OPERATION STATE — always included
@@ -974,6 +1006,16 @@ function compressGameState(gs: GameState): string {
     operationSection = `\nOPERATION: ${op.name} | Phase: ${op.phase}\nOBJ: ${objLine}\nTACTICAL: ${op.tacticalFacts.join('. ')}\nASSETS: ${op.assetConstraints.join('. ')}\nABORT: ${op.abortConditions.join('. ')}\nSIGNALS: ${op.signals.join('. ')}${assessLine}`
   }
 
+  // --- Exploration state ---
+  let explorationSection = ''
+  if (w.explorationState) {
+    const ex = w.explorationState
+    const exploredLine = ex.explored.map(a => `${a.name} (${a.notes})`).join(', ')
+    const unexploredLine = ex.unexplored.map(a => `${a.name} (${a.hints})`).join(', ')
+    const resourceLine = ex.resources.map(r => `${r.name} ${r.current}`).join(' | ')
+    explorationSection = `\nFACILITY: ${ex.facilityName} | ${ex.status}\nEXPLORED: ${exploredLine || 'None'}\nCURRENT: ${ex.current.name} — ${ex.current.description}\nUNEXPLORED: ${unexploredLine || 'None'}\nRESOURCES: ${resourceLine || 'Standard'}${ex.alertLevel ? `\nALERT: ${ex.alertLevel}` : ''}`
+  }
+
   let combatSection = 'COMBAT: Inactive'
   if (combat.active) {
     const enemyLines = combat.enemies
@@ -1058,7 +1100,7 @@ function compressGameState(gs: GameState): string {
     triggeredClocks.length > 0 ? `Fired: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
   ].filter(Boolean).join(' | ') || 'None'
 
-  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
+  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState|setExplorationState) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
 
   return `PRESSURE: ${pressureLine}
 
@@ -1078,7 +1120,7 @@ NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
 ANTAG: ${antagonistLine}
-CLOCKS: ${clocksLine}${shipSection}${operationSection}${notebookSection}
+CLOCKS: ${clocksLine}${shipSection}${operationSection}${explorationSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
@@ -1107,7 +1149,8 @@ export function buildMessagesForClaude(
   // Boost history budget during active operations when context matters most
   const hasActiveOp = gameState.world.operationState &&
     ['active', 'extraction'].includes(gameState.world.operationState.phase)
-  const budget = TARGET_HISTORY_TOKENS + (hasActiveOp ? OPERATION_TOKEN_BOOST : 0)
+  const hasExploration = !!gameState.world.explorationState
+  const budget = TARGET_HISTORY_TOKENS + ((hasActiveOp || hasExploration) ? OPERATION_TOKEN_BOOST : 0)
 
   // Walk backwards from most recent, accumulating until token budget hit
   // but always include at least MIN_MESSAGE_FLOOR messages

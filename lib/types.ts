@@ -206,6 +206,16 @@ export interface Notebook {
   connections: ClueConnection[]
 }
 
+export interface ExplorationState {
+  facilityName: string      // "Pinnacle Station" / "Ruins of Kal'Theros"
+  status: string            // "hostile, cipher disrupted" / "unexplored, dark"
+  explored: { name: string; notes: string }[]
+  current: { name: string; description: string }
+  unexplored: { name: string; hints: string }[]
+  resources: { name: string; current: string }[]
+  alertLevel?: string       // narrative description of facility awareness
+}
+
 export interface WorldState {
   shipName: string
   currentLocation: { name: string; description: string }
@@ -221,6 +231,7 @@ export interface WorldState {
   notebook: Notebook | null
   sceneSnapshot?: string  // persistent spatial/situational context: who is where, injuries, environment state
   operationState: OperationState | null  // multi-phase plan persistence
+  explorationState: ExplorationState | null  // spatial exploration tracking
 }
 
 export interface Enemy {
