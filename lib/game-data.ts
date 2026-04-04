@@ -115,6 +115,7 @@ export function createInitialGameState(
     tensionClocks: [],
     currentTime: '',
     notebook: null,
+    operationState: null,
   }
 
   return {
@@ -193,6 +194,10 @@ export function loadGameState(): GameState | null {
     // Migrate saves that predate chapterFrame
     if (state.chapterFrame === undefined) {
       state.chapterFrame = null
+    }
+    // Migrate saves that predate operationState
+    if (state.world.operationState === undefined) {
+      state.world.operationState = null
     }
     // Migrate cyberpunk saves that predate the tech rig
     if (state.meta.genre === 'cyberpunk' && !state.world.ship) {

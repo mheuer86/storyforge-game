@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { HelpCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { slashCommands } from '@/lib/slash-commands'
-import type { Notebook, ClueConnection, Clue } from '@/lib/types'
+import type { Notebook, ClueConnection, Clue, OperationState } from '@/lib/types'
 
 interface PickerItem {
   id: string
@@ -26,9 +26,11 @@ interface ActionBarProps {
   prefill?: string
   onPrefillConsumed?: () => void
   notebook?: Notebook | null
+  operationState?: OperationState | null
+  onOpenIntel?: () => void
 }
 
-export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook }: ActionBarProps) {
+export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, onOpenIntel }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
@@ -321,6 +323,35 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
             </button>
           ))}
         </div>
+      )}
+
+      {/* Operation HUD — above input during active/extraction */}
+      {operationState && (operationState.phase === 'active' || operationState.phase === 'extraction') && (
+        <button
+          type="button"
+          onClick={onOpenIntel}
+          className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-2 text-left transition-colors hover:bg-primary/10"
+        >
+          <span className={cn(
+            'inline-block w-1.5 h-1.5 rounded-full shrink-0',
+            operationState.phase === 'active' ? 'bg-primary animate-pulse' : 'bg-warning animate-pulse'
+          )} />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-primary shrink-0">
+            {operationState.name}
+          </span>
+          <span className="text-[10px] text-primary/30 shrink-0">·</span>
+          <span className="text-[11px] truncate inline-flex gap-2">
+            {operationState.objectives.map((o, i) => (
+              <span key={i} className={cn(
+                o.status === 'active' && 'text-foreground/60',
+                o.status === 'completed' && 'text-foreground/30 line-through',
+                o.status === 'failed' && 'text-destructive/30 line-through',
+              )}>
+                {i + 1}. {o.text}
+              </span>
+            ))}
+          </span>
+        </button>
       )}
 
       {/* Custom Input — contained area */}

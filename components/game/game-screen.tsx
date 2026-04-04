@@ -57,6 +57,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
   const [rollPrompt, setRollPrompt] = useState<RollPrompt | null>(null)
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string; rollResolution?: RollResolution } | null>(null)
@@ -1387,13 +1388,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             prefill={actionBarPrefill}
             onPrefillConsumed={() => setActionBarPrefill(undefined)}
             notebook={gameState.world.notebook}
+            operationState={gameState.world.operationState}
+            onOpenIntel={() => { setMenuInitialTab('intel'); setIsMenuOpen(true) }}
           />
         </div>
       </main>
 
       <BurgerMenu
         open={isMenuOpen}
-        onOpenChange={setIsMenuOpen}
+        onOpenChange={(open) => { setIsMenuOpen(open); if (!open) setMenuInitialTab(undefined) }}
+        initialTab={menuInitialTab}
         genre={(gameState.meta.genre || 'space-opera') as Genre}
         chapterMission={gameState.chapterFrame}
         onConnectEvidence={handleConnectEvidence}
@@ -1449,6 +1453,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           antagonist: gameState.world.antagonist,
           tensionClocks: (gameState.world.tensionClocks ?? []).filter((c) => c.status !== 'resolved'),
           notebook: gameState.world.notebook ?? null,
+          operationState: gameState.world.operationState ?? null,
         }}
         chapters={gameState.history.chapters.map((c) => ({
           number: c.number,
