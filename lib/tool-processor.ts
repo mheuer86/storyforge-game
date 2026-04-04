@@ -35,7 +35,7 @@ export function applyToolResults(
         creditsChange?: number
         inventoryAdd?: InventoryItem[]
         inventoryRemove?: string[]
-        inventoryUse?: { id: string }
+        inventoryUse?: { id: string; setCharges?: number }
         tempModifierAdd?: TempModifier
         tempModifierRemove?: string
         traitUpdate?: { name: string; usesRemaining: number }
@@ -85,13 +85,35 @@ export function applyToolResults(
       }
 
       if (input.inventoryUse) {
+        const useId = input.inventoryUse.id.toLowerCase()
+        let matched = false
         char.inventory = char.inventory.map((item) => {
-          if (item.id === input.inventoryUse!.id) {
-            const newCharges = (item.charges ?? 1) - 1
-            if (newCharges <= 0 && item.charges !== undefined) {
-              statChanges.push({ type: 'loss', label: `${item.name} depleted` })
+          // Match by ID or name — exact, startsWith, or slug variants
+          const id = item.id.toLowerCase()
+          const name = item.name.toLowerCase()
+          const slug = name.replace(/\s+/g, '_')
+          const matchById = id === useId || id.startsWith(useId) || useId.startsWith(id)
+          const matchByName = name === useId || name.startsWith(useId) || slug === useId || slug.startsWith(useId)
+          if ((matchById || matchByName) && !matched) {
+            matched = true
+            if (item.charges !== undefined) {
+              const newCharges = input.inventoryUse!.setCharges !== undefined
+                ? Math.max(0, input.inventoryUse!.setCharges)
+                : Math.max(0, item.charges - 1)
+              if (newCharges === item.charges) return item // no change
+              if (newCharges <= 0) {
+                statChanges.push({ type: 'loss', label: `${item.name} depleted` })
+              } else {
+                statChanges.push({ type: 'loss', label: `${item.name} ${item.charges} → ${newCharges}` })
+              }
+              return { ...item, charges: newCharges }
+            } else if (item.quantity > 1) {
+              statChanges.push({ type: 'loss', label: `${item.name} ${item.quantity} → ${item.quantity - 1}` })
+              return { ...item, quantity: item.quantity - 1 }
+            } else {
+              statChanges.push({ type: 'loss', label: `${item.name} used` })
+              return { ...item, quantity: 0 }
             }
-            return { ...item, charges: Math.max(0, newCharges) }
           }
           return item
         })

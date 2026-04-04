@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState, Antagonist, ShipState, Notebook, OperationState } from '@/lib/types'
+import type { GameState, Antagonist, ShipState, Notebook, OperationState, ExplorationState } from '@/lib/types'
 import { debugLog } from '@/lib/tool-processor'
 import { renderMarkdown } from './chat-message'
 
@@ -62,6 +62,7 @@ interface World {
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
   notebook: Notebook | null
   operationState: OperationState | null
+  explorationState: ExplorationState | null
 }
 
 interface Chapter {
@@ -172,19 +173,19 @@ export function BurgerMenu({
                 <TabsTrigger value="character" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                   Character
                 </TabsTrigger>
-                {ship.state && (
-                  <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
-                    {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
-                  </TabsTrigger>
-                )}
+                <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
+                  World
+                </TabsTrigger>
                 {(world.operationState || genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
                   <TabsTrigger value="intel" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                     {genreConfig.intelTabLabel}
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
-                  World
-                </TabsTrigger>
+                {ship.state && (
+                  <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
+                    {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="chapters" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
                   Chapters
                 </TabsTrigger>
@@ -204,7 +205,7 @@ export function BurgerMenu({
 
               {/* World Tab */}
               <TabsContent value="world" className="mt-0 p-4">
-                <WorldPanel world={world} partyBaseName={genreConfig.partyBaseName} />
+                <WorldPanel world={world} partyBaseName={genreConfig.partyBaseName} explorationLabel={genreConfig.explorationLabel} inventory={character.class.gear} />
               </TabsContent>
 
               {/* Chapters Tab */}
@@ -494,6 +495,163 @@ function MissionBrief({ op }: { op: OperationState }) {
   )
 }
 
+function ResourceBar({ name, current }: { name: string; current: string }) {
+  // Parse "2/3", "full", "1", etc. into a fill fraction
+  let fraction = 1
+  let label = current
+  const slashMatch = current.match(/^(\d+)\s*\/\s*(\d+)/)
+  if (slashMatch) {
+    const cur = parseInt(slashMatch[1])
+    const max = parseInt(slashMatch[2])
+    fraction = max > 0 ? cur / max : 0
+    label = `${cur}/${max}`
+  } else if (current.toLowerCase() === 'full') {
+    fraction = 1
+  } else {
+    const num = parseInt(current)
+    if (!isNaN(num)) {
+      // No max given — estimate: 1=critical, 2-3=low, 4+=ok
+      fraction = Math.min(1, num / 6)
+      label = `${num}`
+    }
+  }
+
+  const isEmpty = fraction <= 0
+  const barColor = isEmpty ? 'bg-foreground/10' : fraction <= 0.2 ? 'bg-destructive/70' : fraction <= 0.5 ? 'bg-warning/70' : 'bg-primary/50'
+
+  return (
+    <div className={cn("flex items-center gap-2", isEmpty && "opacity-40")}>
+      <span className={cn("text-xs w-24 truncate shrink-0", isEmpty ? "text-foreground/30 line-through" : "text-foreground/60")}>{name}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-foreground/5 overflow-hidden">
+        {!isEmpty && <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${Math.max(4, fraction * 100)}%` }} />}
+      </div>
+      <span className={cn(
+        'text-[10px] font-mono w-8 text-right shrink-0',
+        isEmpty ? 'text-foreground/30' : fraction <= 0.2 ? 'text-destructive/70' : fraction <= 0.5 ? 'text-warning/70' : 'text-foreground/40'
+      )}>{isEmpty ? '—' : label}</span>
+    </div>
+  )
+}
+
+function ExplorationCard({ ex, label, inventory }: { ex: ExplorationState; label: string; inventory?: GearItem[] }) {
+  const [exploredExpanded, setExploredExpanded] = useState(ex.explored.length <= 3)
+
+  // Derive resource bars from inventory (charges-based items)
+  const inventoryResources: { name: string; current: string }[] = (inventory || [])
+    .filter(item => item.charges !== undefined && item.maxCharges !== undefined && item.maxCharges > 0)
+    .map(item => ({ name: item.name, current: item.charges === item.maxCharges ? 'full' : `${item.charges}/${item.maxCharges}` }))
+  // Exploration-specific resources: only show if they DON'T look like inventory items
+  // (i.e. no slash format like "2/4" or "full" — those should come from inventory)
+  const extraResources = (ex.resources || []).filter(r => {
+    // Skip if inventory already has this item
+    if (inventoryResources.some(ir => ir.name.toLowerCase() === r.name.toLowerCase())) return false
+    // Skip if it looks like an inventory consumable (has charges format) but isn't in inventory
+    // — this means the GM put it in resources instead of inventory, which is wrong
+    if (/^\d+\/\d+$/.test(r.current.trim()) || r.current.toLowerCase() === 'full') return false
+    return true
+  })
+  const allResources = [...inventoryResources, ...extraResources]
+
+  const alertUrgency = ex.alertLevel?.toLowerCase().includes('converging') || ex.alertLevel?.toLowerCase().includes('lockdown')
+    ? 'high'
+    : ex.alertLevel?.toLowerCase().includes('search') || ex.alertLevel?.toLowerCase().includes('alert')
+      ? 'medium'
+      : 'low'
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+      {/* Header */}
+      <div className="px-3 py-2.5 border-b border-primary/10">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">
+          {label}: {ex.facilityName}
+        </div>
+        <div className="text-xs text-foreground/40 mt-0.5">{ex.status}</div>
+      </div>
+
+      {/* Body */}
+      <div className="px-3 py-2.5 flex flex-col gap-4">
+        {/* Current Position */}
+        <div>
+          <SectionLabel>Current Position</SectionLabel>
+          <div className="rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-2">
+            <div className="text-xs font-medium text-foreground/80">{ex.current.name}</div>
+            <div className="text-xs text-foreground/50 mt-0.5">{ex.current.description}</div>
+          </div>
+        </div>
+
+        {/* Unexplored */}
+        {ex.unexplored.length > 0 && (
+          <div>
+            <SectionLabel>Unexplored</SectionLabel>
+            <div className="flex flex-col gap-1.5">
+              {ex.unexplored.map((zone, i) => (
+                <div key={i} className="flex gap-2 text-xs text-foreground/60">
+                  <span className="text-primary/40 shrink-0">◇</span>
+                  <div>
+                    <span className="text-foreground/70">{zone.name}</span>
+                    {zone.hints && <span className="text-foreground/40"> — {zone.hints}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Explored */}
+        {ex.explored.length > 0 && (
+          <div>
+            <button
+              onClick={() => setExploredExpanded(!exploredExpanded)}
+              className="flex items-center gap-2.5 mb-3 w-full text-left"
+            >
+              <div className="w-6 h-px bg-primary/40" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">
+                Explored {!exploredExpanded && `(${ex.explored.length})`}
+              </h3>
+              <span className="text-[10px] text-foreground/30 ml-auto">{exploredExpanded ? '▾' : '▸'}</span>
+            </button>
+            {exploredExpanded && (
+              <div className="flex flex-col gap-1.5">
+                {ex.explored.map((zone, i) => (
+                  <div key={i} className="flex gap-2 text-xs text-foreground/40">
+                    <span className="text-emerald-400/50 shrink-0">✓</span>
+                    <span>{zone.name}{zone.notes ? ` — ${zone.notes}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Resources — derived from inventory + exploration-specific */}
+        {allResources.length > 0 && (
+          <div>
+            <SectionLabel>Resources</SectionLabel>
+            <div className="flex flex-col gap-2">
+              {allResources.map((r, i) => (
+                <ResourceBar key={i} name={r.name} current={r.current} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Alert Level */}
+        {ex.alertLevel && (
+          <div className={cn(
+            'rounded-lg border px-3 py-2 text-xs',
+            alertUrgency === 'high' ? 'border-destructive/30 bg-destructive/5 text-destructive/80' :
+            alertUrgency === 'medium' ? 'border-warning/30 bg-warning/5 text-warning/80' :
+            'border-foreground/10 bg-foreground/5 text-foreground/50'
+          )}>
+            <span className="font-semibold uppercase tracking-wider text-[10px]">Alert: </span>
+            {ex.alertLevel}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function CharacterSheet({ character, currencyLabel, mission }: { character: Character; currencyLabel: string; mission?: string | null }) {
   return (
     <div className="flex flex-col gap-5 text-sm">
@@ -702,8 +860,10 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
   )
 }
 
-function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: string }) {
-  const [subtab, setSubtab] = useState<'people' | 'narrative' | 'locations'>('people')
+type GearItem = { name: string; description: string; damage?: string; effect?: string; charges?: number; maxCharges?: number }
+
+function WorldPanel({ world, partyBaseName, explorationLabel, inventory }: { world: World; partyBaseName: string; explorationLabel: string; inventory?: GearItem[] }) {
+  const [subtab, setSubtab] = useState<'locations' | 'people' | 'narrative'>('locations')
 
   const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
   const isResolved = (s: string) => s.toLowerCase() === 'resolved'
@@ -714,7 +874,7 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
     <div className="flex flex-col gap-4 text-sm">
       {/* Subtab toggle */}
       <div className="flex gap-4">
-        {(['people', 'narrative', 'locations'] as const).map((tab) => (
+        {(['locations', 'people', 'narrative'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setSubtab(tab)}
@@ -1031,13 +1191,17 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
       {/* ── Locations ── */}
       {subtab === 'locations' && (
         <>
-          {/* Current Location */}
+          {/* Current Location — exploration card when active, simple card otherwise */}
           <div>
             <SectionLabel>Current Location</SectionLabel>
-            <div className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
-              <div className="font-medium text-foreground">{world.location.name}</div>
-              <div className="text-xs text-foreground/60">{world.location.description}</div>
-            </div>
+            {world.explorationState ? (
+              <ExplorationCard ex={world.explorationState} label={explorationLabel} inventory={inventory} />
+            ) : (
+              <div className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
+                <div className="font-medium text-foreground">{world.location.name}</div>
+                <div className="text-xs text-foreground/60">{world.location.description}</div>
+              </div>
+            )}
           </div>
 
           {/* Vessels & Installations */}

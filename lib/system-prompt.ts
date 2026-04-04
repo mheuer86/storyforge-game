@@ -855,9 +855,14 @@ function buildToolUsage(currencyName: string): string {
 - Did a promise get fulfilled or broken? → update_world with updatePromise
 - Did a tension clock tick? → update_clock
 - Did the scene location or situation change? → update_world with setLocation/setSceneSnapshot
+- Did the player use a consumable item (grenade, medpatch, charge, ammo)? → update_character with inventoryUse (match by item ID)
 - Did the player assert something uncertain as fact? → request_roll (see Assessment Rolls in Roll Discipline)
 
 **TOOL CALL DISCIPLINE (critical):** Never narrate a resolution before the tool call fires. Never confirm a tool call executed unless you see it in your response. If a tool call silently fails, say "the tool didn't fire, let me retry" — do not say "done." Narrating a state change without calling the tool is the single worst failure mode: the player sees the world state contradict the narrative, and trust in the system breaks.
+
+**Consumable tracking.** When the player uses a consumable (grenade, medpatch, ammo, charge), call update_character with inventoryUse in the same response. Match by item ID from the GEAR line in state. If the player throws a flashbang, the flashbang charges must decrement. Narrating use without calling the tool is the consumable version of the promise-fulfillment bug.
+
+**No meta-narration.** Never narrate your decision-making process. Don't write "let me resolve that", "before narrating the outcome", "I'll call a roll for this", "let me check the state", or any variation. Just call the tool. The player sees the result — they don't need you to announce what you're about to do. Stay in character at all times.
 
 **World state:** update_world for addNpcs (check list first — updateNpc if exists), addThread, updateThread, addFaction, addPromise, updatePromise (match by "to" name, set status + updated "what" text). update_antagonist (establish) on first reveal.
 
@@ -1012,8 +1017,8 @@ function compressGameState(gs: GameState): string {
     const ex = w.explorationState
     const exploredLine = ex.explored.map(a => `${a.name} (${a.notes})`).join(', ')
     const unexploredLine = ex.unexplored.map(a => `${a.name} (${a.hints})`).join(', ')
-    const resourceLine = ex.resources.map(r => `${r.name} ${r.current}`).join(' | ')
-    explorationSection = `\nFACILITY: ${ex.facilityName} | ${ex.status}\nEXPLORED: ${exploredLine || 'None'}\nCURRENT: ${ex.current.name} — ${ex.current.description}\nUNEXPLORED: ${unexploredLine || 'None'}\nRESOURCES: ${resourceLine || 'Standard'}${ex.alertLevel ? `\nALERT: ${ex.alertLevel}` : ''}`
+    const resourceLine = ex.resources.length > 0 ? ex.resources.map(r => `${r.name} ${r.current}`).join(' | ') : ''
+    explorationSection = `\nFACILITY: ${ex.facilityName} | ${ex.status}\nEXPLORED: ${exploredLine || 'None'}\nCURRENT: ${ex.current.name} — ${ex.current.description}\nUNEXPLORED: ${unexploredLine || 'None'}${resourceLine ? `\nRESOURCES: ${resourceLine}` : ''}${ex.alertLevel ? `\nALERT: ${ex.alertLevel}` : ''}`
   }
 
   let combatSection = 'COMBAT: Inactive'
