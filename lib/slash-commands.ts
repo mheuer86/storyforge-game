@@ -54,6 +54,13 @@ The player proposes connecting two items from their notebook. Match the names ag
       `PLAYER COMMAND: /use ${args}\nThe player wants to use "${args}" from their inventory. Narrate the usage and apply its mechanical effect. If the item has charges, update via update_character. Match the item name against GEAR in game state.`,
   },
   {
+    name: 'clue',
+    description: 'Flag something as evidence worth tracking',
+    args: '[what you noticed]',
+    buildInstruction: (args) =>
+      `PLAYER COMMAND: /clue ${args}\nThe player believes "${args}" is significant evidence worth tracking. Evaluate whether it qualifies as a clue (meaningful information with investigative value). If yes, call add_clue with a descriptive title, the factual content, the source, and relevant tags. If the player is reaching, acknowledge their thinking but explain why it doesn't qualify as evidence yet — without dismissing it entirely.`,
+  },
+  {
     name: 'challenge',
     description: 'Force a mechanical moment',
     args: '',

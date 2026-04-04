@@ -158,6 +158,8 @@ request_roll BEFORE outcome. Never narrate state change without tool call. sugge
 
 **Consumable tracking.** When the player uses a consumable, call update_character with inventoryUse in the same response.
 
+**No double-deductions.** Before deducting credits or consuming items, check the state. Read LEDGER — if the last entry matches what you're about to charge, it already happened. Read GEAR — if the item's charges already reflect the use, don't call inventoryUse again. A cost narrated once is charged once. This applies across turns: if you narrated using a medpatch last turn and charges went from 6 to 5, do not decrement again this turn.
+
 **No meta-narration.** Never narrate your decision-making process. Don't write "let me resolve that" or "I'll call a roll for this." Just call the tool.
 
 **Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).`
@@ -179,14 +181,8 @@ function selectSituationModule(
     return buildTutorialModule(ps, config)
   }
 
-  // Investigation overlays for noir or investigation-heavy chapters
-  const isNoir = genre === 'noire'
-  const hasInvestigation = gs.world.threads.some(t =>
-    ['case', 'investigation', 'mystery', 'clue', 'evidence'].some(k =>
-      t.title.toLowerCase().includes(k)
-    )
-  )
-  const investigationOverlay = (isNoir || hasInvestigation) && context !== 'combat'
+  // Investigation overlay — always loaded (every genre has mysteries), except during combat
+  const investigationOverlay = context !== 'combat' && ps.investigationGuide
     ? buildInvestigationOverlay(config.notebookLabel, ps.investigationGuide)
     : ''
 
@@ -425,7 +421,7 @@ function buildInvestigationOverlay(notebookLabel: string, genreGuide: string): s
 
 ${genreGuide}
 
-**Clue discovery:** Active investigation → request_roll. PP meets DC → auto-notice. NPC volunteering scales with disposition.
+**Clue discovery:** Active investigation → request_roll. PP meets DC → auto-notice. NPC volunteering scales with disposition. **Before adding a clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clueId to update it instead of creating a duplicate.**
 
 **Connection proposals:** Strong (sound reasoning) → INT Investigation, DC 10/14/18. Weak (plausible but off) → partial truth. No connection → no roll, narrate dead end.
 
@@ -603,8 +599,8 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 
 ### 2. HP & RESOURCES
 - Does HP reflect damage taken and healing received in recent messages?
-- Do ${config.currencyAbbrev} reflect transactions mentioned?
-- Fix with update_character (hpChange or hpSet, creditsChange).
+- Fix with update_character (hpChange or hpSet).
+- For ${config.currencyAbbrev}: calculate the correct balance from starting credits minus LEDGER entries. If the current balance doesn't match, use hpSet-style correction: call update_character with creditsChange to set the exact correct amount. Do NOT apply incremental +/- adjustments — calculate the right number and set it directly.
 
 ### 3. TEMPORARY EFFECTS
 - Are there expired temp modifiers still listed? (Check duration descriptions against scene progression.)
