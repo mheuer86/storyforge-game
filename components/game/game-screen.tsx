@@ -250,31 +250,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               )
               if (otherResults.length > 0) {
                 stateWithChanges = applyTools(otherResults, stateWithChanges, statChanges)
-                // Insert scene break headers if any location changes occurred
-                const breaks = (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
-                if (breaks && breaks.length > 0) {
-                  // Insert as a standalone message right before the GM message
-                  const breakMsg: DisplayMessage = {
-                    id: crypto.randomUUID(),
-                    type: 'scene-break',
-                    content: breaks[breaks.length - 1],
-                  }
-                  setMessages((prev) => {
-                    const gmIdx = prev.findIndex((m) => m.id === gmMsgId)
-                    if (gmIdx === -1) return [...prev, breakMsg]
-                    const updated = [...prev]
-                    updated.splice(gmIdx, 0, breakMsg)
-                      return updated
-                  })
-                  delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
-                }
+                // Scene breaks: location data is recorded in state but no longer
+                // rendered as a separate UI message — the GM's narrative heading
+                // (## Location — Time) serves as the visual scene break.
+                delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
               }
             }
 
             if (event.type === 'done') {
               setRetryCountdown(null)
               // Clear stale quick actions if the GM didn't provide new ones
-              if (finalActions.length === 0) {
+              // But preserve them during meta questions (meta responses don't call suggest_actions)
+              if (finalActions.length === 0 && !isMetaQuestion) {
                 setQuickActions([])
               }
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'

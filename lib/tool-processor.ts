@@ -26,6 +26,9 @@ export function applyToolResults(
 ): GameState & { _sceneBreaks?: string[] } {
   let updated = { ...currentState }
   const sceneBreaks: string[] = []
+  // Track credit changes within this batch to detect duplicates
+  const creditChangesThisBatch: number[] = []
+  const ledgerEntriesThisBatch: string[] = []
 
   for (const result of results) {
     if (result.tool === 'update_character') {
@@ -63,13 +66,19 @@ export function applyToolResults(
       }
 
       if (input.creditsChange !== undefined) {
-        const newCredits = char.credits + input.creditsChange
-        if (input.creditsChange < 0) {
-          statChanges.push({ type: 'loss', label: `${char.credits}cr → ${newCredits}cr` })
+        // Reject duplicate credit changes within the same batch
+        if (creditChangesThisBatch.includes(input.creditsChange)) {
+          dbg('DUPLICATE credit change rejected: ' + input.creditsChange)
         } else {
-          statChanges.push({ type: 'gain', label: `+${input.creditsChange}cr` })
+          creditChangesThisBatch.push(input.creditsChange)
+          const newCredits = char.credits + input.creditsChange
+          if (input.creditsChange < 0) {
+            statChanges.push({ type: 'loss', label: `${char.credits}cr → ${newCredits}cr` })
+          } else {
+            statChanges.push({ type: 'gain', label: `+${input.creditsChange}cr` })
+          }
+          char.credits = newCredits
         }
-        char.credits = newCredits
       }
 
       if (input.inventoryAdd) {
@@ -418,9 +427,19 @@ export function applyToolResults(
         statChanges.push({ type: input.updateHeat.level === 'critical' ? 'loss' : 'neutral', label })
       }
       if (input.addLedgerEntry) {
-        world.ledger = [...(world.ledger || []), input.addLedgerEntry]
-        const sign = input.addLedgerEntry.amount > 0 ? '+' : ''
-        statChanges.push({ type: input.addLedgerEntry.amount < 0 ? 'loss' : 'gain', label: `${sign}${input.addLedgerEntry.amount} (${input.addLedgerEntry.description})` })
+        const ledgerKey = `${input.addLedgerEntry.amount}:${input.addLedgerEntry.description}`
+        // Also check against existing ledger for cross-turn duplicates
+        const existingDupe = (world.ledger || []).some(e =>
+          e.amount === input.addLedgerEntry!.amount && e.description === input.addLedgerEntry!.description
+        )
+        if (ledgerEntriesThisBatch.includes(ledgerKey) || existingDupe) {
+          dbg('DUPLICATE ledger entry rejected: ' + ledgerKey)
+        } else {
+          ledgerEntriesThisBatch.push(ledgerKey)
+          world.ledger = [...(world.ledger || []), input.addLedgerEntry]
+          const sign = input.addLedgerEntry.amount > 0 ? '+' : ''
+          statChanges.push({ type: 'neutral', label: `${sign}${input.addLedgerEntry.amount} (${input.addLedgerEntry.description})` })
+        }
       }
       if (input.setOperationState !== undefined) {
         if (input.setOperationState) {
@@ -757,13 +776,25 @@ export function applyToolResults(
           statChanges.push({ type: 'new', label: `Clue: ${input.title || input.content.slice(0, 40) + '...'}` })
         }
       } else {
-        // New clue
-        const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-        notebook.clues = [...notebook.clues, {
-          id: clueId, title: input.title, content: input.content, source: input.source, tags: input.tags,
-          discoveredChapter: updated.meta.chapterNumber, connectionIds: [], isRedHerring: input.isRedHerring ?? false,
-        }]
-        statChanges.push({ type: 'new', label: `Clue: ${input.title || input.content.slice(0, 40) + '...'}` })
+        // New clue — check for duplicate by title first
+        const titleLower = (input.title || '').toLowerCase()
+        const duplicate = titleLower ? notebook.clues.find(c => (c.title || '').toLowerCase() === titleLower) : null
+        if (duplicate) {
+          // Merge into existing clue instead of creating duplicate
+          notebook.clues = notebook.clues.map(c =>
+            c.id === duplicate.id
+              ? { ...c, content: input.content, source: input.source, tags: [...new Set([...c.tags, ...input.tags])], ...(input.title ? { title: input.title } : {}), ...(input.status ? { status: input.status } : {}) }
+              : c
+          )
+          statChanges.push({ type: 'new', label: `Clue updated: ${input.title || input.content.slice(0, 35) + '...'}` })
+        } else {
+          const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+          notebook.clues = [...notebook.clues, {
+            id: clueId, title: input.title, content: input.content, source: input.source, tags: input.tags,
+            discoveredChapter: updated.meta.chapterNumber, connectionIds: [], isRedHerring: input.isRedHerring ?? false,
+          }]
+          statChanges.push({ type: 'new', label: `Clue: ${input.title || input.content.slice(0, 40) + '...'}` })
+        }
       }
 
       if (input.threadTitle && !notebook.activeThreadTitle) {
