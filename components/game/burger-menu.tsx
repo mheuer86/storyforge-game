@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState, Antagonist, ShipState, Notebook } from '@/lib/types'
+import type { GameState, Antagonist, ShipState, Notebook, OperationState } from '@/lib/types'
 import { debugLog } from '@/lib/tool-processor'
 import { renderMarkdown } from './chat-message'
 
@@ -61,6 +61,7 @@ interface World {
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
   notebook: Notebook | null
+  operationState: OperationState | null
 }
 
 interface Chapter {
@@ -93,6 +94,7 @@ interface BurgerMenuProps {
   onLoad: (state: GameState) => void
   onNewGame?: () => void
   onConnectEvidence?: () => void
+  initialTab?: string
 }
 
 function timeAgo(iso: string): string {
@@ -119,8 +121,13 @@ export function BurgerMenu({
   onLoad,
   onNewGame,
   onConnectEvidence,
+  initialTab,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
+  const [activeMenuTab, setActiveMenuTab] = useState(initialTab || 'character')
+  useEffect(() => {
+    if (initialTab && open) setActiveMenuTab(initialTab)
+  }, [initialTab, open])
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null)
   const [saveMode, setSaveMode] = useState<'save' | 'load' | null>(null)
   const [loadConfirm, setLoadConfirm] = useState<SaveSlotData | null>(null)
@@ -159,7 +166,7 @@ export function BurgerMenu({
             </SheetDescription>
           </SheetHeader>
 
-          <Tabs defaultValue="character" className="flex flex-1 flex-col overflow-hidden">
+          <Tabs value={activeMenuTab} onValueChange={setActiveMenuTab} className="flex flex-1 flex-col overflow-hidden">
             <div className="shrink-0 overflow-x-auto border-b border-border/10 pb-2">
               <TabsList className="flex w-max min-w-full bg-transparent gap-1">
                 <TabsTrigger value="character" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
@@ -170,9 +177,9 @@ export function BurgerMenu({
                     {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
                   </TabsTrigger>
                 )}
-                {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
-                  <TabsTrigger value="notebook" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
-                    {genreConfig.notebookLabel}
+                {(world.operationState || genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
+                  <TabsTrigger value="intel" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
+                    {genreConfig.intelTabLabel}
                   </TabsTrigger>
                 )}
                 <TabsTrigger value="world" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
@@ -211,17 +218,18 @@ export function BurgerMenu({
                 />
               </TabsContent>
 
-              {/* Notebook Tab */}
-              {(genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
-                <TabsContent value="notebook" className="mt-0 p-4">
-                  {world.notebook && world.notebook.clues.length > 0 ? (
-                    <NotebookPanel notebook={world.notebook} notebookLabel={genreConfig.notebookLabel} onConnect={onConnectEvidence} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <h2 className="font-heading text-lg font-semibold text-foreground/50">{genreConfig.notebookLabel}</h2>
-                      <p className="mt-2 text-sm text-muted-foreground/50 max-w-[240px]">No evidence yet. Ask questions, search rooms, follow leads.</p>
-                    </div>
-                  )}
+              {/* Intel Tab — operation brief + notebook */}
+              {(world.operationState || genre === 'noire' || (world.notebook && world.notebook.clues.length > 0)) && (
+                <TabsContent value="intel" className="mt-0 p-4">
+                  <IntelPanel
+                    operationState={world.operationState}
+                    notebook={world.notebook}
+                    evidenceLabel={genreConfig.intelNotebookLabel}
+                    operationLabel={genreConfig.intelOperationLabel}
+                    notebookLabel={genreConfig.notebookLabel}
+                    genre={genre}
+                    onConnect={onConnectEvidence}
+                  />
                 </TabsContent>
               )}
             </ScrollArea>
@@ -361,6 +369,127 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <div className="flex items-center gap-2.5 mb-3">
       <div className="w-6 h-px bg-primary/40" />
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">{children}</h3>
+    </div>
+  )
+}
+
+const PHASE_ORDER = ['planning', 'pre-insertion', 'active', 'extraction', 'complete'] as const
+const PHASE_LABELS: Record<string, string> = {
+  'planning': 'Planning',
+  'pre-insertion': 'Pre-Insertion',
+  'active': 'Active',
+  'extraction': 'Extraction',
+  'complete': 'Complete',
+}
+
+function MissionBrief({ op }: { op: OperationState }) {
+  const phaseIdx = PHASE_ORDER.indexOf(op.phase)
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+      {/* Header */}
+      <div className="px-3 py-2.5 border-b border-primary/10">
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">
+            {op.name}
+          </div>
+          <div className={cn(
+            'flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider',
+            op.phase === 'active' || op.phase === 'extraction' ? 'text-primary' : 'text-foreground/40'
+          )}>
+            <span className={cn(
+              'inline-block w-1.5 h-1.5 rounded-full',
+              op.phase === 'active' ? 'bg-primary animate-pulse' :
+              op.phase === 'extraction' ? 'bg-warning animate-pulse' :
+              op.phase === 'complete' ? 'bg-emerald-400' :
+              'bg-foreground/30'
+            )} />
+            {PHASE_LABELS[op.phase] || op.phase}
+          </div>
+        </div>
+        {/* Phase progress */}
+        <div className="flex gap-1 mt-2">
+          {PHASE_ORDER.filter(p => p !== 'complete').map((phase, i) => (
+            <div
+              key={phase}
+              className={cn(
+                'h-0.5 flex-1 rounded-full transition-colors',
+                i < phaseIdx ? 'bg-primary/60' :
+                i === phaseIdx ? 'bg-primary' :
+                'bg-foreground/10'
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-3 py-2.5 flex flex-col gap-4">
+        {/* Objectives */}
+        <div>
+          <SectionLabel>Objectives</SectionLabel>
+          <div className="flex flex-col gap-1.5">
+            {op.objectives.map((obj, i) => (
+              <div key={i} className={cn("flex gap-2 text-xs", obj.status !== 'active' && "opacity-40")}>
+                <span className={cn(
+                  "font-mono text-[10px] mt-px",
+                  obj.status === 'completed' ? 'text-emerald-400/60' : obj.status === 'failed' ? 'text-destructive/60' : 'text-primary/60'
+                )}>{i + 1}.</span>
+                <span className={cn(
+                  "text-foreground/80",
+                  obj.status === 'completed' && "text-foreground/50 line-through",
+                  obj.status === 'failed' && "text-destructive/50 line-through"
+                )}>{obj.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tactical Facts */}
+        {op.tacticalFacts.length > 0 && (
+          <div>
+            <SectionLabel>Key Details</SectionLabel>
+            <div className="flex flex-col gap-1.5">
+              {op.tacticalFacts.map((fact, i) => (
+                <div key={i} className="flex gap-2 text-xs text-foreground/60">
+                  <span className="text-foreground/20">•</span>
+                  <span>{fact}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Abort Conditions */}
+        {op.abortConditions.length > 0 && (
+          <div>
+            <SectionLabel>Abort Conditions</SectionLabel>
+            <div className="flex flex-col gap-1.5">
+              {op.abortConditions.map((cond, i) => (
+                <div key={i} className="flex gap-2 text-xs text-foreground/60">
+                  <span className="text-foreground/20">•</span>
+                  <span>{cond}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Signals */}
+        {op.signals.length > 0 && (
+          <div>
+            <SectionLabel>Signals</SectionLabel>
+            <div className="flex flex-col gap-1.5">
+              {op.signals.map((sig, i) => (
+                <div key={i} className="flex gap-2 text-xs text-foreground/60">
+                  <span className="text-foreground/20">•</span>
+                  <span>{sig}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -927,6 +1056,72 @@ function WorldPanel({ world, partyBaseName }: { world: World; partyBaseName: str
             </div>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+function IntelPanel({ operationState, notebook, evidenceLabel, operationLabel, notebookLabel, genre, onConnect }: {
+  operationState: OperationState | null
+  notebook: Notebook | null
+  evidenceLabel: string
+  operationLabel: string
+  notebookLabel: string
+  genre: Genre
+  onConnect?: () => void
+}) {
+  const hasOp = !!operationState
+  const hasNotebook = notebook && notebook.clues.length > 0
+  const isNoir = genre === 'noire'
+  // Only show sub-tabs when both sections have content
+  const showSubtabs = hasOp && (hasNotebook || isNoir)
+  const [subtab, setSubtab] = useState<'operation' | 'evidence'>(hasOp ? 'operation' : 'evidence')
+
+  // If operation appears/disappears, adjust active subtab
+  const activeTab = showSubtabs ? subtab : (hasOp ? 'operation' : 'evidence')
+
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      {showSubtabs && (
+        <div className="flex gap-4">
+          <button
+            onClick={() => setSubtab('operation')}
+            className={cn(
+              'text-[10px] font-medium uppercase tracking-[0.15em] transition-colors pb-1',
+              activeTab === 'operation'
+                ? 'text-primary border-b border-primary/40'
+                : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+            )}
+          >
+            {operationLabel}
+          </button>
+          <button
+            onClick={() => setSubtab('evidence')}
+            className={cn(
+              'text-[10px] font-medium uppercase tracking-[0.15em] transition-colors pb-1',
+              activeTab === 'evidence'
+                ? 'text-primary border-b border-primary/40'
+                : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+            )}
+          >
+            {evidenceLabel}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'operation' && operationState && (
+        <MissionBrief op={operationState} />
+      )}
+
+      {activeTab === 'evidence' && (
+        notebook && notebook.clues.length > 0 ? (
+          <NotebookPanel notebook={notebook} notebookLabel={notebookLabel} onConnect={onConnect} />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <h2 className="font-heading text-lg font-semibold text-foreground/50">{notebookLabel}</h2>
+            <p className="mt-2 text-sm text-muted-foreground/50 max-w-[240px]">No evidence yet. Ask questions, search rooms, follow leads.</p>
+          </div>
+        )
       )}
     </div>
   )

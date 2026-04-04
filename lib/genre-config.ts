@@ -101,6 +101,9 @@ export interface GenreConfig {
     investigationGuide: string
   }
   notebookLabel: string
+  intelTabLabel: string        // top-level tab: Intel, Case Board, Recon, Lore, Dossier
+  intelNotebookLabel: string   // sub-tab for evidence: Intelligence, Evidence, Data, Research
+  intelOperationLabel: string  // sub-tab for operations: Operation, The Play, The Run, Quest, Scheme
   openingHooks: string[]
   initialChapterTitle: string
   locationNames: string[]
@@ -369,6 +372,9 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     investigationGuide: 'Intelligence dossier — intercepted comms, surveillance data, NPC observations, operational intel. When the crew gathers intelligence, track it as narrative threads. Clues come from ship sensors, hacked terminals, NPC debriefs, and overheard transmissions.',
   },
   notebookLabel: 'Dossier',
+  intelTabLabel: 'Intel',
+  intelNotebookLabel: 'Intelligence',
+  intelOperationLabel: 'Operation',
   openingHooks: [
     'The ship just dropped out of FTL at an unfamiliar station. Something is wrong — the docking authority is demanding an unusual fee, and there are armed patrols everywhere.',
     'A distress signal pulled the ship off-course to a derelict freighter drifting in an asteroid belt. The cargo bay doors are open. No life signs.',
@@ -645,6 +651,9 @@ Rest terminology: Short rest, Long rest.`,
     investigationGuide: 'Lore codex — prophecy fragments, historical connections, magical phenomena, ancient texts. When the player researches mysteries, track discoveries as narrative threads. Clues come from libraries, ruins, NPC scholars, and divination.',
   },
   notebookLabel: 'Codex',
+  intelTabLabel: 'Lore',
+  intelNotebookLabel: 'Research',
+  intelOperationLabel: 'Quest',
   openingHooks: [
     'The tavern door slams open. A wounded rider staggers in, clutching a sealed message. "For the company at the back table," he gasps, then collapses. The seal bears a crest no one has seen in twenty years.',
     'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the cart is heavier than it should be, and the merchant keeps looking over his shoulder.',
@@ -926,6 +935,9 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     investigationGuide: 'Data cache — netrunner intercepts, camera feeds, contact reports, corp documents. When the player gathers intel, track it as narrative threads. Clues come from hacked systems, surveillance footage, informants, and intercepted communications.',
   },
   notebookLabel: 'Data Cache',
+  intelTabLabel: 'Recon',
+  intelNotebookLabel: 'Data',
+  intelOperationLabel: 'The Run',
   openingHooks: [
     'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now the crew is pinned in a ventilation shaft forty floors up with no way down.',
     'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours.',
@@ -1202,6 +1214,9 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     investigationGuide: 'Journal of confessions — extracted testimony, names implicated, evidence of heresy or corruption. When the player interrogates or investigates, track discoveries as narrative threads. Clues come from confessions, seized documents, NPC testimony, and physical evidence.',
   },
   notebookLabel: 'Journal',
+  intelTabLabel: 'Dossier',
+  intelNotebookLabel: 'Evidence',
+  intelOperationLabel: 'Scheme',
   openingHooks: [
     'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop.',
     'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: retrieve something from a crypt three previous parties never returned from.',
@@ -1465,6 +1480,9 @@ Don't pre-script which scenes contain which clues. Seed clues into scenes as the
 Every case should have a tension clock. It ticks with time, failed checks, and antagonist moves. When it fills, something changes — evidence destroyed, witness disappears, the killer strikes again. Thoroughness competes with urgency.`,
   },
   notebookLabel: 'Case Board',
+  intelTabLabel: 'Case Board',
+  intelNotebookLabel: 'Evidence',
+  intelOperationLabel: 'The Play',
   openingHooks: [
     'A woman you\'ve never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names — four of them are still alive.',
     'Your client wants you to find their missing spouse. Simple enough. Then you find the spouse, and they beg you to say you didn\'t.',
@@ -1508,6 +1526,9 @@ function makeStub(
     systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
     promptSections: { role: '', setting: '', vocabulary: '', toneOverride: '', assetMechanic: '', traitRules: '', consumableLabel: '', tutorialContext: '', npcVoiceGuide: '', buildAssetState: null, investigationGuide: '' },
     notebookLabel: 'Notebook',
+    intelTabLabel: 'Intel',
+    intelNotebookLabel: 'Evidence',
+    intelOperationLabel: 'Operation',
     openingHooks: [],
     initialChapterTitle: 'New Horizons',
     locationNames: ['Base'],

@@ -145,6 +145,30 @@ export interface TensionClock {
   triggerEffect: string
 }
 
+export interface Assessment {
+  claim: string           // "Carren talks if it serves her"
+  skill: string           // "WIS Insight"
+  result: number          // 18
+  confidence: 'low' | 'moderate' | 'high'
+  rolled: boolean         // false = unrolled assessment, flagged in state
+}
+
+export interface OperationObjective {
+  text: string
+  status: 'active' | 'completed' | 'failed'
+}
+
+export interface OperationState {
+  name: string            // "Pinnacle Strike" / "The Waterfront Sting"
+  phase: 'planning' | 'pre-insertion' | 'active' | 'extraction' | 'complete'
+  objectives: OperationObjective[]  // ordered priority stack
+  tacticalFacts: string[] // key details informing decisions
+  assetConstraints: string[] // what each unit can/cannot do
+  abortConditions: string[]
+  signals: string[]       // who signals what and how
+  assessments: Assessment[]
+}
+
 export interface Clue {
   id: string
   title?: string  // short descriptive label (e.g. "Betting Slip", "Pawn Receipt")
@@ -193,6 +217,7 @@ export interface WorldState {
   currentTime: string  // narrative timeline e.g. "Day 3, evening" or "Late afternoon"
   notebook: Notebook | null
   sceneSnapshot?: string  // persistent spatial/situational context: who is where, injuries, environment state
+  operationState: OperationState | null  // multi-phase plan persistence
 }
 
 export interface Enemy {

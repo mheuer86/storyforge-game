@@ -229,6 +229,7 @@ export function applyToolResults(
         updatePromise?: { id?: string; to?: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; what?: string }
         setCurrentTime?: string
         setSceneSnapshot?: string
+        setOperationState?: import('./types').OperationState | null
       }
       const world = { ...updated.world }
 
@@ -355,6 +356,23 @@ export function applyToolResults(
         if (matchedName) {
           const label = up.status === 'fulfilled' ? `Promise kept: ${matchedName}` : up.status === 'broken' ? `Promise broken: ${matchedName}` : `Promise → ${up.status}: ${matchedName}`
           statChanges.push({ type: up.status === 'fulfilled' ? 'gain' : up.status === 'broken' ? 'loss' : 'neutral', label })
+        }
+      }
+      if (input.setOperationState !== undefined) {
+        if (input.setOperationState) {
+          // Normalize objectives: accept plain strings or {text, status} objects
+          const op = { ...input.setOperationState }
+          op.objectives = (op.objectives || []).map(obj =>
+            typeof obj === 'string'
+              ? { text: obj, status: 'active' as const }
+              : { text: obj.text, status: obj.status || 'active' }
+          )
+          op.assessments = op.assessments || []
+          world.operationState = op
+          statChanges.push({ type: 'new', label: `Op: ${op.name} [${op.phase}]` })
+        } else {
+          world.operationState = null
+          statChanges.push({ type: 'neutral', label: 'Operation complete' })
         }
       }
       updated = { ...updated, world }

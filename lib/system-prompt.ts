@@ -87,7 +87,7 @@ ${toneBlock}
 
 Always write in present tense, second person. "You see...", "You move...", "The guard turns..."
 Keep responses to 2-4 paragraphs unless a pivotal moment demands more. End every response with an implicit or explicit "what do you do?" moment.
-Do NOT use markdown headings (# or ##) unless there is a genuine scene transition — a new location, significant time jump, or chapter break.
+When a scene opens or the location changes, begin with a scene heading: "## [Location] — [Time]" (e.g. "## The Cracked Pestle Tavern — Day 1, Late Afternoon"). This is the ONLY permitted use of markdown headings — never use them to title narrative beats, label what just happened, or structure mid-scene content.
 Always separate distinct narrative blocks with a blank line. Quoted text, dialogue, and italic passages must have a blank line before and after them.
 
 ## THE WORLD
@@ -119,6 +119,8 @@ ${infiltrationSection}
 ${downtimeSection}
 
 ${fallbackSection}
+${SECTION_OPERATIONS}
+
 ${SECTION_NARRATIVE_GUIDANCE}
 
 ${SECTION_EXAMPLE_FLOW}
@@ -164,7 +166,7 @@ export function buildClosePrompt(gameState: GameState): [string, string] {
 
   const hitDieAvg: Record<string, number> = {
     soldier: 6, warrior: 6, enforcer: 6, bruiser: 6, inquisitor: 6, solo: 6,
-    scout: 5, ranger: 5, shadowdancer: 5, runner: 5, outrider: 5,
+    scout: 5, ranger: 5, shadowdancer: 5, runner: 5, outrider: 5, driftrunner: 5,
     diplomat: 4, face: 4, troubadour: 4, grifter: 4, spymaster: 4,
   }
   const classKey = gameState.character.class.toLowerCase()
@@ -192,6 +194,7 @@ Review the game state. Check:
 - Open promises: which were fulfilled or broken?
 - Tension clocks: which should advance, trigger, or resolve?
 - Antagonist: did they move this chapter?
+- Operation state: clear it (setOperationState: null) if the operation completed.
 
 Call update_world to resolve/update any stale entries. Call update_antagonist if the antagonist's status changed.
 
@@ -341,6 +344,10 @@ function detectContext(gs: GameState): PromptContext {
   )
   if (hasInfiltrationClock) return 'infiltration'
 
+  // Active/extraction phase of an operation implies infiltration context
+  const op = gs.world.operationState
+  if (op && (op.phase === 'active' || op.phase === 'extraction')) return 'infiltration'
+
   const loc = gs.world.currentLocation?.description?.toLowerCase() ?? ''
   const safeIndicators = ['station', 'base', 'tavern', 'headquarters', 'port', 'camp', 'town', 'city', 'bar', 'shop', 'inn', 'safehouse', 'quarters']
   const isSafe = safeIndicators.some(s => loc.includes(s))
@@ -391,6 +398,23 @@ Both apply → cancel out, roll normally.
 **Sequential processing:** Multiple queued actions → process in sequence, stop at first roll condition, wait for result before continuing.
 
 **NPC actions under pressure:** When a companion or NPC acts on the player's behalf in uncertain conditions, that's a fate roll or NPC stat check. Never silently resolve uncertain NPC actions.
+
+**Assessment rolls in planning scenes:** When the player or an NPC asserts a fact about an uncertain situation during planning — enemy strength, NPC loyalty, timeline feasibility, asset reliability, tactical conditions — that assertion is a check. The player is committing to a read that shapes operational decisions. If being wrong has consequences, call request_roll before confirming it as fact.
+
+Requires a roll:
+- "Carren is a hired hand, not a loyalist" → WIS Insight
+- "The conduit is still open" → INT check
+- "Their backup protocols are as old as the array" → INT (Hacking)
+- "Dray will hold together under that briefing" → WIS Insight
+
+Does NOT require a roll:
+- "Let's hit the defense node first, then intercept Vos" → pure decision
+- "Renn, how long for the trigger package?" → NPC delivering expertise
+- "We leave at midday" → scheduling decision
+
+The distinction: if the player would face consequences for being wrong, it's a roll. If they're choosing between known options, it's a decision. This is the most commonly missed roll gate — planning scenes feel like dialogue but contain hidden judgment calls.
+
+**Five-turn audit:** If five consecutive player turns pass without a request_roll, review the last five turns for missed gates. Five turns of meaningful play with zero uncertainty is nearly impossible. If all five were genuinely pure decisions or NPC-delivered information, continue. Otherwise, find the gate you missed.
 
 **Strong roleplay lowers DC or grants advantage — never eliminates the roll.**
 
@@ -524,6 +548,29 @@ Don't compress transit or waiting into pure summary. Play at least one scene wit
 **NPC texture during extended interaction:** For each named NPC present, establish: one observable habit, one unprompted line revealing personality, one unexpected moment. These don't require rolls — they're texture that makes the world inhabited.
 
 When the player asks to skip ahead, compress logistics but deliver one brief scene. Ask if they want to engage or move on.`
+
+// ============================================================
+// OPERATION STATE — always included
+// ============================================================
+
+const SECTION_OPERATIONS = `## OPERATION STATE
+
+When the player finalizes a multi-phase operation plan, capture it in operation state immediately via update_world(setOperationState). This is the GM's tactical memory — the single most important tool for maintaining consistency during complex operations.
+
+**When to set:** The moment the player commits to a plan with specific objectives, assets, signals, and abort conditions. This usually happens at the end of a planning scene.
+
+**Mandatory fields:**
+- **objectives:** Ordered priority stack. "1. Destroy defense node. 2. Capture Vos. 3. Archive opportunistic." The GM reads this every turn and cannot contradict the priority order.
+- **tacticalFacts:** Key details that inform moment-to-moment decisions. "Vos intercepts at Sec5-6 junction. Guard uniform cover. 30sec before Dray breach."
+- **assetConstraints:** What each unit can and cannot do. "Meridian = small frigate, 4 crew, secondary port extraction." This prevents routing assets through impossible channels.
+- **abortConditions:** When to walk away. Listed explicitly so the GM enforces them.
+- **signals:** Who signals what and how. "Node explosion = Dray go. Leech = Renn remote."
+
+**The operation state is canonical.** If a detail is in the operation state, do not contradict it. Do not forget it. If the player changes the plan, update the operation state first, then narrate.
+
+**Assessments:** When an uncertain fact is confirmed by a roll during planning, log it with claim, confidence level, and whether it was actually rolled. Unrolled assessments show "NO ROLL" in state — address them retroactively.
+
+**Phase transitions:** Update phase as the operation progresses (planning → pre-insertion → active → extraction → complete). Clear with null when the operation concludes.`
 
 // ============================================================
 // INVESTIGATION MECHANICS
@@ -758,7 +805,7 @@ function buildDifficultyEngine(currencyName: string, consumableLabel: string): s
 function buildToolUsage(currencyName: string): string {
   return `## TOOL USAGE
 
-**Scene open:** When a scene opens or the location changes, begin your narrative text with a scene heading on the first line: "## [Location] — [Time]" (e.g. "## The Cracked Pestle Tavern — Day 1, Late Afternoon"). This heading is the first thing the player reads — it establishes where and when before the narrative begins. Then write the scene below it. Also call update_world (setLocation, setCurrentTime, setSceneSnapshot) alongside your text to persist the state.
+**Scene open:** On location changes, write the scene heading (see Tone) and call update_world (setLocation, setCurrentTime, setSceneSnapshot) to persist the state. Check clocks for background advances. Check antagonist movedThisChapter past the midpoint. Check active timers for passed deadlines.
 
 **Scene snapshot:** Always call update_world with setSceneSnapshot when position, injuries, or surroundings change. This is a 1-2 sentence stage direction that persists across conversation turns. Example: "Player crouched behind overturned table in tavern common room. Pell at the door, wounded left arm. Fire spreading from kitchen." Update it whenever anyone moves, gets hurt, or the environment shifts — not just on location changes.
 
@@ -771,7 +818,7 @@ function buildToolUsage(currencyName: string): string {
 - Did a promise get fulfilled or broken? → update_world with updatePromise
 - Did a tension clock tick? → update_clock
 - Did the scene location or situation change? → update_world with setLocation/setSceneSnapshot
-- Did the player assert something uncertain as fact? → request_roll for the assessment. Planning scenes contain hidden judgment calls: loyalty reads, tactical estimates, predictions about enemy behavior. If the player would face consequences for being wrong, it's a roll — even in a briefing room.
+- Did the player assert something uncertain as fact? → request_roll (see Assessment Rolls in Roll Discipline)
 
 **TOOL CALL DISCIPLINE (critical):** Never narrate a resolution before the tool call fires. Never confirm a tool call executed unless you see it in your response. If a tool call silently fails, say "the tool didn't fire, let me retry" — do not say "done." Narrating a state change without calling the tool is the single worst failure mode: the player sees the world state contradict the narrative, and trust in the system breaks.
 
@@ -797,7 +844,7 @@ function buildToolUsage(currencyName: string): string {
 
 **Meta:** meta_response only.
 
-**Pre-check (before writing narrative):** Does this scene contain uncertainty that should be resolved by dice? If the outcome isn't guaranteed — social persuasion, physical challenge, knowledge recall, stealth, deception, or an assessment of uncertain facts — call request_roll BEFORE narrating the result. Planning and briefing scenes are NOT exempt: loyalty reads, tactical estimates, and predictions about enemy behavior are assessment rolls if the player would face consequences for being wrong. NPC expertise delivered through dialogue (Renn's analysis, Patel's engineering specs) is NOT a roll — but the player's own judgment calls ARE. Don't write past the gate because the scene feels like conversation.
+**Pre-check (before writing narrative):** Does this scene contain uncertainty that should be resolved by dice? If the outcome isn't guaranteed — social persuasion, physical challenge, knowledge recall, stealth, deception, or an assessment of uncertain facts — call request_roll BEFORE narrating the result. See ASSESSMENT ROLLS IN PLANNING SCENES in Roll Discipline for the specific failure pattern in briefings and strategy discussions.
 
 **Contested rolls (use often):** When an NPC actively resists or competes, use the contested field on request_roll instead of a static DC. Common triggers: Deception vs Insight, Stealth vs Perception, Persuasion vs Wisdom, Intimidation vs Resolve, Athletics vs Athletics (grapple), Investigation vs Deception (seeing through a cover). If there is a named NPC on the other side of the check, it should almost always be contested. Static DCs are for impersonal obstacles (locks, cliffs, knowledge recall) — not for NPC interactions.
 
@@ -902,6 +949,20 @@ function compressGameState(gs: GameState): string {
     ? config.promptSections.buildAssetState(w.ship, w.shipName)
     : ''
 
+  // --- Operation state ---
+  let operationSection = ''
+  if (w.operationState) {
+    const op = w.operationState
+    const objLine = op.objectives.map((o, i) => {
+      const mark = o.status === 'completed' ? '✓' : o.status === 'failed' ? '✗' : ''
+      return `${i + 1}.${mark}${o.text}`
+    }).join(' ')
+    const assessLine = op.assessments && op.assessments.length > 0
+      ? `\nASSESSED: ${op.assessments.map(a => `${a.claim} (${a.skill} ${a.result} ${a.confidence}${!a.rolled ? ' NO ROLL' : ''})`).join(' | ')}`
+      : ''
+    operationSection = `\nOPERATION: ${op.name} | Phase: ${op.phase}\nOBJ: ${objLine}\nTACTICAL: ${op.tacticalFacts.join('. ')}\nASSETS: ${op.assetConstraints.join('. ')}\nABORT: ${op.abortConditions.join('. ')}\nSIGNALS: ${op.signals.join('. ')}${assessLine}`
+  }
+
   let combatSection = 'COMBAT: Inactive'
   if (combat.active) {
     const enemyLines = combat.enemies
@@ -986,6 +1047,8 @@ function compressGameState(gs: GameState): string {
     triggeredClocks.length > 0 ? `Fired: ${triggeredClocks.map((c) => `${c.name} — ${c.triggerEffect}`).join(', ')}` : '',
   ].filter(Boolean).join(' | ') || 'None'
 
+  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
+
   return `PRESSURE: ${pressureLine}
 
 PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
@@ -1004,11 +1067,13 @@ NPCS: ${npcsLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}
 ANTAG: ${antagonistLine}
-CLOCKS: ${clocksLine}${shipSection}${notebookSection}
+CLOCKS: ${clocksLine}${shipSection}${operationSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}
+
+${toolCheatSheet}`
 }
 
 // ============================================================
@@ -1018,6 +1083,7 @@ ${chapterLine}${frameLine ? '\n' + frameLine : ''}`
 const TARGET_HISTORY_TOKENS = 4000
 const AVG_TOKENS_PER_CHAR = 0.3
 const MIN_MESSAGE_FLOOR = 6  // At least 3 full player-GM turns
+const OPERATION_TOKEN_BOOST = 1000  // Extra budget during active ops
 
 export function buildMessagesForClaude(
   gameState: GameState,
@@ -1027,6 +1093,11 @@ export function buildMessagesForClaude(
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
 
+  // Boost history budget during active operations when context matters most
+  const hasActiveOp = gameState.world.operationState &&
+    ['active', 'extraction'].includes(gameState.world.operationState.phase)
+  const budget = TARGET_HISTORY_TOKENS + (hasActiveOp ? OPERATION_TOKEN_BOOST : 0)
+
   // Walk backwards from most recent, accumulating until token budget hit
   // but always include at least MIN_MESSAGE_FLOOR messages
   let tokenEstimate = 0
@@ -1035,7 +1106,7 @@ export function buildMessagesForClaude(
 
   for (let i = allMessages.length - 1; i >= 0; i--) {
     const msgTokens = Math.ceil(allMessages[i].content.length * AVG_TOKENS_PER_CHAR)
-    if (tokenEstimate + msgTokens > TARGET_HISTORY_TOKENS && messagesIncluded() >= MIN_MESSAGE_FLOOR) {
+    if (tokenEstimate + msgTokens > budget && messagesIncluded() >= MIN_MESSAGE_FLOOR) {
       break
     }
     tokenEstimate += msgTokens
@@ -1097,7 +1168,12 @@ IMPORTANT: Use update_world to establish the starting location (setLocation), th
       ? `\n\nNo chapter frame established yet. Establish one with set_chapter_frame within the first 2-3 turns, based on the player's direction.`
       : ''
 
+  const op = gameState.world.operationState
+  const opContext = op
+    ? `\n\nActive operation: ${op.name}, phase: ${op.phase}. Primary objective: ${op.objectives[0]?.text || 'see state'}.`
+    : ''
+
   return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
 
-Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}`
+Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}${opContext}`
 }

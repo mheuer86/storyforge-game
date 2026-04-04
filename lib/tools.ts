@@ -371,6 +371,62 @@ export const gameTools: Anthropic.Tool[] = [
           },
           required: ['id', 'to', 'what', 'status'],
         },
+        setOperationState: {
+          type: ['object', 'null'],
+          description: 'Set or clear the multi-phase operation plan. Pass the full OperationState object when the player commits to a plan. Pass null to clear when the operation completes. This is the GM\'s tactical memory — if a detail is in operation state, it is canonical.',
+          properties: {
+            name: { type: 'string', description: 'Operation name, e.g. "Pinnacle Strike", "The Waterfront Sting"' },
+            phase: { type: 'string', enum: ['planning', 'pre-insertion', 'active', 'extraction', 'complete'] },
+            objectives: {
+              type: 'array',
+              description: 'Ordered priority stack. First = primary objective. Mark completed: true when an objective is achieved.',
+              items: {
+                type: 'object',
+                properties: {
+                  text: { type: 'string', description: 'The objective description' },
+                  status: { type: 'string', enum: ['active', 'completed', 'failed'], description: 'Objective status. Defaults to active.' },
+                },
+                required: ['text'],
+              },
+            },
+            tacticalFacts: {
+              type: 'array',
+              description: 'Key details informing moment-to-moment decisions.',
+              items: { type: 'string' },
+            },
+            assetConstraints: {
+              type: 'array',
+              description: 'What each unit/asset can and cannot do.',
+              items: { type: 'string' },
+            },
+            abortConditions: {
+              type: 'array',
+              description: 'When to walk away — listed explicitly.',
+              items: { type: 'string' },
+            },
+            signals: {
+              type: 'array',
+              description: 'Who signals what and how.',
+              items: { type: 'string' },
+            },
+            assessments: {
+              type: 'array',
+              description: 'Uncertain facts confirmed (or flagged as unrolled) during planning.',
+              items: {
+                type: 'object',
+                properties: {
+                  claim: { type: 'string', description: 'The asserted fact' },
+                  skill: { type: 'string', description: 'Skill used, e.g. "WIS Insight"' },
+                  result: { type: 'number', description: 'Roll result' },
+                  confidence: { type: 'string', enum: ['low', 'moderate', 'high'] },
+                  rolled: { type: 'boolean', description: 'false = unrolled assessment, flagged for retroactive resolution' },
+                },
+                required: ['claim', 'skill', 'result', 'confidence', 'rolled'],
+              },
+            },
+          },
+          required: ['name', 'phase', 'objectives', 'tacticalFacts', 'assetConstraints', 'abortConditions', 'signals'],
+        },
         updatePromise: {
           type: 'object',
           description: 'Update an existing promise. Match by id or by the NPC name (to field). Can update status and/or description.',
