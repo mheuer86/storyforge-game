@@ -311,6 +311,11 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 - Should any tension clock have advanced based on recent events?
 - Fix with update_clock (advance, trigger, or resolve).
 
+### 10. OPERATION STATE
+- Is there an active operation whose phase should have advanced? (e.g. planning scene ended but phase still "planning", or operation clearly completed but not cleared.)
+- Were any objectives clearly achieved or failed in recent messages but still marked "active"?
+- Fix with update_world (setOperationState — update phase or objective status, or set to null if operation is over).
+
 ## RULES
 - Be conservative. Only fix clear discrepancies, not ambiguous ones.
 - Do NOT generate any narrative text. Your only output is tool calls.
