@@ -73,14 +73,13 @@ export function WorldSetup({ onNext, onBack }: WorldSetupProps) {
                 key={genre.id}
                 onClick={() => handleGenreSelect(genre.id)}
                 className={cn(
-                  'relative flex flex-col items-start gap-2 rounded-xl border p-5 text-left transition-all duration-300',
+                  'group/genre relative flex flex-col rounded-xl border overflow-hidden text-left transition-all duration-300',
                   isSelected
-                    ? 'border-primary/60 bg-primary/8'
-                    : 'border-border/20 bg-transparent hover:border-border/40'
+                    ? 'border-primary/60'
+                    : 'border-border/20 hover:border-border/40'
                 )}
                 style={isSelected ? {
                   borderColor: `color-mix(in oklch, ${accent} 60%, transparent)`,
-                  backgroundColor: `color-mix(in oklch, ${accent} 8%, transparent)`,
                   boxShadow: `0 0 25px -5px color-mix(in oklch, ${accent} 15%, transparent)`,
                 } : undefined}
                 onMouseEnter={(e) => {
@@ -94,10 +93,25 @@ export function WorldSetup({ onNext, onBack }: WorldSetupProps) {
                   }
                 }}
               >
-                <span className="text-lg font-bold text-foreground">{genre.name}</span>
-                <span className="text-xs leading-snug text-muted-foreground/60 italic">
-                  "{config.tagline}"
-                </span>
+                <div className="relative w-full aspect-[16/10] overflow-hidden">
+                  <img
+                    src={`/genres/${genre.id}.png`}
+                    alt={genre.name}
+                    className={cn(
+                      'w-full h-full object-cover transition-all duration-500',
+                      isSelected
+                        ? 'grayscale-0 opacity-100'
+                        : 'grayscale opacity-50 group-hover/genre:grayscale-0 group-hover/genre:opacity-80'
+                    )}
+                  />
+                  {/* Text overlay — bottom-aligned */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-3 pt-8">
+                    <span className="block text-lg font-bold text-white">{genre.name}</span>
+                    <span className="block text-[11px] leading-snug text-white/60 italic mt-0.5">
+                      "{config.tagline}"
+                    </span>
+                  </div>
+                </div>
               </button>
             )
           })}
