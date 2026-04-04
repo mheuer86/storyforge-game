@@ -13,7 +13,7 @@ export const runtime = 'nodejs'
 export const maxDuration = 90
 
 const requestSchema = z.object({
-  message: z.string().max(2000),
+  message: z.string().max(8000),
   gameState: z.object({
     meta: z.object({ version: z.string(), chapterNumber: z.number() }).passthrough(),
     character: z.object({ name: z.string(), hp: z.object({ current: z.number(), max: z.number() }) }).passthrough(),

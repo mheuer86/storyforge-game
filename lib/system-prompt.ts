@@ -389,6 +389,8 @@ function buildSocialModule(): string {
 
 **NPC texture:** For each named NPC present during extended interaction, establish: one observable habit, one unprompted line revealing personality, one moment where they show something unexpected. These don't need rolls — they're texture.
 
+**Risky questions:** When the player asks an NPC something sensitive (probing loyalty, past, affiliations, motives), that's a roll gate. The question landing well is Persuasion or Deception (depending on framing). The player trusting the answer is WIS Insight — possibly contested vs the NPC's Deception if they have reason to lie. Don't let NPCs volunteer sensitive information without dice deciding how much they share and whether it's truthful.
+
 **Skip-ahead:** When the player asks, compress logistics but deliver one brief scene. Ask if they want to engage.
 
 ## SCOPE ESCALATION

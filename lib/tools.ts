@@ -393,8 +393,8 @@ export const gameTools: Anthropic.Tool[] = [
           required: ['id', 'to', 'what', 'status'],
         },
         setOperationState: {
-          type: ['object', 'null'],
-          description: 'Set or clear the multi-phase operation plan. Pass the full OperationState object when the player commits to a plan. Pass null to clear when the operation completes. This is the GM\'s tactical memory — if a detail is in operation state, it is canonical.',
+          type: 'object',
+          description: 'Set or update the multi-phase operation plan. Pass the full OperationState object when the player commits to a plan. To clear after operation completes, set phase to "complete". This is the GM\'s tactical memory — if a detail is in operation state, it is canonical.',
           properties: {
             name: { type: 'string', description: 'Operation name, e.g. "Pinnacle Strike", "The Waterfront Sting"' },
             phase: { type: 'string', enum: ['planning', 'pre-insertion', 'active', 'extraction', 'complete'] },
@@ -449,8 +449,8 @@ export const gameTools: Anthropic.Tool[] = [
           required: ['name', 'phase', 'objectives', 'tacticalFacts', 'assetConstraints', 'abortConditions', 'signals'],
         },
         setExplorationState: {
-          type: ['object', 'null'],
-          description: 'Set or clear the spatial exploration state. Pass the full object when the player enters a facility, dungeon, or crime scene. Pass null when they exit. Update at every zone transition.',
+          type: 'object',
+          description: 'Set or update the spatial exploration state. Pass the full object when the player enters a facility, dungeon, or crime scene. To clear when they exit, omit this field entirely and call with just other update_world actions. Update at every zone transition.',
           properties: {
             facilityName: { type: 'string', description: 'Name of the facility or location being explored' },
             status: { type: 'string', description: 'Overall facility status, e.g. "hostile, cipher disrupted" or "unexplored, dark"' },
