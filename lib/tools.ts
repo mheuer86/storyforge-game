@@ -433,6 +433,61 @@ export const gameTools: Anthropic.Tool[] = [
           },
           required: ['name', 'phase', 'objectives', 'tacticalFacts', 'assetConstraints', 'abortConditions', 'signals'],
         },
+        setExplorationState: {
+          type: ['object', 'null'],
+          description: 'Set or clear the spatial exploration state. Pass the full object when the player enters a facility, dungeon, or crime scene. Pass null when they exit. Update at every zone transition.',
+          properties: {
+            facilityName: { type: 'string', description: 'Name of the facility or location being explored' },
+            status: { type: 'string', description: 'Overall facility status, e.g. "hostile, cipher disrupted" or "unexplored, dark"' },
+            explored: {
+              type: 'array',
+              description: 'Zones already cleared/visited.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  notes: { type: 'string', description: 'Key events or findings in this zone' },
+                },
+                required: ['name', 'notes'],
+              },
+            },
+            current: {
+              type: 'object',
+              description: 'Where the player is right now.',
+              properties: {
+                name: { type: 'string' },
+                description: { type: 'string', description: 'Physical layout, exits, notable features' },
+              },
+              required: ['name', 'description'],
+            },
+            unexplored: {
+              type: 'array',
+              description: 'Known but unvisited areas with sensory hints.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  hints: { type: 'string', description: 'What the player can sense from here' },
+                },
+                required: ['name', 'hints'],
+              },
+            },
+            resources: {
+              type: 'array',
+              description: 'Consumables actively depleting during exploration.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  current: { type: 'string', description: 'Current amount, e.g. "2/3" or "full"' },
+                },
+                required: ['name', 'current'],
+              },
+            },
+            alertLevel: { type: 'string', description: 'Narrative description of facility awareness, e.g. "Grid down, response teams converging"' },
+          },
+          required: ['facilityName', 'status', 'explored', 'current', 'unexplored', 'resources'],
+        },
         updatePromise: {
           type: 'object',
           description: 'Update an existing promise. Match by id or by the NPC name (to field). Can update status and/or description.',
