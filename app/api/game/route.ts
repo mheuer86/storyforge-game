@@ -258,9 +258,13 @@ export async function POST(req: NextRequest) {
           }
 
           // Merge any prior tool_results (from tools called before the roll in the same batch) with the roll result
+          const isSuccessfulHit = (result === 'success' || result === 'critical') && gameState.combat.active && rollType !== 'damage' && rollType !== 'healing'
+          const damageChainInstruction = isSuccessfulHit
+            ? `\n\nDAMAGE ROLL REQUIRED: The attack hit. You MUST call request_roll NOW with rollType="damage", sides matching the weapon's damage die, checkType=weapon name, dc=0. Do NOT narrate damage — the player rolls. Do NOT write "roll your damage" as text. Call the tool.`
+            : ''
           const allToolResults: Anthropic.ToolResultBlockParam[] = [
             ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) },
+            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) + damageChainInstruction },
           ]
 
           const continuationMessages: Anthropic.MessageParam[] = [
