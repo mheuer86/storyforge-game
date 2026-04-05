@@ -317,20 +317,18 @@ function buildCombatModule(genre: string, ps: ReturnType<typeof getGenreConfig>[
 **Turn order:** Player action → Enemy response → New situation → suggest_actions.
 
 1. Player picks action (Attack, Ability, Item, Flee, custom, environmental interaction)
-2. Resolve attack: request_roll (d20 skill check to hit). On hit, IMMEDIATELY call request_roll AGAIN for damage (see DAMAGE ROLL PROTOCOL below). Then apply the rolled damage total via update_character(hpChange=-total) on the target.
-3. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use request_roll — instead roll the damage yourself and call update_character with hpChange AND rollBreakdown (label, dice, roll, modifier, total, damageType, sides) so the UI shows a damage badge.
-4. Present new situation with suggest_actions
+2. Resolve attack: request_roll (d20 skill check to hit). On hit, the system auto-chains a damage roll — the player rolls damage dice without you needing to call request_roll again. You will receive both the hit result and the damage total.
+3. **After receiving damage:** State the enemy's new HP explicitly: "[Enemy] takes [X] damage ([old HP] → [new HP])." Do the arithmetic carefully. Read the enemy's current HP from COMBAT state before subtracting.
+4. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use request_roll — instead roll the damage yourself and call update_character with hpChange AND rollBreakdown (label, dice, roll, modifier, total, damageType, sides) so the UI shows a damage badge.
+5. Present new situation with suggest_actions
 
-## DAMAGE ROLL PROTOCOL
+## DAMAGE & HEALING ROLLS
 
-After EVERY successful player hit, you MUST call request_roll for damage. No exceptions.
+**Player attacks:** The system auto-chains damage rolls after a successful hit. You do NOT need to call request_roll for damage. You will receive the damage total automatically. Apply it to the target and state the new HP.
 
-1. Do NOT narrate a damage number — the dice decide.
-2. Do NOT write "roll your damage" as text — call the tool.
-3. IMMEDIATELY call request_roll with: rollType="damage", sides matching the weapon's damage die (e.g. sides=10 for "1d10 energy"), checkType=weapon name, damageType from the weapon string, dc=0, modifier from the relevant stat if the weapon specifies +STAT (e.g. "+DEX" → use DEX modifier).
-4. Wait for the damage result before narrating the hit's effect or continuing to enemy actions.
+**Healing items:** When the player uses a healing item with dice (e.g. "1d8+WIS HP"), call request_roll with rollType="healing", sides matching the die, checkType=item name, damageType="HP", dc=0, modifier=the resolved stat bonus. Then apply via update_character(hpChange=+total).
 
-The same applies to **healing items:** call request_roll with rollType="healing", sides matching the item's die, checkType=item name, damageType="HP", dc=0, modifier=the resolved stat bonus. Then apply via update_character(hpChange=+total).
+**Enemy HP tracking:** After every damage result, state the arithmetic explicitly: "[Enemy] takes [X] damage ([current HP] → [new HP])." Read the enemy's current HP from COMBAT state before subtracting. Do NOT estimate or round — calculate exactly.
 
 **Spatial tracking:** Maintain positions for all combatants, hazards, and exits. Update each round. Do not teleport — movement is consistent and logical. Player needs relative distances and cover.
 
