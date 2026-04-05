@@ -114,19 +114,33 @@ export const gameTools: Anthropic.Tool[] = [
           type: 'string',
           description: 'Upgrade an existing proficiency to expertise via Skill Point. The proficiency must already exist in the list. Stored with "(expertise)" suffix.',
         },
+      rollBreakdown: {
+          type: 'object',
+          description: 'Dice roll breakdown for display when the GM auto-resolves a roll (e.g. enemy damage). Rendered as a roll badge in the chat UI. Use this when an enemy attacks or any NPC-initiated dice effect occurs — roll the dice yourself and pass the breakdown here alongside the hpChange.',
+          properties: {
+            label: { type: 'string', description: 'Display label (e.g. "Guard Attack", "Trap Damage")' },
+            dice: { type: 'string', description: 'Dice notation (e.g. "1d8+2", "2d6")' },
+            roll: { type: 'number', description: 'Raw die result (before modifier)' },
+            modifier: { type: 'number', description: 'Total modifier applied' },
+            total: { type: 'number', description: 'Final result: roll + modifier' },
+            damageType: { type: 'string', description: 'Damage type (e.g. "energy", "fire", "slashing")' },
+            sides: { type: 'number', description: 'Die sides (6, 8, 10, 12, 20)' },
+          },
+          required: ['label', 'dice', 'roll', 'modifier', 'total'],
+        },
       },
     },
   },
   {
     name: 'request_roll',
     description:
-      'Request a d20 skill check. Call this before narrating the outcome of any action that has a meaningful chance of failure. The system will auto-resolve the roll and return the result to you so you can narrate the outcome.',
+      'Request a dice roll from the player. Use for skill checks (d20 vs DC), attack damage, and healing. For skill checks, use the default d20. For damage/healing, set sides to the weapon/item die (6, 8, 10, 12) and rollType to "damage" or "healing". The player rolls interactively. Do NOT use this for enemy damage — use update_character with rollBreakdown instead.',
     input_schema: {
       type: 'object' as const,
       properties: {
         checkType: {
           type: 'string',
-          description: 'The skill or ability being checked (e.g. "Stealth", "Persuasion", "Athletics", "Piloting", "Hacking", "Medicine")',
+          description: 'The skill, weapon, or item name (e.g. "Stealth", "Plasma Rifle", "Medpatch")',
         },
         stat: {
           type: 'string',
@@ -135,20 +149,20 @@ export const gameTools: Anthropic.Tool[] = [
         },
         dc: {
           type: 'number',
-          description: 'Difficulty Class. Easy: 8, Moderate: 12, Hard: 16, Very Hard: 20.',
+          description: 'Difficulty Class. For skill checks: Easy 8, Moderate 12, Hard 16, Very Hard 20. For damage/healing rolls set to 0 (no DC).',
         },
         modifier: {
           type: 'number',
-          description: 'Total modifier to add to the roll (stat modifier + proficiency bonus if proficient).',
+          description: 'Total modifier to add to the roll. For checks: stat mod + proficiency. For damage: resolve stat modifiers from the weapon string (e.g. "+DEX" → use DEX modifier). For healing: resolve from item effect string.',
         },
         reason: {
           type: 'string',
-          description: 'Brief in-narrative reason for the check (shown to the player).',
+          description: 'Brief in-narrative reason for the roll (shown to the player).',
         },
         advantage: {
           type: 'string',
           enum: ['advantage', 'disadvantage'],
-          description: 'Set to "advantage" (roll 2d20, take higher) or "disadvantage" (roll 2d20, take lower) when conditions warrant it. Omit for a normal roll. See ADVANTAGE/DISADVANTAGE rules in system prompt.',
+          description: 'Only for skill checks. Roll 2d20, take higher/lower. Omit for normal or damage/healing rolls.',
         },
         contested: {
           type: 'object',
@@ -159,6 +173,20 @@ export const gameTools: Anthropic.Tool[] = [
             npcModifier: { type: 'number', description: 'The NPC\'s total modifier for their roll.' },
           },
           required: ['npcName', 'npcSkill', 'npcModifier'],
+        },
+        sides: {
+          type: 'number',
+          enum: [6, 8, 10, 12, 20],
+          description: 'Number of sides on the die. Default 20 for skill checks. Use 6/8/10/12 for damage and healing dice matching the weapon/item definition.',
+        },
+        rollType: {
+          type: 'string',
+          enum: ['check', 'damage', 'healing'],
+          description: 'Type of roll. "check" for skill/ability checks (default). "damage" for player attack damage after a successful hit. "healing" for healing item use.',
+        },
+        damageType: {
+          type: 'string',
+          description: 'Damage or healing type label for display (e.g. "energy", "fire", "slashing", "HP"). Optional.',
         },
       },
       required: ['checkType', 'stat', 'dc', 'modifier', 'reason'],

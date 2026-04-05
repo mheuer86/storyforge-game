@@ -308,6 +308,9 @@ export interface RollDisplayData {
   npcRoll?: number
   npcTotal?: number
   isOriginal?: boolean  // true = this was the original roll before an inspiration reroll (shown dimmed)
+  sides?: number        // die sides (6, 8, 10, 12, 20); default 20
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string   // e.g. "energy", "fire", "slashing", "HP"
 }
 
 export interface ChatMessage {
@@ -317,6 +320,7 @@ export interface ChatMessage {
   timestamp: string
   rollData?: RollDisplayData
   statChanges?: { type: 'gain' | 'loss' | 'new' | 'neutral'; label: string }[]
+  rollBreakdown?: RollBreakdown
 }
 
 export interface RollRecord {
@@ -335,6 +339,9 @@ export interface RollRecord {
   contested?: ContestedRollInfo
   npcRoll?: number
   npcTotal?: number
+  sides?: number
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string
 }
 
 export interface ChapterDebrief {
@@ -418,6 +425,9 @@ export type StreamEvent =
       advantage?: 'advantage' | 'disadvantage'
       contested?: ContestedRollInfo
       priorToolResults?: unknown[]
+      sides?: number
+      rollType?: 'check' | 'damage' | 'healing'
+      damageType?: string
     }
   | { type: 'tools'; results: ToolCallResult[] }
   | { type: 'done' }
@@ -439,11 +449,24 @@ export interface RollResolution {
   npcRoll?: number
   npcTotal?: number
   priorToolResults?: unknown[]
+  sides?: number
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string
 }
 
 export interface ToolCallResult {
   tool: string
   input: Record<string, unknown>
+}
+
+export interface RollBreakdown {
+  label: string       // e.g. "Guard Attack"
+  dice: string        // e.g. "1d8+2"
+  roll: number        // raw die result
+  modifier: number    // total modifier applied
+  total: number       // roll + modifier
+  damageType?: string // e.g. "energy", "fire"
+  sides?: number      // die sides (6, 8, 10, 12, 20)
 }
 
 // Tool input types
@@ -462,6 +485,7 @@ export interface UpdateCharacterInput {
   addProficiency?: string
   upgradeToExpertise?: string
   spendInspiration?: boolean
+  rollBreakdown?: RollBreakdown
 }
 
 export interface ContestedRollInfo {
@@ -478,6 +502,9 @@ export interface RequestRollInput {
   reason: string
   advantage?: 'advantage' | 'disadvantage'
   contested?: ContestedRollInfo
+  sides?: number
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string
 }
 
 export interface StartCombatInput {

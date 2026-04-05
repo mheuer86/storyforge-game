@@ -22,6 +22,9 @@ interface DiceRollModalProps {
   consequence?: string
   onRoll: () => void
   onContinue: () => void
+  sides?: number
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string
 }
 
 export function DiceRollModal({
@@ -34,20 +37,30 @@ export function DiceRollModal({
   consequence,
   onRoll,
   onContinue,
+  sides = 20,
+  rollType = 'check',
+  damageType,
 }: DiceRollModalProps) {
   const [isRolling, setIsRolling] = useState(false)
   const [displayNumber, setDisplayNumber] = useState<number | null>(null)
 
+  const isDamageOrHealing = rollType === 'damage' || rollType === 'healing'
   const total = roll !== null ? roll + modifier : null
-  const success = total !== null && total >= dc
-  const isCritical = roll === 20
-  const isCriticalFail = roll === 1
+  const success = isDamageOrHealing ? true : total !== null && total >= dc
+  const isCritical = !isDamageOrHealing && roll === 20
+  const isCriticalFail = !isDamageOrHealing && roll === 1
+
+  const title = rollType === 'damage'
+    ? `Attack Damage — ${check}`
+    : rollType === 'healing'
+    ? `Healing — ${check}`
+    : `${check} Check`
 
   useEffect(() => {
     if (isRolling && roll === null) {
       // Animate random numbers while rolling
       const interval = setInterval(() => {
-        setDisplayNumber(Math.floor(Math.random() * 20) + 1)
+        setDisplayNumber(Math.floor(Math.random() * sides) + 1)
       }, 50)
 
       return () => clearInterval(interval)
@@ -55,11 +68,11 @@ export function DiceRollModal({
       setDisplayNumber(roll)
       setIsRolling(false)
     }
-  }, [isRolling, roll])
+  }, [isRolling, roll, sides])
 
   const handleRoll = () => {
     setIsRolling(true)
-    setDisplayNumber(Math.floor(Math.random() * 20) + 1)
+    setDisplayNumber(Math.floor(Math.random() * sides) + 1)
     
     // Trigger actual roll after animation
     setTimeout(() => {
@@ -75,27 +88,42 @@ export function DiceRollModal({
       >
         <DialogHeader className="text-center">
           <DialogTitle className="text-xl font-medium text-foreground">
-            {check} Check
+            {title}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Roll a d20 to determine the outcome of your {check} check against DC {dc}
+            {isDamageOrHealing
+              ? `Roll a d${sides} for ${rollType === 'damage' ? 'damage' : 'healing'}`
+              : `Roll a d20 to determine the outcome of your ${check} check against DC ${dc}`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-6 py-4">
           {/* DC and Modifier Info */}
           <div className="flex items-center gap-6 text-sm">
+            {!isDamageOrHealing && (
+              <>
+                <div className="flex flex-col items-center">
+                  <span className="text-muted-foreground">Target</span>
+                  <span className="font-mono text-lg font-bold text-foreground">DC {dc}</span>
+                </div>
+                <div className="h-8 w-px bg-border" />
+              </>
+            )}
             <div className="flex flex-col items-center">
-              <span className="text-muted-foreground">Target</span>
-              <span className="font-mono text-lg font-bold text-foreground">DC {dc}</span>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex flex-col items-center">
-              <span className="text-muted-foreground">Modifier</span>
+              <span className="text-muted-foreground">{isDamageOrHealing ? 'Bonus' : 'Modifier'}</span>
               <span className="font-mono text-lg font-bold text-primary">
                 {formatModifier(modifier)}
               </span>
             </div>
+            {damageType && (
+              <>
+                <div className="h-8 w-px bg-border" />
+                <div className="flex flex-col items-center">
+                  <span className="text-muted-foreground">Type</span>
+                  <span className="font-mono text-lg font-bold text-foreground capitalize">{damageType}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Dice Display */}
@@ -128,7 +156,7 @@ export function DiceRollModal({
                 {displayNumber}
               </span>
             ) : (
-              <span className="text-4xl text-muted-foreground">d20</span>
+              <span className="text-4xl text-muted-foreground">d{sides}</span>
             )}
           </div>
 
@@ -140,31 +168,44 @@ export function DiceRollModal({
                 <span className={cn(isCritical ? 'text-warning' : isCriticalFail ? 'text-destructive' : 'text-foreground')}>
                   {roll}
                 </span>
-                <span className="text-muted-foreground"> + </span>
-                <span className="text-primary">{modifier}</span>
+                {modifier !== 0 && (
+                  <>
+                    <span className="text-muted-foreground"> + </span>
+                    <span className="text-primary">{modifier}</span>
+                  </>
+                )}
                 <span className="text-muted-foreground"> = </span>
-                <span className={cn('font-bold', success ? 'text-success' : 'text-destructive')}>
+                <span className={cn('font-bold', isDamageOrHealing ? 'text-foreground' : success ? 'text-success' : 'text-destructive')}>
                   {total}
                 </span>
-              </div>
-              <div
-                className={cn(
-                  'text-lg font-semibold',
-                  isCritical
-                    ? 'text-warning'
-                    : success
-                    ? 'text-success'
-                    : 'text-destructive'
+                {isDamageOrHealing && damageType && (
+                  <span className="text-muted-foreground capitalize"> {damageType}</span>
                 )}
-              >
-                {isCritical
-                  ? 'Critical Success!'
-                  : isCriticalFail
-                  ? 'Critical Failure!'
-                  : success
-                  ? 'Success!'
-                  : 'Failure'}
               </div>
+              {isDamageOrHealing ? (
+                <div className="text-lg font-semibold text-foreground">
+                  {total} {rollType === 'healing' ? 'HP healed' : `${damageType || ''} damage`}
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    'text-lg font-semibold',
+                    isCritical
+                      ? 'text-warning'
+                      : success
+                      ? 'text-success'
+                      : 'text-destructive'
+                  )}
+                >
+                  {isCritical
+                    ? 'Critical Success!'
+                    : isCriticalFail
+                    ? 'Critical Failure!'
+                    : success
+                    ? 'Success!'
+                    : 'Failure'}
+                </div>
+              )}
 
               {/* Consequence */}
               {consequence && (
@@ -184,7 +225,7 @@ export function DiceRollModal({
               disabled={isRolling}
               className="action-glow w-full max-w-[200px] bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isRolling ? 'Rolling...' : 'Roll d20'}
+              {isRolling ? 'Rolling...' : `Roll d${sides}`}
             </Button>
           ) : (
             <Button
