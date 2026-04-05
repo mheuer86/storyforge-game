@@ -298,3 +298,29 @@ Update the `request_roll` tool description to mention damage and healing use cas
 | `components/game/game-screen.tsx` | ✅ Thread new fields, variable dice generation | ✅ Render enemy roll badge from tool results | |
 | `lib/tool-processor.ts` | ✅ Thread new fields into roll log | ✅ Process `rollBreakdown` | |
 | `lib/system-prompt.ts` | | | ✅ Combat/healing dice instructions |
+
+---
+
+## V4 — Refinements (post-playtest)
+
+Captured from review session 2026-04-05. Not yet implemented — validate with playtesting first.
+
+### V4.1 — Combined hit + damage roll (reduce lag)
+
+Current flow: d20 hit check → stream pause → player rolls → stream resumes → damage roll → stream pause → player rolls → stream resumes. Two round-trips per attack.
+
+**Proposed:** Sequential roll in one modal. Player rolls d20, modal shows hit/miss instantly, if hit the die transforms to the damage die and they roll again. One modal open, two clicks, no stream round-trip between them. The API receives both results in a single continuation.
+
+### V4.2 — Multi-dice weapons (`count` field)
+
+Weapons like Combat Shotgun ("2d6") need multiple dice. Reuse the advantage UI pattern (two dice rendered side by side) with sum logic instead of keep-highest.
+
+Add `count?: number` (default 1) to `RequestRollInput`. Modal renders `count` dice, player clicks to roll all, total = sum of all dice + modifier. Advantage UI already proves the pattern works.
+
+### V4.3 — Critical hit damage
+
+On a nat 20 (critical hit), damage should be doubled per D&D rules. Simplest approach: prompt instruction telling Claude to double the modifier on the subsequent damage `request_roll`. No UI change needed — the roll badge shows a bigger number naturally.
+
+### V4.4 — Roll log filtering
+
+Damage/healing rolls in the chapter roll log may clutter debrief analysis. Options: filter by `rollType === 'check'` in the debrief prompt, or tag damage/healing rolls so the debrief ignores them. Low priority — monitor in playtesting.

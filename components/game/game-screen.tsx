@@ -212,6 +212,23 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               )
             }
 
+            // Hook-derived chapter title for new games
+            if ((event as Record<string, unknown>).type === 'chapter_title') {
+              const title = (event as Record<string, unknown>).title as string
+              if (title) {
+                stateWithChanges = {
+                  ...stateWithChanges,
+                  meta: { ...stateWithChanges.meta, chapterTitle: title },
+                  history: {
+                    ...stateWithChanges.history,
+                    chapters: stateWithChanges.history.chapters.map((ch, i) =>
+                      i === stateWithChanges.history.chapters.length - 1 ? { ...ch, title } : ch
+                    ),
+                  },
+                }
+              }
+            }
+
             if (event.type === 'roll_prompt') {
               onRollPrompt({
                 check: event.check,

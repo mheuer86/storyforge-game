@@ -306,7 +306,17 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Phase 1: normal turn ──
-        const actualMessage = isInitial ? buildInitialMessage(gameState) : message
+        let actualMessage = message
+        if (isInitial) {
+          const initialResult = buildInitialMessage(gameState)
+          if (typeof initialResult === 'string') {
+            actualMessage = initialResult
+          } else {
+            actualMessage = initialResult.message
+            // Send the hook-derived chapter title so the client can update game state
+            send({ type: 'chapter_title', title: initialResult.chapterTitle } as unknown as StreamEvent)
+          }
+        }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
         const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true)
@@ -329,7 +339,10 @@ export async function POST(req: NextRequest) {
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
                   { role: 'user' as const, content: [{ type: 'tool_result' as const, tool_use_id: rollResolution.toolUseId, content: rollResultText(rollResolution.roll, rollResolution.modifier, rollResolution.npcTotal ?? rollResolution.dc, resolveRoll(rollResolution.roll, rollResolution.modifier, rollResolution.npcTotal ?? rollResolution.dc), rollResolution.advantage, rollResolution.rawRolls, rollResolution.contested, rollResolution.npcRoll, rollResolution.npcTotal) }] },
                 ]
-              : buildMessagesForClaude(gameState, isInitial ? buildInitialMessage(gameState) : message, isMetaQuestion)
+              : (() => {
+                  const retryMsg = isInitial ? buildInitialMessage(gameState) : message
+                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
+                })()
 
             const loopResult = await runToolLoop(retrySystem, retryMessages, send, true)
 

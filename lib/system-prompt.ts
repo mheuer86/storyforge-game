@@ -1083,7 +1083,7 @@ export function buildMessagesForClaude(
 // INITIAL MESSAGE
 // ============================================================
 
-export function buildInitialMessage(gameState: GameState): string {
+export function buildInitialMessage(gameState: GameState): string | { message: string; chapterTitle: string } {
   const genre = (gameState.meta?.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
   const chapters = gameState.history?.chapters ?? []
@@ -1104,13 +1104,16 @@ export function buildInitialMessage(gameState: GameState): string {
     const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
     const picked = pool[Math.floor(Math.random() * pool.length)]
     const hook = typeof picked === 'string' ? picked : picked.hook
+    const hookTitle = typeof picked !== 'string' && picked.title ? picked.title : config.initialChapterTitle
     const partyLabel = config.partyBaseName.toLowerCase()
 
-    return `Begin the campaign. Opening hook: "${hook}"
+    const msg = `Begin the campaign. Opening hook: "${hook}"
 
 Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.
 
 IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), the scene snapshot (setSceneSnapshot), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
+
+    return { message: msg, chapterTitle: hookTitle }
   }
 
   const location = gameState.world?.currentLocation?.name ?? 'current location'
