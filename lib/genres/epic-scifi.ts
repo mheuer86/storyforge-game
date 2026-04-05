@@ -185,7 +185,7 @@ const epicSciFiClasses: CharacterClass[] = [
 
 const epicSciFiTheme: GenreTheme = {
   logo: '/logo_epic-scifi.png',
-  fontNarrative: "var(--font-cormorant-garamond), Georgia, serif",
+  fontNarrative: "var(--font-newsreader), Georgia, serif",
   fontHeading: "var(--font-cinzel), Georgia, serif",
   fontSystem: "'Geist Mono', monospace",
   fontScale: 1.1,
