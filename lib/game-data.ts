@@ -111,6 +111,17 @@ export function createInitialGameState(
       ],
       combatOptions: [],
       upgradeLog: [],
+    } : genre === 'epic-scifi' ? {
+      hullCondition: -1,  // -1 = no integrity bar (retinue has no hull concept)
+      systems: [
+        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informant network.' },
+        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
+        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Access to one Resonant (shared).' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
+      ],
+      combatOptions: [],
+      upgradeLog: [],
     } : null,
     tensionClocks: [],
     currentTime: '',

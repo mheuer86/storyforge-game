@@ -269,7 +269,11 @@ Rest terminology: Respite (short rest), Full Withdrawal (long rest).`,
 - **Grim Prognosis:** Heal 1d8+WIS with a side effect (pain, dependency, temporary sense loss). Side effects are amplified on patients with Drift exposure history. The Physik\'s healing always costs something \u2014 that\'s the genre\'s medical reality.`,
     assetMechanic: 'The player\'s Retinue represents their growing personal power base. Unlike a ship, it is made of people with loyalty, morale, and limits. Each upgrade tier (L1\u2192L3) across Sworn, Intelligence, Household, Drift Capacity, and Reputation should feel like a narrative milestone, not just a stat increase. The GM should introduce retinue members as named NPCs with opinions and loyalties. Upgrading Drift Capacity in particular should trigger moral reflection \u2014 the player is deepening their personal claim on a human being\'s service.',
     consumableLabel: 'Tinctures (stimulant, sedative, analgesic), drift suppressants, field dressings, stimulants',
-    buildAssetState: null,
+    buildAssetState: (ship, shipName) => {
+      const systemsLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
+      const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
+      return `\nRETINUE: ${shipName}\nSERVICES: ${systemsLine}\nRETINUE OPTIONS: ${combatLine}`
+    },
     investigationGuide: `Ledger \u2014 political debts, faction promises, evidence of complicity, intercepted correspondence, testimony. Investigation in this genre is about power: who has it, who hid what, who betrayed whom.
 
 At chapter open or when a new stratagem begins, establish privately:
