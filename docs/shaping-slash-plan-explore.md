@@ -20,7 +20,7 @@ Two new slash commands (`/plan`, `/explore`) that reliably activate their respec
 |----|-------------|--------|
 | R0 | `/plan` initiates operation planning mode via `setOperationState` | Core goal |
 | R1 | `/explore` activates spatial exploration at the player's current location via `setExplorationState` | Core goal |
-| R2 | `/plan` scans recent history (player actions, NPC dialogue, established facts) and prefills objectives, tactical facts, and constraints from what's already been discussed | Must-have |
+| R2 | `/plan` scans recent history (player actions, NPC dialogue, established facts) and DECISIONS in game state, then prefills objectives, tactical facts, and constraints from what's already been discussed | Must-have |
 | R3 | Planning mode is conversational — player refines through dialogue, not forced Q&A | Must-have |
 | R4 | Transition from planning to execution: Claude suggests confirmation proactively when the plan feels complete, responds to keywords ("let's go", "execute"), or player can type `/plan` again to explicitly trigger the transition | Must-have |
 | R5 | `/explore` works at any scale — Claude picks granularity appropriate to context (rooms in a dungeon, districts in a city, terrain features in wilderness) and maps the surrounding explorable area | Must-have |
@@ -35,10 +35,10 @@ Single shape — mechanism is two `buildInstruction` entries in `lib/slash-comma
 
 | Part | Mechanism |
 |------|-----------|
-| **A1** | `/plan` slash command entry with `buildInstruction` that instructs Claude to: scan history for discussed plans/objectives/NPC intel, prefill via `setOperationState(phase: "planning")`, then continue conversationally |
+| **A1** | `/plan` slash command entry with `buildInstruction` that instructs Claude to: scan history + DECISIONS for discussed plans/objectives/NPC intel, prefill via `setOperationState(phase: "planning")`, then continue conversationally. Does not duplicate rules from the Planning situation module — that module loads automatically when `operationState` exists. |
 | **A2** | `/plan` re-invocation handling: if `operationState` already exists and `phase === "planning"`, the instruction tells Claude to present a structured confirmation and transition to `phase: "active"` |
 | **A3** | `/plan` proactive transition: instruction includes guidance for Claude to suggest confirmation when the plan feels complete, or respond to keywords like "let's go", "execute", "ready" |
-| **A4** | `/explore` slash command entry with `buildInstruction` that instructs Claude to: assess the current location, pick appropriate granularity, and call `setExplorationState` with zones mapped from narrative context |
+| **A4** | `/explore` slash command entry with `buildInstruction` that instructs Claude to: assess the current location, pick appropriate granularity, and call `setExplorationState` with zones mapped from narrative context. Note: setting `explorationState` automatically triggers the Infiltration situation module on subsequent turns, shifting Claude's behavior. |
 | **A5** | `/explore` scale adaptation: instruction tells Claude to pick granularity based on context — rooms for buildings/dungeons, districts for cities, terrain features for wilderness |
 
 ## Fit Check: R × A
@@ -83,17 +83,19 @@ Check OPERATION STATE in the current game state.
 **If no operation is active (operationState is null):**
 Enter planning mode. ${hasArgs ? `The player's stated objective: "${args}".` : 'The player wants to plan their next move.'}
 
-1. Scan recent conversation history — player statements, NPC dialogue, established facts, known threats, available assets. Extract anything relevant to the upcoming operation.
+1. Scan recent conversation history — player statements, NPC dialogue, established facts, known threats, available assets. Also check DECISIONS in game state for active choices that affect the operation (trust, alliances, resource commitments). Extract anything relevant to the upcoming operation.
 
 2. Call update_world with setOperationState to initialize the plan:
    - name: a short evocative operation name based on the objective
    - phase: "planning"
    - objectives: prefill from what's already been discussed (if anything). ${hasArgs ? `Primary objective: "${args}".` : 'Ask the player what the primary objective is if unclear.'}
-   - tacticalFacts: any relevant intel from recent history (NPC info, scouted locations, known guard patterns, etc.)
+   - tacticalFacts: any relevant intel from recent history (NPC info, scouted locations, known guard patterns, etc.). Include relevant active decisions.
    - assetConstraints: known capabilities and limitations of the party/crew
    - abortConditions: leave empty for now — discuss with player
    - signals: leave empty for now — discuss with player
    - assessments: flag any uncertain facts from history as unrolled assessments
+
+Note: once operationState exists, the system prompt automatically loads the Planning situation module with detailed behavioral rules. This instruction only needs to trigger the mode and prefill — the module handles the rest.
 
 3. Present what you've gathered conversationally: "Here's what I've pieced together..." Show the prefilled plan naturally, then ask what's missing or wrong. Do NOT use a rigid Q&A format — let the player guide the discussion.
 
@@ -156,6 +158,8 @@ Activate spatial exploration mode. Based on the current location and narrative c
 3. Narrate the moment of shifting into exploration mode — the player pauses, takes stock of their surroundings. Describe what they can see, hear, and sense. End with the available directions/zones.
 
 4. Call suggest_actions with exploration-appropriate options (investigate current area, move to [zone], search for [thing], etc.)
+
+Note: once explorationState is set, the system prompt automatically loads the Infiltration situation module on subsequent turns, shifting Claude's behavior to spatial awareness, stealth mechanics, and zone-by-zone pacing. This instruction only needs to initialize the state.
 
 **If exploration is already active:**
 ${hasArgs ? `The player wants to explore "${args}" specifically. Check if it matches an unexplored zone. If yes, transition to that zone — update current, move the old current to explored, and describe the new area. If no match, treat it as investigating something in the current zone.` : 'Show the current exploration status: where they are, what they\'ve explored, what remains. Ask what they want to investigate or where they want to go next.'}`
