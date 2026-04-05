@@ -259,12 +259,60 @@ export async function POST(req: NextRequest) {
 
           // Merge any prior tool_results (from tools called before the roll in the same batch) with the roll result
           const isSuccessfulHit = (result === 'success' || result === 'critical') && gameState.combat.active && rollType !== 'damage' && rollType !== 'healing'
-          const damageChainInstruction = isSuccessfulHit
-            ? `\n\nDAMAGE ROLL REQUIRED: The attack hit. You MUST call request_roll NOW with rollType="damage", sides matching the weapon's damage die, checkType=weapon name, dc=0. Do NOT narrate damage — the player rolls. Do NOT write "roll your damage" as text. Call the tool.`
-            : ''
+
+          // Auto-chain: after a successful hit, send a damage roll prompt directly to the client
+          // without involving Claude. This bypasses the model entirely for damage rolls.
+          if (isSuccessfulHit) {
+            // Find the weapon in inventory by matching check name
+            const weapon = gameState.character.inventory.find(
+              (item) => item.damage && item.name.toLowerCase() === check.toLowerCase()
+            )
+            if (weapon?.damage) {
+              // Parse damage string: "1d6", "1d8 energy", "1d6+DEX", "1d10+STR"
+              const dmgMatch = weapon.damage.match(/1d(\d+)(?:\+(\w+))?(?:\s+(.+))?/)
+              if (dmgMatch) {
+                const damageSides = parseInt(dmgMatch[1])
+                const statKey = dmgMatch[2] as keyof typeof gameState.character.stats | undefined
+                const dmgType = dmgMatch[3] || ''
+                const damageMod = statKey && gameState.character.stats[statKey]
+                  ? Math.floor((gameState.character.stats[statKey] - 10) / 2)
+                  : 0
+
+                // Record the hit roll
+                const hitRollResults: ToolCallResult[] = [{ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> }]
+                send({ type: 'tools', results: hitRollResults })
+
+                // Send damage roll prompt directly to client — no Claude involved
+                send({
+                  type: 'roll_prompt',
+                  check: weapon.name,
+                  stat: statKey || stat,
+                  dc: 0,
+                  modifier: damageMod,
+                  reason: `Damage for ${weapon.name}`,
+                  toolUseId: `dmg-auto-${crypto.randomUUID().slice(0, 8)}`,
+                  pendingMessages: [
+                    ...(pendingMessages as Anthropic.MessageParam[]),
+                    { role: 'user', content: [
+                      ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
+                      { type: 'tool_result' as const, tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) },
+                    ]},
+                  ],
+                  sides: damageSides,
+                  rollType: 'damage',
+                  damageType: dmgType,
+                })
+
+                send({ type: 'done' })
+                controller.close()
+                return
+              }
+            }
+          }
+
           const allToolResults: Anthropic.ToolResultBlockParam[] = [
             ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) + damageChainInstruction },
+            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) },
           ]
 
           const continuationMessages: Anthropic.MessageParam[] = [
