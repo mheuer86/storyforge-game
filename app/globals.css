@@ -96,6 +96,10 @@
   --narrative-font-size: 0.8125rem; /* 13px — mono reads larger than serif at same size */
 }
 
+[data-genre="epic-scifi"] {
+  --narrative-font-size: 1rem; /* 16px — Cormorant Garamond is thin/light, needs more size to read comfortably */
+}
+
 /* Dark theme is the default for this app */
 .dark {
   --background: oklch(0.12 0.02 260);
