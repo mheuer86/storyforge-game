@@ -5,10 +5,11 @@ import fantasyConfig from './fantasy'
 import cyberpunkConfig from './cyberpunk'
 import grimdarkConfig from './grimdark'
 import noireConfig from './noire'
+import epicSciFiConfig from './epic-scifi'
 
 // ─── Genre Config Interfaces ────────────────────────────────────────
 
-export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'cyberpunk' | 'noire' | 'western' | 'zombie' | 'wasteland' | 'cold-war'
+export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'cyberpunk' | 'noire' | 'epic-scifi' | 'western' | 'zombie' | 'wasteland' | 'cold-war'
 
 export interface Species {
   id: string
@@ -166,6 +167,7 @@ const genreConfigs: Record<string, GenreConfig> = {
   'grimdark':     grimdarkConfig,
   'cyberpunk':    cyberpunkConfig,
   'noire':        noireConfig,
+  'epic-scifi':   epicSciFiConfig,
   'western':      westernConfig,
   'zombie':       zombieConfig,
   'wasteland':    wastelandConfig,
@@ -178,6 +180,7 @@ export const genres: { id: Genre; name: string; available: boolean }[] = [
   { id: 'grimdark',     name: 'Grimdark',       available: true  },
   { id: 'cyberpunk',    name: 'Cyberpunk',      available: true  },
   { id: 'noire',        name: 'Noire',          available: true  },
+  { id: 'epic-scifi',   name: 'Epic Sci-Fi',    available: true  },
   { id: 'western',      name: 'Western',        available: false },
   { id: 'zombie',       name: 'Zombie Apocalypse',      available: false },
   { id: 'wasteland',    name: 'Post-Atomic Wasteland',  available: false },
