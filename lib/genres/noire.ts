@@ -196,7 +196,7 @@ const noireTheme: GenreTheme = {
 
 const noireConfig: GenreConfig = {
   id: 'noire',
-  name: 'Noire',
+  name: 'Noir',
   tagline: 'Everyone lies. The truth is what\'s left when the lies stop working.',
   available: true,
   species: noireSpecies,

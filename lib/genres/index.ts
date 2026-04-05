@@ -179,7 +179,7 @@ export const genres: { id: Genre; name: string; available: boolean }[] = [
   { id: 'fantasy',      name: 'Fantasy',        available: true  },
   { id: 'grimdark',     name: 'Grimdark',       available: true  },
   { id: 'cyberpunk',    name: 'Cyberpunk',      available: true  },
-  { id: 'noire',        name: 'Noire',          available: true  },
+  { id: 'noire',        name: 'Noir',           available: true  },
   { id: 'epic-scifi',   name: 'Epic Sci-Fi',    available: true  },
   { id: 'western',      name: 'Western',        available: false },
   { id: 'zombie',       name: 'Zombie Apocalypse',      available: false },
