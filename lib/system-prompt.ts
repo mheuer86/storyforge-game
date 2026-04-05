@@ -130,6 +130,8 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 **Disposition:** Hostile=disadvantage all social. Wary=disadvantage Persuasion. Neutral=standard. Favorable=+2. Trusted=advantage. Climbing slow, falling fast. Fear ≠ trust — compliance under threat doesn't improve disposition.
 
+**Origin:** The player's origin (species/background) shapes how the world treats them — NPC first impressions, which institutions cooperate or resist, what social doors open and close. Reference origin-specific contacts, advantages, and positioning in NPC reactions. When introducing a new NPC, consider how they'd react to someone of this origin before defaulting to neutral. Origin is not cosmetic — it's a persistent social modifier.
+
 **Promises:** Active→Strained (deferred twice). Strained→Broken (third deferral). Two-chapter rule: no progress → auto Strained.
 
 **Clocks:** Advance on time/failures/exposure. Max once/scene. Trigger when filled. Must advance once before resolving.
@@ -1086,13 +1088,24 @@ export function buildInitialMessage(gameState: GameState): string {
   const isNewGame = chapters.length === 0 && chapterNumber <= 1
 
   if (isNewGame) {
-    const hooks = config.openingHooks
-    const hook = hooks[Math.floor(Math.random() * hooks.length)]
+    const playerClass = gameState.character?.class?.toLowerCase() ?? ''
+    // Filter hooks: prefer class-tagged hooks matching this class, fall back to universal
+    const allHooks = config.openingHooks
+    const classHooks = allHooks.filter(h =>
+      typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
+    )
+    const universalHooks = allHooks.filter(h =>
+      typeof h === 'string' || !h.classes
+    )
+    // 70% chance to pick class-specific if available, else universal
+    const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
+    const picked = pool[Math.floor(Math.random() * pool.length)]
+    const hook = typeof picked === 'string' ? picked : picked.hook
     const partyLabel = config.partyBaseName.toLowerCase()
 
     return `Begin the campaign. Opening hook: "${hook}"
 
-Write the opening scene based on this hook. Adapt it to my character's species, class, and ${partyLabel} from the game state. Follow the tutorial-as-narrative structure for this first chapter.
+Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.
 
 IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), the scene snapshot (setSceneSnapshot), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.`
   }
