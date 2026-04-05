@@ -117,31 +117,31 @@ const spaceOperaSpecies: Species[] = [
     id: 'human',
     name: 'Human',
     description: 'Adaptable, widespread, politically dominant in most systems.',
-    lore: 'No special traits — their versatility is the trait. NPCs rarely react to a human with surprise.',
+    lore: 'The default face in every station and port. Nobody looks twice at a human, which is itself a kind of advantage. No starting contact bonus, but no suspicion either. Advantage on checks to blend in, pass unnoticed, or avoid profiling. The cost: no cultural network to fall back on. When things go wrong, you\'re on your own.',
   },
   {
     id: 'vrynn',
     name: 'Vrynn',
     description: 'Insectoid. Chitinous plating, compound eyes, darkvision.',
-    lore: 'Uncommon in core systems; often assumed to be from the outer Rim. Tend to unsettle species that rely on facial expressions for trust.',
+    lore: 'Uncommon in core systems — most people have never spoken to a Vrynn, and the compound eyes make them uneasy. That discomfort cuts both ways: people underestimate you, and people avoid you. Start with one Vrynn diaspora contact at Favorable (information broker or mechanic). Advantage on Perception checks (compound eyes process movement faster). Disadvantage on initial Persuasion checks with species that rely on facial expressions for trust — you can\'t smile, and they can\'t read you.',
   },
   {
     id: 'korath',
     name: 'Korath',
     description: 'Broad, dense-boned, grey-skinned. Built for heavy gravity worlds.',
-    lore: 'Known for blunt honesty and engineering talent. Respected in industrial sectors, underestimated in diplomacy.',
+    lore: 'Korath are respected in dockyards, engineering bays, and anywhere that values directness over diplomacy. Blunt honesty is cultural, not rudeness — but most other species don\'t know the difference. Start with one industrial sector contact at Favorable (dock boss or supply officer). Advantage on Engineering and Athletics checks. Disadvantage on Deception checks — your culture doesn\'t train for lying, and your face doesn\'t hide it.',
   },
   {
     id: 'sylphari',
     name: 'Sylphari',
     description: 'Tall, luminescent markings, low-light adapted.',
-    lore: 'Originally from tidally locked worlds. Reputation as scholars and mediators, but their calm demeanor is often mistaken for passivity.',
+    lore: 'From tidally locked worlds where patience isn\'t a virtue, it\'s a survival trait. Sylphari are welcome in diplomatic halls and academic stations; less so in frontier bars where "calm" reads as "condescending." Start with one academic or diplomatic contact at Favorable. Advantage on Insight checks (reading emotional states is how Sylphari survived millennia of darkness-side politics). First impression with frontier or military NPCs starts one tier lower than normal — prove yourself before they listen.',
   },
   {
     id: 'zerith',
     name: 'Zerith',
     description: 'Lean, scaled, cold-blooded. Fast reflexes, poor endurance in sustained cold.',
-    lore: 'Culturally decentralized; no homeworld loyalty. Often found in mercenary or freelance roles. Trusted by few, which suits most of them fine.',
+    lore: 'No homeworld, no unified government, no cultural center. Zerith are freelancers by nature and reputation — which means most station authorities assume you\'re a mercenary, smuggler, or both. Start with one freelancer contact at Favorable (fellow Zerith, operates independently). Advantage on Initiative and Reflex saves (cold-blooded physiology, faster neural response). Disadvantage on CON checks in sustained cold environments. Authorities and law enforcement start at Wary.',
   },
 ]
 
@@ -378,15 +378,35 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
   intelOperationLabel: 'Operation',
   explorationLabel: 'Facility',
   openingHooks: [
-    'The ship just dropped out of FTL at an unfamiliar station. Something is wrong — the docking authority is demanding an unusual fee, and there are armed patrols everywhere.',
+    // Universal — work for any class
     'A distress signal pulled the ship off-course to a derelict freighter drifting in an asteroid belt. The cargo bay doors are open. No life signs.',
-    'The crew is docked at a bustling trade hub when an old contact shows up with a job — retrieve a data chip from a locked-down sector of the station. Payment: enough to cover the ship\'s overdue repairs.',
-    'The ship is running on fumes, limping into the nearest port after a pirate ambush damaged the FTL drive. The only station in range is controlled by a faction the crew has history with.',
-    'A routine cargo run turned sour. The client never showed at the rendezvous point, and now an unknown ship is tailing the crew through a nebula.',
     'Shore leave on a fringe colony. The crew splits up. Then an explosion rocks the market district, and the station goes into lockdown.',
     'The ship received anonymous coordinates and a single encrypted message: "Come alone. Bring the item." The crew doesn\'t know what item the sender means.',
     'Docked for refueling at a mining outpost, the crew witnesses station security dragging someone away. The prisoner locks eyes with the captain and mouths one word: "Help."',
-    'You just completed the biggest score of your career. The cargo bay is full, the crew is celebrating, and your comm is lighting up with three buyers — all offering too much.',
+    // Driftrunner — smuggling, cargo, borders, deals
+    { hook: 'The cargo in bay three is humming. It wasn\'t humming when you loaded it. The manifest says machine parts, but the radiation counter says otherwise. And the buyer changed the drop coordinates an hour ago.', classes: ['Driftrunner'] },
+    { hook: 'A routine cargo run turned sour. The client never showed at the rendezvous point, and now an unknown ship is tailing the crew through a nebula. Whatever\'s in the crate, someone wants it back.', classes: ['Driftrunner'] },
+    { hook: 'Customs flagged the ship at a core-world checkpoint. The contraband isn\'t yours — someone planted it during the last dock. Now station security wants to impound the ship, and the real owner of the cargo is sending threats over encrypted comm.', classes: ['Driftrunner'] },
+    // Vanguard — combat, security, protection
+    { hook: 'The convoy you were hired to escort just lost its lead ship to a pirate ambush. The remaining transports are scattering, your employer is screaming over comms, and the pirates are already locking weapons on the next target.', classes: ['Vanguard'] },
+    { hook: 'A frontier outpost went dark three days ago. The garrison commander was a friend. The relief force found the station intact but empty — no bodies, no damage, no explanation. They\'re asking for someone willing to go inside.', classes: ['Vanguard'] },
+    { hook: 'A warlord from the Outer Reach is offering amnesty and triple pay to any ex-military crew willing to run a blockade. The cargo is humanitarian supplies. The blockade is run by the faction you used to serve.', classes: ['Vanguard'] },
+    // Technomancer — systems, data, machines, hacking
+    { hook: 'The ship\'s AI woke you at 0300 with a priority alert: someone accessed the encrypted partition while you were asleep. The intrusion came from inside the ship. The AI can\'t identify who.', classes: ['Technomancer'] },
+    { hook: 'A dead hacker\'s neural implant arrived in a courier package addressed to you. No return sender. The implant contains a partial decryption key to a file that\'s been bouncing around darknet servers for months — a file three corporations have killed to suppress.', classes: ['Technomancer'] },
+    { hook: 'The station you just docked at is running on emergency protocols — life support cycling, airlocks glitching, docking clamps won\'t release. The station AI insists everything is nominal. It isn\'t. And your ship is locked in.', classes: ['Technomancer'] },
+    // Diplomat — politics, betrayal, negotiation
+    { hook: 'Two factions on the verge of war have agreed to meet on neutral ground — your ship. The summit starts in six hours. Then the lead negotiator for one side is found dead in their quarters, and both delegations are blaming the crew.', classes: ['Diplomat'] },
+    { hook: 'An old political ally sends an encrypted message: they\'ve been accused of treason and are being transferred to a black site. They have information that could destabilize the sector. They\'re asking you to intervene — officially or otherwise.', classes: ['Diplomat'] },
+    { hook: 'You brokered a ceasefire between a mining colony and its corporate owners. It was supposed to hold. Now the colony leader is dead, the corporation is moving security forces in, and both sides say you guaranteed terms the other violated.', classes: ['Diplomat'] },
+    // Medic — patients, biology, things that shouldn't exist
+    { hook: 'A cargo hauler docks with your station requesting emergency medical assistance. The patient has symptoms you\'ve never seen — tissue regenerating faster than it should, organs in the wrong places. The hauler\'s crew won\'t say where they found this person.', classes: ['Medic'] },
+    { hook: 'A quarantine alert locks down the station you\'re docked at. The pathogen is unknown, spreading fast, and doesn\'t match anything in the medical database. Station medical is overwhelmed and asking for volunteers. The first patients are already dying.', classes: ['Medic'] },
+    { hook: 'A former colleague sends you lab results that shouldn\'t exist: a blood sample from a patient who died two years ago, showing active cell division. The sample was collected yesterday. From a facility that was supposed to be decommissioned.', classes: ['Medic'] },
+    // Ace — flight, pursuit, impossible navigation
+    { hook: 'The ship is running on fumes, limping into the nearest port after a pirate ambush damaged the FTL drive. The only station in range is controlled by a faction the crew has history with — and they remember the last time you outflew their patrol squadron.', classes: ['Ace'] },
+    { hook: 'A pilot you used to fly with went missing on a charted beacon corridor — a route that\'s supposed to be safe. Search and rescue found the ship drifting, engines cold, flight recorder wiped. The cockpit was locked from the inside. No body.', classes: ['Ace'] },
+    { hook: 'An anonymous client is offering a fortune to fly a sealed container through the Wraith Nebula — an uncharted region where navigation systems fail and ships disappear. No questions, payment on delivery. Three other pilots already turned it down.', classes: ['Ace'] },
   ],
   initialChapterTitle: 'New Horizons',
   locationNames: [
@@ -403,31 +423,31 @@ const fantasySpecies: Species[] = [
     id: 'human',
     name: 'Human',
     description: 'Adaptable, politically dominant across most kingdoms.',
-    lore: 'No special traits — their versatility is the trait. Common everywhere, rarely questioned.',
+    lore: 'The common face of every kingdom. Nobody questions a human at a city gate or a market stall. No starting contact bonus, but no suspicion either. Advantage on checks to blend in or navigate bureaucracy — the systems were built by humans, for humans. The cost: no racial network. Other species look after their own; humans are on their own.',
   },
   {
     id: 'elf',
     name: 'Elf',
     description: 'Slender, long-lived, keen-eyed.',
-    lore: 'Respected in courts and academies, distrusted in frontier towns as aloof. Reputation for patience that others mistake for indifference.',
+    lore: 'Elven patience is cultural, not passive — it comes from living long enough to see hasty decisions rot. Welcomed in courts and academies; distrusted on the frontier where "elf" means "outsider who thinks they know better." Start with one court or academic contact at Favorable. Advantage on Perception and History checks (keen eyes, long memory). Frontier and common-folk NPCs start at Wary — earn their respect through action, not lineage.',
   },
   {
     id: 'dwarf',
     name: 'Dwarf',
     description: 'Stocky, dense-boned, mountain-born.',
-    lore: 'Known for blunt honesty and craftsmanship. Respected in trade guilds, underestimated in matters of subtlety.',
+    lore: 'Dwarven bluntness isn\'t rudeness; it\'s efficiency. A dwarf\'s word is a contract, and a contract is unbreakable. Trade guilds know this, which is why dwarven merchants get better terms than anyone else. Start with one trade guild contact at Favorable. Advantage on Engineering, Appraisal, and CON saves (dense bones, stubborn constitution). Disadvantage on Deception checks — lying goes against everything your culture taught you, and your face shows it.',
   },
   {
     id: 'halfling',
     name: 'Halfling',
     description: 'Small, nimble, deceptively tough.',
-    lore: 'Seen as harmless by most, which suits them fine. Natural talent for going unnoticed. Found everywhere, owned by no kingdom.',
+    lore: 'People see the size and stop looking. That\'s the advantage. Halflings are everywhere, owned by no kingdom, beholden to no lord — which makes them either invisible or suspect, depending on who\'s asking. Start with one traveling merchant or innkeeper contact at Favorable (halfling network, always passing through). Advantage on Stealth checks and checks to go unnoticed in crowds. Disadvantage on Intimidation — nobody fears someone they could pick up.',
   },
   {
     id: 'dragonkin',
     name: 'Dragonkin',
     description: 'Tall, scaled, remnants of an ancient bloodline.',
-    lore: 'Fast reflexes, intimidating presence. Culturally scattered since the Fall of the Wyrm Kingdoms. Trusted by few, feared by many.',
+    lore: 'The Wyrm Kingdoms fell three centuries ago, but the fear hasn\'t. Dragonkin are imposing, fast, and carry a reputation for violence they didn\'t earn. Some doors open because people are afraid to say no. Others close for the same reason. Start with one dragonkin exile contact at Favorable (scattered community, fiercely loyal). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you\'re feared before you\'re known. Climbing to Trusted takes twice as long.',
   },
 ]
 
@@ -658,14 +678,35 @@ Rest terminology: Short rest, Long rest.`,
   intelOperationLabel: 'Quest',
   explorationLabel: 'Dungeon',
   openingHooks: [
+    // Universal — work for any class
     'The tavern door slams open. A wounded rider staggers in, clutching a sealed message. "For the company at the back table," he gasps, then collapses. The seal bears a crest no one has seen in twenty years.',
-    'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the cart is heavier than it should be, and the merchant keeps looking over his shoulder.',
-    'A warlord\'s army is three days from the city. The council offers you command of the defense — but you recognize the warlord\'s banner. You served under it once.',
-    'The healer who saved your life asks one favor in return: escort her to a temple that her own church has declared heretical.',
     'The company is camped in the foothills when a stranger approaches the fire. She offers information about a bounty on the company\'s heads, but her price is a favor she won\'t name yet.',
     'Market day in the capital. The company splits up to resupply. Then the cathedral bells start ringing — not for prayer. The city gates are closing.',
-    'A map found in a dead adventurer\'s pack leads to a hidden entrance beneath an ancient watchtower. The markings are in a language nobody in the company reads.',
     'Passing through a mountain pass, the company finds a caravan overturned and looted. One survivor, badly hurt, begs for help: "They took the children into the mines."',
+    // Shadowblade — theft, secrets, locked doors
+    { hook: 'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the lock on the cart is one you recognize — guild-work, the kind used to seal things people kill to protect. And the merchant keeps looking over his shoulder.', classes: ['Shadowblade'] },
+    { hook: 'Someone broke into the duke\'s treasury last night using techniques only a handful of people know. You\'re one of them. The duke\'s men are already asking questions, and the real thief left behind a calling card that looks uncomfortably like yours.', classes: ['Shadowblade'] },
+    { hook: 'A dying man presses a key into your hand in a crowded market. "The vault under the old courthouse. Before the full moon." He\'s dead before you can ask what\'s in it — or who\'s already looking for it.', classes: ['Shadowblade'] },
+    // Warden — battle, duty, defense
+    { hook: 'A warlord\'s army is three days from the city. The council offers you command of the defense — but you recognize the warlord\'s banner. You served under it once.', classes: ['Warden'] },
+    { hook: 'The garrison at Thornwall hasn\'t sent a rider in two weeks. The road north is open, the weather is clear, and no one will say why they stopped sending reports. The crown wants someone to ride up and find out.', classes: ['Warden'] },
+    { hook: 'A knight you once served with arrives at your camp, wounded and alone. His company was ambushed escorting a prisoner. The prisoner escaped. The knight says the prisoner must be found before dawn — not because of what he did, but because of what he knows.', classes: ['Warden'] },
+    // Arcanist — magic, forbidden knowledge, things that shouldn't exist
+    { hook: 'A map found in a dead adventurer\'s pack leads to a hidden entrance beneath an ancient watchtower. The markings are in a language nobody in the company reads — except you. It\'s a dialect of Old Arcane that was supposed to have died with the Sundering.', classes: ['Arcanist'] },
+    { hook: 'Your spell misfired last night. Not a wild surge — something answered. A voice in the residual energy, speaking words you didn\'t cast. Your focus crystal is still warm this morning, and it shouldn\'t be.', classes: ['Arcanist'] },
+    { hook: 'A sealed archive beneath the Collegium has been opened for the first time in a century. Three scholars went in to catalog the contents. One came back, unable to speak. The Collegium is asking for someone with practical experience to go in after the other two.', classes: ['Arcanist'] },
+    // Herald — politics, reputation, information
+    { hook: 'Two lords on the edge of war have agreed to meet — but only if you broker the terms. One of them saved your life once. The other is married to the person who betrayed you. Both know your name.', classes: ['Herald'] },
+    { hook: 'A song you wrote three years ago about a dead king has resurfaced. Someone is performing it in every tavern from here to the capital, and the lyrics have been changed. The new version names a living lord as the killer. People believe it because your name is on it.', classes: ['Herald'] },
+    { hook: 'A minor noble offers the company winter quarters and full pay to perform one task: deliver a marriage proposal to a neighboring house. The catch — the bride has already refused twice, and the last messenger came back missing three fingers.', classes: ['Herald'] },
+    // Mender — faith, healing, moral weight
+    { hook: 'The healer who saved your life asks one favor in return: escort her to a temple that her own church has declared heretical. She says the temple holds a cure for the eastern plague. The church says it holds something worse.', classes: ['Mender'] },
+    { hook: 'A village priest sends word that the dead in his churchyard aren\'t staying dead. Not undead — breathing, confused, remembering nothing. The church hierarchy wants the village quarantined. The priest wants someone who can tell healing from abomination.', classes: ['Mender'] },
+    { hook: 'A wounded soldier is carried into camp. The wound is cursed — it won\'t close, and conventional healing accelerates the decay. The soldier carries orders that must reach the capital in three days. Healing him means understanding the curse. Understanding the curse means finding who cast it.', classes: ['Mender'] },
+    // Ranger — wilderness, tracking, things from the wild
+    { hook: 'The Thornwood is moving. Not growing — moving. The tree line has advanced half a mile in a week, swallowing farmland. Livestock that wanders in doesn\'t come back. The locals say the forest is angry. The tracks you found at the new edge say something in the forest is hunting.', classes: ['Ranger'] },
+    { hook: 'A hunting party went into the highlands a week ago and hasn\'t returned. You found their camp — abandoned, gear intact, food still on the fire. No blood, no struggle. But the tracks leading away from camp aren\'t human, and they\'re heading toward the nearest village.', classes: ['Ranger'] },
+    { hook: 'Something has been killing wolves in the eastern range. Not hunters — the kills are too clean, too deliberate, and the bodies are arranged in patterns. Whatever is doing this is working its way down the food chain. The wolves were the largest predator in the area. The next largest is the livestock.', classes: ['Ranger'] },
   ],
   initialChapterTitle: 'The First Step',
   locationNames: [
@@ -682,31 +723,31 @@ const cyberpunkSpecies: Species[] = [
     id: 'street-kid',
     name: 'Street Kid',
     description: 'Born in the gutter wards. Knows every shortcut, every gang corner, every unwritten rule.',
-    lore: 'Underestimated everywhere above street level. That assumption is a weapon.',
+    lore: 'You grew up where the city doesn\'t bother pretending. Cops don\'t come, corps don\'t care, and you learned to read a room before you learned to read. Start with one gang contact at Favorable. Advantage on Streetwise checks. Disadvantage on initial social checks with corpo or institutional NPCs — they see the ward before they see you.',
   },
   {
     id: 'corpo',
     name: 'Corpo Dropout',
     description: 'Former corporate employee. Polished accent, expensive habits, one bad decision.',
-    lore: 'Still dresses the part, which opens doors — but corp contacts remember faces. Some relationships survive the fall. Most don\'t.',
+    lore: 'You still walk like you own the building, and it still opens doors. But the corp remembers you left, and they remember why. Start with one former corpo colleague at Neutral (they\'re cautious, not loyal). Your former corporation as a faction starts at Wary — you know too much, and they know you know. Advantage on social checks in corporate environments — you know the language, the hierarchy, the tells. Gang and street NPCs start at Wary: you smell like the enemy.',
   },
   {
     id: 'nomad',
     name: 'Nomad',
     description: 'Arrived from the badlands with a car, a gun, and clan instincts.',
-    lore: 'Clan loyalty is deep-wired — city people read it as suspicion. The badlands bred a different kind of toughness: no corpo safety net, no NCPD response time.',
+    lore: 'The city is loud, vertical, and full of people who mistake comfort for safety. You know what it means to survive without a safety net. Start with one clan contact at Trusted (outside the city, reachable by comm). Advantage on Survival and vehicle-related checks. City fixers start at Wary — nomads are unpredictable, and unpredictable is bad for business.',
   },
   {
     id: 'undercity-born',
     name: 'Undercity Born',
     description: 'Grew up in the maintenance warrens and black-market tunnels beneath the city\'s visible layers.',
-    lore: 'Invisible to corps, trusted by no one above ground — which is exactly the point. Knows routes, people, and systems that don\'t appear on any official map.',
+    lore: 'You know routes that don\'t appear on any official map and people who don\'t appear in any database. The surface world is loud and exposed; you prefer walls on all sides. Start with one black-market dealer at Favorable. Advantage on checks to navigate, hide, or find things in urban infrastructure. Disadvantage on social checks in high-society or corporate settings — you don\'t know the codes, and it shows.',
   },
   {
     id: 'syndicate-blood',
     name: 'Syndicate Blood',
     description: 'Raised inside an organized crime family or gang hierarchy. Knows how authority actually works.',
-    lore: 'Understands the difference between power and the performance of power. Has obligations that don\'t expire — and contacts that open doors most people don\'t know exist.',
+    lore: 'You understand the difference between power and the performance of power. Obligations don\'t expire, and neither do the connections. Start with one syndicate contact at Favorable. A rival gang or syndicate faction starts at Hostile — they know your family, and the history between you is blood. Advantage on Intimidation and checks to read power dynamics. But the family watches: acting against syndicate interests (even indirectly) gets reported. Betrayal drops every syndicate NPC by two disposition tiers.',
   },
 ]
 
@@ -943,15 +984,35 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
   intelOperationLabel: 'The Run',
   explorationLabel: 'Network',
   openingHooks: [
-    'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now the crew is pinned in a ventilation shaft forty floors up with no way down.',
-    'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours.',
+    // Universal — work for any class
     'The crew wakes up in a med-bay with a gap in their memory logs and someone else\'s coordinates loaded into their neural buffer. No explanation. No sender. Just a location and a time.',
-    'Three weeks of flatline work, scraping by on small jobs. Then an unsigned braindance clip arrives. Inside: surveillance footage of the crew that no one should have.',
     'A rival crew is dead. Their equipment, their job board, and their contacts are up for grabs — but so is whoever killed them.',
-    'A corp access card shows up in the safehouse mail slot. The face on the ID matches no one in the crew. The clearance level is maximum.',
-    'Street rumor: a cargo AV is floating dead over the industrial sector, loaded with corp merchandise and no crew aboard. First come, first served — if NCPD doesn\'t get there first.',
     'The city goes dark. Not a power failure — a targeted blackout in a six-block radius. In the silence, a voice on every local channel says a name. It\'s the player\'s.',
-    'Last night you uploaded something to the net that you shouldn\'t have. You don\'t remember doing it. Your rig\'s activity log says it took eleven minutes. Three corps have already noticed.',
+    'A corp access card shows up in the safehouse mail slot. The face on the ID matches no one in the crew. The clearance level is maximum.',
+    // Ghost — infiltration, access, being where you shouldn't be
+    { hook: 'The job was supposed to be clean: grab the data chip, ghost out. Then corpo security showed up two hours early, and now you\'re pinned in a ventilation shaft forty floors up with no way down.', classes: ['Ghost'] },
+    { hook: 'A corpo exec offers triple rate to break into her own company\'s server room. She says it\'s a security audit. The floor plan she gave you has rooms that don\'t appear on any public blueprint.', classes: ['Ghost'] },
+    { hook: 'You got in clean. You got the data. You got out. Then your fence tells you the chip is blank — wiped remotely sometime between extraction and delivery. Someone knew the exact moment you\'d have it.', classes: ['Ghost'] },
+    // Razorback — violence, territory, physical confrontation
+    { hook: 'A gang boss you used to work for is dead. Killed in a way that matches your signature — mantis blades, close range, no witnesses. You didn\'t do it, but the gang doesn\'t know that. They\'re already hunting.', classes: ['Razorback'] },
+    { hook: 'A street doc patches you up after a firefight and mentions, casually, that the chrome in your arm isn\'t factory. Someone modified your cyberware while you were under, and she can\'t tell what it does.', classes: ['Razorback'] },
+    { hook: 'Three gangs are converging on the same block tonight — your block. One of them hired you to hold the line. The other two don\'t know you\'re here yet. Neither does the NCPD AV circling overhead.', classes: ['Razorback'] },
+    // Netrunner — the net, data, systems
+    { hook: 'Last night you uploaded something to the net that you shouldn\'t have. You don\'t remember doing it. Your rig\'s activity log says it took eleven minutes. Three corps have already noticed.', classes: ['Netrunner'] },
+    { hook: 'A dead netrunner\'s deck shows up at a pawn shop with your handle scratched into the casing. Inside: an unfinished run against a corp subnet, paused mid-execution. The daemon is still live, waiting for someone to finish what they started.', classes: ['Netrunner'] },
+    { hook: 'You jacked into a routine data grab and found something underneath — a ghost subnet that shouldn\'t exist, running on hardware that was decommissioned five years ago. Something in it pinged you back.', classes: ['Netrunner'] },
+    // Fixer — contacts, deals, information
+    { hook: 'Three weeks of flatline work, scraping by on small jobs. Then an unsigned braindance clip arrives. Inside: surveillance footage of you meeting a client who was found dead the next morning. Someone is building a case — or leverage.', classes: ['Fixer'] },
+    { hook: 'Your most reliable contact calls in a panic: someone is burning their network from the inside. Three fixers dead in two days, all connected to the same job — a job you brokered six months ago and thought was finished.', classes: ['Fixer'] },
+    { hook: 'A corpo middleman offers you a name — someone high up who wants to defect. All you have to do is arrange safe passage. The catch: two other fixers got the same offer this week. Neither of them made it home.', classes: ['Fixer'] },
+    // Medtech — bodies, augmentation, patients
+    { hook: 'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours. When you get there, the ripperdoc says she\'s not a hostage.', classes: ['Medtech'] },
+    { hook: 'A patient walks into your clinic with military-grade chrome that no street doc installed. They don\'t know where it came from. They don\'t remember the surgery. And the serial numbers on the implants belong to a soldier who died two years ago.', classes: ['Medtech'] },
+    { hook: 'Someone is killing ripperdocs in the lower city. Clean work — no forced entry, no theft, just a body and a message carved into the operating table. You\'re the only doc in the district who hasn\'t been hit yet.', classes: ['Medtech'] },
+    // Solo — contracts, targets, survival
+    { hook: 'The target is dead. Clean job, clean exit. Then the client sends a second payment — double the original — with a note: "Wrong person. Real target attached. Finish it." The photo is someone you know.', classes: ['Solo'] },
+    { hook: 'You wake up in a motel room you don\'t recognize with a bullet wound you don\'t remember getting. Your gun has been fired. The news is running a story about a corpo exec found dead downtown. Your face isn\'t on camera. Yet.', classes: ['Solo'] },
+    { hook: 'A contract comes in through the usual channels: eliminate a solo operator who\'s been hitting corp targets across the city. Efficient, methodical, no witnesses. You read the dossier twice before you realize — the operational profile is yours.', classes: ['Solo'] },
   ],
   initialChapterTitle: 'Night One',
   locationNames: [
@@ -968,31 +1029,31 @@ const grimdarkSpecies: Species[] = [
     id: 'house-veldran',
     name: 'House Veldran',
     description: 'Merchant nobility. Politically dominant, widely spread, no special bloodline traits.',
-    lore: 'Wealth over blood. They are everywhere and own most of what matters. NPCs rarely question a Veldran face.',
+    lore: 'Wealth is the only bloodline that matters, and Veldran has more of it than anyone. The name opens ledgers, not hearts — merchants cooperate, commoners resent, and rival houses scheme. Start with one Veldran trade agent at Favorable. House Ashfang as a faction starts at Wary (old debts from the Wyrm war reparations). Advantage on checks involving commerce, bribes, or reading financial motives. The cost: everyone assumes you\'re buying loyalty, not earning it. Common folk start at Wary — wealth breeds resentment.',
   },
   {
     id: 'house-sylvara',
     name: 'House Sylvara',
     description: 'Ancient woodland bloodline. Long-lived, keen-eyed, patient to a fault.',
-    lore: 'Respected in courts, distrusted in frontier towns. Their calm is often read as coldness — or worse, contempt.',
+    lore: 'Sylvara patience comes from outliving everyone who rushed. Courts respect the name; frontier camps don\'t. Your calm reads as arrogance to people who are hungry now. Start with one Sylvara elder at Favorable (distant, but responsive to the house name). House Veldran as a faction starts at Wary (Sylvara patience has cost Veldran money for generations). Advantage on Perception and Insight checks — you\'ve learned to watch before you act. Frontier and common-folk NPCs start at Wary. Earning trust takes twice as many positive interactions.',
   },
   {
     id: 'house-stonemark',
     name: 'House Stonemark',
     description: 'Mountain clan bloodline. Dense-boned, blunt-spoken, legendary craftsmen.',
-    lore: 'Trusted in trade guilds, underestimated in matters of subtlety. Their debts run generations.',
+    lore: 'A Stonemark word is a Stonemark bond — generations of debts honored, promises kept, enemies remembered. Trade guilds deal with you on reputation alone. But bluntness is a liability when subtlety matters: you say what you mean, and everyone knows it. Start with one guild or clan contact at Favorable. House Sylvara as a faction starts at Wary (centuries of mountain-court friction — Stonemark bluntness offends Sylvara sensibility). Advantage on CON saves and Engineering/Crafting checks. Disadvantage on Deception — your culture considers lying a form of cowardice, and your face agrees.',
   },
   {
     id: 'wandering-kin',
     name: 'The Wandering Kin',
     description: 'Rootless small folk. No house, no loyalty, found in every city and camp.',
-    lore: 'Seen as harmless by most, which suits them fine. Owned by no kingdom — a fact some call freedom and others call exile.',
+    lore: 'No house means no protection, but also no obligations. The Kin are everywhere and owe nothing, which makes them useful and suspect in equal measure. Other houses underestimate you — that\'s a resource, not an insult. Start with one Kin traveler contact at Favorable (always moving, always knows what\'s happening in the next town). Any landed house as a faction starts at Wary toward houseless folk — guards, stewards, and nobles assume you\'re a thief or a spy until proven otherwise. Advantage on Stealth checks and checks to gather rumors or go unnoticed. Disadvantage on Intimidation — power respects size, and you don\'t have it.',
   },
   {
     id: 'house-ashfang',
     name: 'House Ashfang',
     description: 'Fallen bloodline. Scaled, fast, remnants of the Wyrm Kingdoms.',
-    lore: 'Once feared as conquerors. Now scattered, distrusted, and carrying a reputation they didn\'t choose. Trusted by few — which has made them careful.',
+    lore: 'The Wyrm Kingdoms burned three centuries ago, but the fear is fresh. Ashfang are fast, imposing, and carry a name that makes people reach for weapons. Some cooperate because they\'re afraid. Others refuse to cooperate for the same reason. Start with one Ashfang exile contact at Favorable (scattered but loyal). The Church as a faction starts at Hostile (the Wyrm Kingdoms burned temples; the Church has a long memory). House Veldran as a faction starts at Wary (they profited from the fall and don\'t want the past revisited). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you are feared before you are known. Breaking through to Trusted requires proof of character, not just words.',
   },
 ]
 
@@ -1223,15 +1284,35 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
   intelOperationLabel: 'Scheme',
   explorationLabel: 'Ground',
   openingHooks: [
-    'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop.',
-    'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: retrieve something from a crypt three previous parties never returned from.',
-    'The company is camped outside a city under quarantine. Inside: a contact with critical intelligence. The gates are locked and the walls are watched.',
-    'A child walks into camp alone, carrying a signet ring from a dead lord. She won\'t say where she got it — only: "They said to find the Company."',
+    // Universal — work for any class
     'The battle is over. The wrong side won. The company\'s employer is dead, and the victors are offering amnesty to surrendering mercenaries. The kind that ends with a noose.',
     'A courier brings payment for a job the company didn\'t do. Someone is using the company\'s name — and whoever hired them wants a reckoning.',
+    'A child walks into camp alone, carrying a signet ring from a dead lord. She won\'t say where she got it — only: "They said to find the Company."',
     'Mid-winter. The road north is blocked by snow. The only shelter: an abandoned monastery with fresh tracks going in and none coming out.',
-    'A lord hires the company to investigate missing grain shipments. The trail leads to the lord\'s own steward. Now the company knows too much.',
-    'You\'ve been appointed magistrate of a town that executed the last three magistrates. Your first case arrives tomorrow.',
+    // Cutthroat — kills, poison, dirty work
+    { hook: 'The mark is dead. Clean work. Then the client sends a second name — the dead man\'s daughter, twelve years old. She saw something. The client says it\'s the job. Your gut says it\'s a test.', classes: ['Cutthroat'] },
+    { hook: 'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: enter a lord\'s bedchamber and replace his medicine with something from a black vial. They don\'t want it to look like poison. They want it to look like God.', classes: ['Cutthroat'] },
+    { hook: 'Someone is killing with your methods — same blade angle, same entry point, same calling card you stopped using years ago. Two dead this week. The city watch doesn\'t know your face yet, but whoever is copying your work wants them to.', classes: ['Cutthroat'] },
+    // Ironclad — sieges, last stands, battles
+    { hook: 'The village paid for protection. Three days in, the captain is dead and the company is being blamed for the raid they were hired to stop. The villagers want blood. The real raiders are still in the hills. And the company is down to seven.', classes: ['Ironclad'] },
+    { hook: 'A lord\'s keep is under siege. The garrison commander sent for reinforcements a week ago — none came. You\'re not reinforcements. You\'re a mercenary company passing through. But the commander is offering everything he has left to anyone willing to hold the wall for three more days.', classes: ['Ironclad'] },
+    { hook: 'The bridge at Ashford is the only crossing for fifty miles, and two armies want it. Your company holds it — not by contract, but because you were standing on it when the war started. Both sides have sent envoys. Both want you to hold it for them. Neither is offering enough.', classes: ['Ironclad'] },
+    // Hexblade — curses, forbidden knowledge, corruption
+    { hook: 'A sealed contract arrives from a house that doesn\'t officially exist. The task: retrieve a grimoire from a crypt three previous parties never returned from. The house insists the book is harmless. The wards on the crypt entrance say otherwise.', classes: ['Hexblade'] },
+    { hook: 'Your focus cracked last night. Not from use — from something pushing out. The bone fetish is warm, and the markings have changed. Whatever was bound inside is awake, and it\'s been whispering a name. Yours.', classes: ['Hexblade'] },
+    { hook: 'A village burned its own healer at the stake for witchcraft. The healer\'s apprentice found you and says the real curseworker is still in the village, hiding behind the accusation. The plague that started before the burning is getting worse. They need someone who understands forbidden things.', classes: ['Hexblade'] },
+    // Schemer — secrets, betrayals, power plays
+    { hook: 'A lord hires the company to investigate missing grain shipments. The trail leads to the lord\'s own steward. The steward offers you triple to say you found nothing. The lord\'s wife offers you something else entirely to make the steward disappear.', classes: ['Schemer'] },
+    { hook: 'You\'ve been appointed magistrate of a town that executed the last three magistrates. Your first case arrives tomorrow: a merchant accusing a priest of theft. The priest accusing the merchant of heresy. Both are lying, and the town council is watching to see which lie you choose.', classes: ['Schemer'] },
+    { hook: 'Two houses are negotiating a marriage alliance. Both have hired you separately — one to ensure the marriage happens, the other to ensure it doesn\'t. You took both contracts because you knew you\'d learn more from the middle than either side.', classes: ['Schemer'] },
+    // Plague Doctor — disease, bodies, the cost of healing
+    { hook: 'The company is camped outside a city under quarantine. The plague inside is killing faster than the doctors can count. A contact with critical intelligence is trapped behind the walls. The gates are locked, the walls are watched, and the few who\'ve climbed over came back with black fingers.', classes: ['Plague Doctor'] },
+    { hook: 'A field hospital after a battle. The wounded are packed three to a cot. You\'re the only one with real training. Then a soldier is carried in with wounds that aren\'t from any weapon you recognize — the flesh is dissolving, not cut. And three more arrive with the same thing.', classes: ['Plague Doctor'] },
+    { hook: 'A noble family is dying. One by one, over months, symptoms that mimic natural illness. The house physician says plague. The servants whisper poison. The family heir, the last one standing, asks you to examine the bodies before the church takes them for cremation at dawn.', classes: ['Plague Doctor'] },
+    // Inquisitor — heresy, confessions, institutional rot
+    { hook: 'The church sends you to a remote monastery to investigate reports of heresy. When you arrive, the abbot is cooperative, the brothers are devout, and the chapel is immaculate. Everything is perfect. That\'s the problem — the last investigator sent the same report before he vanished.', classes: ['Inquisitor'] },
+    { hook: 'A condemned man, hours from execution, demands to speak to an inquisitor. Not a priest — an inquisitor. He says his confession will implicate three sitting members of the council. The council says he\'s lying to delay the rope. He says he can prove it, but only to someone with the authority to act.', classes: ['Inquisitor'] },
+    { hook: 'Your predecessor\'s final case file arrived sealed, with a note: "I was wrong about everything. Start over." Inside: testimony implicating a bishop, a trade guild, and a dead woman who may not be dead. The seal on the file has been opened and resealed at least once.', classes: ['Inquisitor'] },
   ],
   initialChapterTitle: 'First Blood',
   locationNames: [
@@ -1260,13 +1341,13 @@ const noireSpecies: Species[] = [
     id: 'old-money',
     name: 'Old Money',
     description: 'From the families that built this city. You know the quiet arrangements.',
-    lore: 'You know the clubs, the boards, the quiet arrangements. You also know what those families do to protect themselves. Start with one high-society contact at Favorable. Access to spaces others can\'t enter. Your name precedes you — people form opinions before meeting you.',
+    lore: 'You know the clubs, the boards, the quiet arrangements. You also know what those families do to protect themselves. Start with one high-society contact at Favorable. Advantage on social checks in elite settings and checks to leverage institutional access. Disadvantage on initial social checks with working-class and street NPCs — your name precedes you, and it doesn\'t mean the same thing down here.',
   },
   {
     id: 'veteran',
     name: 'Veteran',
     description: 'Went to war and came back different. Violence doesn\'t shock you.',
-    lore: 'The city feels small after what you saw. Violence doesn\'t shock you, which is useful. It also doesn\'t bother you, which is a problem. Advantage on CON saves against fear and intimidation. One military contact at Favorable. First extreme violence in a chapter: no WIS save, NPCs notice.',
+    lore: 'The city feels small after what you saw. Violence doesn\'t shock you, which is useful. It also doesn\'t bother you, which is a problem. Start with one military contact at Favorable. Advantage on CON saves against fear and intimidation. Disadvantage on Insight checks reading civilian emotional cues — you\'re calibrated for threat assessment, not empathy. First extreme violence in a chapter: no WIS save required, but NPCs notice your lack of reaction.',
   },
   {
     id: 'immigrant',
