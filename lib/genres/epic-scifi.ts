@@ -188,7 +188,7 @@ const epicSciFiTheme: GenreTheme = {
   fontNarrative: "var(--font-cormorant-garamond), Georgia, serif",
   fontHeading: "var(--font-cinzel), Georgia, serif",
   fontSystem: "'Geist Mono', monospace",
-  fontScale: 1.0,
+  fontScale: 1.1,
   background: 'oklch(0.06 0.01 280)',
   foreground: 'oklch(0.90 0.02 60)',
   card: 'oklch(0.10 0.01 280)',
