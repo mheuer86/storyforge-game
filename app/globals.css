@@ -325,13 +325,13 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 800px 500px at 30% 70%, oklch(0.18 0.10 300 / 0.25) 0%, transparent 100%),
-    radial-gradient(ellipse 600px 400px at 70% 30%, oklch(0.22 0.12 85 / 0.15) 0%, transparent 100%),
-    radial-gradient(ellipse 1000px 600px at 50% 50%, oklch(0.12 0.06 280 / 0.20) 0%, transparent 100%);
+    radial-gradient(ellipse 800px 500px at 30% 70%, oklch(0.22 0.14 300 / 0.40) 0%, transparent 100%),
+    radial-gradient(ellipse 600px 400px at 70% 30%, oklch(0.26 0.14 85 / 0.25) 0%, transparent 100%),
+    radial-gradient(ellipse 1000px 600px at 50% 50%, oklch(0.16 0.10 280 / 0.30) 0%, transparent 100%);
   animation: drift-aurora 120s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 @keyframes drift-aurora {
