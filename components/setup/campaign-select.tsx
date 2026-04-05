@@ -31,14 +31,13 @@ function formatDate(iso: string): string {
 }
 
 function genreAccentColor(genre: string): string {
-  const map: Record<string, string> = {
-    'space-opera': 'oklch(0.82 0.15 175)',
-    'fantasy': 'oklch(0.72 0.14 75)',
-    'cyberpunk': 'oklch(0.75 0.22 145)',
-    'grimdark': 'oklch(0.58 0.16 28)',
-    'noire': 'oklch(0.48 0.20 22)',
+  // Read primary color from genre config instead of hardcoding
+  try {
+    const config = getGenreConfig(genre as Genre)
+    return config.theme.primary
+  } catch {
+    return 'oklch(0.82 0.15 175)' // fallback to space opera teal
   }
-  return map[genre] || map['space-opera']
 }
 
 export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewGame }: CampaignSelectProps) {
