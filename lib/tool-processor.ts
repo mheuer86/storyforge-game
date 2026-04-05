@@ -1,4 +1,4 @@
-import type { GameState, ToolCallResult, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock, RollRecord } from './types'
+import type { GameState, ToolCallResult, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock, RollRecord, RollBreakdown } from './types'
 
 export interface StatChange {
   type: 'gain' | 'loss' | 'new' | 'neutral'

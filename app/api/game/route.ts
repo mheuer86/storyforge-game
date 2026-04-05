@@ -28,7 +28,7 @@ const requestSchema = z.object({
   isAudit: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
   rollResolution: z.object({
-    roll: z.number().min(1).max(20),
+    roll: z.number().min(1).max(100),
     check: z.string(),
     stat: z.string(),
     dc: z.number(),
@@ -45,18 +45,30 @@ const requestSchema = z.object({
     npcRoll: z.number().min(1).max(20).optional(),
     npcTotal: z.number().optional(),
     priorToolResults: z.array(z.any()).optional(),
+    sides: z.number().optional(),
+    rollType: z.enum(['check', 'damage', 'healing']).optional(),
+    damageType: z.string().optional(),
   }).optional(),
 })
 
-function resolveRoll(roll: number, modifier: number, dc: number): RollRecord['result'] {
+function resolveRoll(roll: number, modifier: number, dc: number, rollType?: string): RollRecord['result'] {
+  // Damage and healing rolls have no DC/crit/fumble — always "success"
+  if (rollType === 'damage' || rollType === 'healing') return 'success'
   if (roll === 20) return 'critical'
   if (roll === 1) return 'fumble'
   if (roll + modifier >= dc) return 'success'
   return 'failure'
 }
 
-function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number): string {
+function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
+  // Damage and healing rolls — just report the total
+  if (rollType === 'damage') {
+    return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.`
+  }
+  if (rollType === 'healing') {
+    return `Healing roll: ${roll} + ${modifier} = ${total} HP healed.`
+  }
   const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
   const contestedNote = contested && npcRoll !== undefined && npcTotal !== undefined
     ? ` Contested vs ${contested.npcName}'s ${contested.npcSkill}: NPC rolled ${npcRoll} + ${contested.npcModifier} = ${npcTotal}.`
@@ -131,7 +143,7 @@ async function runToolLoop(
 
     for (const tc of toolCalls) {
       if (interceptRolls && tc.name === 'request_roll') {
-        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage'; contested?: { npcName: string; npcSkill: string; npcModifier: number } }
+        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage'; contested?: { npcName: string; npcSkill: string; npcModifier: number }; sides?: number; rollType?: 'check' | 'damage' | 'healing'; damageType?: string }
 
         // Flush accumulated tools before pausing for the roll
         if (toolResults.length > 0) {
@@ -159,6 +171,9 @@ async function runToolLoop(
           priorToolResults,
           ...(input.advantage && { advantage: input.advantage }),
           ...(input.contested && { contested: input.contested }),
+          ...(input.sides && { sides: input.sides }),
+          ...(input.rollType && { rollType: input.rollType }),
+          ...(input.damageType && { damageType: input.damageType }),
         })
 
         return { toolResults, messages, hitRoll: true }
@@ -224,10 +239,10 @@ export async function POST(req: NextRequest) {
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
-          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal, priorToolResults: priorResults } = rollResolution
+          const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal, priorToolResults: priorResults, sides, rollType, damageType } = rollResolution
           // For contested rolls, compare player total vs NPC total instead of static DC
           const effectiveDC = npcTotal !== undefined ? npcTotal : dc
-          const result = resolveRoll(roll, modifier, effectiveDC)
+          const result = resolveRoll(roll, modifier, effectiveDC, rollType)
 
           const rollRecord: RollRecord = {
             id: crypto.randomUUID(),
@@ -237,12 +252,15 @@ export async function POST(req: NextRequest) {
             ...(rawRolls && { rawRolls }),
             ...(contested && { contested }),
             ...(npcRoll !== undefined && { npcRoll, npcTotal }),
+            ...(sides && { sides }),
+            ...(rollType && { rollType }),
+            ...(damageType && { damageType }),
           }
 
           // Merge any prior tool_results (from tools called before the roll in the same batch) with the roll result
           const allToolResults: Anthropic.ToolResultBlockParam[] = [
             ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal) },
+            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) },
           ]
 
           const continuationMessages: Anthropic.MessageParam[] = [
