@@ -226,6 +226,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     ),
                   },
                 }
+                // Update the displayed chapter header
+                const headerContent = `Chapter ${stateWithChanges.meta.chapterNumber}: ${title}`
+                setMessages((prev) =>
+                  prev.map((m) => m.type === 'chapter-header' ? { ...m, content: headerContent } : m)
+                )
               }
             }
 

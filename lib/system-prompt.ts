@@ -1088,7 +1088,7 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
   const config = getGenreConfig(genre)
   const chapters = gameState.history?.chapters ?? []
   const chapterNumber = gameState.meta?.chapterNumber ?? 1
-  const isNewGame = chapters.length === 0 && chapterNumber <= 1
+  const isNewGame = chapterNumber <= 1 && chapters.every(ch => ch.status === 'in-progress' && ch.summary === '')
 
   if (isNewGame) {
     const playerClass = gameState.character?.class?.toLowerCase() ?? ''
