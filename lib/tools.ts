@@ -481,7 +481,8 @@ export const gameTools: Anthropic.Tool[] = [
           description: 'Set or update the spatial exploration state. Pass the full object when the player enters a facility, dungeon, or crime scene. To clear when they exit, omit this field entirely and call with just other update_world actions. Update at every zone transition.',
           properties: {
             facilityName: { type: 'string', description: 'Name of the facility or location being explored' },
-            status: { type: 'string', description: 'Overall facility status, e.g. "hostile, cipher disrupted" or "unexplored, dark"' },
+            status: { type: 'string', description: 'Overall facility status, e.g. "hostile, guards present" or "quiet, market district" or "unexplored, dark"' },
+            hostile: { type: 'boolean', description: 'true = enemy territory, active threats, stealth required, or active operation in progress. false = friendly area, crime scene, safe exploration. Determines whether infiltration or social rules load.' },
             explored: {
               type: 'array',
               description: 'Zones already cleared/visited.',
@@ -529,7 +530,7 @@ export const gameTools: Anthropic.Tool[] = [
             },
             alertLevel: { type: 'string', description: 'Narrative description of facility awareness, e.g. "Grid down, response teams converging"' },
           },
-          required: ['facilityName', 'status', 'explored', 'current', 'unexplored', 'resources'],
+          required: ['facilityName', 'status', 'hostile', 'explored', 'current', 'unexplored', 'resources'],
         },
         updatePromise: {
           type: 'object',

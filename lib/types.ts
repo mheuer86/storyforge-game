@@ -219,6 +219,7 @@ export interface Notebook {
 export interface ExplorationState {
   facilityName: string      // "Pinnacle Station" / "Ruins of Kal'Theros"
   status: string            // "hostile, cipher disrupted" / "unexplored, dark"
+  hostile: boolean           // true = infiltration rules, false = social rules with spatial tracking
   explored: { name: string; notes: string }[]
   current: { name: string; description: string }
   unexplored: { name: string; hints: string }[]
