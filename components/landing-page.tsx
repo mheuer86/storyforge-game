@@ -76,6 +76,17 @@ const demoContent: Record<string, DemoContent> = {
     finalMessage: { id: 'no-4', type: 'gm', content: 'She\'s telling the truth about the passport. But her left hand, the one in her lap, keeps clenching. She\'s afraid, and not just for her husband. Something about this meeting itself is costing her. Someone told her not to come here.', timestamp: ts },
     actions: ['Take the case', 'Ask about the clenched fist', 'Name your price first'],
   },
+  'epic-scifi': {
+    chapter: 'Chapter 1: First Audience',
+    messages: [
+      { id: 'es-1', type: 'gm', content: 'The Conclave hall is vast enough to lose a voice in. Gold leaf catches the light from chandeliers powered by Drift energy you can almost taste on the back of your tongue. The Minor Houses sit below the dais. The Major Houses sit above it. You are standing.', timestamp: ts },
+      { id: 'es-2', type: 'player', content: 'Study the Synod delegation before they notice me', timestamp: ts },
+      { id: 'es-3', type: 'gm', content: 'Three Synod Adjudicators in white and silver vestments, seated apart from the houses. The one in the center hasn\'t stopped watching the Resonant standing behind House Aldren\'s chair. The Resonant\'s hands are trembling.', timestamp: ts },
+    ],
+    roll: { check: 'Insight Check', dc: 14, roll: 16, modifier: 3, total: 19, result: 'success', reason: 'Reading the Synod Adjudicator' },
+    finalMessage: { id: 'es-4', type: 'gm', content: 'The Adjudicator isn\'t watching the Resonant with suspicion. It\'s recognition. She knows this Resonant. And from the way her jaw is set, the Resonant was supposed to be somewhere else entirely. House Aldren has an unregistered asset, and the Synod just noticed.', timestamp: ts },
+    actions: ['Approach House Aldren with a warning', 'Intercept the Adjudicator', 'Stay silent and watch what unfolds'],
+  },
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -190,7 +201,7 @@ export function LandingPage() {
       {/* ── Genre Showcase + Gameplay Preview (combined interactive section) ── */}
       <section className="mx-auto w-full max-w-5xl px-6 pb-28">
         <h2 className="mb-10 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
-          Five worlds. One engine.
+          Six worlds. One engine.
         </h2>
 
         <div className="flex flex-col gap-6 md:flex-row" style={themeVars}>
