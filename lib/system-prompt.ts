@@ -317,11 +317,20 @@ function buildCombatModule(genre: string, ps: ReturnType<typeof getGenreConfig>[
 **Turn order:** Player action → Enemy response → New situation → suggest_actions.
 
 1. Player picks action (Attack, Ability, Item, Flee, custom, environmental interaction)
-2. Resolve attack: request_roll (d20 skill check to hit). On hit, request_roll AGAIN with sides matching the weapon's damage dice (e.g. sides=10 for "1d10 energy"), rollType="damage", checkType=weapon name, damageType from the weapon string, modifier from the relevant stat if the weapon specifies +STAT. Then apply the rolled damage total via update_character(hpChange=-total) on the target.
+2. Resolve attack: request_roll (d20 skill check to hit). On hit, IMMEDIATELY call request_roll AGAIN for damage (see DAMAGE ROLL PROTOCOL below). Then apply the rolled damage total via update_character(hpChange=-total) on the target.
 3. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use request_roll — instead roll the damage yourself and call update_character with hpChange AND rollBreakdown (label, dice, roll, modifier, total, damageType, sides) so the UI shows a damage badge.
 4. Present new situation with suggest_actions
 
-**Healing items:** When the player uses a healing item with dice (e.g. "1d8+WIS HP"), call request_roll with sides matching the die, rollType="healing", checkType=item name, damageType="HP", dc=0, modifier=the resolved stat bonus. Then apply via update_character(hpChange=+total).
+## DAMAGE ROLL PROTOCOL
+
+After EVERY successful player hit, you MUST call request_roll for damage. No exceptions.
+
+1. Do NOT narrate a damage number — the dice decide.
+2. Do NOT write "roll your damage" as text — call the tool.
+3. IMMEDIATELY call request_roll with: rollType="damage", sides matching the weapon's damage die (e.g. sides=10 for "1d10 energy"), checkType=weapon name, damageType from the weapon string, dc=0, modifier from the relevant stat if the weapon specifies +STAT (e.g. "+DEX" → use DEX modifier).
+4. Wait for the damage result before narrating the hit's effect or continuing to enemy actions.
+
+The same applies to **healing items:** call request_roll with rollType="healing", sides matching the item's die, checkType=item name, damageType="HP", dc=0, modifier=the resolved stat bonus. Then apply via update_character(hpChange=+total).
 
 **Spatial tracking:** Maintain positions for all combatants, hazards, and exits. Update each round. Do not teleport — movement is consistent and logical. Player needs relative distances and cover.
 
@@ -495,13 +504,9 @@ export function buildClosePrompt(gameState: GameState): [string, string] {
     ? `\nGM SELF-ASSESSMENT (from the narrative GM):\n${gameState.meta.selfAssessment}`
     : ''
 
-  const hitDieAvg: Record<string, number> = {
-    soldier: 6, warrior: 6, enforcer: 6, bruiser: 6, inquisitor: 6, solo: 6,
-    scout: 5, ranger: 5, shadowdancer: 5, runner: 5, outrider: 5, driftrunner: 5,
-    diplomat: 4, face: 4, troubadour: 4, grifter: 4, spymaster: 4,
-  }
-  const classKey = gameState.character.class.toLowerCase()
-  const hitDie = hitDieAvg[classKey] ?? 5
+  // Look up hit die from genre config (correct by construction)
+  const classConfig = config.classes.find(c => c.name === gameState.character.class)
+  const hitDie = classConfig?.hitDieAvg ?? 5
   const conMod = getStatModifier(gameState.character.stats.CON)
   const hpIncrease = Math.max(1, hitDie + conMod)
   const currentLevel = gameState.character.level

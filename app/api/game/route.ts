@@ -268,7 +268,8 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: allToolResults },
           ]
 
-          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, false)
+          // interceptRolls=true so damage/healing rolls after a hit are interactive too
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
           finish(loopResult.toolResults)
           return

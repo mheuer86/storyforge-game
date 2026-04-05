@@ -602,8 +602,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         gmMsgId,
         false,
         stateWithRoll,
-        () => {
-          // nested rolls not expected — treat as error
+        (nextRollPrompt) => {
+          // Chained roll (e.g. damage after a hit) — show dice modal again
+          setRollPrompt(nextRollPrompt)
           isLoadingRef.current = false
           setIsLoading(false)
         },
