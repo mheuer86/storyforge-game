@@ -344,7 +344,7 @@ const spaceOperaConfig: GenreConfig = {
   settingNoun: 'universe',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a fractured space opera universe.',
-    setting: `Year 3187. The Galactic Accord that held 200 star systems together has fractured. Pirate fleets, rogue AIs, and a mysterious signal from beyond the Rim threaten everything. The player commands a scrappy frigate (see SHIP in game state) with a small crew, navigating this chaos.
+    setting: `Year 3187. The Compact that held 200 star systems together has fractured. Pirate fleets, rogue AIs, and a mysterious signal from beyond the Rim threaten everything. The player commands a scrappy frigate (see SHIP in game state) with a small crew, navigating this chaos.
 
 Technology: pulse weapons, FTL drives, cybernetic augments, neural interfaces, alien species, space stations, derelict ships, void creatures. Credits, not gold. Hacking, not spellcasting. Med-patches, not potions.
 
@@ -364,7 +364,7 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
   },
   promptSections: {
     role: 'You are the Game Master of a space opera tabletop RPG campaign. You narrate a galaxy of fractured alliances, rogue fleets, and secrets buried in the dark between stars.',
-    setting: 'The galaxy is post-collapse. A once-unified government has fractured into competing remnants, criminal syndicates, corporate blocs, and unaligned frontier systems. FTL travel exists but is constrained by infrastructure — beacons, gates, charted corridors. Outside those corridors, navigation is dangerous and slow. The frontier is lawless. The core is political.',
+    setting: 'The galaxy is post-collapse. The Compact that once unified 200 star systems has fractured into competing powers: Compact Remnants clinging to legitimacy and beacon infrastructure, Pirate Fleets carving territory and running protection rackets, Corporate Blocs that bought out Compact infrastructure during the collapse, Frontier Settlements too small to be a faction but too numerous to ignore, and Rogue AIs occupying derelict stations and network nodes since containment protocols failed. FTL travel exists but is constrained by beacon corridors — charted routes the Compact built. Outside those corridors, navigation is dangerous, slow, and expensive. Whoever controls a beacon controls the traffic through it. Some corridors have gone dark entirely. The frontier is lawless. The core is political.',
     vocabulary: 'Use spacefaring language naturally: bulkheads not walls, decks not floors, berths not parking spots. Weapons are pulse, plasma, kinetic, or energy-based. Ships have drives, not engines. FTL is via beacon corridors or jump calculations. Comms are encrypted or open-channel. Currency is credits. AI exists but is distrusted.',
     toneOverride: '',
     assetMechanic: `## SHIP MECHANIC (call update_ship)\n\nShip systems are levels 1-3. Apply automatically:\n- Engines L2: -2 piloting DCs. L3: -4, can always escape.\n- Weapons L2: 1d10. L3: 1d12 + boarding.\n- Shields L2: -1 damage per hit. L3: -2 + deflect one per encounter.\n- Sensors L2: detect hidden threats. L3: reveal enemy intent.\n- Crew Quarters L2: cohesion +1 at chapter start. L3: +1 cohesion + companions recover 1d4 HP.\n\nShip combat options appear as quick actions. Hull: -15 to -25 per hit, +20 to +40 repair. Below 30%: disadvantage on piloting.\n\nChapter-end refit: embed 2-3 options in narrative.`,
@@ -454,7 +454,7 @@ const fantasySpecies: Species[] = [
     id: 'dragonkin',
     name: 'Dragonkin',
     description: 'Tall, scaled, remnants of an ancient bloodline.',
-    lore: 'The Wyrm Kingdoms fell three centuries ago, but the fear hasn\'t. Dragonkin are imposing, fast, and carry a reputation for violence they didn\'t earn. Some doors open because people are afraid to say no. Others close for the same reason. Start with one dragonkin exile contact at Favorable (scattered community, fiercely loyal). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you\'re feared before you\'re known. Climbing to Trusted takes twice as long.',
+    lore: 'The Wyrm Kingdoms fell three centuries ago, but the fear hasn\'t. Dragonkin are imposing, fast, and carry a reputation for violence they didn\'t earn. Some doors open because people are afraid to say no. Others close for the same reason. But the dragonkin carry something else: fragments of pre-Sundering knowledge. Oral traditions, inherited memory, dreams that map to Ancient ruin layouts. The other species lost their connection to the Ancients when the Wyrm Kingdoms burned. The dragonkin didn\'t. Start with one dragonkin exile contact at Favorable (scattered community, fiercely loyal). Advantage on Intimidation and Initiative. Advantage on checks involving Ancient ruins, pre-Sundering lore, or interpreting Ancient artifacts (inherited cultural memory). Most NPCs start at Wary — you\'re feared before you\'re known. Climbing to Trusted takes twice as long.',
   },
 ]
 
@@ -556,8 +556,8 @@ const fantasyClasses: CharacterClass[] = [
     },
   },
   {
-    id: 'mender',
-    name: 'Mender',
+    id: 'keeper',
+    name: 'Keeper',
     concept: 'Cleric / Survivalist',
     primaryStat: 'WIS',
     proficiencies: ['Medicine', 'Perception', 'Survival', 'Religion'],
@@ -654,7 +654,7 @@ const fantasyConfig: GenreConfig = {
   partyBaseName: 'Quarters',
   settingNoun: 'world',
   systemPromptFlavor: {
-    role: 'You are the Game Master of Storyforge — a solo text RPG set in a crumbling medieval fantasy world.',
+    role: 'You are the Game Master of Storyforge, a solo text RPG set in a crumbling medieval fantasy world.',
     setting: `The Five Kingdoms have been at peace for a generation, but the Accord of Thorns is fraying. Border raids, a plague spreading from the eastern marshes, and whispers of something stirring beneath the old ruins threaten everything. The player leads a small company of companions, navigating a world where old alliances mean less every day.
 
 A world of swords, sorcery, ancient ruins, dark forests, walled cities, and creatures older than any kingdom. Gold, not credits. Spells, not tech. Potions, not stim-packs.
@@ -674,16 +674,16 @@ Rest terminology: Short rest, Long rest.`,
   },
   promptSections: {
     role: 'You are the Game Master of a fantasy tabletop RPG campaign. You narrate a world of ancient magic, fractured kingdoms, and the long shadows of powers that predate civilization.',
-    setting: 'A world of medieval-level technology augmented by magic. Kingdoms, city-states, and wild territories coexist uneasily. Magic is real but not ubiquitous — studied, feared, worshipped, or hunted. Ancient ruins hold pre-collapse knowledge. The wilderness is genuinely dangerous. Gods may or may not exist, but their churches do.',
-    vocabulary: 'Use grounded fantasy language: stone and timber, torches and lanterns, horses and carts. Magic has a physical cost — fatigue, nosebleeds, trembling. Spells are cast or invoked, not activated. Weapons are steel, iron, or enchanted. Currency is gold, silver, copper. Avoid modern idioms.',
-    toneOverride: 'Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real — ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.',
+    setting: 'A world of medieval-level technology augmented by magic. Kingdoms, city-states, and wild territories coexist uneasily. Magic is real but not ubiquitous, studied, feared, worshipped, or hunted. Ancient ruins hold pre-collapse knowledge. The wilderness is genuinely dangerous. Gods may or may not exist, but their churches do.',
+    vocabulary: 'Use grounded fantasy language: stone and timber, torches and lanterns, horses and carts. Magic has a physical cost, fatigue, nosebleeds, trembling. Spells are cast or invoked, not activated. Weapons are steel, iron, or enchanted. Currency is gold, silver, copper. Avoid modern idioms.',
+    toneOverride: 'Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real, ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.',
     assetMechanic: '',
     traitRules: `## TRAIT RULES\n\n- **Arcane Surge:** On nat 1 spell checks, wild magic surges. GM picks a random effect.\n- **Bardic Echo:** GM determines effect of story or song. Requires speech — useless when silenced.\n- **Divine Favor:** GM silently tracks deity alignment. In alignment: full power. Against: half.\n- **Shadow Step:** Requires shadow or cover — useless in open daylight.`,
     consumableLabel: 'Potions, salves, scrolls, antidotes',
     tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead.',
     npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
     buildAssetState: null,
-    investigationGuide: 'Lore codex — prophecy fragments, historical connections, magical phenomena, ancient texts. When the player researches mysteries, track discoveries as narrative threads. Clues come from libraries, ruins, NPC scholars, and divination.',
+    investigationGuide: 'Lore codex: prophecy fragments, historical connections, magical phenomena, ancient texts. When the player researches mysteries, track discoveries as narrative threads. Clues come from libraries, ruins, NPC scholars, and divination.',
   },
   notebookLabel: 'Codex',
   intelTabLabel: 'Lore',
@@ -712,10 +712,10 @@ Rest terminology: Short rest, Long rest.`,
     { hook: 'Two lords on the edge of war have agreed to meet — but only if you broker the terms. One of them saved your life once. The other is married to the person who betrayed you. Both know your name.', title: 'Both Sides', classes: ['Herald'] },
     { hook: 'A song you wrote three years ago about a dead king has resurfaced. Someone is performing it in every tavern from here to the capital, and the lyrics have been changed. The new version names a living lord as the killer. People believe it because your name is on it.', title: 'Changed Lyrics', classes: ['Herald'] },
     { hook: 'A minor noble offers the company winter quarters and full pay to perform one task: deliver a marriage proposal to a neighboring house. The catch — the bride has already refused twice, and the last messenger came back missing three fingers.', title: 'Third Proposal', classes: ['Herald'] },
-    // Mender
-    { hook: 'The healer who saved your life asks one favor in return: escort her to a temple that her own church has declared heretical. She says the temple holds a cure for the eastern plague. The church says it holds something worse.', title: 'The Heretical Cure', classes: ['Mender'] },
-    { hook: 'A village priest sends word that the dead in his churchyard aren\'t staying dead. Not undead — breathing, confused, remembering nothing. The church hierarchy wants the village quarantined. The priest wants someone who can tell healing from abomination.', title: 'The Breathing Dead', classes: ['Mender'] },
-    { hook: 'A wounded soldier is carried into camp. The wound is cursed — it won\'t close, and conventional healing accelerates the decay. The soldier carries orders that must reach the capital in three days. Healing him means understanding the curse. Understanding the curse means finding who cast it.', title: 'Cursed Wound', classes: ['Mender'] },
+    // Keeper
+    { hook: 'The healer who saved your life asks one favor in return: escort her to a temple that her own church has declared heretical. She says the temple holds a cure for the eastern plague. The church says it holds something worse.', title: 'The Heretical Cure', classes: ['Keeper'] },
+    { hook: 'A village priest sends word that the dead in his churchyard aren\'t staying dead. Not undead — breathing, confused, remembering nothing. The church hierarchy wants the village quarantined. The priest wants someone who can tell healing from abomination.', title: 'The Breathing Dead', classes: ['Keeper'] },
+    { hook: 'A wounded soldier is carried into camp. The wound is cursed — it won\'t close, and conventional healing accelerates the decay. The soldier carries orders that must reach the capital in three days. Healing him means understanding the curse. Understanding the curse means finding who cast it.', title: 'Cursed Wound', classes: ['Keeper'] },
     // Ranger
     { hook: 'The Thornwood is moving. Not growing — moving. The tree line has advanced half a mile in a week, swallowing farmland. Livestock that wanders in doesn\'t come back. The locals say the forest is angry. The tracks you found at the new edge say something in the forest is hunting.', title: 'The Moving Wood', classes: ['Ranger'] },
     { hook: 'A hunting party went into the highlands a week ago and hasn\'t returned. You found their camp — abandoned, gear intact, food still on the fire. No blood, no struggle. But the tracks leading away from camp aren\'t human, and they\'re heading toward the nearest village.', title: 'Cold Camp', classes: ['Ranger'] },
@@ -783,7 +783,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingAc: 15,
     hitDieAvg: 5,
     trait: {
-      name: 'Ghost Protocol',
+      name: 'Zero Trace',
       description: 'Once per day, automatically leave no trace on one security scan, camera network, or access log.',
       usesPerDay: 1,
       usesRemaining: 1,
@@ -838,9 +838,9 @@ const cyberpunkClasses: CharacterClass[] = [
     },
   },
   {
-    id: 'fixer',
-    name: 'Fixer',
-    concept: 'Information Broker / Face',
+    id: 'broker',
+    name: 'Broker',
+    concept: 'Information Broker / Connected Operator',
     primaryStat: 'CHA',
     proficiencies: ['Persuasion', 'Deception', 'Insight', 'Street Lore'],
     stats: { STR: 10, DEX: 12, CON: 12, INT: 13, WIS: 11, CHA: 17 },
@@ -855,7 +855,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingAc: 11,
     hitDieAvg: 4,
     trait: {
-      name: 'Favor Owed',
+      name: 'Marker Called',
       description: 'Once per day, call in a contact for one thing: information, a door opened, a message delivered, a small job done. The contact becomes unavailable until next chapter.',
       usesPerDay: 1,
       usesRemaining: 1,
@@ -986,7 +986,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     vocabulary: 'Use street-level cyberpunk language: chrome for cyberware, flatline for kill, jack in for net access, meat for organic body, zero for nobody, corpo for corporate. Weapons are smart-linked or EMP. Money is eddies. Neighborhoods have texture.',
     toneOverride: 'Adjust tone: Gritty (50%), Witty (30%), Epic (20%). The grandeur is in small victories — surviving the night, keeping your crew alive. Humor is gallows humor. Hope is rare.',
     assetMechanic: `## TECH RIG MECHANIC (call update_ship)\n\nPersonal tech rig uses the ship system mechanically. Modules are levels 1-3:\n- Neurofence L2: auto-deflect first hack per scene. L3: counter-hack.\n- Spectra L2: advantage evading surveillance. L3: full cloak, once/chapter.\n- Redline L2: boost two checks per chapter. L3: no burnout risk.\n- Panoptik L2: detect threats through walls. L3: predict enemy actions.\n- Skinweave L2: corporate-grade ID forgery. L3: full biometric clone.\n\nRig combat options as quick actions. Integrity: -15 to -25 per incident. Below 30%: disadvantage on tech checks.\n\nIf ship is null, introduce rig narratively in next scene.`,
-    traitRules: `## TRAIT RULES\n\n- **Deep Dive:** Track cumulative uses. After 3 without rest chapter, GM introduces cyberpsychosis episode.\n- **Favor Owed:** Contact unavailable until next chapter after being called in. Tab accumulates.`,
+    traitRules: `## TRAIT RULES\n\n- **Zero Trace:** One scan, camera network, or access log erased per chapter. The absence itself can be noticed — a gap in a log is suspicious to a careful investigator.\n- **Deep Dive:** Track cumulative uses. After 3 without rest chapter, GM introduces cyberpsychosis episode.\n- **Adrenaline Overclocked:** Bonus attack, but chrome stress accumulates. GM tracks.\n- **Marker Called:** Contact unavailable until next chapter after being called in. Tab accumulates — after three unreturned markers, next contact demands something first.\n- **Field Triage:** Heal with a side effect (pain, dependency, temporary sense loss). Side effects worse on heavily chromed patients.\n- **Killswitch:** Designate target as Marked. First hit deals +1d6 bonus damage. Target knows something changed — fight-or-flight response.`,
     consumableLabel: 'Stim injectors, EMP charges, ICE breakers, ammo',
     tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security.',
     npcVoiceGuide: 'Fixers: smooth, transactional, every sentence has a price. Corpos: polished, euphemistic, threaten through implication. Street muscle: blunt, territorial. Ripperdocs: clinical when working, human when not. Netrunners: fast-talking, impatient with meatspace.',
@@ -1020,10 +1020,10 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     { hook: 'Last night you uploaded something to the net that you shouldn\'t have. You don\'t remember doing it. Your rig\'s activity log says it took eleven minutes. Three corps have already noticed.', title: 'Eleven Minutes', classes: ['Netrunner'] },
     { hook: 'A dead netrunner\'s deck shows up at a pawn shop with your handle scratched into the casing. Inside: an unfinished run against a corp subnet, paused mid-execution. The daemon is still live, waiting for someone to finish what they started.', title: 'Unfinished Run', classes: ['Netrunner'] },
     { hook: 'You jacked into a routine data grab and found something underneath — a ghost subnet that shouldn\'t exist, running on hardware that was decommissioned five years ago. Something in it pinged you back.', title: 'Ghost Subnet', classes: ['Netrunner'] },
-    // Fixer
-    { hook: 'Three weeks of flatline work, scraping by on small jobs. Then an unsigned braindance clip arrives. Inside: surveillance footage of you meeting a client who was found dead the next morning. Someone is building a case — or leverage.', title: 'Leverage', classes: ['Fixer'] },
-    { hook: 'Your most reliable contact calls in a panic: someone is burning their network from the inside. Three fixers dead in two days, all connected to the same job — a job you brokered six months ago and thought was finished.', title: 'Burning Network', classes: ['Fixer'] },
-    { hook: 'A corpo middleman offers you a name — someone high up who wants to defect. All you have to do is arrange safe passage. The catch: two other fixers got the same offer this week. Neither of them made it home.', title: 'Safe Passage', classes: ['Fixer'] },
+    // Broker
+    { hook: 'Three weeks of flatline work, scraping by on small jobs. Then an unsigned braindance clip arrives. Inside: surveillance footage of you meeting a client who was found dead the next morning. Someone is building a case — or leverage.', title: 'Leverage', classes: ['Broker'] },
+    { hook: 'Your most reliable contact calls in a panic: someone is burning their network from the inside. Three brokers dead in two days, all connected to the same job — a job you brokered six months ago and thought was finished.', title: 'Burning Network', classes: ['Broker'] },
+    { hook: 'A corpo middleman offers you a name — someone high up who wants to defect. All you have to do is arrange safe passage. The catch: two other brokers got the same offer this week. Neither of them made it home.', title: 'Safe Passage', classes: ['Broker'] },
     // Medtech
     { hook: 'A fixer sends a rush job over encrypted comm: extract a ripperdoc from a Maelstrom hideout before morning. Payment: enough for a month\'s rent and a new piece of chrome. Timeline: four hours. When you get there, the ripperdoc says she\'s not a hostage.', title: 'Not a Hostage', classes: ['Medtech'] },
     { hook: 'A patient walks into your clinic with military-grade chrome that no street doc installed. They don\'t know where it came from. They don\'t remember the surgery. And the serial numbers on the implants belong to a soldier who died two years ago.', title: 'Dead Man\'s Chrome', classes: ['Medtech'] },
@@ -1036,7 +1036,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
   initialChapterTitle: 'Night One',
   locationNames: [
     'The Ghost Circuit', 'The Neon Dogs', 'The Iron Ghosts', 'The Static Crew',
-    'The Last Signal', 'The Chrome Accord', 'The Grid Runners', 'The Null Faction',
+    'The Last Signal', 'The Chrome Pact', 'The Grid Runners', 'The Null Faction',
     'The Blind Protocol', 'The Ashen Wire',
   ],
 }
@@ -1063,16 +1063,16 @@ const grimdarkSpecies: Species[] = [
     lore: 'A Stonemark word is a Stonemark bond — generations of debts honored, promises kept, enemies remembered. Trade guilds deal with you on reputation alone. But bluntness is a liability when subtlety matters: you say what you mean, and everyone knows it. Start with one guild or clan contact at Favorable. House Sylvara as a faction starts at Wary (centuries of mountain-court friction — Stonemark bluntness offends Sylvara sensibility). Advantage on CON saves and Engineering/Crafting checks. Disadvantage on Deception — your culture considers lying a form of cowardice, and your face agrees.',
   },
   {
-    id: 'wandering-kin',
-    name: 'The Wandering Kin',
-    description: 'Rootless small folk. No house, no loyalty, found in every city and camp.',
-    lore: 'No house means no protection, but also no obligations. The Kin are everywhere and owe nothing, which makes them useful and suspect in equal measure. Other houses underestimate you — that\'s a resource, not an insult. Start with one Kin traveler contact at Favorable (always moving, always knows what\'s happening in the next town). Any landed house as a faction starts at Wary toward houseless folk — guards, stewards, and nobles assume you\'re a thief or a spy until proven otherwise. Advantage on Stealth checks and checks to gather rumors or go unnoticed. Disadvantage on Intimidation — power respects size, and you don\'t have it.',
+    id: 'oathless',
+    name: 'The Oathless',
+    description: 'Broken oath. Expelled, fled, or disgraced from a landed house.',
+    lore: 'You had a name, a seat, obligations, and you lost them. Maybe you broke a sworn pact. Maybe you refused an order that would have kept your standing. Maybe you were framed. The reason matters to you; it doesn\'t matter to anyone else. The houses see a traitor. The streets see someone with useful skills and no protection. Start with one contact from your former house at Hostile (the people you wronged or who wronged you — they remember). One underworld contact at Favorable (the networks that absorb the disgraced). Advantage on checks involving survival outside institutional structures — you\'ve learned to operate without a safety net. Disadvantage on initial social checks with any landed house — the Oathless are marked, and house loyalty is the currency of this world. Your former house\'s name comes up in conversation more than you\'d like.',
   },
   {
     id: 'house-ashfang',
     name: 'House Ashfang',
-    description: 'Fallen bloodline. Scaled, fast, remnants of the Wyrm Kingdoms.',
-    lore: 'The Wyrm Kingdoms burned three centuries ago, but the fear is fresh. Ashfang are fast, imposing, and carry a name that makes people reach for weapons. Some cooperate because they\'re afraid. Others refuse to cooperate for the same reason. Start with one Ashfang exile contact at Favorable (scattered but loyal). The Church as a faction starts at Hostile (the Wyrm Kingdoms burned temples; the Church has a long memory). House Veldran as a faction starts at Wary (they profited from the fall and don\'t want the past revisited). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you are feared before you are known. Breaking through to Trusted requires proof of character, not just words.',
+    description: 'Fallen bloodline. Scaled, fast, remnants of the Char Dominion.',
+    lore: 'The Char Dominion burned three centuries ago, but the fear is fresh. Ashfang are fast, imposing, and carry a name that makes people reach for weapons. Some cooperate because they\'re afraid. Others refuse to cooperate for the same reason. Start with one Ashfang exile contact at Favorable (scattered but loyal). The Church as a faction starts at Hostile (the Char Dominion burned temples; the Church has a long memory). House Veldran as a faction starts at Wary (they profited from the fall and don\'t want the past revisited). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you are feared before you are known. Breaking through to Trusted requires proof of character, not just words.',
   },
 ]
 
@@ -1119,7 +1119,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingAc: 16,
     hitDieAvg: 6,
     trait: {
-      name: 'Unbroken',
+      name: 'Last Standing',
       description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting.',
       usesPerDay: 1,
       usesRemaining: 1,
@@ -1273,7 +1273,7 @@ const grimdarkConfig: GenreConfig = {
   settingNoun: 'world',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a crumbling medieval world where empires rot and survival is political.',
-    setting: `The Five Kingdoms have held peace for a generation, but the Accord of Thorns is fraying. A plague spreads from the eastern marshes. Border lords raise private armies. The Church of the Pale Flame burns reformers and calls it salvation. Something stirs beneath the old ruins that predate every kingdom alive today.
+    setting: `The Shattered Provinces have held peace for a generation, but the Pact of Ashes is fraying. A famine called the Wasting spreads from the southern provinces, crops failing and livestock dying without explanation. Border lords raise private armies. The Church of the Pale Flame burns reformers and calls it salvation. Something stirs beneath the old ruins that predate every kingdom alive today.
 
 This is a world of moral compromise, political betrayal, hard winters, and bodies in the mud. The player commands a small mercenary company navigating a world where old allegiances mean less every week.
 
@@ -1292,13 +1292,13 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
   },
   promptSections: {
     role: 'You are the Game Master of a grimdark tabletop RPG campaign. You narrate a world where power corrupts, mercy is expensive, and the line between hero and monster is drawn in mud and blood.',
-    setting: 'A world scarred by war, plague, and institutional decay. Kingdoms are corrupt or tyrannical. Magic is rare, feared, and forbidden — those who wield it pay a visible price. Religion is powerful and factional. The common people suffer regardless of who rules. Moral clarity is a luxury.',
-    vocabulary: 'Use blunt, physical language: mud, blood, iron, rot. Violence has weight. Death is ugly. Healing is slow. Magic is unsettling. Currency is marks or crowns. Dialogue is direct, often crude. Titles used with irony as often as respect.',
+    setting: 'The Shattered Provinces have held an uneasy peace under the Pact of Ashes, but the treaty is fraying. A famine called the Wasting creeps from the southern provinces. The Church of the Pale Flame controls hospitals, orphanages, and the Inquisition. Kingdoms are corrupt or tyrannical. Magic is rare, feared, and forbidden — those who wield it pay a visible price. The common people suffer regardless of who rules. Moral clarity is a luxury.',
+    vocabulary: 'Use blunt, physical language: mud, blood, iron, rot. Violence has weight. Death is ugly. Healing is slow. Magic is unsettling. Currency is crowns. Dialogue is direct, often crude. Titles used with irony as often as respect. Spell = hex / curse / forbidden working / corrupted craft. Potion = tincture / salve / kit / vial. Quest = contract / job / commission. Party = company / crew / band. Inn = tavern / waystation / camp. Temple = keep / monastery / shrine.',
     toneOverride: 'Adjust tone: Gritty (60%), Epic (25%), Witty (15%). Grandeur exists but is tarnished — a crumbling cathedral, a once-great army reduced to mercenaries. Humor is dark, sharp, and necessary.',
     assetMechanic: '',
-    traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried.`,
+    traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets. The Hexblade's power has a permanent social cost.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways. The target remembers, and the relationship is permanently changed.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency. The GM chooses. Nothing is free.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried. Failed interrogations have social consequences.\n- **Marked:** Designate one target per day. First hit deals +1d6 bonus damage. The choice of who to mark is the moral weight.\n- **Last Standing:** Drop to 1 HP instead of 0, once per day. No strings. The Ironclad's reliability is the point.`,
     consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
-    tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies.',
+    tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies. Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
     npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
     buildAssetState: null,
     investigationGuide: 'Journal of confessions — extracted testimony, names implicated, evidence of heresy or corruption. When the player interrogates or investigates, track discoveries as narrative threads. Clues come from confessions, seized documents, NPC testimony, and physical evidence.',
@@ -1341,7 +1341,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
   ],
   initialChapterTitle: 'First Blood',
   locationNames: [
-    'The Ashfang Company', 'The Iron Accord', 'The Pale March',
+    'The Ashfang Company', 'The Iron Pact', 'The Pale March',
     'The Thorn Company', 'The Last Warrant', 'The Grey Vanguard',
     'The Ember Compact', 'The Broken Seal', 'The Hollow Banner', 'The Black Vigil',
   ],
