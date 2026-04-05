@@ -72,7 +72,7 @@ export interface GenreTheme {
   tertiaryForeground: string
   scrollbarThumb: string
   scrollbarThumbHover: string
-  backgroundEffect: 'starfield' | 'mist'
+  backgroundEffect: 'starfield' | 'mist' | 'static' | 'drift'
   fontScale?: number  // multiplier for base font sizes — 1.0 is default, 0.9 = 90%
 }
 
@@ -231,17 +231,36 @@ export function applyGenreTheme(genre: Genre): void {
   bodyEl.style.setProperty('--font-scale', String(theme.fontScale ?? 1))
   root.dataset.genre = genre
 
-  const starfield = document.querySelector('.starfield')
-  const gridOverlay = document.querySelector('.grid-overlay')
-  const mistBg = document.querySelector('.mist-bg')
+  // Toggle background effects — only one active at a time
+  const bgElements = {
+    starfield: document.querySelector('.starfield'),
+    grid: document.querySelector('.grid-overlay'),
+    mist: document.querySelector('.mist-bg'),
+    static: document.querySelector('.static-bg'),
+    drift: document.querySelector('.drift-bg'),
+  }
 
-  if (theme.backgroundEffect === 'starfield') {
-    starfield?.classList.remove('hidden')
-    gridOverlay?.classList.remove('hidden')
-    mistBg?.classList.add('hidden')
-  } else {
-    starfield?.classList.add('hidden')
-    gridOverlay?.classList.add('hidden')
-    mistBg?.classList.remove('hidden')
+  // Hide all
+  bgElements.starfield?.classList.add('hidden')
+  bgElements.grid?.classList.add('hidden')
+  bgElements.mist?.classList.add('hidden')
+  bgElements.static?.classList.add('hidden')
+  bgElements.drift?.classList.add('hidden')
+
+  // Show active
+  switch (theme.backgroundEffect) {
+    case 'starfield':
+      bgElements.starfield?.classList.remove('hidden')
+      bgElements.grid?.classList.remove('hidden')
+      break
+    case 'mist':
+      bgElements.mist?.classList.remove('hidden')
+      break
+    case 'static':
+      bgElements.static?.classList.remove('hidden')
+      break
+    case 'drift':
+      bgElements.drift?.classList.remove('hidden')
+      break
   }
 }

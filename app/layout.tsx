@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Lora, Newsreader, Roboto_Mono, Space_Grotesk } from 'next/font/google'
+import { Geist, Geist_Mono, Lora, Newsreader, Roboto_Mono, Space_Grotesk, Cormorant_Garamond, Cinzel } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
@@ -28,6 +28,16 @@ const spaceGrotesk = Space_Grotesk({
 const newsreader = Newsreader({
   subsets: ['latin'],
   variable: '--font-newsreader',
+})
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-cormorant-garamond',
+})
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-cinzel',
 })
 const geistPixel = localFont({
   src: './fonts/GeistPixel-Square.woff2',
@@ -70,10 +80,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} ${spaceGrotesk.variable} ${newsreader.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} ${spaceGrotesk.variable} ${newsreader.variable} ${cormorantGaramond.variable} ${cinzel.variable} font-sans antialiased`}>
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
         <div className="mist-bg hidden" aria-hidden="true" />
+        <div className="static-bg hidden" aria-hidden="true" />
+        <div className="drift-bg hidden" aria-hidden="true" />
         <div className="grain-overlay" aria-hidden="true" />
         <div className="ambient-orb ambient-orb-1" aria-hidden="true" />
         <div className="ambient-orb ambient-orb-2" aria-hidden="true" />

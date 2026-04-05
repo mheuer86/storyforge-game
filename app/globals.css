@@ -289,6 +289,53 @@
   to { background-position: 100px 50px, -80px -40px, 30px -20px; }
 }
 
+/* Cyberpunk static/scanline background effect */
+.static-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(0.30 0.15 145 / 0.03) 2px,
+      oklch(0.30 0.15 145 / 0.03) 4px
+    ),
+    radial-gradient(ellipse 600px 400px at 30% 70%, oklch(0.20 0.10 145 / 0.15) 0%, transparent 100%),
+    radial-gradient(ellipse 400px 300px at 70% 30%, oklch(0.18 0.08 70 / 0.10) 0%, transparent 100%);
+  animation: static-flicker 8s steps(4) infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.8;
+}
+
+@keyframes static-flicker {
+  0%, 100% { opacity: 0.8; }
+  25% { opacity: 0.75; }
+  50% { opacity: 0.85; }
+  75% { opacity: 0.7; }
+}
+
+/* Epic Sci-Fi drift aurora background effect */
+.drift-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 800px 500px at 30% 70%, oklch(0.18 0.10 300 / 0.25) 0%, transparent 100%),
+    radial-gradient(ellipse 600px 400px at 70% 30%, oklch(0.22 0.12 85 / 0.15) 0%, transparent 100%),
+    radial-gradient(ellipse 1000px 600px at 50% 50%, oklch(0.12 0.06 280 / 0.20) 0%, transparent 100%);
+  animation: drift-aurora 120s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+@keyframes drift-aurora {
+  from { background-position: 0 0, 100% 100%, 50% 50%; }
+  50% { background-position: 80px 40px, -60px -30px, 20px -15px; }
+  to { background-position: -40px 60px, 50px -50px, -30px 30px; }
+}
+
 /* Typography utility classes */
 .font-heading {
   font-family: var(--font-heading);
