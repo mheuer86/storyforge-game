@@ -706,8 +706,8 @@ function detectContext(gs: GameState): PromptContext {
   )
   if (hasInfiltrationClock) return 'infiltration'
 
-  // Exploration state is an explicit infiltration signal
-  if (gs.world.explorationState) return 'infiltration'
+  // Hostile exploration triggers infiltration; non-hostile stays in social with spatial tracking
+  if (gs.world.explorationState?.hostile) return 'infiltration'
 
   // Active/extraction phase of an operation implies infiltration context
   const op = gs.world.operationState
