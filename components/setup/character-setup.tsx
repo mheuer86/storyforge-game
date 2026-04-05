@@ -13,7 +13,7 @@ import { WizardNav } from './wizard-nav'
 
 // Portrait paths: /portraits/{genre}/{species-id}.png
 // Falls back to letter placeholder if image doesn't exist
-const PORTRAIT_GENRES = new Set(['space-opera', 'fantasy', 'cyberpunk', 'grimdark', 'noire'])
+const PORTRAIT_GENRES = new Set(['space-opera', 'fantasy', 'cyberpunk', 'grimdark', 'noire', 'epic-scifi'])
 
 function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
   genre: Genre
