@@ -124,6 +124,16 @@ export interface Promise {
   status: 'open' | 'strained' | 'fulfilled' | 'broken'
 }
 
+export interface Decision {
+  id: string
+  summary: string           // "Trust Voss despite the forged credentials"
+  context: string           // "Confrontation in the docking bay — Voss couldn't explain the forgery"
+  category: 'moral' | 'tactical' | 'strategic' | 'relational'
+  status: 'active' | 'superseded' | 'abandoned'
+  reason?: string           // Why it was superseded/abandoned
+  chapter: number           // When it was made
+}
+
 export interface AntagonistMove {
   chapterNumber: number
   description: string
@@ -254,6 +264,7 @@ export interface WorldState {
   timers: Timer[]               // hard calendar deadlines
   heat: HeatTracker[]           // aggregate exposure per faction
   ledger: LedgerEntry[]         // recent transaction history
+  decisions: Decision[]          // non-operational player choices that persist across history window
 }
 
 export interface CombatAbility {

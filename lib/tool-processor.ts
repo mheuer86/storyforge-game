@@ -258,6 +258,8 @@ export function applyToolResults(
         addFaction?: { name: string; stance: string }
         addPromise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
         updatePromise?: { id?: string; to?: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; what?: string }
+        addDecision?: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational' }
+        updateDecision?: { id: string; status: 'active' | 'superseded' | 'abandoned'; reason?: string }
         setCurrentTime?: string
         setSceneSnapshot?: string
         setOperationState?: import('./types').OperationState | null
@@ -392,6 +394,42 @@ export function applyToolResults(
         if (matchedName) {
           const label = up.status === 'fulfilled' ? `Promise kept: ${matchedName}` : up.status === 'broken' ? `Promise broken: ${matchedName}` : `Promise → ${up.status}: ${matchedName}`
           statChanges.push({ type: up.status === 'fulfilled' ? 'gain' : up.status === 'broken' ? 'loss' : 'neutral', label })
+        }
+      }
+      if (input.addDecision) {
+        const decisions = world.decisions || []
+        const existing = decisions.find(d => d.id === input.addDecision!.id)
+        if (existing) {
+          world.decisions = decisions.map(d =>
+            d.id === input.addDecision!.id ? { ...d, summary: input.addDecision!.summary, context: input.addDecision!.context, category: input.addDecision!.category } : d
+          )
+        } else {
+          const chapterNum = updated.meta?.chapterNumber ?? 1
+          const newDecision = { ...input.addDecision, status: 'active' as const, chapter: chapterNum }
+          // Auto-archive oldest active if at cap (8)
+          const activeDecisions = decisions.filter(d => d.status === 'active')
+          if (activeDecisions.length >= 8) {
+            const oldest = activeDecisions[0]
+            world.decisions = decisions.map(d =>
+              d.id === oldest.id ? { ...d, status: 'superseded' as const, reason: 'overtaken by events' } : d
+            )
+            world.decisions = [...world.decisions, newDecision]
+          } else {
+            world.decisions = [...decisions, newDecision]
+          }
+          statChanges.push({ type: 'new', label: `Decision: ${input.addDecision.summary}` })
+        }
+      }
+      if (input.updateDecision) {
+        const ud = input.updateDecision
+        const decisions = world.decisions || []
+        world.decisions = decisions.map(d =>
+          d.id === ud.id ? { ...d, status: ud.status, ...(ud.reason && { reason: ud.reason }) } : d
+        )
+        const matched = decisions.find(d => d.id === ud.id)
+        if (matched) {
+          const label = ud.status === 'superseded' ? `Decision superseded: ${matched.summary}` : ud.status === 'abandoned' ? `Decision abandoned: ${matched.summary}` : `Decision → ${ud.status}`
+          statChanges.push({ type: ud.status === 'active' ? 'neutral' : 'loss', label })
         }
       }
       if (input.setExplorationState !== undefined) {

@@ -514,6 +514,27 @@ export const gameTools: Anthropic.Tool[] = [
           },
           required: ['status'],
         },
+        addDecision: {
+          type: 'object',
+          description: 'Record a non-operational decision the player has committed to. Auto-record when the player finalizes a choice with downstream consequences outside an active operation. Do not ask permission — if it clears the threshold (commitment with consequences), record it.',
+          properties: {
+            id: { type: 'string', description: 'Unique ID (snake_case)' },
+            summary: { type: 'string', description: 'One-line decision statement, e.g. "Trust Voss despite the forged credentials"' },
+            context: { type: 'string', description: 'Situation when the decision was made' },
+            category: { type: 'string', enum: ['moral', 'tactical', 'strategic', 'relational'], description: 'Primary category. moral=ethical weight, tactical=situation approach, strategic=long-term direction, relational=trust/loyalty' },
+          },
+          required: ['id', 'summary', 'context', 'category'],
+        },
+        updateDecision: {
+          type: 'object',
+          description: 'Supersede or abandon a decision when circumstances change. Match by id.',
+          properties: {
+            id: { type: 'string', description: 'Decision id to update' },
+            status: { type: 'string', enum: ['active', 'superseded', 'abandoned'] },
+            reason: { type: 'string', description: 'Why the decision was superseded or abandoned' },
+          },
+          required: ['id', 'status'],
+        },
         addTimer: {
           type: 'object',
           description: 'Add a hard calendar deadline. Timers are visible in state every turn — do not narrate past a deadline without acknowledging it.',

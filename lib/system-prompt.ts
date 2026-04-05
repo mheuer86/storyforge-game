@@ -134,6 +134,8 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 **Clocks:** Advance on time/failures/exposure. Max once/scene. Trigger when filled. Must advance once before resolving.
 
+**Decisions:** Auto-record non-operational choices with downstream consequences via addDecision. Threshold: commitment that changes relationships, resources, or narrative direction. Don't record mid-operation tactical choices (ops system handles those) or low-stakes immediate choices. If uncertain, record — the 8-cap auto-archives stale entries. Moral choices mid-operation still get recorded (ops doesn't track those).
+
 **Timers:** Hard deadlines. Don't narrate past them. **Heat:** High = tighter security, suspicious NPCs. **Economy:** Track transactions via addLedgerEntry. Last purchase anchors pricing. **Inspiration:** Risky compelling choice. Hold one. Spend = reroll.
 
 ## DIFFICULTY ENGINE
@@ -146,11 +148,12 @@ Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesse
 2. Risky compelling choice → inspiration
 3. NPC attitude shifted → disposition
 4. Promise fulfilled/broken → updatePromise
-5. Clock tick → update_clock
-6. Scene changed → setLocation/setSceneSnapshot
-7. Consumable used → inventoryUse
-8. Uncertain fact asserted → request_roll
-9. ${config.currencyName} spent → update_character + addLedgerEntry
+5. Non-operational commitment with consequences → addDecision
+6. Clock tick → update_clock
+7. Scene changed → setLocation/setSceneSnapshot
+8. Consumable used → inventoryUse
+9. Uncertain fact asserted → request_roll
+10. ${config.currencyName} spent → update_character + addLedgerEntry
 
 ## TOOL DISCIPLINE
 
@@ -552,6 +555,7 @@ Call generate_debrief with:
 - costsPaid: specific permanent costs from this chapter
 - promisesKept: promises fulfilled or advanced
 - promisesBroken: promises strained or broken
+Reference active decisions by category in tactical/strategic sections — which held, which broke, which had consequences. Supersede any decisions no longer relevant via updateDecision before generating the debrief.
 ${selfAssessment ? `\nFor GM Transparency (Section 6), incorporate the GM's self-assessment above into your analysis.` : ''}
 
 ### Step 6: SET NEXT FRAME
@@ -627,31 +631,36 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 - Were any promises clearly broken? (Player did the opposite, or deadline passed in narrative.)
 - Fix with update_world (promises — set status to "fulfilled" or "broken").
 
-### 8. THREADS
+### 8. DECISIONS
+- Did the player commit to a non-operational choice with consequences that isn't recorded? (Trust, alliances, resource allocation, moral choices outside operations.)
+- Are any active decisions now obsolete? (Circumstances changed, player reversed course.)
+- Fix with update_world (addDecision or updateDecision).
+
+### 9. THREADS
 - Did any thread clearly resolve in recent messages but is still marked "open"?
 - Did any thread worsen (deteriorating flag should be true) based on neglect or escalation?
 - Fix with update_world (threads — set status or deteriorating flag).
 
-### 9. CLOCKS
+### 10. CLOCKS
 - Should any tension clock have advanced based on recent events?
 - Fix with update_clock (advance, trigger, or resolve).
 
-### 10. OPERATION STATE
+### 11. OPERATION STATE
 - Is there an active operation whose phase should have advanced? (e.g. planning scene ended but phase still "planning", or operation clearly completed but not cleared.)
 - Were any objectives clearly achieved or failed in recent messages but still marked "active"?
 - Fix with update_world (setOperationState — update phase or objective status, or set to null if operation is over).
 
-### 11. EXPLORATION STATE
+### 12. EXPLORATION STATE
 - Is there an active exploration state but the player clearly left the facility?
 - Is the current zone wrong based on recent movement?
 - Are resources consumed in recent messages but not reflected?
 - Fix with update_world (setExplorationState — update zones/resources, or set to null if exited).
 
-### 12. TIMERS
+### 13. TIMERS
 - Has an active timer's deadline passed based on currentTime? Set to expired.
 - Fix with update_world (updateTimer).
 
-### 13. HEAT
+### 14. HEAT
 - Did recent actions increase faction exposure but heat wasn't updated?
 - Fix with update_world (updateHeat).
 
@@ -808,6 +817,16 @@ function compressGameState(gs: GameState): string {
     w.promises.length > 0
       ? w.promises.map((p) => `To ${p.to}: "${p.what}" [${p.status}]`).join('; ')
       : 'None'
+
+  const decisions = w.decisions || []
+  const activeDecisions = decisions.filter(d => d.status === 'active')
+  const supersededDecisions = decisions.filter(d => d.status !== 'active')
+  const decisionsLine = activeDecisions.length > 0 || supersededDecisions.length > 0
+    ? [
+        ...activeDecisions.map(d => `[${d.category}] "${d.summary}" (Ch.${d.chapter})`),
+        ...supersededDecisions.slice(-2).map(d => `[${d.status.toUpperCase()}] [${d.category}] "${d.summary}"${d.reason ? ` → ${d.reason}` : ''} (Ch.${d.chapter})`),
+      ].join('; ')
+    : ''
 
   const antagonistLine = w.antagonist
     ? `${w.antagonist.name} — ${w.antagonist.description} | Agenda: ${w.antagonist.agenda} | Moved: ${w.antagonist.movedThisChapter ? 'YES' : 'no'}${w.antagonist.moves.length > 0 ? ` | Last: ${w.antagonist.moves[w.antagonist.moves.length - 1].description}` : ''}`
@@ -971,7 +990,7 @@ function compressGameState(gs: GameState): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
-  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addFaction|setOperationState|setExplorationState|addTimer|updateTimer|updateHeat|addLedgerEntry) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
+  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addDecision|updateDecision|addFaction|setOperationState|setExplorationState|addTimer|updateTimer|updateHeat|addLedgerEntry) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
 
   return `PRESSURE: ${pressureLine}
 
@@ -989,7 +1008,7 @@ COHESION: ${cohesionLine}
 FACTIONS: ${factionsLine}
 NPCS: ${npcsLine}
 THREADS: ${threadsLine}
-PROMISES: ${promisesLine}
+PROMISES: ${promisesLine}${decisionsLine ? `\nDECISIONS: ${decisionsLine}` : ''}
 ANTAG: ${antagonistLine}
 CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${explorationSection}${notebookSection}
 

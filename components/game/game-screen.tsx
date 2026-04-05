@@ -1437,6 +1437,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             deteriorating: t.deteriorating,
           })),
           promises: gameState.world.promises,
+          decisions: gameState.world.decisions ?? [],
           antagonist: gameState.world.antagonist,
           tensionClocks: (gameState.world.tensionClocks ?? []).filter((c) => c.status !== 'resolved'),
           notebook: gameState.world.notebook ?? null,

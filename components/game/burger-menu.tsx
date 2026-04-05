@@ -58,6 +58,7 @@ interface World {
   npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation'; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
+  decisions: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; status: 'active' | 'superseded' | 'abandoned'; reason?: string; chapter: number }[]
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
   notebook: Notebook | null
@@ -1118,13 +1119,45 @@ function WorldPanel({ world, partyBaseName, explorationLabel, inventory }: { wor
             )
           })()}
 
+          {/* Decisions — active non-operational choices */}
+          {(() => {
+            const activeDecisions = world.decisions.filter((d) => d.status === 'active')
+            return activeDecisions.length > 0 ? (
+              <div>
+                <SectionLabel>Key Decisions</SectionLabel>
+                <div className="flex flex-col gap-2">
+                  {activeDecisions.map((decision) => (
+                    <div
+                      key={decision.id}
+                      className={cn(
+                        'rounded px-3 py-2 border',
+                        decision.category === 'moral' && 'border-blue-400/30 bg-blue-400/5',
+                        decision.category === 'tactical' && 'border-amber-400/30 bg-amber-400/5',
+                        decision.category === 'strategic' && 'border-violet-400/30 bg-violet-400/5',
+                        decision.category === 'relational' && 'border-rose-400/30 bg-rose-400/5',
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{decision.summary}</div>
+                        <span className="text-[10px] uppercase tracking-wider text-foreground/40">{decision.category}</span>
+                      </div>
+                      <div className="text-xs text-foreground/60">{decision.context}</div>
+                      <div className="mt-1 text-[10px] text-foreground/30">Ch. {decision.chapter}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+          })()}
+
           {/* Archive — resolved threads, triggered/resolved clocks, fulfilled/broken promises */}
           {(() => {
             const resolvedThreads = world.threads.filter((t) => isResolved(t.status))
             const triggeredClocks = world.tensionClocks.filter((c) => c.status === 'triggered')
             const resolvedClocks = world.tensionClocks.filter((c) => c.status === 'resolved')
             const settledPromises = world.promises.filter((p) => p.status === 'fulfilled' || p.status === 'broken')
-            const hasArchive = resolvedThreads.length > 0 || triggeredClocks.length > 0 || resolvedClocks.length > 0 || settledPromises.length > 0
+            const pastDecisions = world.decisions.filter((d) => d.status !== 'active')
+            const hasArchive = resolvedThreads.length > 0 || triggeredClocks.length > 0 || resolvedClocks.length > 0 || settledPromises.length > 0 || pastDecisions.length > 0
 
             return hasArchive ? (
               <div className="mt-2 border-t border-border/10 pt-3">
@@ -1179,6 +1212,21 @@ function WorldPanel({ world, partyBaseName, explorationLabel, inventory }: { wor
                         </span>
                       </div>
                       <div className="text-xs text-foreground/50">{promise.what}</div>
+                    </div>
+                  ))}
+                  {/* Past decisions — superseded/abandoned */}
+                  {pastDecisions.map((decision) => (
+                    <div
+                      key={decision.id}
+                      className="rounded border border-border/20 bg-secondary/5 px-3 py-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-foreground">{decision.summary}</div>
+                        <span className="text-[10px] uppercase tracking-wider text-foreground/40">
+                          {decision.status === 'superseded' ? 'Superseded' : 'Abandoned'}
+                        </span>
+                      </div>
+                      {decision.reason && <div className="text-xs text-foreground/50">{decision.reason}</div>}
                     </div>
                   ))}
                 </div>
