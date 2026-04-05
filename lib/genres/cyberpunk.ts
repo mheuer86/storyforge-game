@@ -215,7 +215,7 @@ const cyberpunkTheme: GenreTheme = {
   actionGlowHover: '0 0 0 1px rgba(80,220,120,0.4), 0 0 20px -3px rgba(80,220,120,0.3)',
   scrollbarThumb: 'oklch(0.25 0.02 260)',
   scrollbarThumbHover: 'oklch(0.30 0.02 260)',
-  backgroundEffect: 'starfield',
+  backgroundEffect: 'static',
   fontScale: 0.85,
 }
 

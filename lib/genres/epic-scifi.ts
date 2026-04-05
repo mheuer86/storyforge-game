@@ -185,8 +185,8 @@ const epicSciFiClasses: CharacterClass[] = [
 
 const epicSciFiTheme: GenreTheme = {
   logo: '/logo_epic-scifi.png',
-  fontNarrative: "'Cormorant Garamond', Georgia, serif",
-  fontHeading: "'Cinzel', Georgia, serif",
+  fontNarrative: "var(--font-cormorant-garamond), Georgia, serif",
+  fontHeading: "var(--font-cinzel), Georgia, serif",
   fontSystem: "'Geist Mono', monospace",
   fontScale: 0.9,
   background: 'oklch(0.06 0.01 280)',
@@ -216,7 +216,7 @@ const epicSciFiTheme: GenreTheme = {
   actionGlowHover: '0 0 0 1px rgba(180,150,50,0.5), 0 0 20px -3px rgba(180,150,50,0.35)',
   scrollbarThumb: 'oklch(0.20 0.01 280)',
   scrollbarThumbHover: 'oklch(0.26 0.01 280)',
-  backgroundEffect: 'mist',
+  backgroundEffect: 'drift',
 }
 
 const epicSciFiConfig: GenreConfig = {
