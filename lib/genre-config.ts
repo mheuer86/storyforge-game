@@ -29,6 +29,7 @@ export interface CharacterClass {
   startingCredits: number
   startingHp: number
   startingAc: number
+  hitDieAvg: number  // average HP gained per level (before CON mod). Tanks: 6, mixed: 5, faces/casters: 4
   trait: Trait
 }
 
@@ -162,6 +163,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 120,
     startingHp: 9,
     startingAc: 15,
+    hitDieAvg: 5,
     trait: {
       name: 'Smuggler\'s Luck',
       description: 'Once per day, when caught, searched, or cornered, one contraband item or piece of evidence goes undetected.',
@@ -185,6 +187,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 80,
     startingHp: 12,
     startingAc: 16,
+    hitDieAvg: 6,
     trait: {
       name: 'Adrenaline Surge',
       description: 'Once per day, make a bonus attack immediately after a successful attack.',
@@ -208,6 +211,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 100,
     startingHp: 8,
     startingAc: 12,
+    hitDieAvg: 4,
     trait: {
       name: 'System Override',
       description: 'Once per day, auto-succeed on one hacking check or seize a machine for 1 minute. The intrusion leaves a trace; the GM may introduce a delayed consequence in a later scene.',
@@ -231,6 +235,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 200,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Diplomatic Immunity',
       description: 'Once per day, invoke formal authority to halt a hostile encounter. Works on factions that recognize galactic law. Fails on pirates, outlaws, or the desperate.',
@@ -254,6 +259,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 100,
     startingHp: 10,
     startingAc: 13,
+    hitDieAvg: 5,
     trait: {
       name: 'Xenobiology',
       description: 'Once per day, identify a weakness or vulnerability in a non-human target (creature, alien tech, bioweapon). The GM reveals one exploitable detail. Also stabilizes allies.',
@@ -277,6 +283,7 @@ const spaceOperaClasses: CharacterClass[] = [
     startingCredits: 90,
     startingHp: 10,
     startingAc: 14,
+    hitDieAvg: 5,
     trait: {
       name: 'Dead Eye',
       description: 'Once per day, treat one ranged attack as a critical hit (on a 19-20). Also has vehicle expertise: advantage on all piloting checks.',
@@ -468,6 +475,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 120,
     startingHp: 9,
     startingAc: 15,
+    hitDieAvg: 5,
     trait: {
       name: 'Shadow Step',
       description: 'Once per day, vanish from sight and reappear within striking distance of a target you can see. Useless in broad daylight with no cover.',
@@ -491,6 +499,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 80,
     startingHp: 12,
     startingAc: 16,
+    hitDieAvg: 6,
     trait: {
       name: 'Battle Surge',
       description: 'Once per day, make a bonus attack immediately after a successful attack.',
@@ -514,6 +523,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 100,
     startingHp: 8,
     startingAc: 12,
+    hitDieAvg: 4,
     trait: {
       name: 'Arcane Surge',
       description: 'Once per day, auto-succeed on an Arcana check or force a re-save. On nat 1 spell checks, wild magic surges with a random effect (helpful, harmful, or strange).',
@@ -537,6 +547,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 200,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Bardic Echo',
       description: 'Once per day, invoke a story, song, or legend that shifts the mood of a scene. A crowd calms, a guard hesitates, an enemy pauses. Requires speaking; useless when silenced or ambushed.',
@@ -560,6 +571,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 100,
     startingHp: 10,
     startingAc: 13,
+    hitDieAvg: 5,
     trait: {
       name: 'Divine Favor',
       description: 'Healing strength tied to deity alignment. Acting in alignment: heal at full power + bonus. Acting against: heal at half. The GM tracks favor silently, creating moral tension.',
@@ -583,6 +595,7 @@ const fantasyClasses: CharacterClass[] = [
     startingCredits: 90,
     startingHp: 10,
     startingAc: 14,
+    hitDieAvg: 5,
     trait: {
       name: 'Dead Eye',
       description: 'Once per day, treat one ranged attack as a critical hit (on a 19-20). Also has terrain expertise: advantage on all Survival checks in the wilds.',
@@ -768,6 +781,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 1200,
     startingHp: 9,
     startingAc: 15,
+    hitDieAvg: 5,
     trait: {
       name: 'Ghost Protocol',
       description: 'Once per day, automatically leave no trace on one security scan, camera network, or access log.',
@@ -791,6 +805,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 800,
     startingHp: 12,
     startingAc: 16,
+    hitDieAvg: 6,
     trait: {
       name: 'Adrenaline Overclocked',
       description: 'Once per day, make a bonus melee attack immediately after a successful hit.',
@@ -814,6 +829,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 1000,
     startingHp: 8,
     startingAc: 12,
+    hitDieAvg: 4,
     trait: {
       name: 'Deep Dive',
       description: 'Once per day, auto-succeed on a Hacking check or seize a networked device. Each use adds neural stress. After 3 cumulative uses without a rest chapter, the GM introduces a cyberpsychosis episode.',
@@ -837,6 +853,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 2000,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Favor Owed',
       description: 'Once per day, call in a contact for one thing: information, a door opened, a message delivered, a small job done. The contact becomes unavailable until next chapter.',
@@ -860,6 +877,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 1000,
     startingHp: 10,
     startingAc: 13,
+    hitDieAvg: 5,
     trait: {
       name: 'Field Triage',
       description: 'Once per day, stabilize a downed ally or gain advantage on Medicine checks as a bonus action.',
@@ -883,6 +901,7 @@ const cyberpunkClasses: CharacterClass[] = [
     startingCredits: 1500,
     startingHp: 12,
     startingAc: 15,
+    hitDieAvg: 6,
     trait: {
       name: 'Dead Man Walking',
       description: 'Once per day, ignore all damage from one attack. You felt it; you just don\'t stop.',
@@ -1074,6 +1093,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 80,
     startingHp: 9,
     startingAc: 15,
+    hitDieAvg: 5,
     trait: {
       name: 'Marked',
       description: 'Once per day, designate a target as Marked. Your first hit against them deals +1d6 bonus damage.',
@@ -1097,6 +1117,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 60,
     startingHp: 12,
     startingAc: 16,
+    hitDieAvg: 6,
     trait: {
       name: 'Unbroken',
       description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting.',
@@ -1120,6 +1141,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 70,
     startingHp: 8,
     startingAc: 12,
+    hitDieAvg: 4,
     trait: {
       name: 'Corruption Tap',
       description: 'Once per day, auto-succeed on one forbidden magic check or inflict a minor curse. Each use darkens your reputation with NPCs who sense forbidden magic. Priests recoil, commoners whisper.',
@@ -1143,6 +1165,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 150,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Leverage',
       description: 'Once per day, reveal a secret about a target NPC that changes the conversation. Only works if the player has had prior interaction or gathered intel. The target remembers.',
@@ -1166,6 +1189,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 80,
     startingHp: 10,
     startingAc: 13,
+    hitDieAvg: 5,
     trait: {
       name: 'Bitter Medicine',
       description: 'Once per day, heal an ally for 1d8+WIS, but the treatment has a side effect chosen by the GM: nausea, hallucinations, or dependency. Nothing is free.',
@@ -1189,6 +1213,7 @@ const grimdarkClasses: CharacterClass[] = [
     startingCredits: 90,
     startingHp: 9,
     startingAc: 13,
+    hitDieAvg: 5,
     trait: {
       name: 'The Question',
       description: 'Once per day, after 1+ rounds of dialogue with a target, force a WIS save (DC = 8 + INT mod). On failure, the target reveals one true piece of information. On success, they know you tried.',
@@ -1374,6 +1399,7 @@ const noireClasses: CharacterClass[] = [
     startingCredits: 80,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Case Instinct',
       description: 'Once per chapter, propose a connection between two known facts. INT Investigation check (DC scales by obscurity: obvious 10, moderate 14, deep 18). Success reveals new information. Failure reveals nothing but doesn\'t consume the use.',
@@ -1397,6 +1423,7 @@ const noireClasses: CharacterClass[] = [
     startingCredits: 150,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'Favor Owed',
       description: 'Once per chapter, call in a contact for information, access, or a service. Contact unavailable until next chapter. After three favors without reciprocation, next contact demands something first.',
@@ -1420,6 +1447,7 @@ const noireClasses: CharacterClass[] = [
     startingCredits: 60,
     startingHp: 12,
     startingAc: 13,
+    hitDieAvg: 6,
     trait: {
       name: 'Heavy Lean',
       description: 'Once per chapter, auto-succeed on Intimidation against a non-elite NPC. Target cooperates immediately but disposition drops one tier permanently. You can\'t scare someone into trusting you.',
@@ -1443,6 +1471,7 @@ const noireClasses: CharacterClass[] = [
     startingCredits: 100,
     startingHp: 8,
     startingAc: 12,
+    hitDieAvg: 4,
     trait: {
       name: 'New Face',
       description: 'Once per chapter, establish a cover identity for a specific situation. Identity holds for initial contact without a Deception check. If blown, every NPC present permanently distrusts you — Wary minimum, no recovery above Neutral.',
@@ -1466,6 +1495,7 @@ const noireClasses: CharacterClass[] = [
     startingCredits: 90,
     startingHp: 8,
     startingAc: 11,
+    hitDieAvg: 4,
     trait: {
       name: 'On The Record',
       description: 'Once per chapter, invoke press status to compel a public-facing NPC to answer or grant access. They cooperate because refusing looks worse. But: anything learned this way becomes public knowledge, alerting other interested parties.',
