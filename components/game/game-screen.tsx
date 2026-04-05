@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { TopBar } from './top-bar'
 import { ChatMessage } from './chat-message'
-import { RollBadge } from './roll-badge'
+import { RollBadge, EnemyRollBadge } from './roll-badge'
 import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overlay'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, TensionClock } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ interface DisplayMessage {
   isError?: boolean
   statChanges?: StatChange[]
   rollData?: RollDisplayData
+  rollBreakdown?: RollBreakdown
   sceneBreak?: string  // location/time header attached to this GM message
 }
 
@@ -45,6 +46,9 @@ interface RollPrompt {
   contested?: { npcName: string; npcSkill: string; npcModifier: number }
   npcRoll?: number
   priorToolResults?: unknown[]
+  sides?: number
+  rollType?: 'check' | 'damage' | 'healing'
+  damageType?: string
 }
 
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
@@ -184,6 +188,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const decoder = new TextDecoder()
       let buf = ''
       const statChanges: StatChange[] = []
+      let lastRollBreakdown: RollBreakdown | undefined
       let finalActions: string[] = []
 
       while (true) {
@@ -220,6 +225,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 advantage: event.advantage,
                 contested: event.contested,
                 priorToolResults: event.priorToolResults,
+                sides: event.sides,
+                rollType: event.rollType,
+                damageType: event.damageType,
               })
             }
 
@@ -243,6 +251,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     m.id === gmMsgId ? { ...m, type: 'meta-response', content: gmText } : m
                   )
                 )
+              }
+
+              // Extract enemy roll breakdown from update_character calls
+              for (const r of event.results) {
+                if (r.tool === 'update_character' && r.input.rollBreakdown) {
+                  lastRollBreakdown = r.input.rollBreakdown as RollBreakdown
+                }
               }
 
               const otherResults = event.results.filter(
@@ -277,9 +292,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       content: gmText,
                       timestamp: new Date().toISOString(),
                       ...(statChanges.length > 0 && { statChanges }),
+                      ...(lastRollBreakdown && { rollBreakdown: lastRollBreakdown }),
                     },
                   ],
                 },
+              }
+              // Attach rollBreakdown to the GM display message
+              if (lastRollBreakdown) {
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === gmMsgId ? { ...m, rollBreakdown: lastRollBreakdown } : m))
+                )
               }
               onDone(finalState, statChanges)
             }
@@ -473,18 +495,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         ...(prompt.contested && { contested: prompt.contested }),
         ...(prompt.npcRoll !== undefined && { npcRoll: prompt.npcRoll, npcTotal }),
         ...(prompt.priorToolResults && prompt.priorToolResults.length > 0 && { priorToolResults: prompt.priorToolResults }),
+        ...(prompt.sides && { sides: prompt.sides }),
+        ...(prompt.rollType && { rollType: prompt.rollType }),
+        ...(prompt.damageType && { damageType: prompt.damageType }),
       }
 
       const modifier = prompt.modifier
       const total = roll + modifier
+      const isDmgOrHeal = prompt.rollType === 'damage' || prompt.rollType === 'healing'
       // For contested rolls: compare player total vs NPC total. For static: compare vs DC.
       const effectiveDC = npcTotal !== undefined ? npcTotal : prompt.dc
       const result: 'critical' | 'success' | 'failure' | 'fumble' =
-        roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= effectiveDC ? 'success' : 'failure'
+        isDmgOrHeal ? 'success' : roll === 20 ? 'critical' : roll === 1 ? 'fumble' : total >= effectiveDC ? 'success' : 'failure'
 
       const rollMsgId = crypto.randomUUID()
       const gmMsgId = crypto.randomUUID()
-      const rollDisplayData = { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal }
+      const rollDisplayData: RollDisplayData = { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal, sides: prompt.sides, rollType: prompt.rollType, damageType: prompt.damageType }
 
       // If this is a reroll after inspiration, inject the original failed roll first
       const origRoll = originalRollRef.current
@@ -644,6 +670,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       content: msg.content,
       ...(msg.rollData && { rollData: msg.rollData }),
       ...(msg.statChanges && { statChanges: msg.statChanges }),
+      ...(msg.rollBreakdown && { rollBreakdown: msg.rollBreakdown }),
     }))
     setMessages(displayMessages)
 
@@ -683,11 +710,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     if (selectedItemBonus) {
       rollPrompt.modifier += selectedItemBonus.bonus
     }
-    const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
-    const isContested = !!rollPrompt.contested
-    const die1 = Math.floor(Math.random() * 20) + 1
-    const die2 = isAdvantage ? Math.floor(Math.random() * 20) + 1
-      : isContested ? Math.floor(Math.random() * 20) + 1  // NPC die
+    const dieSides = rollPrompt.sides || 20
+    const isDmgOrHeal = rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing'
+    // Advantage/disadvantage and contested only apply to d20 checks
+    const isAdvantage = !isDmgOrHeal && (rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage')
+    const isContested = !isDmgOrHeal && !!rollPrompt.contested
+    const die1 = Math.floor(Math.random() * dieSides) + 1
+    const die2 = isAdvantage ? Math.floor(Math.random() * dieSides) + 1
+      : isContested ? Math.floor(Math.random() * 20) + 1  // NPC die always d20
       : die1
     const kept = rollPrompt.advantage === 'advantage' ? Math.max(die1, die2)
       : rollPrompt.advantage === 'disadvantage' ? Math.min(die1, die2)
@@ -702,13 +732,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setDicePhase('rolling')
 
     const interval = setInterval(() => {
-      setDiceDisplay(Math.floor(Math.random() * 20) + 1)
+      setDiceDisplay(Math.floor(Math.random() * dieSides) + 1)
       if (isAdvantage || isContested) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
     }, 50)
 
     setTimeout(() => {
       clearInterval(interval)
-      setDiceDisplay(isContested ? die2 : die1)  // For contested: display2 = NPC die, display1 used for player below
+      setDiceDisplay(isContested ? die2 : die1)
       setDiceDisplay(die1)
       if (isAdvantage || isContested) setDiceDisplay2(die2)
       setDicePhase('revealed')
@@ -788,14 +818,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [rollPrompt, rolledValue, rawRolls, sendContinuation])
 
   // After revealing the dice result, auto-continue to phase 2
-  // Unless: roll failed and player has inspiration → offer reroll
+  // Unless: roll failed and player has inspiration → offer reroll (not for damage/healing)
   useEffect(() => {
     if (dicePhase !== 'revealed' || rolledValue === null || !rollPrompt) return
+    const isDmgOrHeal = rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing'
     const total = rolledValue + rollPrompt.modifier
     const npcTot = rollPrompt.contested && rollPrompt.npcRoll !== undefined
       ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : null
     const effectiveDC = npcTot !== null ? npcTot : rollPrompt.dc
-    const isFail = rolledValue !== 20 && (rolledValue === 1 || total < effectiveDC)
+    const isFail = !isDmgOrHeal && rolledValue !== 20 && (rolledValue === 1 || total < effectiveDC)
     const hasInspiration = gameState?.character.inspiration ?? false
 
     if (isFail && hasInspiration && !originalRoll) {
@@ -852,6 +883,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         content: msg.content,
         ...(msg.rollData && { rollData: msg.rollData }),
         ...(msg.statChanges && { statChanges: msg.statChanges }),
+        ...(msg.rollBreakdown && { rollBreakdown: msg.rollBreakdown }),
       }))
       setMessages(displayMessages)
       setQuickActions([])
@@ -1090,6 +1122,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       onFlag={message.type === 'gm' && !message.isError ? handleConsistencyCheck : undefined}
                       onRetry={message.isError ? handleRetry : undefined}
                     />
+                    {message.rollBreakdown && (
+                      <div className="mt-2">
+                        <EnemyRollBadge breakdown={message.rollBreakdown} />
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -1147,22 +1184,38 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       <div className="mt-2 text-center text-xs text-primary/60">Tap to roll</div>
                     </>
                   ) : (
-                    /* Standard roll — DC check */
+                    /* Standard roll — DC check or damage/healing */
                     <>
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-primary/70">
-                            {rollPrompt.check} Check
-                            {rollPrompt.advantage && (
+                            {rollPrompt.rollType === 'damage' ? `Attack Damage — ${rollPrompt.check}`
+                              : rollPrompt.rollType === 'healing' ? `Healing — ${rollPrompt.check}`
+                              : `${rollPrompt.check} Check`}
+                            {rollPrompt.advantage && !rollPrompt.rollType?.match(/damage|healing/) && (
                               <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
                                 — {rollPrompt.advantage}
                               </span>
                             )}
                           </div>
                           <div className="mt-1 flex items-center gap-3 font-system text-sm">
-                            <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
-                            <span className="text-muted-foreground/30">|</span>
-                            <span className="text-muted-foreground">{rollPrompt.stat} <span className="font-semibold text-primary">{(rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)) >= 0 ? '+' : ''}{rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)}</span>{selectedItemBonus && <span className="text-primary/50 ml-1">({selectedItemBonus.name})</span>}</span>
+                            {rollPrompt.rollType !== 'damage' && rollPrompt.rollType !== 'healing' && (
+                              <>
+                                <span className="text-muted-foreground">DC <span className="font-semibold text-foreground">{rollPrompt.dc}</span></span>
+                                <span className="text-muted-foreground/30">|</span>
+                              </>
+                            )}
+                            <span className="text-muted-foreground">
+                              {rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing' ? `d${rollPrompt.sides || 20}` : rollPrompt.stat}
+                              {' '}<span className="font-semibold text-primary">{(rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)) >= 0 ? '+' : ''}{rollPrompt.modifier + (selectedItemBonus?.bonus ?? 0)}</span>
+                              {selectedItemBonus && <span className="text-primary/50 ml-1">({selectedItemBonus.name})</span>}
+                            </span>
+                            {rollPrompt.damageType && (
+                              <>
+                                <span className="text-muted-foreground/30">|</span>
+                                <span className="text-muted-foreground capitalize">{rollPrompt.damageType}</span>
+                              </>
+                            )}
                           </div>
                           <div className="mt-1 text-xs text-foreground/50 italic leading-relaxed">
                             {rollPrompt.reason}
@@ -1172,7 +1225,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
                             🎲
                           </div>
-                          {rollPrompt.advantage && (
+                          {rollPrompt.advantage && !rollPrompt.rollType?.match(/damage|healing/) && (
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/5 text-2xl">
                               🎲
                             </div>
@@ -1208,7 +1261,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         </div>
                       )}
                       <div className="mt-3 text-center text-xs text-primary/60">
-                        Tap to roll{rollPrompt.advantage ? ' 2d20' : ''}
+                        Tap to roll{rollPrompt.advantage && rollPrompt.rollType !== 'damage' && rollPrompt.rollType !== 'healing' ? ' 2d20' : rollPrompt.sides && rollPrompt.sides !== 20 ? ` d${rollPrompt.sides}` : ''}
                       </div>
                     </>
                   )}
@@ -1310,12 +1363,19 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                         </div>
                       </>
                     )}
-                    <div className={cardColor}>
+                    <div className={rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing' ? [
+                      'rounded-lg border px-6 py-4 transition-all duration-500',
+                      dicePhase === 'revealed'
+                        ? rollPrompt.rollType === 'healing' ? 'border-emerald-400/40 bg-emerald-400/5' : 'border-primary/40 bg-primary/5'
+                        : 'border-border/50 bg-card/50',
+                    ].join(' ') : cardColor}>
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2 font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            {rollPrompt.check} — {rollPrompt.stat}
-                            {rollPrompt.advantage && dicePhase === 'revealed' && (
+                            {rollPrompt.rollType === 'damage' ? `Attack Damage — ${rollPrompt.check}`
+                              : rollPrompt.rollType === 'healing' ? `Healing — ${rollPrompt.check}`
+                              : `${rollPrompt.check} — ${rollPrompt.stat}`}
+                            {rollPrompt.advantage && dicePhase === 'revealed' && rollPrompt.rollType !== 'damage' && rollPrompt.rollType !== 'healing' && (
                               <span className={rollPrompt.advantage === 'advantage' ? 'text-emerald-400' : 'text-orange-400'}>
                                 {rollPrompt.advantage}
                               </span>
@@ -1323,9 +1383,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                           </div>
                           {dicePhase === 'revealed' && rolledValue !== null && total !== null && (
                             <div className="mt-1 font-system text-sm text-foreground">
-                              {rolledValue} + {rollPrompt.modifier} = {total} <span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
-                              {' '}
-                              <span className={resultColor(result)}>— {resultLabel(result)}</span>
+                              {rolledValue}{rollPrompt.modifier !== 0 && <span className="text-muted-foreground"> {rollPrompt.modifier > 0 ? '+' : ''}{rollPrompt.modifier}</span>} = <span className={rollPrompt.rollType === 'healing' ? 'font-bold text-emerald-400' : rollPrompt.rollType === 'damage' ? 'font-bold text-primary' : ''}>{total}</span>
+                              {rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing' ? (
+                                <span className="text-muted-foreground capitalize"> {rollPrompt.damageType || (rollPrompt.rollType === 'healing' ? 'HP' : 'damage')}</span>
+                              ) : (
+                                <>
+                                  {' '}<span className="text-muted-foreground">vs DC {rollPrompt.dc}</span>
+                                  {' '}<span className={resultColor(result)}>— {resultLabel(result)}</span>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
