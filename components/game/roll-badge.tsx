@@ -1,10 +1,35 @@
-import type { RollDisplayData } from '@/lib/types'
+import type { RollDisplayData, RollBreakdown } from '@/lib/types'
+
+export function EnemyRollBadge({ breakdown }: { breakdown: RollBreakdown }) {
+  return (
+    <div className="rounded-lg border border-red-500/40 bg-red-500/5 px-6 py-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-heading text-xs font-medium uppercase tracking-wider text-red-400/80">
+            {breakdown.label}
+          </div>
+          <div className="mt-1 font-system text-sm text-foreground">
+            <span className="text-muted-foreground">🎲 {breakdown.dice} → </span>
+            <span className="font-bold text-red-400">{breakdown.total}</span>
+            {breakdown.damageType && (
+              <span className="text-muted-foreground capitalize"> {breakdown.damageType}</span>
+            )}
+          </div>
+        </div>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-red-500/40 bg-red-500/10 font-mono text-xl font-bold text-red-400`}>
+          {breakdown.roll}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function RollBadge({ rollData }: { rollData: RollDisplayData }) {
-  const isCrit = rollData.result === 'critical'
-  const isFumble = rollData.result === 'fumble'
-  const isSuccess = rollData.result === 'success' || isCrit
-  const label = isCrit ? '— CRITICAL!' : isFumble ? '— FUMBLE' : isSuccess ? '— SUCCESS' : '— FAILURE'
+  const isDamageOrHealing = rollData.rollType === 'damage' || rollData.rollType === 'healing'
+  const isCrit = !isDamageOrHealing && rollData.result === 'critical'
+  const isFumble = !isDamageOrHealing && rollData.result === 'fumble'
+  const isSuccess = isDamageOrHealing || rollData.result === 'success' || isCrit
+  const label = isDamageOrHealing ? '' : isCrit ? '— CRITICAL!' : isFumble ? '— FUMBLE' : isSuccess ? '— SUCCESS' : '— FAILURE'
   const hasAdv = !!rollData.advantage && !!rollData.rawRolls
 
   const cardClass = isCrit
@@ -80,6 +105,42 @@ export function RollBadge({ rollData }: { rollData: RollDisplayData }) {
           {' '}= {rollData.total} <span className="text-muted-foreground/60">vs DC {rollData.dc}</span>
           {' '}<span className="text-orange-400/60 line-through">{label}</span>
         </div>
+      </div>
+    )
+  }
+
+  // Damage or healing roll — no DC, no success/failure
+  if (isDamageOrHealing) {
+    const dmgColor = rollData.rollType === 'healing'
+      ? 'border-emerald-400/40 bg-emerald-400/5'
+      : 'border-primary/40 bg-primary/5'
+    const dmgTextColor = rollData.rollType === 'healing' ? 'text-emerald-400' : 'text-primary'
+    const sides = rollData.sides || 20
+    return (
+      <div className={`rounded-lg border px-6 py-4 ${dmgColor}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {rollData.rollType === 'healing' ? 'Healing' : 'Attack Damage'} — {rollData.check}
+            </div>
+            <div className="mt-1 font-system text-sm text-foreground">
+              {rollData.roll}
+              {rollData.modifier !== 0 && (
+                <span className="text-muted-foreground">
+                  {' '}{rollData.modifier > 0 ? '+' : ''}{rollData.modifier}
+                </span>
+              )}
+              {' '}= <span className={`font-bold ${dmgTextColor}`}>{rollData.total}</span>
+              {rollData.damageType && (
+                <span className="text-muted-foreground capitalize"> {rollData.damageType}</span>
+              )}
+            </div>
+          </div>
+          <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border ${dmgColor} font-mono text-3xl font-bold ${dmgTextColor}`}>
+            {rollData.roll}
+          </div>
+        </div>
+        <div className="mt-1 text-right font-system text-[10px] text-muted-foreground/50">d{sides}</div>
       </div>
     )
   }
