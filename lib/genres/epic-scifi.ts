@@ -104,7 +104,7 @@ const epicSciFiClasses: CharacterClass[] = [
     hitDieAvg: 4,
     trait: {
       name: 'Inquisition',
-      description: 'Once per chapter, after 1+ rounds of dialogue, force a WIS save. Failure: target reveals one truth. Success: they know you tried.',
+      description: 'Once per chapter, after 1+ rounds of dialogue, force a WIS save on the target. If they fail: they reveal one truth. If they resist: they know you tried.',
       usesPerDay: 1,
       usesRemaining: 1,
     },
@@ -263,7 +263,7 @@ Rest terminology: Respite (short rest), Full Withdrawal (long rest).`,
 
 - **Accord:** Player invokes house name or formal authority. Halts hostility or forces negotiation. Fails on anyone who doesn\'t recognize or respect the Hegemony. GM should track which factions the player has invoked against \u2014 repeated use on the same faction diminishes effectiveness.
 - **Unbroken:** Drop to 1 HP instead of 0, once per chapter. No strings \u2014 the Knight\'s reliability is the point.
-- **Inquisition:** Requires 1+ rounds of dialogue. WIS save: failure reveals one truth. Success: target knows you tried, and their disposition toward you drops. In this genre, failed interrogations have political consequences.
+- **Inquisition:** Requires 1+ rounds of dialogue. Target makes a WIS save. If they fail, they reveal one truth. If they resist, they know you tried, and their disposition toward you drops. In this genre, failed interrogations have political consequences.
 - **Drift Touch:** Attune to sense, disrupt, or perceive. Every use leaves a Synod-detectable trace. The GM should track cumulative Drift Touch uses \u2014 after 3 uses in a chapter without suppression, a Synod notice event triggers.
 - **Ghost Protocol:** Erase trace from one record, scan, or memory. The erasure is perfect, but the absence can be noticed \u2014 a gap in a record is itself suspicious to a careful investigator.
 - **Grim Prognosis:** Heal 1d8+WIS with a side effect (pain, dependency, temporary sense loss). Side effects are amplified on patients with Drift exposure history. The Physik\'s healing always costs something \u2014 that\'s the genre\'s medical reality.`,
