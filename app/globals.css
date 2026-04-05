@@ -88,16 +88,12 @@
 }
 
 :root {
-  --narrative-font-size: 0.875rem; /* 14px default (text-sm) */
+  --narrative-font-size: 1rem; /* 16px default — serif fonts (Lora, Newsreader) need this for comfortable reading */
 }
 
 [data-genre="space-opera"],
 [data-genre="cyberpunk"] {
-  --narrative-font-size: 0.8125rem; /* 13px — mono reads larger than serif at same size */
-}
-
-[data-genre="epic-scifi"] {
-  --narrative-font-size: 1rem; /* 16px — Cormorant Garamond is thin/light, needs more size to read comfortably */
+  --narrative-font-size: 0.8125rem; /* 13px — mono/sans reads larger than serif at same size */
 }
 
 /* Dark theme is the default for this app */
