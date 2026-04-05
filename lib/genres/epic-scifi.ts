@@ -96,7 +96,7 @@ const epicSciFiClasses: CharacterClass[] = [
       { id: 'inquisitors_codex', name: 'Inquisitor\'s Codex', description: 'Synod reference for identifying heresy and Drift anomalies', quantity: 1 },
       { id: 'attunement_scanner', name: 'Attunement Scanner', description: 'Detects Drift residue', quantity: 1, charges: 3, maxCharges: 3 },
       { id: 'binding_cuffs', name: 'Binding Cuffs', description: 'Drift-suppressing restraints', quantity: 1 },
-      { id: 'concealed_stiletto', name: 'Concealed Stiletto', description: 'Last resort', quantity: 1, damage: '1d4' },
+      { id: 'resonance_spike', name: 'Resonance Spike', description: 'Short-range Drift-disrupting blade, doubles as attunement probe', quantity: 1, damage: '1d4' },
     ],
     startingCredits: 120,
     startingHp: 8,
