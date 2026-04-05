@@ -184,7 +184,7 @@ export function BurgerMenu({
                 )}
                 {ship.state && (
                   <TabsTrigger value="ship" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
-                    {genre === 'cyberpunk' ? 'Rig' : 'Ship'}
+                    {genreConfig.partyBaseName}
                   </TabsTrigger>
                 )}
                 <TabsTrigger value="chapters" className="shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:border-b data-[state=active]:border-primary/40 data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground/50 bg-transparent shadow-none rounded-none">
@@ -773,16 +773,19 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
 
 function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; partyBaseName: string }) {
   const isCyberpunk = genre === 'cyberpunk'
-  const hasRig = (genre === 'space-opera' || isCyberpunk) && ship.state
-  if (hasRig) {
+  const hasAsset = ship.state
+  if (hasAsset) {
     const s = ship.state!
+    const showCondition = s.hullCondition >= 0  // -1 = hidden (e.g. retinue has no hull)
     const conditionLabel = isCyberpunk ? 'Rig Integrity' : 'Hull Condition'
     const hullColor = s.hullCondition >= 70 ? 'text-success' : s.hullCondition >= 30 ? 'text-warning' : 'text-destructive'
     const hullBarColor = s.hullCondition >= 70 ? 'bg-success' : s.hullCondition >= 30 ? 'bg-warning' : 'bg-destructive'
+    const assetTitle = isCyberpunk ? 'Tech Rig' : ship.name
     return (
       <div className="flex min-w-0 flex-col gap-4 overflow-hidden text-sm">
         <div>
-          <h2 className="font-heading text-lg font-semibold text-foreground">{isCyberpunk ? 'Tech Rig' : ship.name}</h2>
+          <h2 className="font-heading text-lg font-semibold text-foreground">{assetTitle}</h2>
+          {showCondition && (
           <div className="mt-2">
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-foreground/50">{conditionLabel}</span>
@@ -792,10 +795,11 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
               <div className={cn('h-full rounded-full transition-all', hullBarColor)} style={{ width: `${s.hullCondition}%` }} />
             </div>
           </div>
+          )}
         </div>
 
         <div>
-          <SectionLabel>{isCyberpunk ? 'Modules' : 'Systems'}</SectionLabel>
+          <SectionLabel>{isCyberpunk ? 'Modules' : genre === 'epic-scifi' ? 'Services' : 'Systems'}</SectionLabel>
           <div className="flex flex-col gap-2">
             {s.systems.map((sys) => (
               <div key={sys.id} className="flex items-start gap-3 rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
