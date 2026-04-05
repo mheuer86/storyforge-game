@@ -105,7 +105,7 @@ export interface GenreConfig {
   intelNotebookLabel: string   // sub-tab for evidence: Intelligence, Evidence, Data, Research
   intelOperationLabel: string  // sub-tab for operations: Operation, The Play, The Run, Quest, Scheme
   explorationLabel: string     // exploration card header prefix: Facility, Dungeon, Scene, Network, Ground
-  openingHooks: string[]
+  openingHooks: (string | { hook: string; classes?: string[] })[]
   initialChapterTitle: string
   locationNames: string[]
 }
@@ -1490,10 +1490,31 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
   intelOperationLabel: 'The Play',
   explorationLabel: 'Scene',
   openingHooks: [
+    // Universal — work for any class
     'A woman you\'ve never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names — four of them are still alive.',
-    'Your client wants you to find their missing spouse. Simple enough. Then you find the spouse, and they beg you to say you didn\'t.',
-    'A cop you trust asks you to look into a case they can\'t touch. The reason they can\'t touch it is the reason you shouldn\'t either.',
     'Someone is killing people connected to a trial that happened twenty years ago. You were a witness. You\'re the only one who hasn\'t been contacted — by the killer or the police.',
+    'A body washes up on the riverbank with your business card in its pocket. You\'ve never seen this person before. The police want to talk.',
+    'A friend calls at 2am, panicking. By the time you get to their apartment, they\'re gone. The door is unlocked, the lights are on, and there\'s blood on the kitchen floor — but not enough to be fatal.',
+    // Private Investigator
+    { hook: 'Your client wants you to find their missing spouse. Simple enough. Then you find the spouse, and they beg you to say you didn\'t.', classes: ['Private Investigator'] },
+    { hook: 'A lawyer hires you to locate a witness before a trial next week. The witness doesn\'t want to be found, and neither does whoever is paying her to stay hidden.', classes: ['Private Investigator'] },
+    { hook: 'An insurance company sends you a straightforward fraud case. The claimant died in a fire, but dental records don\'t match. Someone is in that grave, just not the right someone.', classes: ['Private Investigator'] },
+    // Fixer
+    { hook: 'Two of your clients hired you for the same job without knowing it. One wants the package delivered. The other wants it destroyed. Both paid upfront.', classes: ['Fixer'] },
+    { hook: 'A politician\'s aide needs a problem to disappear before the morning papers. The problem is a person, and the person is sitting in your waiting room asking for help.', classes: ['Fixer'] },
+    { hook: 'Your best contact just burned you — gave your name to the wrong people as a fall guy for a warehouse robbery. You have until morning to prove you weren\'t involved, or make sure it doesn\'t matter.', classes: ['Fixer'] },
+    // Bruiser
+    { hook: 'The man you were hired to protect is dead. Killed in the one room you weren\'t watching. Your employer says you\'re still on the payroll — now find out who did it, before they decide you helped.', classes: ['Bruiser'] },
+    { hook: 'A bar fight that wasn\'t your fault leaves a man on the floor who turns out to be a city councilman\'s son. Now the councilman wants a meeting. Not with the police — with you.', classes: ['Bruiser'] },
+    { hook: 'Your boss sends you to collect from a debtor. The address leads to an empty apartment, a suitcase full of photographs, and a note that says "They\'ll kill me if I pay and kill me if I don\'t."', classes: ['Bruiser'] },
+    // Grifter
+    { hook: 'The mark you conned last month just showed up at your door — not angry, but terrified. Someone used the fake identity you sold them to commit a murder, and now both of you are connected to the body.', classes: ['Grifter'] },
+    { hook: 'You\'re halfway through the best con of your career when you realize the target knows exactly what you\'re doing. They\'re playing along. That\'s worse.', classes: ['Grifter'] },
+    { hook: 'A dying man gives you a key and a name. The name is fake — you know because you invented it three years ago for a job you thought was finished.', classes: ['Grifter'] },
+    // Reporter
+    { hook: 'A source slides you documents proving a construction magnate bribed the building inspector before a collapse that killed nine people. Then your editor kills the story. No explanation.', classes: ['Reporter'] },
+    { hook: 'You\'re writing a puff piece about a charity gala when a waiter slips you a napkin: "The woman giving the speech ordered a murder. Proof in the coat check. Locker 14."', classes: ['Reporter'] },
+    { hook: 'Your predecessor at the paper left a filing cabinet full of notes on a story they never published. The last entry, dated three days before they quit, reads: "They know I know. Options narrowing."', classes: ['Reporter'] },
   ],
   initialChapterTitle: 'The Job',
   locationNames: [
