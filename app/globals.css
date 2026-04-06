@@ -187,6 +187,34 @@
   }
 }
 
+/* Background effects — hidden by default, shown via [data-genre] on <html> */
+.starfield,
+.grid-overlay,
+.mist-bg,
+.static-bg,
+.drift-bg {
+  display: none;
+}
+
+[data-genre="space-opera"] .starfield,
+[data-genre="space-opera"] .grid-overlay {
+  display: block;
+}
+
+[data-genre="fantasy"] .mist-bg,
+[data-genre="grimdark"] .mist-bg,
+[data-genre="noire"] .mist-bg {
+  display: block;
+}
+
+[data-genre="cyberpunk"] .static-bg {
+  display: block;
+}
+
+[data-genre="epic-scifi"] .drift-bg {
+  display: block;
+}
+
 /* Starfield background effect */
 .starfield {
   position: fixed;

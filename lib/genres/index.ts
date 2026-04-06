@@ -231,36 +231,6 @@ export function applyGenreTheme(genre: Genre): void {
   bodyEl.style.setProperty('--font-scale', String(theme.fontScale ?? 1))
   root.dataset.genre = genre
 
-  // Toggle background effects — only one active at a time
-  const bgElements = {
-    starfield: document.querySelector('.starfield'),
-    grid: document.querySelector('.grid-overlay'),
-    mist: document.querySelector('.mist-bg'),
-    static: document.querySelector('.static-bg'),
-    drift: document.querySelector('.drift-bg'),
-  }
-
-  // Hide all
-  bgElements.starfield?.classList.add('hidden')
-  bgElements.grid?.classList.add('hidden')
-  bgElements.mist?.classList.add('hidden')
-  bgElements.static?.classList.add('hidden')
-  bgElements.drift?.classList.add('hidden')
-
-  // Show active
-  switch (theme.backgroundEffect) {
-    case 'starfield':
-      bgElements.starfield?.classList.remove('hidden')
-      bgElements.grid?.classList.remove('hidden')
-      break
-    case 'mist':
-      bgElements.mist?.classList.remove('hidden')
-      break
-    case 'static':
-      bgElements.static?.classList.remove('hidden')
-      break
-    case 'drift':
-      bgElements.drift?.classList.remove('hidden')
-      break
-  }
+  // Background effects are handled purely by CSS via [data-genre] selectors
+  // in globals.css — no JavaScript toggling needed
 }

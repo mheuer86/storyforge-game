@@ -83,9 +83,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${geistPixel.variable} ${robotoMono.variable} ${spaceGrotesk.variable} ${newsreader.variable} ${cormorantGaramond.variable} ${cinzel.variable} font-sans antialiased`}>
         <div className="starfield" aria-hidden="true" />
         <div className="grid-overlay" aria-hidden="true" />
-        <div className="mist-bg hidden" aria-hidden="true" />
-        <div className="static-bg hidden" aria-hidden="true" />
-        <div className="drift-bg hidden" aria-hidden="true" />
+        <div className="mist-bg" aria-hidden="true" />
+        <div className="static-bg" aria-hidden="true" />
+        <div className="drift-bg" aria-hidden="true" />
         <div className="grain-overlay" aria-hidden="true" />
         <div className="ambient-orb ambient-orb-1" aria-hidden="true" />
         <div className="ambient-orb ambient-orb-2" aria-hidden="true" />
