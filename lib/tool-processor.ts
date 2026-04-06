@@ -566,9 +566,11 @@ export function applyToolResults(
           ...updated.history,
           chapters: [
             ...updated.history.chapters.filter((ch) => ch.number !== currentNum),
-            completedChapter,
+            { ...completedChapter, messages: updated.history.messages },  // archive messages
             nextChapter,
           ],
+          messages: [],  // clear for the new chapter
+          rollLog: [],   // reset roll log for new chapter
         },
         world: updated.world.antagonist
           ? { ...updated.world, antagonist: { ...updated.world.antagonist, movedThisChapter: false } }
