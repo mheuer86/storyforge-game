@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { buildSystemPrompt, buildClosePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
-import { gameTools, auditTools } from '@/lib/tools'
+import { gameTools, auditTools, getToolsForContext } from '@/lib/tools'
+import type { GameContext } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
 
@@ -119,12 +120,21 @@ async function runToolLoop(
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
 
+  // Mark the last tool with cache_control so the full tool array gets cached.
+  // This avoids re-processing ~7K tokens of tool definitions on every API call.
+  const toolsToSend = options?.tools || gameTools
+  const cachedTools = toolsToSend.map((t, i) =>
+    i === toolsToSend.length - 1
+      ? { ...t, cache_control: { type: 'ephemeral' as const } }
+      : t
+  )
+
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
       max_tokens: 2048,
       system: systemPrompt,
-      tools: options?.tools || gameTools,
+      tools: cachedTools,
       messages,
     })
 
@@ -183,6 +193,11 @@ async function runToolLoop(
       roundResults.push({ type: 'tool_result', tool_use_id: tc.id, content: 'OK' })
     }
 
+    // suggest_actions is always the terminal tool — no need to continue the loop.
+    // This saves a full API round (~14-16K tokens) on every single turn.
+    const hasSuggestActions = toolCalls.some(tc => tc.name === 'suggest_actions')
+    if (hasSuggestActions) break
+
     messages = [
       ...messages,
       { role: 'assistant' as const, content: completed.content },
@@ -191,6 +206,20 @@ async function runToolLoop(
   }
 
   return { toolResults, messages, hitRoll: false }
+}
+
+function detectGameContext(gameState: GameState, isMetaQuestion: boolean): GameContext {
+  if (isMetaQuestion) return 'meta'
+  if (gameState.combat.active) return 'combat'
+  const clocks = gameState.world.tensionClocks ?? []
+  const hasInfiltration = clocks.some(c =>
+    c.status === 'active' &&
+    (c.name.toLowerCase().includes('alert') || c.name.toLowerCase().includes('detection'))
+  )
+  const op = gameState.world.operationState
+  if (hasInfiltration || gameState.world.explorationState?.hostile ||
+      (op && (op.phase === 'active' || op.phase === 'extraction'))) return 'infiltration'
+  return 'social'
 }
 
 function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
@@ -233,6 +262,9 @@ export async function POST(req: NextRequest) {
         send({ type: 'done' })
         controller.close()
       }
+
+      const gameContext = detectGameContext(gameState, isMetaQuestion)
+      const contextTools = getToolsForContext(gameContext, gameState.combat.active, !!gameState.world.notebook)
 
       try {
         const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
@@ -321,7 +353,7 @@ export async function POST(req: NextRequest) {
           ]
 
           // interceptRolls=true so damage/healing rolls after a hit are interactive too
-          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { tools: contextTools })
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
           finish(loopResult.toolResults)
           return
@@ -372,7 +404,7 @@ export async function POST(req: NextRequest) {
         }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
-        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true)
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools })
 
         if (loopResult.hitRoll) {
           send({ type: 'done' })
@@ -397,7 +429,7 @@ export async function POST(req: NextRequest) {
                   return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
                 })()
 
-            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true)
+            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: contextTools })
 
             if (loopResult.hitRoll) {
               send({ type: 'done' })
