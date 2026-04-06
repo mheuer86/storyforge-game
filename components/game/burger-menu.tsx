@@ -206,7 +206,7 @@ export function BurgerMenu({
 
               {/* World Tab */}
               <TabsContent value="world" className="mt-0 p-4">
-                <WorldPanel world={world} partyBaseName={genreConfig.partyBaseName} explorationLabel={genreConfig.explorationLabel} inventory={character.class.gear} />
+                <WorldPanel world={world} partyBaseName={genreConfig.partyBaseName} explorationLabel={genreConfig.explorationLabel} companionLabel={genreConfig.companionLabel} inventory={character.class.gear} />
               </TabsContent>
 
               {/* Chapters Tab */}
@@ -867,7 +867,7 @@ function ShipPanel({ ship, genre, partyBaseName }: { ship: Ship; genre: Genre; p
 
 type GearItem = { name: string; description: string; damage?: string; effect?: string; charges?: number; maxCharges?: number }
 
-function WorldPanel({ world, partyBaseName, explorationLabel, inventory }: { world: World; partyBaseName: string; explorationLabel: string; inventory?: GearItem[] }) {
+function WorldPanel({ world, partyBaseName, explorationLabel, companionLabel, inventory }: { world: World; partyBaseName: string; explorationLabel: string; companionLabel: string; inventory?: GearItem[] }) {
   const [subtab, setSubtab] = useState<'locations' | 'people' | 'narrative'>('locations')
 
   const isVessel = (n: { subtype?: string }) => n.subtype === 'vessel' || n.subtype === 'installation'
@@ -900,7 +900,7 @@ function WorldPanel({ world, partyBaseName, explorationLabel, inventory }: { wor
         <>
           {/* Companions */}
           <div>
-            <SectionLabel>Companions</SectionLabel>
+            <SectionLabel>{companionLabel}</SectionLabel>
             {world.companions.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {world.companions.map((c, i) => (

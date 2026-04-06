@@ -108,6 +108,7 @@ export interface GenreConfig {
     buildAssetState: ((ship: ShipState, shipName: string) => string) | null
     investigationGuide: string
   }
+  companionLabel: string     // "Companions", "Retainers", "Crew", etc.
   notebookLabel: string
   intelTabLabel: string
   intelNotebookLabel: string
@@ -143,6 +144,7 @@ function makeStub(
     settingNoun: 'world',
     systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
     promptSections: { role: '', setting: '', vocabulary: '', toneOverride: '', assetMechanic: '', traitRules: '', consumableLabel: '', tutorialContext: '', npcVoiceGuide: '', buildAssetState: null, investigationGuide: '' },
+    companionLabel: 'Companions',
     notebookLabel: 'Notebook',
     intelTabLabel: 'Intel',
     intelNotebookLabel: 'Evidence',
