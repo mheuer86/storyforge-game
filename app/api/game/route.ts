@@ -115,7 +115,7 @@ async function runToolLoop(
   initialMessages: Anthropic.MessageParam[],
   send: SendFn,
   interceptRolls: boolean,
-  options?: { model?: string; tools?: Anthropic.Tool[] },
+  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
@@ -129,7 +129,8 @@ async function runToolLoop(
       : t
   )
 
-  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+  const rounds = options?.maxRounds ?? MAX_TOOL_ROUNDS
+  for (let round = 0; round < rounds; round++) {
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
       max_tokens: 2048,
@@ -384,7 +385,9 @@ export async function POST(req: NextRequest) {
           const auditMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: 'Audit the current game state now.' },
           ]
-          const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools })
+          // maxRounds=1: Haiku should batch all corrections into one response.
+          // Looping wastes tokens re-sending the same stale state for each fix.
+          const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
           return
         }
