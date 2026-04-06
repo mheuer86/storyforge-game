@@ -142,7 +142,7 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 ## DIFFICULTY ENGINE
 
-Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesses once/chapter. Rule 3: ${ps.consumableLabel} — don't refill without restock. Rule 4: antagonist moves once/chapter offscreen. Rule 5: one thread worsens/chapter. Rule 6: deferred promises get mentioned.
+Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesses once/chapter. Rule 3: ${ps.consumableLabel} — don't refill without restock. Rule 4: antagonist moves once/chapter offscreen. Rule 5: one thread worsens/chapter — prefer threads connected to the player's prior successes (the best complications are consequences, not coincidences). Rule 6: deferred promises get mentioned.
 
 ## POST-ACTION CHECKLIST (every response)
 
