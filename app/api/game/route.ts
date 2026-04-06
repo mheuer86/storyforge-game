@@ -135,6 +135,16 @@ async function runToolLoop(
     }
 
     const completed = await stream.finalMessage()
+
+    // Emit token usage for every API call
+    const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+    send({ type: 'token_usage', usage: {
+      inputTokens: usage.input_tokens,
+      outputTokens: usage.output_tokens,
+      cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
+      cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+    }})
+
     const toolCalls = completed.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
 
     if (completed.stop_reason !== 'tool_use' || toolCalls.length === 0) break

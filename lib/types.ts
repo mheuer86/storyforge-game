@@ -445,6 +445,14 @@ export type StreamEvent =
   | { type: 'done' }
   | { type: 'retrying'; delayMs: number; reason: string }
   | { type: 'error'; message: string }
+  | { type: 'token_usage'; usage: TokenUsage }
+
+export interface TokenUsage {
+  inputTokens: number
+  outputTokens: number
+  cacheWriteTokens: number
+  cacheReadTokens: number
+}
 
 export interface RollResolution {
   roll: number

@@ -59,6 +59,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setQuickActionsRaw(actions)
     saveQuickActions(actions)
   }, [])
+  const [tokenLog, setTokenLog] = useState<Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
@@ -251,6 +252,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 rollType: event.rollType,
                 damageType: event.damageType,
               })
+            }
+
+            if (event.type === 'token_usage') {
+              setTokenLog(prev => [...prev, {
+                input: event.usage.inputTokens,
+                output: event.usage.outputTokens,
+                cacheWrite: event.usage.cacheWriteTokens,
+                cacheRead: event.usage.cacheReadTokens,
+                timestamp: new Date().toISOString(),
+              }])
             }
 
             if (event.type === 'tools') {
@@ -1489,6 +1500,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onSave={handleSave}
         onLoad={handleLoad}
         onNewGame={onNewGame}
+        tokenLog={tokenLog}
         character={{
           name: gameState.character.name,
           species: { name: gameState.character.species },

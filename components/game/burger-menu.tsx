@@ -97,6 +97,7 @@ interface BurgerMenuProps {
   onNewGame?: () => void
   onConnectEvidence?: () => void
   initialTab?: string
+  tokenLog?: Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>
 }
 
 function timeAgo(iso: string): string {
@@ -124,6 +125,7 @@ export function BurgerMenu({
   onNewGame,
   onConnectEvidence,
   initialTab,
+  tokenLog,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
   const [activeMenuTab, setActiveMenuTab] = useState(initialTab || 'character')
@@ -218,6 +220,56 @@ export function BurgerMenu({
                     setExpandedChapter(expandedChapter === num ? null : num)
                   }
                 />
+                {/* Token usage stats */}
+                {tokenLog && tokenLog.length > 0 && (() => {
+                  const totals = tokenLog.reduce((acc, t) => ({
+                    input: acc.input + t.input,
+                    output: acc.output + t.output,
+                    cacheWrite: acc.cacheWrite + t.cacheWrite,
+                    cacheRead: acc.cacheRead + t.cacheRead,
+                  }), { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 })
+                  const cacheRate = totals.input > 0 ? Math.round((totals.cacheRead / (totals.input + totals.cacheRead)) * 100) : 0
+                  const cost = (
+                    (totals.input - totals.cacheRead) * 3 / 1_000_000 +
+                    totals.cacheRead * 0.30 / 1_000_000 +
+                    totals.cacheWrite * 3.75 / 1_000_000 +
+                    totals.output * 15 / 1_000_000
+                  )
+                  const exportCsv = () => {
+                    const header = 'timestamp,input_tokens,output_tokens,cache_write,cache_read\n'
+                    const rows = tokenLog.map(t => `${t.timestamp},${t.input},${t.output},${t.cacheWrite},${t.cacheRead}`).join('\n')
+                    const blob = new Blob([header + rows], { type: 'text/csv' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `storyforge-tokens-${new Date().toISOString().slice(0, 10)}.csv`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  }
+                  return (
+                    <div className="mt-6 border-t border-border/10 pt-4">
+                      <SectionLabel>Token Usage (this session)</SectionLabel>
+                      <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                        <div className="text-muted-foreground">API calls</div>
+                        <div className="text-right text-foreground">{tokenLog.length}</div>
+                        <div className="text-muted-foreground">Input tokens</div>
+                        <div className="text-right text-foreground">{(totals.input + totals.cacheRead).toLocaleString()}</div>
+                        <div className="text-muted-foreground">Output tokens</div>
+                        <div className="text-right text-foreground">{totals.output.toLocaleString()}</div>
+                        <div className="text-muted-foreground">Cache hit rate</div>
+                        <div className="text-right text-foreground">{cacheRate}%</div>
+                        <div className="text-muted-foreground">Est. cost</div>
+                        <div className="text-right text-foreground">${cost.toFixed(4)}</div>
+                      </div>
+                      <button
+                        onClick={exportCsv}
+                        className="mt-3 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  )
+                })()}
               </TabsContent>
 
               {/* Intel Tab — operation brief + notebook */}
