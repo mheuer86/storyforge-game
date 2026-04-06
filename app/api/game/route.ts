@@ -232,12 +232,16 @@ function detectGameContext(gameState: GameState, isMetaQuestion: boolean): GameC
   return 'social'
 }
 
-function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
+function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): { system: Anthropic.TextBlockParam[]; dynamicState: string } {
   const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
-  return [
-    { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: dynamicState },
-  ]
+  return {
+    // System prompt is now fully static — cached at 90% discount
+    system: [
+      { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
+    ],
+    // Dynamic state injected into the user message instead
+    dynamicState,
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -277,7 +281,7 @@ export async function POST(req: NextRequest) {
       const contextTools = getToolsForContext(gameContext, gameState.combat.active, !!gameState.world.notebook)
 
       try {
-        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+        const { system: systemPrompt, dynamicState } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
@@ -412,7 +416,7 @@ export async function POST(req: NextRequest) {
             send({ type: 'chapter_title', title: initialResult.chapterTitle } as unknown as StreamEvent)
           }
         }
-        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
+        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion, dynamicState)
 
         const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools })
 
@@ -428,7 +432,7 @@ export async function POST(req: NextRequest) {
           send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
           try {
-            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+            const { system: retrySystem, dynamicState: retryDynamic } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
@@ -436,7 +440,7 @@ export async function POST(req: NextRequest) {
                 ]
               : (() => {
                   const retryMsg = isInitial ? buildInitialMessage(gameState) : message
-                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
+                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion, retryDynamic)
                 })()
 
             const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: contextTools })

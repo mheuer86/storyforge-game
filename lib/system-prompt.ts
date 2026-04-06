@@ -167,7 +167,9 @@ request_roll BEFORE outcome. Never narrate state change without tool call. sugge
 
 **No meta-narration.** Never narrate your decision-making process. Don't write "let me resolve that" or "I'll call a roll for this." Just call the tool.
 
-**Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).`
+**Output order:** 1. Narrative. 2. State mutations. 3. suggest_actions (always).
+
+**Input format:** Each player message includes a [GM CONTEXT] block with the current game state. This is authoritative — treat it as your source of truth for HP, inventory, NPCs, location, and all tracked state. The [PLAYER ACTION] section is the actual player input.`
 }
 
 // ============================================================
@@ -1035,7 +1037,8 @@ const OPERATION_TOKEN_BOOST = 1000  // Extra budget during active ops
 export function buildMessagesForClaude(
   gameState: GameState,
   currentMessage: string,
-  isMetaQuestion: boolean
+  isMetaQuestion: boolean,
+  dynamicState?: string
 ): Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> {
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
@@ -1084,8 +1087,15 @@ export function buildMessagesForClaude(
     }
   }
 
+  // Inject dynamic state + player message as the final user turn.
+  // Dynamic state is moved out of the system prompt so the system block
+  // stays fully static and cacheable. The GM CONTEXT label tells Claude
+  // to treat this as authoritative state, not player input.
   const prefix = isMetaQuestion ? '[META] ' : ''
-  messages.push({ role: 'user', content: prefix + currentMessage })
+  const stateBlock = dynamicState
+    ? `[GM CONTEXT — AUTHORITATIVE STATE]\n${dynamicState}\n\n[PLAYER ACTION]\n${prefix}${currentMessage}`
+    : prefix + currentMessage
+  messages.push({ role: 'user', content: stateBlock })
 
   return messages
 }
