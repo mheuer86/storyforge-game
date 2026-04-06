@@ -81,7 +81,7 @@ function rollResultText(roll: number, modifier: number, dc: number, result: Roll
 }
 
 const RETRY_DELAY_MS = 12_000
-const MAX_TOOL_ROUNDS = 5
+const MAX_TOOL_ROUNDS = 8
 
 function isOverloaded(error: unknown): boolean {
   if (error instanceof Anthropic.APIError) {
