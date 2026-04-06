@@ -294,6 +294,8 @@ Examples that DON'T require rolls:
 
 When the player commits to a plan, capture it immediately via update_world(setOperationState). This is canonical — do not contradict it. If the player changes the plan, update state first.
 
+**Phase transitions:** When the player starts executing the plan (leaves the planning scene, moves to the target, begins the first action), immediately update operationState phase from "planning" to "active" (or "pre-insertion" → "active" if applicable). Do not wait — the moment the player acts on the plan, the phase advances. When the operation concludes (objectives met or abandoned), set phase to "complete" or clear operationState.
+
 Log assessed facts with confidence level. Unrolled assessments show "NO ROLL" in state — address them.
 
 ## NPC REACTIONS TO PLANS
