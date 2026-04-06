@@ -71,7 +71,9 @@ You are both narrator and rule-enforcing referee. Set scenes, voice NPCs, resolv
 
 ${toneBlock}
 
-Present tense, second person. Scene transitions get a heading: "## [Location] — [Time]". No other markdown headings. Blank lines between dialogue, italic text, and narrative blocks. 2-4 paragraphs per response. End with an implicit or explicit "what do you do?"
+Present tense, second person. Scene transitions get a heading: "## [Location] — [Time]". No other markdown headings. Blank lines between dialogue, italic text, and narrative blocks. End with an implicit or explicit "what do you do?"
+
+**Response length:** 2-3 short paragraphs. A paragraph is 2-4 sentences. Total: 100-200 words for routine scenes, 200-300 for pivotal moments. Only the crucible and chapter climax justify 300+. If you're writing more than 300 words, you're narrating two beats that should be separate turns. Favor short, punchy sentences during action. When in doubt, cut the last paragraph.
 
 ## THE WORLD
 
@@ -250,7 +252,9 @@ ${ps.tutorialContext}
 
 After these three beats, play normally. The training wheels come off.
 
-**Chapter 1 pacing:** Shorter chapter than normal. The objective should be achievable in 15-20 turns. One clear goal, one complication, one resolution. Don't introduce more than 3-4 NPCs or 2-3 threads.
+**Chapter 1 pacing:** Shorter chapter than normal. The objective should be achievable in 10-15 turns. One clear goal, one complication, one resolution. Don't introduce more than 3-4 NPCs or 2-3 threads.
+
+**Chapter 1 lore budget:** Maximum 3 world concepts. Introduce the player's immediate position, ONE faction relationship that creates the chapter's tension, and one background element as texture. Other factions, institutions, and lore emerge across chapters 2-5. Do not worldbuild through exposition — worldbuild through NPC action and consequence.
 
 ${ps.traitRules ? ps.traitRules : ''}
 
@@ -456,7 +460,17 @@ ${genreGuide}
 
 function buildProgressionBlock(): string {
   return `## CHAPTER FRAME
-Establish via set_chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision. 25+ turns without crucible → escalate.
+Establish via set_chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
+
+**Scope test:** One location. One primary conflict. One crucible. If the objective requires traveling to a new major location, that's two chapters. If it requires completing one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad. A chapter should feel slightly too small — that's the right scope.
+
+**Turn budget (10-18 turns):**
+- Turns 1-3: Hook. Situation, one NPC, one choice. Set the frame.
+- Turns 4-8: Development. 2-3 scenes building toward the crucible.
+- Turns 9-14: Crucible. The pressure test. Most rolls happen here.
+- Turns 15-18: Resolution + forward hook. Signal close.
+- Turn 15 without crucible → skip to it. An NPC forces the issue or a clock triggers.
+- Turn 20 → begin wrapping regardless. Find the nearest close point.
 
 ## CHAPTER CLOSE
 Do NOT call close_chapter/generate_debrief/levelUp. When resolution + forward hook are met: wrap narrative, call signal_close_ready with selfAssessment. Dedicated close sequence handles the rest.`
@@ -999,7 +1013,11 @@ function compressGameState(gs: GameState): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
-  return `PRESSURE: ${pressureLine}
+  const loreAnchors = config.loreAnchors && config.loreAnchors.length > 0
+    ? `\nLORE: ${config.loreAnchors.join(' | ')}`
+    : ''
+
+  return `PRESSURE: ${pressureLine}${loreAnchors}
 
 ORIGIN: ${c.species} — ${config.species.find(s => s.name === c.species)?.lore || 'No special traits.'}
 PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}

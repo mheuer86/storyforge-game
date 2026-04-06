@@ -109,6 +109,7 @@ export interface GenreConfig {
     investigationGuide: string
   }
   companionLabel: string     // "Companions", "Retainers", "Crew", etc.
+  loreAnchors?: string[]     // compact world facts shipped every turn for complex genres
   notebookLabel: string
   intelTabLabel: string
   intelNotebookLabel: string
