@@ -402,7 +402,9 @@ export async function POST(req: NextRequest) {
           const closeMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: 'Execute the chapter close sequence now.' },
           ]
-          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false)
+          // Close sequence needs many rounds: audit cleanup, close_chapter, levelUp,
+          // skill points, generate_debrief, set_chapter_frame. Give it plenty of room.
+          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false, { maxRounds: 12 })
           finish(loopResult.toolResults)
           return
         }

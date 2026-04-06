@@ -1159,9 +1159,16 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
 
 Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.
 
-IMPORTANT: Use update_world to establish the starting location (setLocation), the current time (setCurrentTime — e.g. "Day 1, early morning"), the scene snapshot (setSceneSnapshot), at least one NPC (addNpcs), one faction (addFaction), and one narrative thread (addThread). The world state is blank — you must populate it.
+IMPORTANT: In your FIRST response, call ALL of these via update_world in ONE batch:
+- setLocation (starting location)
+- setCurrentTime (e.g. "Day 1, early morning")
+- setSceneSnapshot (who is where)
+- addNpcs (at least one NPC + origin contacts — see below)
+- addFaction (at least one)
+- addThread (at least one narrative thread)
+Also call set_chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The world state is blank — you must populate it.
 
-ORIGIN CONTACTS: The player's origin lore defines starting contacts (e.g. "Start with one Synod official at Favorable"). Create these as named NPCs in your first turn with the specified disposition. Give them a name, a personality, and a voice note. These are the player's pre-existing relationships — they should feel established, not freshly met.`
+ORIGIN CONTACTS: The player's origin lore defines starting contacts (e.g. "Start with one Synod official at Favorable"). Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.`
 
     return { message: msg, chapterTitle: hookTitle }
   }
