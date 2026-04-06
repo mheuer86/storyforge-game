@@ -973,6 +973,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
     setCloseInProgress(true)
     const preCloseState = gameState
+    // Safety: snapshot messages before close sequence in case it fails mid-way
+    try {
+      localStorage.setItem('storyforge_preclose_messages', JSON.stringify({
+        chapter: gameState.meta.chapterNumber,
+        title: gameState.meta.chapterTitle,
+        messages: gameState.history.messages,
+        timestamp: new Date().toISOString(),
+      }))
+    } catch { /* localStorage full — non-critical */ }
     const gmMsgId = crypto.randomUUID()
     // Don't add a message — the overlay replaces the text stream.
     // streamRequest will try to update a message with this ID but find nothing, which is fine.
