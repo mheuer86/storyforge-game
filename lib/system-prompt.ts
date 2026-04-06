@@ -1036,9 +1036,9 @@ export function buildMessagesForClaude(
   gameState: GameState,
   currentMessage: string,
   isMetaQuestion: boolean
-): Array<{ role: 'user' | 'assistant'; content: string }> {
+): Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> {
   const allMessages = gameState.history.messages
-  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
+  const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
 
   // Boost history budget during active operations when context matters most
   const hasActiveOp = gameState.world.operationState &&
@@ -1069,6 +1069,18 @@ export function buildMessagesForClaude(
       messages.push({ role: 'user', content: prefix + msg.content })
     } else if (msg.role === 'gm' || msg.role === 'meta-response') {
       messages.push({ role: 'assistant', content: msg.content })
+    }
+  }
+
+  // Cache breakpoint: mark the last "old" message before the new player input.
+  // The prefix (system + tools + old history) stays identical between turns,
+  // so Anthropic's prefix cache hits on everything before this breakpoint.
+  if (messages.length >= 2) {
+    const lastOld = messages[messages.length - 1]
+    const text = typeof lastOld.content === 'string' ? lastOld.content : lastOld.content[0]?.text ?? ''
+    messages[messages.length - 1] = {
+      role: lastOld.role,
+      content: [{ type: 'text', text, cache_control: { type: 'ephemeral' } }],
     }
   }
 
