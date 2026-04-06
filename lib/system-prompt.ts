@@ -610,9 +610,9 @@ export function buildAuditPrompt(gameState: GameState): [string, string] {
   const config = getGenreConfig(genre)
 
   // Include recent message history so the auditor can cross-reference
-  const recentMessages = gameState.history.messages.slice(-12)
+  const recentMessages = gameState.history.messages.slice(-6)
   const messageLog = recentMessages
-    .map((m) => `[${m.role}] ${m.content.slice(0, 200)}`)
+    .map((m) => `[${m.role}] ${m.content.slice(0, 150)}`)
     .join('\n')
 
   const instructions = `You are the state auditor for a ${config.name} RPG. You are NOT the narrative GM. Your job is mechanical: verify game state accuracy and fix drift.
