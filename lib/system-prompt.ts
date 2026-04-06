@@ -945,8 +945,15 @@ function compressGameState(gs: GameState): string {
 
   // Derive turn count from player messages in current chapter
   const playerTurnCount = gs.history.messages.filter(m => m.role === 'player').length
+  const turnWarning = playerTurnCount >= 20
+    ? ` ⚠ OVER BUDGET — wrap NOW. Find the nearest close point.`
+    : playerTurnCount >= 15
+    ? ` ⚠ APPROACHING LIMIT — drive toward resolution and signal_close_ready.`
+    : playerTurnCount >= 12
+    ? ` — crucible should be active or imminent.`
+    : ''
   const frameLine = gs.chapterFrame
-    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}`
+    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}`
     : ''
   const timeLine = w.currentTime ? `TIME: ${w.currentTime}` : ''
   const partyLabel = config.partyBaseName.toUpperCase()
