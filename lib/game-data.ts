@@ -166,6 +166,7 @@ export function createInitialGameState(
       rollLog: [],
     },
     chapterFrame: null,
+    storySummary: null,
   }
 }
 

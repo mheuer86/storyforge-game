@@ -562,6 +562,7 @@ export function applyToolResults(
           selfAssessment: undefined,
         },
         chapterFrame: null,
+        storySummary: null,  // reset for new chapter
         history: {
           ...updated.history,
           chapters: [

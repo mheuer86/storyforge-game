@@ -1070,35 +1070,52 @@ export function buildMessagesForClaude(
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
 
-  // Boost history budget during active operations when context matters most
-  const hasActiveOp = gameState.world.operationState &&
-    ['active', 'extraction'].includes(gameState.world.operationState.phase)
-  const hasExploration = !!gameState.world.explorationState
-  const budget = TARGET_HISTORY_TOKENS + ((hasActiveOp || hasExploration) ? OPERATION_TOKEN_BOOST : 0)
+  const summary = gameState.storySummary
 
-  // Walk backwards from most recent, accumulating until token budget hit
-  // but always include at least MIN_MESSAGE_FLOOR messages
-  let tokenEstimate = 0
-  let startIndex = allMessages.length
-  const messagesIncluded = () => allMessages.length - startIndex
+  // If we have a story summary, inject it as a stable prefix + only include recent messages
+  if (summary && summary.text) {
+    messages.push({ role: 'user', content: `[STORY SO FAR]\n${summary.text}` })
+    messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current situation.' })
 
-  for (let i = allMessages.length - 1; i >= 0; i--) {
-    const msgTokens = Math.ceil(allMessages[i].content.length * AVG_TOKENS_PER_CHAR)
-    if (tokenEstimate + msgTokens > budget && messagesIncluded() >= MIN_MESSAGE_FLOOR) {
-      break
+    // Only include messages AFTER the summary point
+    const recentMessages = allMessages.slice(summary.upToMessageIndex + 1)
+    for (const msg of recentMessages) {
+      if (msg.role === 'player' || msg.role === 'meta-question') {
+        const p = msg.role === 'meta-question' ? '[META] ' : ''
+        messages.push({ role: 'user', content: p + msg.content })
+      } else if (msg.role === 'gm' || msg.role === 'meta-response') {
+        messages.push({ role: 'assistant', content: msg.content })
+      }
     }
-    tokenEstimate += msgTokens
-    startIndex = i
-  }
+  } else {
+    // No summary — use the windowed history as before
+    // Boost history budget during active operations when context matters most
+    const hasActiveOp = gameState.world.operationState &&
+      ['active', 'extraction'].includes(gameState.world.operationState.phase)
+    const hasExploration = !!gameState.world.explorationState
+    const budget = TARGET_HISTORY_TOKENS + ((hasActiveOp || hasExploration) ? OPERATION_TOKEN_BOOST : 0)
 
-  const windowedMessages = allMessages.slice(startIndex)
+    let tokenEstimate = 0
+    let startIndex = allMessages.length
+    const messagesIncluded = () => allMessages.length - startIndex
 
-  for (const msg of windowedMessages) {
-    if (msg.role === 'player' || msg.role === 'meta-question') {
-      const prefix = msg.role === 'meta-question' ? '[META] ' : ''
-      messages.push({ role: 'user', content: prefix + msg.content })
-    } else if (msg.role === 'gm' || msg.role === 'meta-response') {
-      messages.push({ role: 'assistant', content: msg.content })
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      const msgTokens = Math.ceil(allMessages[i].content.length * AVG_TOKENS_PER_CHAR)
+      if (tokenEstimate + msgTokens > budget && messagesIncluded() >= MIN_MESSAGE_FLOOR) {
+        break
+      }
+      tokenEstimate += msgTokens
+      startIndex = i
+    }
+
+    const windowedMessages = allMessages.slice(startIndex)
+    for (const msg of windowedMessages) {
+      if (msg.role === 'player' || msg.role === 'meta-question') {
+        const p = msg.role === 'meta-question' ? '[META] ' : ''
+        messages.push({ role: 'user', content: p + msg.content })
+      } else if (msg.role === 'gm' || msg.role === 'meta-response') {
+        messages.push({ role: 'assistant', content: msg.content })
+      }
     }
   }
 

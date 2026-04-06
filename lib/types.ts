@@ -398,6 +398,12 @@ export interface HistoryState {
   rollLog: RollRecord[]
 }
 
+export interface StorySummary {
+  text: string            // 200-300 token narrative summary
+  upToMessageIndex: number // messages[0..N] that were summarized
+  turn: number            // player turn count when generated
+}
+
 export interface MetaState {
   version: string
   createdAt: string
@@ -420,6 +426,7 @@ export interface GameState {
   combat: CombatState
   history: HistoryState
   chapterFrame: ChapterFrame | null
+  storySummary: StorySummary | null
 }
 
 // API streaming event types
