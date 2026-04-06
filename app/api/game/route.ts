@@ -5,6 +5,7 @@ import { buildSystemPrompt, buildClosePrompt, buildAuditPrompt, buildMessagesFor
 import { gameTools, auditTools, getToolsForContext } from '@/lib/tools'
 import type { GameContext } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
+import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
 
 const client = new Anthropic()
@@ -27,6 +28,7 @@ const requestSchema = z.object({
   isConsistencyCheck: z.boolean().optional(),
   isChapterClose: z.boolean().optional(),
   isAudit: z.boolean().optional(),
+  isSummarize: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
   rollResolution: z.object({
     roll: z.number().min(1).max(100),
@@ -261,7 +263,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, isAudit, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, isAudit, isSummarize, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -389,6 +391,47 @@ export async function POST(req: NextRequest) {
           // Looping wastes tokens re-sending the same stale state for each fix.
           const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Summarize: Haiku generates a "story so far" summary ──
+        if (isSummarize) {
+          const SUMMARIZE_MODEL = 'claude-haiku-4-5-20251001'
+          const msgs = gameState.history.messages
+          const messageBlock = msgs
+            .map((m) => `[${m.role}] ${m.content.slice(0, 300)}`)
+            .join('\n')
+          const summarizeSystem: Anthropic.TextBlockParam[] = [{
+            type: 'text',
+            text: `You are a story summarizer for a ${getGenreConfig((gameState.meta.genre || 'space-opera') as Genre).name} RPG. Produce a concise narrative summary of what has happened so far in this chapter. Include: key events in order, important NPCs encountered, decisions made, unresolved threads, and current situation. Write in past tense, third person. 200-300 words maximum. No meta-commentary — just the story facts.`,
+          }]
+          const summarizeMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: `Summarize this chapter so far:\n\n${messageBlock}` },
+          ]
+          const stream = await client.messages.stream({
+            model: SUMMARIZE_MODEL,
+            max_tokens: 512,
+            system: summarizeSystem,
+            messages: summarizeMessages,
+          })
+          let summaryText = ''
+          for await (const event of stream) {
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+              summaryText += event.delta.text
+            }
+          }
+          const completed = await stream.finalMessage()
+          const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+          send({ type: 'token_usage', usage: {
+            inputTokens: usage.input_tokens,
+            outputTokens: usage.output_tokens,
+            cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
+            cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+          }})
+          // Send the summary as a tool result so the client can store it
+          send({ type: 'tools', results: [{ tool: '_story_summary', input: { text: summaryText, upToMessageIndex: msgs.length - 1, turn: msgs.filter(m => m.role === 'player').length } }] })
+          send({ type: 'done' })
+          controller.close()
           return
         }
 

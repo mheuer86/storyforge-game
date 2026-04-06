@@ -163,6 +163,66 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [])
 
+  /** Background story summarizer — Haiku generates a "story so far" summary. */
+  const summarizeInFlightRef = useRef(false)
+  const runSummarize = useCallback(async (state: GameState) => {
+    if (summarizeInFlightRef.current) return
+    summarizeInFlightRef.current = true
+    try {
+      const response = await fetch('/api/game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: '',
+          gameState: state,
+          isMetaQuestion: false,
+          isInitial: false,
+          isSummarize: true,
+        }),
+      })
+      if (!response.ok || !response.body) return
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line) as StreamEvent
+            if (event.type === 'tools') {
+              const summaryResult = event.results.find(r => r.tool === '_story_summary')
+              if (summaryResult) {
+                const { text, upToMessageIndex, turn } = summaryResult.input as { text: string; upToMessageIndex: number; turn: number }
+                setGameState(prev => {
+                  if (!prev) return prev
+                  const updated = { ...prev, storySummary: { text, upToMessageIndex, turn } }
+                  saveGameState(updated)
+                  return updated
+                })
+              }
+            }
+            if (event.type === 'token_usage') {
+              setTokenLog(prev => [...prev, {
+                input: event.usage.inputTokens,
+                output: event.usage.outputTokens,
+                cacheWrite: event.usage.cacheWriteTokens,
+                cacheRead: event.usage.cacheReadTokens,
+                timestamp: new Date().toISOString(),
+              }])
+            }
+          } catch { /* skip */ }
+        }
+      }
+    } catch { /* summary failure is non-critical */ } finally {
+      summarizeInFlightRef.current = false
+    }
+  }, [])
+
   const streamRequest = useCallback(async (
     body: Record<string, unknown>,
     gmMsgId: string,
@@ -445,12 +505,17 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setRetryContext(null)
           isLoadingRef.current = false
           setIsLoading(false)
-          // Trigger background audit every 5 player turns (non-blocking)
+          // Trigger background audit every 8 player turns (non-blocking)
           const AUDIT_INTERVAL = 8
+          const SUMMARIZE_INTERVAL = 6
           if (!isInitial && !isMetaQuestion) {
             const playerTurns = finalState.history.messages.filter(m => m.role === 'player').length
             if (playerTurns > 0 && playerTurns % AUDIT_INTERVAL === 0) {
               runAudit(finalState)
+            }
+            // Generate story summary every 6 turns (non-blocking)
+            if (playerTurns > 0 && playerTurns % SUMMARIZE_INTERVAL === 0) {
+              runSummarize(finalState)
             }
           }
         },
