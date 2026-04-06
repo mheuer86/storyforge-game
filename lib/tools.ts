@@ -998,3 +998,73 @@ export const gameTools: Anthropic.Tool[] = [
 export const auditTools: Anthropic.Tool[] = gameTools.filter((t) =>
   ['update_character', 'update_world', 'update_antagonist', 'update_cohesion', 'update_ship', 'update_clock', 'update_disposition'].includes(t.name)
 )
+
+// ============================================================
+// CONTEXT-AWARE TOOL SUBSETS
+// Reduces tool definition tokens sent per API call (~3-4K saved).
+// ============================================================
+
+/** Tools needed in every context */
+const CORE_TOOL_NAMES = [
+  'update_character', 'request_roll', 'suggest_actions', 'update_world',
+  'update_cohesion', 'update_disposition', 'update_clock', 'award_inspiration',
+  'set_chapter_frame', 'signal_close_ready',
+]
+
+/** Additional tools for combat scenes */
+const COMBAT_TOOL_NAMES = ['start_combat', 'end_combat', 'update_ship']
+
+/** Additional tools for investigation/social scenes */
+const INVESTIGATION_TOOL_NAMES = ['add_clue', 'connect_clues']
+
+/** Tools only needed for close/debrief sequences */
+const CLOSE_TOOL_NAMES = ['close_chapter', 'generate_debrief', 'update_antagonist']
+
+/** Meta-question context */
+const META_TOOL_NAMES = ['meta_response']
+
+export type GameContext = 'combat' | 'social' | 'infiltration' | 'meta' | 'default'
+
+export function getToolsForContext(context: GameContext, hasCombat: boolean, hasNotebook: boolean): Anthropic.Tool[] {
+  const names = new Set<string>(CORE_TOOL_NAMES)
+
+  switch (context) {
+    case 'combat':
+      COMBAT_TOOL_NAMES.forEach(n => names.add(n))
+      // Keep antagonist for combat encounters
+      names.add('update_antagonist')
+      break
+    case 'infiltration':
+      // Infiltration can escalate to combat or involve clues
+      COMBAT_TOOL_NAMES.forEach(n => names.add(n))
+      INVESTIGATION_TOOL_NAMES.forEach(n => names.add(n))
+      names.add('update_antagonist')
+      break
+    case 'social':
+      INVESTIGATION_TOOL_NAMES.forEach(n => names.add(n))
+      names.add('update_antagonist')
+      names.add('update_ship')
+      break
+    case 'meta':
+      // Meta questions only need meta_response
+      return gameTools.filter(t => META_TOOL_NAMES.includes(t.name))
+    default:
+      // Default: include everything except close-only tools
+      COMBAT_TOOL_NAMES.forEach(n => names.add(n))
+      INVESTIGATION_TOOL_NAMES.forEach(n => names.add(n))
+      names.add('update_antagonist')
+      break
+  }
+
+  // Always include combat tools if combat is currently active, regardless of context detection
+  if (hasCombat) {
+    COMBAT_TOOL_NAMES.forEach(n => names.add(n))
+  }
+
+  // Only include investigation tools if notebook exists
+  if (hasNotebook) {
+    INVESTIGATION_TOOL_NAMES.forEach(n => names.add(n))
+  }
+
+  return gameTools.filter(t => names.has(t.name))
+}

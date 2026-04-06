@@ -997,8 +997,6 @@ function compressGameState(gs: GameState): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
-  const toolCheatSheet = `TOOLS: update_world(setLocation|setCurrentTime|setSceneSnapshot|addNpcs|updateNpc|addThread|updateThread|addPromise|updatePromise|addDecision|updateDecision|addFaction|setOperationState|setExplorationState|addTimer|updateTimer|updateHeat|addLedgerEntry) | update_character(hp|credits|inventory|levelUp|exhaustion) | request_roll | signal_close_ready | set_chapter_frame | start_combat | end_combat | update_ship | update_cohesion | update_disposition | update_clock | update_antagonist | award_inspiration | add_clue | connect_clues | suggest_actions | meta_response`
-
   return `PRESSURE: ${pressureLine}
 
 ORIGIN: ${c.species} — ${config.species.find(s => s.name === c.species)?.lore || 'No special traits.'}
@@ -1022,9 +1020,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}
-
-${toolCheatSheet}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}`
 }
 
 // ============================================================
