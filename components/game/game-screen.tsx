@@ -446,7 +446,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           isLoadingRef.current = false
           setIsLoading(false)
           // Trigger background audit every 5 player turns (non-blocking)
-          const AUDIT_INTERVAL = 5
+          const AUDIT_INTERVAL = 8
           if (!isInitial && !isMetaQuestion) {
             const playerTurns = finalState.history.messages.filter(m => m.role === 'player').length
             if (playerTurns > 0 && playerTurns % AUDIT_INTERVAL === 0) {
