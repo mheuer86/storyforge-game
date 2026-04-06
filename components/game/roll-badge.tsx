@@ -160,12 +160,12 @@ export function RollBadge({ rollData }: { rollData: RollDisplayData }) {
           <div className="mt-1 font-system text-sm text-foreground">
             {rollData.roll}
             {rollData.modifier !== 0 && (
-              <span className="text-muted-foreground">
+              <span className="text-primary">
                 {' '}{rollData.modifier > 0 ? '+' : ''}{rollData.modifier}
               </span>
             )}
-            {' '}= {rollData.total} <span className="text-muted-foreground">vs DC {rollData.dc}</span>{' '}
-            <span className={labelClass}>{label}</span>
+            {' '}= {rollData.total} <span className="text-foreground">vs DC {rollData.dc}</span>{' '}
+            — <span className={labelClass}>{label}</span>
           </div>
         </div>
         <div className="ml-4 flex items-center gap-1.5">
