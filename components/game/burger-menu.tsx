@@ -1388,9 +1388,9 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
 
   // Categorize connections by tier
   const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
-  const breakthroughs = activeConns.filter(c => c.tier === 'breakthrough')
-  const leads = activeConns.filter(c => c.tier === 'lead')
-  const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived' || c.status === 'disproven')
+  const breakthroughs = activeConns.filter(c => c.tier === 'breakthrough').reverse()
+  const leads = activeConns.filter(c => c.tier === 'lead').reverse()
+  const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived' || c.status === 'disproven').reverse()
 
   // Evidence: active clues
   const activeClues = [...visibleClues].filter(c => !c.status || c.status === 'active').reverse()
