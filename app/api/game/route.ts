@@ -423,7 +423,9 @@ export async function POST(req: NextRequest) {
         }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion, dynamicState)
 
-        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools })
+        // Normal turns: 4 rounds max. Narrative + batched tools + suggest_actions should
+        // fit in 1-2 rounds. 4 gives headroom for rolls or complex tool sequences.
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, maxRounds: 4 })
 
         if (loopResult.hitRoll) {
           send({ type: 'done' })
