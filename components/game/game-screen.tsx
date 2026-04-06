@@ -977,7 +977,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [gameState])
 
   const handleCloseChapter = useCallback(async () => {
-    if (!gameState || isLoadingRef.current) return
+    if (!gameState) return
+    // Force-reset loading state — a stuck ref shouldn't block chapter close
+    isLoadingRef.current = false
     isLoadingRef.current = true
     setIsLoading(true)
     setLastStatChanges([])
