@@ -284,6 +284,7 @@ At chapter open or when a new stratagem begins, establish privately:
 
 Political stratagems always have a faction clock. The longer the player takes, the more factions adjust their positions. Evidence gets buried, witnesses are transferred, and alliances shift.`,
   },
+  companionLabel: 'Inner Circle',
   notebookLabel: 'Whispers',
   intelTabLabel: 'Ledger',
   intelNotebookLabel: 'Whispers',

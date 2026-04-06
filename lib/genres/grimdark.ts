@@ -263,6 +263,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     buildAssetState: null,
     investigationGuide: 'Journal of confessions — extracted testimony, names implicated, evidence of heresy or corruption. When the player interrogates or investigates, track discoveries as narrative threads. Clues come from confessions, seized documents, NPC testimony, and physical evidence.',
   },
+  companionLabel: 'Sworn',
   notebookLabel: 'Journal',
   intelTabLabel: 'Dossier',
   intelNotebookLabel: 'Evidence',

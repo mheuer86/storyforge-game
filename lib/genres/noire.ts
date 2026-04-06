@@ -249,6 +249,7 @@ Don't pre-script which scenes contain which clues. Seed clues into scenes as the
 
 Every case should have a tension clock. It ticks with time, failed checks, and antagonist moves. When it fills, something changes — evidence destroyed, witness disappears, the killer strikes again. Thoroughness competes with urgency.`,
   },
+  companionLabel: 'Associates',
   notebookLabel: 'Case Board',
   intelTabLabel: 'Case Board',
   intelNotebookLabel: 'Evidence',
