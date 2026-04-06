@@ -499,15 +499,15 @@ function MissionBrief({ op }: { op: OperationState }) {
           </div>
         </div>
 
-        {/* Tactical Facts */}
-        {op.tacticalFacts.length > 0 && (
+        {/* Signals */}
+        {op.signals.length > 0 && (
           <div>
-            <SectionLabel>Key Details</SectionLabel>
+            <SectionLabel>Signals</SectionLabel>
             <div className="flex flex-col gap-1.5">
-              {op.tacticalFacts.map((fact, i) => (
+              {op.signals.map((sig, i) => (
                 <div key={i} className="flex gap-2 text-xs text-foreground/60">
                   <span className="text-foreground/20">•</span>
-                  <span>{fact}</span>
+                  <span>{sig}</span>
                 </div>
               ))}
             </div>
@@ -529,15 +529,15 @@ function MissionBrief({ op }: { op: OperationState }) {
           </div>
         )}
 
-        {/* Signals */}
-        {op.signals.length > 0 && (
+        {/* Tactical Facts */}
+        {op.tacticalFacts.length > 0 && (
           <div>
-            <SectionLabel>Signals</SectionLabel>
+            <SectionLabel>Key Details</SectionLabel>
             <div className="flex flex-col gap-1.5">
-              {op.signals.map((sig, i) => (
+              {op.tacticalFacts.map((fact, i) => (
                 <div key={i} className="flex gap-2 text-xs text-foreground/60">
                   <span className="text-foreground/20">•</span>
-                  <span>{sig}</span>
+                  <span>{fact}</span>
                 </div>
               ))}
             </div>
