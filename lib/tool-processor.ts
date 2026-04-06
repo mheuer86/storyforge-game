@@ -445,10 +445,11 @@ export function applyToolResults(
         statChanges.push({ type: 'new', label: `Timer: ${input.addTimer.description}` })
       }
       if (input.updateTimer) {
+        const timerDesc = (world.timers || []).find(t => t.id === input.updateTimer!.id)?.description || input.updateTimer.id
         world.timers = (world.timers || []).map(t =>
           t.id === input.updateTimer!.id ? { ...t, status: input.updateTimer!.status } : t
         )
-        statChanges.push({ type: 'neutral', label: `Timer ${input.updateTimer.status}: ${input.updateTimer.id}` })
+        statChanges.push({ type: 'neutral', label: `Timer ${input.updateTimer.status}: ${timerDesc}` })
       }
       if (input.updateHeat) {
         const existing = (world.heat || []).find(h => h.faction === input.updateHeat!.faction)
