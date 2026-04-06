@@ -610,7 +610,7 @@ export function buildAuditPrompt(gameState: GameState): [string, string] {
   const config = getGenreConfig(genre)
 
   // Include recent message history so the auditor can cross-reference
-  const recentMessages = gameState.history.messages.slice(-6)
+  const recentMessages = gameState.history.messages.slice(-16) // ~8 player turns × 2 messages each
   const messageLog = recentMessages
     .map((m) => `[${m.role}] ${m.content.slice(0, 150)}`)
     .join('\n')
