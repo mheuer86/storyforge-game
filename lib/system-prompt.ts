@@ -82,7 +82,8 @@ ${ps.vocabulary}
 
 ## NPC VOICE
 
-Read the Voice field on each NPC before writing dialogue. Rhythm, not accents. No overused AI names (Aldric, Kael, Voss, Thorne, Ash).
+Read the Voice field on each NPC before writing dialogue. Rhythm, not accents. No overused AI names (Aldric, Kael, Voss, Thorne, Ash, Sable, Petra, Renn).
+${config.npcNames ? `**Name pool** — sample from these when naming new NPCs: ${config.npcNames.join(', ')}. You may invent names in the same style but prefer the pool.` : ''}
 ${ps.npcVoiceGuide}
 
 ## D20 MECHANICS

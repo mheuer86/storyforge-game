@@ -366,6 +366,13 @@ Political stratagems always have a faction clock. The longer the player takes, t
     'The Ashen Court', 'The Sworn Circle', 'The Synod\'s Shadow',
     'The Conclave Guard', 'The House Vael Company', 'The Quiet Accord', 'The Threshold Guard',
   ],
+  npcNames: [
+    'Orveth', 'Caerun', 'Ivane', 'Tessil', 'Varenne', 'Dallian', 'Soreth',
+    'Kaelith', 'Rannoch', 'Lysenne', 'Hadrex', 'Comene', 'Valdris', 'Essara',
+    'Theron', 'Maelich', 'Solvaine', 'Corveth', 'Aurane', 'Kassad', 'Bellerin',
+    'Tyrath', 'Naeven', 'Jorvane', 'Pallix', 'Cresseth', 'Ulvaine', 'Rathek',
+    'Selenne', 'Damaris', 'Vesken', 'Oriane', 'Kolveth', 'Talenne', 'Gavren',
+  ],
 }
 
 export default epicSciFiConfig

@@ -130,6 +130,7 @@ export interface GenreConfig {
   openingHooks: (string | { hook: string; title?: string; classes?: string[] })[]
   initialChapterTitle: string
   locationNames: string[]
+  npcNames?: string[]        // genre-appropriate NPC name pool — Claude samples from these instead of defaulting to "Aldric"
 }
 
 // ─── Stubs ──────────────────────────────────────────────────────────

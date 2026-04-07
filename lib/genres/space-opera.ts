@@ -359,6 +359,13 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     'The Ember Vow', 'The Broken Circlet', 'The Wayward Claim', 'The Stray Fortune',
     'The Dusk Reaver', 'The Silver Contrition',
   ],
+  npcNames: [
+    'Torr', 'Vasek', 'Kessrin', 'Halcyon', 'Dray', 'Maren', 'Cade', 'Yuki',
+    'Orin', 'Zael', 'Priya', 'Nen', 'Cortez', 'Thalik', 'Sable', 'Jin',
+    'Reva', 'Hollis', 'Quorra', 'Besh', 'Leung', 'Soraya', 'Kael', 'Voss',
+    'Tamsin', 'Gideon', 'Nyx', 'Petrov', 'Ashara', 'Lorne', 'Desta', 'Ryn',
+    'Kovac', 'Indira', 'Fenwick',
+  ],
 }
 
 
