@@ -185,6 +185,8 @@ The summary captures: what happened, what changed, and the emotional/relational 
 
 Do NOT signal scene_end during combat (a fight is one scene) or mid-conversation (a dialogue is one scene even if it changes topic).
 
+Include \`tone_signature\` with every scene_end — 1-2 words capturing the emotional register ("quiet tension", "earned release", "accumulated dread", "bitter resolve"). This helps maintain continuity of register across scene boundaries.
+
 ## CREW LOAD TRACKING
 
 Crew members carry psychological and emotional weight from the campaign. When updating a crew NPC, use \`temp_load_add\` to record what they're carrying:
@@ -613,6 +615,13 @@ Include chapter_frame with a provisional frame for the next chapter:
 
 This is provisional — the narrative GM will confirm or adjust it in the first turns of the new chapter.
 
+### Step 7: CURATE NARRATIVE MEMORY
+This is the single opportunity to mark what survives compression. Include:
+
+**pivotal_scenes** (max 2-3 per chapter): the scenes that defined this chapter. Write longer summaries (~200-300 tokens) preserving specific imagery, dialogue beats, and callbacks that might be referenced later. Not plot summaries — *moment* summaries. What the scene felt like, what specific lines were said, what the player saw. If a scene might get called back to in a future chapter, it goes here.
+
+**Signature lines on NPCs** (via world.update_npcs with add_signature_line): review the chapter for NPC lines that captured a character perfectly. Mark 1-2 per major NPC. These persist forever as voice anchors. Choose lines the player is likely to remember.
+
 ## RULES
 - Be analytical, not narrative. No GM voice, no scene descriptions.
 - Reference actual events, rolls, NPCs, and consequences. Generic praise is worthless.
@@ -918,7 +927,10 @@ function compressGameState(gs: GameState): string {
         const loadEntries = n.tempLoad && n.tempLoad.length > 0
           ? '\n    Load: ' + n.tempLoad.map(e => `[${e.severity}] ${e.description} (${e.acquired})`).join('; ')
           : ''
-        return `${n.name}${voice}${vuln}${loadEntries}`
+        const sigLines = n.signatureLines && n.signatureLines.length > 0
+          ? '\n    Voice: ' + n.signatureLines.map(l => `"${l}"`).join(' | ')
+          : ''
+        return `${n.name}${voice}${vuln}${loadEntries}${sigLines}`
       }).join('\n  ')
     : 'None'
 
@@ -1159,9 +1171,18 @@ export function buildMessagesForClaude(
   if (sceneSummaries.length > 0) {
     // ── Scene summaries: inject all chapter summaries, then only current-scene messages ──
     const summaryBlock = sceneSummaries
-      .map((s) => `[Scene ${s.sceneNumber}] ${s.text}`)
+      .map((s) => {
+        const tone = s.toneSignature ? ` [${s.toneSignature}]` : ''
+        return `[Scene ${s.sceneNumber}]${tone} ${s.text}`
+      })
       .join('\n\n')
-    messages.push({ role: 'user', content: `[SCENE SUMMARIES]\n${summaryBlock}` })
+
+    // Pivotal scenes from prior chapters (permanent, never rotated)
+    const pivotalBlock = (gameState.pivotalScenes ?? []).length > 0
+      ? '\n\n[PIVOTAL MOMENTS]\n' + gameState.pivotalScenes.map(p => `[Ch${p.chapter}: ${p.title}] ${p.text}`).join('\n\n')
+      : ''
+
+    messages.push({ role: 'user', content: `[SCENE SUMMARIES]\n${summaryBlock}${pivotalBlock}` })
     messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current scene.' })
 
     // Current scene = messages after the last summarized scene

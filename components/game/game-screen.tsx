@@ -196,6 +196,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       let lastRollBreakdown: RollBreakdown | undefined
       let finalActions: string[] = []
       let sceneEndSummary: string | undefined
+      let sceneToneSignature: string | undefined
       let lastCommitInput: Record<string, unknown> | undefined
 
       while (true) {
@@ -288,10 +289,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 }
 
                 // Extract scene boundary from commit_turn
-                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string }
+                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string; tone_signature?: string }
                 if (sceneInput.scene_end) {
                   if (sceneInput.scene_summary) {
                     sceneEndSummary = sceneInput.scene_summary
+                  }
+                  if (sceneInput.tone_signature) {
+                    sceneToneSignature = sceneInput.tone_signature
                   }
                   // If scene_end without scene_summary, messages stay raw (no worse than before).
                   // Claude should almost always include scene_summary per prompt instructions.
@@ -363,7 +367,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 const sceneNum = (lastScene?.sceneNumber ?? 0) + 1
                 finalState.sceneSummaries = [
                   ...existing,
-                  { text: sceneEndSummary, sceneNumber: sceneNum, fromMessageIndex: fromIdx, toMessageIndex: toIdx },
+                  { text: sceneEndSummary, sceneNumber: sceneNum, fromMessageIndex: fromIdx, toMessageIndex: toIdx, ...(sceneToneSignature && { toneSignature: sceneToneSignature }) },
                 ]
               }
 

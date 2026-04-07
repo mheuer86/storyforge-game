@@ -82,6 +82,7 @@ export interface NPC {
   combatTier?: 1 | 2 | 3 | 4 | 5  // stat derivation tier, set once per NPC
   combatNotes?: string    // fighting style: "tactical, focuses fire, won't fight alone"
   tempLoad?: TempLoadEntry[]  // what this crew member is carrying (stress, trauma, unresolved promises)
+  signatureLines?: string[]   // 2-4 preserved exact quotes that capture this NPC's voice at pivotal moments
 }
 
 export interface TempLoadEntry {
@@ -423,6 +424,7 @@ export interface SceneSummary {
   sceneNumber: number       // chapter-scoped (resets on chapter close)
   fromMessageIndex: number  // first message index in this scene
   toMessageIndex: number    // last message index in this scene
+  toneSignature?: string    // 1-2 words: "quiet tension", "earned release", "accumulated dread"
 }
 
 export interface MetaState {
@@ -453,6 +455,20 @@ export interface GameState {
   npcFailures: NpcFailure[]         // per-NPC per-approach failure tracking
   counters: Record<string, number>  // persistent genre counters (drift_exposure, corruption, etc.) — survive chapter close
   rulesWarnings: string[]           // injected by rules engine each turn, reset before next turn
+  pivotalScenes: PivotalScene[]     // permanent, never rotated — chapter-defining moments with longer summaries
+  rollSequences: RollSequence[]     // detected roll patterns (consecutive failures, breakthroughs)
+}
+
+export interface PivotalScene {
+  text: string        // ~300 token scene summary preserving specific imagery and callbacks
+  chapter: number
+  title: string       // short label: "The Caerun Corridor", "The Holding Room"
+}
+
+export interface RollSequence {
+  description: string  // "5 consecutive failures against Caerun/Deception, released on nat 20 Persuasion"
+  turns: string        // "Turns 15-20"
+  chapter: number
 }
 
 // API streaming event types

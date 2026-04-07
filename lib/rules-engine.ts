@@ -267,6 +267,9 @@ export function runRulesEngine(
     updated = rules.evaluate(updated, commitInput as CommitInput | null, rollContext)
   }
 
+  // Cross-genre: detect roll sequences
+  updated = detectRollSequences(updated)
+
   // Cross-genre: derive cohesion from crew dispositions
   updated = deriveCohesionFromCrew(updated)
 
@@ -274,6 +277,73 @@ export function runRulesEngine(
   updated = checkCrewBreakingPoints(updated)
 
   return updated
+}
+
+/**
+ * Detect notable roll sequences in the roll log and store them.
+ * Looks for: 3+ consecutive failures against the same skill/check,
+ * especially when followed by a success/critical (breakthrough pattern).
+ */
+function detectRollSequences(state: GameState): GameState {
+  const rollLog = state.history.rollLog
+  if (rollLog.length < 3) return state
+
+  const existingDescs = new Set((state.rollSequences ?? []).map(r => r.description))
+  const newSequences: GameState['rollSequences'] = []
+
+  // Scan for consecutive failure runs
+  let runStart = 0
+  let runCheck = ''
+  let runCount = 0
+
+  for (let i = 0; i < rollLog.length; i++) {
+    const roll = rollLog[i]
+    const isFailure = roll.result === 'failure' || roll.result === 'fumble'
+
+    if (isFailure && roll.check === runCheck) {
+      runCount++
+    } else if (isFailure) {
+      // New failure run
+      runStart = i
+      runCheck = roll.check
+      runCount = 1
+    } else if (runCount >= 3) {
+      // Run broken by success — record the pattern
+      const isBreakthrough = roll.result === 'critical' || roll.result === 'success'
+      const desc = isBreakthrough
+        ? `${runCount} consecutive failures on ${runCheck}, released on ${roll.result === 'critical' ? 'nat 20' : 'success'} ${roll.check}`
+        : `${runCount} consecutive failures on ${runCheck}`
+
+      if (!existingDescs.has(desc)) {
+        newSequences.push({
+          description: desc,
+          turns: `Rolls ${runStart + 1}-${i + 1}`,
+          chapter: state.meta.chapterNumber,
+        })
+        existingDescs.add(desc)
+      }
+      runCount = 0
+      runCheck = ''
+    } else {
+      runCount = 0
+      runCheck = ''
+    }
+  }
+
+  // Check if current run is notable (even without a breakthrough yet)
+  if (runCount >= 3) {
+    const desc = `${runCount} consecutive failures on ${runCheck} (ongoing)`
+    if (!existingDescs.has(desc)) {
+      newSequences.push({
+        description: desc,
+        turns: `Rolls ${runStart + 1}-${rollLog.length}`,
+        chapter: state.meta.chapterNumber,
+      })
+    }
+  }
+
+  if (newSequences.length === 0) return state
+  return { ...state, rollSequences: [...(state.rollSequences ?? []), ...newSequences] }
 }
 
 /**
