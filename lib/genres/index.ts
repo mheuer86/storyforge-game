@@ -11,17 +11,27 @@ import epicSciFiConfig from './epic-scifi'
 
 export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'cyberpunk' | 'noire' | 'epic-scifi' | 'western' | 'zombie' | 'wasteland' | 'cold-war'
 
+export interface StartingContact {
+  role: string              // "trade agent", "mentor", "rival" — GM names them
+  disposition: 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted'
+  description: string       // who they are, e.g. "A Veldran trade agent who owes you a favor"
+  affiliation?: string      // faction name, e.g. "The Synod"
+  npcRole?: 'crew' | 'contact' | 'npc'  // defaults to 'contact'
+}
+
 export interface Species {
   id: string
   name: string
   description: string
   lore: string
+  startingContacts?: StartingContact[]  // auto-created as NPCs on game init
 }
 
 export interface CharacterClass {
   id: string
   name: string
   concept: string
+  description?: string
   primaryStat: string
   proficiencies: string[]
   stats: {
@@ -108,6 +118,7 @@ export interface GenreConfig {
     buildAssetState: ((ship: ShipState, shipName: string) => string) | null
     investigationGuide: string
   }
+  cohesionGuide?: string     // genre-specific cohesion triggers (overrides generic +1/-1 rules)
   companionLabel: string     // "Companions", "Retainers", "Crew", etc.
   loreAnchors?: string[]     // compact world facts shipped every turn for complex genres
   notebookLabel: string
@@ -115,6 +126,7 @@ export interface GenreConfig {
   intelNotebookLabel: string
   intelOperationLabel: string
   explorationLabel: string
+  heatLabel?: string           // genre-specific name for heat system (default: "Heat")
   openingHooks: (string | { hook: string; title?: string; classes?: string[] })[]
   initialChapterTitle: string
   locationNames: string[]

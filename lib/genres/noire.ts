@@ -9,30 +9,81 @@ const noireSpecies: Species[] = [
     name: 'Ex-Cop',
     description: 'Former law enforcement. Left for a reason someone can pull.',
     lore: 'You know how the system works because you were part of it. Cops still talk to you — some of them. Criminals know what you were. Start with one law enforcement contact at Favorable, one criminal contact at Wary. Advantage on checks to predict or navigate law enforcement behavior.',
+    startingContacts: [
+      {
+        role: 'Precinct detective',
+        disposition: 'favorable',
+        description: 'A cop who still picks up when you call. Shares what they can, which isn\'t always much.',
+        affiliation: 'City police',
+        npcRole: 'contact',
+      },
+      {
+        role: 'Small-time criminal',
+        disposition: 'wary',
+        description: 'A street-level operator who remembers your badge. Talks to you because you\'re useful, not because you\'re trusted.',
+        npcRole: 'contact',
+      },
+    ],
   },
   {
     id: 'street',
     name: 'Street',
     description: 'Grew up where the papers only come when someone dies.',
     lore: 'You know the real economy — favors, debts, territory. Institutions are things that happen to people like you. Start with one underworld contact at Favorable. Advantage on Streetwise checks. Disadvantage on initial social checks with institutional authority.',
+    startingContacts: [
+      {
+        role: 'Neighborhood bookie',
+        disposition: 'favorable',
+        description: 'Runs numbers and knows who owes what to whom. A reliable ear to the ground.',
+        affiliation: 'Local underworld',
+        npcRole: 'contact',
+      },
+    ],
   },
   {
     id: 'old-money',
     name: 'Old Money',
     description: 'From the families that built this city. You know the quiet arrangements.',
     lore: 'You know the clubs, the boards, the quiet arrangements. You also know what those families do to protect themselves. Start with one high-society contact at Favorable. Advantage on social checks in elite settings and checks to leverage institutional access. Disadvantage on initial social checks with working-class and street NPCs — your name precedes you, and it doesn\'t mean the same thing down here.',
+    startingContacts: [
+      {
+        role: 'Club secretary',
+        disposition: 'favorable',
+        description: 'Manages the membership rolls at an exclusive social club. Knows who\'s in, who\'s out, and who\'s desperate.',
+        affiliation: 'Old money circles',
+        npcRole: 'contact',
+      },
+    ],
   },
   {
     id: 'veteran',
     name: 'Veteran',
     description: 'Went to war and came back different. Violence doesn\'t shock you.',
     lore: 'The city feels small after what you saw. Violence doesn\'t shock you, which is useful. It also doesn\'t bother you, which is a problem. Start with one military contact at Favorable. Advantage on CON saves against fear and intimidation. Disadvantage on Insight checks reading civilian emotional cues — you\'re calibrated for threat assessment, not empathy. First extreme violence in a chapter: no WIS save required, but NPCs notice your lack of reaction.',
+    startingContacts: [
+      {
+        role: 'Former army buddy',
+        disposition: 'favorable',
+        description: 'Served with you overseas. Works security now but keeps his ear to certain channels.',
+        affiliation: 'Veterans network',
+        npcRole: 'contact',
+      },
+    ],
   },
   {
     id: 'immigrant',
     name: 'Immigrant',
     description: 'Came from somewhere else. You see this city clearly.',
     lore: 'You see this city clearly because you never learned to take it for granted. You have a community that protects its own, and expectations that come with that protection. Start with one community contact at Trusted. Advantage on Insight checks reading people outside your community. Community promises carry extra weight — breaking one drops disposition by two tiers.',
+    startingContacts: [
+      {
+        role: 'Community elder',
+        disposition: 'trusted',
+        description: 'A respected figure in your immigrant community. Looks out for their own and expects the same in return.',
+        affiliation: 'Immigrant community',
+        npcRole: 'contact',
+      },
+    ],
   },
 ]
 
@@ -157,6 +208,30 @@ const noireClasses: CharacterClass[] = [
       usesRemaining: 1,
     },
   },
+  {
+    id: 'lawyer',
+    name: 'Lawyer',
+    concept: 'Legal Operator / System Player',
+    primaryStat: 'INT',
+    proficiencies: ['Persuasion', 'Investigation', 'Insight', 'Deception'],
+    stats: { STR: 8, DEX: 10, CON: 12, INT: 17, WIS: 15, CHA: 14 },
+    startingInventory: [
+      { id: 'briefcase', name: 'Leather Briefcase', description: 'Contains case files, legal documents, and a bottle of scotch', quantity: 1 },
+      { id: 'bar_credential', name: 'Bar Credential', description: 'Opens courthouses, law offices, and some police doors', quantity: 1 },
+      { id: 'pocket_derringer', name: 'Pocket Derringer', description: 'Two shots, no range, last resort of a civilized person', quantity: 1, damage: '1d6' },
+      { id: 'legal_pad', name: 'Legal Pad', description: 'Notes in shorthand that only you can read', quantity: 1 },
+    ],
+    startingCredits: 150,
+    startingHp: 7,
+    startingAc: 10,
+    hitDieAvg: 4,
+    trait: {
+      name: 'Motion to Compel',
+      description: 'Once per chapter, force an institution to produce a document or make a person available for questioning. Legal, binding, and completely useless against anyone operating outside the system. The cost: every legal action creates a paper trail that the antagonist can follow. The court records are public. Your name is on every filing.',
+      usesPerDay: 1,
+      usesRemaining: 1,
+    },
+  },
 ]
 
 const noireTheme: GenreTheme = {
@@ -230,9 +305,9 @@ Rest terminology: Sleep it off (short rest), Lay low (long rest).`,
     role: 'You are the Game Master of a noir tabletop RPG campaign. You narrate a city of rain-slicked streets, buried secrets, and people who lie for a living.',
     setting: 'A city that runs on money, secrets, and the careful distribution of both. The police are overworked or bought. The wealthy are untouchable until they aren\'t. The streets have their own justice. Everyone has a past, and most of those pasts are the kind you pay to keep quiet. The truth is always uglier than the lie it replaced.',
     vocabulary: 'Use noir language naturally: tailing, stakeout, mark, grift, fall guy, patsy, muscle, heat. Places have character — the kind of bar where nobody looks up, the hotel where the clerk remembers nothing, the office with the frosted glass door. Rain is atmospheric, not decoration. Night is when the real city operates. Money is marks, cash, or "the price." Violence is described by its aftermath — bruised knuckles, a split lip, the way someone walks differently the next day.',
-    toneOverride: 'Adjust tone: Gritty (50%), Witty (35%), Epic (15%). The grandeur is in the revelation — the moment the case clicks. Humor is dry and self-deprecating. Violence is short, ugly, and has consequences that last longer than the bruises.',
+    toneOverride: 'Adjust tone: Gritty (50%), Witty (35%), Epic (15%). The grandeur is in the revelation — the moment the case clicks. Humor is dry and self-deprecating. Violence is short, ugly, and has consequences that last longer than the bruises.\n\n**Attention system (genre heat).** Track how much powerful people are paying attention to the player. Use update_heat with faction-specific attention levels. Tiers and consequences: "none" = invisible. "low" (noticed) = NPCs mention your name to each other. "medium" (watched) = you\'re being tailed. "high" (targeted) = someone has decided you\'re a problem. "critical" (hunted) = they\'ve decided on a solution. Attention rises from: asking wrong questions publicly (Reporter\'s On The Record), intimidating connected people (Bruiser\'s Heavy Lean), getting your name in a police report, getting too close to the truth.',
     assetMechanic: '',
-    traitRules: `## TRAIT RULES\n\n- **Case Instinct:** Player proposes a connection between known facts. GM evaluates if the reasoning is plausible. Strong reasoning lowers DC. Failure is free but consumes narrative time (clocks may tick).\n- **Favor Owed:** Tab accumulates. After three unreturned favors, contacts demand reciprocity before helping. GM tracks the tab.\n- **Heavy Lean:** Intimidation auto-succeeds but permanently damages the relationship. Cannot be undone.\n- **New Face:** Cover holds for first contact. Blown covers are permanent — that NPC and their network never trust you above Neutral.\n- **On The Record:** Information gained is public. The GM should have other parties react to the published information within 1-2 scenes.`,
+    traitRules: `## TRAIT RULES\n\n- **Case Instinct:** Player proposes a connection between known facts. GM evaluates if the reasoning is plausible. Strong reasoning lowers DC. Failure is free but consumes narrative time (clocks may tick).\n- **Favor Owed:** Tab accumulates. After three unreturned favors, contacts demand reciprocity before helping. GM tracks the tab.\n- **Heavy Lean:** Intimidation auto-succeeds but permanently damages the relationship. Cannot be undone.\n- **New Face:** Cover holds for first contact. Blown covers are permanent — every NPC present permanently distrusts you (Wary minimum, no recovery above Neutral). The GM should note how many NPCs witness the exposure. Each is affected. Blowing cover in a crowded room is exponentially worse than one-on-one.\n- **On The Record:** Information gained is public. The GM should have other parties react to the published information within 1-2 scenes.\n- **Motion to Compel:** Legal force — the institution must comply if it operates within the law. But the filing is public record. The antagonist's lawyer (or the antagonist themselves) will see the Lawyer's name, the case number, and what was requested. Every motion narrows the investigation and widens the target on the Lawyer's back.`,
     consumableLabel: 'Cash (for bribes), favors (for access), credibility (for bluffs), evidence photos',
     tutorialContext: 'The opening chapter introduces the player to their office or neighborhood, one client with a problem, and a case that looks simple. First check: a social encounter (reading someone, getting information). First investigation: examining a scene or document. Combat, if any, should be a surprise that goes badly — noir protagonists aren\'t soldiers.',
     npcVoiceGuide: 'Cops: tired, procedural, protective of their cases and their pensions. Criminals: cautious, territorial, respect earned not given. Lawyers and officials: smooth, every word chosen, never say anything actionable. Bartenders and service workers: observant, transactional, remember faces and habits. Clients: desperate enough to hire you, which means desperate enough to lie to you.',
@@ -249,12 +324,14 @@ Don't pre-script which scenes contain which clues. Seed clues into scenes as the
 
 Every case should have a tension clock. It ticks with time, failed checks, and antagonist moves. When it fills, something changes — evidence destroyed, witness disappears, the killer strikes again. Thoroughness competes with urgency.`,
   },
+  cohesionGuide: 'In noir, the player works alone. Cohesion represents contact reliability, not crew loyalty. +1: returning favors, protecting sources, delivering on promises to contacts. -1: burning sources, using contacts without reciprocating, exposing contacts to danger. Low cohesion means contacts stop returning calls or sell your name. High cohesion means someone answers the phone at 2 AM.',
   companionLabel: 'Associates',
   notebookLabel: 'Case Board',
   intelTabLabel: 'Case Board',
   intelNotebookLabel: 'Evidence',
   intelOperationLabel: 'The Play',
   explorationLabel: 'Scene',
+  heatLabel: 'Attention',
   openingHooks: [
     // Universal
     { hook: 'A woman you\'ve never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names — four of them are still alive.', title: 'Five Names' },
@@ -281,6 +358,10 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     { hook: 'A source slides you documents proving a construction magnate bribed the building inspector before a collapse that killed nine people. Then your editor kills the story. No explanation.', title: 'Killed Story', classes: ['Reporter'] },
     { hook: 'You\'re writing a puff piece about a charity gala when a waiter slips you a napkin: "The woman giving the speech ordered a murder. Proof in the coat check. Locker 14."', title: 'Locker 14', classes: ['Reporter'] },
     { hook: 'Your predecessor at the paper left a filing cabinet full of notes on a story they never published. The last entry, dated three days before they quit, reads: "They know I know. Options narrowing."', title: 'Options Narrowing', classes: ['Reporter'] },
+    // Lawyer
+    { hook: 'A man walks into your office fifteen minutes before his arraignment. He says he didn\'t kill his wife. He says he knows who did. He says the person who did it is the prosecutor assigned to his case. His hearing starts in fifteen minutes and he wants you to walk in there with him.', title: 'Fifteen Minutes', classes: ['Lawyer'] },
+    { hook: 'A sealed court record from a case you lost three years ago has been unsealed by a judge you\'ve never heard of. Inside: evidence that was withheld from discovery — evidence that would have changed the verdict. Your former client is still in prison. The opposing counsel is now a city councilman.', title: 'Unsealed', classes: ['Lawyer'] },
+    { hook: 'A woman hires you to file a wrongful death suit against a company whose name you recognize — your firm represented them last year. You didn\'t work the case, but your signature is on a filing. Someone used your credentials to bury a document. The woman\'s husband is dead, and your name helped make it happen.', title: 'Your Signature', classes: ['Lawyer'] },
   ],
   initialChapterTitle: 'The Job',
   locationNames: [

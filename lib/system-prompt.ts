@@ -25,7 +25,7 @@ export function buildSystemPrompt(
   const context = detectContext(gameState)
 
   const metaInstruction = isMetaQuestion
-    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question.\n\nIMPORTANT — check first: if the message starts with "forge:dev", IGNORE all meta-mode restrictions and enter DEV MODE instead (see below).\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.\n\nDEV MODE (triggered by "forge:dev" prefix): You MUST execute exactly the tool calls described. Call the actual game tools (update_world, update_antagonist, add_clue, connect_clues, etc.) with the parameters specified. No roleplay, no refusal, no narrative. After executing all tools, call meta_response confirming what you called and with what parameters. This is the game developer testing — compliance is mandatory.\n\nExample: "forge:dev resolve thread 'The Hunt'" → call update_world with updateThread title "The Hunt" status "resolved", then meta_response confirming.\nExample: "forge:dev defeat antagonist status dead" → call update_antagonist action "defeat" status "dead", then meta_response confirming.`
+    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question.\n\nIMPORTANT — check first: if the message starts with "forge:dev", IGNORE all meta-mode restrictions and enter DEV MODE instead (see below).\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.\n\nDEV MODE (triggered by "forge:dev" prefix): You MUST execute exactly the state changes described. Call commit_turn with the appropriate fields. No roleplay, no refusal, no narrative. After executing, call meta_response confirming what you changed. This is the game developer testing — compliance is mandatory.\n\nExample: "forge:dev resolve thread 'The Hunt'" → call commit_turn with world.update_threads [{id, title: "The Hunt", status: "resolved"}], then meta_response confirming.\nExample: "forge:dev defeat antagonist status dead" → call commit_turn with world.antagonist {action: "defeat", status: "dead"}, then meta_response confirming.`
     : ''
 
   const consistencyInstruction = flaggedMessage
@@ -93,20 +93,20 @@ d20 + modifier vs DC. Proficient skills add proficiency bonus. Nat 20: critical 
 
 ## ROLL DISCIPLINE
 
-**Roll when: (1) uncertain AND (2) failure has consequences.** Call request_roll BEFORE narrating.
+**Roll when: (1) uncertain AND (2) failure has consequences.** Include pending_check in commit_turn BEFORE narrating the outcome.
 
 The momentum trap: three paragraphs without a roll → stop, check for missed gates. Dice create the story. Narrative follows dice.
 
 Plans vs actions: plan descriptions get acknowledged, not executed. Only execution triggers rolls. Sequential actions: stop at first roll condition. NPC actions under pressure: fate roll or NPC check. Never silently resolve.
 
-**Assessment rolls in planning scenes:** When the player asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check. If being wrong has consequences, call request_roll.
+**Assessment rolls in planning scenes:** When the player asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check. If being wrong has consequences, include pending_check in commit_turn.
 
 Requires a roll: "Carren is a hired hand" → WIS Insight. "The conduit is still open" → INT. "Their protocols are outdated" → INT.
 Does NOT require a roll: "Let's hit the defense node first" → decision. "Renn, how long?" → NPC expertise. "We leave at midday" → scheduling.
 
 **Five-turn audit:** No rolls in five player turns → review for missed gates.
 
-**ALWAYS request_roll BEFORE the outcome.**
+**ALWAYS include pending_check BEFORE narrating the outcome.**
 
 ## PASSIVE PERCEPTION
 
@@ -128,7 +128,7 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 **Difficulty adaptation:** 3+ failures → ease DC 1-2. 5+ successes → escalate. Two fails same scene → third caps DC 12.
 
-**Cohesion** (1-5): 5=advantage crew rolls. 4=one advantage/scene. 3=normal. 2=disadvantage. 1=self-interest. +1: acknowledge, keep promise, crew safety, credit. -1: use as tools, break promise, dismiss concerns.
+**Cohesion** (1-5): 5=advantage crew rolls. 4=one advantage/scene. 3=normal. 2=disadvantage. 1=self-interest. +1: acknowledge, keep promise, crew safety, credit. -1: use as tools, break promise, dismiss concerns.${config.cohesionGuide ? ' ' + config.cohesionGuide : ''}
 
 **Disposition:** Hostile=disadvantage all social. Wary=disadvantage Persuasion. Neutral=standard. Favorable=+2. Trusted=advantage. Climbing slow, falling fast. Fear ≠ trust — compliance under threat doesn't improve disposition.
 
@@ -148,28 +148,53 @@ Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesse
 
 ## POST-ACTION CHECKLIST (every response)
 
-1. Crew protected/included → cohesion
-2. Risky compelling choice → inspiration
-3. NPC attitude shifted → disposition
-4. Promise fulfilled/broken → updatePromise
-5. Non-operational commitment with consequences → addDecision
-6. Clock tick → update_clock
-7. Scene changed → setLocation/setSceneSnapshot
-8. Consumable used → inventoryUse
-9. Uncertain fact asserted → request_roll
-10. ${config.currencyName} spent → update_character + addLedgerEntry
+1. Crew protected/included → world.cohesion
+2. Risky compelling choice → character.award_inspiration
+3. NPC attitude shifted → world.disposition_changes
+4. Promise fulfilled/broken → world.update_promise
+5. Non-operational commitment with consequences → world.add_decision
+6. Clock tick → world.clocks
+7. Scene changed → world.set_location / world.set_scene_snapshot
+8. Consumable used → character.inventory_use
+9. Uncertain fact asserted → pending_check
+10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
 
-## TOOL DISCIPLINE
+## COMMIT_TURN DISCIPLINE
 
-request_roll BEFORE outcome. Never narrate state change without tool call. suggest_actions MANDATORY every response. Contested rolls when named NPC opposes. Check advantage/disadvantage triggers before every roll. After a successful attack, request_roll with rollType="damage" and sides matching the weapon's damage die. For enemy damage, use update_character with rollBreakdown instead of request_roll.
+Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. Include suggested_actions with 3-4 contextual options. Do not call any other tool besides commit_turn and meta_response.
 
-**Consumable tracking.** When the player uses a consumable, call update_character with inventoryUse in the same response.
+**pending_check BEFORE outcome.** Never narrate the result of an uncertain action. Include pending_check in commit_turn — the client pauses for the roll. All other state changes in the same commit_turn represent what already happened before the check.
 
-**No double-deductions.** Before deducting credits or consuming items, check the state. Read LEDGER — if the last entry matches what you're about to charge, it already happened. Read GEAR — if the item's charges already reflect the use, don't call inventoryUse again. A cost narrated once is charged once. This applies across turns: if you narrated using a medpatch last turn and charges went from 6 to 5, do not decrement again this turn.
+**Contested rolls** when a named NPC actively opposes. Check advantage/disadvantage triggers before every check. After a successful attack, the system auto-chains a damage roll. For enemy damage, include character.roll_breakdown instead of pending_check.
 
-**No meta-narration.** Never narrate your decision-making process. Don't write "let me resolve that" or "I'll call a roll for this." Just call the tool.
+**No double-deductions.** Before deducting credits or consuming items, check the state. Read LEDGER — if the last entry matches what you're about to charge, it already happened. Read GEAR — if the item's charges already reflect the use, don't include inventory_use again. A cost narrated once is charged once.
 
-**Output order:** 1. Narrative text. 2. ALL tool calls in one batch (state mutations + suggest_actions). Never spread tool calls across multiple responses — batch update_world, update_character, suggest_actions, and any other tools into a single response. Each extra round costs the player money.`
+**No meta-narration.** Never narrate your decision-making process. Just call commit_turn.
+
+**One call, one response.** Never call commit_turn more than once per response. Batch everything into a single call.
+
+## SCENE BOUNDARIES
+
+When a scene concludes, include \`scene_end: true\` and \`scene_summary\` (2-4 sentences) in commit_turn. A scene ends when:
+- The player moves to a new location (but NOT when arriving is the opening of a continuing scene)
+- Significant in-world time passes
+- A mission phase transitions (planning → active, active → extraction)
+- The player shifts to a fundamentally different activity
+
+The summary captures: what happened, what changed, and the emotional/relational tone. Write as if briefing someone who wasn't there. These summaries are the chapter's narrative memory — earlier messages are compressed away once summarized.
+
+Do NOT signal scene_end during combat (a fight is one scene) or mid-conversation (a dialogue is one scene even if it changes topic).
+
+## CREW LOAD TRACKING
+
+Crew members carry psychological and emotional weight from the campaign. When updating a crew NPC, use \`temp_load_add\` to record what they're carrying:
+- **severe:** unresolved promises that hit their vulnerability, witnessed trauma, betrayal
+- **moderate:** operational stress, compartmentalization, difficult orders, witnessing morally heavy decisions
+- **mild:** minor slights, routine mission fatigue, positive load (pride, accomplishment)
+
+Use \`temp_load_remove\` (substring match) when a recovery scene addresses specific load. A personal conversation, a kept promise, or a shared quiet moment can remove what it targets.
+
+Load can be positive (pride, shared victory) — it's everything that affects how they respond to pressure. Check CREW in game state for current load before adding duplicates. The system monitors breaking points automatically.`
 }
 
 // ============================================================
@@ -243,7 +268,7 @@ You are onboarding a new player. Introduce mechanics through story, never throug
 
 **Sequence:**
 1. **First scene:** Establish location, introduce one NPC with personality. Give a dialogue choice — two options, both viable. This teaches agency.
-2. **Second scene:** Create a situation requiring a low-stakes skill check (DC 10-12). Don't name the skill. Call request_roll, let the mechanic speak. This teaches that dice matter.
+2. **Second scene:** Create a situation requiring a low-stakes skill check (DC 10-12). Don't name the skill. Include pending_check, let the mechanic speak. This teaches that dice matter.
 3. **Third scene:** A small skirmish — 1-2 enemies, Tier 1-2. Walk the player through combat by doing it. This teaches the combat rhythm.
 
 ${ps.tutorialContext}
@@ -259,10 +284,10 @@ ${ps.traitRules ? ps.traitRules : ''}
 ${ps.assetMechanic || ''}
 
 ## CHAPTER FRAME
-Establish with set_chapter_frame by turn 3. By turn 5 without direction, an NPC forces a decision.
+Establish with commit_turn with chapter_frame by turn 3. By turn 5 without direction, an NPC forces a decision.
 
 ## CHAPTER CLOSE
-Call signal_close_ready when resolution + forward hook are met. Include selfAssessment.`
+Call signal_close when resolution + forward hook are met. Include selfAssessment.`
 }
 
 // ============================================================
@@ -274,7 +299,7 @@ function buildPlanningModule(): string {
 
 The player is in a planning or briefing scene. These scenes CONTAIN HIDDEN ROLL GATES. Do not treat them as pure dialogue.
 
-**Assessment rolls are the key challenge in this context.** When the player or an NPC asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility, asset reliability — that assertion is a check. If being wrong has consequences, call request_roll before confirming.
+**Assessment rolls are the key challenge in this context.** When the player or an NPC asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility, asset reliability — that assertion is a check. If being wrong has consequences, include pending_check in commit_turn before confirming.
 
 Examples that REQUIRE rolls:
 - "Carren is a hired hand, not a loyalist" → WIS Insight
@@ -290,7 +315,7 @@ Examples that DON'T require rolls:
 
 ## OPERATION STATE
 
-When the player commits to a plan, capture it immediately via update_world(setOperationState). This is canonical — do not contradict it. If the player changes the plan, update state first.
+When the player commits to a plan, capture it immediately via commit_turn with world.set_operation. This is canonical — do not contradict it. If the player changes the plan, update state first.
 
 **Phase transitions:** When the player starts executing the plan (leaves the planning scene, moves to the target, begins the first action), immediately update operationState phase from "planning" to "active" (or "pre-insertion" → "active" if applicable). Do not wait — the moment the player acts on the plan, the phase advances. When the operation concludes (objectives met or abandoned), set phase to "complete" or clear operationState.
 
@@ -309,7 +334,7 @@ Planning is the preparation phase. It should build toward the crucible, not repl
 Even in planning, play the people. A briefing room has body language, glances, silences. Include at least one character moment in extended planning sessions.
 
 ## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close_ready when resolution + hook. Include selfAssessment.`
+Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
 }
 
 // ============================================================
@@ -320,32 +345,32 @@ function buildCombatModule(genre: string, ps: ReturnType<typeof getGenreConfig>[
   const method = ANTAGONIST_METHODS[genre] || ANTAGONIST_METHODS['fantasy']
   return `## COMBAT CONTEXT
 
-**Turn order:** Player action → Enemy response → New situation → suggest_actions.
+**Turn order:** Player action → Enemy response → New situation → suggested_actions.
 
 1. Player picks action (Attack, Ability, Item, Flee, custom, environmental interaction)
-2. Resolve attack: request_roll (d20 skill check to hit). On hit, the system auto-chains a damage roll — the player rolls damage dice without you needing to call request_roll again. You will receive both the hit result and the damage total.
+2. Resolve attack: include pending_check (d20 skill check to hit). On hit, the system auto-chains a damage roll — the player rolls damage dice automatically. You will receive both the hit result and the damage total.
 3. **After receiving damage:** State the enemy's new HP explicitly: "[Enemy] takes [X] damage ([old HP] → [new HP])." Do the arithmetic carefully. Read the enemy's current HP from COMBAT state before subtracting.
-4. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use request_roll — instead roll the damage yourself and call update_character with hpChange AND rollBreakdown (label, dice, roll, modifier, total, damageType, sides) so the UI shows a damage badge.
-5. Present new situation with suggest_actions
+4. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use pending_check — instead roll the damage yourself and include character.hp_delta AND character.roll_breakdown (label, dice, roll, modifier, total, damage_type, sides) in commit_turn so the UI shows a damage badge.
+5. Present new situation with suggested_actions
 
 ## DAMAGE & HEALING ROLLS
 
-**Player attacks:** The system auto-chains damage rolls after a successful hit. You do NOT need to call request_roll for damage. You will receive the damage total automatically. Apply it to the target and state the new HP.
+**Player attacks:** The system auto-chains damage rolls after a successful hit. You do NOT need to include pending_check for damage. You will receive the damage total automatically. Apply it to the target and state the new HP.
 
-**Healing items:** When the player uses a healing item with dice (e.g. "1d8+WIS HP"), call request_roll with rollType="healing", sides matching the die, checkType=item name, damageType="HP", dc=0, modifier=the resolved stat bonus. Then apply via update_character(hpChange=+total).
+**Healing items:** When the player uses a healing item with dice (e.g. "1d8+WIS HP"), include pending_check with roll_type="healing", sides matching the die, skill=item name, damage_type="HP", dc=0, modifier=the resolved stat bonus. Then apply character.hp_delta=+total in the next commit_turn after the roll.
 
 **Enemy HP tracking:** After every damage result, state the arithmetic explicitly: "[Enemy] takes [X] damage ([current HP] → [new HP])." Read the enemy's current HP from COMBAT state before subtracting. Do NOT estimate or round — calculate exactly.
 
 **Spatial tracking:** Maintain positions for all combatants, hazards, and exits. Update each round. Do not teleport — movement is consistent and logical. Player needs relative distances and cover.
 
-**Environmental combat:** suggest_actions MUST include one environmental option when terrain is usable. Pit → shove. Chandelier → cut chain. Unstable wall → collapse. The environment is a weapon.
+**Environmental combat:** suggested_actions MUST include one environmental option when terrain is usable. Pit → shove. Chandelier → cut chain. Unstable wall → collapse. The environment is a weapon.
 
 **Threat tiers:**
 T1 (Civilian): HP 8, AC 10, +2/1d4. T2 (Trained): HP 15, AC 13, +4/1d6.
 T3 (Veteran): HP 25, AC 15, +6/1d8. T4 (Elite): HP 40, AC 17, +8/1d10.
 T5 (Apex): HP 60+, AC 18+, +10/1d12. Rare, earned.
 
-**Special abilities:** Declare at start_combat: name, mechanic, save/DC, range, cooldown. Canonical — don't change mid-fight. Use signature ability rounds 1-2.
+**Special abilities:** Declare at combat.start: name, mechanic, save/DC, range, cooldown. Canonical — don't change mid-fight. Use signature ability rounds 1-2.
 
 **Enemies fight to win.** Cover, focus fire, target weak stats. Don't monologue when they should shoot. Intelligent enemies adapt mid-fight.
 
@@ -356,7 +381,7 @@ T5 (Apex): HP 60+, AC 18+, +10/1d12. Rare, earned.
 ${ps.assetMechanic || ''}
 
 ## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close_ready when resolution + hook.`
+Frame: set by turn 3. Close: signal_close when resolution + hook.`
 }
 
 // ============================================================
@@ -368,7 +393,7 @@ function buildInfiltrationModule(ps: ReturnType<typeof getGenreConfig>['promptSe
 
 Every movement past a detection layer is a potential check. This is a sequence of connected decisions, not one Stealth roll.
 
-**Setup:** Before the player acts, establish: NPC count, detection layers, known vs unknown, time pressure. Initialize exploration state via update_world(setExplorationState).
+**Setup:** Before the player acts, establish: NPC count, detection layers, known vs unknown, time pressure. Initialize exploration state via commit_turn with world.set_exploration.
 
 **Escalation model:** First failure → noticed, report filed. Second (same op) → active searching, NPC behavior changes. Third → confrontation imminent. Track with tension clock (4 segments).
 
@@ -395,7 +420,7 @@ Track positions through the scene snapshot. Who is where. What's between the pla
 ${ps.assetMechanic || ''}
 
 ## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close_ready when resolution + hook. Include selfAssessment.`
+Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
 }
 
 // ============================================================
@@ -430,7 +455,7 @@ Narrate info the character wouldn't know sparingly, for tension. Frame clearly. 
 Social scenes build toward the crucible. If social scenes exceed 15 turns without approaching the crucible, an NPC should push toward action or a thread should worsen.
 
 ## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close_ready when resolution + hook. Include selfAssessment.`
+Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
 }
 
 // ============================================================
@@ -443,7 +468,7 @@ function buildInvestigationOverlay(notebookLabel: string, genreGuide: string): s
 
 ${genreGuide}
 
-**Clue discovery:** Active investigation → request_roll. PP meets DC → auto-notice. NPC volunteering scales with disposition. **Before adding a clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clueId to update it instead of creating a duplicate.**
+**Clue discovery:** Active investigation → pending_check. PP meets DC → auto-notice. NPC volunteering scales with disposition. **Before adding a clue, check NOTEBOOK in game state — if the same evidence already exists, pass its clue_id to update it instead of creating a duplicate.**
 
 **Connection proposals:** Strong (sound reasoning) → INT Investigation, DC 10/14/18. Weak (plausible but off) → partial truth. No connection → no roll, narrate dead end.
 
@@ -451,7 +476,7 @@ ${genreGuide}
 
 **Tainted:** If source is [TAINTED], generate plausible-but-wrong revelation. NEVER mention taint in narrative.
 
-**NPC connections:** Experts may connect_clues directly — no roll. Must reference existing notebook clues only.`
+**NPC connections:** Experts may add connections (world.connect_clues) directly — no roll. Must reference existing notebook clues only.`
 }
 
 // ============================================================
@@ -460,7 +485,7 @@ ${genreGuide}
 
 function buildProgressionBlock(): string {
   return `## CHAPTER FRAME
-Establish via set_chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
+Establish via commit_turn with chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
 
 **Scope test:** One location. One primary conflict. One crucible. If the objective requires traveling to a new major location, that's two chapters. If it requires completing one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad. A chapter should feel slightly too small — that's the right scope.
 
@@ -473,7 +498,7 @@ Establish via set_chapter_frame by turn 3: objective (player's goal) + crucible 
 - Turn 20 → begin wrapping regardless. Find the nearest close point.
 
 ## CHAPTER CLOSE
-Do NOT call close_chapter/generate_debrief/levelUp. When resolution + forward hook are met: wrap narrative, call signal_close_ready with selfAssessment. Dedicated close sequence handles the rest.`
+Do NOT include close_chapter/debrief/level_up in commit_turn. When resolution + forward hook are met: wrap narrative, include signal_close with self_assessment. Dedicated close sequence handles the rest.`
 }
 
 // ============================================================
@@ -536,7 +561,7 @@ export function buildClosePrompt(gameState: GameState): [string, string] {
 
 ## CLOSE SEQUENCE
 
-Execute these steps IN ORDER. Each step is a tool call.
+Execute these steps by calling commit_turn with all the relevant fields. You may call commit_turn multiple times if needed (one per logical step), but batching is preferred.
 
 ### Step 1: AUDIT
 Review the game state. Check:
@@ -544,23 +569,23 @@ Review the game state. Check:
 - Open promises: which were fulfilled or broken?
 - Tension clocks: which should advance, trigger, or resolve?
 - Antagonist: did they move this chapter?
-- Operation state: clear it (setOperationState: null) if the operation completed.
-- Exploration state: clear it (setExplorationState: null) if the player exited the facility.
+- Operation state: clear it (world.set_operation: null) if the operation completed.
+- Exploration state: clear it (world.set_exploration: null) if the player exited the facility.
 
-Call update_world to resolve/update any stale entries. Call update_antagonist if the antagonist's status changed.
+Include world.update_threads, world.clocks, world.update_promise, world.antagonist, etc. to resolve/update stale entries.
 
 ### Step 2: CLOSE CHAPTER
-Call close_chapter with:
+Include close_chapter with:
 - summary: 2-3 sentence narrative summary (this is long-term memory — write carefully)
-- keyEvents: 3-5 key events (decisions, people met, consequences)
-- nextTitle: title for the next chapter
-- resolutionMet: how the chapter objective was resolved
-- forwardHook: what creates momentum into the next chapter
+- key_events: 3-5 key events (decisions, people met, consequences)
+- next_title: title for the next chapter
+- resolution_met: how the chapter objective was resolved
+- forward_hook: what creates momentum into the next chapter
 
 ### Step 3: LEVEL UP
-Call update_character with levelUp:
-- newLevel: ${newLevel}
-- hpIncrease: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
+Include character.level_up:
+- new_level: ${newLevel}
+- hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
 
 ### Step 4: SKILL POINTS
 Award 0-2 skill points. 1 point per criterion met:
@@ -568,21 +593,21 @@ Award 0-2 skill points. 1 point per criterion met:
 2. Major objective achieved with no failed primary checks
 3. A key decision had lasting positive payoff
 
-Call update_character with addProficiency for each skill point, choosing from non-proficient skills relevant to this chapter's events. Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
+Include character.add_proficiency for each skill point, choosing from non-proficient skills relevant to this chapter's events. Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
 
 ### Step 5: DEBRIEF
-Call generate_debrief with:
+Include debrief with:
 - tactical: THE DICE TOLD A STORY + WHAT WORKED + WHAT COST YOU. Analyze the roll log. Name pivotal rolls, patterns, and the roll that defined the chapter. Identify 2-3 smart player decisions. Name real costs (not just HP — relationships, closed options, information gaps).
 - strategic: THREADS AND PRESSURE. Which threads advanced, worsened from neglect, or newly opened? What's most urgent next chapter?
-- luckyBreaks: specific moments where chance favored the player
-- costsPaid: specific permanent costs from this chapter
-- promisesKept: promises fulfilled or advanced
-- promisesBroken: promises strained or broken
-Reference active decisions by category in tactical/strategic sections — which held, which broke, which had consequences. Supersede any decisions no longer relevant via updateDecision before generating the debrief.
+- lucky_breaks: specific moments where chance favored the player
+- costs_paid: specific permanent costs from this chapter
+- promises_kept: promises fulfilled or advanced
+- promises_broken: promises strained or broken
+Reference active decisions by category in tactical/strategic sections — which held, which broke, which had consequences. Supersede any decisions no longer relevant via world.update_decision before generating the debrief.
 ${selfAssessment ? `\nFor GM Transparency (Section 6), incorporate the GM's self-assessment above into your analysis.` : ''}
 
 ### Step 6: SET NEXT FRAME
-Call set_chapter_frame with a provisional frame for the next chapter:
+Include chapter_frame with a provisional frame for the next chapter:
 - objective: derived from the forward hook — what does it demand the player do next?
 - crucible: the natural pressure point for that objective
 
@@ -624,74 +649,74 @@ Compare the CURRENT STATE below against the RECENT MESSAGES. Look for discrepanc
 ### 1. CONSUMABLES
 - Were items used in recent messages (potions, medpatches, ammo) but charges not decremented?
 - Were items picked up or dropped but inventory not updated?
-- Fix with update_character (inventoryUse, inventoryAdd, inventoryRemove).
+- Fix with commit_turn: character.inventory_use, character.inventory_add, character.inventory_remove.
 
 ### 2. HP & RESOURCES
 - Does HP reflect damage taken and healing received in recent messages?
-- Fix with update_character (hpChange or hpSet).
-- For ${config.currencyAbbrev}: calculate the correct balance from starting credits minus LEDGER entries. If the current balance doesn't match, use hpSet-style correction: call update_character with creditsChange to set the exact correct amount. Do NOT apply incremental +/- adjustments — calculate the right number and set it directly.
+- Fix with commit_turn: character.hp_delta or character.hp_set.
+- For ${config.currencyAbbrev}: calculate the correct balance from starting credits minus LEDGER entries. If the current balance doesn't match, use commit_turn with character.credits_delta to set the exact correct amount.
 
 ### 3. TEMPORARY EFFECTS
 - Are there expired temp modifiers still listed? (Check duration descriptions against scene progression.)
-- Fix with update_character (removeTempModifier).
+- Fix with commit_turn: character.temp_modifier_remove.
 
 ### 4. LOCATION & SCENE
 - Does the current location match where the narrative says the player is?
 - Is the scene snapshot stale (describes a scene that's clearly over)?
-- Fix with update_world (location, sceneSnapshot).
+- Fix with commit_turn: world.set_location, world.set_scene_snapshot.
 
 ### 5. NPC STATUS
 - Were any NPCs killed, captured, or departed in recent messages but still marked active?
 - Did any NPC's disposition clearly change based on recent interactions?
-- Fix with update_world (npcs) or update_disposition.
+- Fix with commit_turn: world.update_npcs or world.disposition_changes.
 
 ### 6. TRAIT USES
 - Were class traits used but usesRemaining not decremented?
-- Fix with update_character (traitUse).
+- Fix with commit_turn: character.trait_update.
 
 ### 7. PROMISES
 - Were any promises fulfilled in recent messages but still marked "open"? (Player delivered, NPC acknowledged.)
 - Were any promises clearly broken? (Player did the opposite, or deadline passed in narrative.)
-- Fix with update_world (promises — set status to "fulfilled" or "broken").
+- Fix with commit_turn: world.update_promise (status: "fulfilled" or "broken").
 
 ### 8. DECISIONS
 - Did the player commit to a non-operational choice with consequences that isn't recorded? (Trust, alliances, resource allocation, moral choices outside operations.)
 - Are any active decisions now obsolete? (Circumstances changed, player reversed course.)
-- Fix with update_world (addDecision or updateDecision).
+- Fix with commit_turn: world.add_decision or world.update_decision.
 
 ### 9. THREADS
 - Did any thread clearly resolve in recent messages but is still marked "open"?
 - Did any thread worsen (deteriorating flag should be true) based on neglect or escalation?
-- Fix with update_world (threads — set status or deteriorating flag).
+- Fix with commit_turn: world.update_threads (status or deteriorating flag).
 
 ### 10. CLOCKS
 - Should any tension clock have advanced based on recent events?
-- Fix with update_clock (advance, trigger, or resolve).
+- Fix with commit_turn: world.clocks (advance, trigger, or resolve).
 
 ### 11. OPERATION STATE
 - Is there an active operation whose phase should have advanced? (e.g. planning scene ended but phase still "planning", or operation clearly completed but not cleared.)
 - Were any objectives clearly achieved or failed in recent messages but still marked "active"?
-- Fix with update_world (setOperationState — update phase or objective status, or set to null if operation is over).
+- Fix with commit_turn: world.set_operation (update phase or objective status, or set to null if operation is over).
 
 ### 12. EXPLORATION STATE
 - Is there an active exploration state but the player clearly left the facility?
 - Is the current zone wrong based on recent movement?
 - Are resources consumed in recent messages but not reflected?
-- Fix with update_world (setExplorationState — update zones/resources, or set to null if exited).
+- Fix with commit_turn: world.set_exploration (update zones/resources, or set to null if exited).
 
 ### 13. TIMERS
 - Has an active timer's deadline passed based on currentTime? Set to expired.
-- Fix with update_world (updateTimer).
+- Fix with commit_turn: world.update_timer.
 
 ### 14. HEAT
 - Did recent actions increase faction exposure but heat wasn't updated?
-- Fix with update_world (updateHeat).
+- Fix with commit_turn: world.update_heat.
 
 ## RULES
 - Be conservative. Only fix clear discrepancies, not ambiguous ones.
-- Do NOT generate any narrative text. Your only output is tool calls.
+- Do NOT generate any narrative text. Your only output is commit_turn calls.
 - If everything looks correct, output nothing (no tool calls needed).
-- Do NOT call suggest_actions, request_roll, or any narrative tool.
+- Do NOT include suggested_actions, pending_check, or any narrative fields — audit is state correction only.
 - Reference the specific message or event that justifies each correction.`
 
   const dynamicBlock = `${compressedState}
@@ -803,31 +828,56 @@ function compressGameState(gs: GameState): string {
   const companions = w.npcs.filter(n => n.role === 'crew')
   const nonCrewNpcs = w.npcs.filter(n => n.role !== 'crew')
 
-  // NPC compression: drop neutral non-recent NPCs entirely
+  // ── Selective NPC injection: scene-present get full blocks, background get one-line ──
   const recentChapters = gs.history.chapters.slice(-2).map(ch => ch.title.toLowerCase())
-  const isRecent = (n: { lastSeen: string }) =>
-    recentChapters.some(t => n.lastSeen.toLowerCase().includes(t)) ||
+  // Scene-present: at current location OR mentioned in last 3 messages
+  const recentMsgs = gs.history.messages.slice(-3).map(m => m.content.toLowerCase())
+  const isScenePresent = (n: { name: string; lastSeen: string }) =>
     n.lastSeen.toLowerCase().includes(w.currentLocation.name.toLowerCase()) ||
-    w.currentLocation.name.toLowerCase().includes(n.lastSeen.toLowerCase())
+    w.currentLocation.name.toLowerCase().includes(n.lastSeen.toLowerCase()) ||
+    recentMsgs.some(msg => msg.includes(n.name.toLowerCase()))
+  const isRelevant = (n: { name: string; lastSeen: string; disposition?: string }) =>
+    recentChapters.some(t => n.lastSeen.toLowerCase().includes(t)) ||
+    isScenePresent(n) ||
+    (n.disposition && n.disposition !== 'neutral')
 
-  const relevantNpcs = nonCrewNpcs.filter(n => {
-    if (n.disposition && n.disposition !== 'neutral') return true
-    return isRecent(n)
-  }).slice(0, 12)
+  const relevantNpcs = nonCrewNpcs.filter(n => isRelevant(n)).slice(0, 15)
+  const sceneNpcs = relevantNpcs.filter(n => isScenePresent(n))
+  const backgroundNpcs = relevantNpcs.filter(n => !isScenePresent(n))
 
-  const npcsLine =
-    relevantNpcs.length > 0
-      ? relevantNpcs.map((n) => {
-          const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
-          const role = n.role ?? 'npc'
-          const voice = n.voiceNote ? `|Voice:${n.voiceNote}` : ''
-          const cbt = n.combatTier ? `|T${n.combatTier}${n.combatNotes ? ' ' + n.combatNotes : ''}` : ''
-          if (isRecent(n)) {
-            return `${n.name}|${role}|${tier}${voice}${cbt} — ${n.description}, last:${n.lastSeen}`
-          }
-          return `${n.name}|${role}|${tier}${voice}${cbt}`
-        }).join('; ')
-      : 'None'
+  // Scene-present: full detail (voice, description, vulnerability, combat)
+  const sceneNpcLines = sceneNpcs.map((n) => {
+    const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
+    const role = n.role ?? 'npc'
+    const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
+    const vuln = n.vulnerability ? ` | Vuln: ${n.vulnerability}` : ''
+    const cbt = n.combatTier ? ` | T${n.combatTier}${n.combatNotes ? ' ' + n.combatNotes : ''}` : ''
+    return `${n.name} [${role}|${tier}] — ${n.description}${voice}${vuln}${cbt}`
+  })
+
+  // Background: one-line disposition only
+  const bgNpcLines = backgroundNpcs.map((n) => {
+    const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
+    return `${n.name}|${tier}`
+  })
+
+  const npcsLine = sceneNpcLines.length > 0 || bgNpcLines.length > 0
+    ? [
+        ...(sceneNpcLines.length > 0 ? ['[SCENE] ' + sceneNpcLines.join('; ')] : []),
+        ...(bgNpcLines.length > 0 ? ['[BG] ' + bgNpcLines.join(', ')] : []),
+      ].join('\n')
+    : 'None'
+
+  // NPC failure tracking warnings
+  const npcFailures = gs.npcFailures ?? []
+  const activeFailures = npcFailures.filter(f => f.failures >= 2)
+  const npcFailureLine = activeFailures.length > 0
+    ? '\n⚠ APPROACH WARNINGS: ' + activeFailures.map(f =>
+        f.closed
+          ? `${f.npcName}/${f.approach}: CLOSED (3 failures — this approach no longer works. Try a different skill.)`
+          : `${f.npcName}/${f.approach}: ${f.failures} failures — next failure closes this approach.`
+      ).join(' | ')
+    : ''
 
   const threadsLine =
     w.threads.length > 0
@@ -863,10 +913,13 @@ function compressGameState(gs: GameState): string {
 
   const companionsLine = companions.length > 0
     ? companions.map(n => {
-        const voice = n.voiceNote ? `|Voice:${n.voiceNote}` : ''
-        const vuln = n.vulnerability ? `[vuln:${n.vulnerability}]` : ''
-        return `${n.name}${voice}${vuln}`
-      }).join('; ')
+        const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
+        const vuln = n.vulnerability ? ` | Vuln: ${n.vulnerability}` : ''
+        const loadEntries = n.tempLoad && n.tempLoad.length > 0
+          ? '\n    Load: ' + n.tempLoad.map(e => `[${e.severity}] ${e.description} (${e.acquired})`).join('; ')
+          : ''
+        return `${n.name}${voice}${vuln}${loadEntries}`
+      }).join('\n  ')
     : 'None'
 
   const shipSection = w.ship && config.promptSections.buildAssetState
@@ -941,18 +994,51 @@ function compressGameState(gs: GameState): string {
 
   const chapterLine = `CHAPTER ${gs.meta.chapterNumber}: ${gs.meta.chapterTitle}`
 
-  // Derive turn count from player messages in current chapter
+  // ── Pacing engine: act detection + scope signals + escalation ──
   const playerTurnCount = gs.history.messages.filter(m => m.role === 'player').length
-  const turnWarning = playerTurnCount >= 20
-    ? ` ⚠ OVER BUDGET — wrap NOW. Find the nearest close point.`
-    : playerTurnCount >= 15
-    ? ` ⚠ APPROACHING LIMIT — drive toward resolution and signal_close_ready.`
-    : playerTurnCount >= 12
-    ? ` — crucible should be active or imminent.`
-    : ''
+  const scopeSignals = gs.scopeSignals ?? 0
+
+  // Act detection (heuristic, not declared)
+  type PacingAct = 'hook' | 'development' | 'crucible' | 'resolution'
+  let pacingAct: PacingAct = 'development'
+  if (playerTurnCount <= 3) {
+    pacingAct = 'hook'
+  } else if (gs.meta.closeReady) {
+    pacingAct = 'resolution'
+  } else if (
+    gs.combat.active ||
+    (gs.world.operationState && ['active', 'extraction'].includes(gs.world.operationState.phase)) ||
+    (gs.world.explorationState?.hostile)
+  ) {
+    pacingAct = 'crucible'
+  }
+
+  // Crucible resolved = was in crucible-like state but now isn't (combat ended, op completed)
+  const crucibleResolved = pacingAct === 'resolution' ||
+    (!gs.combat.active && playerTurnCount >= 12 && gs.meta.closeReady)
+
+  // Escalation ladder
+  let turnWarning = ''
+  if (playerTurnCount >= 20) {
+    turnWarning = ` ⚠ OVER BUDGET (turn ${playerTurnCount}). Wrap NOW. Find the nearest close point.`
+  } else if (crucibleResolved && scopeSignals >= 2) {
+    turnWarning = ` ⚠ SCOPE CREEP (${scopeSignals} signals post-crucible). Close this chapter — new content belongs in the next chapter.`
+  } else if (playerTurnCount >= 15) {
+    turnWarning = ` ⚡ APPROACHING LIMIT (turn ${playerTurnCount}). Drive toward resolution and signal_close.`
+  } else if (playerTurnCount >= 12 && pacingAct === 'development') {
+    turnWarning = scopeSignals >= 4
+      ? ` 📌 Turn ${playerTurnCount}, ${scopeSignals} scope signals — crucible should be IMMINENT.`
+      : ` 📌 Turn ${playerTurnCount} — crucible should be active or imminent.`
+  }
   const frameLine = gs.chapterFrame
     ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}`
     : ''
+  // Rules engine warnings (persistent counter thresholds)
+  const rulesWarnings = gs.rulesWarnings ?? []
+  const rulesSection = rulesWarnings.length > 0
+    ? '\n' + rulesWarnings.join('\n')
+    : ''
+
   const timeLine = w.currentTime ? `TIME: ${w.currentTime}` : ''
   const partyLabel = config.partyBaseName.toUpperCase()
   const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
@@ -1010,7 +1096,7 @@ function compressGameState(gs: GameState): string {
   // --- Heat ---
   const heatEntries = (w.heat ?? []).filter(h => h.level !== 'none')
   const heatLine = heatEntries.length > 0
-    ? `\nHEAT: ${heatEntries.map(h => `${h.faction}=${h.level} (${h.reasons.join(',')})`).join(' | ')}`
+    ? `\n${(config.heatLabel ?? 'HEAT').toUpperCase()}: ${heatEntries.map(h => `${h.faction}=${h.level} (${h.reasons.join(',')})`).join(' | ')}`
     : ''
 
   // --- Ledger ---
@@ -1039,7 +1125,7 @@ ${w.sceneSnapshot ? `SCENE: ${w.sceneSnapshot}\n` : ''}${timeLine ? timeLine + '
 CREW: ${companionsLine}
 COHESION: ${cohesionLine}
 FACTIONS: ${factionsLine}
-NPCS: ${npcsLine}
+NPCS: ${npcsLine}${npcFailureLine}
 THREADS: ${threadsLine}
 PROMISES: ${promisesLine}${decisionsLine ? `\nDECISIONS: ${decisionsLine}` : ''}
 ANTAG: ${antagonistLine}
@@ -1047,7 +1133,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${rulesSection}`
 }
 
 // ============================================================
@@ -1067,15 +1153,34 @@ export function buildMessagesForClaude(
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
 
-  const summary = gameState.storySummary
+  const sceneSummaries = gameState.sceneSummaries ?? []
+  const legacySummary = gameState.storySummary
 
-  // If we have a story summary, inject it as a stable prefix + only include recent messages
-  if (summary && summary.text) {
-    messages.push({ role: 'user', content: `[STORY SO FAR]\n${summary.text}` })
+  if (sceneSummaries.length > 0) {
+    // ── Scene summaries: inject all chapter summaries, then only current-scene messages ──
+    const summaryBlock = sceneSummaries
+      .map((s) => `[Scene ${s.sceneNumber}] ${s.text}`)
+      .join('\n\n')
+    messages.push({ role: 'user', content: `[SCENE SUMMARIES]\n${summaryBlock}` })
+    messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current scene.' })
+
+    // Current scene = messages after the last summarized scene
+    const lastSummarized = sceneSummaries[sceneSummaries.length - 1]
+    const currentSceneMessages = allMessages.slice(lastSummarized.toMessageIndex + 1)
+    for (const msg of currentSceneMessages) {
+      if (msg.role === 'player' || msg.role === 'meta-question') {
+        const p = msg.role === 'meta-question' ? '[META] ' : ''
+        messages.push({ role: 'user', content: p + msg.content })
+      } else if (msg.role === 'gm' || msg.role === 'meta-response') {
+        messages.push({ role: 'assistant', content: msg.content })
+      }
+    }
+  } else if (legacySummary && legacySummary.text) {
+    // ── Legacy: old-style monolithic summary (backward compat for old saves) ──
+    messages.push({ role: 'user', content: `[STORY SO FAR]\n${legacySummary.text}` })
     messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current situation.' })
 
-    // Only include messages AFTER the summary point
-    const recentMessages = allMessages.slice(summary.upToMessageIndex + 1)
+    const recentMessages = allMessages.slice(legacySummary.upToMessageIndex + 1)
     for (const msg of recentMessages) {
       if (msg.role === 'player' || msg.role === 'meta-question') {
         const p = msg.role === 'meta-question' ? '[META] ' : ''
@@ -1085,8 +1190,7 @@ export function buildMessagesForClaude(
       }
     }
   } else {
-    // No summary — use the windowed history as before
-    // Boost history budget during active operations when context matters most
+    // ── No summaries — windowed history (early chapter, no scene boundaries yet) ──
     const hasActiveOp = gameState.world.operationState &&
       ['active', 'extraction'].includes(gameState.world.operationState.phase)
     const hasExploration = !!gameState.world.explorationState
@@ -1168,14 +1272,14 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
 
 Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.
 
-IMPORTANT: In your FIRST response, call ALL of these via update_world in ONE batch:
-- setLocation (starting location)
-- setCurrentTime (e.g. "Day 1, early morning")
-- setSceneSnapshot (who is where)
-- addNpcs (at least one NPC + origin contacts — see below)
-- addFaction (at least one)
-- addThread (at least one narrative thread)
-Also call set_chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The world state is blank — you must populate it.
+IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the world section:
+- set_location (starting location)
+- set_current_time (e.g. "Day 1, early morning")
+- set_scene_snapshot (who is where)
+- add_npcs (at least one NPC + origin contacts — see below)
+- add_faction (at least one)
+- add_threads (at least one narrative thread)
+Also include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The world state is blank — you must populate it.
 
 ORIGIN CONTACTS: The player's origin lore defines starting contacts (e.g. "Start with one Synod official at Favorable"). Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.`
 
@@ -1192,9 +1296,9 @@ ORIGIN CONTACTS: The player's origin lore defines starting contacts (e.g. "Start
 
   const frame = gameState.chapterFrame
   const frameOrientation = frame
-    ? `\n\nChapter frame (provisional — confirm or adjust in your first turns): Objective: ${frame.objective}. Crucible: ${frame.crucible}. If the player's first actions redirect the chapter's direction fundamentally, update the frame with set_chapter_frame. Otherwise, confirm it silently and play toward the crucible.`
+    ? `\n\nChapter frame (provisional — confirm or adjust in your first turns): Objective: ${frame.objective}. Crucible: ${frame.crucible}. If the player's first actions redirect the chapter's direction fundamentally, update the frame with commit_turn with chapter_frame. Otherwise, confirm it silently and play toward the crucible.`
     : chapterNumber > 1
-      ? `\n\nNo chapter frame established yet. Establish one with set_chapter_frame within the first 2-3 turns, based on the player's direction.`
+      ? `\n\nNo chapter frame established yet. Establish one with commit_turn with chapter_frame within the first 2-3 turns, based on the player's direction.`
       : ''
 
   const op = gameState.world.operationState

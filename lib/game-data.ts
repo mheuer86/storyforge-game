@@ -84,7 +84,14 @@ export function createInitialGameState(
       description: 'Starting location — the GM will establish this.',
     },
     factions: [],
-    npcs: [],
+    npcs: (selectedSpecies.startingContacts ?? []).map(c => ({
+      name: c.role,  // placeholder name — Claude will name them properly in first response
+      description: c.description,
+      lastSeen: 'Starting contact',
+      role: c.npcRole ?? 'contact' as const,
+      disposition: c.disposition,
+      ...(c.affiliation && { affiliation: c.affiliation }),
+    })),
     threads: [],
     promises: [],
     antagonist: null,
@@ -108,6 +115,17 @@ export function createInitialGameState(
         { id: 'redline', name: 'Redline', level: 1, description: 'Boost one ability check per chapter (risk of burnout).' },
         { id: 'panoptik', name: 'Panoptik', level: 1, description: 'Detect armed hostiles and surveillance in area.' },
         { id: 'skinweave', name: 'Skinweave', level: 1, description: 'Basic identity bypass for low-security.' },
+      ],
+      combatOptions: [],
+      upgradeLog: [],
+    } : genre === 'grimdark' ? {
+      hullCondition: -1,  // -1 = no integrity bar (Company uses dimension levels, not a single bar)
+      systems: [
+        { id: 'strength', name: 'Strength', level: 1, description: 'A handful of fighters, basic arms.' },
+        { id: 'morale', name: 'Morale', level: 1, description: 'Fragile. One bad contract from breaking.' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known locally. Nobody special.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Rumor and hearsay. No scouts.' },
+        { id: 'provisions', name: 'Provisions', level: 1, description: 'A week of supplies. No reserve.' },
       ],
       combatOptions: [],
       upgradeLog: [],
@@ -167,6 +185,11 @@ export function createInitialGameState(
     },
     chapterFrame: null,
     storySummary: null,
+    sceneSummaries: [],
+    scopeSignals: 0,
+    npcFailures: [],
+    counters: {},
+    rulesWarnings: [],
   }
 }
 

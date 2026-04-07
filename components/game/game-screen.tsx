@@ -10,6 +10,7 @@ import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overla
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
+import { runRulesEngine } from '@/lib/rules-engine'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
 import { track } from '@vercel/analytics'
@@ -145,7 +146,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             const event = JSON.parse(line) as StreamEvent
             if (event.type === 'tools') {
               const corrections = event.results.filter(
-                (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
+                (r) => r.tool !== 'meta_response'
               )
               if (corrections.length > 0) {
                 auditedState = applyToolResults(corrections, auditedState, statChanges, track)
@@ -163,65 +164,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [])
 
-  /** Background story summarizer — Haiku generates a "story so far" summary. */
-  const summarizeInFlightRef = useRef(false)
-  const runSummarize = useCallback(async (state: GameState) => {
-    if (summarizeInFlightRef.current) return
-    summarizeInFlightRef.current = true
-    try {
-      const response = await fetch('/api/game', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: '',
-          gameState: state,
-          isMetaQuestion: false,
-          isInitial: false,
-          isSummarize: true,
-        }),
-      })
-      if (!response.ok || !response.body) return
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buf = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += decoder.decode(value, { stream: true })
-        const lines = buf.split('\n')
-        buf = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const event = JSON.parse(line) as StreamEvent
-            if (event.type === 'tools') {
-              const summaryResult = event.results.find(r => r.tool === '_story_summary')
-              if (summaryResult) {
-                const { text, upToMessageIndex, turn } = summaryResult.input as { text: string; upToMessageIndex: number; turn: number }
-                setGameState(prev => {
-                  if (!prev) return prev
-                  const updated = { ...prev, storySummary: { text, upToMessageIndex, turn } }
-                  saveGameState(updated)
-                  return updated
-                })
-              }
-            }
-            if (event.type === 'token_usage') {
-              setTokenLog(prev => [...prev, {
-                input: event.usage.inputTokens,
-                output: event.usage.outputTokens,
-                cacheWrite: event.usage.cacheWriteTokens,
-                cacheRead: event.usage.cacheReadTokens,
-                timestamp: new Date().toISOString(),
-              }])
-            }
-          } catch { /* skip */ }
-        }
-      }
-    } catch { /* summary failure is non-critical */ } finally {
-      summarizeInFlightRef.current = false
-    }
-  }, [])
+  // Scene summaries are now generated inline by Claude (scene_end + scene_summary in commit_turn).
+  // The old fixed-interval Haiku summarizer has been removed.
 
   const streamRequest = useCallback(async (
     body: Record<string, unknown>,
@@ -251,6 +195,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const statChanges: StatChange[] = []
       let lastRollBreakdown: RollBreakdown | undefined
       let finalActions: string[] = []
+      let sceneEndSummary: string | undefined
+      let lastCommitInput: Record<string, unknown> | undefined
 
       while (true) {
         const { done, value } = await reader.read()
@@ -325,17 +271,37 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             }
 
             if (event.type === 'tools') {
-              const suggestTool = event.results.findLast((r) => r.tool === 'suggest_actions')
-              if (suggestTool) {
-                finalActions = (suggestTool.input as { actions: string[] }).actions
-                setQuickActions(finalActions)
+              // Extract suggested_actions from commit_turn
+              const commitTool = event.results.findLast((r) => r.tool === 'commit_turn')
+              if (commitTool) {
+                lastCommitInput = commitTool.input as Record<string, unknown>
+                const commitInput = commitTool.input as { suggested_actions?: string[] }
+                if (commitInput.suggested_actions && commitInput.suggested_actions.length > 0) {
+                  finalActions = commitInput.suggested_actions
+                  setQuickActions(finalActions)
+                }
+
+                // Extract enemy roll breakdown from commit_turn.character.roll_breakdown
+                const charInput = commitTool.input as { character?: { roll_breakdown?: RollBreakdown } }
+                if (charInput.character?.roll_breakdown) {
+                  lastRollBreakdown = charInput.character.roll_breakdown
+                }
+
+                // Extract scene boundary from commit_turn
+                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string }
+                if (sceneInput.scene_end) {
+                  if (sceneInput.scene_summary) {
+                    sceneEndSummary = sceneInput.scene_summary
+                  }
+                  // If scene_end without scene_summary, messages stay raw (no worse than before).
+                  // Claude should almost always include scene_summary per prompt instructions.
+                }
               }
 
               const metaTool = event.results.find((r) => r.tool === 'meta_response')
               if (metaTool) {
                 const metaContent = (metaTool.input as { content: string }).content
                 // Only use tool content as fallback — if Claude streamed text, that's the real answer.
-                // The tool often carries a brief summary while the full response is in the stream.
                 if (!gmText.trim()) {
                   gmText = metaContent
                 }
@@ -346,21 +312,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 )
               }
 
-              // Extract enemy roll breakdown from update_character calls
-              for (const r of event.results) {
-                if (r.tool === 'update_character' && r.input.rollBreakdown) {
-                  lastRollBreakdown = r.input.rollBreakdown as RollBreakdown
-                }
-              }
-
-              const otherResults = event.results.filter(
-                (r) => r.tool !== 'suggest_actions' && r.tool !== 'meta_response'
+              // Apply state changes from commit_turn and other internal tools (excluding meta_response)
+              const stateResults = event.results.filter(
+                (r) => r.tool !== 'meta_response'
               )
-              if (otherResults.length > 0) {
-                stateWithChanges = applyTools(otherResults, stateWithChanges, statChanges)
-                // Scene breaks: location data is recorded in state but no longer
-                // rendered as a separate UI message — the GM's narrative heading
-                // (## Location — Time) serves as the visual scene break.
+              if (stateResults.length > 0) {
+                stateWithChanges = applyTools(stateResults, stateWithChanges, statChanges)
                 delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
               }
             }
@@ -368,12 +325,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             if (event.type === 'done') {
               setRetryCountdown(null)
               // Clear stale quick actions if the GM didn't provide new ones
-              // But preserve them during meta questions (meta responses don't call suggest_actions)
+              // But preserve them during meta questions (meta responses don't call commit_turn)
               if (finalActions.length === 0 && !isMetaQuestion) {
                 setQuickActions([])
               }
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
-              const finalState = {
+              let finalState: GameState = {
                 ...stateWithChanges,
                 history: {
                   ...stateWithChanges.history,
@@ -396,6 +353,43 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   prev.map((m) => (m.id === gmMsgId ? { ...m, rollBreakdown: lastRollBreakdown } : m))
                 )
               }
+
+              // Append scene summary if a scene boundary occurred
+              if (sceneEndSummary) {
+                const existing = finalState.sceneSummaries ?? []
+                const lastScene = existing[existing.length - 1]
+                const fromIdx = lastScene ? lastScene.toMessageIndex + 1 : 0
+                const toIdx = finalState.history.messages.length - 1
+                const sceneNum = (lastScene?.sceneNumber ?? 0) + 1
+                finalState.sceneSummaries = [
+                  ...existing,
+                  { text: sceneEndSummary, sceneNumber: sceneNum, fromMessageIndex: fromIdx, toMessageIndex: toIdx },
+                ]
+              }
+
+              // Detect scope signals from commit_turn and increment counter
+              if (lastCommitInput) {
+                let signals = 0
+                const world = lastCommitInput.world as Record<string, unknown> | undefined
+                if (world) {
+                  if (world.set_location) signals++
+                  const addNpcs = world.add_npcs as unknown[] | undefined
+                  if (addNpcs && addNpcs.length >= 3) signals++
+                  const antagonist = world.antagonist as { action?: string } | undefined
+                  if (antagonist?.action === 'establish') signals++
+                  const clocks = world.clocks as { action?: string }[] | undefined
+                  if (clocks?.some(c => c.action === 'establish')) signals++
+                  if (world.add_timer) signals++
+                  if (world.set_operation) signals++
+                }
+                if (signals > 0) {
+                  finalState.scopeSignals = (finalState.scopeSignals ?? 0) + signals
+                }
+              }
+
+              // Run rules engine (persistent counters, threshold warnings)
+              finalState = runRulesEngine(finalState, lastCommitInput ?? null)
+
               onDone(finalState, statChanges)
             }
 
@@ -507,15 +501,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setIsLoading(false)
           // Trigger background audit every 8 player turns (non-blocking)
           const AUDIT_INTERVAL = 8
-          const SUMMARIZE_INTERVAL = 6
           if (!isInitial && !isMetaQuestion) {
             const playerTurns = finalState.history.messages.filter(m => m.role === 'player').length
             if (playerTurns > 0 && playerTurns % AUDIT_INTERVAL === 0) {
               runAudit(finalState)
-            }
-            // Generate story summary every 6 turns (non-blocking)
-            if (playerTurns > 0 && playerTurns % SUMMARIZE_INTERVAL === 0) {
-              runSummarize(finalState)
             }
           }
         },
@@ -673,11 +662,36 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         },
       }
 
+      // Track NPC failure for contested rolls
+      let stateForContinuation = stateWithRoll
+      if ((result === 'failure' || result === 'fumble') && prompt.contested && !isDmgOrHeal) {
+        const npcName = prompt.contested.npcName
+        const approach = prompt.check  // skill name (e.g. "Deception", "Intimidation")
+        const failures = stateForContinuation.npcFailures ?? []
+        const existing = failures.find(f => f.npcName === npcName && f.approach === approach)
+        if (existing) {
+          const newCount = existing.failures + 1
+          stateForContinuation = {
+            ...stateForContinuation,
+            npcFailures: failures.map(f =>
+              f.npcName === npcName && f.approach === approach
+                ? { ...f, failures: newCount, closed: newCount >= 3 }
+                : f
+            ),
+          }
+        } else {
+          stateForContinuation = {
+            ...stateForContinuation,
+            npcFailures: [...failures, { npcName, approach, failures: 1, closed: false }],
+          }
+        }
+      }
+
       await streamRequest(
-        { message: '', gameState: stateWithRoll, isMetaQuestion: false, isInitial: false, rollResolution },
+        { message: '', gameState: stateForContinuation, isMetaQuestion: false, isInitial: false, rollResolution },
         gmMsgId,
         false,
-        stateWithRoll,
+        stateForContinuation,
         (nextRollPrompt) => {
           // Chained roll (e.g. damage after a hit) — show dice modal again
           setRollPrompt(nextRollPrompt)
@@ -685,6 +699,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setIsLoading(false)
         },
         (finalState, statChanges) => {
+          // Run rules engine with roll context for trait detection
+          const rollCtx = { check: prompt.check, result }
+          finalState = runRulesEngine(finalState, null, rollCtx)
           setGameState(finalState)
           saveGameState(finalState)
           setLastStatChanges(statChanges)

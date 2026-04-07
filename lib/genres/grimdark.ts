@@ -8,31 +8,52 @@ const grimdarkSpecies: Species[] = [
     id: 'house-veldran',
     name: 'House Veldran',
     description: 'Merchant nobility. Politically dominant, widely spread, no special bloodline traits.',
-    lore: 'Wealth is the only bloodline that matters, and Veldran has more of it than anyone. The name opens ledgers, not hearts — merchants cooperate, commoners resent, and rival houses scheme. Start with one Veldran trade agent at Favorable. House Ashfang as a faction starts at Wary (old debts from the Wyrm war reparations). Advantage on checks involving commerce, bribes, or reading financial motives. The cost: everyone assumes you\'re buying loyalty, not earning it. Common folk start at Wary — wealth breeds resentment.',
+    lore: 'Wealth is the only bloodline that matters, and Veldran has more of it than anyone. The name opens ledgers, not hearts — merchants cooperate, commoners resent, and rival houses scheme. Start with one Veldran trade agent at Favorable. House Ashfang as a faction starts at Wary (old debts from the Wyrm war reparations). Advantage on checks involving commerce, bribes, or reading financial motives. The cost: everyone assumes you\'re buying loyalty, not earning it. Common folk start at Wary — wealth breeds resentment. Hard constraint: first transaction with any new NPC is at disadvantage until you\'ve established a non-financial relationship. Money works, but only after trust.',
+    startingContacts: [
+      { role: 'trade agent', disposition: 'favorable', description: 'A Veldran trade agent who manages commercial interests across the provinces', affiliation: 'House Veldran' },
+      { role: 'rival faction representative', disposition: 'wary', description: 'House Ashfang remembers the Wyrm war reparations and the debts still owed', affiliation: 'House Ashfang' },
+    ],
   },
   {
     id: 'house-sylvara',
     name: 'House Sylvara',
     description: 'Ancient woodland bloodline. Long-lived, keen-eyed, patient to a fault.',
-    lore: 'Sylvara patience comes from outliving everyone who rushed. Courts respect the name; frontier camps don\'t. Your calm reads as arrogance to people who are hungry now. Start with one Sylvara elder at Favorable (distant, but responsive to the house name). House Veldran as a faction starts at Wary (Sylvara patience has cost Veldran money for generations). Advantage on Perception and Insight checks — you\'ve learned to watch before you act. Frontier and common-folk NPCs start at Wary. Earning trust takes twice as many positive interactions.',
+    lore: 'Sylvara patience comes from outliving everyone who rushed. Courts respect the name; frontier camps don\'t. Your calm reads as arrogance to people who are hungry now. Start with one Sylvara elder at Favorable (distant, but responsive to the house name). House Veldran as a faction starts at Wary (Sylvara patience has cost Veldran money for generations). Advantage on Perception and Insight checks — you\'ve learned to watch before you act. Frontier and common-folk NPCs start at Wary. Earning trust takes twice as many positive interactions. Hard constraint: disposition advances require two positive interactions instead of one. But disposition drops also require two negative interactions — patience cuts both ways.',
+    startingContacts: [
+      { role: 'elder advisor', disposition: 'favorable', description: 'A distant Sylvara elder, responsive to the house name but rarely seen in person', affiliation: 'House Sylvara' },
+      { role: 'rival faction representative', disposition: 'wary', description: 'House Veldran resents Sylvara patience, which has cost them money for generations', affiliation: 'House Veldran' },
+    ],
   },
   {
     id: 'house-stonemark',
     name: 'House Stonemark',
     description: 'Mountain clan bloodline. Dense-boned, blunt-spoken, legendary craftsmen.',
     lore: 'A Stonemark word is a Stonemark bond — generations of debts honored, promises kept, enemies remembered. Trade guilds deal with you on reputation alone. But bluntness is a liability when subtlety matters: you say what you mean, and everyone knows it. Start with one guild or clan contact at Favorable. House Sylvara as a faction starts at Wary (centuries of mountain-court friction — Stonemark bluntness offends Sylvara sensibility). Advantage on CON saves and Engineering/Crafting checks. Disadvantage on Deception — your culture considers lying a form of cowardice, and your face agrees.',
+    startingContacts: [
+      { role: 'guild craftmaster', disposition: 'favorable', description: 'A trade guild contact who deals with Stonemark on reputation alone', affiliation: 'Stonemark Clan' },
+      { role: 'rival faction representative', disposition: 'wary', description: 'House Sylvara finds Stonemark bluntness offensive, centuries of mountain-court friction', affiliation: 'House Sylvara' },
+    ],
   },
   {
     id: 'oathless',
     name: 'The Oathless',
     description: 'Broken oath. Expelled, fled, or disgraced from a landed house.',
     lore: 'You had a name, a seat, obligations, and you lost them. Maybe you broke a sworn pact. Maybe you refused an order that would have kept your standing. Maybe you were framed. The reason matters to you; it doesn\'t matter to anyone else. The houses see a traitor. The streets see someone with useful skills and no protection. Start with one contact from your former house at Hostile (the people you wronged or who wronged you — they remember). One underworld contact at Favorable (the networks that absorb the disgraced). Advantage on checks involving survival outside institutional structures — you\'ve learned to operate without a safety net. Disadvantage on initial social checks with any landed house — the Oathless are marked, and house loyalty is the currency of this world. Your former house\'s name comes up in conversation more than you\'d like.',
+    startingContacts: [
+      { role: 'former house enforcer', disposition: 'hostile', description: 'Someone from your former house who remembers what you did, or what was done to you' },
+      { role: 'underworld fixer', disposition: 'favorable', description: 'A contact in the networks that absorb the disgraced, useful and discreet' },
+    ],
   },
   {
     id: 'house-ashfang',
     name: 'House Ashfang',
     description: 'Fallen bloodline. Scaled, fast, remnants of the Char Dominion.',
-    lore: 'The Char Dominion burned three centuries ago, but the fear is fresh. Ashfang are fast, imposing, and carry a name that makes people reach for weapons. Some cooperate because they\'re afraid. Others refuse to cooperate for the same reason. Start with one Ashfang exile contact at Favorable (scattered but loyal). The Church as a faction starts at Hostile (the Char Dominion burned temples; the Church has a long memory). House Veldran as a faction starts at Wary (they profited from the fall and don\'t want the past revisited). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you are feared before you are known. Breaking through to Trusted requires proof of character, not just words.',
+    lore: 'The Char Dominion burned three centuries ago, but the fear is fresh. Ashfang are fast, imposing, and carry a name that makes people reach for weapons. Some cooperate because they\'re afraid. Others refuse to cooperate for the same reason. Start with one Ashfang exile contact at Favorable (scattered but loyal). The Church as a faction starts at Hostile (the Char Dominion burned temples; the Church has a long memory). House Veldran as a faction starts at Wary (they profited from the fall and don\'t want the past revisited). Advantage on Intimidation and Initiative. Most NPCs start at Wary — you are feared before you are known. Breaking through to Trusted requires proof of character, not just words. Hard constraint: Persuasion that relies on good faith (not leverage or intimidation) is at disadvantage. People cooperate from fear, not trust.',
+    startingContacts: [
+      { role: 'exile kin', disposition: 'favorable', description: 'A scattered Ashfang exile, fiercely loyal to those who share the bloodline', affiliation: 'House Ashfang' },
+      { role: 'church inquisitor', disposition: 'hostile', description: 'The Church of the Pale Flame burned temples three centuries ago and remembers who lit the fires', affiliation: 'The Church' },
+      { role: 'rival faction merchant', disposition: 'wary', description: 'House Veldran profited from the Char Dominion\'s fall and prefers the past stay buried', affiliation: 'House Veldran' },
+    ],
   },
 ]
 
@@ -255,14 +276,27 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     setting: 'The Shattered Provinces have held an uneasy peace under the Pact of Ashes, but the treaty is fraying. A famine called the Wasting creeps from the southern provinces. The Church of the Pale Flame controls hospitals, orphanages, and the Inquisition. Kingdoms are corrupt or tyrannical. Magic is rare, feared, and forbidden — those who wield it pay a visible price. The common people suffer regardless of who rules. Moral clarity is a luxury.',
     vocabulary: 'Use blunt, physical language: mud, blood, iron, rot. Violence has weight. Death is ugly. Healing is slow. Magic is unsettling. Currency is crowns. Dialogue is direct, often crude. Titles used with irony as often as respect. Spell = hex / curse / forbidden working / corrupted craft. Potion = tincture / salve / kit / vial. Quest = contract / job / commission. Party = company / crew / band. Inn = tavern / waystation / camp. Temple = keep / monastery / shrine.',
     toneOverride: 'Adjust tone: Gritty (60%), Epic (25%), Witty (15%). Grandeur exists but is tarnished — a crumbling cathedral, a once-great army reduced to mercenaries. Humor is dark, sharp, and necessary.',
-    assetMechanic: '',
+    assetMechanic: `## THE COMPANY\n\nThe company is your mercenary band. Five dimensions tracked at L1-L3:\n- Strength: fighters, equipment, combat capability. Upgrade through recruitment and victories.\n- Morale: will to fight, unit cohesion under pressure. Upgrade through paid contracts and victories. Degrades without pay or after defeats.\n- Reputation: who knows you, whether they hire or avoid. Upgrade through visible successes. Damaged by broken contracts.\n- Intelligence: scouts, informants, advance warning. Upgrade through recruiting specialists.\n- Provisions: supplies, medical stores, operational endurance. Consumed by operations. Replenished by contracts.\n\nThe company degrades between chapters without maintenance. Propose 2-3 ways to maintain or upgrade the company at chapter transitions.\n\nEach dimension should have a named NPC attached (the sergeant, the quartermaster, the scout, etc.). Upgrading a dimension means investing in the person who runs it.`,
     traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets. The Hexblade's power has a permanent social cost.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways. The target remembers, and the relationship is permanently changed.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency. The GM chooses. Nothing is free.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried. Failed interrogations have social consequences.\n- **Marked:** Designate one target per day. First hit deals +1d6 bonus damage. The choice of who to mark is the moral weight.\n- **Last Standing:** Drop to 1 HP instead of 0, once per day. No strings. The Ironclad's reliability is the point.`,
     consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
     tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies. Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
     npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
-    buildAssetState: null,
-    investigationGuide: 'Journal of confessions — extracted testimony, names implicated, evidence of heresy or corruption. When the player interrogates or investigates, track discoveries as narrative threads. Clues come from confessions, seized documents, NPC testimony, and physical evidence.',
+    buildAssetState: (ship, shipName) => {
+      const systemsLine = ship.systems.map(s => `${s.name} L${s.level}: ${s.description}`).join('\n  ')
+      const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
+      return `\nCOMPANY: ${shipName}\n  ${systemsLine}\nCOMPANY TACTICS: ${combatLine}`
+    },
+    investigationGuide: `Journal of confessions — extracted testimony, names implicated, evidence of heresy or corruption.
+
+Evidence is coerced, not discovered. Confessions come under pressure, testimony is traded for favors, documents are stolen rather than filed. Nobody volunteers the truth in this world — it has to be extracted, and extraction changes the relationship.
+
+The faction clock is survival, not politics. The longer you investigate, the more dangerous it gets — witnesses die, evidence is burned, the target sends people after you. Every turn spent gathering evidence is a turn the target spends covering tracks.
+
+Misdirection comes from NPCs lying for their own reasons, not from planted evidence. Everyone has a version of the truth that serves their interests. When testimonies contradict, the contradiction is itself a clue about who benefits from which version.
+
+The gatekeeper clue is a person, not a document. Someone who knows the truth and will only share it for a price the player may not want to pay. The price is always moral, not financial.`,
   },
+  cohesionGuide: 'In this genre, cohesion is conditional loyalty maintained by results. +1: successful contracts paid in full, captain taking risks the company needed, victories that vindicate hard choices. -1: broken contracts, mission failures the captain pushed for, mercy that costs the company resources or lives. Cohesion is brittle — it can be high but never feels secure, because the next failed contract could break it. The company degrades between chapters without maintenance.',
   companionLabel: 'Sworn',
   notebookLabel: 'Journal',
   intelTabLabel: 'Dossier',
@@ -275,6 +309,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     { hook: 'A courier brings payment for a job the company didn\'t do. Someone is using the company\'s name — and whoever hired them wants a reckoning.', title: 'Stolen Name' },
     { hook: 'A child walks into camp alone, carrying a signet ring from a dead lord. She won\'t say where she got it — only: "They said to find the Company."', title: 'The Signet Ring' },
     { hook: 'Mid-winter. The road north is blocked by snow. The only shelter: an abandoned monastery with fresh tracks going in and none coming out.', title: 'Fresh Tracks' },
+    { hook: 'Three days ago, the company freed prisoners from a lord\'s dungeon. Good deed, clear conscience. This morning, two of them killed — one a rival, one an innocent witness. The lord\'s steward found you: "He wasn\'t keeping them in cages because he\'s cruel. He was keeping them in cages because he knew what they\'d do." Now the lord wants compensation, the dead witness\'s family wants justice, and two of the freed prisoners are asking for the company\'s protection.', title: 'The Mercy' },
     // Cutthroat — kills, poison, dirty work
     { hook: 'The mark is dead. Clean work. Then the client sends a second name — the dead man\'s daughter, twelve years old. She saw something. The client says it\'s the job. Your gut says it\'s a test.', title: 'Second Name', classes: ['Cutthroat'] },
     { hook: 'A sealed contract arrives from a house that doesn\'t officially exist. Payment is generous. The task: enter a lord\'s bedchamber and replace his medicine with something from a black vial. They don\'t want it to look like poison. They want it to look like God.', title: 'The Black Vial', classes: ['Cutthroat'] },

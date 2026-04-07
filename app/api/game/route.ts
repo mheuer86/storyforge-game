@@ -2,8 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { buildSystemPrompt, buildClosePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
-import { gameTools, auditTools, getToolsForContext } from '@/lib/tools'
-import type { GameContext } from '@/lib/tools'
+import { gameTools, auditTools, metaTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
@@ -55,7 +54,6 @@ const requestSchema = z.object({
 })
 
 function resolveRoll(roll: number, modifier: number, dc: number, rollType?: string): RollRecord['result'] {
-  // Damage and healing rolls have no DC/crit/fumble — always "success"
   if (rollType === 'damage' || rollType === 'healing') return 'success'
   if (roll === 20) return 'critical'
   if (roll === 1) return 'fumble'
@@ -65,7 +63,6 @@ function resolveRoll(roll: number, modifier: number, dc: number, rollType?: stri
 
 function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
-  // Damage and healing rolls — just report the total
   if (rollType === 'damage') {
     return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.`
   }
@@ -84,7 +81,6 @@ function rollResultText(roll: number, modifier: number, dc: number, result: Roll
 }
 
 const RETRY_DELAY_MS = 12_000
-const MAX_TOOL_ROUNDS = 8
 
 function isOverloaded(error: unknown): boolean {
   if (error instanceof Anthropic.APIError) {
@@ -106,11 +102,16 @@ interface ToolLoopResult {
 }
 
 /**
- * Run the Claude streaming + tool loop. Shared by Phase 1, Phase 2, and retry.
+ * Run the Claude streaming + tool loop.
  *
- * When `interceptRolls` is true, a `request_roll` tool call pauses the loop,
- * sends a roll_prompt to the client, and closes the stream (hitRoll = true).
- * When false (Phase 2, after a roll), request_roll is treated like any other tool.
+ * With commit_turn, this is typically single-pass:
+ * 1. Stream narrative text
+ * 2. Receive commit_turn tool call
+ * 3. Extract results, check for pending_check
+ * 4. Done
+ *
+ * Multi-round is still supported for the close sequence (which may need
+ * multiple commit_turn calls for audit + close + level-up + debrief).
  */
 async function runToolLoop(
   systemPrompt: Anthropic.TextBlockParam[],
@@ -122,8 +123,6 @@ async function runToolLoop(
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
 
-  // Mark the last tool with cache_control so the full tool array gets cached.
-  // This avoids re-processing ~7K tokens of tool definitions on every API call.
   const toolsToSend = options?.tools || gameTools
   const cachedTools = toolsToSend.map((t, i) =>
     i === toolsToSend.length - 1
@@ -131,7 +130,7 @@ async function runToolLoop(
       : t
   )
 
-  const rounds = options?.maxRounds ?? MAX_TOOL_ROUNDS
+  const rounds = options?.maxRounds ?? 2
   for (let round = 0; round < rounds; round++) {
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
@@ -149,7 +148,6 @@ async function runToolLoop(
 
     const completed = await stream.finalMessage()
 
-    // Emit token usage for every API call
     const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
     send({ type: 'token_usage', usage: {
       inputTokens: usage.input_tokens,
@@ -165,51 +163,69 @@ async function runToolLoop(
     const roundResults: Anthropic.ToolResultBlockParam[] = []
 
     for (const tc of toolCalls) {
-      if (interceptRolls && tc.name === 'request_roll') {
-        const input = tc.input as { checkType: string; stat: string; dc: number; modifier: number; reason: string; advantage?: 'advantage' | 'disadvantage'; contested?: { npcName: string; npcSkill: string; npcModifier: number }; sides?: number; rollType?: 'check' | 'damage' | 'healing'; damageType?: string }
+      // ── pending_check interception: pause for player roll ──
+      if (interceptRolls && tc.name === 'commit_turn') {
+        const input = tc.input as Record<string, unknown>
+        const pendingCheck = input.pending_check as {
+          skill: string; stat: string; dc: number; modifier: number; reason: string;
+          advantage?: boolean; disadvantage?: boolean;
+          contested?: { npc_name: string; npc_skill: string; npc_modifier: number };
+          sides?: number; roll_type?: 'check' | 'damage' | 'healing'; damage_type?: string;
+        } | undefined
 
-        // Flush accumulated tools before pausing for the roll
-        if (toolResults.length > 0) {
-          send({ type: 'tools', results: toolResults })
+        if (pendingCheck) {
+          // Apply the commit_turn (minus pending_check) as state changes that already happened
+          toolResults.push({ tool: 'commit_turn', input: tc.input as Record<string, unknown> })
+
+          // Flush accumulated tools before pausing for the roll
+          if (toolResults.length > 0) {
+            send({ type: 'tools', results: toolResults })
+          }
+
+          // Map advantage/disadvantage booleans to the enum the client expects
+          const advEnum = pendingCheck.advantage ? 'advantage' : pendingCheck.disadvantage ? 'disadvantage' : undefined
+
+          const pendingMessages: Anthropic.MessageParam[] = [
+            ...messages,
+            { role: 'assistant' as const, content: completed.content },
+          ]
+          const priorToolResults = [...roundResults]
+
+          send({
+            type: 'roll_prompt',
+            check: pendingCheck.skill,
+            stat: pendingCheck.stat,
+            dc: pendingCheck.dc,
+            modifier: pendingCheck.modifier,
+            reason: pendingCheck.reason,
+            toolUseId: tc.id,
+            pendingMessages,
+            priorToolResults,
+            ...(advEnum && { advantage: advEnum }),
+            ...(pendingCheck.contested && {
+              contested: {
+                npcName: pendingCheck.contested.npc_name,
+                npcSkill: pendingCheck.contested.npc_skill,
+                npcModifier: pendingCheck.contested.npc_modifier,
+              },
+            }),
+            ...(pendingCheck.sides && { sides: pendingCheck.sides }),
+            ...(pendingCheck.roll_type && { rollType: pendingCheck.roll_type }),
+            ...(pendingCheck.damage_type && { damageType: pendingCheck.damage_type }),
+          })
+
+          return { toolResults, messages, hitRoll: true }
         }
-
-        // Build pending messages — include assistant content but NOT partial tool_results yet.
-        // The prior tool_results (roundResults) will be merged with the roll result in the continuation.
-        const pendingMessages: Anthropic.MessageParam[] = [
-          ...messages,
-          { role: 'assistant' as const, content: completed.content },
-        ]
-        // Stash prior tool_results so the continuation can merge them with the roll result
-        const priorToolResults = [...roundResults]
-
-        send({
-          type: 'roll_prompt',
-          check: input.checkType,
-          stat: input.stat,
-          dc: input.dc,
-          modifier: input.modifier,
-          reason: input.reason,
-          toolUseId: tc.id,
-          pendingMessages,
-          priorToolResults,
-          ...(input.advantage && { advantage: input.advantage }),
-          ...(input.contested && { contested: input.contested }),
-          ...(input.sides && { sides: input.sides }),
-          ...(input.rollType && { rollType: input.rollType }),
-          ...(input.damageType && { damageType: input.damageType }),
-        })
-
-        return { toolResults, messages, hitRoll: true }
       }
 
+      // Normal tool result (commit_turn without pending_check, or meta_response)
       toolResults.push({ tool: tc.name, input: tc.input as Record<string, unknown> })
       roundResults.push({ type: 'tool_result', tool_use_id: tc.id, content: 'OK' })
     }
 
-    // suggest_actions is always the terminal tool — no need to continue the loop.
-    // This saves a full API round (~14-16K tokens) on every single turn.
-    const hasSuggestActions = toolCalls.some(tc => tc.name === 'suggest_actions')
-    if (hasSuggestActions) break
+    // commit_turn is terminal — one call per turn. Break unless in close sequence.
+    const hasCommitTurn = toolCalls.some(tc => tc.name === 'commit_turn')
+    if (hasCommitTurn && rounds <= 2) break
 
     messages = [
       ...messages,
@@ -221,25 +237,8 @@ async function runToolLoop(
   return { toolResults, messages, hitRoll: false }
 }
 
-function detectGameContext(gameState: GameState, isMetaQuestion: boolean): GameContext {
-  if (isMetaQuestion) return 'meta'
-  if (gameState.combat.active) return 'combat'
-  const clocks = gameState.world.tensionClocks ?? []
-  const hasInfiltration = clocks.some(c =>
-    c.status === 'active' &&
-    (c.name.toLowerCase().includes('alert') || c.name.toLowerCase().includes('detection'))
-  )
-  const op = gameState.world.operationState
-  if (hasInfiltration || gameState.world.explorationState?.hostile ||
-      (op && (op.phase === 'active' || op.phase === 'extraction'))) return 'infiltration'
-  return 'social'
-}
-
 function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
   const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
-  // Two system blocks: static (cached) + dynamic (per-turn).
-  // Both are system-level context — structurally can't be overridden by user input.
-  // History in messages stays a cacheable append-only prefix.
   return [
     { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: dynamicState },
@@ -279,8 +278,8 @@ export async function POST(req: NextRequest) {
         controller.close()
       }
 
-      const gameContext = detectGameContext(gameState, isMetaQuestion)
-      const contextTools = getToolsForContext(gameContext, gameState.combat.active, !!gameState.world.notebook)
+      // Select tools: meta gets meta_response only, everything else gets commit_turn + meta_response
+      const contextTools = isMetaQuestion ? metaTools : gameTools
 
       try {
         const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
@@ -288,7 +287,6 @@ export async function POST(req: NextRequest) {
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
           const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal, priorToolResults: priorResults, sides, rollType, damageType } = rollResolution
-          // For contested rolls, compare player total vs NPC total instead of static DC
           const effectiveDC = npcTotal !== undefined ? npcTotal : dc
           const result = resolveRoll(roll, modifier, effectiveDC, rollType)
 
@@ -305,18 +303,14 @@ export async function POST(req: NextRequest) {
             ...(damageType && { damageType }),
           }
 
-          // Merge any prior tool_results (from tools called before the roll in the same batch) with the roll result
           const isSuccessfulHit = (result === 'success' || result === 'critical') && gameState.combat.active && rollType !== 'damage' && rollType !== 'healing'
 
-          // Auto-chain: after a successful hit, send a damage roll prompt directly to the client
-          // without involving Claude. This bypasses the model entirely for damage rolls.
+          // Auto-chain: after a successful hit, send a damage roll prompt directly
           if (isSuccessfulHit) {
-            // Find the weapon in inventory by matching check name
             const weapon = gameState.character.inventory.find(
               (item) => item.damage && item.name.toLowerCase() === check.toLowerCase()
             )
             if (weapon?.damage) {
-              // Parse damage string: "1d6", "1d8 energy", "1d6+DEX", "1d10+STR"
               const dmgMatch = weapon.damage.match(/1d(\d+)(?:\+(\w+))?(?:\s+(.+))?/)
               if (dmgMatch) {
                 const damageSides = parseInt(dmgMatch[1])
@@ -326,11 +320,9 @@ export async function POST(req: NextRequest) {
                   ? Math.floor((gameState.character.stats[statKey] - 10) / 2)
                   : 0
 
-                // Record the hit roll
                 const hitRollResults: ToolCallResult[] = [{ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> }]
                 send({ type: 'tools', results: hitRollResults })
 
-                // Send damage roll prompt directly to client — no Claude involved
                 send({
                   type: 'roll_prompt',
                   check: weapon.name,
@@ -368,8 +360,7 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: allToolResults },
           ]
 
-          // interceptRolls=true so damage/healing rolls after a hit are interactive too
-          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { tools: contextTools })
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
           finish(loopResult.toolResults)
           return
@@ -386,8 +377,6 @@ export async function POST(req: NextRequest) {
           const auditMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: 'Audit the current game state now.' },
           ]
-          // maxRounds=1: Haiku should batch all corrections into one response.
-          // Looping wastes tokens re-sending the same stale state for each fix.
           const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
           return
@@ -407,19 +396,19 @@ export async function POST(req: NextRequest) {
           const summarizeMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: `Summarize this chapter so far:\n\n${messageBlock}` },
           ]
-          const stream = await client.messages.stream({
+          const summarizeStream = await client.messages.stream({
             model: SUMMARIZE_MODEL,
             max_tokens: 512,
             system: summarizeSystem,
             messages: summarizeMessages,
           })
           let summaryText = ''
-          for await (const event of stream) {
+          for await (const event of summarizeStream) {
             if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
               summaryText += event.delta.text
             }
           }
-          const completed = await stream.finalMessage()
+          const completed = await summarizeStream.finalMessage()
           const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
           send({ type: 'token_usage', usage: {
             inputTokens: usage.input_tokens,
@@ -427,7 +416,6 @@ export async function POST(req: NextRequest) {
             cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
             cacheReadTokens: usage.cache_read_input_tokens ?? 0,
           }})
-          // Send the summary as a tool result so the client can store it
           send({ type: 'tools', results: [{ tool: '_story_summary', input: { text: summaryText, upToMessageIndex: msgs.length - 1, turn: msgs.filter(m => m.role === 'player').length } }] })
           send({ type: 'done' })
           controller.close()
@@ -444,8 +432,7 @@ export async function POST(req: NextRequest) {
           const closeMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: 'Execute the chapter close sequence now.' },
           ]
-          // Close sequence needs many rounds: audit cleanup, close_chapter, levelUp,
-          // skill points, generate_debrief, set_chapter_frame. Give it plenty of room.
+          // Close sequence may need multiple rounds: audit + close + levelUp + debrief + frame
           const loopResult = await runToolLoop(closeSystem, closeMessages, send, false, { maxRounds: 12 })
           finish(loopResult.toolResults)
           return
@@ -459,15 +446,14 @@ export async function POST(req: NextRequest) {
             actualMessage = initialResult
           } else {
             actualMessage = initialResult.message
-            // Send the hook-derived chapter title so the client can update game state
             send({ type: 'chapter_title', title: initialResult.chapterTitle } as unknown as StreamEvent)
           }
         }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
-        // Normal turns: 4 rounds max. Narrative + batched tools + suggest_actions should
-        // fit in 1-2 rounds. 4 gives headroom for rolls or complex tool sequences.
-        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, maxRounds: 4 })
+        // Normal turns: 2 rounds max. Narrative + commit_turn should be 1 round.
+        // 2 gives headroom if Claude doesn't include everything in one call.
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools })
 
         if (loopResult.hitRoll) {
           send({ type: 'done' })
@@ -492,7 +478,8 @@ export async function POST(req: NextRequest) {
                   return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
                 })()
 
-            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: contextTools })
+            const retryTools = isMetaQuestion ? metaTools : gameTools
+            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: retryTools })
 
             if (loopResult.hitRoll) {
               send({ type: 'done' })
