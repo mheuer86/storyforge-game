@@ -5,6 +5,24 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-04-07',
+    changes: [
+      'V1.5 Engine — the GM now completes each turn in a single response instead of chaining multiple tool calls. Dramatically faster, dramatically cheaper. What used to take 3-6 API calls now takes 1',
+      'Scene memory — when you move to a new location or a scene concludes, the GM writes a summary that captures what happened, what changed, and the emotional tone. Earlier scenes compress into these summaries so the GM always knows the story arc without re-reading everything',
+      'Pacing engine — a hidden system tracks narrative structure (setup, development, crucible, resolution) and nudges the GM to keep chapters tight. Chapters target 12-18 turns instead of sprawling to 40+',
+      'Rules engine — persistent counters track genre-specific consequences across chapters. Corruption darkens the Hexblade\'s world. Drift Exposure draws the Synod\'s attention. Chrome Stress erodes empathy. Favor Balance strains contacts. These aren\'t warnings — they change the world state directly',
+      'Crew load — each companion now carries psychological weight from the campaign. Unresolved promises, witnessed trauma, operational stress. The system detects when someone is approaching their breaking point',
+      'NPC memory — the GM preserves signature quotes from important NPCs and marks pivotal scenes that survive compression. When an NPC references something from three chapters ago, it\'s because the system kept that moment alive',
+      'Grimdark Company — a five-dimension mercenary band (Strength, Morale, Reputation, Intelligence, Provisions) that degrades between chapters without maintenance',
+      'Fantasy overhaul — new thesis: "the world is forgetting itself." Rewritten classes (Spell Archaeologist, Wilderness Interpreter, Shadow Walker, Divine Vessel), traits with narrative costs, investigation as archaeology',
+      'New origin: Spent Resonant (Epic Sci-Fi) — a hard-mode origin. Officially dead. Unofficially, still capable. Every use of your abilities makes your classification retroactively fraudulent',
+      'New class: Lawyer (Noir) — Motion to Compel forces institutions to produce documents. The cost: every legal action creates a paper trail the antagonist can follow',
+      'Genre refinements — trait costs across all genres (every ability now has a price), expanded investigation guides, genre-specific crew dynamics, origin-specific starting liabilities, and 10+ new opening hooks',
+      'Attention system (Noir) — a genre-specific heat tracker: none → noticed → watched → targeted → hunted',
+      'Save protection — loading a different campaign now auto-backs up your current game first',
+    ],
+  },
+  {
     date: '2026-04-03',
     changes: [
       'Chapter Frame — the GM now silently plans each chapter with an objective and crucible. Your mission appears in the character sheet so you always know what you\'re working toward',
