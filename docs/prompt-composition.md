@@ -206,7 +206,7 @@ The current player message is appended last as a plain `user` message (with `[ME
 
 Replaces the normal GM prompt when a chapter closes. The close handler is explicitly "NOT the narrative GM" -- it's mechanical.
 
-**Seven-step sequence:**
+**Seven-step sequence (all batched into a single commit_turn call, max 3 API rounds):**
 
 1. **Audit** -- review threads, promises, clocks, antagonist, operation/exploration state. Resolve or update stale entries.
 2. **Close Chapter** -- summary (2-3 sentences, long-term memory), key events (3-5), next chapter title, resolution description, forward hook.
@@ -216,7 +216,7 @@ Replaces the normal GM prompt when a chapter closes. The close handler is explic
 6. **Set Next Frame** -- provisional objective + crucible for the next chapter, derived from forward hook.
 7. **Curate Narrative Memory** -- `pivotal_scenes` (max 2-3 per chapter, ~200-300 token moment summaries preserving imagery and dialogue). Signature lines on NPCs via `add_signature_line` (1-2 per major NPC, permanent voice anchors).
 
-Rules: analytical voice only, no GM narration, reference actual events and rolls, execute all steps.
+All seven steps execute in a single commit_turn. The prompt explicitly instructs batching to save API rounds (previously required up to 12 separate tool calls). Rules: analytical voice only, no GM narration, reference actual events and rolls, execute all steps.
 
 ### Audit Prompt (`buildAuditPrompt`)
 

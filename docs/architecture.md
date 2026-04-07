@@ -41,7 +41,7 @@ localStorage (persist GameState)
 API route handler. Core responsibilities:
 - **Request validation** via Zod schema (message, gameState shape, all context flags)
 - **System prompt construction** via `buildSystemBlocks()`, two `TextBlockParam` entries with cache_control on the static layer
-- **Tool loop** (`runToolLoop`): streams Claude response, collects tool calls, handles pending_check interception. Typically single-pass (narrative + commit_turn). Multi-round for chapter close (up to 12 rounds).
+- **Tool loop** (`runToolLoop`): streams Claude response, collects tool calls, handles pending_check interception. Typically single-pass (narrative + commit_turn). Chapter close allows up to 3 rounds but targets 1 (all steps batched into a single commit_turn).
 - **Roll resolution continuation**: when `rollResolution` is present, reconstructs the conversation from `pendingMessages`, appends the roll result as a tool_result, and continues the Claude stream
 - **Auto-chain damage**: after a successful combat hit roll, automatically sends a damage roll_prompt to the client without going back to Claude (parses weapon damage from inventory)
 - **Overload retry**: catches 529/503/502, sends `retrying` event with delay, retries once
@@ -170,7 +170,7 @@ Main game UI. Client component. Responsibilities:
 1. Claude sends `signal_close` in commit_turn when chapter feels complete (includes reason and self-assessment)
 2. Client shows close button. Player triggers chapter close.
 3. Client sends POST with `isChapterClose: true`
-4. API uses `buildClosePrompt()` with up to 12 tool loop rounds for the full sequence: summary, key events, debrief (tactical/strategic grades, promises kept/broken, costs paid), level-up, next chapter frame, forward hook
+4. API uses `buildClosePrompt()` with up to 3 tool loop rounds (targets 1 — all steps batched into a single commit_turn): audit fixes, close_chapter, level-up, skill points, debrief, next chapter frame, pivotal scene curation
 5. `close_chapter` in commit_turn triggers: chapter archived with messages, chapter-scoped state reset (scene summaries, scope signals, chapter counters), persistent state preserved (counters, pivotal scenes, roll sequences)
 
 ### Audit
