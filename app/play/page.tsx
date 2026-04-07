@@ -56,6 +56,33 @@ function AppContent() {
   }
 
   const handleLoadSlot = (slot: SaveSlotData) => {
+    // Auto-backup current game before overwriting with loaded save
+    if (autoSave) {
+      const currentName = autoSave.character.name
+      const currentGenre = autoSave.meta.genre
+      // Check if current auto-save differs from what we're loading
+      const isDifferentGame = currentName !== slot.characterName || currentGenre !== slot.gameState.meta.genre
+      if (isDifferentGame) {
+        // Find matching slot for current game, or first empty slot, or slot 3 as last resort
+        let backupSlot: 1 | 2 | 3 | null = null
+        for (const s of [1, 2, 3] as const) {
+          const existing = getSaveSlot(s)
+          if (existing && existing.characterName === currentName && existing.genre === currentGenre) {
+            backupSlot = s
+            break
+          }
+        }
+        if (!backupSlot) {
+          for (const s of [1, 2, 3] as const) {
+            if (!getSaveSlot(s)) { backupSlot = s; break }
+          }
+        }
+        if (backupSlot) {
+          saveToSlot(backupSlot, autoSave)
+        }
+      }
+    }
+
     saveGameState(slot.gameState)
     applyGenreTheme((slot.gameState.meta.genre || 'space-opera') as Genre)
     setPendingGameState(slot.gameState)
