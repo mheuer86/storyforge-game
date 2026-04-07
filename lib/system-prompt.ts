@@ -1045,6 +1045,12 @@ function compressGameState(gs: GameState): string {
   const frameLine = gs.chapterFrame
     ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}`
     : ''
+  // Weak stats — flags stats with ≤0 modifier for difficulty engine targeting
+  const weakStats = Object.entries(c.stats)
+    .filter(([, v]) => getStatModifier(v) <= 0)
+    .map(([s]) => s)
+  const weakLine = weakStats.length > 0 ? `Weak: ${weakStats.join(', ')}` : ''
+
   // Rules engine warnings (persistent counter thresholds)
   const rulesWarnings = gs.rulesWarnings ?? []
   const rulesSection = rulesWarnings.length > 0
@@ -1122,7 +1128,7 @@ function compressGameState(gs: GameState): string {
     ? `\nLORE: ${config.loreAnchors.join(' | ')}`
     : ''
 
-  return `PRESSURE: ${pressureLine}${loreAnchors}
+  return `PRESSURE: ${pressureLine}${weakLine ? ' | ' + weakLine : ''}${loreAnchors}
 
 ORIGIN: ${c.species} — ${config.species.find(s => s.name === c.species)?.lore || 'No special traits.'}
 PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
@@ -1145,7 +1151,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${rulesSection}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}`
 }
 
 // ============================================================
