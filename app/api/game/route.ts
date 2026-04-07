@@ -144,7 +144,9 @@ async function runToolLoop(
 
     for await (const event of stream) {
       if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        send({ type: 'text', content: event.delta.text })
+        // Strip model artifacts that can leak through streaming
+        const text = event.delta.text.replace(/<\/s>/g, '')
+        if (text) send({ type: 'text', content: text })
       }
     }
 
