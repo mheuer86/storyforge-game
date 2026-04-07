@@ -81,6 +81,13 @@ export interface NPC {
   voiceNote?: string      // speech rhythm: "Short sentences. Grunts. Mechanical metaphors."
   combatTier?: 1 | 2 | 3 | 4 | 5  // stat derivation tier, set once per NPC
   combatNotes?: string    // fighting style: "tactical, focuses fire, won't fight alone"
+  tempLoad?: TempLoadEntry[]  // what this crew member is carrying (stress, trauma, unresolved promises)
+}
+
+export interface TempLoadEntry {
+  description: string
+  severity: 'mild' | 'moderate' | 'severe'
+  acquired: string  // when/where: "Ch 2, Athex-7" or "Pinnacle infiltration"
 }
 
 export interface CohesionLogEntry {
@@ -404,6 +411,20 @@ export interface StorySummary {
   turn: number            // player turn count when generated
 }
 
+export interface NpcFailure {
+  npcName: string          // NPC name (from contested roll or check context)
+  approach: string         // skill used (e.g. "Deception", "Intimidation")
+  failures: number         // count of failures with this approach
+  closed: boolean          // true when 3+ failures — approach is burned
+}
+
+export interface SceneSummary {
+  text: string              // 2-4 sentence scene summary
+  sceneNumber: number       // chapter-scoped (resets on chapter close)
+  fromMessageIndex: number  // first message index in this scene
+  toMessageIndex: number    // last message index in this scene
+}
+
 export interface MetaState {
   version: string
   createdAt: string
@@ -426,7 +447,12 @@ export interface GameState {
   combat: CombatState
   history: HistoryState
   chapterFrame: ChapterFrame | null
-  storySummary: StorySummary | null
+  storySummary: StorySummary | null  // legacy, kept for backward compat
+  sceneSummaries: SceneSummary[]
+  scopeSignals: number              // chapter-scoped scope signal count for pacing
+  npcFailures: NpcFailure[]         // per-NPC per-approach failure tracking
+  counters: Record<string, number>  // persistent genre counters (drift_exposure, corruption, etc.) — survive chapter close
+  rulesWarnings: string[]           // injected by rules engine each turn, reset before next turn
 }
 
 // API streaming event types

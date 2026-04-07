@@ -9,30 +9,45 @@ const fantasySpecies: Species[] = [
     name: 'Human',
     description: 'Adaptable, politically dominant across most kingdoms.',
     lore: 'The common face of every kingdom. Nobody questions a human at a city gate or a market stall. No starting contact bonus, but no suspicion either. Advantage on checks to blend in or navigate bureaucracy — the systems were built by humans, for humans. The cost: no racial network. Other species look after their own; humans are on their own.',
+    startingContacts: [
+      { role: 'local official', disposition: 'neutral', description: 'A minor bureaucrat who knows how the systems work and owes no particular loyalty' },
+    ],
   },
   {
     id: 'elf',
     name: 'Elf',
     description: 'Slender, long-lived, keen-eyed.',
     lore: 'Elven patience is cultural, not passive — it comes from living long enough to see hasty decisions rot. Welcomed in courts and academies; distrusted on the frontier where "elf" means "outsider who thinks they know better." Start with one court or academic contact at Favorable. Advantage on Perception and History checks (keen eyes, long memory). Frontier and common-folk NPCs start at Wary — earn their respect through action, not lineage.',
+    startingContacts: [
+      { role: 'court scholar', disposition: 'favorable', description: 'An academic at the Collegium who respects elven lineage and long memory', affiliation: 'The Collegium' },
+    ],
   },
   {
     id: 'dwarf',
     name: 'Dwarf',
     description: 'Stocky, dense-boned, mountain-born.',
     lore: 'Dwarven bluntness isn\'t rudeness; it\'s efficiency. A dwarf\'s word is a contract, and a contract is unbreakable. Trade guilds know this, which is why dwarven merchants get better terms than anyone else. Start with one trade guild contact at Favorable. Advantage on Engineering, Appraisal, and CON saves (dense bones, stubborn constitution). Disadvantage on Deception checks — lying goes against everything your culture taught you, and your face shows it.',
+    startingContacts: [
+      { role: 'trade guild factor', disposition: 'favorable', description: 'A guild merchant who gives dwarves better terms because a dwarven contract is unbreakable', affiliation: 'Trade Guild' },
+    ],
   },
   {
     id: 'halfling',
     name: 'Halfling',
     description: 'Small, nimble, deceptively tough.',
     lore: 'People see the size and stop looking. That\'s the advantage. Halflings are everywhere, owned by no kingdom, beholden to no lord — which makes them either invisible or suspect, depending on who\'s asking. Start with one traveling merchant or innkeeper contact at Favorable (halfling network, always passing through). Advantage on Stealth checks and checks to go unnoticed in crowds. Disadvantage on Intimidation — nobody fears someone they could pick up.',
+    startingContacts: [
+      { role: 'traveling innkeeper', disposition: 'favorable', description: 'A halfling innkeeper plugged into the network of travelers, always passing through' },
+    ],
   },
   {
     id: 'dragonkin',
     name: 'Dragonkin',
     description: 'Tall, scaled, remnants of an ancient bloodline.',
     lore: 'The Wyrm Kingdoms fell three centuries ago, but the fear hasn\'t. Dragonkin are imposing, fast, and carry a reputation for violence they didn\'t earn. Some doors open because people are afraid to say no. Others close for the same reason. But the dragonkin carry something else: fragments of pre-Sundering knowledge. Oral traditions, inherited memory, dreams that map to Ancient ruin layouts. The other species lost their connection to the Ancients when the Wyrm Kingdoms burned. The dragonkin didn\'t. Start with one dragonkin exile contact at Favorable (scattered community, fiercely loyal). Advantage on Intimidation and Initiative. Advantage on checks involving Ancient ruins, pre-Sundering lore, or interpreting Ancient artifacts (inherited cultural memory). Most NPCs start at Wary — you\'re feared before you\'re known. Climbing to Trusted takes twice as long.',
+    startingContacts: [
+      { role: 'exile lorekeeper', disposition: 'favorable', description: 'A scattered dragonkin exile who preserves oral traditions and pre-Sundering knowledge', affiliation: 'Dragonkin Diaspora' },
+    ],
   },
 ]
 
@@ -40,7 +55,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'shadowblade',
     name: 'Shadowblade',
-    concept: 'Rogue / Infiltrator',
+    concept: 'Shadow Walker / Threshold Crosser',
+    description: 'The spaces between places hold things the Sundering displaced. The Shadowblade passes through them and brings something back — sometimes useful, sometimes wrong.',
     primaryStat: 'DEX',
     proficiencies: ['Stealth', 'Sleight of Hand', 'Lockpicking', 'Acrobatics'],
     stats: { STR: 10, DEX: 17, CON: 12, INT: 14, WIS: 11, CHA: 13 },
@@ -55,8 +71,8 @@ const fantasyClasses: CharacterClass[] = [
     startingAc: 15,
     hitDieAvg: 5,
     trait: {
-      name: 'Shadow Step',
-      description: 'Once per day, vanish from sight and reappear within striking distance of a target you can see. Useless in broad daylight with no cover.',
+      name: 'The Price of Shadows',
+      description: 'The Shadowblade vanishes through somewhere and brings something back. After each use, the GM places a small detail in the next scene that came from wherever they stepped through. Sometimes useful. Sometimes wrong.',
       usesPerDay: 1,
       usesRemaining: 1,
     },
@@ -64,7 +80,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'warden',
     name: 'Warden',
-    concept: 'Knight / Tank',
+    concept: 'Sworn Protector / Last Guardian',
+    description: 'Bound by oaths older than the kingdoms that forgot them. The Warden protects what remains because someone has to remember what was worth protecting.',
     primaryStat: 'STR',
     proficiencies: ['Athletics', 'Intimidation', 'Heavy Weapons', 'Shield Tactics'],
     stats: { STR: 17, DEX: 12, CON: 15, INT: 10, WIS: 11, CHA: 10 },
@@ -79,8 +96,8 @@ const fantasyClasses: CharacterClass[] = [
     startingAc: 16,
     hitDieAvg: 6,
     trait: {
-      name: 'Battle Surge',
-      description: 'Once per day, make a bonus attack immediately after a successful attack.',
+      name: 'Oath Burden',
+      description: 'The Warden\'s bonus attack comes from invoking a sworn duty. After the surge, they must keep one promise made during the chapter or lose access to the trait next chapter. Strength bound by obligation.',
       usesPerDay: 1,
       usesRemaining: 1,
     },
@@ -88,7 +105,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'arcanist',
     name: 'Arcanist',
-    concept: 'Wizard / Scholar',
+    concept: 'Spell Archaeologist / Lost Knowledge Seeker',
+    description: 'Every spell is a fragment of something larger that no living teacher fully understands. The Arcanist pieces together what the world has forgotten, one dangerous discovery at a time.',
     primaryStat: 'INT',
     proficiencies: ['Arcana', 'Investigation', 'History', 'Enchantment'],
     stats: { STR: 10, DEX: 13, CON: 12, INT: 17, WIS: 13, CHA: 10 },
@@ -112,7 +130,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'herald',
     name: 'Herald',
-    concept: 'Bard / Negotiator',
+    concept: 'Lorekeeper / Story Wielder',
+    description: "The old stories aren't decoration — they're the last record of truths the world has lost. The Herald speaks them into power, knowing that every story shared becomes known to those who hear it.",
     primaryStat: 'CHA',
     proficiencies: ['Persuasion', 'Deception', 'Insight', 'History'],
     stats: { STR: 10, DEX: 12, CON: 12, INT: 13, WIS: 11, CHA: 17 },
@@ -128,7 +147,7 @@ const fantasyClasses: CharacterClass[] = [
     hitDieAvg: 4,
     trait: {
       name: 'Bardic Echo',
-      description: 'Once per day, invoke a story, song, or legend that shifts the mood of a scene. A crowd calms, a guard hesitates, an enemy pauses. Requires speaking; useless when silenced or ambushed.',
+      description: 'Once per day, invoke a story, song, or legend that shifts the mood of a scene. A crowd calms, a guard hesitates, an enemy pauses. Requires speaking; useless when silenced or ambushed. Memory cost: stories invoked become known to whoever heard them. Skilled NPCs can use that knowledge against the Herald later.',
       usesPerDay: 1,
       usesRemaining: 1,
     },
@@ -136,7 +155,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'keeper',
     name: 'Keeper',
-    concept: 'Cleric / Survivalist',
+    concept: 'Divine Vessel / Fading Thread',
+    description: 'The gods have grown quieter each generation. The Keeper holds the last thread of divine favor, acting in alignment with powers that may not answer much longer.',
     primaryStat: 'WIS',
     proficiencies: ['Medicine', 'Perception', 'Survival', 'Religion'],
     stats: { STR: 10, DEX: 13, CON: 14, INT: 13, WIS: 17, CHA: 10 },
@@ -160,7 +180,8 @@ const fantasyClasses: CharacterClass[] = [
   {
     id: 'ranger',
     name: 'Ranger',
-    concept: 'Archer / Scout',
+    concept: 'Wilderness Interpreter / Living Memory',
+    description: "The forests remember what the cities forgot. The Ranger reads the land's scars and follows trails that predate every living map.",
     primaryStat: 'DEX',
     proficiencies: ['Tracking', 'Sharpshooting', 'Acrobatics', 'Animal Handling'],
     stats: { STR: 10, DEX: 16, CON: 13, INT: 12, WIS: 13, CHA: 11 },
@@ -175,8 +196,8 @@ const fantasyClasses: CharacterClass[] = [
     startingAc: 14,
     hitDieAvg: 5,
     trait: {
-      name: 'Dead Eye',
-      description: 'Once per day, treat one ranged attack as a critical hit (on a 19-20). Also has terrain expertise: advantage on all Survival checks in the wilds.',
+      name: 'The Ranger\'s Mark',
+      description: 'The perfect shot requires studying the target for a full round, observing them as prey. NPCs witnessing this feel it. Disposition gains slow for one chapter after each use.',
       usesPerDay: 1,
       usesRemaining: 1,
     },
@@ -221,7 +242,7 @@ const fantasyTheme: GenreTheme = {
 const fantasyConfig: GenreConfig = {
   id: 'fantasy',
   name: 'Fantasy',
-  tagline: 'Ancient magic, chosen heroes, and the world worth saving.',
+  tagline: 'The world is older than it remembers. What was lost has a price. Pay it anyway.',
   available: true,
   species: fantasySpecies,
   speciesLabel: 'Race',
@@ -252,17 +273,18 @@ Rest terminology: Short rest, Long rest.`,
   },
   promptSections: {
     role: 'You are the Game Master of a fantasy tabletop RPG campaign. You narrate a world of ancient magic, fractured kingdoms, and the long shadows of powers that predate civilization.',
-    setting: 'A world of medieval-level technology augmented by magic. Kingdoms, city-states, and wild territories coexist uneasily. Magic is real but not ubiquitous, studied, feared, worshipped, or hunted. Ancient ruins hold pre-collapse knowledge. The wilderness is genuinely dangerous. Gods may or may not exist, but their churches do.',
+    setting: 'The world is forgetting itself. The Five Kingdoms still stand, the Accord of Thorns still holds on paper, but the knowledge that built this civilization is disappearing. Ancient ruins dot every kingdom, libraries no one can read, machines no one can operate, inscriptions in languages that died with the Sundering. The Dragonkin remember fragments through oral tradition and inherited dream-memory, but even their knowledge is incomplete, fading with each generation. Magic is not ascending; it is echo. Every spell cast draws on a diminishing reservoir that no one knows how to replenish. The Collegium studies what remains but understands less each decade. The churches preach about gods whose names they may have wrong. The wilderness reclaims what civilization can no longer maintain. The Accord of Thorns is fraying not because of politics alone, but because the shared knowledge that made cooperation possible is gone. Border lords dispute treaties written in a legal language no living scholar fully commands. The world is not ending in fire. It is ending in forgetting.',
     vocabulary: 'Use grounded fantasy language: stone and timber, torches and lanterns, horses and carts. Magic has a physical cost, fatigue, nosebleeds, trembling. Spells are cast or invoked, not activated. Weapons are steel, iron, or enchanted. Currency is gold, silver, copper. Avoid modern idioms.',
     toneOverride: 'Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real, ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.',
-    assetMechanic: '',
-    traitRules: `## TRAIT RULES\n\n- **Arcane Surge:** On nat 1 spell checks, wild magic surges. GM picks a random effect.\n- **Bardic Echo:** GM determines effect of story or song. Requires speech — useless when silenced.\n- **Divine Favor:** GM silently tracks deity alignment. In alignment: full power. Against: half.\n- **Shadow Step:** Requires shadow or cover — useless in open daylight.`,
+    assetMechanic: `## THE FELLOWSHIP\n\nThe player's companions are the genre's signature asset. Unlike a ship or retinue, the fellowship is made of people with their own arcs, secrets, and breaking points. Each companion should have:\n- A reason they joined (personal stake in the chapter's hook)\n- A secret that becomes relevant later\n- A vulnerability that triggers under specific player decisions\n- An arc that resolves alongside the main plot\n\nCompanions are tracked as crew NPCs with tempLoad. High-stakes events distribute load across the fellowship. Recovery requires personal scenes, not just rest. The fellowship doesn't degrade automatically between chapters (unlike Grimdark), but it fractures when the player ignores individual companions' needs.\n\nWhen introducing companions, give them opinions. They aren't followers — they're allies with their own reasons for being here. A companion who disagrees with the player's decision is more valuable than one who agrees.`,
+    traitRules: `## TRAIT RULES\n\n- **Arcane Surge:** On nat 1 spell checks, wild magic surges. GM picks a random effect.\n- **Bardic Echo:** GM determines effect of story or song. Requires speech — useless when silenced. Memory cost: stories invoked become known to whoever heard them. Skilled NPCs can use that knowledge against the Herald later.\n- **Divine Favor:** GM silently tracks deity alignment. In alignment: full power. Against: half.\n- **The Price of Shadows:** The Shadowblade vanishes through somewhere and brings something back. After each use, the GM places a small detail in the next scene that came from wherever they stepped through. Sometimes useful. Sometimes wrong.\n- **Oath Burden:** The Warden's bonus attack comes from invoking a sworn duty. After the surge, they must keep one promise made during the chapter or lose access to the trait next chapter. Strength bound by obligation.\n- **The Ranger's Mark:** The perfect shot requires studying the target for a full round, observing them as prey. NPCs witnessing this feel it. Disposition gains slow for one chapter after each use.`,
     consumableLabel: 'Potions, salves, scrolls, antidotes',
     tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead.',
     npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
     buildAssetState: null,
-    investigationGuide: 'Lore codex: prophecy fragments, historical connections, magical phenomena, ancient texts. When the player researches mysteries, track discoveries as narrative threads. Clues come from libraries, ruins, NPC scholars, and divination.',
+    investigationGuide: 'Lore codex — prophecy fragments, historical connections, magical phenomena, ancient texts, ruin surveys.\n\nInvestigation in this genre is archaeology under pressure. The player isn\'t gathering evidence; they\'re recovering knowledge that was deliberately or accidentally lost.\n\nThe truth is older than the question. What you\'re investigating turns out to be a recurrence of something that happened before, repeatedly. Finding the pattern is the breakthrough.\n\nSources are fragments. No source is complete. Every NPC scholar, every library, every ruin holds part of the story — and the parts contradict each other in ways that are themselves clues.\n\nTranslation matters. Language is a barrier. Old texts require interpretation, and interpretation introduces error. Some clues are mistranslations of older clues.\n\nThe gatekeeper is dead. The person who knew the whole truth died long ago. The investigation is about reconstructing their knowledge from what they left behind — letters, students, marginalia in books they owned.',
   },
+  cohesionGuide: 'In fantasy, cohesion is the fellowship bond. +1: shared hardship endured together, player consulting companions before major decisions, moments of vulnerability or trust between party members. -1: treating companions as tools, making unilateral decisions that affect the group, dismissing a companion\'s personal stakes. Companions in this genre have their own arcs — cohesion tracks whether the player is part of those arcs or just using the people in them.',
   companionLabel: 'Companions',
   notebookLabel: 'Codex',
   intelTabLabel: 'Lore',
@@ -271,9 +293,9 @@ Rest terminology: Short rest, Long rest.`,
   explorationLabel: 'Dungeon',
   openingHooks: [
     // Universal
-    { hook: 'The tavern door slams open. A wounded rider staggers in, clutching a sealed message. "For the company at the back table," he gasps, then collapses. The seal bears a crest no one has seen in twenty years.', title: 'The Sealed Message' },
-    { hook: 'The company is camped in the foothills when a stranger approaches the fire. She offers information about a bounty on the company\'s heads, but her price is a favor she won\'t name yet.', title: 'The Stranger\'s Price' },
-    { hook: 'Market day in the capital. The company splits up to resupply. Then the cathedral bells start ringing — not for prayer. The city gates are closing.', title: 'Closing Gates' },
+    { hook: 'A child in the village speaks fluent Old Arcane in her sleep. She\'s never heard the language. The village priest wants her examined. The local lord wants her taken. The girl wants someone who can tell her what she\'s saying.', title: 'The Old Tongue' },
+    { hook: 'An ancient road has appeared in the forest overnight. Stone-paved, perfectly preserved, leading somewhere that wasn\'t there yesterday. Three woodsmen have walked it. None have come back. The road is still there.', title: 'The Road' },
+    { hook: 'A scholar at the Collegium dies under suspicious circumstances. Her last research notes describe a place she calls \'the second library\' — and she writes about it as if you\'ve already been there together. You\'ve never met her.', title: 'The Second Library' },
     { hook: 'Passing through a mountain pass, the company finds a caravan overturned and looted. One survivor, badly hurt, begs for help: "They took the children into the mines."', title: 'Into the Mines' },
     // Shadowblade
     { hook: 'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the lock on the cart is one you recognize — guild-work, the kind used to seal things people kill to protect. And the merchant keeps looking over his shoulder.', title: 'Guild-Work', classes: ['Shadowblade'] },
