@@ -61,23 +61,25 @@ function resolveRoll(roll: number, modifier: number, dc: number, rollType?: stri
   return 'failure'
 }
 
+const ROLL_REMINDER = ' Narrate the outcome, then call commit_turn with all state changes and suggested_actions.'
+
 function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
   if (rollType === 'damage') {
-    return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.`
+    return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.${ROLL_REMINDER}`
   }
   if (rollType === 'healing') {
-    return `Healing roll: ${roll} + ${modifier} = ${total} HP healed.`
+    return `Healing roll: ${roll} + ${modifier} = ${total} HP healed.${ROLL_REMINDER}`
   }
   const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
   const contestedNote = contested && npcRoll !== undefined && npcTotal !== undefined
     ? ` Contested vs ${contested.npcName}'s ${contested.npcSkill}: NPC rolled ${npcRoll} + ${contested.npcModifier} = ${npcTotal}.`
     : ''
   const vsText = contested && npcTotal !== undefined ? `vs ${contested.npcName}'s ${npcTotal}` : `vs DC ${dc}`
-  if (result === 'critical') return `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.`
-  if (result === 'fumble') return `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.`
-  if (result === 'success') return `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.`
-  return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.`
+  if (result === 'critical') return `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.${ROLL_REMINDER}`
+  if (result === 'fumble') return `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.${ROLL_REMINDER}`
+  if (result === 'success') return `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.${ROLL_REMINDER}`
+  return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.${ROLL_REMINDER}`
 }
 
 const RETRY_DELAY_MS = 12_000
