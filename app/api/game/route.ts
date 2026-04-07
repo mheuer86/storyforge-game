@@ -235,16 +235,15 @@ function detectGameContext(gameState: GameState, isMetaQuestion: boolean): GameC
   return 'social'
 }
 
-function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): { system: Anthropic.TextBlockParam[]; dynamicState: string } {
+function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
   const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
-  return {
-    // System prompt is now fully static — cached at 90% discount
-    system: [
-      { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
-    ],
-    // Dynamic state injected into the user message instead
-    dynamicState,
-  }
+  // Two system blocks: static (cached) + dynamic (per-turn).
+  // Both are system-level context — structurally can't be overridden by user input.
+  // History in messages stays a cacheable append-only prefix.
+  return [
+    { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: dynamicState },
+  ]
 }
 
 export async function POST(req: NextRequest) {
@@ -284,7 +283,7 @@ export async function POST(req: NextRequest) {
       const contextTools = getToolsForContext(gameContext, gameState.combat.active, !!gameState.world.notebook)
 
       try {
-        const { system: systemPrompt, dynamicState } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
@@ -464,7 +463,7 @@ export async function POST(req: NextRequest) {
             send({ type: 'chapter_title', title: initialResult.chapterTitle } as unknown as StreamEvent)
           }
         }
-        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion, dynamicState)
+        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
 
         // Normal turns: 4 rounds max. Narrative + batched tools + suggest_actions should
         // fit in 1-2 rounds. 4 gives headroom for rolls or complex tool sequences.
@@ -482,7 +481,7 @@ export async function POST(req: NextRequest) {
           send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
           try {
-            const { system: retrySystem, dynamicState: retryDynamic } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
@@ -490,7 +489,7 @@ export async function POST(req: NextRequest) {
                 ]
               : (() => {
                   const retryMsg = isInitial ? buildInitialMessage(gameState) : message
-                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion, retryDynamic)
+                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
                 })()
 
             const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: contextTools })
