@@ -1308,7 +1308,13 @@ IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the wor
 - add_threads (at least one narrative thread)
 Also include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The world state is blank — you must populate it.
 
-ORIGIN CONTACTS: The player's origin lore defines starting contacts (e.g. "Start with one Synod official at Favorable"). Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.`
+ORIGIN CONTACTS: Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.
+${(() => {
+      const species = config.species.find(s => s.name === gameState.character?.species)
+      const contacts = species?.startingContacts
+      if (!contacts || contacts.length === 0) return 'See origin lore for starting contact details.'
+      return contacts.map(c => `- ${c.role} at ${c.disposition}${c.affiliation ? ` (${c.affiliation})` : ''}: ${c.description}`).join('\n')
+    })()}`
 
     return { message: msg, chapterTitle: hookTitle }
   }
