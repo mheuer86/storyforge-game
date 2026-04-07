@@ -169,9 +169,7 @@ request_roll BEFORE outcome. Never narrate state change without tool call. sugge
 
 **No meta-narration.** Never narrate your decision-making process. Don't write "let me resolve that" or "I'll call a roll for this." Just call the tool.
 
-**Output order:** 1. Narrative text. 2. ALL tool calls in one batch (state mutations + suggest_actions). Never spread tool calls across multiple responses — batch update_world, update_character, suggest_actions, and any other tools into a single response. Each extra round costs the player money.
-
-**Input format:** Each player message includes a [GM CONTEXT] block with the current game state. This is authoritative — treat it as your source of truth for HP, inventory, NPCs, location, and all tracked state. The [PLAYER ACTION] section is the actual player input.`
+**Output order:** 1. Narrative text. 2. ALL tool calls in one batch (state mutations + suggest_actions). Never spread tool calls across multiple responses — batch update_world, update_character, suggest_actions, and any other tools into a single response. Each extra round costs the player money.`
 }
 
 // ============================================================
@@ -1064,8 +1062,7 @@ const OPERATION_TOKEN_BOOST = 1000  // Extra budget during active ops
 export function buildMessagesForClaude(
   gameState: GameState,
   currentMessage: string,
-  isMetaQuestion: boolean,
-  dynamicState?: string
+  isMetaQuestion: boolean
 ): Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> {
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
@@ -1131,15 +1128,10 @@ export function buildMessagesForClaude(
     }
   }
 
-  // Inject dynamic state + player message as the final user turn.
-  // Dynamic state is moved out of the system prompt so the system block
-  // stays fully static and cacheable. The GM CONTEXT label tells Claude
-  // to treat this as authoritative state, not player input.
+  // Dynamic state is now in a second system block (system-level authority,
+  // can't be overridden by user input). Messages are just the player's action.
   const prefix = isMetaQuestion ? '[META] ' : ''
-  const stateBlock = dynamicState
-    ? `[GM CONTEXT — AUTHORITATIVE STATE]\n${dynamicState}\n\n[PLAYER ACTION]\n${prefix}${currentMessage}`
-    : prefix + currentMessage
-  messages.push({ role: 'user', content: stateBlock })
+  messages.push({ role: 'user', content: prefix + currentMessage })
 
   return messages
 }
