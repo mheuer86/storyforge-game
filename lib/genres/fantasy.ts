@@ -328,6 +328,13 @@ Rest terminology: Short rest, Long rest.`,
     'The Last Watch', 'The Ember March', 'The Broken Crown',
     'The Dusk Accord', 'The Silver Vigil', 'The Iron Covenant', 'The Pale Banner',
   ],
+  npcNames: [
+    'Eowen', 'Calder', 'Brynn', 'Thessa', 'Rowan', 'Kellan', 'Mirth', 'Aldwen',
+    'Sorrel', 'Cael', 'Arden', 'Lirael', 'Tiernan', 'Morvaine', 'Glynn', 'Eira',
+    'Corwin', 'Daeris', 'Fennel', 'Islene', 'Branwen', 'Taliesin', 'Neve',
+    'Gareth', 'Elowynn', 'Bereth', 'Cirin', 'Morwenna', 'Taran', 'Aelwen',
+    'Ossian', 'Rhiannon', 'Kedrin', 'Wrennen', 'Lowen',
+  ],
 }
 
 

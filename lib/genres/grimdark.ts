@@ -341,6 +341,13 @@ The gatekeeper clue is a person, not a document. Someone who knows the truth and
     'The Thorn Company', 'The Last Warrant', 'The Grey Vanguard',
     'The Ember Compact', 'The Broken Seal', 'The Hollow Banner', 'The Black Vigil',
   ],
+  npcNames: [
+    'Harven', 'Breck', 'Oswick', 'Dalla', 'Fenmark', 'Greth', 'Ulra', 'Morwen',
+    'Tove', 'Aldwin', 'Sigra', 'Kord', 'Wulfric', 'Etta', 'Haldren', 'Maren',
+    'Brant', 'Helga', 'Torsten', 'Gerta', 'Rickard', 'Edda', 'Osmund', 'Vitta',
+    'Gorath', 'Brita', 'Leofric', 'Thyra', 'Caskwell', 'Anneke', 'Dunstan',
+    'Ragna', 'Blaeric', 'Hildeth', 'Yoren',
+  ],
 }
 
 

@@ -372,6 +372,13 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     'The Last Signal', 'The Chrome Pact', 'The Grid Runners', 'The Null Faction',
     'The Blind Protocol', 'The Ashen Wire',
   ],
+  npcNames: [
+    'Razor', 'Jin', 'Kovacs', 'Delgado', 'Nine', 'Bishop', 'Yara', 'Frost',
+    'Kali', 'Vex', 'Santos', 'Nika', 'Mercer', 'Tran', 'Glitch', 'Okafor',
+    'Splicer', 'Reyes', 'Null', 'Tanaka', 'Cass', 'Devlin', 'Ashe', 'Miko',
+    'Roque', 'Haze', 'Petrov', 'Lux', 'Corbin', 'Zara', 'Dex', 'Vasquez',
+    'Ghost', 'Niles', 'Kwon',
+  ],
 }
 
 

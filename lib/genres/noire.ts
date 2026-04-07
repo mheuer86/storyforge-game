@@ -369,6 +369,13 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     'The Gaslight Agency', 'The Red Line Office', 'The Ashworth Bureau',
     'The Meridian Desk', 'The Cold File Agency', 'The Inkwell Office', 'The Dusk Bureau',
   ],
+  npcNames: [
+    'Halloran', 'Russo', 'Novak', 'Linden', 'Varga', 'Coretti', 'Bledsoe',
+    'Callahan', 'Mazur', 'DeLuca', 'Pfeiffer', 'Kessler', 'Malone', 'Stavros',
+    'Birch', 'Casella', 'Donnelly', 'Roth', 'Navarro', 'Brennan', 'Kovac',
+    'Margolis', 'Tierney', 'Volpe', 'Ogden', 'Sabo', 'Wexler', 'Palmieri',
+    'Hennessy', 'Krol', 'Whitfield', 'Renko', 'Szabo', 'Loomis', 'Cafferty',
+  ],
 }
 
 
