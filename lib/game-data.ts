@@ -84,14 +84,7 @@ export function createInitialGameState(
       description: 'Starting location — the GM will establish this.',
     },
     factions: [],
-    npcs: (selectedSpecies.startingContacts ?? []).map(c => ({
-      name: c.role,  // placeholder name — Claude will name them properly in first response
-      description: c.description,
-      lastSeen: 'Starting contact',
-      role: c.npcRole ?? 'contact' as const,
-      disposition: c.disposition,
-      ...(c.affiliation && { affiliation: c.affiliation }),
-    })),
+    npcs: [],  // Claude creates named NPCs from origin lore + startingContacts context in first turn
     threads: [],
     promises: [],
     antagonist: null,
