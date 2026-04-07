@@ -563,7 +563,7 @@ export function buildClosePrompt(gameState: GameState): [string, string] {
 
 ## CLOSE SEQUENCE
 
-Execute these steps by calling commit_turn with all the relevant fields. You may call commit_turn multiple times if needed (one per logical step), but batching is preferred.
+Execute ALL steps in a SINGLE commit_turn call. Batch everything: audit fixes, close_chapter, level_up, skill points, debrief, chapter_frame, and pivotal_scenes all go in one commit_turn. This saves multiple API rounds.
 
 ### Step 1: AUDIT
 Review the game state. Check:
