@@ -41,7 +41,7 @@ interface CommitTurnInput {
   }
   world?: {
     add_npcs?: { name: string; description: string; last_seen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string }[]
-    update_npcs?: { name: string; description?: string; last_seen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; temp_load_add?: { description: string; severity: 'mild' | 'moderate' | 'severe'; acquired: string }[]; temp_load_remove?: string }[]
+    update_npcs?: { name: string; description?: string; last_seen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; temp_load_add?: { description: string; severity: 'mild' | 'moderate' | 'severe'; acquired: string }[]; temp_load_remove?: string; add_signature_line?: string }[]
     set_location?: { name: string; description: string }
     set_current_time?: string
     set_scene_snapshot?: string
@@ -78,6 +78,7 @@ interface CommitTurnInput {
   pending_check?: Record<string, unknown>
   scene_end?: boolean
   scene_summary?: string
+  pivotal_scenes?: { title: string; text: string }[]
 }
 
 // ============================================================
@@ -344,6 +345,12 @@ function applyWorldChanges(
             updated.tempLoad = (updated.tempLoad ?? []).filter(
               e => !e.description.toLowerCase().includes(removeStr)
             )
+          }
+          if (n.add_signature_line) {
+            const lines = updated.signatureLines ?? []
+            if (lines.length < 4) {  // cap at 4
+              updated.signatureLines = [...lines, n.add_signature_line]
+            }
           }
           return updated
         })
@@ -987,6 +994,22 @@ function applyNarrativeChanges(
     )
     updated = { ...updated, history: { ...updated.history, chapters } }
     statChanges.push({ type: 'new', label: 'Chapter debrief ready' })
+  }
+
+  // Pivotal scenes (close prompt curation)
+  if (input.pivotal_scenes) {
+    const scenes = input.pivotal_scenes
+    const existing = updated.pivotalScenes ?? []
+    const newScenes = scenes.map(s => ({
+      title: s.title,
+      text: s.text,
+      chapter: updated.meta.chapterNumber,
+    }))
+    // Cap at 8 total, keep newest
+    updated = {
+      ...updated,
+      pivotalScenes: [...existing, ...newScenes].slice(-8),
+    }
   }
 
   return updated

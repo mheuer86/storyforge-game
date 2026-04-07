@@ -190,6 +190,8 @@ export function createInitialGameState(
     npcFailures: [],
     counters: {},
     rulesWarnings: [],
+    pivotalScenes: [],
+    rollSequences: [],
   }
 }
 

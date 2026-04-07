@@ -184,7 +184,11 @@ const commitTurnDefinition: Anthropic.Tool = {
                 },
                 temp_load_remove: {
                   type: 'string',
-                  description: 'Remove a load entry by description (substring match). Use after recovery scenes that address what the crew member was carrying.',
+                  description: 'Remove a load entry by description (substring match). Use after recovery scenes.',
+                },
+                add_signature_line: {
+                  type: 'string',
+                  description: 'Preserve an exact NPC quote that captures their voice at a pivotal moment. Max 4 per NPC. Use sparingly — only lines that define the character.',
                 },
               },
               required: ['name'],
@@ -669,6 +673,21 @@ const commitTurnDefinition: Anthropic.Tool = {
       // ── Scene Management ───────────────────────────────────
       scene_end: { type: 'boolean', description: 'True when a scene boundary occurred.' },
       scene_summary: { type: 'string', description: '2-4 sentence summary of concluding scene.' },
+      tone_signature: { type: 'string', description: '1-2 words capturing emotional register of concluding scene (e.g. "quiet tension", "earned release", "accumulated dread").' },
+
+      // ── Narrative Curation (close prompt only) ────────────────
+      pivotal_scenes: {
+        type: 'array',
+        description: 'Scenes from this chapter worth preserving permanently. Close prompt only. Max 2-3 per chapter.',
+        items: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Short label: "The Caerun Corridor", "The Holding Room"' },
+            text: { type: 'string', description: '~200-300 token summary preserving specific imagery, dialogue beats, and callbacks.' },
+          },
+          required: ['title', 'text'],
+        },
+      },
     },
     required: ['suggested_actions'],
   },
