@@ -381,6 +381,7 @@ export interface Chapter {
   keyEvents: string[]
   debrief?: ChapterDebrief
   messages?: ChatMessage[]  // archived chat messages for completed chapters
+  sceneSummaries?: SceneSummary[]  // preserved for cross-chapter memory (active arcs only)
 }
 
 export interface ChapterFrame {

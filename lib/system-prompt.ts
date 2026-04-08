@@ -1352,38 +1352,38 @@ export function buildMessagesForClaude(
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
 
-  const sceneSummaries = gameState.sceneSummaries ?? []
   const legacySummary = gameState.storySummary
 
-  if (sceneSummaries.length > 0) {
-    // ── Scene summaries: inject all chapter summaries, then only current-scene messages ──
-    const summaryBlock = sceneSummaries
-      .map((s) => {
+  // ── Prior chapter scene summaries: inject for chapters that still have them ──
+  // Scene summaries are cleaned up when their arc resolves, so presence = still relevant
+  const priorChaptersWithScenes = gameState.history.chapters.filter(ch =>
+    ch.status === 'complete' && ch.sceneSummaries && ch.sceneSummaries.length > 0
+  )
+  if (priorChaptersWithScenes.length > 0) {
+    const priorBlock = priorChaptersWithScenes.map(ch => {
+      const scenes = ch.sceneSummaries!.map(s => {
         const tone = s.toneSignature ? ` [${s.toneSignature}]` : ''
         return `[Scene ${s.sceneNumber}]${tone} ${s.text}`
-      })
-      .join('\n\n')
+      }).join('\n')
+      return `[Ch${ch.number}: ${ch.title}]\n${scenes}`
+    }).join('\n\n')
 
     // Pivotal scenes from prior chapters (permanent, never rotated)
     const pivotalBlock = (gameState.pivotalScenes ?? []).length > 0
       ? '\n\n[PIVOTAL MOMENTS]\n' + gameState.pivotalScenes.map(p => `[Ch${p.chapter}: ${p.title}] ${p.text}`).join('\n\n')
       : ''
 
-    messages.push({ role: 'user', content: `[SCENE SUMMARIES]\n${summaryBlock}${pivotalBlock}` })
-    messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current scene.' })
+    messages.push({ role: 'user', content: `[PRIOR CHAPTER SCENES]\n${priorBlock}${pivotalBlock}` })
+    messages.push({ role: 'assistant', content: 'Acknowledged. Prior chapter context loaded.' })
+  } else if (gameState.pivotalScenes && gameState.pivotalScenes.length > 0) {
+    // No scene summaries from prior chapters, but pivotal moments exist
+    const pivotalBlock = gameState.pivotalScenes.map(p => `[Ch${p.chapter}: ${p.title}] ${p.text}`).join('\n\n')
+    messages.push({ role: 'user', content: `[PIVOTAL MOMENTS]\n${pivotalBlock}` })
+    messages.push({ role: 'assistant', content: 'Acknowledged.' })
+  }
 
-    // Current scene = messages after the last summarized scene
-    const lastSummarized = sceneSummaries[sceneSummaries.length - 1]
-    const currentSceneMessages = allMessages.slice(lastSummarized.toMessageIndex + 1)
-    for (const msg of currentSceneMessages) {
-      if (msg.role === 'player' || msg.role === 'meta-question') {
-        const p = msg.role === 'meta-question' ? '[META] ' : ''
-        messages.push({ role: 'user', content: p + msg.content })
-      } else if (msg.role === 'gm' || msg.role === 'meta-response') {
-        messages.push({ role: 'assistant', content: msg.content })
-      }
-    }
-  } else if (legacySummary && legacySummary.text) {
+  // ── Current chapter: always use raw messages (no within-chapter compression) ──
+  if (legacySummary && legacySummary.text) {
     // ── Legacy: old-style monolithic summary (backward compat for old saves) ──
     messages.push({ role: 'user', content: `[STORY SO FAR]\n${legacySummary.text}` })
     messages.push({ role: 'assistant', content: 'Acknowledged. Continuing from current situation.' })
