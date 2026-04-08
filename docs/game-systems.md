@@ -29,7 +29,7 @@ Every chapter follows a four-act structure detected automatically from game stat
 | Crucible resolved + 2+ scope signals post-crucible | Scope creep, close the chapter |
 | Turn 20+ | Over budget, wrap now |
 
-**Chapter target:** 10-18 turns. Turns 1-3 are the hook. Turns 4-8 are development. Turns 9-14 are the crucible. Turns 15-18 are resolution. The scope test enforces one location, one primary conflict, one crucible per chapter.
+**Chapter target:** 10-18 turns, with a 25-turn hard cap. Turns 1-3 are the hook. Turns 4-8 are development. Turns 9-14 are the crucible. Turns 15-18 are resolution. The scope test enforces one location, one primary conflict, one crucible per chapter. The frame constraint is milestone-scoped: the chapter objective aligns with the active episode milestone, keeping each chapter focused on a single narrative beat within the larger arc.
 
 ---
 
@@ -161,3 +161,21 @@ These systems run entirely behind the scenes. Their names and mechanics are neve
 | **Counters** | Persistent genre-specific counters (drift_exposure, corruption, chrome_stress, favor_balance) that survive chapter close. Threshold crossings trigger world-state mutations and warnings to the GM. |
 
 All of these are managed through dynamic state injection: the compressed game state block includes their current values so the GM can act on them, but the player only experiences their narrative effects.
+
+---
+
+## 9. Story Arcs & Episodes
+
+Long-running narrative structures that persist across chapters, providing campaign-level continuity.
+
+**Arcs** are campaign-spanning storylines (e.g., "The Syndicate War", "Finding the Lost Colony"). Each arc has a status (`active`, `resolved`, `abandoned`) and contains one or more episodes. Arcs persist across chapter boundaries and are never reset.
+
+**Episodes** are chapter-scoped milestones within an arc. Each episode defines a milestone (a concrete narrative goal) and tracks its status (`pending`, `active`, `completed`, `failed`). Only one episode per arc is active at a time.
+
+**Relationship to chapter frame:** The chapter objective is derived from the active episode's milestone. This keeps each chapter focused on advancing one specific beat in the larger arc, rather than trying to resolve the whole storyline at once.
+
+**Arc decomposition at chapter start:** When a new chapter begins, the GM decomposes the active arc into its next episode milestone. This becomes the chapter frame objective. If no arc exists yet, the opening hook establishes one.
+
+**Close sequence advancement:** During the three-phase Haiku close, Phase 1 advances episodes with summaries of what was accomplished. Episodes can be completed, new episodes added, arcs resolved, or arcs abandoned based on the chapter's events.
+
+**Dynamic state display:** Active arcs and their episode progress are included in the compressed game state so the GM always knows the campaign-level narrative position. The player experiences arcs through narrative, not through exposed mechanics.

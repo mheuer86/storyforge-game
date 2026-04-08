@@ -204,19 +204,27 @@ The current player message is appended last as a plain `user` message (with `[ME
 
 ### Close Prompt (`buildClosePrompt`)
 
-Replaces the normal GM prompt when a chapter closes. The close handler is explicitly "NOT the narrative GM" -- it's mechanical.
+Replaces the normal GM prompt when a chapter closes. Uses Claude Haiku (`claude-haiku-4-5`) in a three-phase sequence. The close handler is explicitly "NOT the narrative GM" -- it's mechanical.
 
-**Seven-step sequence (all batched into a single commit_turn call, max 3 API rounds):**
+**Three-phase Haiku close sequence:**
 
+Each phase is a separate Haiku API call with its own focused prompt, producing one `commit_turn` per phase.
+
+**Phase 1: Close + Level Up**
 1. **Audit** -- review threads, promises, clocks, antagonist, operation/exploration state. Resolve or update stale entries.
 2. **Close Chapter** -- summary (2-3 sentences, long-term memory), key events (3-5), next chapter title, resolution description, forward hook.
 3. **Level Up** -- new level, HP increase (hit die avg + CON mod, min 1). Proficiency bonus bumps at levels 5/9/13. ASI at levels 4/8/12.
 4. **Skill Points** -- 0-2 points awarded against criteria (creative non-proficient use, clean objective completion, lasting positive decision payoff).
-5. **Debrief** -- tactical (dice analysis, smart decisions, real costs), strategic (thread movement, urgency), lucky breaks, costs paid, promises kept/broken. Incorporates GM self-assessment if available.
-6. **Set Next Frame** -- provisional objective + crucible for the next chapter, derived from forward hook.
-7. **Curate Narrative Memory** -- `pivotal_scenes` (max 2-3 per chapter, ~200-300 token moment summaries preserving imagery and dialogue). Signature lines on NPCs via `add_signature_line` (1-2 per major NPC, permanent voice anchors).
+5. **Arc Advancement** -- advance active episodes with summaries of what was accomplished. Complete, fail, or add episodes. Resolve or abandon arcs as warranted by the chapter's events.
 
-All seven steps execute in a single commit_turn. The prompt explicitly instructs batching to save API rounds (previously required up to 12 separate tool calls). Rules: analytical voice only, no GM narration, reference actual events and rolls, execute all steps.
+**Phase 2: Debrief**
+6. **Debrief** -- tactical (dice analysis, smart decisions, real costs), strategic (thread movement, urgency), lucky breaks, costs paid, promises kept/broken. Incorporates GM self-assessment if available.
+
+**Phase 3: Curation**
+7. **Curate Narrative Memory** -- `pivotal_scenes` (max 2-3 per chapter, ~200-300 token moment summaries preserving imagery and dialogue). Signature lines on NPCs via `add_signature_line` (1-2 per major NPC, permanent voice anchors).
+8. **Set Next Frame** -- provisional objective + crucible for the next chapter, derived from forward hook and the next active episode milestone.
+
+Rules: analytical voice only, no GM narration, reference actual events and rolls, execute all steps within each phase.
 
 ### Audit Prompt (`buildAuditPrompt`)
 
