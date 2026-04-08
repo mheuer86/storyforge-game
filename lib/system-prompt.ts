@@ -570,7 +570,10 @@ export function buildClosePrompt(gameState: GameState): [string, string] {
 
 ## CLOSE SEQUENCE
 
-Execute ALL steps in a SINGLE commit_turn call. Batch everything: audit fixes, close_chapter, level_up, skill points, debrief, chapter_frame, and pivotal_scenes all go in one commit_turn. This saves multiple API rounds.
+Execute these steps across 2-3 commit_turn calls:
+- **Call 1:** Audit fixes (thread/promise/clock updates) + close_chapter (summary, key_events, next_title, resolution_met, forward_hook) + character changes (level_up, add_proficiency)
+- **Call 2:** debrief + chapter_frame + pivotal_scenes + signature lines
+You MUST include close_chapter in one of these calls — without it the chapter does not close. Include level_up with the close_chapter call.
 
 ### Step 1: AUDIT
 Review the game state. Check:
