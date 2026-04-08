@@ -979,6 +979,7 @@ function applyNarrativeChanges(
       status: 'complete' as const,
       summary: ci.summary,
       keyEvents: ci.key_events,
+      sceneSummaries: updated.sceneSummaries.length > 0 ? updated.sceneSummaries : undefined,
     }
     const nextNum = currentNum + 1
     const nextChapter = {
@@ -1135,6 +1136,11 @@ function applyNarrativeChanges(
       arcs = arcs.map(a =>
         a.id === au.resolve_arc!.arc_id ? { ...a, status: 'resolved' as const } : a
       )
+      // Clean up: drop scene summaries from prior chapters — arc is resolved, scene-level detail no longer needed
+      const chapters = updated.history.chapters.map(ch =>
+        ch.sceneSummaries ? { ...ch, sceneSummaries: undefined } : ch
+      )
+      updated = { ...updated, history: { ...updated.history, chapters } }
     }
 
     if (au.abandon_arc) {
