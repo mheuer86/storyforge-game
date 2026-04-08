@@ -79,6 +79,7 @@ interface CommitTurnInput {
   scene_end?: boolean
   scene_summary?: string
   tone_signature?: string
+  objective_status?: 'in_progress' | 'resolved' | 'failed'
   pivotal_scenes?: { title: string; text: string }[]
   arc_updates?: {
     create_arc?: { id: string; title: string; episodes: string[] }
@@ -1002,6 +1003,7 @@ function applyNarrativeChanges(
       storySummary: null,
       sceneSummaries: [],
       _pendingSceneSummary: false,
+      _objectiveResolvedAtTurn: undefined,
       scopeSignals: 0,
       npcFailures: [],
       counters: resetChapterCounters(updated).counters,  // reset per-chapter counters, preserve persistent ones
@@ -1053,6 +1055,12 @@ function applyNarrativeChanges(
         ],
       }
     }
+  }
+
+  // Objective status tracking: record when objective flips to resolved/failed
+  if (input.objective_status && (input.objective_status === 'resolved' || input.objective_status === 'failed') && !updated._objectiveResolvedAtTurn) {
+    const turnCount = updated.history.messages.filter(m => m.role === 'player').length
+    updated = { ...updated, _objectiveResolvedAtTurn: turnCount } as typeof updated
   }
 
   // Track missed scene_end: if set_location happened without scene_end, flag it for next turn

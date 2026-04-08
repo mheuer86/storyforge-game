@@ -295,6 +295,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 if (ci.tone_signature) logParts.push(`tone="${ci.tone_signature}"`)
                 if (ci.chapter_frame) logParts.push(`frame=${JSON.stringify(ci.chapter_frame)}`)
                 if (ci.signal_close) logParts.push(`signal_close=${JSON.stringify(ci.signal_close)}`)
+                if (ci.objective_status) logParts.push(`objective_status=${ci.objective_status}`)
                 if (ci.arc_updates) logParts.push(`arc_updates=${JSON.stringify(ci.arc_updates)}`)
                 if (ci.character && typeof ci.character === 'object') {
                   const ch = ci.character as Record<string, unknown>
@@ -365,6 +366,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 }
                 if (stateWithChanges._pendingSceneSummary) {
                   debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ PENDING_SCENE_SUMMARY flag=true (location changed without scene_end)`)
+                }
+                if (stateWithChanges._objectiveResolvedAtTurn) {
+                  const currentTurn = stateWithChanges.history.messages.filter(m => m.role === 'player').length
+                  const since = currentTurn - stateWithChanges._objectiveResolvedAtTurn
+                  debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_STATUS resolved_at_turn=${stateWithChanges._objectiveResolvedAtTurn} turns_since=${since}`)
                 }
               }
             }
@@ -1170,7 +1176,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       currentState = await runClosePhase(2, currentState)
 
       // Phase 3: Narrative Curation (pivotal scenes + signature lines)
-      currentState = await runClosePhase(3, currentState)
+      // Deferred to background — player sees overlay immediately after phase 1+2.
+      // Phase 3 output (pivotal scenes, signature lines) is memory for future chapters,
+      // not displayed in the close overlay. Completes silently.
+      const phase3State = currentState
+      runClosePhase(3, phase3State).then(result => {
+        setGameState(result)
+        saveGameState(result)
+      }).catch(() => { /* non-critical: pivotal scenes missing for one chapter transition */ })
 
       // Build close overlay data from pre/post state comparison
       const completedChapter = currentState.history.chapters.find(

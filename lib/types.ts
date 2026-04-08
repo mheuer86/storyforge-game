@@ -460,6 +460,7 @@ export interface GameState {
   pivotalScenes: PivotalScene[]     // permanent, never rotated — chapter-defining moments with longer summaries
   rollSequences: RollSequence[]     // detected roll patterns (consecutive failures, breakthroughs)
   _pendingSceneSummary?: boolean    // true when set_location fired without scene_end — reminds Claude next turn
+  _objectiveResolvedAtTurn?: number  // turn number when objective_status flipped to resolved/failed — drives close timing
   arcs: StoryArc[]                 // multi-chapter narrative arcs with episode milestones
 }
 
