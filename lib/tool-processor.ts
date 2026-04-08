@@ -79,6 +79,13 @@ interface CommitTurnInput {
   scene_end?: boolean
   scene_summary?: string
   pivotal_scenes?: { title: string; text: string }[]
+  arc_updates?: {
+    create_arc?: { id: string; title: string; episodes: string[] }
+    advance_episode?: { arc_id: string; summary: string }
+    resolve_arc?: { arc_id: string }
+    abandon_arc?: { arc_id: string; reason: string }
+    add_episode?: { arc_id: string; milestone: string }
+  }
 }
 
 // ============================================================
@@ -1010,6 +1017,76 @@ function applyNarrativeChanges(
       ...updated,
       pivotalScenes: [...existing, ...newScenes].slice(-8),
     }
+  }
+
+  // Arc updates
+  if (input.arc_updates) {
+    const au = input.arc_updates
+    let arcs = [...(updated.arcs ?? [])]
+
+    if (au.create_arc) {
+      const existing = arcs.find(a => a.id === au.create_arc!.id)
+      if (!existing) {
+        arcs.push({
+          id: au.create_arc.id,
+          title: au.create_arc.title,
+          status: 'active',
+          episodes: au.create_arc.episodes.map((milestone, i) => ({
+            chapter: updated.meta.chapterNumber,
+            milestone,
+            status: i === 0 ? 'active' as const : 'pending' as const,
+          })),
+        })
+      }
+    }
+
+    if (au.advance_episode) {
+      arcs = arcs.map(a => {
+        if (a.id !== au.advance_episode!.arc_id) return a
+        let foundActive = false
+        let activatedNext = false
+        const episodes = a.episodes.map(ep => {
+          if (ep.status === 'active' && !foundActive) {
+            foundActive = true
+            return { ...ep, status: 'complete' as const, summary: au.advance_episode!.summary }
+          }
+          if (foundActive && ep.status === 'pending' && !activatedNext) {
+            activatedNext = true
+            return { ...ep, status: 'active' as const, chapter: updated.meta.chapterNumber }
+          }
+          return ep
+        })
+        return { ...a, episodes }
+      })
+    }
+
+    if (au.resolve_arc) {
+      arcs = arcs.map(a =>
+        a.id === au.resolve_arc!.arc_id ? { ...a, status: 'resolved' as const } : a
+      )
+    }
+
+    if (au.abandon_arc) {
+      arcs = arcs.map(a =>
+        a.id === au.abandon_arc!.arc_id ? { ...a, status: 'abandoned' as const } : a
+      )
+    }
+
+    if (au.add_episode) {
+      arcs = arcs.map(a => {
+        if (a.id !== au.add_episode!.arc_id) return a
+        return {
+          ...a,
+          episodes: [...a.episodes, {
+            chapter: updated.meta.chapterNumber,
+            milestone: au.add_episode!.milestone,
+            status: 'pending' as const,
+          }],
+        }
+      })
+    }
+
+    updated = { ...updated, arcs }
   }
 
   return updated

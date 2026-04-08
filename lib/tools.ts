@@ -688,6 +688,63 @@ const commitTurnDefinition: Anthropic.Tool = {
           required: ['title', 'text'],
         },
       },
+
+      // ── Story Arc Management ──────────────────────────────────
+      arc_updates: {
+        type: 'object',
+        description: 'Manage multi-chapter story arcs. Create arcs at chapter start, advance episodes at chapter close.',
+        properties: {
+          create_arc: {
+            type: 'object',
+            description: 'Create a new story arc with planned episode milestones.',
+            properties: {
+              id: { type: 'string', description: 'snake_case identifier, e.g. "expose_coll"' },
+              title: { type: 'string', description: 'The arc goal: "Expose Coll before the hearing"' },
+              episodes: {
+                type: 'array',
+                description: '2-4 planned episode milestones. First becomes active.',
+                items: { type: 'string' },
+              },
+            },
+            required: ['id', 'title', 'episodes'],
+          },
+          advance_episode: {
+            type: 'object',
+            description: 'Mark current episode complete and activate the next. Include a summary of what this episode achieved.',
+            properties: {
+              arc_id: { type: 'string' },
+              summary: { type: 'string', description: '1-2 sentences: what this episode achieved toward the arc goal.' },
+            },
+            required: ['arc_id', 'summary'],
+          },
+          resolve_arc: {
+            type: 'object',
+            description: 'Mark an arc as resolved (final episode complete).',
+            properties: {
+              arc_id: { type: 'string' },
+            },
+            required: ['arc_id'],
+          },
+          abandon_arc: {
+            type: 'object',
+            description: 'Mark an arc as abandoned (player walked away). May have consequences.',
+            properties: {
+              arc_id: { type: 'string' },
+              reason: { type: 'string' },
+            },
+            required: ['arc_id', 'reason'],
+          },
+          add_episode: {
+            type: 'object',
+            description: 'Add a new episode to an existing arc (discovered mid-arc).',
+            properties: {
+              arc_id: { type: 'string' },
+              milestone: { type: 'string' },
+            },
+            required: ['arc_id', 'milestone'],
+          },
+        },
+      },
     },
     required: ['suggested_actions'],
   },

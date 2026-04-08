@@ -457,6 +457,21 @@ export interface GameState {
   rulesWarnings: string[]           // injected by rules engine each turn, reset before next turn
   pivotalScenes: PivotalScene[]     // permanent, never rotated — chapter-defining moments with longer summaries
   rollSequences: RollSequence[]     // detected roll patterns (consecutive failures, breakthroughs)
+  arcs: StoryArc[]                 // multi-chapter narrative arcs with episode milestones
+}
+
+export interface StoryArc {
+  id: string              // snake_case, e.g. "expose_coll"
+  title: string           // "Expose Coll before the hearing"
+  status: 'active' | 'resolved' | 'abandoned'
+  episodes: Episode[]
+}
+
+export interface Episode {
+  chapter: number         // which chapter this episode belongs to
+  milestone: string       // "Find out who accused Maret and why"
+  status: 'pending' | 'active' | 'complete'
+  summary?: string        // arc-scoped: what this episode achieved toward the arc goal (1-2 sentences)
 }
 
 export interface PivotalScene {
