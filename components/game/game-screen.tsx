@@ -491,6 +491,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       debugLogRef.current.push(`\n[${new Date().toISOString()}] ── TURN ${turnNum} ──${isMetaQuestion ? ' (meta)' : ''}${isInitial ? ' (initial)' : ''}`)
       debugLogRef.current.push(`[${new Date().toISOString()}] PLAYER "${playerMessage.slice(0, 120)}${playerMessage.length > 120 ? '...' : ''}"`)
       if (currentState._pendingSceneSummary) debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ SCENE_SUMMARY_OWED flag active — reminder injected into message`)
+      const lastRoll = currentState.history.rollLog.length > 0 ? currentState.history.rollLog[currentState.history.rollLog.length - 1] : null
+      const turnsSinceRoll = lastRoll ? currentState.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRoll.timestamp).length : turnNum
+      if (turnsSinceRoll >= 2) debugLogRef.current.push(`[${new Date().toISOString()}] ${turnsSinceRoll >= 5 ? '🚨' : '⚠'} ROLL_DROUGHT turns_since_roll=${turnsSinceRoll}${turnsSinceRoll >= 5 ? ' — MANDATORY reminder injected' : ''}`)
 
       const displayContent = displayOverride || playerMessage
       const playerDisplayMessage: DisplayMessage | null =
