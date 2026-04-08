@@ -437,8 +437,8 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: 'Execute the chapter close sequence now.' },
           ]
           // Close sequence may need multiple rounds: audit + close + levelUp + debrief + frame
-          // With commit_turn, close sequence should fit in 1-2 calls (audit+close+levelUp+debrief+frame+curation all batch into one commit_turn)
-          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false, { maxRounds: 3 })
+          // Close sequence: Claude should batch into 1-2 calls but may need more for debrief + curation
+          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false, { maxRounds: 6 })
           finish(loopResult.toolResults)
           return
         }
