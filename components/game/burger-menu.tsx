@@ -98,6 +98,7 @@ interface BurgerMenuProps {
   onConnectEvidence?: () => void
   initialTab?: string
   tokenLog?: Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>
+  debugLog?: string[]
 }
 
 function timeAgo(iso: string): string {
@@ -126,6 +127,7 @@ export function BurgerMenu({
   onConnectEvidence,
   initialTab,
   tokenLog,
+  debugLog,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
   const [activeMenuTab, setActiveMenuTab] = useState(initialTab || 'character')
@@ -267,6 +269,22 @@ export function BurgerMenu({
                       >
                         Export CSV
                       </button>
+                      {debugLog && debugLog.length > 0 && (
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([debugLog.join('\n')], { type: 'text/plain' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `storyforge-debug-${new Date().toISOString().slice(0, 10)}.txt`
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          }}
+                          className="mt-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors ml-4"
+                        >
+                          Export Debug Log
+                        </button>
+                      )}
                     </div>
                   )
                 })()}
