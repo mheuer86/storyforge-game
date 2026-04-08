@@ -792,11 +792,29 @@ function detectContext(gs: GameState): PromptContext {
   const op = gs.world.operationState
   if (op && (op.phase === 'active' || op.phase === 'extraction')) return 'infiltration'
 
+  // Hostile or threatening NPCs in the world → not safe regardless of location name
+  const hasThreat = gs.world.npcs.some(n =>
+    n.disposition === 'hostile' ||
+    (n.description?.toLowerCase().match(/creature|predator|hostile|unknown|dangerous|monster|beast/) && n.status === 'active')
+  )
+  if (hasThreat) return 'infiltration'
+
+  // Recent player messages signal stealth/danger → override safe location
+  const recentMessages = gs.history.messages.slice(-4)
+  const recentThreatLang = recentMessages.some(m =>
+    m.role === 'player' &&
+    /\b(quiet|sneak|stealth|avoid|creature|hostile|careful|don't.*awake|don't.*alert|hide|creep|silent)\b/i.test(m.content)
+  )
+  if (recentThreatLang) return 'infiltration'
+
+  // Active tension clocks (any kind) suggest pressure, not safety
+  const hasActiveClock = clocks.some(c => c.status === 'active')
+  if (hasActiveClock) return 'exploration'
+
   const loc = gs.world.currentLocation?.description?.toLowerCase() ?? ''
-  const safeIndicators = ['station', 'base', 'tavern', 'headquarters', 'port', 'camp', 'town', 'city', 'bar', 'shop', 'inn', 'safehouse', 'quarters']
+  const safeIndicators = ['tavern', 'headquarters', 'port', 'camp', 'town', 'city', 'bar', 'shop', 'inn', 'safehouse', 'quarters', 'market', 'cantina']
   const isSafe = safeIndicators.some(s => loc.includes(s))
 
-  const recentMessages = gs.history.messages.slice(-3)
   const recentlyRested = recentMessages.some(m =>
     m.content.toLowerCase().includes('rest') ||
     m.content.toLowerCase().includes('sleep') ||
