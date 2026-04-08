@@ -205,8 +205,8 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
           </div>
         </div>
 
-        {/* Character preview — terminal dossier */}
-        {selectedClass && (
+        {/* Character preview — terminal dossier (requires both origin + class) */}
+        {selectedSpecies && selectedClass && (
           <div className="rounded-xl border border-border/15 overflow-hidden">
             {/* Header bar */}
             <div className="flex items-center px-4 py-2.5 bg-primary/5 border-b border-border/10">
@@ -215,72 +215,94 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               </span>
             </div>
 
-            <div className="p-5 flex flex-col gap-5">
-              {/* Stat grid */}
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {Object.entries(selectedClass.stats).map(([stat, value]) => {
-                  const isPrimary = stat === selectedClass.primaryStat
-                  return (
-                    <div
-                      key={stat}
-                      className={cn(
-                        'rounded-lg border p-2.5 text-center transition-colors',
-                        isPrimary
-                          ? 'border-primary/30 bg-primary/8'
-                          : 'border-border/10 bg-secondary/5'
-                      )}
-                    >
-                      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">{stat}</div>
-                      <div className="font-mono text-2xl font-semibold text-foreground">{value}</div>
-                      <div className={cn(
-                        'font-mono text-xs',
-                        isPrimary ? 'text-primary' : 'text-muted-foreground/60'
-                      )}>
-                        {formatModifier(getStatModifier(value))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Vitals — key-value rows */}
-              <div className="flex flex-col">
-                {[
-                  { label: 'HP', value: `${selectedClass.startingHp} / ${selectedClass.startingHp}` },
-                  { label: 'AC', value: String(selectedClass.startingAc) },
-                  { label: config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1), value: `${selectedClass.startingCredits} ${config.currencyAbbrev}` },
-                ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
-                    <span className="text-xs text-foreground/70">{row.label}</span>
-                    <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
+            <div className="p-5 flex flex-col gap-5 sm:flex-row sm:gap-6">
+              {/* Left column — lore & description */}
+              <div className="flex flex-col gap-4 sm:w-1/2">
+                {/* Origin lore */}
+                <div>
+                  <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-primary/70 mb-1.5">
+                    {config.speciesLabel} — {selectedSpecies.name}
                   </div>
-                ))}
-              </div>
-
-              {/* Starting inventory */}
-              <div>
-                <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-primary/70 mb-2">
-                  Starting Gear
+                  <p className="text-xs text-foreground/50 leading-relaxed">{selectedSpecies.lore}</p>
                 </div>
-                <ul className="flex flex-col gap-1.5">
-                  {selectedClass.startingInventory.map((item) => (
-                    <li key={item.id} className="flex items-start gap-2 text-xs">
-                      <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
-                      <span className="text-foreground/70">
-                        {item.name}
-                        {item.damage && (
-                          <span className="ml-1 font-mono text-[10px] text-muted-foreground/40">({item.damage})</span>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+
+                {/* Class description + trait */}
+                <div>
+                  <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-primary/70 mb-1.5">
+                    Class — {selectedClass.name}
+                  </div>
+                  {selectedClass.description && (
+                    <p className="text-xs text-foreground/50 leading-relaxed mb-3">{selectedClass.description}</p>
+                  )}
+                  <div className="border-l-2 border-primary/30 pl-3">
+                    <div className="text-xs font-medium text-primary/80">{selectedClass.trait.name}</div>
+                    <div className="mt-1 text-xs text-foreground/50 leading-relaxed">{selectedClass.trait.description}</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Class trait */}
-              <div className="border-l-2 border-primary/30 pl-4">
-                <div className="text-sm font-medium text-primary/80">{selectedClass.trait.name}</div>
-                <div className="mt-1 text-xs text-foreground/50 leading-relaxed">{selectedClass.trait.description}</div>
+              {/* Right column — stats, vitals, gear */}
+              <div className="flex flex-col gap-5 sm:w-1/2">
+                {/* Stat grid */}
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+                  {Object.entries(selectedClass.stats).map(([stat, value]) => {
+                    const isPrimary = stat === selectedClass.primaryStat
+                    return (
+                      <div
+                        key={stat}
+                        className={cn(
+                          'rounded-lg border p-2.5 text-center transition-colors',
+                          isPrimary
+                            ? 'border-primary/30 bg-primary/8'
+                            : 'border-border/10 bg-secondary/5'
+                        )}
+                      >
+                        <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">{stat}</div>
+                        <div className="font-mono text-2xl font-semibold text-foreground">{value}</div>
+                        <div className={cn(
+                          'font-mono text-xs',
+                          isPrimary ? 'text-primary' : 'text-muted-foreground/60'
+                        )}>
+                          {formatModifier(getStatModifier(value))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Vitals — key-value rows */}
+                <div className="flex flex-col">
+                  {[
+                    { label: 'HP', value: `${selectedClass.startingHp} / ${selectedClass.startingHp}` },
+                    { label: 'AC', value: String(selectedClass.startingAc) },
+                    { label: config.currencyName.charAt(0).toUpperCase() + config.currencyName.slice(1), value: `${selectedClass.startingCredits} ${config.currencyAbbrev}` },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
+                      <span className="text-xs text-foreground/70">{row.label}</span>
+                      <span className="font-mono text-sm font-medium text-foreground">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Starting inventory */}
+                <div>
+                  <div className="text-[9px] font-medium uppercase tracking-[0.15em] text-primary/70 mb-2">
+                    Starting Gear
+                  </div>
+                  <ul className="flex flex-col gap-1.5">
+                    {selectedClass.startingInventory.map((item) => (
+                      <li key={item.id} className="flex items-start gap-2 text-xs">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+                        <span className="text-foreground/70">
+                          {item.name}
+                          {item.damage && (
+                            <span className="ml-1 font-mono text-[10px] text-foreground/40">({item.damage})</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
