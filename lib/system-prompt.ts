@@ -494,7 +494,11 @@ function buildProgressionBlock(): string {
   return `## CHAPTER FRAME
 Establish via commit_turn with chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
 
-**The objective is the NEXT MILESTONE, not the arc resolution.** A chapter is an episode, not a season. "Expose Coll before the hearing" is a multi-chapter arc. "Find out who accused Maret and why" is one chapter. "Gather evidence and witnesses" is the next. "Present the case at the hearing" is the third. If the player's stated intent spans multiple milestones, pick the FIRST one and frame only that. When it resolves, signal_close and let the next chapter handle the next milestone.
+**Story arcs and episodes.** When the player's intent spans multiple chapters, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter frame objective = the FIRST episode's milestone, not the arc goal. Each chapter is one episode. When the episode's milestone is met, signal_close.
+
+Example: Player says "I want to expose Coll." Create arc "Expose Coll" with episodes: ["Find who accused Maret and why", "Gather evidence and witnesses", "Present the case"]. Chapter 1 objective = "Find who accused Maret and why." When that resolves, signal_close. Chapter 2 picks up the next episode.
+
+**The objective must be achievable in 12-18 turns.** If it needs traveling to a new location, that's two chapters. If it needs one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad.
 
 **Scope test:** One primary conflict. One crucible. 12-18 turns. If the objective requires traveling to a new major location, that's two chapters. If it requires completing one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad.
 
@@ -583,7 +587,9 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
    - new_level: ${newLevel}
    - hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
 
-4. NEXT FRAME: Include chapter_frame (objective + crucible for next chapter).
+4. NEXT FRAME: Include chapter_frame for next chapter. The objective should be the next episode's milestone if an arc is active.
+
+5. ARC ADVANCEMENT: If story arcs exist, include arc_updates.advance_episode for the current arc with a 1-2 sentence summary of what this episode achieved. If the arc's final episode just completed, use arc_updates.resolve_arc instead. The next chapter's frame objective should match the next episode's milestone.
 
 You MUST include close_chapter and level_up. Without close_chapter the chapter does not close.
 Include suggested_actions: ["Ready for Chapter ${newLevel}"].
@@ -1073,6 +1079,22 @@ function compressGameState(gs: GameState): string {
   const frameLine = gs.chapterFrame
     ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}${rollDrought}`
     : ''
+
+  // Story arcs display
+  const activeArcs = (gs.arcs ?? []).filter(a => a.status === 'active')
+  const arcsLine = activeArcs.length > 0
+    ? activeArcs.map(a => {
+        const totalEps = a.episodes.length
+        const completedEps = a.episodes.filter(e => e.status === 'complete').length
+        const activeEp = a.episodes.find(e => e.status === 'active')
+        const completedSummaries = a.episodes
+          .filter(e => e.status === 'complete' && e.summary)
+          .map(e => `  Ep ${a.episodes.indexOf(e) + 1} (Ch ${e.chapter}): ${e.summary}`)
+          .join('\n')
+        return `ARC: ${a.title} [Ep ${completedEps + 1}/${totalEps}]${activeEp ? ` | Active: ${activeEp.milestone}` : ''}${completedSummaries ? '\n' + completedSummaries : ''}`
+      }).join('\n')
+    : ''
+
   // Weak stats — flags stats with ≤0 modifier for difficulty engine targeting
   const weakStats = Object.entries(c.stats)
     .filter(([, v]) => getStatModifier(v) <= 0)
@@ -1179,7 +1201,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}`
 }
 
 // ============================================================
@@ -1334,7 +1356,7 @@ IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the wor
 - add_npcs (at least one NPC + origin contacts — see below)
 - add_faction (at least one)
 - add_threads (at least one narrative thread)
-Also include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The world state is blank — you must populate it.
+Also include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal. The world state is blank — you must populate it.
 
 ORIGIN CONTACTS: Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.
 ${(() => {

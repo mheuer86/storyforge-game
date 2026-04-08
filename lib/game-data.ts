@@ -185,6 +185,7 @@ export function createInitialGameState(
     rulesWarnings: [],
     pivotalScenes: [],
     rollSequences: [],
+    arcs: [],
   }
 }
 
