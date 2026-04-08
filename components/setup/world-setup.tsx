@@ -26,7 +26,6 @@ export function WorldSetup({ onNext, onBack }: WorldSetupProps) {
   }
 
   const availableGenres = genres.filter(g => g.available)
-  const comingSoonGenres = genres.filter(g => !g.available)
 
   return (
     <div className="flex min-h-screen flex-col items-center px-6 pt-16 pb-28">
@@ -117,31 +116,6 @@ export function WorldSetup({ onNext, onBack }: WorldSetupProps) {
           })}
         </div>
 
-        {/* Coming soon — compact grid with divider */}
-        {comingSoonGenres.length > 0 && (
-          <div className="opacity-50">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-px flex-1 bg-border/20" />
-              <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground/40">
-                Expanding the Multiverse
-              </span>
-              <div className="h-px flex-1 bg-border/20" />
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {comingSoonGenres.map((genre) => (
-                <div
-                  key={genre.id}
-                  className="flex items-center justify-between rounded-lg border border-border/10 bg-secondary/5 px-3 py-2"
-                >
-                  <span className="text-[11px] text-muted-foreground/60">{genre.name}</span>
-                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/30">
-                    Soon
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Fixed bottom nav */}
