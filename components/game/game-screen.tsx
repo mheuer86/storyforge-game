@@ -548,6 +548,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         stateWithPlayerMessage,
         (prompt) => {
           setRollPrompt(prompt)
+          debugLogRef.current.push(`[${new Date().toISOString()}] 🎲 ROLL_REQUESTED ${prompt.check} (${prompt.stat}) DC ${prompt.dc} mod ${prompt.modifier > 0 ? '+' : ''}${prompt.modifier} — "${prompt.reason}"`)
           setRetryContext(null)
           isLoadingRef.current = false
           setIsLoading(false)
@@ -627,6 +628,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const npcTotal = prompt.contested && prompt.npcRoll !== undefined
         ? prompt.npcRoll + prompt.contested.npcModifier
         : undefined
+
+      const logDC = npcTotal !== undefined ? npcTotal : prompt.dc
+      const logTotal = roll + prompt.modifier
+      const logResult = roll === 20 ? 'CRITICAL' : roll === 1 ? 'FUMBLE' : logTotal >= logDC ? 'SUCCESS' : 'FAILURE'
+      debugLogRef.current.push(`[${new Date().toISOString()}] 🎲 ROLL_RESULT ${prompt.check}: ${roll}${prompt.modifier >= 0 ? '+' : ''}${prompt.modifier}=${logTotal} vs DC ${logDC} → ${logResult}`)
 
       const rollResolution: RollResolution = {
         roll,
