@@ -1339,7 +1339,10 @@ export function buildMessagesForClaude(
   // Dynamic state is now in a second system block (system-level authority,
   // can't be overridden by user input). Messages are just the player's action.
   const prefix = isMetaQuestion ? '[META] ' : ''
-  messages.push({ role: 'user', content: prefix + currentMessage })
+  const sceneReminder = gameState._pendingSceneSummary
+    ? '\n[SYSTEM: You changed location last turn without scene_end. You MUST include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in your commit_turn this turn.]'
+    : ''
+  messages.push({ role: 'user', content: prefix + currentMessage + sceneReminder })
 
   return messages
 }
