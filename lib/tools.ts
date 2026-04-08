@@ -674,6 +674,7 @@ const commitTurnDefinition: Anthropic.Tool = {
       scene_end: { type: 'boolean', description: 'True when a scene boundary occurred.' },
       scene_summary: { type: 'string', description: '2-4 sentence summary of concluding scene.' },
       tone_signature: { type: 'string', description: '1-2 words capturing emotional register of concluding scene (e.g. "quiet tension", "earned release", "accumulated dread").' },
+      objective_status: { type: 'string', enum: ['in_progress', 'resolved', 'failed'], description: 'Evaluate the chapter frame objective every turn. resolved = objective achieved. failed = no longer achievable. in_progress = still working toward it. Factual assessment, not a close decision.' },
 
       // ── Narrative Curation (close prompt only) ────────────────
       pivotal_scenes: {

@@ -242,8 +242,8 @@ async function runToolLoop(
   return { toolResults, messages, hitRoll: false }
 }
 
-function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string): Anthropic.TextBlockParam[] {
-  const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined)
+function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string, currentMessage?: string): Anthropic.TextBlockParam[] {
+  const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
   return [
     { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: dynamicState },
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
       const contextTools = isMetaQuestion ? metaTools : gameTools
 
       try {
-        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
@@ -495,7 +495,7 @@ export async function POST(req: NextRequest) {
           send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
           try {
-            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage)
+            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),

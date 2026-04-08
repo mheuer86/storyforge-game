@@ -16,9 +16,10 @@ import { getGenreConfig, type Genre } from './genre-config'
 export function buildSystemPrompt(
   gameState: GameState,
   isMetaQuestion: boolean,
-  flaggedMessage?: string
+  flaggedMessage?: string,
+  currentMessage?: string
 ): [string, string] {
-  const compressedState = compressGameState(gameState)
+  const compressedState = compressGameState(gameState, isMetaQuestion ? undefined : currentMessage)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
   const ps = config.promptSections
@@ -844,11 +845,77 @@ const ANTAGONIST_METHODS: Record<string, string> = {
 // ============================================================
 
 // ============================================================
+// ROLL GATE DETECTION
+// ============================================================
+
+function detectRollGate(
+  playerMessage: string,
+  sceneNpcs: Array<{ name: string; disposition?: string; role?: string; status?: string }>,
+): string | null {
+  const msg = playerMessage.toLowerCase()
+
+  // Skip meta questions and empty messages
+  if (msg.startsWith('forge:dev') || msg.length === 0) return null
+
+  const stealthVerbs = /\b(quiet|sneak|stealth|careful|avoid|hide|creep|silent|don't.*alert|don't.*awake|unnoticed|undetected|slip past|slip through)\b/i
+  const socialVerbs = /\b(convince|persuade|lie|bluff|intimidate|threaten|negotiate|talk.*into|charm|deceive|pretend|cover story)\b/i
+  const physicalVerbs = /\b(climb|break|force|sprint|jump|swim|lift|push|pull|pry|smash|run|escape|flee|dodge|grab|throw|catch)\b/i
+  const techVerbs = /\b(hack|pick|lockpick|repair|fix|patch|heal|stabilize|decrypt|bypass|override|crack|splice|restore|hotwire|rig)\b/i
+  const infoVerbs = /\b(ask|question|find out|what happened|what do you know|tell me|any idea|suspicion|investigate|examine|search|check|inspect|analyze|screen|review|look for|scan|study)\b/i
+  const questionWords = /\b(what|why|how|who|where|when|any|tell me|do you know|does .* know)\b/i
+
+  const activeSceneNpcs = sceneNpcs.filter(n => n.status !== 'dead' && n.status !== 'gone')
+
+  // Priority order: stealth > social manipulation > physical > technical > info extraction
+
+  // Stealth — always fires
+  if (stealthVerbs.test(msg)) {
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: stealth/movement\nREQUIRED: pending_check — Stealth check\nDo NOT narrate successful movement without a check result.`
+  }
+
+  // Social manipulation — always fires when NPC present
+  if (socialVerbs.test(msg) && activeSceneNpcs.length > 0) {
+    const targetNpc = activeSceneNpcs.find(n => msg.includes(n.name.toLowerCase())) || activeSceneNpcs[0]
+    const tier = (targetNpc.disposition || 'neutral').toUpperCase()
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: social manipulation (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — Persuasion, Deception, or Intimidation\nDo NOT narrate ${targetNpc.name}'s response without a check result.`
+  }
+
+  // Physical action — always fires
+  if (physicalVerbs.test(msg)) {
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: physical action\nREQUIRED: pending_check — Athletics, Acrobatics, or STR/DEX check\nDo NOT narrate success without a check result.`
+  }
+
+  // Technical — always fires
+  if (techVerbs.test(msg)) {
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: technical action\nREQUIRED: pending_check — relevant skill check\nDo NOT narrate success without a check result.`
+  }
+
+  // Information extraction from NPCs — Trusted exempt, everyone else requires a roll
+  if ((infoVerbs.test(msg) || questionWords.test(msg)) && activeSceneNpcs.length > 0) {
+    const targetNpc = activeSceneNpcs.find(n =>
+      msg.includes(n.name.toLowerCase()) ||
+      (n.disposition && ['hostile', 'wary', 'neutral'].includes(n.disposition))
+    )
+    if (targetNpc && targetNpc.disposition !== 'trusted') {
+      const tier = (targetNpc.disposition || 'neutral').toUpperCase()
+      const contested = ['hostile', 'wary'].includes(targetNpc.disposition || '') ? ' (contested)' : ''
+      return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: information extraction (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — Persuasion or Insight${contested}\nDo NOT narrate ${targetNpc.name}'s answer without a check result.`
+    }
+  }
+
+  // Search/investigation (no NPC target) — always fires
+  if (infoVerbs.test(msg)) {
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: investigation/search\nREQUIRED: pending_check — Investigation or Perception\nDo NOT narrate discovery without a check result.`
+  }
+
+  return null
+}
+
 // ============================================================
 // COMPRESSED GAME STATE
 // ============================================================
 
-function compressGameState(gs: GameState): string {
+function compressGameState(gs: GameState, currentMessage?: string): string {
   const c = gs.character
   const w = gs.world
   const combat = gs.combat
@@ -1246,7 +1313,26 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}`
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${currentMessage ? (() => {
+    const rollGate = detectRollGate(currentMessage, sceneNpcs)
+    return rollGate ? '\n' + rollGate : ''
+  })() : ''}${(() => {
+    // Close timing enforcement
+    const resolvedAt = gs._objectiveResolvedAtTurn
+    const turnsSinceResolved = resolvedAt ? playerTurnCount - resolvedAt : 0
+    if (turnsSinceResolved >= 4 || playerTurnCount >= 20) {
+      return `\n[CLOSE REQUIRED] Objective resolved ${turnsSinceResolved} turns ago (turn ${resolvedAt}). Call signal_close in this commit_turn. Any remaining beats become the next chapter's opening.`
+    } else if (turnsSinceResolved >= 2 || playerTurnCount >= 18) {
+      return `\n[CLOSE OVERDUE] Objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close this turn unless a genuinely new crucible has emerged. Wrapping beats are not new content.`
+    } else if (turnsSinceResolved >= 1) {
+      return `\n[CLOSE AVAILABLE] Objective "${gs.chapterFrame?.objective ?? ''}" resolved last turn. signal_close is available. If this turn doesn't establish meaningful new content, close now.`
+    } else if (playerTurnCount >= 20) {
+      return `\n[CLOSE REQUIRED] Turn ${playerTurnCount} — turn budget reached. Call signal_close in this commit_turn.`
+    } else if (playerTurnCount >= 18) {
+      return `\n[CLOSE AVAILABLE] Turn ${playerTurnCount} — approaching turn budget. Consider signal_close.`
+    }
+    return ''
+  })()}`
 }
 
 // ============================================================
