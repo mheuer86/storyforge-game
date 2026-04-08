@@ -520,13 +520,20 @@ function applyWorldChanges(
   if (input.set_exploration !== undefined) {
     if (input.set_exploration) {
       const e = input.set_exploration
+      // Deduplicate: remove unexplored rooms that fuzzy-match any explored room name.
+      // Claude often adds variants like "Command Deck (Upper)" unexplored while "Command Deck" is explored.
+      const exploredNames = e.explored.map(r => r.name.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim())
+      const dedupedUnexplored = e.unexplored.filter(u => {
+        const normalizedName = u.name.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim()
+        return !exploredNames.some(en => en === normalizedName || en.includes(normalizedName) || normalizedName.includes(en))
+      })
       world.explorationState = {
         facilityName: e.facility_name,
         status: e.status,
         hostile: e.hostile,
         explored: e.explored,
         current: e.current,
-        unexplored: e.unexplored,
+        unexplored: dedupedUnexplored,
         resources: e.resources,
         alertLevel: e.alert_level,
       } as import('./types').ExplorationState
