@@ -127,7 +127,7 @@ export interface GenreConfig {
   intelOperationLabel: string
   explorationLabel: string
   heatLabel?: string           // genre-specific name for heat system (default: "Heat")
-  openingHooks: (string | { hook: string; title?: string; classes?: string[] })[]
+  openingHooks: (string | { hook: string; title?: string; classes?: string[]; frame?: { objective: string; crucible: string }; arc?: { name: string; episode: string } })[]
   initialChapterTitle: string
   locationNames: string[]
   npcNames?: string[]        // genre-appropriate NPC name pool — Claude samples from these instead of defaulting to "Aldric"

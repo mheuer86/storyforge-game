@@ -94,9 +94,11 @@ d20 + modifier vs DC. Proficient skills add proficiency bonus. Nat 20: critical 
 
 ## ROLL DISCIPLINE
 
-**Roll when: (1) uncertain AND (2) failure has consequences.** Include pending_check in commit_turn BEFORE narrating the outcome.
+**Roll when: (1) uncertain AND (2) the story advances.** Every interaction that advances the story has a failure cost. If you think there's no failure state, you haven't thought hard enough. NPCs can refuse, misunderstand, demand something in return, or give wrong information. Knowledge checks can return partial, misleading, or dangerous results. The world resists — that's what makes success meaningful.
 
-**The momentum trap: three turns without a roll → you've missed a gate.** Stop and look back. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated.
+Include pending_check in commit_turn BEFORE narrating the outcome.
+
+**The momentum trap: three turns without a roll → you've missed a gate.** Stop and look back. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated — fix it on the next turn.
 
 **NPC information is GATED, not free.** NPCs do not volunteer critical information through conversation alone. Disposition determines willingness — Hostile refuses, Wary needs leverage, Neutral needs a reason, Favorable shares if asked well, Trusted volunteers. But even willing NPCs require a check (Persuasion, Insight, Deception, Intimidation) to extract actionable intelligence. The only free information is what the player can directly observe (visible bruises, a document on a table, a name on a sign). Everything spoken by an NPC that advances the investigation costs a roll.
 
@@ -104,10 +106,8 @@ Plans vs actions: plan descriptions get acknowledged, not executed. Only executi
 
 **Assessment rolls:** When someone asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check if being wrong has consequences.
 
-Requires a roll: "Carren is a hired hand" → WIS Insight. "The conduit is still open" → INT. Asking an NPC what they know about X → Persuasion. Reading someone's true motivation → Insight.
+Requires a roll: "Carren is a hired hand" → WIS Insight. "The conduit is still open" → INT. Asking an NPC what they know about X → Persuasion. Reading someone's true motivation → Insight. Translating ancient text → INT/Ancient Lore. Convincing someone of an extraordinary claim → Persuasion. Crossing hostile/guarded territory → Stealth or Survival.
 Does NOT require a roll: "Let's hit the defense node first" → decision. "Renn, how long?" → NPC expertise on a non-sensitive topic. "We leave at midday" → scheduling.
-
-**Five-turn audit:** No rolls in five player turns → review for missed gates. This is an error, not a style choice.
 
 **ALWAYS include pending_check BEFORE narrating the outcome.**
 
@@ -117,7 +117,9 @@ PP = 10 + WIS mod. At or below → auto-notice. Above → missed unless active s
 
 ## FAIL FORWARD (mandatory)
 
-Failed ≠ nothing happens. Succeed with cost, partial success, or new complication. Failure as a door: look for what failure accidentally exposes. Best failures create opportunities success would bypass.
+Failed ≠ nothing happens. But failed also ≠ success with flavor text. **When a check fails, the outcome MUST differ mechanically from success.** Failure costs: close an approach, add a cost (HP, time, disposition drop, thread worsening, clock tick), give partial or wrong information, shift control to an NPC, or reveal something the player didn't want revealed. The story advances through a worse door, not the same door with a sad paragraph.
+
+If the player failed a knowledge check, they don't get the knowledge. Someone else might have it (at a cost). If they failed Persuasion, the NPC doesn't cooperate — they demand something, refuse, or misunderstand. If they failed Perception, they miss something that matters later. Consistency: if a check was worth rolling, the failure must change what happens next.
 
 ## CONSEQUENCES
 
@@ -603,6 +605,14 @@ Be analytical, not narrative. The ${config.currencyName} system uses ${config.cu
       ? `\nGM SELF-ASSESSMENT:\n${gameState.meta.selfAssessment}`
       : ''
 
+    // Build roll log summary for the debrief
+    const rollLog = gameState.history.rollLog || []
+    const rollSummary = rollLog.length > 0
+      ? `\nROLL LOG (actual results this chapter):\n${rollLog.map(r =>
+          `- ${r.check} (${r.stat}): rolled ${r.roll}${r.modifier >= 0 ? '+' : ''}${r.modifier}=${r.total} vs DC ${r.dc} → ${r.result.toUpperCase()}${r.reason ? ` — "${r.reason}"` : ''}`
+        ).join('\n')}\n\nTotal: ${rollLog.length} rolls, ${rollLog.filter(r => r.result === 'success' || r.result === 'critical').length} successes, ${rollLog.filter(r => r.result === 'failure' || r.result === 'fumble').length} failures.`
+      : '\nNo rolls recorded this chapter.'
+
     const instructions = `You are the chapter debrief analyst for a ${config.name} RPG. Execute in ONE commit_turn call.
 
 1. SKILL POINTS: Award 0-2 via character.add_proficiency. Criteria:
@@ -612,15 +622,16 @@ Be analytical, not narrative. The ${config.currencyName} system uses ${config.cu
    Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
 
 2. DEBRIEF: Include debrief with:
-   - tactical: Dice analysis + what worked + what cost you. Name pivotal rolls, 2-3 smart decisions, real costs.
+   - tactical: Dice analysis + what worked + what cost you. Reference the ROLL LOG below — use actual roll results, not guesses.
    - strategic: Threads advanced, worsened, opened. What's most urgent.
-   - lucky_breaks: moments where chance favored the player
+   - lucky_breaks: moments where chance favored the player (check the roll log for high rolls or narrow successes)
    - costs_paid: permanent costs (not just HP)
    - promises_kept: fulfilled or advanced
    - promises_broken: strained or broken
+${rollSummary}
 ${selfAssessment}
 
-Be analytical. Reference actual events and rolls. Generic praise is worthless.
+Be analytical. Reference actual rolls from the log above. Do NOT invent roll outcomes. Generic praise is worthless.
 Include suggested_actions: ["Continue"].`
 
     return [instructions, compressedState]
@@ -874,17 +885,28 @@ function compressGameState(gs: GameState): string {
   const sceneNpcs = relevantNpcs.filter(n => isScenePresent(n))
   const backgroundNpcs = relevantNpcs.filter(n => !isScenePresent(n))
 
-  // Scene-present: full detail (voice, description, vulnerability, combat)
+  // Disposition → inline mechanical consequences (Claude reads state literally, rules aspirationally)
+  const dispositionConsequences: Record<string, string> = {
+    hostile: 'refuses help, attacks if provoked, contested checks required for any interaction',
+    wary: 'withholds information, requires proof or leverage, disadvantage on Persuasion',
+    neutral: 'cooperates if given a reason, no free information, requires a check to extract intel',
+    favorable: 'shares if asked well, +2 on social checks, still requires a roll for actionable intel',
+    trusted: 'volunteers information, advantage on social checks, may act independently to help',
+  }
+
+  // Scene-present: full detail (voice, description, vulnerability, combat, disposition consequences)
   const sceneNpcLines = sceneNpcs.map((n) => {
     const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
+    const tierKey = (n.disposition || 'neutral').toLowerCase()
+    const consequences = dispositionConsequences[tierKey] || dispositionConsequences.neutral
     const role = n.role ?? 'npc'
     const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
     const vuln = n.vulnerability ? ` | Vuln: ${n.vulnerability}` : ''
     const cbt = n.combatTier ? ` | T${n.combatTier}${n.combatNotes ? ' ' + n.combatNotes : ''}` : ''
-    return `${n.name} [${role}|${tier}] — ${n.description}${voice}${vuln}${cbt}`
+    return `${n.name} [${role}|${tier.toUpperCase()} — ${consequences}] — ${n.description}${voice}${vuln}${cbt}`
   })
 
-  // Background: one-line disposition only
+  // Background: one-line disposition with consequences
   const bgNpcLines = backgroundNpcs.map((n) => {
     const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
     return `${n.name}|${tier}`
@@ -1053,9 +1075,14 @@ function compressGameState(gs: GameState): string {
   const messagesSinceLastRoll = lastRollTimestamp
     ? gs.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRollTimestamp).length
     : playerTurnCount
-  const rollDrought = messagesSinceLastRoll >= 3
-    ? ` ⚠ ROLL DROUGHT: ${messagesSinceLastRoll} turns without a check. The momentum trap is active — find the gate you missed.`
-    : ''
+  let rollDrought = ''
+  if (messagesSinceLastRoll >= 7) {
+    rollDrought = ` 🚨 ROLL DROUGHT (${messagesSinceLastRoll} turns): MANDATORY — propose a pending_check before ANY narrative progression. The player's next action requires a roll, no exceptions.`
+  } else if (messagesSinceLastRoll >= 5) {
+    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Next player action MUST include a pending_check. No free information, no ungated progress.`
+  } else if (messagesSinceLastRoll >= 3) {
+    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): The momentum trap is active. Look for the gate you missed — find a roll trigger now.`
+  }
 
   // Crucible resolved = was in crucible-like state but now isn't (combat ended, op completed)
   const crucibleResolved = pacingAct === 'resolution' ||
@@ -1329,21 +1356,34 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
   const isNewGame = chapterNumber <= 1 && chapters.every(ch => ch.status === 'in-progress' && ch.summary === '')
 
   if (isNewGame) {
-    const playerClass = gameState.character?.class?.toLowerCase() ?? ''
-    // Filter hooks: prefer class-tagged hooks matching this class, fall back to universal
-    const allHooks = config.openingHooks
-    const classHooks = allHooks.filter(h =>
-      typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
-    )
-    const universalHooks = allHooks.filter(h =>
-      typeof h === 'string' || !h.classes
-    )
-    // 70% chance to pick class-specific if available, else universal
-    const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
-    const picked = pool[Math.floor(Math.random() * pool.length)]
-    const hook = typeof picked === 'string' ? picked : picked.hook
-    const hookTitle = typeof picked !== 'string' && picked.title ? picked.title : config.initialChapterTitle
-    const partyLabel = config.partyBaseName.toLowerCase()
+    // Hook was pre-selected in createInitialGameState and stored in meta
+    const hook = gameState.meta?.selectedHook
+      || (() => {
+        // Fallback: re-select if meta.selectedHook is missing (legacy saves)
+        const playerClass = gameState.character?.class?.toLowerCase() ?? ''
+        const allHooks = config.openingHooks
+        const classHooks = allHooks.filter(h =>
+          typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
+        )
+        const universalHooks = allHooks.filter(h =>
+          typeof h === 'string' || !h.classes
+        )
+        const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
+        const picked = pool[Math.floor(Math.random() * pool.length)]
+        return typeof picked === 'string' ? picked : picked.hook
+      })()
+    const hookTitle = gameState.meta?.chapterTitle ?? config.initialChapterTitle
+
+    const hasPresetFrame = !!gameState.chapterFrame
+    const hasPresetArcs = gameState.arcs && gameState.arcs.length > 0
+
+    const frameInstruction = hasPresetFrame
+      ? `The chapter frame is already set (objective: "${gameState.chapterFrame!.objective}", crucible: "${gameState.chapterFrame!.crucible}"). Do NOT include chapter_frame in your commit_turn — it's locked. Play toward this objective.`
+      : `Include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The objective must be achievable in 12-18 turns — it's the NEXT MILESTONE, not the arc resolution.`
+
+    const arcInstruction = hasPresetArcs
+      ? `A story arc is already set ("${gameState.arcs[0].title}" with episode milestone: "${gameState.arcs[0].episodes[0]?.milestone}"). Do NOT create a new arc — work within this one. You may add additional episodes via arc_updates.add_episode if the story calls for it.`
+      : `If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal.`
 
     const msg = `Begin the campaign. Opening hook: "${hook}"
 
@@ -1356,7 +1396,9 @@ IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the wor
 - add_npcs (at least one NPC + origin contacts — see below)
 - add_faction (at least one)
 - add_threads (at least one narrative thread)
-Also include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal. The world state is blank — you must populate it.
+${frameInstruction}
+${arcInstruction}
+The world state is blank — you must populate it.
 
 ORIGIN CONTACTS: Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.
 ${(() => {

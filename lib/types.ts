@@ -386,6 +386,7 @@ export interface Chapter {
 export interface ChapterFrame {
   objective: string
   crucible: string
+  refined?: boolean  // true after one mid-chapter refinement has been applied
 }
 
 export interface CloseData {
@@ -435,6 +436,7 @@ export interface MetaState {
   chapterTitle: string
   genre: string
   sessionCount: number
+  selectedHook?: string       // opening hook text, stored so buildInitialMessage doesn't re-select
   closeReady?: boolean
   closeReason?: string
   selfAssessment?: string

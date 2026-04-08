@@ -919,10 +919,27 @@ function applyNarrativeChanges(
   statChanges: StatChange[],
   trackEvent?: (name: string, data: Record<string, string | number | boolean>) => void,
 ): GameState {
+  // Chapter frame update rules:
+  // - Always allowed during close sequence (close_chapter present)
+  // - One mid-chapter refinement allowed if: turn 5+ AND (defining decision OR promise change in same commit)
+  // - All other mid-chapter updates silently rejected to prevent frame drift
   if (input.chapter_frame) {
-    updated = {
-      ...updated,
-      chapterFrame: { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible },
+    const isCloseSequence = !!input.close_chapter
+    const alreadyRefined = updated.chapterFrame?.refined === true
+    const turnCount = updated.history.messages.filter(m => m.role === 'player').length
+    const hasDefiningTrigger = !!input.world?.add_decision || !!input.world?.update_promise
+
+    if (isCloseSequence) {
+      updated = {
+        ...updated,
+        chapterFrame: { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible },
+      }
+    } else if (!alreadyRefined && turnCount >= 5 && hasDefiningTrigger) {
+      updated = {
+        ...updated,
+        chapterFrame: { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible, refined: true },
+      }
+      dbg(`Frame refined at turn ${turnCount}: "${input.chapter_frame.objective}"`)
     }
   }
 
@@ -938,8 +955,10 @@ function applyNarrativeChanges(
     }
   }
 
-  if (input.close_chapter) {
-    const ci = input.close_chapter
+  if (input.close_chapter && !updated.meta.chapterClosed) {
+    const rawCi = input.close_chapter
+    // Strip "Chapter N:" prefix if Claude included it in the title
+    const ci = { ...rawCi, next_title: rawCi.next_title.replace(/^Chapter\s+\d+\s*:\s*/i, '') }
     const currentNum = updated.meta.chapterNumber
     trackEvent?.('chapter_completed', { chapter: currentNum, genre: updated.meta.genre })
     const completedChapter = {
@@ -966,6 +985,7 @@ function applyNarrativeChanges(
         ...updated.meta,
         chapterNumber: nextNum,
         chapterTitle: ci.next_title,
+        chapterClosed: true,  // prevent Phase 2/3 from closing another chapter
         closeReady: false,
         closeReason: undefined,
         selfAssessment: undefined,

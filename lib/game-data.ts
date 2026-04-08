@@ -53,6 +53,20 @@ export function createInitialGameState(
     throw new Error(`Invalid class (${classId}) or species (${speciesId}) for genre ${genre}`)
   }
 
+  // Select opening hook (same logic as buildInitialMessage, but earlier so we can inject frame/arc)
+  const playerClass = selectedClass.name.toLowerCase()
+  const allHooks = config.openingHooks
+  const classHooks = allHooks.filter(h =>
+    typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
+  )
+  const universalHooks = allHooks.filter(h =>
+    typeof h === 'string' || !h.classes
+  )
+  const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
+  const pickedHook = pool[Math.floor(Math.random() * pool.length)]
+  const hookObj = typeof pickedHook === 'string' ? { hook: pickedHook } : pickedHook
+  const hookTitle = hookObj.title || config.initialChapterTitle
+
   const now = new Date().toISOString()
 
   const character: CharacterState = {
@@ -145,15 +159,35 @@ export function createInitialGameState(
     decisions: [],
   }
 
+  // Build initial chapter frame from hook (if provided)
+  const initialFrame = hookObj.frame
+    ? { objective: hookObj.frame.objective, crucible: hookObj.frame.crucible }
+    : null
+
+  // Build initial arc from hook (if provided)
+  const initialArcs = hookObj.arc
+    ? [{
+        id: hookObj.arc.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''),
+        title: hookObj.arc.name,
+        status: 'active' as const,
+        episodes: [{
+          chapter: 1,
+          milestone: hookObj.arc.episode,
+          status: 'active' as const,
+        }],
+      }]
+    : []
+
   return {
     meta: {
       version: '1.0',
       createdAt: now,
       lastSaved: now,
       chapterNumber: 1,
-      chapterTitle: config.initialChapterTitle,
+      chapterTitle: hookTitle,
       genre: genre,
       sessionCount: 1,
+      selectedHook: hookObj.hook,  // stored so buildInitialMessage can reuse without re-selecting
     },
     character,
     world,
@@ -168,7 +202,7 @@ export function createInitialGameState(
       chapters: [
         {
           number: 1,
-          title: config.initialChapterTitle,
+          title: hookTitle,
           status: 'in-progress',
           summary: '',
           keyEvents: [],
@@ -176,7 +210,7 @@ export function createInitialGameState(
       ],
       rollLog: [],
     },
-    chapterFrame: null,
+    chapterFrame: initialFrame,
     storySummary: null,
     sceneSummaries: [],
     scopeSignals: 0,
@@ -185,7 +219,7 @@ export function createInitialGameState(
     rulesWarnings: [],
     pivotalScenes: [],
     rollSequences: [],
-    arcs: [],
+    arcs: initialArcs,
   }
 }
 
