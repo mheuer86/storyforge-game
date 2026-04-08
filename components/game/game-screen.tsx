@@ -289,10 +289,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 }
 
                 // Extract scene boundary from commit_turn
-                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string; tone_signature?: string }
-                if (sceneInput.scene_end) {
+                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string; tone_signature?: string; world?: { set_location?: unknown } }
+                // Auto-detect scene boundary: if set_location present but no scene_end, force it
+                const hasLocationChange = !!sceneInput.world?.set_location
+                const hasSceneEnd = !!sceneInput.scene_end
+                if (hasSceneEnd || hasLocationChange) {
                   if (sceneInput.scene_summary) {
                     sceneEndSummary = sceneInput.scene_summary
+                  } else if (hasLocationChange && !hasSceneEnd) {
+                    // Location change without scene_end — create a minimal summary
+                    sceneEndSummary = '[Scene boundary detected from location change]'
                   }
                   if (sceneInput.tone_signature) {
                     sceneToneSignature = sceneInput.tone_signature
