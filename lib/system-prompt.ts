@@ -96,16 +96,18 @@ d20 + modifier vs DC. Proficient skills add proficiency bonus. Nat 20: critical 
 
 **Roll when: (1) uncertain AND (2) failure has consequences.** Include pending_check in commit_turn BEFORE narrating the outcome.
 
-The momentum trap: three paragraphs without a roll → stop, check for missed gates. Dice create the story. Narrative follows dice.
+**The momentum trap: three turns without a roll → you've missed a gate.** Stop and look back. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated.
+
+**NPC information is GATED, not free.** NPCs do not volunteer critical information through conversation alone. Disposition determines willingness — Hostile refuses, Wary needs leverage, Neutral needs a reason, Favorable shares if asked well, Trusted volunteers. But even willing NPCs require a check (Persuasion, Insight, Deception, Intimidation) to extract actionable intelligence. The only free information is what the player can directly observe (visible bruises, a document on a table, a name on a sign). Everything spoken by an NPC that advances the investigation costs a roll.
 
 Plans vs actions: plan descriptions get acknowledged, not executed. Only execution triggers rolls. Sequential actions: stop at first roll condition. NPC actions under pressure: fate roll or NPC check. Never silently resolve.
 
-**Assessment rolls in planning scenes:** When the player asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check. If being wrong has consequences, include pending_check in commit_turn.
+**Assessment rolls:** When someone asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check if being wrong has consequences.
 
-Requires a roll: "Carren is a hired hand" → WIS Insight. "The conduit is still open" → INT. "Their protocols are outdated" → INT.
-Does NOT require a roll: "Let's hit the defense node first" → decision. "Renn, how long?" → NPC expertise. "We leave at midday" → scheduling.
+Requires a roll: "Carren is a hired hand" → WIS Insight. "The conduit is still open" → INT. Asking an NPC what they know about X → Persuasion. Reading someone's true motivation → Insight.
+Does NOT require a roll: "Let's hit the defense node first" → decision. "Renn, how long?" → NPC expertise on a non-sensitive topic. "We leave at midday" → scheduling.
 
-**Five-turn audit:** No rolls in five player turns → review for missed gates.
+**Five-turn audit:** No rolls in five player turns → review for missed gates. This is an error, not a style choice.
 
 **ALWAYS include pending_check BEFORE narrating the outcome.**
 
@@ -185,6 +187,8 @@ When a scene concludes, include \`scene_end: true\` and \`scene_summary\` (2-4 s
 The summary captures: what happened, what changed, and the emotional/relational tone. Write as if briefing someone who wasn't there. These summaries are the chapter's narrative memory — earlier messages are compressed away once summarized.
 
 Do NOT signal scene_end during combat (a fight is one scene) or mid-conversation (a dialogue is one scene even if it changes topic).
+
+**MANDATORY: When you include set_location in commit_turn, you MUST also include scene_end: true and scene_summary.** A location change IS a scene boundary. The only exception is the very first scene of a new chapter.
 
 Include \`tone_signature\` with every scene_end — 1-2 words capturing the emotional register ("quiet tension", "earned release", "accumulated dread", "bitter resolve"). This helps maintain continuity of register across scene boundaries.
 
@@ -490,7 +494,9 @@ function buildProgressionBlock(): string {
   return `## CHAPTER FRAME
 Establish via commit_turn with chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
 
-**Scope test:** One location. One primary conflict. One crucible. If the objective requires traveling to a new major location, that's two chapters. If it requires completing one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad. A chapter should feel slightly too small — that's the right scope.
+**The objective is the NEXT MILESTONE, not the arc resolution.** A chapter is an episode, not a season. "Expose Coll before the hearing" is a multi-chapter arc. "Find out who accused Maret and why" is one chapter. "Gather evidence and witnesses" is the next. "Present the case at the hearing" is the third. If the player's stated intent spans multiple milestones, pick the FIRST one and frame only that. When it resolves, signal_close and let the next chapter handle the next milestone.
+
+**Scope test:** One primary conflict. One crucible. 12-18 turns. If the objective requires traveling to a new major location, that's two chapters. If it requires completing one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad.
 
 **Turn budget (10-18 turns):**
 - Turns 1-3: Hook. Situation, one NPC, one choice. Set the frame.
@@ -1014,6 +1020,7 @@ function compressGameState(gs: GameState): string {
   // Act detection (heuristic, not declared)
   type PacingAct = 'hook' | 'development' | 'crucible' | 'resolution'
   let pacingAct: PacingAct = 'development'
+  const clueCount = gs.world.notebook?.clues?.length ?? 0
   if (playerTurnCount <= 3) {
     pacingAct = 'hook'
   } else if (gs.meta.closeReady) {
@@ -1021,10 +1028,21 @@ function compressGameState(gs: GameState): string {
   } else if (
     gs.combat.active ||
     (gs.world.operationState && ['active', 'extraction'].includes(gs.world.operationState.phase)) ||
-    (gs.world.explorationState?.hostile)
+    (gs.world.explorationState?.hostile) ||
+    clueCount >= 3  // investigation with 3+ clues = crucible-equivalent
   ) {
     pacingAct = 'crucible'
   }
+
+  // Roll drought — count turns since last roll
+  const rollLog = gs.history.rollLog
+  const lastRollTimestamp = rollLog.length > 0 ? rollLog[rollLog.length - 1].timestamp : null
+  const messagesSinceLastRoll = lastRollTimestamp
+    ? gs.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRollTimestamp).length
+    : playerTurnCount
+  const rollDrought = messagesSinceLastRoll >= 3
+    ? ` ⚠ ROLL DROUGHT: ${messagesSinceLastRoll} turns without a check. The momentum trap is active — find the gate you missed.`
+    : ''
 
   // Crucible resolved = was in crucible-like state but now isn't (combat ended, op completed)
   const crucibleResolved = pacingAct === 'resolution' ||
@@ -1032,7 +1050,9 @@ function compressGameState(gs: GameState): string {
 
   // Escalation ladder
   let turnWarning = ''
-  if (playerTurnCount >= 20) {
+  if (playerTurnCount >= 25) {
+    turnWarning = ` ⚠ HARD CAP (turn ${playerTurnCount}). You have 3 turns to signal_close. Close with what you have — unresolved threads become next chapter's hooks.`
+  } else if (playerTurnCount >= 20) {
     turnWarning = ` ⚠ OVER BUDGET (turn ${playerTurnCount}). Wrap NOW. Find the nearest close point.`
   } else if (crucibleResolved && scopeSignals >= 2) {
     turnWarning = ` ⚠ SCOPE CREEP (${scopeSignals} signals post-crucible). Close this chapter — new content belongs in the next chapter.`
@@ -1044,7 +1064,7 @@ function compressGameState(gs: GameState): string {
       : ` 📌 Turn ${playerTurnCount} — crucible should be active or imminent.`
   }
   const frameLine = gs.chapterFrame
-    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}`
+    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}${rollDrought}`
     : ''
   // Weak stats — flags stats with ≤0 modifier for difficulty engine targeting
   const weakStats = Object.entries(c.stats)
