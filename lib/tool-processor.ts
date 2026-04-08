@@ -78,6 +78,7 @@ interface CommitTurnInput {
   pending_check?: Record<string, unknown>
   scene_end?: boolean
   scene_summary?: string
+  tone_signature?: string
   pivotal_scenes?: { title: string; text: string }[]
   arc_updates?: {
     create_arc?: { id: string; title: string; episodes: string[] }
@@ -1021,6 +1022,30 @@ function applyNarrativeChanges(
     )
     updated = { ...updated, history: { ...updated.history, chapters } }
     statChanges.push({ type: 'new', label: 'Chapter debrief ready' })
+  }
+
+  // Scene summaries — when Claude signals scene_end, compress prior messages into a summary
+  if (input.scene_end && input.scene_summary) {
+    const existing = updated.sceneSummaries ?? []
+    const lastSummary = existing[existing.length - 1]
+    const fromIndex = lastSummary ? lastSummary.toMessageIndex + 1 : 0
+    const toIndex = Math.max(0, updated.history.messages.length - 1)
+    // Only push if there are messages to summarize
+    if (toIndex >= fromIndex) {
+      updated = {
+        ...updated,
+        sceneSummaries: [
+          ...existing,
+          {
+            text: input.scene_summary,
+            sceneNumber: existing.length + 1,
+            fromMessageIndex: fromIndex,
+            toMessageIndex: toIndex,
+            ...(input.tone_signature && { toneSignature: input.tone_signature }),
+          },
+        ],
+      }
+    }
   }
 
   // Pivotal scenes (close prompt curation)
