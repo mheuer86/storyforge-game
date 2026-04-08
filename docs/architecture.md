@@ -100,7 +100,7 @@ Total static budget: ~2200-2500 tokens per turn (down from ~5500 monolithic).
 Additional functions:
 - `buildClosePrompt()`: dedicated chapter close instructions + state
 - `buildAuditPrompt()`: lightweight state hygiene check instructions
-- `buildMessagesForClaude()`: assembles conversation history with scene compression (scene summaries replace old messages to stay within context window)
+- `buildMessagesForClaude()`: assembles conversation history with cross-chapter memory (prior chapter scene summaries for active arcs, raw messages for current chapter)
 - `buildInitialMessage()`: constructs the opening hook for new games/chapters
 - `compressGameState()`: serializes GameState into a compact text block for the system prompt
 - `detectContext()`: examines GameState to select the appropriate situation module
@@ -148,7 +148,8 @@ Main game UI. Client component. Responsibilities:
 - Builds and sends API requests with appropriate flags
 - Parses SSE-style stream: accumulates `text` events, processes `tools` events through `applyToolResults` + `runRulesEngine`, handles `roll_prompt` by showing dice widget
 - **Scope signal detection**: counts pacing signals from Claude per chapter
-- **Scene summary capture**: extracts scene summaries from tool results for history compression
+- **Scene summary capture**: extracts scene summaries from tool results for cross-chapter memory
+- **Debug log**: per-turn capture of commit_turn fields, state changes, roll events, scene summaries, tokens (downloadable as .txt)
 - **Roll prompt UI**: displays dice widget, captures player roll, sends `rollResolution` back to API
 - **Chapter close orchestration**: triggers close sequence, displays overlay with debrief
 - **Retry handling**: countdown display on overload, automatic retry
@@ -175,7 +176,7 @@ Main game UI. Client component. Responsibilities:
    - **Phase 1 (close+levelup):** audit fixes, close_chapter, level-up, skill points, arc advancement (advance episodes, resolve/abandon arcs)
    - **Phase 2 (debrief):** tactical, strategic, lucky breaks, costs paid, promises kept/broken
    - **Phase 3 (curation):** pivotal scene selection, signature line curation, next chapter frame
-5. `close_chapter` in commit_turn triggers: chapter archived with messages, chapter-scoped state reset (scene summaries, scope signals, chapter counters), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs)
+5. `close_chapter` in commit_turn triggers: chapter archived with messages and scene summaries, chapter-scoped state reset (scope signals, chapter counters, objective resolved turn), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs). Phase 3 (narrative curation) deferred to background.
 
 ### Audit
 
@@ -194,7 +195,7 @@ On-demand "story so far" generation using Claude Haiku. Produces a 200-300 word 
 All state lives in localStorage. Design principles:
 
 - **No migrations needed**: new optional fields default gracefully (nullish coalescing throughout)
-- **Chapter close resets**: scene summaries, scope signals, chapter-scoped counters, NPC `movedThisChapter` flag
-- **Chapter close preserves**: persistent counters, pivotal scenes, roll sequences, NPC tempLoad, decisions, roll log
-- **Scene compression**: old messages are replaced by scene summaries to keep context window manageable. Completed chapters archive their messages separately.
+- **Chapter close resets**: scope signals, chapter-scoped counters, NPC `movedThisChapter` flag, `_objectiveResolvedAtTurn`, `_pendingSceneSummary`
+- **Chapter close preserves**: persistent counters, pivotal scenes, roll sequences, NPC tempLoad, decisions, roll log. Scene summaries are copied to the completed chapter record for cross-chapter memory.
+- **Cross-chapter memory**: scene summaries from prior chapters with active arcs are injected as `[PRIOR CHAPTER SCENES]`. Within-chapter, raw messages are used (no compression, full cache efficiency). Scene summaries cleaned up when all associated arcs resolve.
 - **Save slots**: `saveToSlot()` for manual save points alongside auto-save after every turn

@@ -163,32 +163,31 @@ Rebuilt every turn from current `GameState`. Structured as labeled text blocks:
 | PACING | Act detection (hook/development/crucible/resolution), scope signal count, turn budget warnings at 12/15/20 turns and post-crucible scope creep. |
 | WEAK STATS | Stats with modifier <= 0, flagged for difficulty engine targeting |
 | RULES WARNINGS | Persistent counter threshold warnings from the rules engine |
+| ROLL GATE | Per-turn verb scan of player message → `[ROLL GATE]` block naming specific skill and target NPC. Five categories: stealth, physical, technical, social, info extraction. All fire regardless of context. |
+| CLOSE TIMING | Escalating directives based on `_objectiveResolvedAtTurn`: `[CLOSE AVAILABLE]` at +1, `[CLOSE OVERDUE]` at +2, `[CLOSE REQUIRED]` at +4 or turn 20. Hard budget at 18/20. |
 
 ## Message Assembly (`buildMessagesForClaude`)
 
-Three paths, selected by what compression data exists:
+Messages are assembled in two phases: cross-chapter memory, then current chapter history.
 
-### Path 1: Scene Summaries (standard path)
+### Phase 1: Cross-Chapter Memory
 
-When `sceneSummaries` exist:
+**Prior chapter scene summaries** are injected when completed chapters have `sceneSummaries` (preserved from their chapter close, cleaned up when all associated arcs resolve):
 
-1. Inject `[SCENE SUMMARIES]` block: all scene summaries with scene number and tone signature.
+1. Inject `[PRIOR CHAPTER SCENES]` block: scene summaries grouped by chapter with scene numbers and tone signatures.
 2. Append `[PIVOTAL MOMENTS]` block: curated scenes from prior chapters (permanent, never rotated). Format: `[Ch{N}: {title}] {text}`.
-3. GM acknowledges with "Continuing from current scene."
-4. Append only current-scene raw messages (everything after `lastSummarized.toMessageIndex`).
+3. GM acknowledges with "Prior chapter context loaded."
 
-### Path 2: Legacy Summary (backward compat)
+If no prior scene summaries exist but pivotal moments do, only the `[PIVOTAL MOMENTS]` block is injected.
 
-When `storySummary` exists but no scene summaries:
+### Phase 2: Current Chapter History
 
-1. Inject `[STORY SO FAR]` block with monolithic summary text.
-2. GM acknowledges.
-3. Append messages after `upToMessageIndex`.
+Scene summaries are **not** used for within-chapter compression. This preserves ~98% cache hit rate (compressing within-chapter breaks the cache prefix on every scene change). Two paths:
 
-### Path 3: Windowed History (early chapter, no summaries yet)
+**Legacy Summary path** (backward compat for old saves):
+When `storySummary` exists: inject `[STORY SO FAR]` block, then messages after `upToMessageIndex`.
 
-When neither exists:
-
+**Windowed History path** (standard):
 1. Walk backwards through messages, estimating tokens at 0.3 tokens/char.
 2. Budget: 4000 tokens base, +1000 during active operations or exploration.
 3. Floor: minimum 6 messages (3 full player-GM turns).
@@ -198,17 +197,21 @@ When neither exists:
 
 In all paths, the last message before the current player input gets `cache_control: { type: 'ephemeral' }`. This marks the prefix boundary: system blocks + tools + old history all stay identical between turns, enabling Anthropic prefix cache hits.
 
-The current player message is appended last as a plain `user` message (with `[META]` prefix for meta-questions).
+### Player Message Injection
+
+The current player message is appended last as a plain `user` message (with `[META]` prefix for meta-questions). System-level reminders may be appended:
+- `[SYSTEM: SCENE SUMMARY OWED]` — when `_pendingSceneSummary` flag is active (location changed without scene_end last turn)
+- `[SYSTEM: ROLL DROUGHT]` — when 5+ turns have passed without a roll
 
 ## Special Prompts
 
 ### Close Prompt (`buildClosePrompt`)
 
-Replaces the normal GM prompt when a chapter closes. Uses Claude Haiku (`claude-haiku-4-5`) in a three-phase sequence. The close handler is explicitly "NOT the narrative GM" -- it's mechanical.
+Replaces the normal GM prompt when a chapter closes. Uses Claude Haiku (`claude-haiku-4-5`) for phases 1-2 and Sonnet for phase 3 (narrative curation). The close handler is explicitly "NOT the narrative GM" -- it's mechanical.
 
-**Three-phase Haiku close sequence:**
+**Three-phase close sequence:**
 
-Each phase is a separate Haiku API call with its own focused prompt, producing one `commit_turn` per phase.
+Phases 1-2 run sequentially in the foreground (player waits). Phase 3 is deferred to the background (player sees the close overlay immediately after phase 1-2, ~10s instead of ~18-20s). Phase 3 output (pivotal scenes, signature lines) is memory for future chapters, not displayed in the overlay.
 
 **Phase 1: Close + Level Up**
 1. **Audit** -- review threads, promises, clocks, antagonist, operation/exploration state. Resolve or update stale entries.

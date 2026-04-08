@@ -88,13 +88,15 @@ There is also a legacy `systemPromptFlavor` object (`role`, `setting`, `vocabula
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `openingHooks` | `(string \| { hook: string; title?: string; classes?: string[] })[]` | Scenario starters shown at game creation. |
+| `openingHooks` | `(string \| HookObject)[]` | Scenario starters shown at game creation. All 133 hooks across 6 genres now include frame + arc. |
 | `locationNames` | `string[]` | Default location names available in the genre world. |
 
 Hooks can be plain strings or objects with:
 - `hook` -- the scenario text.
 - `title` -- optional display title for the hook selector.
 - `classes` -- optional array of class IDs. When present, the hook only appears if the player chose one of these classes. This enables class-tailored scenarios (e.g. an Envoy-only political dilemma in Epic Sci-Fi).
+- `frame` -- optional `{ objective: string; crucible: string }`. Pre-seeds the chapter frame so Claude starts with a tight chapter-1 goal instead of improvising. Objective scoped for ~20-25 turns.
+- `arc` -- optional `{ name: string; episode: string }`. Pre-seeds the first story arc with episode 1 marked active. Gives Claude a broader narrative thread from turn 1.
 
 Universal hooks (no `classes` filter) are available to all classes.
 
