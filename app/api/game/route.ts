@@ -450,7 +450,7 @@ export async function POST(req: NextRequest) {
               timestamp: new Date().toISOString(),
               system: phaseSystem.map(b => b.text),
               messages: phaseMessages,
-              tools: gameTools.map(t => ({ name: t.name, description: (t as Record<string, unknown>).description, input_schema: t.input_schema })),
+              tools: gameTools.map(t => ({ name: t.name, description: (t as unknown as Record<string, unknown>).description, input_schema: t.input_schema })),
             }
             const fs = await import('fs')
             const dir = process.cwd() + '/scripts/ab-close'
