@@ -61,6 +61,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     saveQuickActions(actions)
   }, [])
   const [tokenLog, setTokenLog] = useState<Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>>([])
+  const debugLogRef = useRef<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
@@ -262,13 +263,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             }
 
             if (event.type === 'token_usage') {
+              const u = event.usage
               setTokenLog(prev => [...prev, {
-                input: event.usage.inputTokens,
-                output: event.usage.outputTokens,
-                cacheWrite: event.usage.cacheWriteTokens,
-                cacheRead: event.usage.cacheReadTokens,
+                input: u.inputTokens, output: u.outputTokens,
+                cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
                 timestamp: new Date().toISOString(),
               }])
+              debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
             }
 
             if (event.type === 'tools') {
@@ -276,6 +277,31 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               const commitTool = event.results.findLast((r) => r.tool === 'commit_turn')
               if (commitTool) {
                 lastCommitInput = commitTool.input as Record<string, unknown>
+                // Debug log: capture the full commit_turn input
+                const ci = commitTool.input as Record<string, unknown>
+                const logParts: string[] = []
+                if (ci.world && typeof ci.world === 'object') {
+                  const w = ci.world as Record<string, unknown>
+                  if (w.set_location) logParts.push(`set_location=${JSON.stringify(w.set_location)}`)
+                  if (w.set_scene_snapshot) logParts.push(`snapshot="${w.set_scene_snapshot}"`)
+                  if (w.add_npcs) logParts.push(`add_npcs=${(w.add_npcs as Array<{name: string}>).map(n => n.name).join(',')}`)
+                  if (w.update_npcs) logParts.push(`update_npcs=${(w.update_npcs as Array<{name: string}>).map(n => n.name).join(',')}`)
+                  if (w.disposition_changes) logParts.push(`dispositions=${JSON.stringify(w.disposition_changes)}`)
+                  if (w.set_exploration) logParts.push('set_exploration=yes')
+                  if (w.cohesion) logParts.push(`cohesion=${JSON.stringify(w.cohesion)}`)
+                }
+                if (ci.scene_end) logParts.push(`scene_end=true`)
+                if (ci.scene_summary) logParts.push(`scene_summary="${ci.scene_summary}"`)
+                if (ci.tone_signature) logParts.push(`tone="${ci.tone_signature}"`)
+                if (ci.chapter_frame) logParts.push(`frame=${JSON.stringify(ci.chapter_frame)}`)
+                if (ci.signal_close) logParts.push(`signal_close=${JSON.stringify(ci.signal_close)}`)
+                if (ci.arc_updates) logParts.push(`arc_updates=${JSON.stringify(ci.arc_updates)}`)
+                if (ci.character && typeof ci.character === 'object') {
+                  const ch = ci.character as Record<string, unknown>
+                  if (ch.hp_delta) logParts.push(`hp_delta=${ch.hp_delta}`)
+                  if (ch.credits_delta) logParts.push(`credits_delta=${ch.credits_delta}`)
+                }
+                debugLogRef.current.push(`[${new Date().toISOString()}] COMMIT_TURN ${logParts.join(' | ')}`)
                 const commitInput = commitTool.input as { suggested_actions?: string[] }
                 if (commitInput.suggested_actions && commitInput.suggested_actions.length > 0) {
                   finalActions = commitInput.suggested_actions
@@ -329,6 +355,17 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               if (stateResults.length > 0) {
                 stateWithChanges = applyTools(stateResults, stateWithChanges, statChanges)
                 delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
+                // Debug log: state changes and scene summary status
+                if (statChanges.length > 0) {
+                  debugLogRef.current.push(`[${new Date().toISOString()}] STATE_CHANGES ${statChanges.map(s => `[${s.type}] ${s.label}`).join(' | ')}`)
+                }
+                const ss = stateWithChanges.sceneSummaries ?? []
+                if (ss.length > 0) {
+                  debugLogRef.current.push(`[${new Date().toISOString()}] SCENE_SUMMARIES count=${ss.length} latest="${ss[ss.length - 1].text.slice(0, 80)}..."`)
+                }
+                if (stateWithChanges._pendingSceneSummary) {
+                  debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ PENDING_SCENE_SUMMARY flag=true (location changed without scene_end)`)
+                }
               }
             }
 
@@ -450,6 +487,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       isLoadingRef.current = true
       setIsLoading(true)
       setLastStatChanges([])
+      const turnNum = currentState.history.messages.filter(m => m.role === 'player').length + 1
+      debugLogRef.current.push(`\n[${new Date().toISOString()}] ── TURN ${turnNum} ──${isMetaQuestion ? ' (meta)' : ''}${isInitial ? ' (initial)' : ''}`)
+      debugLogRef.current.push(`[${new Date().toISOString()}] PLAYER "${playerMessage.slice(0, 120)}${playerMessage.length > 120 ? '...' : ''}"`)
+      if (currentState._pendingSceneSummary) debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ SCENE_SUMMARY_OWED flag active — reminder injected into message`)
 
       const displayContent = displayOverride || playerMessage
       const playerDisplayMessage: DisplayMessage | null =
@@ -1616,6 +1657,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onLoad={handleLoad}
         onNewGame={onNewGame}
         tokenLog={tokenLog}
+        debugLog={debugLogRef.current}
         character={{
           name: gameState.character.name,
           species: { name: gameState.character.species },
