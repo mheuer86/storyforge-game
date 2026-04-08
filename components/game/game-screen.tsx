@@ -1091,62 +1091,83 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     // Don't add a message — the overlay replaces the text stream.
     // streamRequest will try to update a message with this ID but find nothing, which is fine.
 
-    await streamRequest(
-      {
-        message: '',
-        gameState,
-        isMetaQuestion: false,
-        isInitial: false,
-        isChapterClose: true,
-      },
-      gmMsgId,
-      true,
-      gameState,
-      () => { /* no roll prompt expected */ },
-      (finalState, statChanges) => {
-        // Build close data from pre/post state comparison
-        const completedChapter = finalState.history.chapters.find(
-          ch => ch.number === preCloseState.meta.chapterNumber && ch.status === 'complete'
-        )
-        const newProfs = finalState.character.proficiencies.filter(
-          p => !preCloseState.character.proficiencies.includes(p)
-        )
-        const closeData: import('@/lib/types').CloseData = {
-          completedChapterNumber: preCloseState.meta.chapterNumber,
-          completedChapterTitle: preCloseState.meta.chapterTitle,
-          nextChapterTitle: finalState.meta.chapterTitle,
-          resolutionMet: '',  // not easily extracted from state diff, but visible in debrief
-          forwardHook: '',
-          levelUp: {
-            oldLevel: preCloseState.character.level,
-            newLevel: finalState.character.level,
-            hpIncrease: finalState.character.hp.max - preCloseState.character.hp.max,
-            oldHpMax: preCloseState.character.hp.max,
-            newHpMax: finalState.character.hp.max,
-            newProficiencyBonus: finalState.character.proficiencyBonus !== preCloseState.character.proficiencyBonus
-              ? finalState.character.proficiencyBonus : undefined,
+    // Three-phase Haiku close sequence
+    const runClosePhase = (phase: 1 | 2 | 3, currentState: GameState): Promise<GameState> => {
+      return new Promise((resolve, reject) => {
+        const phaseGmMsgId = crypto.randomUUID()
+        streamRequest(
+          {
+            message: '',
+            gameState: currentState,
+            isMetaQuestion: false,
+            isInitial: false,
+            isChapterClose: true,
+            closePhase: phase,
           },
-          skillPointsAwarded: newProfs,
-          debrief: completedChapter?.debrief ?? null,
-          nextFrame: finalState.chapterFrame,
-        }
-        const closedState = {
-          ...finalState,
-          meta: { ...finalState.meta, chapterClosed: true, closeData },
-        }
-        setGameState(closedState)
-        saveGameState(closedState)
-        setLastStatChanges(statChanges)
-        setCloseInProgress(false)
-        isLoadingRef.current = false
-        setIsLoading(false)
-      },
-      () => {
-        setCloseInProgress(false)
-        isLoadingRef.current = false
-        setIsLoading(false)
-      },
-    )
+          phaseGmMsgId,
+          true,
+          currentState,
+          () => { /* no roll prompt in close */ },
+          (phaseState) => {
+            setGameState(phaseState)
+            saveGameState(phaseState)
+            resolve(phaseState)
+          },
+          () => reject(new Error(`Close phase ${phase} failed`)),
+        )
+      })
+    }
+
+    try {
+      // Phase 1: Close + Level-up + Audit + Frame
+      let currentState = await runClosePhase(1, gameState)
+
+      // Phase 2: Skill Points + Debrief
+      currentState = await runClosePhase(2, currentState)
+
+      // Phase 3: Narrative Curation (pivotal scenes + signature lines)
+      currentState = await runClosePhase(3, currentState)
+
+      // Build close overlay data from pre/post state comparison
+      const completedChapter = currentState.history.chapters.find(
+        ch => ch.number === preCloseState.meta.chapterNumber && ch.status === 'complete'
+      )
+      const newProfs = currentState.character.proficiencies.filter(
+        p => !preCloseState.character.proficiencies.includes(p)
+      )
+      const closeData: import('@/lib/types').CloseData = {
+        completedChapterNumber: preCloseState.meta.chapterNumber,
+        completedChapterTitle: preCloseState.meta.chapterTitle,
+        nextChapterTitle: currentState.meta.chapterTitle,
+        resolutionMet: '',
+        forwardHook: '',
+        levelUp: {
+          oldLevel: preCloseState.character.level,
+          newLevel: currentState.character.level,
+          hpIncrease: currentState.character.hp.max - preCloseState.character.hp.max,
+          oldHpMax: preCloseState.character.hp.max,
+          newHpMax: currentState.character.hp.max,
+          newProficiencyBonus: currentState.character.proficiencyBonus !== preCloseState.character.proficiencyBonus
+            ? currentState.character.proficiencyBonus : undefined,
+        },
+        skillPointsAwarded: newProfs,
+        debrief: completedChapter?.debrief ?? null,
+        nextFrame: currentState.chapterFrame,
+      }
+      const closedState = {
+        ...currentState,
+        meta: { ...currentState.meta, chapterClosed: true, closeData },
+      }
+      setGameState(closedState)
+      saveGameState(closedState)
+      setCloseInProgress(false)
+      isLoadingRef.current = false
+      setIsLoading(false)
+    } catch {
+      setCloseInProgress(false)
+      isLoadingRef.current = false
+      setIsLoading(false)
+    }
   }, [gameState, streamRequest])
 
   const handleStartNextChapter = useCallback(() => {
