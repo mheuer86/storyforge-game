@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildClosePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
+import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
 import { gameTools, auditTools, metaTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
@@ -26,6 +26,7 @@ const requestSchema = z.object({
   isInitial: z.boolean(),
   isConsistencyCheck: z.boolean().optional(),
   isChapterClose: z.boolean().optional(),
+  closePhase: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   isAudit: z.boolean().optional(),
   isSummarize: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
@@ -265,7 +266,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, isAudit, isSummarize, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isAudit, isSummarize, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -426,19 +427,19 @@ export async function POST(req: NextRequest) {
           return
         }
 
-        // ── Chapter close: dedicated close prompt ──
+        // ── Chapter close: three-phase Haiku sequence ──
         if (isChapterClose) {
-          const [closeInstructions, closeState] = buildClosePrompt(gameState)
-          const closeSystem: Anthropic.TextBlockParam[] = [
-            { type: 'text', text: closeInstructions, cache_control: { type: 'ephemeral' } },
-            { type: 'text', text: closeState },
+          const CLOSE_MODEL = 'claude-haiku-4-5-20251001'
+          const phase = closePhase ?? 1
+          const [phaseInstructions, phaseState] = buildClosePhasePrompt(gameState, phase as 1 | 2 | 3)
+          const phaseSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: phaseInstructions },
+            { type: 'text', text: phaseState },
           ]
-          const closeMessages: Anthropic.MessageParam[] = [
-            { role: 'user', content: 'Execute the chapter close sequence now.' },
+          const phaseMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: `Execute close phase ${phase} now.` },
           ]
-          // Close sequence may need multiple rounds: audit + close + levelUp + debrief + frame
-          // Close sequence: Claude should batch into 1-2 calls but may need more for debrief + curation
-          const loopResult = await runToolLoop(closeSystem, closeMessages, send, false, { maxRounds: 6 })
+          const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2 })
           finish(loopResult.toolResults)
           return
         }

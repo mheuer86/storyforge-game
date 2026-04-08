@@ -543,102 +543,106 @@ function buildFallbacks(context: PromptContext, hasInvestigation: boolean, ps: R
  * This replaces the normal GM prompt when isChapterClose is true.
  * It guides the close GM through the atomic close sequence.
  */
-export function buildClosePrompt(gameState: GameState): [string, string] {
+/**
+ * Three-phase Haiku close sequence. Each phase is a focused prompt.
+ * Phase 1: Audit + close_chapter + level_up + frame
+ * Phase 2: Skill points + debrief
+ * Phase 3: Pivotal scenes + signature lines (narrative curation)
+ */
+export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [string, string] {
   const compressedState = compressGameState(gameState)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
 
-  const selfAssessment = gameState.meta.selfAssessment
-    ? `\nGM SELF-ASSESSMENT (from the narrative GM):\n${gameState.meta.selfAssessment}`
-    : ''
+  if (phase === 1) {
+    const classConfig = config.classes.find(c => c.name === gameState.character.class)
+    const hitDie = classConfig?.hitDieAvg ?? 5
+    const conMod = getStatModifier(gameState.character.stats.CON)
+    const hpIncrease = Math.max(1, hitDie + conMod)
+    const currentLevel = gameState.character.level
+    const newLevel = currentLevel + 1
+    const profBonusNote = [5, 9, 13].includes(newLevel)
+      ? ` new_proficiency_bonus: ${newLevel >= 13 ? 5 : newLevel >= 9 ? 4 : 3}.`
+      : ''
+    const asiNote = [4, 8, 12].includes(newLevel)
+      ? ` This is an ASI level — include stat_increase.`
+      : ''
 
-  // Look up hit die from genre config (correct by construction)
-  const classConfig = config.classes.find(c => c.name === gameState.character.class)
-  const hitDie = classConfig?.hitDieAvg ?? 5
-  const conMod = getStatModifier(gameState.character.stats.CON)
-  const hpIncrease = Math.max(1, hitDie + conMod)
-  const currentLevel = gameState.character.level
-  const newLevel = currentLevel + 1
-  const profBonusNote = [5, 9, 13].includes(newLevel)
-    ? ` newProficiencyBonus: ${newLevel >= 13 ? 5 : newLevel >= 9 ? 4 : 3}.`
-    : ''
-  const asiNote = [4, 8, 12].includes(newLevel)
-    ? ` This is an ASI level — include statIncrease with the player's choice (+2 to one stat or +1 to two). The player will choose via the UI.`
-    : ''
+    const instructions = `You are the chapter close handler for a ${config.name} RPG. Execute these steps in ONE commit_turn call.
 
-  const instructions = `You are the chapter close handler for a ${config.name} RPG. You are NOT the narrative GM. Your job is mechanical: execute the close sequence precisely.
+1. AUDIT: Review threads, promises, clocks, antagonist, operation/exploration state. Include fixes in commit_turn (update_threads, clocks, update_promise, etc.).
 
-## CLOSE SEQUENCE
+2. CLOSE CHAPTER: Include close_chapter with:
+   - summary: 2-3 sentence narrative summary (long-term memory — write carefully)
+   - key_events: 3-5 key events
+   - next_title: title for the next chapter
+   - resolution_met: how the objective was resolved
+   - forward_hook: what creates momentum
 
-Execute these steps across 2-3 commit_turn calls:
-- **Call 1:** Audit fixes (thread/promise/clock updates) + close_chapter (summary, key_events, next_title, resolution_met, forward_hook) + character changes (level_up, add_proficiency)
-- **Call 2:** debrief + chapter_frame + pivotal_scenes + signature lines
-You MUST include close_chapter in one of these calls — without it the chapter does not close. Include level_up with the close_chapter call.
+3. LEVEL UP: Include character.level_up:
+   - new_level: ${newLevel}
+   - hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
 
-### Step 1: AUDIT
-Review the game state. Check:
-- Active threads: which resolved this chapter? Which carry forward?
-- Open promises: which were fulfilled or broken?
-- Tension clocks: which should advance, trigger, or resolve?
-- Antagonist: did they move this chapter?
-- Operation state: clear it (world.set_operation: null) if the operation completed.
-- Exploration state: clear it (world.set_exploration: null) if the player exited the facility.
+4. NEXT FRAME: Include chapter_frame (objective + crucible for next chapter).
 
-Include world.update_threads, world.clocks, world.update_promise, world.antagonist, etc. to resolve/update stale entries.
+You MUST include close_chapter and level_up. Without close_chapter the chapter does not close.
+Include suggested_actions: ["Ready for Chapter ${newLevel}"].
+Be analytical, not narrative. The ${config.currencyName} system uses ${config.currencyAbbrev}.`
 
-### Step 2: CLOSE CHAPTER
-Include close_chapter with:
-- summary: 2-3 sentence narrative summary (this is long-term memory — write carefully)
-- key_events: 3-5 key events (decisions, people met, consequences)
-- next_title: title for the next chapter
-- resolution_met: how the chapter objective was resolved
-- forward_hook: what creates momentum into the next chapter
+    return [instructions, compressedState]
+  }
 
-### Step 3: LEVEL UP
-Include character.level_up:
-- new_level: ${newLevel}
-- hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
+  if (phase === 2) {
+    const selfAssessment = gameState.meta.selfAssessment
+      ? `\nGM SELF-ASSESSMENT:\n${gameState.meta.selfAssessment}`
+      : ''
 
-### Step 4: SKILL POINTS
-Award 0-2 skill points. 1 point per criterion met:
-1. A non-proficient skill was used creatively during the chapter
-2. Major objective achieved with no failed primary checks
-3. A key decision had lasting positive payoff
+    const instructions = `You are the chapter debrief analyst for a ${config.name} RPG. Execute in ONE commit_turn call.
 
-Include character.add_proficiency for each skill point, choosing from non-proficient skills relevant to this chapter's events. Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
+1. SKILL POINTS: Award 0-2 via character.add_proficiency. Criteria:
+   - A non-proficient skill was used creatively
+   - Major objective achieved with no failed primary checks
+   - A key decision had lasting positive payoff
+   Current proficiencies: ${gameState.character.proficiencies.join(', ')}.
 
-### Step 5: DEBRIEF
-Include debrief with:
-- tactical: THE DICE TOLD A STORY + WHAT WORKED + WHAT COST YOU. Analyze the roll log. Name pivotal rolls, patterns, and the roll that defined the chapter. Identify 2-3 smart player decisions. Name real costs (not just HP — relationships, closed options, information gaps).
-- strategic: THREADS AND PRESSURE. Which threads advanced, worsened from neglect, or newly opened? What's most urgent next chapter?
-- lucky_breaks: specific moments where chance favored the player
-- costs_paid: specific permanent costs from this chapter
-- promises_kept: promises fulfilled or advanced
-- promises_broken: promises strained or broken
-Reference active decisions by category in tactical/strategic sections — which held, which broke, which had consequences. Supersede any decisions no longer relevant via world.update_decision before generating the debrief.
-${selfAssessment ? `\nFor GM Transparency (Section 6), incorporate the GM's self-assessment above into your analysis.` : ''}
+2. DEBRIEF: Include debrief with:
+   - tactical: Dice analysis + what worked + what cost you. Name pivotal rolls, 2-3 smart decisions, real costs.
+   - strategic: Threads advanced, worsened, opened. What's most urgent.
+   - lucky_breaks: moments where chance favored the player
+   - costs_paid: permanent costs (not just HP)
+   - promises_kept: fulfilled or advanced
+   - promises_broken: strained or broken
+${selfAssessment}
 
-### Step 6: SET NEXT FRAME
-Include chapter_frame with a provisional frame for the next chapter:
-- objective: derived from the forward hook — what does it demand the player do next?
-- crucible: the natural pressure point for that objective
+Be analytical. Reference actual events and rolls. Generic praise is worthless.
+Include suggested_actions: ["Continue"].`
 
-This is provisional — the narrative GM will confirm or adjust it in the first turns of the new chapter.
+    return [instructions, compressedState]
+  }
 
-### Step 7: CURATE NARRATIVE MEMORY
-This is the single opportunity to mark what survives compression. Include:
+  // Phase 3: Narrative curation — needs actual messages for finding quotes
+  const msgs = gameState.history.messages
+  const messageBlock = msgs
+    .map((m) => `[${m.role}] ${m.content.slice(0, 300)}`)
+    .join('\n')
 
-**pivotal_scenes** (max 2-3 per chapter): the scenes that defined this chapter. Write longer summaries (~200-300 tokens) preserving specific imagery, dialogue beats, and callbacks that might be referenced later. Not plot summaries — *moment* summaries. What the scene felt like, what specific lines were said, what the player saw. If a scene might get called back to in a future chapter, it goes here.
+  const instructions = `You are the narrative curator for a ${config.name} RPG. Review the chapter transcript below and execute in ONE commit_turn call.
 
-**Signature lines on NPCs** (via world.update_npcs with add_signature_line): review the chapter for NPC lines that captured a character perfectly. Mark 1-2 per major NPC. These persist forever as voice anchors. Choose lines the player is likely to remember.
+1. PIVOTAL SCENES: Include pivotal_scenes (2-3 moments). Write ~200 token summaries preserving specific imagery, dialogue, and callbacks. Not plot summaries — moment summaries. What it felt like, what was said.
 
-## RULES
-- Be analytical, not narrative. No GM voice, no scene descriptions.
-- Reference actual events, rolls, NPCs, and consequences. Generic praise is worthless.
-- Execute ALL steps. Do not skip any.
-- The ${config.currencyName} system uses ${config.currencyAbbrev}.`
+2. SIGNATURE LINES: Include world.update_npcs with add_signature_line for 1-2 major NPCs. Choose exact quotes that capture the character perfectly. Lines the player would remember.
+
+Include suggested_actions: ["Continue"].
+
+CHAPTER TRANSCRIPT:
+${messageBlock}`
 
   return [instructions, compressedState]
+}
+
+// Legacy wrapper for backward compat
+export function buildClosePrompt(gameState: GameState): [string, string] {
+  return buildClosePhasePrompt(gameState, 1)
 }
 
 /**
