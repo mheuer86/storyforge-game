@@ -1136,9 +1136,16 @@ function applyNarrativeChanges(
       arcs = arcs.map(a =>
         a.id === au.resolve_arc!.arc_id ? { ...a, status: 'resolved' as const } : a
       )
-      // Clean up: drop scene summaries from prior chapters — arc is resolved, scene-level detail no longer needed
+      // Clean up scene summaries from prior chapters, but only if no other active arc
+      // has episodes in that chapter. A scene touched by two arcs stays until both resolve.
+      const remainingActiveArcs = arcs.filter(a => a.status === 'active')
+      const chaptersWithActiveArcs = new Set(
+        remainingActiveArcs.flatMap(a => a.episodes.map(e => e.chapter))
+      )
       const chapters = updated.history.chapters.map(ch =>
-        ch.sceneSummaries ? { ...ch, sceneSummaries: undefined } : ch
+        ch.sceneSummaries && !chaptersWithActiveArcs.has(ch.number)
+          ? { ...ch, sceneSummaries: undefined }
+          : ch
       )
       updated = { ...updated, history: { ...updated.history, chapters } }
     }
