@@ -81,7 +81,9 @@ function BulletList({ items }: { items: string[] }) {
 }
 
 export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapter }: ChapterCloseOverlayProps) {
-  const { levelUp, skillPointsAwarded, debrief, nextFrame, completedChapterTitle, completedChapterNumber, nextChapterTitle } = closeData
+  const { levelUp, skillPointsAwarded, debrief, nextFrame, completedChapterTitle, completedChapterNumber, nextChapterTitle: rawNextTitle } = closeData
+  // Strip "Chapter N:" prefix if Claude included it in the title
+  const nextChapterTitle = rawNextTitle?.replace(/^Chapter\s+\d+\s*:\s*/i, '') ?? rawNextTitle
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -160,7 +162,7 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
                     </div>
                     <div className="text-foreground/60 leading-relaxed [&_strong]:font-medium [&_strong]:text-foreground/70">{renderMarkdown(debrief.strategic)}</div>
                   </div>
-                  {debrief.luckyBreaks.length > 0 && (
+                  {debrief.luckyBreaks?.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Lucky Breaks</span>
@@ -168,7 +170,7 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
                       <BulletList items={debrief.luckyBreaks} />
                     </div>
                   )}
-                  {debrief.costsPaid.length > 0 && (
+                  {debrief.costsPaid?.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Costs Paid</span>
