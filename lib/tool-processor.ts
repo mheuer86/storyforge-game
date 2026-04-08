@@ -994,6 +994,7 @@ function applyNarrativeChanges(
       chapterFrame: null,
       storySummary: null,
       sceneSummaries: [],
+      _pendingSceneSummary: false,
       scopeSignals: 0,
       npcFailures: [],
       counters: resetChapterCounters(updated).counters,  // reset per-chapter counters, preserve persistent ones
@@ -1024,30 +1025,19 @@ function applyNarrativeChanges(
     statChanges.push({ type: 'new', label: 'Chapter debrief ready' })
   }
 
-  // Scene summaries — when Claude signals scene_end, compress prior messages into a summary.
-  // Code-level fallback: if set_location is present without scene_end, auto-generate a boundary.
-  const hasExplicitSceneEnd = input.scene_end && input.scene_summary
-  const hasLocationChangeWithoutSceneEnd = input.world?.set_location && !input.scene_end
-  const isFirstScene = (updated.sceneSummaries ?? []).length === 0 && updated.history.messages.length <= 2
-
-  if (hasExplicitSceneEnd || (hasLocationChangeWithoutSceneEnd && !isFirstScene)) {
+  // Scene summaries — when Claude signals scene_end, compress prior messages into a summary
+  if (input.scene_end && input.scene_summary) {
     const existing = updated.sceneSummaries ?? []
     const lastSummary = existing[existing.length - 1]
     const fromIndex = lastSummary ? lastSummary.toMessageIndex + 1 : 0
     const toIndex = Math.max(0, updated.history.messages.length - 1)
-    // Build summary text: use Claude's if provided, otherwise synthesize a minimal marker.
-    // Note: by this point, set_location has already updated world.currentLocation to the NEW scene.
-    // The summary describes the scene that just ENDED, so use a generic marker for the fallback.
-    const summaryText = input.scene_summary
-      || `Scene concluded. Moved to ${input.world?.set_location?.name ?? updated.world.currentLocation?.name ?? 'new location'}.`
-    // Only push if there are messages to summarize
     if (toIndex >= fromIndex) {
       updated = {
         ...updated,
         sceneSummaries: [
           ...existing,
           {
-            text: summaryText,
+            text: input.scene_summary,
             sceneNumber: existing.length + 1,
             fromMessageIndex: fromIndex,
             toMessageIndex: toIndex,
@@ -1056,6 +1046,17 @@ function applyNarrativeChanges(
         ],
       }
     }
+  }
+
+  // Track missed scene_end: if set_location happened without scene_end, flag it for next turn
+  if (input.world?.set_location && !input.scene_end) {
+    const isFirstScene = (updated.sceneSummaries ?? []).length === 0 && updated.history.messages.length <= 2
+    if (!isFirstScene) {
+      updated = { ...updated, _pendingSceneSummary: true } as typeof updated
+    }
+  } else if (input.scene_end) {
+    // Clear the flag if scene_end was properly sent
+    updated = { ...updated, _pendingSceneSummary: false } as typeof updated
   }
 
   // Pivotal scenes (close prompt curation)

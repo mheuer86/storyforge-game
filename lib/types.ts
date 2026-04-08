@@ -459,6 +459,7 @@ export interface GameState {
   rulesWarnings: string[]           // injected by rules engine each turn, reset before next turn
   pivotalScenes: PivotalScene[]     // permanent, never rotated — chapter-defining moments with longer summaries
   rollSequences: RollSequence[]     // detected roll patterns (consecutive failures, breakthroughs)
+  _pendingSceneSummary?: boolean    // true when set_location fired without scene_end — reminds Claude next turn
   arcs: StoryArc[]                 // multi-chapter narrative arcs with episode milestones
 }
 
