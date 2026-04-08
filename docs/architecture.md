@@ -67,6 +67,7 @@ Applies `commit_turn` input to GameState. Domain handlers:
 - **Character**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns
 - **World**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier), location, time, scene snapshot, threads, promises, decisions, factions, antagonist (establish/move/defeat), cohesion (score derivation from log), ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
 - **Combat**: start (spawn enemies), end (loot, credits)
+- **Story Arcs**: arc_updates (create_arc, advance_episode, resolve_arc, abandon_arc, add_episode). Arcs persist across chapters; episodes are chapter-scoped milestones decomposed at chapter start. Arc advancement happens during the close sequence.
 - **Meta**: suggested_actions, chapter_frame, signal_close, close_chapter (archives messages, resets chapter-scoped state via `resetChapterCounters`), debrief, scene_end
 
 Returns: updated GameState + array of `StatChange` objects for UI display.
@@ -170,8 +171,11 @@ Main game UI. Client component. Responsibilities:
 1. Claude sends `signal_close` in commit_turn when chapter feels complete (includes reason and self-assessment)
 2. Client shows close button. Player triggers chapter close.
 3. Client sends POST with `isChapterClose: true`
-4. API uses `buildClosePrompt()` with up to 3 tool loop rounds (targets 1 — all steps batched into a single commit_turn): audit fixes, close_chapter, level-up, skill points, debrief, next chapter frame, pivotal scene curation
-5. `close_chapter` in commit_turn triggers: chapter archived with messages, chapter-scoped state reset (scene summaries, scope signals, chapter counters), persistent state preserved (counters, pivotal scenes, roll sequences)
+4. API runs a three-phase Haiku close sequence (`claude-haiku-4-5`):
+   - **Phase 1 (close+levelup):** audit fixes, close_chapter, level-up, skill points, arc advancement (advance episodes, resolve/abandon arcs)
+   - **Phase 2 (debrief):** tactical, strategic, lucky breaks, costs paid, promises kept/broken
+   - **Phase 3 (curation):** pivotal scene selection, signature line curation, next chapter frame
+5. `close_chapter` in commit_turn triggers: chapter archived with messages, chapter-scoped state reset (scene summaries, scope signals, chapter counters), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs)
 
 ### Audit
 

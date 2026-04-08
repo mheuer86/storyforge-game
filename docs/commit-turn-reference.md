@@ -204,6 +204,18 @@ Schema uses **snake_case** for Claude reliability. The tool-processor (`lib/tool
 
 Client renders a dice widget when `pending_check` is present.
 
+### Story Arcs (`arc_updates`)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `create_arc` | `object` | Start a new story arc. Required: `{id, title, description}`. |
+| `add_episode` | `object` | Add an episode to an existing arc. Required: `{arc_id, episode_id, milestone}`. |
+| `advance_episode` | `object` | Advance or complete an episode. Required: `{arc_id, episode_id, status, summary}`. Status: `active/completed/failed`. |
+| `resolve_arc` | `object` | Mark an arc as resolved. Required: `{arc_id, resolution_summary}`. |
+| `abandon_arc` | `object` | Mark an arc as abandoned. Required: `{arc_id, reason}`. |
+
+Arcs persist across chapters. Episodes are chapter-scoped milestones. The close sequence (Phase 1) advances episodes with summaries. Only one episode per arc should be `active` at a time.
+
 ### Scene (top-level)
 
 | Field | Type | Description |
