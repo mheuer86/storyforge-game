@@ -223,6 +223,7 @@ Arcs persist across chapters. Episodes are chapter-scoped milestones. The close 
 | `scene_end` | `boolean` | True when a scene boundary occurred. |
 | `scene_summary` | `string` | 2-4 sentence summary of the concluding scene. |
 | `tone_signature` | `string` | 1-2 words capturing emotional register (e.g. "quiet tension", "earned release", "accumulated dread"). |
+| `objective_status` | `string` | `in_progress`, `resolved`, or `failed`. Factual assessment of the chapter frame objective every turn. When resolved/failed, triggers close timing enforcement. |
 
 ---
 

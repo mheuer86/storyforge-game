@@ -31,11 +31,21 @@ Every chapter follows a four-act structure detected automatically from game stat
 
 **Chapter target:** 10-18 turns, with a 25-turn hard cap. Turns 1-3 are the hook. Turns 4-8 are development. Turns 9-14 are the crucible. Turns 15-18 are resolution. The scope test enforces one location, one primary conflict, one crucible per chapter. The frame constraint is milestone-scoped: the chapter objective aligns with the active episode milestone, keeping each chapter focused on a single narrative beat within the larger arc.
 
+**Roll gate enforcement:** A `detectRollGate()` function scans the player's message for action verbs (stealth, physical, technical, social, information extraction) and injects a `[ROLL GATE]` block into the dynamic state naming the specific skill and target NPC. All categories fire regardless of context module. Trusted NPCs are exempt from information extraction gates. Target: 1 roll every 2-3 turns. Roll drought warnings escalate at 2/3/5 turns without a roll, with a `[SYSTEM: ROLL DROUGHT]` message injection at 5+ turns.
+
+**Close timing enforcement:** An `objective_status` field in commit_turn (`in_progress`/`resolved`/`failed`) tracks when the chapter objective is met. When resolved, `_objectiveResolvedAtTurn` records the turn number and escalating close directives are injected:
+- +1 turn: `[CLOSE AVAILABLE]`
+- +2 turns: `[CLOSE OVERDUE]`
+- +4 turns or turn 20: `[CLOSE REQUIRED]`
+- Hard budget fallback at turn 18 (available) and 20 (required) regardless of objective status.
+
+**Context detection (`detectContext`):** Determines which prompt module loads (infiltration, social, exploration, combat, downtime). Checks in priority order: active combat → infiltration clocks → hostile exploration → active operations → hostile NPCs → player threat language in recent messages → active tension clocks → safe location indicators. Note: context modules affect narrative tone only, not roll enforcement.
+
 ---
 
-## 2. Scene Summary Compression
+## 2. Scene Summaries as Cross-Chapter Memory
 
-The history system compresses earlier scenes into summaries while keeping the current scene's messages raw.
+Scene summaries serve as a **cross-chapter memory layer**, not as within-chapter compression. Within a 20-turn chapter, raw messages fit the context window and cache efficiency (~98% hit rate) is more valuable than compaction. Compressing within-chapter breaks the cache prefix on every scene change.
 
 **Scene end triggers** (included in `commit_turn` with `scene_end: true`):
 - Player moves to a new location (not arrival at a continuing scene)
@@ -44,11 +54,23 @@ The history system compresses earlier scenes into summaries while keeping the cu
 - The player shifts to a fundamentally different activity
 - Combat and mid-conversation dialogue are never split
 
+**Fallback enforcement:** If Claude sends `set_location` without `scene_end`, a `_pendingSceneSummary` flag is set. Next turn, a `[SYSTEM: SCENE SUMMARY OWED]` reminder is injected into the conversation message, prompting Claude to include the summary retroactively.
+
 **Per-scene summaries** capture what happened, what changed, and the emotional/relational tone in 2-4 sentences. Each summary includes a `toneSignature` (1-2 words like "quiet tension", "earned release", "accumulated dread") that preserves the emotional register across scene boundaries.
 
-**Injection into context:** All chapter scene summaries are injected as a block at the start of the message history. The current scene's messages remain raw and uncompressed. There is no rolling buffer or window that drops old summaries within a chapter.
+**Three lifecycle states:**
 
-**Backward compatibility:** The legacy `storySummary` field (a single 200-300 token narrative summary) is still checked. If scene summaries exist, they take precedence. If only the legacy summary exists, it is injected instead.
+| State | Behavior |
+|-------|----------|
+| **Current chapter** | Summaries are written at every scene boundary but NOT used for context compression. Raw messages are sent to Claude. Full cache efficiency. |
+| **Prior chapters with active arcs** | Scene summaries are preserved on the completed chapter record and injected as a `[PRIOR CHAPTER SCENES]` block before current chapter messages. Higher resolution than the 1-line chapter summary. Static content, caches well. |
+| **Resolved arcs / old chapters** | Scene summaries are cleared when all arcs with episodes in that chapter are resolved. Only the chapter summary remains. |
+
+**On chapter close:** Current `sceneSummaries` are copied into the completed chapter record (`Chapter.sceneSummaries`), then reset for the new chapter.
+
+**On arc resolution:** Scene summaries are cleared only from chapters where no other active arc has episodes. A chapter that contributed to arcs X and Y keeps its scene summaries until both resolve.
+
+**Backward compatibility:** The legacy `storySummary` field (a single 200-300 token narrative summary) is still checked for old saves.
 
 ---
 
@@ -130,7 +152,7 @@ Multiple systems preserve narrative identity across the compression boundary.
 Preserved exact NPC quotes that capture their voice at pivotal moments. Max 4 per NPC, curated during chapter close (Step 7). These persist forever as voice anchors and are displayed alongside crew NPC details in the dynamic state.
 
 ### pivotalScenes
-Permanent chapter-defining moments with longer summaries (~200-300 tokens) preserving specific imagery, dialogue beats, and callbacks. Max 8 total, never rotated or compressed. Injected as a `[PIVOTAL MOMENTS]` block alongside scene summaries. These are moment summaries, not plot summaries: what the scene felt like, what specific lines were said, what the player saw.
+Permanent chapter-defining moments with longer summaries (~200-300 tokens) preserving specific imagery, dialogue beats, and callbacks. Max 8 total, never rotated or compressed. Injected as a `[PIVOTAL MOMENTS]` block alongside prior chapter scene summaries. These are moment summaries, not plot summaries: what the scene felt like, what specific lines were said, what the player saw.
 
 ### rollSequences
 Auto-detected patterns in the roll log. The rules engine scans for 3+ consecutive failures on the same check, optionally followed by a success or critical (the breakthrough pattern). Recorded with a description like "5 consecutive failures on Deception, released on nat 20 Persuasion" and the turn range. Ongoing streaks are tracked too.
