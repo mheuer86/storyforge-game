@@ -427,10 +427,10 @@ export async function POST(req: NextRequest) {
           return
         }
 
-        // ── Chapter close: three-phase Haiku sequence ──
+        // ── Chapter close: Haiku for phases 1-2, Sonnet for phase 3 (curation) ──
         if (isChapterClose) {
-          const CLOSE_MODEL = 'claude-haiku-4-5-20251001'
           const phase = closePhase ?? 1
+          const CLOSE_MODEL = phase === 3 ? MODEL : 'claude-haiku-4-5-20251001'
           const [phaseInstructions, phaseState] = buildClosePhasePrompt(gameState, phase as 1 | 2 | 3)
           const phaseSystem: Anthropic.TextBlockParam[] = [
             { type: 'text', text: phaseInstructions },
