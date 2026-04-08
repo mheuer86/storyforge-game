@@ -1076,12 +1076,12 @@ function compressGameState(gs: GameState): string {
     ? gs.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRollTimestamp).length
     : playerTurnCount
   let rollDrought = ''
-  if (messagesSinceLastRoll >= 7) {
+  if (messagesSinceLastRoll >= 5) {
     rollDrought = ` 🚨 ROLL DROUGHT (${messagesSinceLastRoll} turns): MANDATORY — propose a pending_check before ANY narrative progression. The player's next action requires a roll, no exceptions.`
-  } else if (messagesSinceLastRoll >= 5) {
-    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Next player action MUST include a pending_check. No free information, no ungated progress.`
   } else if (messagesSinceLastRoll >= 3) {
-    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): The momentum trap is active. Look for the gate you missed — find a roll trigger now.`
+    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Next player action MUST include a pending_check. No free information, no ungated progress.`
+  } else if (messagesSinceLastRoll >= 2) {
+    rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Look for a roll trigger — don't let the narrative coast.`
   }
 
   // Crucible resolved = was in crucible-like state but now isn't (combat ended, op completed)
@@ -1342,7 +1342,16 @@ export function buildMessagesForClaude(
   const sceneReminder = gameState._pendingSceneSummary
     ? '\n[SYSTEM: You changed location last turn without scene_end. You MUST include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in your commit_turn this turn.]'
     : ''
-  messages.push({ role: 'user', content: prefix + currentMessage + sceneReminder })
+  // Roll drought: inject into message when 5+ turns without a roll
+  const lastRoll = gameState.history.rollLog.length > 0 ? gameState.history.rollLog[gameState.history.rollLog.length - 1] : null
+  const lastRollTs = lastRoll?.timestamp ?? ''
+  const playerTurnsSinceRoll = lastRollTs
+    ? gameState.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRollTs).length
+    : gameState.history.messages.filter(m => m.role === 'player').length
+  const rollReminder = playerTurnsSinceRoll >= 5 && !isMetaQuestion
+    ? `\n[SYSTEM: ROLL DROUGHT — ${playerTurnsSinceRoll} turns without a check. You MUST include a pending_check in your commit_turn. The player's action cannot succeed or fail without a roll.]`
+    : ''
+  messages.push({ role: 'user', content: prefix + currentMessage + sceneReminder + rollReminder })
 
   return messages
 }
