@@ -217,9 +217,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
       {/* Close Chapter Button */}
       {closeReady && onCloseChapter && (
         <div className="flex flex-col gap-2">
-          {closeReason && (
-            <p className="text-[11px] text-muted-foreground/60 px-1 leading-relaxed">{closeReason}</p>
-          )}
+          {/* closeReason kept in state for debug log but not shown to player — too meta */}
           <button
             onClick={onCloseChapter}
             disabled={disabled}
