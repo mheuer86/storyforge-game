@@ -372,6 +372,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                   const since = currentTurn - stateWithChanges._objectiveResolvedAtTurn
                   debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_STATUS resolved_at_turn=${stateWithChanges._objectiveResolvedAtTurn} turns_since=${since}`)
                 }
+                const arcs = stateWithChanges.arcs ?? []
+                if (arcs.length > 0) {
+                  debugLogRef.current.push(`[${new Date().toISOString()}] ARCS ${arcs.map(a => `${a.id}[${a.status}]`).join(', ')}`)
+                }
               }
             }
 
