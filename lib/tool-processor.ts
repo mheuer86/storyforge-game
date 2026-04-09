@@ -1041,7 +1041,8 @@ function applyNarrativeChanges(
     const lastSummary = existing[existing.length - 1]
     const fromIndex = lastSummary ? lastSummary.toMessageIndex + 1 : 0
     const toIndex = Math.max(0, updated.history.messages.length - 1)
-    if (toIndex >= fromIndex) {
+    // Prevent duplicate: skip if toIndex hasn't advanced past the last summary
+    if (toIndex >= fromIndex && toIndex !== lastSummary?.toMessageIndex) {
       updated = {
         ...updated,
         sceneSummaries: [
@@ -1097,7 +1098,13 @@ function applyNarrativeChanges(
     let arcs = [...(updated.arcs ?? [])]
 
     if (au.create_arc) {
-      const existing = arcs.find(a => a.id === au.create_arc!.id)
+      // Dedup: match by ID or title similarity (Claude often recreates arcs with varied IDs)
+      const newTitle = au.create_arc.title.toLowerCase()
+      const existing = arcs.find(a =>
+        a.id === au.create_arc!.id ||
+        a.title.toLowerCase() === newTitle ||
+        (a.title.toLowerCase().includes(newTitle.slice(0, 20)) || newTitle.includes(a.title.toLowerCase().slice(0, 20)))
+      )
       if (!existing) {
         arcs.push({
           id: au.create_arc.id,
