@@ -594,7 +594,7 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
 
 5. ARC ADVANCEMENT: If story arcs exist, include arc_updates.advance_episode for the current arc with a 1-2 sentence summary of what this episode achieved. If the arc's final episode just completed, use arc_updates.resolve_arc instead. The next chapter's frame objective should match the next episode's milestone.
 
-You MUST include close_chapter and level_up. Without close_chapter the chapter does not close.
+You MUST include close_chapter, level_up, AND chapter_frame. Without close_chapter the chapter does not close. Without chapter_frame the next chapter has no objective.
 Include suggested_actions: ["Ready for Chapter ${newLevel}"].
 Be analytical, not narrative. The ${config.currencyName} system uses ${config.currencyAbbrev}.`
 
@@ -632,7 +632,7 @@ Be analytical, not narrative. The ${config.currencyName} system uses ${config.cu
 ${rollSummary}
 ${selfAssessment}
 
-Be analytical. Reference actual rolls from the log above. Do NOT invent roll outcomes. Generic praise is worthless.
+You MUST include debrief. Without it the player sees no chapter analysis. Be analytical. Reference actual rolls from the log above. Do NOT invent roll outcomes. Generic praise is worthless.
 Include suggested_actions: ["Continue"].`
 
     return [instructions, compressedState]
