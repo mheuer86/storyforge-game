@@ -1774,7 +1774,7 @@ function ChaptersPanel({
                 <div className="flex items-center gap-2 mb-1.5"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Strategic</span></div>
                 <div className="text-sm text-foreground/70 leading-relaxed">{renderMarkdown(showDebrief.debrief.strategic)}</div>
               </div>
-              {showDebrief.debrief.luckyBreaks.length > 0 && (
+              {showDebrief.debrief.luckyBreaks?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Lucky Breaks</span></div>
                   <ul className="flex flex-col gap-1">
@@ -1787,7 +1787,7 @@ function ChaptersPanel({
                   </ul>
                 </div>
               )}
-              {showDebrief.debrief.costsPaid.length > 0 && (
+              {showDebrief.debrief.costsPaid?.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-1"><div className="w-4 h-px bg-primary/20" /><span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/70" style={{ fontFamily: 'var(--font-ui)' }}>Costs Paid</span></div>
                   <ul className="flex flex-col gap-1">
