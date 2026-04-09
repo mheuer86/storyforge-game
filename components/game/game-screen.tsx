@@ -1192,28 +1192,37 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       // Deferred to background — player sees overlay immediately after phase 1+2.
       // Phase 3 output (pivotal scenes, signature lines) is memory for future chapters,
       // not displayed in the close overlay. Completes silently.
-      const phase3State = currentState
-      runClosePhase(3, phase3State).then(phase3Result => {
-        // Merge phase 3 results (pivotal scenes, signature lines) into current state
-        // without overwriting closeData or chapterClosed from the foreground flow
-        setGameState(prev => {
-          if (!prev) return phase3Result
-          const merged = {
-            ...prev,
-            pivotalScenes: phase3Result.pivotalScenes,
-            // Preserve any NPC signature lines phase 3 added
-            world: {
-              ...prev.world,
-              npcs: prev.world.npcs.map(n => {
-                const updated = phase3Result.world.npcs.find(u => u.name === n.name)
-                return updated?.signatureLines ? { ...n, signatureLines: updated.signatureLines } : n
-              }),
-            },
-          }
-          saveGameState(merged)
-          return merged
-        })
-      }).catch(() => { /* non-critical: pivotal scenes missing for one chapter transition */ })
+      // Phase 3 runs in background — but runClosePhase's internal callback calls
+      // setGameState(phaseState) which would overwrite closeData. Use a custom flow
+      // that skips the internal state set and only merges the results.
+      const phase3GmMsgId = crypto.randomUUID()
+      streamRequest(
+        { message: '', gameState: currentState, isMetaQuestion: false, isInitial: false, isChapterClose: true, closePhase: 3 },
+        phase3GmMsgId,
+        true,
+        currentState,
+        () => { /* no roll prompt in close */ },
+        (phase3Result) => {
+          // Merge only phase 3 outputs into current state — don't touch meta/closeData
+          setGameState(prev => {
+            if (!prev) return prev
+            const merged = {
+              ...prev,
+              pivotalScenes: phase3Result.pivotalScenes ?? prev.pivotalScenes,
+              world: {
+                ...prev.world,
+                npcs: prev.world.npcs.map(n => {
+                  const updated = phase3Result.world.npcs.find(u => u.name === n.name)
+                  return updated?.signatureLines ? { ...n, signatureLines: updated.signatureLines } : n
+                }),
+              },
+            }
+            saveGameState(merged)
+            return merged
+          })
+        },
+        () => { /* non-critical: pivotal scenes missing for one chapter transition */ },
+      )
 
       // Build close overlay data from pre/post state comparison
       const completedChapter = currentState.history.chapters.find(

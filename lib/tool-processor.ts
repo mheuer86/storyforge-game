@@ -746,7 +746,14 @@ function applyWorldChanges(
         }
       } else {
         const titleLower = (clueInput.title || '').toLowerCase()
-        const duplicate = titleLower ? notebook.clues.find(c => (c.title || '').toLowerCase() === titleLower) : null
+        const contentLower = clueInput.content.toLowerCase().slice(0, 40)
+        const duplicate = titleLower ? notebook.clues.find(c => {
+          const existingTitle = (c.title || '').toLowerCase()
+          // Exact title match, or title substring match (first 20 chars), or content overlap
+          return existingTitle === titleLower
+            || (existingTitle.length > 5 && titleLower.length > 5 && (existingTitle.includes(titleLower.slice(0, 20)) || titleLower.includes(existingTitle.slice(0, 20))))
+            || (c.content.toLowerCase().slice(0, 40) === contentLower && contentLower.length > 10)
+        }) : null
         if (duplicate) {
           notebook.clues = notebook.clues.map(c =>
             c.id === duplicate.id
@@ -953,15 +960,23 @@ function applyNarrativeChanges(
   }
 
   if (input.signal_close) {
-    updated = {
-      ...updated,
-      meta: {
-        ...updated.meta,
-        closeReady: true,
-        closeReason: input.signal_close.reason,
-        ...(input.signal_close.self_assessment && { selfAssessment: input.signal_close.self_assessment }),
-      },
+    // Gate: signal_close requires scene_end (don't close mid-scene) and no pending_check (don't close mid-roll)
+    const hasSceneEnd = !!input.scene_end
+    const hasPendingCheck = !!input.pending_check
+    if (hasSceneEnd && !hasPendingCheck) {
+      updated = {
+        ...updated,
+        meta: {
+          ...updated.meta,
+          closeReady: true,
+          closeReason: input.signal_close.reason,
+          ...(input.signal_close.self_assessment && { selfAssessment: input.signal_close.self_assessment }),
+        },
+      }
     }
+    // If gated out, log why and defer — Claude will retry next turn
+    if (!hasSceneEnd) dbg('signal_close DEFERRED: missing scene_end')
+    if (hasPendingCheck) dbg('signal_close DEFERRED: pending_check in same turn')
   }
 
   if (input.close_chapter && !updated.meta.chapterClosed) {
