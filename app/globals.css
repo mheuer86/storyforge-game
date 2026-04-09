@@ -298,18 +298,38 @@
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Fantasy mist background effect */
+/* Mist background effect — base structure, colored per genre */
 .mist-bg {
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.22 0.06 45 / 0.7) 0%, transparent 100%),
-    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.20 0.05 75 / 0.5) 0%, transparent 100%),
-    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.18 0.04 55 / 0.4) 0%, transparent 100%);
   animation: mist-drift 90s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
   opacity: 0.85;
+}
+
+/* Fantasy: warm amber mist — ancient light through old stone */
+[data-genre="fantasy"] .mist-bg {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.24 0.10 75 / 0.50) 0%, transparent 100%),
+    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.22 0.08 60 / 0.35) 0%, transparent 100%),
+    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.18 0.06 70 / 0.30) 0%, transparent 100%);
+}
+
+/* Grimdark: ashen red mist — embers and dried blood */
+[data-genre="grimdark"] .mist-bg {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.20 0.10 28 / 0.45) 0%, transparent 100%),
+    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.18 0.06 35 / 0.30) 0%, transparent 100%),
+    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.16 0.08 20 / 0.35) 0%, transparent 100%);
+}
+
+/* Noir: cold grey-blue mist — rain, streetlights, cigarette smoke */
+[data-genre="noire"] .mist-bg {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.18 0.04 250 / 0.40) 0%, transparent 100%),
+    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.16 0.03 230 / 0.30) 0%, transparent 100%),
+    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.14 0.02 240 / 0.25) 0%, transparent 100%);
 }
 
 @keyframes mist-drift {
@@ -326,11 +346,11 @@
       0deg,
       transparent,
       transparent 3px,
-      oklch(0.35 0.18 145 / 0.07) 3px,
-      oklch(0.35 0.18 145 / 0.07) 4px
+      oklch(0.35 0.18 145 / 0.09) 3px,
+      oklch(0.35 0.18 145 / 0.09) 4px
     ),
-    radial-gradient(ellipse 600px 400px at 30% 70%, oklch(0.22 0.12 145 / 0.25) 0%, transparent 100%),
-    radial-gradient(ellipse 400px 300px at 70% 30%, oklch(0.20 0.10 70 / 0.18) 0%, transparent 100%);
+    radial-gradient(ellipse 600px 400px at 30% 70%, oklch(0.22 0.14 145 / 0.35) 0%, transparent 100%),
+    radial-gradient(ellipse 400px 300px at 70% 30%, oklch(0.20 0.12 70 / 0.25) 0%, transparent 100%);
   animation: static-flicker 8s steps(4) infinite;
   pointer-events: none;
   z-index: 0;
