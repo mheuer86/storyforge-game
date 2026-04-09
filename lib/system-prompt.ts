@@ -581,7 +581,7 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
 
 2. CLOSE CHAPTER: Include close_chapter with:
    - summary: 2-3 sentence narrative summary (long-term memory — write carefully)
-   - key_events: 3-5 key events
+   - key_events: 3-5 key events (narrative events only — NO hidden mechanics like cohesion scores, heat levels, disposition tiers, or system state. The player sees these.)
    - next_title: title for the next chapter
    - resolution_met: how the objective was resolved
    - forward_hook: what creates momentum
