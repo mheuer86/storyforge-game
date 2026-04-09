@@ -169,14 +169,15 @@ Main game UI. Client component. Responsibilities:
 
 ### Chapter Close
 
-1. Claude sends `signal_close` in commit_turn when chapter feels complete (includes reason and self-assessment)
-2. Client shows close button. Player triggers chapter close.
-3. Client sends POST with `isChapterClose: true`
-4. API runs a three-phase Haiku close sequence (`claude-haiku-4-5`):
-   - **Phase 1 (close+levelup):** audit fixes, close_chapter, level-up, skill points, arc advancement (advance episodes, resolve/abandon arcs)
-   - **Phase 2 (debrief):** tactical, strategic, lucky breaks, costs paid, promises kept/broken
-   - **Phase 3 (curation):** pivotal scene selection, signature line curation, next chapter frame
-5. `close_chapter` in commit_turn triggers: chapter archived with messages and scene summaries, chapter-scoped state reset (scope signals, chapter counters, objective resolved turn), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs). Phase 3 (narrative curation) deferred to background.
+1. Claude sends `signal_close` in commit_turn when chapter feels complete (includes reason and self-assessment). **Code-gated:** requires `scene_end: true` in same commit_turn (no mid-scene close) and rejects when `pending_check` is present (no mid-roll close). Deferred closes are logged. Close reason is not shown to the player.
+2. Pacing enforcement: scene freeze at turn 16+ (no new scenes), close available at turn 18, close required at turn 20. `objective_status` field tracks resolution; escalating `[CLOSE AVAILABLE]` → `[CLOSE OVERDUE]` → `[CLOSE REQUIRED]` directives injected.
+3. Client shows close button. Player triggers chapter close.
+4. Client sends POST with `isChapterClose: true`
+5. Close sequence:
+   - **Phase 1 (Haiku, foreground):** audit fixes, close_chapter (key_events = narrative only, no hidden mechanics), level-up, chapter_frame for next chapter, arc advancement. MUST produce close_chapter + level_up + chapter_frame.
+   - **Phase 2 (Haiku, foreground):** skill points, debrief (tactical, strategic, lucky breaks, costs, promises). MUST produce debrief.
+   - **Phase 3 (Sonnet, background):** pivotal scene selection, signature line curation. Merges results into state without overwriting closeData or chapterClosed flags. Player sees overlay after phase 1-2 (~10s).
+6. `close_chapter` in commit_turn triggers: chapter archived with messages and scene summaries, chapter-scoped state reset (scope signals, chapter counters, objective resolved turn, pending scene summary flag), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs).
 
 ### Audit
 

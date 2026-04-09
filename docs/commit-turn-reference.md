@@ -181,8 +181,8 @@ Schema uses **snake_case** for Claude reliability. The tool-processor (`lib/tool
 |-------|------|-------------|
 | `suggested_actions` | `string[]` | **REQUIRED.** 3-4 contextual action options for the player. |
 | `chapter_frame` | `object` | Chapter skeleton, set at chapter open (turns 1-3). Never announced to player. `{objective, crucible}`. Objective under 10 words. |
-| `signal_close` | `object` | Signal chapter close conditions met. Player sees Close Chapter button. `{reason}` required; optional `self_assessment`. |
-| `close_chapter` | `object` | Close current chapter. Summary is sole long-term narrative memory. Required: `{summary, key_events, next_title, resolution_met, forward_hook}`. key_events: 2-6 items. |
+| `signal_close` | `object` | Signal chapter close conditions met. Player sees Close Chapter button. `{reason}` required; optional `self_assessment`. **Code-gated:** MUST include `scene_end: true` in same commit_turn (rejected without it). Also rejected when `pending_check` is present. Close reason not shown to player. |
+| `close_chapter` | `object` | Close current chapter. Summary is sole long-term narrative memory. Required: `{summary, key_events, next_title, resolution_met, forward_hook}`. key_events: 2-6 items, narrative only (NO hidden mechanics like cohesion/heat/disposition). |
 | `debrief` | `object` | Chapter debrief. Be direct, analytical, honest. Required: `{tactical, strategic, lucky_breaks, costs_paid, promises_kept, promises_broken}`. |
 | `pivotal_scenes` | `array` | Scenes worth preserving permanently. Close prompt only. Max 2-3 per chapter. `[{title, text}]`. Text: ~200-300 tokens preserving specific imagery, dialogue, callbacks. |
 

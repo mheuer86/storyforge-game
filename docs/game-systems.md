@@ -27,6 +27,7 @@ Every chapter follows a four-act structure detected automatically from game stat
 | Turn 12+ still in development | Crucible should be active or imminent |
 | Turn 15+ | Approaching limit, drive toward resolution |
 | Crucible resolved + 2+ scope signals post-crucible | Scope creep, close the chapter |
+| Turn 16+ | SCENE FREEZE — no new scenes, resolve current scene and close |
 | Turn 20+ | Over budget, wrap now |
 
 **Chapter target:** 10-18 turns, with a 25-turn hard cap. Turns 1-3 are the hook. Turns 4-8 are development. Turns 9-14 are the crucible. Turns 15-18 are resolution. The scope test enforces one location, one primary conflict, one crucible per chapter. The frame constraint is milestone-scoped: the chapter objective aligns with the active episode milestone, keeping each chapter focused on a single narrative beat within the larger arc.
@@ -38,6 +39,8 @@ Every chapter follows a four-act structure detected automatically from game stat
 - +2 turns: `[CLOSE OVERDUE]`
 - +4 turns or turn 20: `[CLOSE REQUIRED]`
 - Hard budget fallback at turn 18 (available) and 20 (required) regardless of objective status.
+
+**Close gating:** `signal_close` is code-gated: requires `scene_end: true` in the same commit_turn (no mid-scene close) and rejects when `pending_check` is present (no mid-roll close). Deferred closes are logged. Combined with scene freeze at turn 16+, chapters land cleanly within their current scene.
 
 **Context detection (`detectContext`):** Determines which prompt module loads (infiltration, social, exploration, combat, downtime). Checks in priority order: active combat → infiltration clocks → hostile exploration → active operations → hostile NPCs → player threat language in recent messages → active tension clocks → safe location indicators. Note: context modules affect narrative tone only, not roll enforcement.
 
