@@ -1183,6 +1183,8 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     turnWarning = ` ⚠ OVER BUDGET (turn ${playerTurnCount}). Wrap NOW. Find the nearest close point.`
   } else if (crucibleResolved && scopeSignals >= 2) {
     turnWarning = ` ⚠ SCOPE CREEP (${scopeSignals} signals post-crucible). Close this chapter — new content belongs in the next chapter.`
+  } else if (playerTurnCount >= 16) {
+    turnWarning = ` ⚡ SCENE FREEZE (turn ${playerTurnCount}). Do NOT start a new scene. Resolve the current scene and signal_close. No new locations, no new NPCs, no new threads.`
   } else if (playerTurnCount >= 15) {
     turnWarning = ` ⚡ APPROACHING LIMIT (turn ${playerTurnCount}). Drive toward resolution and signal_close.`
   } else if (playerTurnCount >= 12 && pacingAct === 'development') {
