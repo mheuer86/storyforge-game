@@ -289,7 +289,7 @@ const cyberpunkConfig: GenreConfig = {
   theme: cyberpunkTheme,
   currencyName: 'eddies',
   currencyAbbrev: '€$',
-  partyBaseName: 'Safehouse',
+  partyBaseName: 'Tech Rig',
   settingNoun: 'city',
   systemPromptFlavor: {
     role: 'You are the Game Master of Storyforge — a solo text RPG set in a sprawling megacity in the near-future.',
