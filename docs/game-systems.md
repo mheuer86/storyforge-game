@@ -201,3 +201,17 @@ Long-running narrative structures that persist across chapters, providing campai
 **Close sequence advancement:** During the three-phase Haiku close, Phase 1 advances episodes with summaries of what was accomplished. Episodes can be completed, new episodes added, arcs resolved, or arcs abandoned based on the chapter's events.
 
 **Dynamic state display:** Active arcs and their episode progress are included in the compressed game state so the GM always knows the campaign-level narrative position. The player experiences arcs through narrative, not through exposed mechanics.
+
+---
+
+## 10. Progression
+
+**Level-up** happens automatically at chapter close (Phase 1). Every chapter grants one level. HP increases by hit die average + CON modifier. Proficiency bonus increases at levels 5, 9, 13.
+
+**Stat increases (ASI)** are gated to levels 4, 8, and 12. At these levels, the close prompt includes `stat_increase` in the commit_turn. The GM assigns the increase based on how the player used their abilities during the chapter.
+
+**Skill points** are awarded in Phase 2 (0-2 per chapter). Criteria: a non-proficient skill used creatively, a major objective achieved cleanly, or a key decision with lasting payoff.
+
+**Retinue/ship upgrades** use the asset system (L1-L3 per system). The prompt instructs Claude to offer 2-3 upgrade options at narrative-appropriate moments (refit stops, markets, salvage, downtime). Upgrades are called via `update_ship` in commit_turn.
+
+**Known gap:** Retinue upgrades rely on Claude narrating a refit/upgrade opportunity, which doesn't always happen — especially with tighter chapter pacing (18-21 turns). Under consideration: a "upgrade earned" flag set at chapter close that Claude weaves into the next chapter's narrative when the setting allows. The flag provides enforcement; Claude controls timing to respect the fiction (no upgrades while fleeing, etc.). Player chooses through in-narrative dialogue, not a UI selector.
