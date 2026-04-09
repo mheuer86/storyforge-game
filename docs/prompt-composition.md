@@ -213,19 +213,21 @@ Replaces the normal GM prompt when a chapter closes. Uses Claude Haiku (`claude-
 
 Phases 1-2 run sequentially in the foreground (player waits). Phase 3 is deferred to the background (player sees the close overlay immediately after phase 1-2, ~10s instead of ~18-20s). Phase 3 output (pivotal scenes, signature lines) is memory for future chapters, not displayed in the overlay.
 
-**Phase 1: Close + Level Up**
+**Pre-close gate:** `signal_close` is code-gated in tool-processor: requires `scene_end: true` in the same commit_turn (no mid-scene close) and rejects when `pending_check` is present (no mid-roll close). Deferred closes are logged.
+
+**Phase 1: Close + Level Up** (Haiku, foreground, MUST produce close_chapter + level_up + chapter_frame)
 1. **Audit** -- review threads, promises, clocks, antagonist, operation/exploration state. Resolve or update stale entries.
-2. **Close Chapter** -- summary (2-3 sentences, long-term memory), key events (3-5), next chapter title, resolution description, forward hook.
+2. **Close Chapter** -- summary (2-3 sentences, long-term memory), key events (3-5, narrative only, NO hidden mechanics like cohesion/heat/disposition), next chapter title, resolution description, forward hook.
 3. **Level Up** -- new level, HP increase (hit die avg + CON mod, min 1). Proficiency bonus bumps at levels 5/9/13. ASI at levels 4/8/12.
-4. **Skill Points** -- 0-2 points awarded against criteria (creative non-proficient use, clean objective completion, lasting positive decision payoff).
+4. **Next Frame** -- chapter_frame for next chapter. Objective = next active episode milestone.
 5. **Arc Advancement** -- advance active episodes with summaries of what was accomplished. Complete, fail, or add episodes. Resolve or abandon arcs as warranted by the chapter's events.
 
-**Phase 2: Debrief**
-6. **Debrief** -- tactical (dice analysis, smart decisions, real costs), strategic (thread movement, urgency), lucky breaks, costs paid, promises kept/broken. Incorporates GM self-assessment if available.
+**Phase 2: Debrief** (Haiku, foreground, MUST produce debrief)
+6. **Skill Points** -- 0-2 points awarded against criteria (creative non-proficient use, clean objective completion, lasting positive decision payoff).
+7. **Debrief** -- tactical (dice analysis, smart decisions, real costs), strategic (thread movement, urgency), lucky breaks, costs paid, promises kept/broken. Incorporates GM self-assessment if available.
 
-**Phase 3: Curation**
-7. **Curate Narrative Memory** -- `pivotal_scenes` (max 2-3 per chapter, ~200-300 token moment summaries preserving imagery and dialogue). Signature lines on NPCs via `add_signature_line` (1-2 per major NPC, permanent voice anchors).
-8. **Set Next Frame** -- provisional objective + crucible for the next chapter, derived from forward hook and the next active episode milestone.
+**Phase 3: Curation** (Sonnet, background — merges results into state without overwriting closeData)
+8. **Curate Narrative Memory** -- `pivotal_scenes` (max 2-3 per chapter, ~200-300 token moment summaries preserving imagery and dialogue). Signature lines on NPCs via `add_signature_line` (1-2 per major NPC, permanent voice anchors).
 
 Rules: analytical voice only, no GM narration, reference actual events and rolls, execute all steps within each phase.
 

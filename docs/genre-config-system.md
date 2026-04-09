@@ -183,7 +183,7 @@ Key fields:
 - `logo` -- genre logo asset path.
 - `fontNarrative`, `fontHeading`, `fontSystem` -- font families for narrative text, headings, and UI.
 - `fontScale?` -- multiplier for base font sizes (1.0 default, 0.9 = 90%).
-- `backgroundEffect` -- one of `'starfield'`, `'mist'`, `'static'`, `'drift'`. Handled by CSS via `[data-genre]` selectors.
+- `backgroundEffect` -- one of `'starfield'`, `'mist'`, `'static'`, `'drift'`. Handled by CSS via `[data-genre]` selectors. Mist is color-differentiated per genre: Fantasy = warm amber, Grimdark = ashen red, Noir = cold grey-blue. Space Opera gets starfield + grid overlay. Epic Sci-Fi gets drift aurora (purple/gold). Cyberpunk gets static scanlines (green/amber).
 - Color tokens: `background`, `foreground`, `card`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`, `narrative`, `meta`, `success`, `warning`, `tertiary`, plus foreground variants.
 - Glow tokens: `titleGlow`, `actionGlow`, `actionGlowHover`.
 - Scrollbar: `scrollbarThumb`, `scrollbarThumbHover`.
