@@ -385,6 +385,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               // But preserve them during meta questions (meta responses don't call commit_turn)
               if (finalActions.length === 0 && !isMetaQuestion) {
                 setQuickActions([])
+                debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ QUICK_ACTIONS none (Claude did not include suggested_actions)`)
+              } else if (finalActions.length > 0) {
+                debugLogRef.current.push(`[${new Date().toISOString()}] QUICK_ACTIONS [${finalActions.join(' | ')}]`)
               }
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
               let finalState: GameState = {
