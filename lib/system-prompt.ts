@@ -514,7 +514,9 @@ Example: Player says "I want to expose Coll." Create arc "Expose Coll" with epis
 - Turn 20 → begin wrapping regardless. Find the nearest close point.
 
 ## CHAPTER CLOSE
-Do NOT include close_chapter/debrief/level_up in commit_turn. When resolution + forward hook are met: wrap narrative, include signal_close with self_assessment. Dedicated close sequence handles the rest.`
+Do NOT include close_chapter/debrief/level_up in commit_turn. When resolution + forward hook are met: wrap narrative, include signal_close with self_assessment. Dedicated close sequence handles the rest.
+
+IMPORTANT: signal_close MUST include scene_end + scene_summary in the same commit_turn. Close is rejected without scene_end. Never close mid-scene or mid-roll — resolve the current scene first, then close.`
 }
 
 // ============================================================
