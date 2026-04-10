@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
-import { Menu, Send, HelpCircle } from 'lucide-react'
+import { Menu, Send, HelpCircle, Github, Beer, ExternalLink } from 'lucide-react'
 import { ChatMessage } from '@/components/game/chat-message'
 import { RollBadge } from '@/components/game/roll-badge'
 import { genres, getGenreConfig, type Genre } from '@/lib/genre-config'
@@ -442,7 +442,7 @@ export function LandingPage() {
           the dice shape everything.
         </p>
         <p className="hero-stagger relative mt-8 max-w-xl text-lg leading-relaxed text-foreground/70 md:text-xl" style={{ animationDelay: '0.4s' }}>
-          A text RPG with real rules, real dice, and real consequences — powered by Claude.
+          Investigation. Infiltration. Political intrigue. A text RPG where the interesting choices happen between the fights.
         </p>
         <div className="hero-stagger relative mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4" style={{ animationDelay: '0.6s' }}>
           <a
@@ -456,6 +456,13 @@ export function LandingPage() {
             className="border border-primary/30 px-8 py-3.5 font-mono text-sm font-semibold text-foreground/80 transition-all hover:border-primary/60 hover:text-foreground"
           >
             Bring your own API key
+          </a>
+        </div>
+        <div className="hero-stagger relative mt-5 flex flex-col items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-muted-foreground/50" style={{ animationDelay: '0.8s' }}>
+          <span>Powered by Claude. Bring your own API key for unlimited play.</span>
+          <a href="https://github.com/mheuer86/storyforge-game" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+            <Github className="h-3.5 w-3.5" />
+            <span>Open Source on GitHub</span>
           </a>
         </div>
       </section>
@@ -799,14 +806,17 @@ export function LandingPage() {
 
       {/* ── 6. Mechanics ── */}
       <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24">
-        <h2 className="mb-10 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
+        <h2 className="mb-3 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
           Not a chatbot wearing a fantasy hat.
         </h2>
+        <p className="mb-10 text-center text-sm text-muted-foreground">
+          Real mechanics. Real consequences. The AI enforces the rules, including on itself.
+        </p>
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { label: 'D20 Rules Engine', text: 'Real ability scores, proficiency checks, advantage/disadvantage. Every roll matters — and you see the math.' },
-            { label: 'Persistent Worlds', text: 'NPCs remember. Promises track. Your ship upgrades between chapters. Crew loyalty shifts based on your choices.' },
-            { label: 'AI Game Master', text: 'Powered by Claude. Adapts difficulty to your play style. Enforces its own rules. Will absolutely let you fail.' },
+            { label: 'NPCs That Remember', text: 'Every NPC tracks disposition toward you. Betray someone and they stay hostile. Earn trust and doors open. No dialogue trees, just consequences.' },
+            { label: 'Promises & Clocks', text: 'Make a promise to an NPC and the game tracks it. Defer too long and it strains. Tension clocks advance whether you\'re ready or not.' },
+            { label: 'D20 Under The Hood', text: 'Real ability scores, proficiency, advantage/disadvantage. Every roll is shown with the math. The dice are honest, and Claude plays by them.' },
           ].map((feature) => (
             <div key={feature.label} className="border border-border/10 bg-card/30 p-5">
               <span className="font-mono text-xs uppercase tracking-[0.15em] text-primary">{feature.label}</span>
@@ -824,7 +834,10 @@ export function LandingPage() {
         >
           Your story is waiting.
         </h2>
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <p className="mt-4 max-w-md text-sm text-muted-foreground leading-relaxed">
+          Try the demo for free, or bring your own Claude API key for unlimited play. No account required.
+        </p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <a
             href="/play"
             className="bg-primary px-10 py-4 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
@@ -844,9 +857,48 @@ export function LandingPage() {
       </section>
 
       {/* ── 8. Footer ── */}
-      <footer className="flex items-center justify-between border-t border-border/10 px-6 py-8 text-muted-foreground/60">
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Storyforge</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Made with Claude</span>
+      <footer className="border-t border-border/10 px-6 py-8">
+        <div className="mx-auto max-w-5xl flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: branding */}
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">Storyforge</span>
+            <span className="text-muted-foreground/20">|</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">Made with Claude</span>
+          </div>
+
+          {/* Center: links */}
+          <div className="flex items-center gap-5">
+            <a href="/privacy" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Privacy
+            </a>
+            <a href="/terms" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Terms
+            </a>
+          </div>
+
+          {/* Right: social + support */}
+          <div className="flex items-center gap-4">
+            <a href="https://github.com/mheuer86/storyforge-game" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors" aria-label="GitHub">
+              <Github className="h-4 w-4" />
+            </a>
+            <a href="https://buymeacoffee.com/storyforgegame" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors" aria-label="Buy me a beer">
+              <Beer className="h-4 w-4" />
+            </a>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'Storyforge', text: 'A text RPG with real rules, real dice, and real consequences.', url: window.location.origin })
+                } else {
+                  navigator.clipboard.writeText(window.location.origin)
+                }
+              }}
+              className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+              aria-label="Share"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </footer>
     </div>
   )

@@ -334,12 +334,12 @@ export function BurgerMenu({
               </Button>
             )}
             <a
-              href="https://www.paypal.me/MartinHeuer"
+              href="https://buymeacoffee.com/storyforgegame"
               target="_blank"
               rel="noopener noreferrer"
               className="text-center text-xs text-muted-foreground/60 hover:text-primary transition-colors"
             >
-              Every hero needs a patron. Fund the next chapter&nbsp;→
+              Every hero needs a patron. Buy me a beer&nbsp;→
             </a>
             <DebugPanel />
           </SheetFooter>
