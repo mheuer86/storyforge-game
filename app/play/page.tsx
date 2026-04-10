@@ -167,7 +167,7 @@ function AppContent() {
 
   return (
     <GameErrorBoundary onReset={handleNewGame}>
-      <GameScreen initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
+      <GameScreen key={pendingGameState?.character.name ?? 'new'} initialGameState={pendingGameState ?? undefined} onNewGame={handleNewGame} />
     </GameErrorBoundary>
   )
 }
