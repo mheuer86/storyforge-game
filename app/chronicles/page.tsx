@@ -34,11 +34,11 @@ export default function ChroniclesPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
           <h1 className="font-mono text-xs uppercase tracking-[0.2em] text-white/50">
             Tales of Storyforge
           </h1>
-          <p className="mt-3 max-w-lg text-base leading-relaxed text-white/60">
+          <p className="mt-3 max-w-lg text-sm sm:text-base leading-relaxed text-white/60">
             Real playthroughs, rendered as short fiction. Every chronicle below came from an actual game session —
             the dice rolls, the choices, the consequences. Your playthrough would produce a different story.
             That&apos;s the point.

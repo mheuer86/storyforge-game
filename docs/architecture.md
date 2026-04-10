@@ -191,6 +191,26 @@ Player prefixes input to trigger meta mode. Uses `metaTools` (meta_response only
 
 On-demand "story so far" generation using Claude Haiku. Produces a 200-300 word narrative summary of the current chapter's messages.
 
+## Access Control & Demo Budget
+
+Three-layer gate on the `/play` route:
+
+```
+PassphraseGate → DemoBudgetGate → AppContent (game)
+```
+
+1. **PassphraseGate** (`components/setup/passphrase-gate.tsx`): Checks authentication. BYOK users (key in localStorage) pass through immediately. Demo users authenticate via access code (server-side session cookie). If `?byok=1` is in the URL and the user is demo-authenticated, shows the BYOK form instead of passing through.
+
+2. **DemoBudgetGate** (`components/setup/demo-budget-gate.tsx`): For demo users only. Checks client-side token counter (`storyforge_demo_usage` in localStorage) against `DEMO_MONTHLY_BUDGET` (2M tokens). If exhausted, shows a full-screen BYOK key entry form. BYOK users bypass entirely.
+
+3. **In-game budget dialog** (`game-screen.tsx`): If demo budget runs out mid-game (client-side check before each API call, or Anthropic credit/billing errors from the server), a modal dialog prompts for a BYOK key instead of showing an inline error.
+
+Token tracking: `trackDemoUsage()` in `lib/api-key.ts` accumulates input+output tokens from `token_usage` stream events. Resets monthly (keyed by `YYYY-MM` string). Per-browser, not per-account.
+
+### GameScreen key prop
+
+`GameScreen` receives a `key` prop derived from the character name in `pendingGameState`. When switching save slots, the key changes, forcing React to fully remount the component with clean state (quick actions, messages, loading flags).
+
 ## State Persistence
 
 All state lives in localStorage. Design principles:

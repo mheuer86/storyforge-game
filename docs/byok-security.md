@@ -1,10 +1,22 @@
 # BYOK Security Model
 
-Storyforge supports two modes: **demo** (server-side API key, access code protected) and **BYOK** (Bring Your Own Key, player provides their own Anthropic API key). This document explains how BYOK keys are handled and what protections are in place.
+Storyforge supports two modes: **demo** (server-side API key, access code protected) and **BYOK** (Bring Your Own Key, player provides their own Anthropic API key). This document explains how BYOK keys are handled, how demo budget enforcement works, and what protections are in place.
+
+## Demo budget & BYOK enforcement
+
+Demo mode has a client-side monthly token budget of **2M tokens** per browser (`DEMO_MONTHLY_BUDGET` in `lib/api-key.ts`). Token usage is tracked in localStorage (`storyforge_demo_usage`) and resets on the 1st of each month (keyed by `YYYY-MM`).
+
+When the budget is exhausted, players are prompted to enter their own API key at three points:
+
+1. **Before setup** (`DemoBudgetGate`): if budget is already exhausted when arriving at `/play`, a full-screen form blocks access until a key is entered. Players never go through character creation only to be blocked.
+2. **Mid-game** (`game-screen.tsx`): if budget runs out during play, a modal dialog with key entry replaces the inline error. The game state is preserved; entering a key lets the player continue immediately.
+3. **API errors**: if the demo key's Anthropic account runs dry (credit/balance/billing errors), the same modal dialog appears for demo users.
+
+The budget is approximate — it tracks tokens seen in API responses, not the actual Anthropic billing. It's a guardrail, not an accounting system.
 
 ## How the key flows
 
-1. Player enters their `sk-ant-...` key in the passphrase gate or in-game settings
+1. Player enters their `sk-ant-...` key in the passphrase gate (`?byok=1`), the demo budget gate, the in-game budget dialog, or the burger menu settings
 2. Key is stored in the browser's `localStorage` under `storyforge_api_key`
 3. On each game request, the key is sent as an `x-anthropic-key` header to `/api/game`
 4. The server creates a one-time `Anthropic()` client with the player's key and forwards the request
