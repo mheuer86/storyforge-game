@@ -944,7 +944,7 @@ export function LandingPage() {
       <footer className="border-t border-border/10 px-6 py-8">
         <div className="mx-auto max-w-5xl flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           {/* Left: branding */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 sm:flex-1">
             <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">Storyforge</span>
             <span className="text-muted-foreground/20">|</span>
             <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">Made with Claude</span>
@@ -967,7 +967,7 @@ export function LandingPage() {
           </div>
 
           {/* Right: social + support */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 sm:flex-1 sm:justify-end">
             <a href="https://github.com/mheuer86/storyforge-game" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors" aria-label="GitHub">
               <Github className="h-4 w-4" />
             </a>
