@@ -359,7 +359,7 @@ function buildCombatModule(genre: string, ps: ReturnType<typeof getGenreConfig>[
 
 1. Player picks action (Attack, Ability, Item, Flee, custom, environmental interaction)
 2. Resolve attack: include pending_check (d20 skill check to hit). On hit, the system auto-chains a damage roll — the player rolls damage dice automatically. You will receive both the hit result and the damage total.
-3. **After receiving damage:** State the enemy's new HP explicitly: "[Enemy] takes [X] damage ([old HP] → [new HP])." Do the arithmetic carefully. Read the enemy's current HP from COMBAT state before subtracting.
+3. **After receiving damage:** Include combat.update_enemies in commit_turn with the enemy's name and hp_delta (negative). The system tracks enemy HP and auto-removes enemies at 0 HP. State the arithmetic: "[Enemy] takes [X] damage ([old HP] → [new HP])."
 4. Enemies act: batch into one beat, call defensive save for dodgeable attacks. For enemy damage, do NOT use pending_check — instead roll the damage yourself and include character.hp_delta AND character.roll_breakdown (label, dice, roll, modifier, total, damage_type, sides) in commit_turn so the UI shows a damage badge.
 5. Present new situation with suggested_actions
 
@@ -369,7 +369,7 @@ function buildCombatModule(genre: string, ps: ReturnType<typeof getGenreConfig>[
 
 **Healing items:** When the player uses a healing item with dice (e.g. "1d8+WIS HP"), include pending_check with roll_type="healing", sides matching the die, skill=item name, damage_type="HP", dc=0, modifier=the resolved stat bonus. Then apply character.hp_delta=+total in the next commit_turn after the roll.
 
-**Enemy HP tracking:** After every damage result, state the arithmetic explicitly: "[Enemy] takes [X] damage ([current HP] → [new HP])." Read the enemy's current HP from COMBAT state before subtracting. Do NOT estimate or round — calculate exactly.
+**Enemy HP tracking:** ALWAYS include combat.update_enemies with hp_delta after dealing damage to an enemy. The system tracks HP and auto-removes defeated enemies. When all enemies are removed, combat ends automatically. State the arithmetic: "[Enemy] takes [X] damage ([current HP] → [new HP])."
 
 **Spatial tracking:** Maintain positions for all combatants, hazards, and exits. Update each round. Do not teleport — movement is consistent and logical. Player needs relative distances and cover.
 
@@ -1297,7 +1297,7 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
   return `PRESSURE: ${pressureLine}${weakLine ? ' | ' + weakLine : ''}${loreAnchors}
 
 ORIGIN: ${c.species} — ${config.species.find(s => s.name === c.species)?.lore || 'No special traits.'}
-PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}
+PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}${c.hp.current <= 0 ? `\n⚠ DEATH STATE: ${c.name} is at 0 HP. MANDATORY: Character is unconscious. Propose a death save (d20, DC 10) via pending_check IMMEDIATELY. No other actions possible. Enemies do NOT attack an unconscious target unless narratively motivated. Three successes = stabilize at 1 HP. Three failures = permanent death. Nat 20 = regain 1 HP. Nat 1 = two failures. A companion may attempt to stabilize (Medicine DC 10) instead.` : ''}
 STATS: ${statLine}
 PROF: ${c.proficiencies.join(', ')}
 GEAR: ${inventoryLine || 'Empty'}

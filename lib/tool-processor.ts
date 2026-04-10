@@ -68,6 +68,7 @@ interface CommitTurnInput {
   }
   combat?: {
     start?: { enemies: (Enemy & { attack_bonus?: number })[]; description: string }
+    update_enemies?: { name: string; hp_delta?: number; status?: 'defeated' | 'dead' | 'fled' }[]
     end?: { outcome: string; loot?: (InventoryItem & { max_charges?: number })[]; credits_gained?: number }
   }
   suggested_actions: string[]
@@ -910,6 +911,31 @@ function applyCombatChanges(
       },
     }
     statChanges.push({ type: 'new', label: 'Combat started' })
+  }
+
+  if (input.update_enemies) {
+    let enemies = [...updated.combat.enemies]
+    for (const update of input.update_enemies) {
+      const idx = enemies.findIndex(e => e.name.toLowerCase() === update.name.toLowerCase())
+      if (idx === -1) continue
+      const enemy = { ...enemies[idx] }
+      if (update.hp_delta !== undefined) {
+        enemy.hp = { ...enemy.hp, current: Math.max(0, enemy.hp.current + update.hp_delta) }
+      }
+      if (update.status === 'defeated' || update.status === 'dead' || update.status === 'fled' || enemy.hp.current <= 0) {
+        statChanges.push({ type: 'gain', label: `${enemy.name} ${update.status || 'defeated'}` })
+        enemies.splice(idx, 1)
+      } else {
+        enemies[idx] = enemy
+      }
+    }
+    // Auto-end combat if no enemies remain
+    if (enemies.length === 0 && updated.combat.active) {
+      updated = { ...updated, combat: { active: false, round: 0, enemies: [], log: [...updated.combat.log, 'All enemies defeated'] } }
+      statChanges.push({ type: 'neutral', label: 'Combat ended' })
+    } else {
+      updated = { ...updated, combat: { ...updated.combat, enemies } }
+    }
   }
 
   if (input.end) {

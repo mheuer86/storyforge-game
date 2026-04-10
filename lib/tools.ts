@@ -520,7 +520,7 @@ const commitTurnDefinition: Anthropic.Tool = {
       // ── Combat Changes ─────────────────────────────────────
       combat: {
         type: 'object',
-        description: 'Start or end combat.',
+        description: 'Start, update, or end combat. Use update_enemies to track damage dealt to enemies mid-combat.',
         properties: {
           start: {
             type: 'object',
@@ -561,6 +561,19 @@ const commitTurnDefinition: Anthropic.Tool = {
               description: { type: 'string' },
             },
             required: ['enemies', 'description'],
+          },
+          update_enemies: {
+            type: 'array',
+            description: 'Update enemy HP or status mid-combat. Enemies at 0 HP are auto-removed. If all enemies removed, combat ends automatically.',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Enemy name (case-insensitive match)' },
+                hp_delta: { type: 'number', description: 'HP change (negative for damage)' },
+                status: { type: 'string', enum: ['defeated', 'dead', 'fled'] },
+              },
+              required: ['name'],
+            },
           },
           end: {
             type: 'object',
