@@ -1,6 +1,10 @@
 {
-  "name": "my-project",
-  "version": "0.1.0",
+  "name": "storyforge-game",
+  "version": "1.5.0",
+  "description": "A text RPG that produces stories you'd actually want to read. Powered by Claude.",
+  "repository": "https://github.com/mheuer86/storyforge-game",
+  "license": "AGPL-3.0",
+  "author": "Martin Heuer <storyforgegame@gmail.com>",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -46,6 +50,7 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.6.0",
     "geist": "^1.7.0",
+    "gray-matter": "^4.0.3",
     "input-otp": "1.4.2",
     "lucide-react": "^0.564.0",
     "next": "16.2.0",
