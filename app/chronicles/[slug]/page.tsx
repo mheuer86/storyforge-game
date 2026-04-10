@@ -91,7 +91,7 @@ export default async function ChroniclePage({ params }: { params: Promise<{ slug
         )}
 
         <div
-          className="prose-chronicle px-6"
+          className="px-6"
           style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}
         >
           {paragraphs.map((p, i) => {
@@ -115,7 +115,7 @@ export default async function ChroniclePage({ params }: { params: Promise<{ slug
               return segment
             })
             return (
-              <p key={i} className="mb-4 leading-relaxed text-foreground/85">
+              <p key={i} className="mb-6 leading-relaxed text-foreground/85">
                 {rendered}
               </p>
             )
