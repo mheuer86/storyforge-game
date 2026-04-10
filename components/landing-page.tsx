@@ -958,6 +958,9 @@ export function LandingPage() {
             <a href="/content-policy" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
               Content Policy
             </a>
+            <a href="/impressum" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Impressum
+            </a>
             <a href="mailto:storyforgegame@gmail.com" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
               Contact
             </a>
