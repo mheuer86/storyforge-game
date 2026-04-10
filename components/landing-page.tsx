@@ -344,6 +344,7 @@ export function LandingPage() {
     const theme = activeConfig.theme
 
     root.dataset.genre = activeGenre
+    root.dataset.landingPage = 'true'
 
     root.style.setProperty('--background', theme.background)
     root.style.setProperty('--foreground', theme.foreground)
@@ -375,6 +376,7 @@ export function LandingPage() {
     return () => {
       // Clean up on unmount (e.g., navigating away from landing page)
       delete root.dataset.genre
+      delete root.dataset.landingPage
     }
   }, [activeGenre, activeConfig.theme])
 
@@ -459,13 +461,13 @@ export function LandingPage() {
         <div className="hero-stagger relative mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4" style={{ animationDelay: '0.7s' }}>
           <a
             href="/play"
-            className="bg-primary px-8 py-3.5 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
+            className="bg-primary px-8 py-3.5 font-mono text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
           >
             Play demo
           </a>
           <a
             href="/play?byok=1"
-            className="border border-primary/30 px-8 py-3.5 font-mono text-sm font-semibold text-foreground/80 transition-all hover:border-primary/60 hover:text-foreground"
+            className="border border-primary/30 px-8 py-3.5 font-mono text-sm font-semibold text-foreground/80 transition-colors hover:border-primary/60 hover:text-foreground"
           >
             Bring your own API key
           </a>
@@ -493,7 +495,7 @@ export function LandingPage() {
               <button
                 key={`${entry.id}-${idx}`}
                 onClick={(e) => handleGenreSelect(entry.id, e.currentTarget)}
-                className={`group relative shrink-0 snap-center w-[75vw] sm:w-[50vw] md:w-[40vw] lg:w-[30vw] aspect-[16/9] overflow-hidden text-left transition-all duration-500 ${
+                className={`group relative shrink-0 snap-center w-[75vw] sm:w-[50vw] md:w-[40vw] lg:w-[30vw] aspect-[16/9] overflow-hidden text-left transition-[transform,opacity,filter] duration-500 ${
                   isActive
                     ? 'grayscale-0 opacity-100 scale-[1.02]'
                     : 'grayscale opacity-50 hover:opacity-70 hover:grayscale-[0.3] scale-[0.97]'
@@ -509,7 +511,7 @@ export function LandingPage() {
                   src={`/genres/${entry.id}.png`}
                   alt={config.name}
                   fill
-                  className={`object-cover transition-all duration-500 ${isActive ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`}
+                  className={`object-cover transition-[filter] duration-500 ${isActive ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`}
                   sizes="320px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -525,7 +527,7 @@ export function LandingPage() {
       {/* ── 3. Genre Detail (expanded) ── */}
       <section
         ref={detailRef}
-        className="mx-auto w-full max-w-5xl px-6 pb-28 transition-all duration-500"
+        className="mx-auto w-full max-w-5xl px-6 pb-28"
         style={themeVars}
       >
         {/* 3a. Lore Block */}
@@ -835,7 +837,7 @@ export function LandingPage() {
             <a
               key={chronicle.slug}
               href={`/chronicles/${chronicle.slug}`}
-              className="group border border-border/10 bg-card/30 p-5 transition-all hover:border-primary/20 hover:bg-card/50"
+              className="group border border-border/10 bg-card/30 p-5 transition-colors hover:border-primary/20 hover:bg-card/50"
             >
               <div className="flex items-baseline justify-between mb-2">
                 <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-primary">{chronicle.genre}</span>
@@ -913,13 +915,13 @@ export function LandingPage() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <a
             href="/play"
-            className="bg-primary px-10 py-4 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
+            className="bg-primary px-10 py-4 font-mono text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
           >
             Play demo
           </a>
           <a
             href="/play?byok=1"
-            className="border border-primary/30 px-10 py-4 font-mono text-sm font-semibold text-foreground/80 transition-all hover:border-primary/60 hover:text-foreground"
+            className="border border-primary/30 px-10 py-4 font-mono text-sm font-semibold text-foreground/80 transition-colors hover:border-primary/60 hover:text-foreground"
           >
             Bring your own API key
           </a>

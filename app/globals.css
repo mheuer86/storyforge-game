@@ -92,7 +92,8 @@
 }
 
 [data-genre="space-opera"],
-[data-genre="cyberpunk"] {
+[data-genre="cyberpunk"],
+[data-genre="epic-scifi"] {
   --narrative-font-size: 0.8125rem; /* 13px — mono/sans reads larger than serif at same size */
 }
 
@@ -188,12 +189,21 @@
 }
 
 /* Background effects — hidden by default, shown via [data-genre] on <html> */
+/* Disabled on landing page for scroll performance */
 .starfield,
 .grid-overlay,
 .mist-bg,
 .static-bg,
 .drift-bg {
   display: none;
+}
+
+[data-landing-page] .starfield,
+[data-landing-page] .grid-overlay,
+[data-landing-page] .mist-bg,
+[data-landing-page] .static-bg,
+[data-landing-page] .drift-bg {
+  display: none !important;
 }
 
 [data-genre="space-opera"] .starfield,
