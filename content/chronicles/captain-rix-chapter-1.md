@@ -5,7 +5,7 @@ chapter: 1
 character: Captain Rix
 class: Driftrunner
 intro: "The first Storyforge playthrough. A Vrynn pilot with 120 credits and a ship held together by habit took a job he couldn't afford to refuse. The dice shaped everything that followed."
-image: ""
+image: /chronicles/rix-chapter-1.jpg
 slug: captain-rix-chapter-1
 ---
 

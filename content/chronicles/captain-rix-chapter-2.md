@@ -5,7 +5,7 @@ chapter: 2
 character: Captain Rix
 class: Driftrunner
 intro: "Rix went to the Soren Narrows to capture a signals relay. He came back with a command node, a mole on his own flagship, and proof that the enemy he thought he was fighting answered to something older than the Accord itself. Every success tightened the noose."
-image: ""
+image: /chronicles/rix-chapter-2.png
 slug: captain-rix-chapter-2
 ---
 
