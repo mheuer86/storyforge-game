@@ -501,15 +501,14 @@ function MissionBrief({ op }: { op: OperationState }) {
         <div>
           <SectionLabel>Objectives</SectionLabel>
           <div className="flex flex-col gap-1.5">
-            {op.objectives.map((obj, i) => (
-              <div key={i} className={cn("flex gap-2 text-xs", obj.status !== 'active' && "opacity-40")}>
+            {op.objectives.filter(obj => obj.status !== 'completed').map((obj, i) => (
+              <div key={i} className={cn("flex gap-2 text-xs", obj.status === 'failed' && "opacity-40")}>
                 <span className={cn(
                   "font-mono text-[10px] mt-px",
-                  obj.status === 'completed' ? 'text-emerald-400/60' : obj.status === 'failed' ? 'text-destructive/60' : 'text-primary/60'
+                  obj.status === 'failed' ? 'text-destructive/60' : 'text-primary/60'
                 )}>{i + 1}.</span>
                 <span className={cn(
                   "text-foreground/80",
-                  obj.status === 'completed' && "text-foreground/50 line-through",
                   obj.status === 'failed' && "text-destructive/50 line-through"
                 )}>{obj.text}</span>
               </div>

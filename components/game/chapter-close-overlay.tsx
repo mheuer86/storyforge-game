@@ -145,57 +145,11 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
               </div>
             )}
 
-            {/* Debrief Card — uses UI font at fixed size, not narrative font */}
+            {/* Debrief hint — full debrief available in burger menu */}
             {debrief && (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8125rem' }}>
-                <SectionLabel>Debrief</SectionLabel>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Tactical</span>
-                    </div>
-                    <div className="text-foreground/60 leading-relaxed [&_strong]:font-medium [&_strong]:text-foreground/70">{renderMarkdown(debrief.tactical)}</div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30">Strategic</span>
-                    </div>
-                    <div className="text-foreground/60 leading-relaxed [&_strong]:font-medium [&_strong]:text-foreground/70">{renderMarkdown(debrief.strategic)}</div>
-                  </div>
-                  {debrief.luckyBreaks?.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Lucky Breaks</span>
-                      </div>
-                      <BulletList items={debrief.luckyBreaks} />
-                    </div>
-                  )}
-                  {debrief.costsPaid?.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Costs Paid</span>
-                      </div>
-                      <BulletList items={debrief.costsPaid} />
-                    </div>
-                  )}
-                  {debrief.promisesKept && debrief.promisesKept.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Promises Kept</span>
-                      </div>
-                      <BulletList items={debrief.promisesKept} />
-                    </div>
-                  )}
-                  {debrief.promisesBroken && debrief.promisesBroken.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/30" style={{ fontFamily: 'var(--font-ui)' }}>Promises Broken</span>
-                      </div>
-                      <BulletList items={debrief.promisesBroken} />
-                    </div>
-                  )}
-                </div>
-              </div>
+              <p className="text-[11px] text-muted-foreground/40 italic text-center">
+                Full debrief available in the Chapters tab.
+              </p>
             )}
 
             {/* Next Chapter Preview */}
