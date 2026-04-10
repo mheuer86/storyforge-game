@@ -458,26 +458,6 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: `Execute close phase ${phase} now.` },
           ]
 
-          // A/B test capture: log close phase inputs for Haiku vs Sonnet comparison
-          // Dev-only (local filesystem) — remove after testing is complete
-          if (process.env.CAPTURE_CLOSE_INPUTS === 'true' && process.env.NODE_ENV === 'development') {
-            const captureData = {
-              phase,
-              genre: gameState.meta.genre,
-              chapter: gameState.meta.chapterNumber,
-              timestamp: new Date().toISOString(),
-              system: phaseSystem.map(b => b.text),
-              messages: phaseMessages,
-              tools: gameTools.map(t => ({ name: t.name, description: (t as unknown as Record<string, unknown>).description, input_schema: t.input_schema })),
-            }
-            const fs = await import('fs')
-            const dir = process.cwd() + '/scripts/ab-close'
-            fs.mkdirSync(dir, { recursive: true })
-            fs.writeFileSync(
-              `${dir}/phase${phase}-ch${gameState.meta.chapterNumber}-${gameState.meta.genre}.json`,
-              JSON.stringify(captureData, null, 2)
-            )
-          }
 
           const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2 })
           finish(loopResult.toolResults)
