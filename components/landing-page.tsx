@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Menu, Send, HelpCircle } from 'lucide-react'
 import { ChatMessage } from '@/components/game/chat-message'
@@ -10,7 +10,7 @@ import type { RollDisplayData } from '@/lib/types'
 
 // ─── Per-genre demo content ──────────────────────────────────────────
 
-const ts = new Date()
+const ts = new Date(0) // fixed timestamp to avoid SSR/client hydration mismatch
 
 interface DemoContent {
   chapter: string
@@ -89,6 +89,47 @@ const demoContent: Record<string, DemoContent> = {
   },
 }
 
+// ─── Genre Lore Content ─────────────────────────────────────────────
+
+const genreLore: Record<string, { lore: string; thesis: string; hookTitle: string; hookText: string }> = {
+  'space-opera': {
+    lore: "Year 3187. The Compact that once unified 200 star systems has collapsed. You command a scrappy frigate with a small crew, navigating a galaxy where pirate fleets, corporate blocs, and rogue AIs compete for what's left. You're not a chosen hero. You're just in the wrong place.",
+    thesis: "Scale mismatch — small people, big stakes.",
+    hookTitle: "Old Colors",
+    hookText: "An old friend from your former unit sends a distress signal from a system you swore you'd never go back to. The signal is three hours old and degrading.",
+  },
+  'fantasy': {
+    lore: "The Five Kingdoms still stand, but the world is ending in forgetting, not fire. Ancient ruins everywhere, nobody remembers who built them. The Collegium studies but understands less each decade. A plague spreads from the eastern marshes. Something stirs beneath ruins older than the kingdoms.",
+    thesis: "A world forgetting itself. Every spell draws from a diminishing reservoir.",
+    hookTitle: "The Second Library",
+    hookText: "A scholar at the Collegium dies under suspicious circumstances. Her notes mention a second library — one you've never heard of, in a place that shouldn't exist.",
+  },
+  'grimdark': {
+    lore: "The Pact of Ashes is fraying. A famine called the Wasting spreads across the provinces. Border lords raise private armies, the Church controls the hospitals and the Inquisition, and magic is feared and costly. You lead a small mercenary company through a world of mud, blood, and iron.",
+    thesis: "Moral entropy. Every choice costs something. Victories are never clean.",
+    hookTitle: "The Mercy",
+    hookText: "Your company freed a group of prisoners from a border lord's stockade. You left two guards alive. Now a steward arrives at camp, unarmed, saying those prisoners were the dangerous ones.",
+  },
+  'cyberpunk': {
+    lore: "Megacorps own the law, the media, and the people. The city is vertical, stratified by wealth. Cyberware is ubiquitous. Privacy is a commodity. You run a small crew from a safehouse in the middle layers.",
+    thesis: "Humanity vs. capability. Every upgrade makes you better at the job, worse at being a person.",
+    hookTitle: "Blackout",
+    hookText: "City blackout in a six-block radius. Your name broadcast on every local channel. Someone wanted you visible. The question is who, and what they think you have.",
+  },
+  'noire': {
+    lore: "The city runs on money, secrets, and the distribution of both. Police are overworked or bought. The wealthy are untouchable until they aren't. You work alone. Rain-slicked streets, frosted glass doors, dive bars, hotels with forgetting clerks.",
+    thesis: "Information as currency. Truth is as dangerous as the lie.",
+    hookTitle: "Five Names",
+    hookText: "A woman you've never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names — four of them are still alive.",
+  },
+  'epic-scifi': {
+    lore: "The Hegemony has endured for a thousand years, held together by Resonants — humans attuned to the Drift. Identified at age seven, taken by the Synod, deployed as living infrastructure. Resonants are legally property. Their power is immense. Their control is total.",
+    thesis: "Institutional complicity. You're inside a machine that runs on human lives.",
+    hookTitle: "The Allocation",
+    hookText: "Your house has been allocated a new Resonant. She's fourteen. She arrives tomorrow. Her family hasn't stopped sending messages. The Synod says to ignore them.",
+  },
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function StatBar({ label, value }: { label: string; value: number }) {
@@ -128,39 +169,236 @@ function ClockDisplay({ name, segments, filled }: { name: string; segments: numb
   )
 }
 
-const demoCharacter = {
-  name: 'Kael Voss', species: 'Vrynn', class: 'Operative', level: 3,
-  hp: { current: 22, max: 28 }, ac: 14,
-  stats: { STR: 8, DEX: 16, CON: 12, INT: 14, WIS: 13, CHA: 10 },
-  credits: 340, trait: 'Shadow Step',
+interface DemoCharacter {
+  name: string; species: string; class: string; level: number
+  hp: { current: number; max: number }; ac: number
+  stats: { STR: number; DEX: number; CON: number; INT: number; WIS: number; CHA: number }
+  currency: number; currencyLabel: string; trait: string; traitDesc: string
+  companion: { name: string; desc: string }
+  npcs: { name: string; desc: string; disposition: string }[]
+  antagonist: { name: string; desc: string }
+  tabs: string[]
 }
 
-const demoNpcs = [
-  { name: 'Sable', desc: 'Fixer. Owes you a favor.', disposition: 'Trusted' },
-  { name: 'Director Voss', desc: 'Station authority. Suspicious.', disposition: 'Wary' },
-  { name: 'Oshi', desc: 'Missing. Last seen Verath Station.', disposition: 'Unknown' },
-]
-
-const demoPromises = [
-  { to: 'Sable', what: 'Locate Oshi\'s child on Verath Station' },
-  { to: 'Laine', what: 'Return the data core' },
-]
-
-const demoClocks = [
-  { name: 'Station Lockdown', segments: 4, filled: 2 },
-  { name: 'Syndicate Patience', segments: 6, filled: 4 },
-]
+const demoCharacters: Record<string, DemoCharacter> = {
+  'space-opera': {
+    name: 'Kael Voss', species: 'Vrynn', class: 'Driftrunner', level: 3,
+    hp: { current: 22, max: 28 }, ac: 14,
+    stats: { STR: 8, DEX: 16, CON: 12, INT: 14, WIS: 13, CHA: 10 },
+    currency: 340, currencyLabel: 'Credits', trait: 'Smuggler\'s Luck',
+    traitDesc: 'Once per day, when caught or cornered, one contraband item goes undetected.',
+    companion: { name: 'Rix', desc: 'Vrynn mechanic. Sarcastic but loyal.' },
+    npcs: [
+      { name: 'Sable', desc: 'Fixer. Owes you a favor.', disposition: 'Trusted' },
+      { name: 'Director Voss', desc: 'Station authority. Suspicious.', disposition: 'Wary' },
+      { name: 'Oshi', desc: 'Missing. Last seen Verath Station.', disposition: 'Unknown' },
+    ],
+    antagonist: { name: 'The Broker', desc: 'Controls Orja-9\'s black market. Knows you\'re here.' },
+    tabs: ['Character', 'Ship', 'World', 'Chapters'],
+  },
+  fantasy: {
+    name: 'Sera Thornwood', species: 'Elf', class: 'Arcanist', level: 3,
+    hp: { current: 18, max: 24 }, ac: 12,
+    stats: { STR: 8, DEX: 12, CON: 10, INT: 17, WIS: 14, CHA: 11 },
+    currency: 85, currencyLabel: 'Gold', trait: 'Arcane Surge',
+    traitDesc: 'Once per day, auto-succeed an Arcana check or force a re-save. Nat 1 triggers wild magic.',
+    companion: { name: 'Bryn', desc: 'Halfling ranger. Quiet, dependable, reads the land.' },
+    npcs: [
+      { name: 'Aldric', desc: 'Collegium scholar. Knows more than he shares.', disposition: 'Favorable' },
+      { name: 'Warden Hale', desc: 'Border patrol. Trusts no one from the capital.', disposition: 'Wary' },
+      { name: 'The Weaver', desc: 'Fortune teller. Always right. Always vague.', disposition: 'Neutral' },
+    ],
+    antagonist: { name: 'The Forgetting', desc: 'Not a person. A process. The world is losing itself.' },
+    tabs: ['Character', 'Fellowship', 'World', 'Chapters'],
+  },
+  grimdark: {
+    name: 'Harren Blackwall', species: 'House Stonemark', class: 'Ironclad', level: 3,
+    hp: { current: 30, max: 34 }, ac: 16,
+    stats: { STR: 16, DEX: 10, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    currency: 42, currencyLabel: 'Gold', trait: 'Last Standing',
+    traitDesc: 'Once per day, drop to 1 HP instead of 0.',
+    companion: { name: 'Maren', desc: 'Company scout. Fast, cynical, reliable under fire.' },
+    npcs: [
+      { name: 'Father Aldous', desc: 'Church healer. Kind hands, cold faith.', disposition: 'Favorable' },
+      { name: 'Steward Gris', desc: 'Border lord\'s man. Delivers threats politely.', disposition: 'Wary' },
+      { name: 'The Leper', desc: 'Knows the Ashlands. No name. No face.', disposition: 'Neutral' },
+    ],
+    antagonist: { name: 'Lord Vane', desc: 'Raises an army while his people starve.' },
+    tabs: ['Character', 'Company', 'World', 'Chapters'],
+  },
+  cyberpunk: {
+    name: 'Zero', species: 'Street Kid', class: 'Netrunner', level: 3,
+    hp: { current: 20, max: 26 }, ac: 13,
+    stats: { STR: 8, DEX: 14, CON: 12, INT: 17, WIS: 10, CHA: 11 },
+    currency: 1200, currencyLabel: 'Eddies', trait: 'Deep Dive',
+    traitDesc: 'Once per day, auto-succeed a hacking check or seize a device. Neural stress accumulates.',
+    companion: { name: 'Patch', desc: 'Medtech. Keeps you alive. Asks too many questions.' },
+    npcs: [
+      { name: 'Mama Kin', desc: 'Gang boss. Raised you. Owns you.', disposition: 'Trusted' },
+      { name: 'Kessler', desc: 'Corporate fixer. Pays well, lies better.', disposition: 'Wary' },
+      { name: 'Ghost', desc: 'Hacker. Dead three years. Still sending messages.', disposition: 'Unknown' },
+    ],
+    antagonist: { name: 'Axiom Corp', desc: 'They don\'t want you dead. They want you useful.' },
+    tabs: ['Character', 'Tech Rig', 'World', 'Chapters'],
+  },
+  noire: {
+    name: 'Sam Harlow', species: 'Ex-Cop', class: 'Private Investigator', level: 3,
+    hp: { current: 19, max: 22 }, ac: 11,
+    stats: { STR: 10, DEX: 12, CON: 11, INT: 13, WIS: 16, CHA: 12 },
+    currency: 180, currencyLabel: 'Cash', trait: 'Case Instinct',
+    traitDesc: 'Once per chapter, propose a connection between facts. Success reveals hidden information.',
+    companion: { name: 'Dot', desc: 'Secretary. Screens your calls. Keeps your secrets.' },
+    npcs: [
+      { name: 'Vera Harmon', desc: 'Client. Husband missing. Not telling everything.', disposition: 'Neutral' },
+      { name: 'Det. Kowalski', desc: 'Old precinct buddy. Still picks up the phone.', disposition: 'Favorable' },
+      { name: 'Eddie Lim', desc: 'Bookie. Knows who owes what to whom.', disposition: 'Wary' },
+    ],
+    antagonist: { name: 'Someone', desc: 'Told Vera not to come here. She came anyway.' },
+    tabs: ['Character', 'Office', 'World', 'Chapters'],
+  },
+  'epic-scifi': {
+    name: 'Lyra Vael', species: 'Minor House', class: 'Envoy', level: 3,
+    hp: { current: 17, max: 22 }, ac: 12,
+    stats: { STR: 8, DEX: 10, CON: 11, INT: 14, WIS: 13, CHA: 17 },
+    currency: 500, currencyLabel: 'Writs', trait: 'Accord',
+    traitDesc: 'Once per chapter, invoke house authority to halt hostility or force negotiation.',
+    companion: { name: 'Thane', desc: 'House retainer. Loyal beyond reason. Served your mother.' },
+    npcs: [
+      { name: 'Adjudicator Seren', desc: 'Synod. Watches everything. Judges more.', disposition: 'Neutral' },
+      { name: 'Lord Aldren', desc: 'Major House. Has an unregistered Resonant.', disposition: 'Wary' },
+      { name: 'Kael', desc: 'Undrift contact. Trusts no institution.', disposition: 'Favorable' },
+    ],
+    antagonist: { name: 'The Synod', desc: 'The machine that runs on human lives. You\'re inside it.' },
+    tabs: ['Character', 'Retinue', 'World', 'Chapters'],
+  },
+}
 
 // ─── Landing Page ────────────────────────────────────────────────────
 
 export function LandingPage() {
   const [activeGenre, setActiveGenre] = useState<Genre>('space-opera')
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
   const availableGenres = genres.filter((g) => g.available)
   const activeConfig = getGenreConfig(activeGenre)
   const demo = demoContent[activeGenre]
+  const lore = genreLore[activeGenre]
+  const char = demoCharacters[activeGenre]
 
-  // Override CSS vars that ChatMessage / RollBadge read from the theme
+  const handleGenreSelect = useCallback((genreId: Genre, el?: HTMLButtonElement) => {
+    setActiveGenre(genreId)
+    setSelectedAction(null)
+    // Center the clicked card in the carousel
+    if (el && carouselRef.current) {
+      const container = carouselRef.current
+      const scrollTarget = el.offsetLeft - container.offsetWidth / 2 + el.offsetWidth / 2
+      container.scrollTo({ left: scrollTarget, behavior: 'smooth' })
+    }
+  }, [])
+
+  // Looping carousel: triple the items and keep scroll centered on the middle set
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const loopGenres = [...availableGenres, ...availableGenres, ...availableGenres]
+  const isScrolling = useRef(false)
+
+  // On mount, center the first active card in the middle set
+  useEffect(() => {
+    const el = carouselRef.current
+    if (!el) return
+    // Find the first card in the middle set (index = availableGenres.length)
+    const firstMiddleCard = el.children[availableGenres.length] as HTMLElement
+    if (firstMiddleCard) {
+      el.scrollLeft = firstMiddleCard.offsetLeft - el.offsetWidth / 2 + firstMiddleCard.offsetWidth / 2
+    }
+  }, [])
+
+  // When scroll stops near the edges, silently jump to the equivalent middle position
+  useEffect(() => {
+    const el = carouselRef.current
+    if (!el) return
+    let timeout: ReturnType<typeof setTimeout>
+    const handleScroll = () => {
+      if (isScrolling.current) return
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        const singleSetWidth = el.scrollWidth / 3
+        if (el.scrollLeft < singleSetWidth * 0.3) {
+          isScrolling.current = true
+          el.scrollLeft += singleSetWidth
+          isScrolling.current = false
+        } else if (el.scrollLeft > singleSetWidth * 1.7) {
+          isScrolling.current = true
+          el.scrollLeft -= singleSetWidth
+          isScrolling.current = false
+        }
+      }, 100)
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => { el.removeEventListener('scroll', handleScroll); clearTimeout(timeout) }
+  }, [])
+
+  // Apply full genre theme to the document (background effects, colors, fonts)
+  useEffect(() => {
+    const root = document.documentElement
+    const body = document.body
+    const theme = activeConfig.theme
+
+    root.dataset.genre = activeGenre
+
+    root.style.setProperty('--background', theme.background)
+    root.style.setProperty('--foreground', theme.foreground)
+    root.style.setProperty('--card', theme.card)
+    root.style.setProperty('--card-foreground', theme.cardForeground)
+    root.style.setProperty('--primary', theme.primary)
+    root.style.setProperty('--primary-foreground', theme.primaryForeground)
+    root.style.setProperty('--secondary', theme.secondary)
+    root.style.setProperty('--secondary-foreground', theme.secondaryForeground)
+    root.style.setProperty('--muted', theme.muted)
+    root.style.setProperty('--muted-foreground', theme.mutedForeground)
+    root.style.setProperty('--accent', theme.accent)
+    root.style.setProperty('--accent-foreground', theme.accentForeground)
+    root.style.setProperty('--destructive', theme.destructive)
+    root.style.setProperty('--border', theme.border)
+    root.style.setProperty('--input', theme.input)
+    root.style.setProperty('--ring', theme.ring)
+    root.style.setProperty('--narrative', theme.narrative)
+    root.style.setProperty('--meta', theme.meta)
+    root.style.setProperty('--success', theme.success)
+    root.style.setProperty('--warning', theme.warning)
+    root.style.setProperty('--title-glow', theme.titleGlow)
+    root.style.setProperty('--tertiary', theme.tertiary)
+    root.style.setProperty('--tertiary-foreground', theme.tertiaryForeground)
+    body.style.setProperty('--font-narrative', theme.fontNarrative)
+    body.style.setProperty('--font-heading', theme.fontHeading)
+    body.style.setProperty('--font-system', theme.fontSystem)
+
+    return () => {
+      // Clean up on unmount (e.g., navigating away from landing page)
+      delete root.dataset.genre
+    }
+  }, [activeGenre, activeConfig.theme])
+
+  // Scroll-triggered reveal for below-fold sections
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -40px 0px' }
+    )
+    // Delay slightly so DOM is painted
+    const timer = setTimeout(() => {
+      document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el))
+    }, 150)
+    return () => { clearTimeout(timer); observer.disconnect() }
+  }, [])
+
+  // Theme vars for inline styling on specific sections
   const themeVars: React.CSSProperties = {
     '--font-narrative': activeConfig.theme.fontNarrative,
     '--font-heading': activeConfig.theme.fontHeading,
@@ -171,237 +409,289 @@ export function LandingPage() {
     '--tertiary': activeConfig.theme.tertiary,
   } as React.CSSProperties
 
+  // Font scale helper — genre fonts have different x-heights at the same CSS size
+  const scale = activeConfig.theme.fontScale ?? 1
+  const scaled = (base: string) => `calc(${base} * ${scale})`
+
   return (
     <div className="flex min-h-screen flex-col">
-      {/* ── Hero ── */}
-      <section className="flex flex-col items-center px-6 pt-28 pb-24 text-center">
-        <h1
-          className="font-mono text-5xl font-light uppercase tracking-[0.25em] md:text-7xl"
+      {/* ── 1. Hero ── */}
+      <section className="relative flex flex-col items-center px-6 pt-32 pb-32 text-center overflow-hidden">
+        {/* Subtle radial gradient */}
+        <div
+          className="pointer-events-none absolute inset-0 transition-all duration-700"
           style={{
-            color: 'var(--primary)',
-            textShadow: '0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4)',
+            background: `radial-gradient(ellipse 60% 40% at 50% 30%, color-mix(in oklch, ${activeConfig.theme.primary} 8%, transparent), transparent)`,
+          }}
+        />
+        <h1
+          className="hero-stagger relative text-4xl font-light tracking-[0.15em] sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-700"
+          style={{
+            fontFamily: activeConfig.theme.fontHeading,
+            color: activeConfig.theme.primary,
+            textShadow: `0 0 40px color-mix(in oklch, ${activeConfig.theme.primary} 80%, transparent), 0 0 80px color-mix(in oklch, ${activeConfig.theme.primary} 40%, transparent)`,
+            animationDelay: '0s',
           }}
         >
-          Storyforge
+          storyforge
         </h1>
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-          The dice shape everything.
+        <p
+          className="hero-stagger relative mt-4 font-mono text-sm tracking-[0.15em] text-primary sm:text-base"
+          style={{ animationDelay: '0.2s' }}
+        >
+          the dice shape everything.
         </p>
-        <p className="mt-8 max-w-xl text-lg leading-relaxed text-foreground/70 md:text-xl">
+        <p className="hero-stagger relative mt-8 max-w-xl text-lg leading-relaxed text-foreground/70 md:text-xl" style={{ animationDelay: '0.4s' }}>
           A text RPG with real rules, real dice, and real consequences — powered by Claude.
         </p>
-        <a
-          href="/play"
-          className="mt-10 rounded-full bg-primary px-8 py-3.5 font-heading text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40"
-        >
-          Start your campaign
-        </a>
+        <div className="hero-stagger relative mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4" style={{ animationDelay: '0.6s' }}>
+          <a
+            href="/play"
+            className="bg-primary px-8 py-3.5 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
+          >
+            Play demo
+          </a>
+          <a
+            href="/play?byok=1"
+            className="border border-primary/30 px-8 py-3.5 font-mono text-sm font-semibold text-foreground/80 transition-all hover:border-primary/60 hover:text-foreground"
+          >
+            Bring your own API key
+          </a>
+        </div>
       </section>
 
-      {/* ── Genre Showcase + Gameplay Preview (combined interactive section) ── */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-28">
+      {/* ── 2. Genre Gallery (horizontal carousel) ── */}
+      <section className="w-full pb-24">
         <h2 className="mb-10 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
           Six worlds. One engine.
         </h2>
 
-        <div className="flex flex-col gap-6 md:flex-row" style={themeVars}>
-          {/* Left: Vertical genre tabs */}
-          <div className="flex shrink-0 flex-row gap-2 overflow-x-auto md:w-48 md:flex-col md:overflow-x-visible">
-            {availableGenres.map((entry) => {
-              const config = getGenreConfig(entry.id)
-              const isActive = entry.id === activeGenre
-              return (
-                <button
-                  key={entry.id}
-                  onClick={() => { setActiveGenre(entry.id); setSelectedAction(null) }}
-                  className={`group flex shrink-0 flex-col rounded-lg border p-3 text-left transition-all md:p-4 ${
-                    isActive
-                      ? 'border-[var(--preview-primary)] bg-card/50'
-                      : 'border-border/10 bg-card/20 hover:bg-card/30'
-                  }`}
-                  style={isActive ? { borderColor: config.theme.primary } : undefined}
-                >
-                  <span
-                    className="text-sm font-bold transition-colors"
-                    style={{ color: isActive ? config.theme.primary : undefined, fontFamily: 'var(--font-space-grotesk)' }}
-                  >
-                    {config.name}
-                  </span>
-                  <span className={`mt-0.5 text-xs italic leading-tight ${
-                    isActive ? 'text-foreground/60' : 'text-muted-foreground/60'
-                  } hidden md:block`}>
-                    {config.tagline}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Right: Content area */}
-          <div className="flex min-w-0 flex-1 flex-col gap-6">
-            {/* Species + Classes */}
-            <div className="grid gap-4">
-              {/* Species — horizontal scroll with portrait cards (matches character wizard) */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.3 }} />
-                  <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: activeConfig.theme.primary }}>
-                    {activeConfig.speciesLabel}
-                  </span>
-                </div>
-                <div className="flex items-start gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
-                  {activeConfig.species.map((s) => (
-                    <div key={s.id} className="snap-start min-w-[140px] w-[140px] shrink-0 text-left">
-                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden mb-2 border border-border/10">
-                        <Image
-                          src={`/portraits/${activeGenre}/${s.id}.png`}
-                          alt={s.name}
-                          fill
-                          className="object-cover"
-                          sizes="140px"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background/80 to-transparent">
-                          <p className="text-[10px] font-bold tracking-wide uppercase text-foreground">{s.name}</p>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed px-0.5">{s.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Classes — grid cards (matches character wizard) */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.3 }} />
-                  <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: activeConfig.theme.primary }}>
-                    Classes
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {activeConfig.classes.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex flex-col gap-1 rounded-xl border border-border/15 bg-secondary/5 p-3.5 text-left"
-                    >
-                      <div className="text-sm font-medium text-foreground">{c.name}</div>
-                      <div className="text-[11px] text-muted-foreground leading-snug">{c.concept}</div>
-                      <div className="mt-1 font-mono text-[10px]" style={{ color: activeConfig.theme.primary }}>{c.primaryStat}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Gameplay preview — themed to active genre */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.3 }} />
-                <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: activeConfig.theme.primary }}>
-                  Gameplay Preview
-                </span>
-              </div>
-
-              <div
-                className="overflow-hidden rounded-xl border border-border/10 bg-card/40 transition-colors"
+        <div ref={carouselRef} className="flex gap-4 overflow-x-auto px-6 pb-4 scrollbar-thin md:gap-5">
+          {loopGenres.map((entry, idx) => {
+            const config = getGenreConfig(entry.id)
+            const isActive = entry.id === activeGenre
+            return (
+              <button
+                key={`${entry.id}-${idx}`}
+                onClick={(e) => handleGenreSelect(entry.id, e.currentTarget)}
+                className={`group relative shrink-0 snap-center w-[75vw] sm:w-[50vw] md:w-[40vw] lg:w-[30vw] aspect-[16/9] overflow-hidden text-left transition-all duration-500 ${
+                  isActive
+                    ? 'grayscale-0 opacity-100 scale-[1.02]'
+                    : 'grayscale opacity-50 hover:opacity-70 hover:grayscale-[0.3] scale-[0.97]'
+                }`}
                 style={{
-                  borderTopWidth: 2,
-                  borderTopColor: activeConfig.theme.primary,
+                  borderLeft: `2px solid ${isActive ? config.theme.primary : `color-mix(in oklch, ${config.theme.primary} 40%, transparent)`}`,
+                  ...(isActive ? {
+                    boxShadow: `0 0 30px -5px ${config.theme.primary}`,
+                  } : {}),
                 }}
               >
-                {/* Mini top bar */}
-                <div className="flex h-10 items-center justify-between border-b border-border/10 bg-background/60 px-4">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
-                    storyforge
-                  </span>
-                  <span className="font-heading text-xs" style={{ color: activeConfig.theme.primary }}>
-                    {demo.chapter}
-                  </span>
-                  <Menu className="h-3.5 w-3.5 text-muted-foreground/60" />
+                <Image
+                  src={`/genres/${entry.id}.png`}
+                  alt={config.name}
+                  fill
+                  className={`object-cover transition-all duration-500 ${isActive ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`}
+                  sizes="320px"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <p className="text-sm font-bold uppercase tracking-wider text-white">{config.name}</p>
                 </div>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
-                {/* Chat area */}
-                <div className="space-y-5 p-5">
-                  {demo.messages.map((msg) => (
-                    <ChatMessage key={msg.id} message={msg} />
-                  ))}
+      {/* ── 3. Genre Detail (expanded) ── */}
+      <section
+        ref={detailRef}
+        className="mx-auto w-full max-w-5xl px-6 pb-28 transition-all duration-500"
+        style={themeVars}
+      >
+        {/* 3a. Lore Block */}
+        <div className="max-w-2xl mb-16">
+          <p
+            className="leading-relaxed text-foreground/80"
+            style={{ fontFamily: activeConfig.theme.fontNarrative, fontSize: scaled('1.05rem') }}
+          >
+            {lore?.lore}
+          </p>
+          <blockquote
+            className="mt-4 border-l-2 pl-4 text-sm italic text-foreground/50 md:text-base"
+            style={{ borderColor: activeConfig.theme.primary }}
+          >
+            {lore?.thesis}
+          </blockquote>
+        </div>
 
-                  <RollBadge rollData={demo.roll} />
-
-                  <ChatMessage message={demo.finalMessage} />
-
-                  {/* Action buttons with hover */}
-                  <div className="flex flex-col gap-2">
-                    {demo.actions.map((action) => (
-                      <button
-                        key={action}
-                        onMouseEnter={() => setSelectedAction(action)}
-                        onMouseLeave={() => setSelectedAction(null)}
-                        className={`rounded-lg border px-4 py-2.5 text-xs text-left transition-all ${
-                          selectedAction === action
-                            ? 'border-primary/30 bg-primary/5 text-foreground'
-                            : 'border-border/15 bg-secondary/5 text-foreground/70 hover:border-primary/20'
-                        }`}
-                      >
-                        {action}
-                      </button>
-                    ))}
+        {/* 3b. Species/Origins */}
+        <div className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
+            <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
+              {activeConfig.speciesLabel}
+            </span>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin">
+            {activeConfig.species.map((s) => (
+              <div key={s.id} className="shrink-0 w-[160px] sm:w-[180px] md:w-[200px] text-left">
+                <div className="relative aspect-[3/4] overflow-hidden mb-3 border border-border/10">
+                  <Image
+                    src={`/portraits/${activeGenre}/${s.id}.png`}
+                    alt={s.name}
+                    fill
+                    className="object-cover"
+                    sizes="200px"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/90 to-transparent">
+                    <p className="text-sm font-bold tracking-wide uppercase text-foreground">{s.name}</p>
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-                {/* Mini action bar */}
-                <div className="flex items-center gap-0 border-t border-border/10 bg-background/40">
-                  <div className="shrink-0 px-3 py-2.5 text-muted-foreground/50">
-                    <HelpCircle className="h-4 w-4" />
-                  </div>
-                  <span className="flex-1 px-2 py-2.5 text-sm text-muted-foreground/50">
-                    Or type your own action...
-                  </span>
-                  <div className="mx-1.5 rounded-lg p-2" style={{ backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 40%, transparent)` }}>
-                    <Send className="h-3.5 w-3.5 text-primary-foreground/70" />
-                  </div>
+        {/* 3c. Classes Grid */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
+            <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
+              Classes
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {activeConfig.classes.map((c) => (
+              <div
+                key={c.id}
+                className="flex flex-col gap-1.5 border border-border/10 bg-card/60 p-4 text-left shadow-md shadow-black/20"
+              >
+                <div className="text-sm font-semibold text-foreground">{c.name}</div>
+                <div className="text-xs text-muted-foreground leading-snug">{c.concept}</div>
+                <div
+                  className="mt-1.5 inline-flex self-start rounded-sm px-2 py-0.5 font-mono text-[11px] font-medium"
+                  style={{ color: activeConfig.theme.primary, backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 12%, transparent)` }}
+                >
+                  {c.primaryStat}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section divider */}
+      <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
+
+      {/* ── 4. Gameplay Preview ── */}
+      <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24" style={themeVars}>
+        <h2 className="mb-3 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
+          See it in action.
+        </h2>
+        <p className="mb-10 text-center text-sm" style={{ color: activeConfig.theme.primary }}>
+          {demo.chapter}
+        </p>
+
+        <div
+          className="relative overflow-hidden border border-border/10 bg-card/40 transition-colors"
+          style={{
+            borderTopWidth: 2,
+            borderTopColor: activeConfig.theme.primary,
+            boxShadow: `inset 0 1px 30px -10px color-mix(in oklch, ${activeConfig.theme.primary} 8%, transparent)`,
+          }}
+        >
+          {/* Mini top bar */}
+          <div className="flex h-10 items-center justify-between border-b border-border/10 bg-background/60 px-4">
+            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
+              storyforge
+            </span>
+            <span className="font-heading text-xs" style={{ color: activeConfig.theme.primary }}>
+              {demo.chapter}
+            </span>
+            <Menu className="h-3.5 w-3.5 text-muted-foreground/60" />
+          </div>
+
+          {/* Chat area */}
+          <div className="space-y-5 p-5">
+            {demo.messages.map((msg) => (
+              <ChatMessage key={msg.id} message={msg} />
+            ))}
+
+            <RollBadge rollData={demo.roll} />
+
+            <ChatMessage message={demo.finalMessage} />
+
+            {/* Action buttons with hover */}
+            <div className="flex flex-col gap-2">
+              {demo.actions.map((action) => (
+                <button
+                  key={action}
+                  onMouseEnter={() => setSelectedAction(action)}
+                  onMouseLeave={() => setSelectedAction(null)}
+                  className={`rounded-sm border px-4 py-2.5 text-xs text-left transition-all ${
+                    selectedAction === action
+                      ? 'border-primary/30 bg-primary/5 text-foreground'
+                      : 'border-border/15 bg-secondary/5 text-foreground/70 hover:border-primary/20'
+                  }`}
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mini action bar */}
+          <div className="flex items-center gap-0 border-t border-border/10 bg-background/40">
+            <div className="shrink-0 px-3 py-2.5 text-muted-foreground/50">
+              <HelpCircle className="h-4 w-4" />
+            </div>
+            <span className="flex-1 px-2 py-2.5 text-sm text-muted-foreground/50">
+              Or type your own action...
+            </span>
+            <div className="mx-1.5 rounded-sm p-2" style={{ backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 40%, transparent)` }}>
+              <Send className="h-3.5 w-3.5 text-primary-foreground/70" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Burger Menu Showcase ── */}
-      <section className="mx-auto w-full max-w-3xl px-6 pb-28">
+      {/* Section divider */}
+      <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
+
+      {/* ── 5. Burger Menu Showcase ── */}
+      <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24" style={themeVars}>
         <h2 className="mb-3 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
           Everything at your fingertips.
         </h2>
         <p className="mb-10 text-center text-sm text-muted-foreground">
-          Character sheet, NPCs, tension clocks, promises, ship systems — one slide away.
+          Character sheet, NPCs, tension clocks, promises — one slide away.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Character panel — matches real burger menu */}
-          <div className="rounded-xl border border-border/15 bg-background/95 backdrop-blur-xl p-5 flex flex-col gap-5 text-sm">
-            {/* Tab bar */}
+          {/* Character panel */}
+          <div className="border border-border/15 bg-background/95 backdrop-blur-xl p-5 flex flex-col gap-5 text-sm">
             <div className="flex gap-4 overflow-x-auto border-b border-border/10 pb-2">
-              {['Character', 'Ship', 'World', 'Chapters'].map((tab, i) => (
+              {char.tabs.map((tab, i) => (
                 <span key={tab} className={`shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] ${i === 0 ? 'text-primary' : 'text-muted-foreground/40'}`}>
                   {tab}
                 </span>
               ))}
             </div>
 
-            {/* Header */}
             <div>
-              <h3 className="font-heading text-lg font-semibold text-foreground">{demoCharacter.name}</h3>
+              <h3 className="font-heading text-lg font-semibold text-foreground">{char.name}</h3>
               <p className="mt-0.5 text-sm text-foreground/50">
-                {demoCharacter.species} {demoCharacter.class} · Level {demoCharacter.level}
+                {char.species} {char.class} · Level {char.level}
               </p>
             </div>
 
-            {/* Vitals — key-value rows */}
             <div className="flex flex-col">
               {[
-                { label: 'HP', value: `${demoCharacter.hp.current} / ${demoCharacter.hp.max}` },
-                { label: 'AC', value: String(demoCharacter.ac) },
-                { label: 'Credits', value: `${demoCharacter.credits}` },
+                { label: 'HP', value: `${char.hp.current} / ${char.hp.max}` },
+                { label: 'AC', value: String(char.ac) },
+                { label: char.currencyLabel, value: `${char.currency}` },
                 { label: 'Inspiration', value: '◇ —' },
               ].map((row) => (
                 <div key={row.label} className="flex items-center justify-between border-b border-border/8 py-2 last:border-0">
@@ -411,18 +701,18 @@ export function LandingPage() {
               ))}
             </div>
 
-            {/* Stats — terminal cards in 3-col grid */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-6 h-px bg-primary/40" />
                 <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Stats</h4>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {Object.entries(demoCharacter.stats).map(([stat, value]) => {
+                {Object.entries(char.stats).map(([stat, value]) => {
                   const mod = Math.floor((value - 10) / 2)
-                  const isPrimary = stat === 'DEX'
+                  const highest = Math.max(...Object.values(char.stats))
+                  const isPrimary = value === highest
                   return (
-                    <div key={stat} className={`rounded-lg border p-2 text-center ${isPrimary ? 'border-primary/30 bg-primary/8' : 'border-border/10 bg-secondary/5'}`}>
+                    <div key={stat} className={`rounded-sm border p-2 text-center ${isPrimary ? 'border-primary/30 bg-primary/8' : 'border-border/10 bg-secondary/5'}`}>
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40">{stat}</div>
                       <div className="font-mono text-lg font-semibold text-foreground">{value}</div>
                       <div className={`font-mono text-xs ${isPrimary ? 'text-primary/80' : 'text-muted-foreground/60'}`}>
@@ -434,31 +724,28 @@ export function LandingPage() {
               </div>
             </div>
 
-            {/* Trait */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-6 h-px bg-primary/40" />
                 <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Class Trait</h4>
               </div>
               <div className="border-l-2 border-primary/30 pl-3">
-                <div className="text-sm font-medium text-primary">{demoCharacter.trait}</div>
-                <div className="mt-1 text-xs text-foreground/50 leading-relaxed">Once per day, when caught or cornered, one contraband item goes undetected.</div>
+                <div className="text-sm font-medium text-primary">{char.trait}</div>
+                <div className="mt-1 text-xs text-foreground/50 leading-relaxed">{char.traitDesc}</div>
               </div>
             </div>
           </div>
 
-          {/* World panel — matches real burger menu */}
-          <div className="rounded-xl border border-border/15 bg-background/95 backdrop-blur-xl p-5 flex flex-col gap-5 text-sm">
-            {/* Tab bar — same as character panel top tabs */}
+          {/* World panel */}
+          <div className="border border-border/15 bg-background/95 backdrop-blur-xl p-5 flex flex-col gap-5 text-sm">
             <div className="flex gap-4 overflow-x-auto border-b border-border/10 pb-2">
-              {['Character', 'Ship', 'World', 'Chapters'].map((tab, i) => (
+              {char.tabs.map((tab, i) => (
                 <span key={tab} className={`shrink-0 text-[10px] font-medium uppercase tracking-[0.15em] ${i === 2 ? 'text-primary' : 'text-muted-foreground/40'}`}>
                   {tab}
                 </span>
               ))}
             </div>
 
-            {/* Subtab toggle */}
             <div className="flex gap-4">
               {['People', 'Narrative', 'Locations'].map((tab, i) => (
                 <span key={tab} className={`text-[10px] font-medium uppercase tracking-[0.15em] pb-1 ${i === 0 ? 'text-primary border-b border-primary/40' : 'text-muted-foreground/40'}`}>
@@ -467,27 +754,25 @@ export function LandingPage() {
               ))}
             </div>
 
-            {/* Companions — primary-tinted card */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-6 h-px bg-primary/40" />
-                <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Companions</h4>
+                <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">{activeConfig.companionLabel}</h4>
               </div>
-              <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2.5">
-                <div className="font-medium text-foreground">Rix</div>
-                <div className="text-xs text-foreground/60">Vrynn mechanic. Sarcastic but loyal.</div>
+              <div className="rounded-sm border border-primary/15 bg-primary/5 px-3 py-2.5">
+                <div className="font-medium text-foreground">{char.companion.name}</div>
+                <div className="text-xs text-foreground/60">{char.companion.desc}</div>
               </div>
             </div>
 
-            {/* Known NPCs — neutral cards */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-6 h-px bg-primary/40" />
                 <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Known NPCs</h4>
               </div>
               <div className="flex flex-col gap-2">
-                {demoNpcs.map((npc) => (
-                  <div key={npc.name} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
+                {char.npcs.map((npc) => (
+                  <div key={npc.name} className="rounded-sm border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{npc.name}</div>
                     <div className="text-xs text-foreground/60">{npc.desc}</div>
                   </div>
@@ -495,23 +780,25 @@ export function LandingPage() {
               </div>
             </div>
 
-            {/* Antagonist — destructive-tinted */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-6 h-px bg-primary/40" />
                 <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">Antagonist</h4>
               </div>
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
-                <div className="font-medium text-foreground">The Broker</div>
-                <div className="text-xs text-foreground/60">Controls Orja-9&apos;s black market. Knows you&apos;re here.</div>
+              <div className="rounded-sm border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                <div className="font-medium text-foreground">{char.antagonist.name}</div>
+                <div className="text-xs text-foreground/60">{char.antagonist.desc}</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Mechanics ── */}
-      <section className="mx-auto w-full max-w-3xl px-6 pb-28">
+      {/* Section divider */}
+      <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
+
+      {/* ── 6. Mechanics ── */}
+      <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24">
         <h2 className="mb-10 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
           Not a chatbot wearing a fantasy hat.
         </h2>
@@ -521,34 +808,42 @@ export function LandingPage() {
             { label: 'Persistent Worlds', text: 'NPCs remember. Promises track. Your ship upgrades between chapters. Crew loyalty shifts based on your choices.' },
             { label: 'AI Game Master', text: 'Powered by Claude. Adapts difficulty to your play style. Enforces its own rules. Will absolutely let you fail.' },
           ].map((feature) => (
-            <div key={feature.label} className="rounded-lg border border-border/10 bg-card/30 p-5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-primary">{feature.label}</span>
+            <div key={feature.label} className="border border-border/10 bg-card/30 p-5">
+              <span className="font-mono text-xs uppercase tracking-[0.15em] text-primary">{feature.label}</span>
               <p className="mt-3 text-sm leading-relaxed text-foreground/70">{feature.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Final CTA ── */}
-      <section className="flex flex-col items-center border-t border-border/10 px-6 py-24 text-center">
+      {/* ── 7. Final CTA ── */}
+      <section className="scroll-reveal flex flex-col items-center px-6 py-24 text-center">
         <h2
           className="font-heading text-4xl font-bold tracking-tight md:text-5xl"
-          style={{ textShadow: '0 0 30px oklch(0.72 0.15 195 / 0.3)' }}
+          style={{ textShadow: `0 0 30px color-mix(in oklch, ${activeConfig.theme.primary} 30%, transparent)` }}
         >
           Your story is waiting.
         </h2>
-        <a
-          href="/play"
-          className="mt-10 rounded-full bg-primary px-10 py-4 font-heading text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40"
-        >
-          Start your campaign
-        </a>
-        <p className="mt-6 max-w-sm font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-          Just a good game. Built by one person with Claude Code.
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <a
+            href="/play"
+            className="bg-primary px-10 py-4 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
+          >
+            Play demo
+          </a>
+          <a
+            href="/play?byok=1"
+            className="border border-primary/30 px-10 py-4 font-mono text-sm font-semibold text-foreground/80 transition-all hover:border-primary/60 hover:text-foreground"
+          >
+            Bring your own API key
+          </a>
+        </div>
+        <p className="mt-8 max-w-sm font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+          Built by one person with Claude Code.
         </p>
       </section>
 
-      {/* ── Footer ── */}
+      {/* ── 8. Footer ── */}
       <footer className="flex items-center justify-between border-t border-border/10 px-6 py-8 text-muted-foreground/60">
         <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Storyforge</span>
         <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Made with Claude</span>
