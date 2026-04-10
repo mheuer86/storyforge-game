@@ -1247,6 +1247,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             ? currentState.character.proficiencyBonus : undefined,
         },
         skillPointsAwarded: newProfs,
+        keyEvents: completedChapter?.keyEvents ?? [],
         debrief: completedChapter?.debrief ?? null,
         nextFrame: currentState.chapterFrame,
       }

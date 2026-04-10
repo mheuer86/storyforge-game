@@ -81,7 +81,7 @@ function BulletList({ items }: { items: string[] }) {
 }
 
 export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapter }: ChapterCloseOverlayProps) {
-  const { levelUp, skillPointsAwarded, debrief, nextFrame, completedChapterTitle, completedChapterNumber, nextChapterTitle: rawNextTitle } = closeData
+  const { levelUp, skillPointsAwarded, keyEvents, debrief, nextFrame, completedChapterTitle, completedChapterNumber, nextChapterTitle: rawNextTitle } = closeData
   // Strip "Chapter N:" prefix if Claude included it in the title
   const nextChapterTitle = rawNextTitle?.replace(/^Chapter\s+\d+\s*:\s*/i, '') ?? rawNextTitle
 
@@ -145,6 +145,21 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
               </div>
             )}
 
+            {/* Key Events */}
+            {keyEvents && keyEvents.length > 0 && (
+              <div>
+                <SectionLabel>Key Events</SectionLabel>
+                <div className="flex flex-col gap-1.5">
+                  {keyEvents.map((event, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-foreground/60 leading-relaxed">
+                      <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+                      {event}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Debrief hint — full debrief available in burger menu */}
             {debrief && (
               <p className="text-[11px] text-muted-foreground/40 italic text-center">
@@ -177,9 +192,9 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
             href="https://buymeacoffee.com/storyforgegame"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-center text-[11px] text-muted-foreground/50 hover:text-primary transition-colors"
+            className="flex items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs text-primary/70 hover:bg-primary/10 hover:text-primary transition-all"
           >
-            Enjoying the story? Buy the developer a beer&nbsp;→
+            Enjoying the story? Buy the developer a beer
           </a>
         </div>
       </div>

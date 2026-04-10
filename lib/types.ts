@@ -396,6 +396,7 @@ export interface CloseData {
   nextChapterTitle: string
   resolutionMet: string
   forwardHook: string
+  keyEvents: string[]
   levelUp: { oldLevel: number; newLevel: number; hpIncrease: number; oldHpMax: number; newHpMax: number; newProficiencyBonus?: number }
   skillPointsAwarded: string[]  // proficiency names added
   debrief: ChapterDebrief | null
