@@ -139,8 +139,11 @@ function applyCharacterChanges(
       ...item,
       maxCharges: item.max_charges ?? item.maxCharges,
     }))
-    char.inventory = [...char.inventory, ...items]
-    items.forEach((item) => {
+    // Dedup: skip items already in inventory (by name, case-insensitive)
+    const existingNames = new Set(char.inventory.map(i => i.name.toLowerCase()))
+    const newItems = items.filter(item => !existingNames.has(item.name.toLowerCase()))
+    char.inventory = [...char.inventory, ...newItems]
+    newItems.forEach((item) => {
       statChanges.push({ type: 'new', label: `+${item.name}` })
     })
   }
@@ -312,7 +315,13 @@ function applyWorldChanges(
         statChanges.push({ type: 'new', label: `Met: ${npc.name}` })
       }
       if (npc.affiliation && !world.factions.some((f) => f.name === npc.affiliation)) {
-        world.factions = [...world.factions, { name: npc.affiliation, stance: 'Unknown' }]
+        // Derive initial faction stance from the NPC's disposition
+        const stanceFromDisposition: Record<string, string> = {
+          trusted: 'Allied', favorable: 'Friendly', neutral: 'Neutral',
+          wary: 'Wary', hostile: 'Hostile',
+        }
+        const initialStance = stanceFromDisposition[npc.disposition?.toLowerCase() ?? ''] ?? 'Neutral'
+        world.factions = [...world.factions, { name: npc.affiliation, stance: initialStance }]
       }
     }
   }
@@ -1015,7 +1024,11 @@ function applyNarrativeChanges(
         closeReason: undefined,
         selfAssessment: undefined,
       },
-      chapterFrame: null,
+      chapterFrame: input.chapter_frame
+        ? { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible }
+        : ci.forward_hook
+          ? { objective: ci.forward_hook, crucible: 'Establish in opening turns' }
+          : null,
       storySummary: null,
       sceneSummaries: [],
       _pendingSceneSummary: false,
