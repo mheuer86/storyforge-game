@@ -45,25 +45,46 @@ const geistPixel = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Storyforge | AI-Powered Text RPG',
-  description: 'Play a story you\'d actually want to read. A text RPG with real rules, real dice, and real consequences — powered by Claude.',
+  title: 'Storyforge — Play a story you\'d actually want to read',
+  description: 'A text RPG with real rules, real dice, and real consequences. Six genres, persistent worlds, NPC memory. Powered by Claude. Bring your own API key.',
   metadataBase: new URL('https://storyforge-game.com'),
   openGraph: {
-    title: 'Storyforge',
-    description: 'Play a story you\'d actually want to read. Six genres. Real dice. Real consequences.',
+    title: 'Storyforge — Play a story you\'d actually want to read',
+    description: 'A text RPG with real rules, real dice, and real consequences. Six genres, persistent worlds, NPC memory. Powered by Claude.',
     url: 'https://storyforge-game.com',
     siteName: 'Storyforge',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Storyforge — AI-Powered Text RPG',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Storyforge — AI-Powered Text RPG',
-    description: 'Play a story you\'d actually want to read. Six genres. Real dice. Real consequences.',
+    title: 'Storyforge — Play a story you\'d actually want to read',
+    description: 'A text RPG with real rules, real dice, and real consequences. Powered by Claude.',
     images: ['/og-image.png'],
   },
   icons: {
-    icon: '/storyforge_logo.png',
+    icon: [
+      {
+        url: '/icon-light-32x32.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon-dark-32x32.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+    apple: '/apple-icon.png',
   },
 }
 
