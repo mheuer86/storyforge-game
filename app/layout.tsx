@@ -46,24 +46,24 @@ const geistPixel = localFont({
 
 export const metadata: Metadata = {
   title: 'Storyforge | AI-Powered Text RPG',
-  description: 'An immersive AI-powered text RPG experience. D&D meets chat in a space opera setting.',
-  generator: 'v0.app',
+  description: 'Play a story you\'d actually want to read. A text RPG with real rules, real dice, and real consequences — powered by Claude.',
+  metadataBase: new URL('https://storyforge-game.com'),
+  openGraph: {
+    title: 'Storyforge',
+    description: 'Play a story you\'d actually want to read. Six genres. Real dice. Real consequences.',
+    url: 'https://storyforge-game.com',
+    siteName: 'Storyforge',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Storyforge — AI-Powered Text RPG',
+    description: 'Play a story you\'d actually want to read. Six genres. Real dice. Real consequences.',
+    images: ['/og-image.png'],
+  },
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/storyforge_logo.png',
   },
 }
 

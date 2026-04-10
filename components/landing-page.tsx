@@ -889,7 +889,7 @@ export function LandingPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {[
             { label: 'No account needed', text: 'Your game saves to your browser. No signup, no cloud, no tracking. Your story stays on your device.' },
-            { label: 'Bring your own API key', text: 'Get a Claude API key from Anthropic and play unlimited. Your key stays in your browser and is never sent to our servers. Cost per chapter is under 1\u20AC.' },
+            { label: 'Bring your own API key', text: 'Get a Claude API key from Anthropic and play unlimited. Your key stays in your browser and is never sent to our servers. Cost per chapter is under 1\u20AC. Works best with Claude Sonnet.' },
             { label: 'Free demo', text: 'Try a few chapters without an API key. There\'s a limited monthly token budget for the demo, then you\'ll need your own key.' },
             { label: 'Open source', text: 'The full codebase is on GitHub. Run your own instance, read the code, contribute. Licensed under AGPL-3.0.' },
           ].map((item) => (
@@ -942,7 +942,7 @@ export function LandingPage() {
 
       {/* ── 8. Footer ── */}
       <footer className="border-t border-border/10 px-6 py-8">
-        <div className="mx-auto max-w-5xl flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto max-w-5xl flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           {/* Left: branding */}
           <div className="flex items-center gap-4">
             <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">Storyforge</span>
@@ -951,7 +951,7 @@ export function LandingPage() {
           </div>
 
           {/* Center: links */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center justify-center gap-5">
             <a href="/chronicles" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
               Tales
             </a>
