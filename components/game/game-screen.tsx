@@ -503,8 +503,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       isInitial: boolean,
       displayOverride?: string  // show this in chat instead of the raw message (for slash commands)
     ) => {
-      // Auto-detect forge:dev prefix as meta question
-      if (playerMessage.toLowerCase().startsWith('forge:dev')) {
+      // Auto-detect forge:dev prefix as meta question (dev only)
+      if (process.env.NODE_ENV === 'development' && playerMessage.toLowerCase().startsWith('forge:dev')) {
         isMetaQuestion = true
       }
       if (isLoadingRef.current) return
