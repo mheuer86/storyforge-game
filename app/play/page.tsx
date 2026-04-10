@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PassphraseGate } from '@/components/setup/passphrase-gate'
+import { DemoBudgetGate } from '@/components/setup/demo-budget-gate'
 import { WorldSetup } from '@/components/setup/world-setup'
 import { CharacterSetup } from '@/components/setup/character-setup'
 import { CampaignSelect } from '@/components/setup/campaign-select'
@@ -174,7 +175,9 @@ function AppContent() {
 export default function StoryforgeApp() {
   return (
     <PassphraseGate>
-      <AppContent />
+      <DemoBudgetGate>
+        <AppContent />
+      </DemoBudgetGate>
     </PassphraseGate>
   )
 }

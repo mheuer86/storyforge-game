@@ -5,6 +5,21 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-04-10',
+    changes: [
+      'Bring Your Own Key — play unlimited with your own Claude API key. Your key stays in your browser and is never sent to our servers. Cost per chapter is under 1\u20AC. Demo mode still available with a shared monthly token budget',
+      'Landing page redesign — new hero section, genre preview cards with live demo content, "Tales of Storyforge" chronicles section, how-it-works explainer, and a proper footer',
+      'Tales of Storyforge — real playthroughs adapted into short fiction. Four launch stories from noir, cyberpunk, and epic sci-fi campaigns, each born from actual dice rolls',
+      'Content policy — a design statement for what Storyforge allows and how the GM handles edge cases. Short, honest, not legalese',
+      'Impressum — legal contact page (TMG \u00A75) for German compliance',
+      'Combat improvements — auto-chain damage fixed, phantom damage blocked, HP 0 now triggers proper death save sequences, enemy tracking persists correctly',
+      'Chapter close polish — key events included in the close overlay, completed objectives hidden from active view, Sonnet handles the debrief for better analytical quality',
+      'OpenGraph sharing — proper social preview cards when sharing links on Twitter, Discord, WhatsApp',
+      'Security hardening — debug panel and token logging restricted to dev mode, prompt dialog replaced with proper UI for API key entry',
+      'Quality of life — Race renamed to Folk across all genres, inventory deduplication, faction initialization fixes, chapter frame fallback improvements',
+    ],
+  },
+  {
     date: '2026-04-07',
     changes: [
       'V1.5 Engine — the GM now completes each turn in a single response instead of chaining multiple tool calls. Dramatically faster, dramatically cheaper. What used to take 3-6 API calls now takes 1',

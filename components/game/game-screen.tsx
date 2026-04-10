@@ -13,7 +13,8 @@ import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { runRulesEngine } from '@/lib/rules-engine'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
-import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted } from '@/lib/api-key'
+import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted, setApiKey } from '@/lib/api-key'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
 import { slashCommands as slashCommandDefs } from '@/lib/slash-commands'
@@ -79,6 +80,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [inspirationOffered, setInspirationOffered] = useState(false)
   const [closeInProgress, setCloseInProgress] = useState(false)
   const [actionBarPrefill, setActionBarPrefill] = useState<string | undefined>(undefined)
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
+  const [budgetKeyInput, setBudgetKeyInput] = useState('')
+  const [budgetKeyError, setBudgetKeyError] = useState('')
   const auditInFlightRef = useRef(false)
   // chapterClosed is derived from game state, not React state — survives reload
   const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
@@ -184,7 +188,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     try {
       // Check demo budget before sending
       if (isDemoBudgetExhausted()) {
-        onError('Monthly demo budget reached. Add your own API key in the menu to continue playing.')
+        setBudgetDialogOpen(true)
+        isLoadingRef.current = false
+        setIsLoading(false)
         return
       }
 
@@ -588,8 +594,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           }
         },
         (msg) => {
+          const lc = msg.toLowerCase()
           const is504 = msg.includes('504')
-          const is529 = msg.includes('529') || msg.toLowerCase().includes('overload')
+          const is529 = msg.includes('529') || lc.includes('overload')
+          const isBudget = lc.includes('credit') || lc.includes('balance') || lc.includes('billing') || lc.includes('insufficient') || lc.includes('budget')
+          if (isBudget && !isByok()) {
+            // Remove the empty GM bubble and show the BYOK dialog
+            setMessages((prev) => prev.filter((m) => m.id !== gmMsgId))
+            setBudgetDialogOpen(true)
+            isLoadingRef.current = false
+            setIsLoading(false)
+            return
+          }
           const friendlyMsg = is504
             ? 'Request timed out — please try again'
             : is529
@@ -626,8 +642,17 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       (prompt) => { setRollPrompt(prompt); setRetryContext(null); isLoadingRef.current = false; setIsLoading(false) },
       (finalState, statChanges) => { setGameState(finalState); saveGameState(finalState); setLastStatChanges(statChanges); setRetryContext(null); isLoadingRef.current = false; setIsLoading(false) },
       (msg) => {
+        const lc = msg.toLowerCase()
         const is504 = msg.includes('504')
-        const is529 = msg.includes('529') || msg.toLowerCase().includes('overload')
+        const is529 = msg.includes('529') || lc.includes('overload')
+        const isBudget = lc.includes('credit') || lc.includes('balance') || lc.includes('billing') || lc.includes('insufficient') || lc.includes('budget')
+        if (isBudget && !isByok()) {
+          setMessages((prev) => prev.filter((m) => m.id !== newGmMsgId))
+          setBudgetDialogOpen(true)
+          isLoadingRef.current = false
+          setIsLoading(false)
+          return
+        }
         const friendlyMsg = is504 ? 'Request timed out — please try again' : is529 ? 'Claude is overloaded right now — please try again in a moment' : `Something went wrong (${msg})`
         setMessages((prev) => prev.map((m) => (m.id === newGmMsgId ? { ...m, content: friendlyMsg, isError: true } : m)))
         isLoadingRef.current = false
@@ -1802,6 +1827,45 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           onStartNextChapter={handleStartNextChapter}
         />
       )}
+
+      {/* Demo budget exhausted dialog */}
+      <Dialog open={budgetDialogOpen} onOpenChange={(open) => { setBudgetDialogOpen(open); if (!open) { setBudgetKeyInput(''); setBudgetKeyError('') } }}>
+        <DialogContent className="max-w-sm border-border/50 bg-card/95" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Demo budget used up</DialogTitle>
+            <DialogDescription>
+              The free demo budget for this month has been used up. Add your own API key to keep playing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <input
+              type="password"
+              value={budgetKeyInput}
+              onChange={(e) => { setBudgetKeyInput(e.target.value); setBudgetKeyError('') }}
+              placeholder="sk-ant-..."
+              autoFocus
+              className="rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30"
+            />
+            <div className="flex flex-col gap-1.5 text-xs text-foreground/50">
+              <p>Get a key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:text-primary transition-colors">console.anthropic.com</a></p>
+              <p>Your key stays in your browser. Cost per chapter is under 1EUR.</p>
+            </div>
+            {budgetKeyError && <p className="text-xs text-destructive">{budgetKeyError}</p>}
+            <button
+              onClick={() => {
+                const key = budgetKeyInput.trim()
+                if (!key.startsWith('sk-ant-')) { setBudgetKeyError('API key should start with sk-ant-'); return }
+                setApiKey(key)
+                setBudgetDialogOpen(false)
+                setBudgetKeyInput('')
+              }}
+              className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Save & Play
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
