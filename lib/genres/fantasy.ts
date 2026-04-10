@@ -245,7 +245,7 @@ const fantasyConfig: GenreConfig = {
   tagline: 'The world is older than it remembers. What was lost has a price. Pay it anyway.',
   available: true,
   species: fantasySpecies,
-  speciesLabel: 'Race',
+  speciesLabel: 'Folk',
   classes: fantasyClasses,
   theme: fantasyTheme,
   currencyName: 'gold',

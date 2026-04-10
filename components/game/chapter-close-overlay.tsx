@@ -212,13 +212,21 @@ export function ChapterCloseOverlay({ closeData, characterName, onStartNextChapt
         </ScrollArea>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-border/10">
+        <div className="px-5 py-4 border-t border-border/10 flex flex-col gap-3">
           <button
             onClick={onStartNextChapter}
             className="w-full rounded-lg bg-primary/10 border border-primary/30 px-4 py-3 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 hover:border-primary/40"
           >
             Start Chapter {(completedChapterNumber + 1)}: {nextChapterTitle}
           </button>
+          <a
+            href="https://buymeacoffee.com/storyforgegame"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-center text-[11px] text-muted-foreground/50 hover:text-primary transition-colors"
+          >
+            Enjoying the story? Buy the developer a beer&nbsp;→
+          </a>
         </div>
       </div>
     </div>
