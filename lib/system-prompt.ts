@@ -173,7 +173,7 @@ Write your narrative response. As the FINAL action, call commit_turn ONCE with A
 
 **Contested rolls** when a named NPC actively opposes. Check advantage/disadvantage triggers before every check. After a successful attack, the system auto-chains a damage roll. For enemy damage, include character.roll_breakdown instead of pending_check.
 
-**No double-deductions.** Before deducting credits or consuming items, check the state. Read LEDGER — if the last entry matches what you're about to charge, it already happened. Read GEAR — if the item's charges already reflect the use, don't include inventory_use again. A cost narrated once is charged once.
+**Track every transaction.** When the player buys, bribes, pays, or uses a consumable, ALWAYS include credits_delta + add_ledger_entry (or inventory_use for items). No transaction is too small to track — a drink at a bar, a bribe to a guard, a toll at a gate. If money changes hands, the ledger records it. Before deducting, check LEDGER to avoid double-charging the same transaction twice. But err on the side of charging, not skipping.
 
 **No meta-narration.** Never narrate your decision-making process. Just call commit_turn.
 
