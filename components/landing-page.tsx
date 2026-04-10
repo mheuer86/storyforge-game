@@ -876,7 +876,30 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── 7. Final CTA ── */}
+      {/* Section divider */}
+      <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
+
+      {/* ── 8. How It Works ── */}
+      <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24">
+        <h2 className="mb-10 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
+          How it works.
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            { label: 'No account needed', text: 'Your game saves to your browser. No signup, no cloud, no tracking. Your story stays on your device.' },
+            { label: 'Bring your own API key', text: 'Get a Claude API key from Anthropic and play unlimited. Your key stays in your browser and is never sent to our servers. Cost per chapter is under 1\u20AC.' },
+            { label: 'Free demo', text: 'Try a few chapters without an API key. There\'s a limited monthly token budget for the demo, then you\'ll need your own key.' },
+            { label: 'Open source', text: 'The full codebase is on GitHub. Run your own instance, read the code, contribute. Licensed under AGPL-3.0.' },
+          ].map((item) => (
+            <div key={item.label} className="border border-border/10 bg-card/30 p-5">
+              <span className="font-mono text-xs uppercase tracking-[0.15em] text-primary">{item.label}</span>
+              <p className="mt-3 text-sm leading-relaxed text-foreground/70">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 9. Final CTA ── */}
       <section className="scroll-reveal flex flex-col items-center px-6 py-24 text-center">
         <h2
           className="font-heading text-4xl font-bold tracking-tight md:text-5xl"
@@ -921,11 +944,11 @@ export function LandingPage() {
             <a href="/chronicles" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
               Tales
             </a>
-            <a href="/privacy" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
-              Privacy
+            <a href="/content-policy" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Content Policy
             </a>
-            <a href="/terms" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
-              Terms
+            <a href="mailto:storyforgegame@gmail.com" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Contact
             </a>
           </div>
 
