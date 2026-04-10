@@ -442,9 +442,21 @@ export function LandingPage() {
           the dice shape everything.
         </p>
         <p className="hero-stagger relative mt-8 max-w-xl text-lg leading-relaxed text-foreground/70 md:text-xl" style={{ animationDelay: '0.4s' }}>
-          Investigation. Infiltration. Political intrigue. A text RPG where the interesting choices happen between the fights.
+          Play a story you'd actually want to read.
         </p>
-        <div className="hero-stagger relative mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4" style={{ animationDelay: '0.6s' }}>
+        <a
+          href="/chronicles"
+          className="hero-stagger relative mt-6 max-w-lg border-l-2 border-primary/30 pl-4 text-left transition-colors hover:border-primary/60"
+          style={{ animationDelay: '0.5s' }}
+        >
+          <p className="text-sm italic text-foreground/40 leading-relaxed">
+            &ldquo;The note said Mira Grenn. Daughter. Twelve years. Saw you leave.&rdquo;
+          </p>
+          <span className="mt-1.5 inline-block font-mono text-[10px] text-primary/50 hover:text-primary/80 transition-colors">
+            Read the Tales of Storyforge →
+          </span>
+        </a>
+        <div className="hero-stagger relative mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4" style={{ animationDelay: '0.7s' }}>
           <a
             href="/play"
             className="bg-primary px-8 py-3.5 font-mono text-sm font-semibold text-primary-foreground transition-all hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
@@ -458,7 +470,7 @@ export function LandingPage() {
             Bring your own API key
           </a>
         </div>
-        <div className="hero-stagger relative mt-5 flex flex-col items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-muted-foreground/50" style={{ animationDelay: '0.8s' }}>
+        <div className="hero-stagger relative mt-5 flex flex-col items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-muted-foreground/50" style={{ animationDelay: '0.9s' }}>
           <span>Powered by Claude. Bring your own API key for unlimited play.</span>
           <a href="https://github.com/mheuer86/storyforge-game" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
             <Github className="h-3.5 w-3.5" />
@@ -804,7 +816,45 @@ export function LandingPage() {
       {/* Section divider */}
       <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
 
-      {/* ── 6. Mechanics ── */}
+      {/* ── 6. Chronicles ── */}
+      <section className="scroll-reveal mx-auto w-full max-w-5xl px-6 pt-20 pb-24">
+        <h2 className="mb-3 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
+          Tales of Storyforge.
+        </h2>
+        <p className="mb-10 text-center text-sm text-muted-foreground">
+          Real playthroughs, adapted into short fiction. Every story started with a dice roll.
+        </p>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            { title: 'The Margaux Hotel', genre: 'Noir', character: 'Hank Garnett, Private Investigator', excerpt: 'The woman in the doorway didn\'t look like someone in mourning. She looked like someone running a calculation.', slug: 'hank-garnett-chapter-1' },
+            { title: 'Implanted', genre: 'Cyberpunk', character: 'Ghost, Ghost', excerpt: 'Rain hammered the corrugated roof. Dr. Yara Okafor had been running the same scan for three minutes and she hadn\'t said a word since the results came up.', slug: 'ghost-sera-chapter-1' },
+            { title: 'The Tethis Run', genre: 'Epic Sci-Fi', character: 'Verum, Seeker', excerpt: 'The cuffs hung loose around her wrist like a suggestion she\'d already declined.', slug: 'verum-chapter-2' },
+            { title: 'Second Name', genre: 'Grimdark', character: 'Whisper, Cutthroat', excerpt: 'The note said Mira Grenn. Daughter. Twelve years. Saw you leave.', slug: 'whisper-chapter-1' },
+          ].map((chronicle) => (
+            <a
+              key={chronicle.slug}
+              href={`/chronicles/${chronicle.slug}`}
+              className="group border border-border/10 bg-card/30 p-5 transition-all hover:border-primary/20 hover:bg-card/50"
+            >
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-primary">{chronicle.genre}</span>
+                <span className="text-[10px] text-muted-foreground/40">{chronicle.character}</span>
+              </div>
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-2">{chronicle.title}</h3>
+              <p className="text-sm italic text-foreground/50 leading-relaxed line-clamp-2">{chronicle.excerpt}</p>
+              <span className="mt-3 inline-block text-xs text-primary/60 group-hover:text-primary transition-colors">
+                Read the story →
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* Section divider */}
+      <div style={{ width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${activeConfig.theme.primary}, transparent)`, opacity: 0.15 }} />
+
+      {/* ── 7. Mechanics ── */}
       <section className="scroll-reveal mx-auto w-full max-w-3xl px-6 pt-20 pb-24">
         <h2 className="mb-3 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">
           Not a chatbot wearing a fantasy hat.
@@ -868,6 +918,9 @@ export function LandingPage() {
 
           {/* Center: links */}
           <div className="flex items-center gap-5">
+            <a href="/chronicles" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+              Tales
+            </a>
             <a href="/privacy" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
               Privacy
             </a>
