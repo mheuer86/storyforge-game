@@ -50,7 +50,7 @@ function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
       )}
       {/* Name overlay at bottom */}
       <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/80 to-transparent">
-        <p className="text-[10px] font-bold tracking-wide uppercase text-foreground">{speciesName}</p>
+        <p className="text-sm font-bold tracking-wide uppercase text-foreground">{speciesName}</p>
       </div>
     </div>
   )
@@ -107,7 +107,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
             value={characterName}
             onChange={(e) => setCharacterName(e.target.value)}
             placeholder="Name your character..."
-            className="w-full bg-transparent border-0 border-b border-border/20 pb-3 text-2xl font-mono tracking-wider text-foreground placeholder:text-muted-foreground/25 focus:border-primary/40 focus:outline-none transition-colors sm:text-3xl"
+            className="w-full bg-transparent border-0 border-b border-border/20 pb-3 text-2xl font-heading tracking-wider text-foreground placeholder:text-muted-foreground/25 focus:border-primary/40 focus:outline-none transition-colors sm:text-3xl"
           />
         </div>
 
