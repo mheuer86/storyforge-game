@@ -13,6 +13,7 @@ import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { runRulesEngine } from '@/lib/rules-engine'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
+import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted } from '@/lib/api-key'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
 import { slashCommands as slashCommandDefs } from '@/lib/slash-commands'
@@ -120,7 +121,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     try {
       const response = await fetch('/api/game', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: apiHeaders(),
         body: JSON.stringify({
           message: '',
           gameState: state,
@@ -181,9 +182,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     let stateWithChanges = currentState
 
     try {
+      // Check demo budget before sending
+      if (isDemoBudgetExhausted()) {
+        onError('Monthly demo budget reached. Add your own API key in the menu to continue playing.')
+        return
+      }
+
       const response = await fetch('/api/game', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: apiHeaders(),
         body: JSON.stringify(body),
       })
 
@@ -270,6 +277,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 timestamp: new Date().toISOString(),
               }])
               debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
+              // Track demo usage (only counts when not using BYOK)
+              if (!isByok()) {
+                trackDemoUsage(u.inputTokens + u.outputTokens + u.cacheWriteTokens + u.cacheReadTokens)
+              }
             }
 
             if (event.type === 'tools') {

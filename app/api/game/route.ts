@@ -7,7 +7,7 @@ import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
 
-const client = new Anthropic()
+let client: Anthropic = new Anthropic()
 const MODEL = process.env.STORYFORGE_MODEL || 'claude-sonnet-4-6'
 
 export const runtime = 'nodejs'
@@ -251,12 +251,20 @@ function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isCons
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+  // BYOK: client can provide their own API key via header
+  const byokKey = req.headers.get('x-anthropic-key')
+  const isByok = !!byokKey
+
+  // If no BYOK key, require server auth (demo mode with passphrase)
+  if (!isByok && !(await isAuthenticated())) {
+    return new Response(JSON.stringify({ error: 'Unauthorized. Provide an API key or enter the access code.' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     })
   }
+
+  // Set client: use player's key if BYOK, otherwise server key
+  client = isByok ? new Anthropic({ apiKey: byokKey }) : new Anthropic()
 
   const parsed = requestSchema.safeParse(await req.json())
   if (!parsed.success) {
