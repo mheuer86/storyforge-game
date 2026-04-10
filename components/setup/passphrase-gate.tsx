@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, type ReactNode } from 'react'
+import { getApiKey, setApiKey, isByok } from '@/lib/api-key'
 
 interface PassphraseGateProps {
   children: ReactNode
@@ -8,11 +9,22 @@ interface PassphraseGateProps {
 
 export function PassphraseGate({ children }: PassphraseGateProps) {
   const [unlocked, setUnlocked] = useState(false)
+  const [mode, setMode] = useState<'access-code' | 'byok'>(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('byok')) return 'byok'
+    return 'access-code'
+  })
   const [input, setInput] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | false>(false)
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
+    // If player has a stored BYOK key, let them through
+    if (isByok()) {
+      setUnlocked(true)
+      setChecking(false)
+      return
+    }
+    // Otherwise check server auth
     fetch('/api/auth')
       .then((res) => res.json())
       .then((data) => {
@@ -22,7 +34,7 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
       .finally(() => setChecking(false))
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAccessCode = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       const res = await fetch('/api/auth', {
@@ -33,15 +45,27 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
       if (res.ok) {
         setUnlocked(true)
       } else {
-        setError(true)
+        setError('Wrong access code.')
         setInput('')
         setTimeout(() => setError(false), 1500)
       }
     } catch {
-      setError(true)
+      setError('Connection error.')
       setInput('')
       setTimeout(() => setError(false), 1500)
     }
+  }
+
+  const handleByok = (e: React.FormEvent) => {
+    e.preventDefault()
+    const key = input.trim()
+    if (!key.startsWith('sk-ant-')) {
+      setError('API key should start with sk-ant-')
+      setTimeout(() => setError(false), 2000)
+      return
+    }
+    setApiKey(key)
+    setUnlocked(true)
   }
 
   if (checking) return null
@@ -52,39 +76,84 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
         <div
-          className="font-roboto-mono text-5xl text-primary/70"
-          style={{ fontVariant: 'small-caps', textShadow: 'var(--title-glow)' }}
+          className="font-mono text-4xl text-primary/70 tracking-[0.15em]"
+          style={{ textShadow: 'var(--title-glow)' }}
         >
           storyforge
         </div>
-        <div className="mt-1 text-xs tracking-widest text-muted-foreground uppercase">
-          Text-based action RPG
+        <div className="mt-2 text-xs tracking-widest text-muted-foreground/60 uppercase">
+          the dice shape everything.
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex w-full max-w-xs flex-col gap-3">
-        <input
-          type="password"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Access code"
-          autoFocus
-          className={[
-            'rounded-lg border bg-secondary/30 px-4 py-3 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all duration-200',
-            error
-              ? 'border-destructive shadow-[0_0_10px_-3px] shadow-destructive/50'
-              : 'border-border/50 focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30',
-          ].join(' ')}
-        />
+      {/* Mode toggle */}
+      <div className="flex gap-4">
+        <button
+          onClick={() => { setMode('access-code'); setInput(''); setError(false) }}
+          className={`text-[10px] font-medium uppercase tracking-[0.15em] pb-1 transition-colors ${
+            mode === 'access-code' ? 'text-primary border-b border-primary/40' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+          }`}
+        >
+          Demo Access
+        </button>
+        <button
+          onClick={() => { setMode('byok'); setInput(''); setError(false) }}
+          className={`text-[10px] font-medium uppercase tracking-[0.15em] pb-1 transition-colors ${
+            mode === 'byok' ? 'text-primary border-b border-primary/40' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+          }`}
+        >
+          Own API Key
+        </button>
+      </div>
+
+      <form onSubmit={mode === 'access-code' ? handleAccessCode : handleByok} className="flex w-full max-w-xs flex-col gap-3">
+        {mode === 'access-code' ? (
+          <input
+            type="password"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Access code"
+            autoFocus
+            className={[
+              'rounded-lg border bg-secondary/30 px-4 py-3 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors duration-200',
+              error
+                ? 'border-destructive shadow-[0_0_10px_-3px] shadow-destructive/50'
+                : 'border-border/50 focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30',
+            ].join(' ')}
+          />
+        ) : (
+          <>
+            <input
+              type="password"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="sk-ant-..."
+              autoFocus
+              className={[
+                'rounded-lg border bg-secondary/30 px-4 py-3 text-center font-mono text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors duration-200',
+                error
+                  ? 'border-destructive shadow-[0_0_10px_-3px] shadow-destructive/50'
+                  : 'border-border/50 focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30',
+              ].join(' ')}
+            />
+            <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
+              Get a key from{' '}
+              <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary/60 hover:text-primary/80 transition-colors">
+                console.anthropic.com
+              </a>
+              . Your key stays in your browser.
+            </p>
+          </>
+        )}
         <button
           type="submit"
           className="rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           style={{ boxShadow: 'var(--action-glow)' }}
         >
-          Enter
+          {mode === 'access-code' ? 'Enter' : 'Save & Play'}
         </button>
         {error && (
-          <p className="text-center text-xs text-destructive">Wrong access code.</p>
+          <p className="text-center text-xs text-destructive">{error}</p>
         )}
       </form>
     </div>

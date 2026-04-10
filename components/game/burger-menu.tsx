@@ -25,6 +25,7 @@ import { getStatModifier, formatModifier, getSaveSlot, saveToSlot, type SaveSlot
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, Antagonist, ShipState, Notebook, OperationState, ExplorationState } from '@/lib/types'
 import { debugLog } from '@/lib/tool-processor'
+import { isByok, getApiKey, setApiKey, clearApiKey } from '@/lib/api-key'
 import { renderMarkdown } from './chat-message'
 
 interface Character {
@@ -333,6 +334,22 @@ export function BurgerMenu({
                 Start new campaign
               </Button>
             )}
+            {/* API key status */}
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground/40">
+              <span>{isByok() ? `API key: ...${getApiKey()?.slice(-6)}` : 'Demo mode'}</span>
+              {isByok() ? (
+                <button onClick={() => { clearApiKey(); window.location.reload() }} className="text-destructive/50 hover:text-destructive/80 transition-colors">
+                  Remove key
+                </button>
+              ) : (
+                <button onClick={() => {
+                  const key = prompt('Enter your Claude API key (sk-ant-...):')
+                  if (key?.startsWith('sk-ant-')) { setApiKey(key); window.location.reload() }
+                }} className="text-primary/50 hover:text-primary/80 transition-colors">
+                  Add API key
+                </button>
+              )}
+            </div>
             <a
               href="https://buymeacoffee.com/storyforgegame"
               target="_blank"
