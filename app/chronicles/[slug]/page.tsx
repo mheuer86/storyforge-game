@@ -95,8 +95,17 @@ export default async function ChroniclePage({ params }: { params: Promise<{ slug
           style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)' }}
         >
           {paragraphs.map((p, i) => {
-            if (p.trim() === '---') {
+            const trimmed = p.trim()
+            if (trimmed === '---') {
               return <hr key={i} className="my-10 border-border" />
+            }
+            // Handle ## headings
+            if (trimmed.startsWith('## ')) {
+              return (
+                <h2 key={i} className="mt-12 mb-6 text-lg font-semibold tracking-tight text-foreground/90">
+                  {trimmed.slice(3)}
+                </h2>
+              )
             }
             // Handle *italics* in text
             const rendered = p.split(/(\*[^*]+\*)/).map((segment, j) => {
