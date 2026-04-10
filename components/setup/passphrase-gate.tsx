@@ -18,9 +18,15 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
+    const wantsByok = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('byok')
     // If player has a stored BYOK key, let them through
     if (isByok()) {
       setUnlocked(true)
+      setChecking(false)
+      return
+    }
+    // If user clicked "Bring your own API key", show the BYOK form even if demo-authenticated
+    if (wantsByok) {
       setChecking(false)
       return
     }
