@@ -136,15 +136,15 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
                   : 'border-border/50 focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30',
               ].join(' ')}
             />
-            <div className="flex flex-col gap-2 text-[10px] text-muted-foreground/40 text-center leading-relaxed">
+            <div className="flex flex-col gap-3 text-xs text-foreground/70 text-center leading-relaxed">
               <p>
                 Get a key from{' '}
-                <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary/60 hover:text-primary/80 transition-colors">
+                <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
                   console.anthropic.com
                 </a>
               </p>
-              <div className="flex flex-col gap-1 border border-border/10 rounded-lg p-3 text-left">
-                <p>Your key is stored in your browser&apos;s local storage only. It is never sent to or stored on our servers.</p>
+              <div className="flex flex-col gap-2 border border-border/15 rounded-lg p-4 text-left text-foreground/60">
+                <p>Your key is stored in your browser only. It is never sent to or stored on our servers.</p>
                 <p>Cost per chapter is under 1EUR, paid directly to Anthropic through your own account.</p>
                 <p>You can remove your key at any time from the in-game menu.</p>
               </div>
