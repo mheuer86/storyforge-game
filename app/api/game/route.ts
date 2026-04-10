@@ -355,14 +355,24 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const allToolResults: Anthropic.ToolResultBlockParam[] = [
-            ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-            { type: 'tool_result', tool_use_id: toolUseId, content: rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType) },
-          ]
+          const resultText = rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType)
+
+          // For auto-chained damage/healing rolls, the toolUseId was generated client-side
+          // and has no matching tool_use in Claude's messages. Send as text instead of tool_result.
+          const isAutoChained = toolUseId.startsWith('dmg-auto-')
+          const resultContent: Anthropic.ContentBlockParam[] = isAutoChained
+            ? [
+                ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
+                { type: 'text' as const, text: resultText },
+              ]
+            : [
+                ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
+                { type: 'tool_result' as const, tool_use_id: toolUseId, content: resultText },
+              ]
 
           const continuationMessages: Anthropic.MessageParam[] = [
             ...(pendingMessages as Anthropic.MessageParam[]),
-            { role: 'user', content: allToolResults },
+            { role: 'user', content: resultContent },
           ]
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
