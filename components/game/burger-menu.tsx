@@ -140,6 +140,9 @@ export function BurgerMenu({
   const [loadConfirm, setLoadConfirm] = useState<SaveSlotData | null>(null)
   const [newGameConfirm, setNewGameConfirm] = useState(false)
   const [slots, setSlots] = useState<(SaveSlotData | null)[]>([null, null, null])
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [apiKeyError, setApiKeyError] = useState('')
   const [savedSlot, setSavedSlot] = useState<number | null>(null)
 
   const openSaveLoad = (mode: 'save' | 'load') => {
@@ -342,10 +345,7 @@ export function BurgerMenu({
                   Remove key
                 </button>
               ) : (
-                <button onClick={() => {
-                  const key = prompt('Enter your Claude API key (sk-ant-...):')
-                  if (key?.startsWith('sk-ant-')) { setApiKey(key); window.location.reload() }
-                }} className="text-primary/50 hover:text-primary/80 transition-colors">
+                <button onClick={() => setApiKeyDialogOpen(true)} className="text-primary/50 hover:text-primary/80 transition-colors">
                   Add API key
                 </button>
               )}
@@ -362,6 +362,45 @@ export function BurgerMenu({
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      {/* API Key dialog */}
+      <Dialog open={apiKeyDialogOpen} onOpenChange={(open) => { setApiKeyDialogOpen(open); if (!open) { setApiKeyInput(''); setApiKeyError('') } }}>
+        <DialogContent className="max-w-sm border-border/50 bg-card/95">
+          <DialogHeader>
+            <DialogTitle>Add API Key</DialogTitle>
+            <DialogDescription>
+              Your key is stored in your browser only and never sent to our servers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => { setApiKeyInput(e.target.value); setApiKeyError('') }}
+              placeholder="sk-ant-..."
+              className="rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:shadow-[0_0_10px_-3px] focus:shadow-primary/30"
+            />
+            <div className="flex flex-col gap-1.5 text-xs text-foreground/50">
+              <p>Get a key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:text-primary transition-colors">console.anthropic.com</a></p>
+              <p>Cost per chapter is under 1EUR, paid directly to Anthropic.</p>
+            </div>
+            {apiKeyError && <p className="text-xs text-destructive">{apiKeyError}</p>}
+            <Button
+              onClick={() => {
+                const key = apiKeyInput.trim()
+                if (!key.startsWith('sk-ant-')) { setApiKeyError('API key should start with sk-ant-'); return }
+                setApiKey(key)
+                setApiKeyDialogOpen(false)
+                setApiKeyInput('')
+                window.location.reload()
+              }}
+              className="w-full"
+            >
+              Save & Play
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Save / Load dialog */}
       <Dialog open={saveMode !== null} onOpenChange={(o) => { if (!o) setSaveMode(null) }}>
