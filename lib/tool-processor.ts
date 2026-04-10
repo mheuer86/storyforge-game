@@ -104,13 +104,17 @@ function applyCharacterChanges(
   const char = { ...updated.character }
 
   if (input.hp_delta !== undefined) {
-    const newHp = Math.max(0, Math.min(char.hp.max, char.hp.current + input.hp_delta))
-    if (input.hp_delta < 0) {
-      statChanges.push({ type: 'loss', label: `HP ${char.hp.current} → ${newHp}` })
-    } else if (input.hp_delta > 0) {
-      statChanges.push({ type: 'gain', label: `HP ${char.hp.current} → ${newHp}` })
+    // Guard: reject phantom damage (negative hp_delta without a roll_breakdown or active combat)
+    const isPhantomDamage = input.hp_delta < 0 && !input.roll_breakdown && !updated.combat.active
+    if (!isPhantomDamage) {
+      const newHp = Math.max(0, Math.min(char.hp.max, char.hp.current + input.hp_delta))
+      if (input.hp_delta < 0) {
+        statChanges.push({ type: 'loss', label: `HP ${char.hp.current} → ${newHp}` })
+      } else if (input.hp_delta > 0) {
+        statChanges.push({ type: 'gain', label: `HP ${char.hp.current} → ${newHp}` })
+      }
+      char.hp = { ...char.hp, current: newHp }
     }
-    char.hp = { ...char.hp, current: newHp }
   }
 
   if (input.hp_set !== undefined) {
