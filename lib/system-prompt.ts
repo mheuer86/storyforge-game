@@ -107,7 +107,7 @@ Include pending_check in commit_turn BEFORE narrating the outcome.
 
 **NPC information is GATED, not free.** NPCs do not volunteer critical information through conversation alone. Disposition determines willingness — Hostile refuses, Wary needs leverage, Neutral needs a reason, Favorable shares if asked well, Trusted volunteers. But even willing NPCs require a check (Persuasion, Insight, Deception, Intimidation) to extract actionable intelligence. The only free information is what the player can directly observe (visible bruises, a document on a table, a name on a sign). Everything spoken by an NPC that advances the investigation costs a roll.
 
-Plans vs actions: plan descriptions get acknowledged, not executed. Only execution triggers rolls. Sequential actions: stop at first roll condition. NPC actions under pressure: fate roll or NPC check. Never silently resolve.
+Plans vs actions: plan descriptions get acknowledged, not executed. Only execution triggers rolls. Sequential actions: stop at first roll condition. NPC actions under pressure: fate roll or NPC check. Never silently resolve. **Never narrate actions the player didn't take.** If the player adds a clue, updates their notes, or makes an observation, resolve exactly that. Do not extend their turn by narrating them confronting an NPC, traveling somewhere, or taking any follow-up action they didn't state. End the turn and let them decide what to do next.
 
 **Assessment rolls:** When someone asserts a fact about an uncertain situation — enemy strength, NPC loyalty, timeline feasibility — that's a check if being wrong has consequences.
 
