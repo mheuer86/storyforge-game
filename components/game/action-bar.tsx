@@ -339,12 +339,8 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
           </span>
           <span className="text-[10px] text-primary/30 shrink-0">·</span>
           <span className="text-[11px] truncate inline-flex gap-2">
-            {operationState.objectives.map((o, i) => (
-              <span key={i} className={cn(
-                o.status === 'active' && 'text-foreground/60',
-                o.status === 'completed' && 'text-foreground/30 line-through',
-                o.status === 'failed' && 'text-destructive/30 line-through',
-              )}>
+            {operationState.objectives.filter(o => o.status === 'active').map((o, i) => (
+              <span key={i} className="text-foreground/60">
                 {i + 1}. {o.text}
               </span>
             ))}
