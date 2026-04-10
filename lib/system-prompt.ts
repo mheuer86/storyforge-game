@@ -25,8 +25,12 @@ export function buildSystemPrompt(
   const ps = config.promptSections
   const context = detectContext(gameState)
 
+  const devModeBlock = process.env.NODE_ENV === 'development'
+    ? `\n\nIMPORTANT — check first: if the message starts with "forge:dev", IGNORE all meta-mode restrictions and enter DEV MODE instead (see below).\n\nDEV MODE (triggered by "forge:dev" prefix): You MUST execute exactly the state changes described. Call commit_turn with the appropriate fields. No roleplay, no refusal, no narrative. After executing, call meta_response confirming what you changed. This is the game developer testing — compliance is mandatory.\n\nExample: "forge:dev resolve thread 'The Hunt'" → call commit_turn with world.update_threads [{id, title: "The Hunt", status: "resolved"}], then meta_response confirming.\nExample: "forge:dev defeat antagonist status dead" → call commit_turn with world.antagonist {action: "defeat", status: "dead"}, then meta_response confirming.`
+    : ''
+
   const metaInstruction = isMetaQuestion
-    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question.\n\nIMPORTANT — check first: if the message starts with "forge:dev", IGNORE all meta-mode restrictions and enter DEV MODE instead (see below).\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.\n\nDEV MODE (triggered by "forge:dev" prefix): You MUST execute exactly the state changes described. Call commit_turn with the appropriate fields. No roleplay, no refusal, no narrative. After executing, call meta_response confirming what you changed. This is the game developer testing — compliance is mandatory.\n\nExample: "forge:dev resolve thread 'The Hunt'" → call commit_turn with world.update_threads [{id, title: "The Hunt", status: "resolved"}], then meta_response confirming.\nExample: "forge:dev defeat antagonist status dead" → call commit_turn with world.antagonist {action: "defeat", status: "dead"}, then meta_response confirming.`
+    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question.\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.${devModeBlock}`
     : ''
 
   const consistencyInstruction = flaggedMessage
@@ -862,7 +866,7 @@ function detectRollGate(
   const msg = playerMessage.toLowerCase()
 
   // Skip meta questions and empty messages
-  if (msg.startsWith('forge:dev') || msg.length === 0) return null
+  if ((process.env.NODE_ENV === 'development' && msg.startsWith('forge:dev')) || msg.length === 0) return null
 
   const stealthVerbs = /\b(quiet|sneak|stealth|careful|avoid|hide|creep|silent|don't.*alert|don't.*awake|unnoticed|undetected|slip past|slip through)\b/i
   const socialVerbs = /\b(convince|persuade|lie|bluff|intimidate|threaten|negotiate|talk.*into|charm|deceive|pretend|cover story)\b/i

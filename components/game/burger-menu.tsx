@@ -226,8 +226,8 @@ export function BurgerMenu({
                     setExpandedChapter(expandedChapter === num ? null : num)
                   }
                 />
-                {/* Token usage stats */}
-                {tokenLog && tokenLog.length > 0 && (() => {
+                {/* Token usage stats (dev only) */}
+                {process.env.NODE_ENV === 'development' && tokenLog && tokenLog.length > 0 && (() => {
                   const totals = tokenLog.reduce((acc, t) => ({
                     input: acc.input + t.input,
                     output: acc.output + t.output,
@@ -358,7 +358,7 @@ export function BurgerMenu({
             >
               Every hero needs a patron. Buy me a beer&nbsp;→
             </a>
-            <DebugPanel />
+            {process.env.NODE_ENV === 'development' && <DebugPanel />}
           </SheetFooter>
         </SheetContent>
       </Sheet>
