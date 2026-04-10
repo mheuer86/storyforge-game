@@ -608,15 +608,20 @@ Be analytical, not narrative. The ${config.currencyName} system uses ${config.cu
       ? `\nGM SELF-ASSESSMENT:\n${gameState.meta.selfAssessment}`
       : ''
 
-    // Build roll log summary for the debrief
+    // The completed chapter is one behind current (Phase 1 already incremented)
+    const completedChapterNum = gameState.meta.chapterNumber - 1
+    const completedChapter = gameState.history.chapters.find(ch => ch.number === completedChapterNum)
+    const completedChapterTitle = completedChapter?.title ?? 'previous chapter'
+
+    // Roll log is preserved through Phase 1 (cleared on next chapter start, not on close)
     const rollLog = gameState.history.rollLog || []
     const rollSummary = rollLog.length > 0
-      ? `\nROLL LOG (actual results this chapter):\n${rollLog.map(r =>
+      ? `\nROLL LOG (actual results from Chapter ${completedChapterNum}: ${completedChapterTitle}):\n${rollLog.map(r =>
           `- ${r.check} (${r.stat}): rolled ${r.roll}${r.modifier >= 0 ? '+' : ''}${r.modifier}=${r.total} vs DC ${r.dc} → ${r.result.toUpperCase()}${r.reason ? ` — "${r.reason}"` : ''}`
         ).join('\n')}\n\nTotal: ${rollLog.length} rolls, ${rollLog.filter(r => r.result === 'success' || r.result === 'critical').length} successes, ${rollLog.filter(r => r.result === 'failure' || r.result === 'fumble').length} failures.`
-      : '\nNo rolls recorded this chapter.'
+      : `\nNo rolls recorded in Chapter ${completedChapterNum}.`
 
-    const instructions = `You are the chapter debrief analyst for a ${config.name} RPG. Execute in ONE commit_turn call.
+    const instructions = `You are the debrief analyst for Chapter ${completedChapterNum}: "${completedChapterTitle}" of a ${config.name} RPG. You are analyzing the COMPLETED chapter, not the upcoming one. Execute in ONE commit_turn call.
 
 1. SKILL POINTS: Award 0-2 via character.add_proficiency. Criteria:
    - A non-proficient skill was used creatively

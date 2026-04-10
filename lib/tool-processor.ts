@@ -1074,7 +1074,7 @@ function applyNarrativeChanges(
           nextChapter,
         ],
         messages: [],
-        rollLog: [],
+        // Keep rollLog until Phase 2 debrief has used it — cleared on next chapter start
       },
       world: updated.world.antagonist
         ? { ...updated.world, antagonist: { ...updated.world.antagonist, movedThisChapter: false } }
