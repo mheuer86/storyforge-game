@@ -927,6 +927,15 @@ export function LandingPage() {
         <p className="mt-8 max-w-sm font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
           Built by one person with Claude Code.
         </p>
+        <a
+          href="https://buymeacoffee.com/storyforgegame"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-primary/50 hover:text-primary/80 transition-colors"
+        >
+          <Beer className="h-3.5 w-3.5" />
+          Buy me a beer
+        </a>
       </section>
 
       {/* ── 8. Footer ── */}
