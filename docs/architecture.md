@@ -175,7 +175,7 @@ Main game UI. Client component. Responsibilities:
 4. Client sends POST with `isChapterClose: true`
 5. Close sequence:
    - **Phase 1 (Haiku, foreground):** audit fixes, close_chapter (key_events = narrative only, no hidden mechanics), level-up, chapter_frame for next chapter, arc advancement. MUST produce close_chapter + level_up + chapter_frame.
-   - **Phase 2 (Haiku, foreground):** skill points, debrief (tactical, strategic, lucky breaks, costs, promises). MUST produce debrief.
+   - **Phase 2 (Sonnet, foreground):** skill points, debrief (tactical, strategic, lucky breaks, costs, promises). MUST produce debrief.
    - **Phase 3 (Sonnet, background):** pivotal scene selection, signature line curation. Merges results into state without overwriting closeData or chapterClosed flags. Player sees overlay after phase 1-2 (~10s).
 6. `close_chapter` in commit_turn triggers: chapter archived with messages and scene summaries, chapter-scoped state reset (scope signals, chapter counters, objective resolved turn, pending scene summary flag), persistent state preserved (counters, pivotal scenes, roll sequences, story arcs).
 

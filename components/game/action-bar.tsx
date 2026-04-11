@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { HelpCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { slashCommands } from '@/lib/slash-commands'
-import type { Notebook, ClueConnection, Clue, OperationState } from '@/lib/types'
+import type { Notebook, ClueConnection, Clue, OperationState, CombatState } from '@/lib/types'
 
 interface PickerItem {
   id: string
@@ -27,10 +27,11 @@ interface ActionBarProps {
   onPrefillConsumed?: () => void
   notebook?: Notebook | null
   operationState?: OperationState | null
+  combatState?: CombatState | null
   onOpenIntel?: () => void
 }
 
-export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, onOpenIntel }: ActionBarProps) {
+export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, combatState, onOpenIntel }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
@@ -346,6 +347,39 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
             ))}
           </span>
         </button>
+      )}
+
+      {/* Combat HUD — enemy health bars during active combat */}
+      {combatState && combatState.active && combatState.enemies.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/[0.04] px-3 py-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0 bg-destructive animate-pulse" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-destructive/80 shrink-0">
+            Combat — Round {combatState.round}
+          </span>
+          <span className="text-[10px] text-destructive/20 shrink-0">·</span>
+          {combatState.enemies.map((enemy) => {
+            const pct = enemy.hp.max > 0 ? Math.max(0, Math.min(100, (enemy.hp.current / enemy.hp.max) * 100)) : 0
+            const barColor = pct > 50 ? 'bg-destructive/60' : pct > 25 ? 'bg-warning/70' : 'bg-red-500/80'
+            return (
+              <div key={enemy.id} className="flex items-center gap-1.5">
+                <span className={cn(
+                  'text-[11px]',
+                  enemy.hp.current <= 0 ? 'text-foreground/25 line-through' : 'text-foreground/60'
+                )}>
+                  {enemy.name}
+                </span>
+                {enemy.hp.current > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-12 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                      <div className={cn('h-full rounded-full transition-all duration-500', barColor)} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-[9px] font-mono text-foreground/40">{enemy.hp.current}/{enemy.hp.max}</span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {/* Custom Input — contained area */}
