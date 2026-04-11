@@ -218,3 +218,13 @@ Long-running narrative structures that persist across chapters, providing campai
 **Retinue/ship upgrades** use the asset system (L1-L3 per system). The prompt instructs Claude to offer 2-3 upgrade options at narrative-appropriate moments (refit stops, markets, salvage, downtime). Upgrades are called via `update_ship` in commit_turn.
 
 **Known gap:** Retinue upgrades rely on Claude narrating a refit/upgrade opportunity, which doesn't always happen — especially with tighter chapter pacing (18-21 turns). Under consideration: a "upgrade earned" flag set at chapter close that Claude weaves into the next chapter's narrative when the setting allows. The flag provides enforcement; Claude controls timing to respect the fiction (no upgrades while fleeing, etc.). Player chooses through in-narrative dialogue, not a UI selector.
+
+## 11. Action Bar HUDs
+
+The action bar displays contextual HUD strips above the input based on game state. Multiple HUDs stack when their conditions overlap (e.g. combat during an infiltration).
+
+**Operation HUD** — Appears when `operationState.phase` is `active` or `extraction`. Shows operation name, pulsing status dot (green for active, yellow for extraction), and active objectives. Completed/failed objectives are hidden from the HUD but remain visible in the burger menu intel panel. Clicking opens the intel tab.
+
+**Combat HUD** — Appears when `combat.active` is true and enemies exist. Shows round number, pulsing red dot, and each enemy with a name + health bar + HP fraction. Health bar color shifts by HP percentage: normal > 50%, warning 25-50%, critical < 25%. Dead enemies (HP 0) show as strikethrough with no bar.
+
+Both HUDs are rendered in `components/game/action-bar.tsx`. Data flows from `GameState.world.operationState` and `GameState.combat` via props from `game-screen.tsx`.
