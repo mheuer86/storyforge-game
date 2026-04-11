@@ -1321,7 +1321,11 @@ export function applyToolResults(
   if (sceneBreaks.length > 0) {
     (updated as GameState & { _sceneBreaks?: string[] })._sceneBreaks = sceneBreaks
   }
-  // Store mutation keys for cross-turn dedup (cleared when no mutations occur)
-  ;(updated as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys = mutationKeys.length > 0 ? mutationKeys : undefined
+  // Store mutation keys for cross-turn dedup
+  // Keep previous keys alive if no new mutations this turn (prevents gap-then-repeat pattern)
+  // Only replace when new mutations occur (the new set becomes the guard for next turn)
+  if (mutationKeys.length > 0) {
+    ;(updated as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys = mutationKeys
+  }
   return updated
 }
