@@ -201,7 +201,7 @@ PassphraseGate → DemoBudgetGate → AppContent (game)
 
 1. **PassphraseGate** (`components/setup/passphrase-gate.tsx`): Checks authentication. BYOK users (key in localStorage) pass through immediately. Demo users authenticate via access code (server-side session cookie). If `?byok=1` is in the URL and the user is demo-authenticated, shows the BYOK form instead of passing through.
 
-2. **DemoBudgetGate** (`components/setup/demo-budget-gate.tsx`): For demo users only. Checks client-side token counter (`storyforge_demo_usage` in localStorage) against `DEMO_MONTHLY_BUDGET` (2M tokens). If exhausted, shows a full-screen BYOK key entry form. BYOK users bypass entirely.
+2. **DemoBudgetGate** (`components/setup/demo-budget-gate.tsx`): For demo users only. Checks client-side token counter (`storyforge_demo_usage` in localStorage) against `DEMO_MONTHLY_BUDGET` (250K tokens). If exhausted, shows a full-screen BYOK key entry form. BYOK users bypass entirely.
 
 3. **In-game budget dialog** (`game-screen.tsx`): If demo budget runs out mid-game (client-side check before each API call, or Anthropic credit/billing errors from the server), a modal dialog prompts for a BYOK key instead of showing an inline error.
 

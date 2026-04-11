@@ -68,7 +68,7 @@ export function getDemoTokensUsed(): number {
 }
 
 /** Monthly demo budget */
-export const DEMO_MONTHLY_BUDGET = 2_000_000
+export const DEMO_MONTHLY_BUDGET = 250_000
 
 /** Check if demo budget is exhausted */
 export function isDemoBudgetExhausted(): boolean {
