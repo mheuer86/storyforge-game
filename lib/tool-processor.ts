@@ -103,6 +103,8 @@ function applyCharacterChanges(
   statChanges: StatChange[],
   creditChangesThisBatch: number[],
   currLabel: string,
+  lastMutationKeys: string[],
+  mutationKeys: string[],
 ): GameState {
   const char = { ...updated.character }
 
@@ -127,9 +129,14 @@ function applyCharacterChanges(
   }
 
   if (input.credits_delta !== undefined) {
+    // Cross-turn dedup: same delta applied to same balance = duplicate
+    const creditMutKey = `credits:${input.credits_delta}:${char.credits}`
     if (creditChangesThisBatch.includes(input.credits_delta)) {
       dbg('DUPLICATE credit change rejected (same batch): ' + input.credits_delta)
+    } else if (lastMutationKeys.includes(creditMutKey)) {
+      dbg('DUPLICATE credit change rejected (same as last turn, same balance): ' + input.credits_delta)
     } else {
+      mutationKeys.push(creditMutKey)
       creditChangesThisBatch.push(input.credits_delta)
       const newCredits = char.credits + input.credits_delta
       if (input.credits_delta < 0) {
@@ -163,6 +170,17 @@ function applyCharacterChanges(
 
   if (input.inventory_use) {
     const useId = input.inventory_use.id.toLowerCase()
+    // Cross-turn dedup: same item + same charge operation = duplicate
+    const targetItem = char.inventory.find(item => {
+      const id = item.id.toLowerCase(); const name = item.name.toLowerCase(); const slug = name.replace(/\s+/g, '_')
+      return id === useId || id.startsWith(useId) || useId.startsWith(id) || name === useId || name.startsWith(useId) || slug === useId || slug.startsWith(useId)
+    })
+    const currentCharges = targetItem?.charges ?? targetItem?.quantity ?? 0
+    const invMutKey = `inv_use:${useId}:${currentCharges}:${input.inventory_use.set_charges ?? 'dec'}`
+    if (lastMutationKeys.includes(invMutKey)) {
+      dbg('DUPLICATE inventory_use rejected (same as last turn): ' + useId)
+    } else {
+      mutationKeys.push(invMutKey)
     let matched = false
     char.inventory = char.inventory.map((item) => {
       const id = item.id.toLowerCase()
@@ -193,6 +211,7 @@ function applyCharacterChanges(
       }
       return item
     })
+    } // end cross-turn dedup else
   }
 
   if (input.temp_modifier_add) {
@@ -1265,6 +1284,8 @@ export function applyToolResults(
   const creditChangesThisBatch: number[] = []
   const currLabel = (() => { try { return getGenreConfig(currentState.meta.genre as Genre).currencyName } catch { return 'credits' } })()
   const ledgerEntriesThisBatch: string[] = []
+  const mutationKeys: string[] = []
+  const lastMutationKeys: string[] = (currentState as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys ?? []
 
   for (const result of results) {
     // ── commit_turn: the single game tool ──
@@ -1272,7 +1293,7 @@ export function applyToolResults(
       const input = result.input as unknown as CommitTurnInput
 
       if (input.character) {
-        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch, currLabel)
+        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch, currLabel, lastMutationKeys, mutationKeys)
       }
       if (input.world) {
         updated = applyWorldChanges(input.world, updated, statChanges, sceneBreaks, ledgerEntriesThisBatch)
@@ -1304,5 +1325,7 @@ export function applyToolResults(
   if (sceneBreaks.length > 0) {
     (updated as GameState & { _sceneBreaks?: string[] })._sceneBreaks = sceneBreaks
   }
+  // Store mutation keys for cross-turn dedup (cleared when no mutations occur)
+  ;(updated as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys = mutationKeys.length > 0 ? mutationKeys : undefined
   return updated
 }
