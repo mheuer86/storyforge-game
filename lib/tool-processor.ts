@@ -1,5 +1,7 @@
 import type { GameState, ToolCallResult, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock, RollRecord, RollBreakdown, Notebook } from './types'
 import { resetChapterCounters } from './rules-engine'
+import { getGenreConfig } from './genres'
+import type { Genre } from './genres'
 
 export interface StatChange {
   type: 'gain' | 'loss' | 'new' | 'neutral'
@@ -100,6 +102,7 @@ function applyCharacterChanges(
   updated: GameState,
   statChanges: StatChange[],
   creditChangesThisBatch: number[],
+  currLabel: string,
 ): GameState {
   const char = { ...updated.character }
 
@@ -130,9 +133,9 @@ function applyCharacterChanges(
       creditChangesThisBatch.push(input.credits_delta)
       const newCredits = char.credits + input.credits_delta
       if (input.credits_delta < 0) {
-        statChanges.push({ type: 'loss', label: `${char.credits}cr → ${newCredits}cr` })
+        statChanges.push({ type: 'loss', label: `${char.credits} ${currLabel} → ${newCredits}` })
       } else {
-        statChanges.push({ type: 'gain', label: `+${input.credits_delta}cr` })
+        statChanges.push({ type: 'gain', label: `+${input.credits_delta} ${currLabel}` })
       }
       char.credits = newCredits
     }
@@ -898,6 +901,7 @@ function applyCombatChanges(
   input: NonNullable<CommitTurnInput['combat']>,
   updated: GameState,
   statChanges: StatChange[],
+  currLabel: string,
 ): GameState {
   if (input.start) {
     // Map snake_case attack_bonus to camelCase attackBonus
@@ -955,7 +959,7 @@ function applyCombatChanges(
     }
     if (input.end.credits_gained) {
       const char = { ...updated.character, credits: updated.character.credits + input.end.credits_gained }
-      statChanges.push({ type: 'gain', label: `+${input.end.credits_gained}cr` })
+      statChanges.push({ type: 'gain', label: `+${input.end.credits_gained} ${currLabel}` })
       updated = { ...updated, character: char }
     }
     updated = {
@@ -1259,6 +1263,7 @@ export function applyToolResults(
   let updated = { ...currentState }
   const sceneBreaks: string[] = []
   const creditChangesThisBatch: number[] = []
+  const currLabel = (() => { try { return getGenreConfig(currentState.meta.genre as Genre).currencyName } catch { return 'credits' } })()
   const ledgerEntriesThisBatch: string[] = []
 
   for (const result of results) {
@@ -1267,13 +1272,13 @@ export function applyToolResults(
       const input = result.input as unknown as CommitTurnInput
 
       if (input.character) {
-        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch)
+        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch, currLabel)
       }
       if (input.world) {
         updated = applyWorldChanges(input.world, updated, statChanges, sceneBreaks, ledgerEntriesThisBatch)
       }
       if (input.combat) {
-        updated = applyCombatChanges(input.combat, updated, statChanges)
+        updated = applyCombatChanges(input.combat, updated, statChanges, currLabel)
       }
       updated = applyNarrativeChanges(input, updated, statChanges, trackEvent)
     }
