@@ -129,8 +129,8 @@ function applyCharacterChanges(
   }
 
   if (input.credits_delta !== undefined) {
-    // Cross-turn dedup: same delta applied to same balance = duplicate
-    const creditMutKey = `credits:${input.credits_delta}:${char.credits}`
+    // Cross-turn dedup: same delta on consecutive turns = duplicate echo
+    const creditMutKey = `credits:${input.credits_delta}`
     if (creditChangesThisBatch.includes(input.credits_delta)) {
       dbg('DUPLICATE credit change rejected (same batch): ' + input.credits_delta)
     } else if (lastMutationKeys.includes(creditMutKey)) {
@@ -171,12 +171,8 @@ function applyCharacterChanges(
   if (input.inventory_use) {
     const useId = input.inventory_use.id.toLowerCase()
     // Cross-turn dedup: same item + same charge operation = duplicate
-    const targetItem = char.inventory.find(item => {
-      const id = item.id.toLowerCase(); const name = item.name.toLowerCase(); const slug = name.replace(/\s+/g, '_')
-      return id === useId || id.startsWith(useId) || useId.startsWith(id) || name === useId || name.startsWith(useId) || slug === useId || slug.startsWith(useId)
-    })
-    const currentCharges = targetItem?.charges ?? targetItem?.quantity ?? 0
-    const invMutKey = `inv_use:${useId}:${currentCharges}:${input.inventory_use.set_charges ?? 'dec'}`
+    // Cross-turn dedup: same item use on consecutive turns = duplicate echo
+    const invMutKey = `inv_use:${useId}`
     if (lastMutationKeys.includes(invMutKey)) {
       dbg('DUPLICATE inventory_use rejected (same as last turn): ' + useId)
     } else {
