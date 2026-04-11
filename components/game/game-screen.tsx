@@ -1733,6 +1733,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             onPrefillConsumed={() => setActionBarPrefill(undefined)}
             notebook={gameState.world.notebook}
             operationState={gameState.world.operationState}
+            combatState={gameState.combat}
             onOpenIntel={() => { setMenuInitialTab('intel'); setIsMenuOpen(true) }}
           />
         </div>
