@@ -128,7 +128,7 @@ function applyCharacterChanges(
 
   if (input.credits_delta !== undefined) {
     if (creditChangesThisBatch.includes(input.credits_delta)) {
-      dbg('DUPLICATE credit change rejected: ' + input.credits_delta)
+      dbg('DUPLICATE credit change rejected (same batch): ' + input.credits_delta)
     } else {
       creditChangesThisBatch.push(input.credits_delta)
       const newCredits = char.credits + input.credits_delta
