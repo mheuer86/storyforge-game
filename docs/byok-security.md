@@ -4,7 +4,7 @@ Storyforge supports two modes: **demo** (server-side API key, access code protec
 
 ## Demo budget & BYOK enforcement
 
-Demo mode has a client-side monthly token budget of **2M tokens** per browser (`DEMO_MONTHLY_BUDGET` in `lib/api-key.ts`). Token usage is tracked in localStorage (`storyforge_demo_usage`) and resets on the 1st of each month (keyed by `YYYY-MM`).
+Demo mode has a client-side monthly token budget of **250K tokens** per browser (`DEMO_MONTHLY_BUDGET` in `lib/api-key.ts`). Token usage is tracked in localStorage (`storyforge_demo_usage`) and resets on the 1st of each month (keyed by `YYYY-MM`).
 
 When the budget is exhausted, players are prompted to enter their own API key at three points:
 
