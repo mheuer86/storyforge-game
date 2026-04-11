@@ -103,8 +103,7 @@ function applyCharacterChanges(
   statChanges: StatChange[],
   creditChangesThisBatch: number[],
   currLabel: string,
-  lastMutationKeys: string[],
-  mutationKeys: string[],
+  fullInput: CommitTurnInput,
 ): GameState {
   const char = { ...updated.character }
 
@@ -129,14 +128,17 @@ function applyCharacterChanges(
   }
 
   if (input.credits_delta !== undefined) {
-    // Cross-turn dedup: same delta on consecutive turns = duplicate echo
-    const creditMutKey = `credits:${input.credits_delta}`
+    // Cross-turn dedup: if this deduction has an associated ledger entry that already
+    // exists in the ledger, it's a duplicate transaction Claude is echoing
+    const ledgerEntry = fullInput?.world?.add_ledger_entry
+    const ledgerAlreadyExists = ledgerEntry && (updated.world.ledger ?? []).some(
+      e => e.amount === ledgerEntry.amount && e.description === ledgerEntry.description
+    )
     if (creditChangesThisBatch.includes(input.credits_delta)) {
       dbg('DUPLICATE credit change rejected (same batch): ' + input.credits_delta)
-    } else if (lastMutationKeys.includes(creditMutKey)) {
-      dbg('DUPLICATE credit change rejected (same as last turn, same balance): ' + input.credits_delta)
+    } else if (ledgerAlreadyExists) {
+      dbg('DUPLICATE credit change rejected (ledger entry already exists): ' + input.credits_delta + ' ' + ledgerEntry?.description)
     } else {
-      mutationKeys.push(creditMutKey)
       creditChangesThisBatch.push(input.credits_delta)
       const newCredits = char.credits + input.credits_delta
       if (input.credits_delta < 0) {
@@ -170,13 +172,6 @@ function applyCharacterChanges(
 
   if (input.inventory_use) {
     const useId = input.inventory_use.id.toLowerCase()
-    // Cross-turn dedup: same item + same charge operation = duplicate
-    // Cross-turn dedup: same item use on consecutive turns = duplicate echo
-    const invMutKey = `inv_use:${useId}`
-    if (lastMutationKeys.includes(invMutKey)) {
-      dbg('DUPLICATE inventory_use rejected (same as last turn): ' + useId)
-    } else {
-      mutationKeys.push(invMutKey)
     let matched = false
     char.inventory = char.inventory.map((item) => {
       const id = item.id.toLowerCase()
@@ -207,7 +202,6 @@ function applyCharacterChanges(
       }
       return item
     })
-    } // end cross-turn dedup else
   }
 
   if (input.temp_modifier_add) {
@@ -1280,8 +1274,6 @@ export function applyToolResults(
   const creditChangesThisBatch: number[] = []
   const currLabel = (() => { try { return getGenreConfig(currentState.meta.genre as Genre).currencyName } catch { return 'credits' } })()
   const ledgerEntriesThisBatch: string[] = []
-  const mutationKeys: string[] = []
-  const lastMutationKeys: string[] = (currentState as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys ?? []
 
   for (const result of results) {
     // ── commit_turn: the single game tool ──
@@ -1289,7 +1281,7 @@ export function applyToolResults(
       const input = result.input as unknown as CommitTurnInput
 
       if (input.character) {
-        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch, currLabel, lastMutationKeys, mutationKeys)
+        updated = applyCharacterChanges(input.character, updated, statChanges, creditChangesThisBatch, currLabel, input)
       }
       if (input.world) {
         updated = applyWorldChanges(input.world, updated, statChanges, sceneBreaks, ledgerEntriesThisBatch)
@@ -1320,12 +1312,6 @@ export function applyToolResults(
 
   if (sceneBreaks.length > 0) {
     (updated as GameState & { _sceneBreaks?: string[] })._sceneBreaks = sceneBreaks
-  }
-  // Store mutation keys for cross-turn dedup
-  // Keep previous keys alive if no new mutations this turn (prevents gap-then-repeat pattern)
-  // Only replace when new mutations occur (the new set becomes the guard for next turn)
-  if (mutationKeys.length > 0) {
-    ;(updated as GameState & { _lastMutationKeys?: string[] })._lastMutationKeys = mutationKeys
   }
   return updated
 }
