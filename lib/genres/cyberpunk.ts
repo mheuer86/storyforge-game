@@ -9,6 +9,7 @@ const cyberpunkSpecies: Species[] = [
     name: 'Street Kid',
     description: 'Born in the gutter wards. Knows every shortcut, every gang corner, every unwritten rule.',
     lore: 'You grew up where the city doesn\'t bother pretending. Cops don\'t come, corps don\'t care, and you learned to read a room before you learned to read. Start with one gang contact at Favorable. Advantage on Streetwise checks. Disadvantage on initial social checks with corpo or institutional NPCs — they see the ward before they see you. Active liability: you still owe the gang that raised you. Once per chapter, a gang obligation surfaces. Ignoring it burns your only safety net.',
+    behavioralDirective: 'Default register: wary, territorial, reading threat levels before names. The ward taught loyalty by necessity, not choice. NPC reactions: corpos see poverty, street NPCs see one of their own. When narrating interiority: the instinct to check corners, count exits, and measure whether a room respects you or is about to take something.',
     startingContacts: [
       {
         role: 'Gang lieutenant',
@@ -24,6 +25,7 @@ const cyberpunkSpecies: Species[] = [
     name: 'Corpo Dropout',
     description: 'Former corporate employee. Polished accent, expensive habits, one bad decision.',
     lore: 'You still walk like you own the building, and it still opens doors. But the corp remembers you left, and they remember why. Start with one former corpo colleague at Neutral (they\'re cautious, not loyal). Your former corporation as a faction starts at Wary — you know too much, and they know you know. Advantage on social checks in corporate environments — you know the language, the hierarchy, the tells. Gang and street NPCs start at Wary: you smell like the enemy. Active liability: your former corp has a file on you. Every time you operate publicly in corporate space, there\'s a chance someone recognizes you and the file gets updated. The corp doesn\'t want you back — they want you controllable.',
+    behavioralDirective: 'Default register: polished, reflexively corporate in posture and diction, aware of the gap between where you came from and where you are now. NPC reactions: corpos see a defector they can leverage, street NPCs see someone who chose to slum it. When narrating interiority: the muscle memory of corporate politeness fighting the knowledge of exactly what that machine does to people.',
     startingContacts: [
       {
         role: 'Former corpo colleague',
@@ -46,6 +48,7 @@ const cyberpunkSpecies: Species[] = [
     name: 'Nomad',
     description: 'Arrived from the badlands with a car, a gun, and clan instincts.',
     lore: 'The city is loud, vertical, and full of people who mistake comfort for safety. You know what it means to survive without a safety net. Start with one clan contact at Trusted (outside the city, reachable by comm). Advantage on Survival and vehicle-related checks. City fixers start at Wary — nomads are unpredictable, and unpredictable is bad for business. Active liability: your clan needs things from the city. Clan requests come with emotional weight — these are family, not clients. Refusing costs more than disposition; it costs identity.',
+    behavioralDirective: 'Default register: grounded, physical, distrustful of walls and ceilings. Measures distance in horizons, not floors. NPC reactions: city people treat as outsider or novelty, other nomads treat as family. When narrating interiority: the claustrophobia of vertical living and the pull of open road against the obligations that brought you inside.',
     startingContacts: [
       {
         role: 'Clan elder',
@@ -61,6 +64,7 @@ const cyberpunkSpecies: Species[] = [
     name: 'Undercity Born',
     description: 'Grew up in the maintenance warrens and black-market tunnels beneath the city\'s visible layers.',
     lore: 'You know routes that don\'t appear on any official map and people who don\'t appear in any database. The surface world is loud and exposed; you prefer walls on all sides. Start with one black-market dealer at Favorable. Advantage on checks to navigate, hide, or find things in urban infrastructure. Disadvantage on social checks in high-society or corporate settings — you don\'t know the codes, and it shows. Active liability: the undercity has its own economy, and you have debts there that don\'t convert to eddies. Someone below is always waiting for you to come back.',
+    behavioralDirective: 'Default register: quiet, watchful, uncomfortable in open spaces. Navigates by infrastructure, not streets. NPC reactions: surface dwellers don\'t know what to make of you, undercity people treat as native. When narrating interiority: the comfort of enclosed spaces and the persistent sense that the surface world is a performance you never learned the script for.',
     startingContacts: [
       {
         role: 'Black-market dealer',
@@ -76,6 +80,7 @@ const cyberpunkSpecies: Species[] = [
     name: 'Syndicate Blood',
     description: 'Raised inside an organized crime family or gang hierarchy. Knows how authority actually works.',
     lore: 'You understand the difference between power and the performance of power. Obligations don\'t expire, and neither do the connections. Start with one syndicate contact at Favorable. A rival gang or syndicate faction starts at Hostile — they know your family, and the history between you is blood. Advantage on Intimidation and checks to read power dynamics. But the family watches: acting against syndicate interests (even indirectly) gets reported. Betrayal drops every syndicate NPC by two disposition tiers.',
+    behavioralDirective: 'Default register: controlled, hierarchical, reading power dynamics the way others read weather. Loyalty is structural, not sentimental. NPC reactions: syndicate members treat as family (with all the weight that carries), outsiders treat as dangerous by association. When narrating interiority: the clarity of knowing exactly where you stand in a system built on blood and obligation, and the question of whether that system is a cage or a home.',
     startingContacts: [
       {
         role: 'Syndicate fixer',
@@ -119,6 +124,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the city\'s surveillance architecture the way a rat knows the walls: every camera blind spot, every biometric scanner with a three-second lag, every maintenance corridor that bypasses the lobby. You know that corporate security is thorough but not omniscient, and that the most dangerous moment is not the breach but the ninety seconds after, when the system decides whether to flag or forget. You know that being invisible is a discipline, not a talent, and that the moment you stop paying attention is the moment someone remembers your face.',
   },
   {
     id: 'razorback',
@@ -143,6 +149,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the weight of chrome in your arms and the half-second advantage it gives you over anyone running stock. You know the sound a mantis blade makes when it deploys, the way a room changes when people hear it, and the particular silence that follows. You know that every piece of cyberware is a transaction: more speed for less feeling, more strength for less of whatever makes you hesitate before the swing. You know the ripperdocs who do clean work and the ones who cut corners, and you know the difference matters more each year.',
   },
   {
     id: 'netrunner',
@@ -167,6 +174,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the Net the way a deep-sea diver knows the ocean: beautiful, lethal, and full of things that were never meant to be found. You know that corporate ICE is designed to fry the brain behind the deck, not just the deck itself. You know the wild Net beyond the corporate firewalls is not empty; it is inhabited by things that used to be programs and became something else. You know the feeling of your body cooling in the chair while your mind races through architecture that doesn\'t obey physics, and you know that coming back is never guaranteed.',
   },
   {
     id: 'broker',
@@ -191,6 +199,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that information is the only commodity in this city that appreciates with scarcity and depreciates with sharing. You know every fixer operates on a web of markers: favors owed, debts called, and the invisible ledger that tracks who is reliable and who is a liability. You know the corpo middlemen who broker defections, the gang lieutenants who buy silence, and the ripperdocs who trade patient data for protection. The city runs on connections, and your encrypted comm is the switchboard.',
   },
   {
     id: 'medtech',
@@ -215,6 +224,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the human body as a system and the chrome inside it as a second system that doesn\'t always agree with the first. You know which implants reject after six months and which ones reject after six years, and that the difference is usually the quality of the biocoating, which is usually the part the manufacturer cuts corners on. You know the clinics that sterilize and the ones that don\'t, and you know that most of your patients can\'t afford the difference. Trauma Team charges per minute. You charge what people can pay.',
   },
   {
     id: 'solo',
@@ -239,6 +249,7 @@ const cyberpunkClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the math of contract killing: distance to target, sight lines, exit routes, and the window between the shot and the response. You know which corpo security teams are professional and which ones panic, and you know the difference between a crew that will hunt you for a week and one that will hunt you forever. You know that survival is not about being the strongest or the fastest; it is about being the one who decided, before walking into the room, exactly how it ends.',
   },
 ]
 
@@ -328,6 +339,41 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     },
     investigationGuide: 'Net dossier — hacked comm logs, surveillance captures, informant tips, intercepted corp traffic.\n\nData is abundant but truth is manufactured. The problem isn\'t finding information — it\'s that every source is compromised. Corp data is curated. Net data is manipulated. Informants are double agents. Camera footage is deepfaked.\n\nAt chapter open or when a new run begins, establish privately:\n- The truth: what actually happened (2-3 sentences)\n- The corporate version: what the data trail shows (always wrong in a way that protects someone powerful)\n- Evidence chain: 5-8 clues, but 2-3 are digitally fabricated. The player must determine which sources are clean.\n- Source reliability: each clue has a source. Sources have trustworthiness ratings the player doesn\'t see.\n- The corporate countermove: when the investigation gets close, the corp doesn\'t hide evidence — they manufacture more. Flood the case board with plausible alternatives.',
   },
+  deepLore: `## THE CITY
+
+**Corporate Sovereignty.** Six megacorporations function as nation-states. They issue citizenship, maintain private militaries, operate their own judicial systems, and control the infrastructure that makes urban life possible. Corporate citizenship means healthcare, housing, education, and security. Losing it means losing all four simultaneously. The corps compete with each other through market manipulation, hostile acquisitions, deniable operations, and occasionally open conflict in contested sectors. Government exists as a regulatory fiction: the mayor is elected, the council convenes, the NCPD patrols, but every institution operates within parameters the corps define.
+
+**The Vertical Stack.** The city is stratified by altitude. Upper levels: corporate arcologies, clean air, private security, residents who have never seen street level. Mid levels: the grinding middle, where most people live and work, where the neon is brightest because it has to compete with the dark. Lower levels and undercity: maintenance warrens, black-market tunnels, communities that exist below the tax line and below the law. Altitude is wealth. Descending is failing. The elevator is the most honest metaphor the city has.
+
+**The Net.** The old Net was open, anarchic, and briefly beautiful. The Compact Wars ended that. Corporate ICE now segments the Net into controlled territories. Beyond the corporate firewalls, the wild Net persists: ungoverned, dangerous, and inhabited by rogue AIs, ghost programs, and data entities that no taxonomy adequately describes. Netrunners operate in both zones. The corporate Net pays better. The wild Net teaches more. Neither is safe.
+
+**Cyberware and Humanity.** Chrome is ubiquitous. Everyone above the poverty line has at least basic implants: neural link, optical overlay, subdermal ID chip. The more chrome you carry, the more capable you become and the less human you feel. It is not a switch; it is a drift. Empathy narrows. Emotional range compresses. The ripperdocs call it "chrome drift," and the psychological literature calls it "cyberpsychosis," but both terms describe the same slow erosion. Most people never notice it happening to them. The people around them notice first.
+
+**Fixers and the Shadow Economy.** Every job in the shadow economy passes through a fixer: brokers who match crews to contracts, negotiate terms, and take a cut. A good fixer is worth more than a good crew, because a good fixer keeps you alive between jobs. Burning a fixer means burning your livelihood. The shadow economy runs on reputation, encrypted comms, and the understanding that everyone is one bad job away from flatline or the street.
+
+**Trauma Team and NCPD.** Trauma Team is privatized emergency response: armed medics on aerodynes, response time under four minutes, subscription required. No subscription means no response. NCPD is public law enforcement, underfunded, overworked, and outgunned by corporate security on good days. The gap between private and public infrastructure is the city\'s defining feature. If you can pay, you survive. If you cannot, you are on your own.`,
+  guideNpcDirective: 'The opening NPC is a fixer. They speak in prices and probabilities. Don\'t explain the city; offer a job whose terms tell the player everything about how the world works.',
+  loreFacets: {
+    corporate: 'In this scene: everything runs on contracts, clearance levels, and plausible deniability. Corporate representatives never threaten directly; they describe consequences. Security is omnipresent but invisible until triggered. The building itself is surveillance. Hospitality is a form of containment.',
+    'street-gang': 'In this scene: territory is the organizing principle. Colors, tags, and reputation define who belongs and who is trespassing. Violence is a dialect, not a disorder. Gang members are loyal to structure, not ideology. Respect is earned by consistency, and disrespect has a physical cost.',
+    net: 'In this scene: the Net is not a place; it is a state of being. Describe it through sensation: the hum of data streams, the cold geometry of ICE architecture, the wrongness of rogue code that moves like something alive. The body is distant. Time is elastic. Coming back is a decision, not an assumption.',
+    'ripperdoc-medical': 'In this scene: the clinic is where the city\'s damage becomes visible. Ripperdocs are surgeons, therapists, and confessors. They see what the chrome does to people. Describe the room: the autoclave, the surgical chair, the tray of implants waiting for bodies. Medicine here is transactional but not impersonal.',
+    undercity: 'In this scene: the undercity operates on its own rules. Light is artificial and unreliable. Sound carries differently in tunnels. Communities here are tight, suspicious of surface dwellers, and fiercely protective of their own. The economy runs on barter, favors, and things that fell off a truck.',
+    badlands: 'In this scene: the city ends, and the emptiness begins. Nomad territory, corporate dumping grounds, and the ruins of suburbs that couldn\'t compete. The horizon is visible for the first time. Vehicles matter more than chrome. Clan loyalty is the only law, and the road is the only freedom.',
+  },
+  loreAnchors: [
+    'Megacorps=six corporations function as nation-states. Issue citizenship, maintain militaries, operate courts. Government is regulatory fiction.',
+    'Vertical Stack=altitude is wealth. Upper: corporate arcologies, clean air. Mid: neon and hustle. Lower/undercity: below the tax line, below the law.',
+    'The Net=post-Compact Wars, segmented by corporate ICE. Wild Net beyond the firewalls: rogue AIs, ghost programs, data entities. Neither zone is safe.',
+    'Cyberware=chrome is ubiquitous. More capability, less humanity. Drift, not snap. Empathy narrows. The people around you notice before you do.',
+    'Fixers=brokers matching crews to contracts. A good fixer keeps you alive between jobs. Burning one means burning your livelihood.',
+    'Trauma Team=privatized emergency response. Subscription required. No subscription, no response. The gap between private and public is the city\'s soul.',
+    'NCPD=public law enforcement. Underfunded, overworked, outgunned by corpo security. Maintains order in zones corps don\'t care about.',
+    'Ripperdocs=street surgeons installing and maintaining chrome. Clean work costs more. Cheap work costs later. They see what the city does to people.',
+    'Cyberpsychosis=cumulative chrome drift. Emotional range compresses. Empathy narrows. Most people don\'t notice it happening to themselves.',
+    'Shadow Economy=reputation-based. Encrypted comms, fixer networks, deniable contracts. Everyone is one bad job from flatline or the street.',
+    'Eddies (€$)=corporate-minted digital currency. Untraceable in theory, surveilled in practice. The only thing the corps and the street agree on.',
+  ],
   cohesionGuide: 'In cyberpunk, cohesion is maintained against an environment that actively erodes it. Corps target crews. The city manufactures distrust. +1: shared survival against systems that wanted you dead, captain spending eddies on the crew rather than gear, choosing crew over scores. -1: sacrificing crew for jobs, accepting jobs the crew opposed, bringing humanity-cost choices home from runs.',
   companionLabel: 'Crew',
   notebookLabel: 'Data Cache',

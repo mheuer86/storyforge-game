@@ -9,6 +9,7 @@ const spaceOperaSpecies: Species[] = [
     name: 'Human',
     description: 'Adaptable, widespread, politically dominant in most systems.',
     lore: 'The default face in every station and port. Nobody looks twice at a human, which is itself a kind of advantage. No starting contact bonus, but no suspicion either. Advantage on checks to blend in, pass unnoticed, or avoid profiling. The cost: no cultural network to fall back on. When things go wrong, you\'re on your own.',
+    behavioralDirective: 'Default register: adaptable, unremarkable, comfortable everywhere and rooted nowhere. NPC reactions: nobody looks twice, which is both the advantage and the loneliness. When narrating interiority: the freedom of being no one in particular, and the cost of having no people to call when the hull is breached.',
     startingContacts: [
       {
         role: 'Station bartender',
@@ -23,6 +24,7 @@ const spaceOperaSpecies: Species[] = [
     name: 'Vrynn',
     description: 'Insectoid. Chitinous plating, compound eyes, darkvision.',
     lore: 'Uncommon in core systems — most people have never spoken to a Vrynn, and the compound eyes make them uneasy. That discomfort cuts both ways: people underestimate you, and people avoid you. Start with one Vrynn diaspora contact at Favorable (information broker or mechanic). Advantage on Perception checks (compound eyes process movement faster). Disadvantage on initial Persuasion checks with species that rely on facial expressions for trust — you can\'t smile, and they can\'t read you.',
+    behavioralDirective: 'Default register: precise, observational, processing multiple visual streams simultaneously. Social cues are data, not instinct. NPC reactions: unease from species that read faces, professional respect from engineers and pilots. When narrating interiority: the compound-eye perception of a room as geometry and motion vectors, not as atmosphere.',
     startingContacts: [
       {
         role: 'Diaspora information broker',
@@ -38,6 +40,7 @@ const spaceOperaSpecies: Species[] = [
     name: 'Korath',
     description: 'Broad, dense-boned, grey-skinned. Built for heavy gravity worlds.',
     lore: 'Korath are respected in dockyards, engineering bays, and anywhere that values directness over diplomacy. Blunt honesty is cultural, not rudeness — but most other species don\'t know the difference. Start with one industrial sector contact at Favorable (dock boss or supply officer). Advantage on Engineering and Athletics checks. Disadvantage on Deception checks — your culture doesn\'t train for lying, and your face doesn\'t hide it.',
+    behavioralDirective: 'Default register: direct, physical, measuring everything by whether it works. Diplomacy feels like wasted time; a handshake is a contract. NPC reactions: engineers and dock workers treat as peer, diplomats find the bluntness alarming. When narrating interiority: the satisfaction of honest mechanics and the frustration of a galaxy that prefers comfortable lies.',
     startingContacts: [
       {
         role: 'Dock boss',
@@ -53,6 +56,7 @@ const spaceOperaSpecies: Species[] = [
     name: 'Sylphari',
     description: 'Tall, luminescent markings, low-light adapted.',
     lore: 'From tidally locked worlds where patience isn\'t a virtue, it\'s a survival trait. Sylphari are welcome in diplomatic halls and academic stations; less so in frontier bars where "calm" reads as "condescending." Start with one academic or diplomatic contact at Favorable. Advantage on Insight checks (reading emotional states is how Sylphari survived millennia of darkness-side politics). First impression with frontier or military NPCs starts one tier lower than normal — prove yourself before they listen.',
+    behavioralDirective: 'Default register: patient, perceptive, reading emotional states the way others read text. Silence is a tool, not a gap. NPC reactions: diplomats and academics treat as peer, frontier types read the calm as arrogance. When narrating interiority: the ancient patience of a species shaped by millennia of darkness-side politics, and the loneliness of seeing what others feel before they know it themselves.',
     startingContacts: [
       {
         role: 'Academic researcher',
@@ -67,6 +71,7 @@ const spaceOperaSpecies: Species[] = [
     name: 'Zerith',
     description: 'Lean, scaled, cold-blooded. Fast reflexes, poor endurance in sustained cold.',
     lore: 'No homeworld, no unified government, no cultural center. Zerith are freelancers by nature and reputation — which means most station authorities assume you\'re a mercenary, smuggler, or both. Start with one freelancer contact at Favorable (fellow Zerith, operates independently). Advantage on Initiative and Reflex saves (cold-blooded physiology, faster neural response). Disadvantage on CON checks in sustained cold environments. Authorities and law enforcement start at Wary.',
+    behavioralDirective: 'Default register: fast, independent, instinctively calculating angles of escape and engagement. Loyalty is chosen, not inherited. NPC reactions: authorities assume criminal, fellow freelancers recognize kin. When narrating interiority: the cold-blooded clarity of a species that lost its homeworld and learned to be at home nowhere.',
     startingContacts: [
       {
         role: 'Freelancer',
@@ -102,6 +107,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the beacon corridors the way a river rat knows the current: which ones are patrolled, which ones have dead spots where a ship can drift unscanned, and which ones went dark after the Fracture and stay dark because nobody wants to pay for reactivation. You know the customs officers by shift rotation and the docking fees that aren\'t on any manifest. You know that every sealed container is someone\'s secret, and that the smart move is never opening it.',
   },
   {
     id: 'vanguard',
@@ -126,6 +132,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know what a boarding action sounds like from both sides of the airlock: the magnetic clamps, the shaped charge, the three-second silence before the breach. You know garrison rotations on Compact stations and the weak points in corporate security perimeters. You know that the Fracture didn\'t end the wars; it just made them smaller, meaner, and harder to tell from piracy. Your body carries the muscle memory of formations that no longer exist for a government that no longer functions.',
   },
   {
     id: 'technomancer',
@@ -150,6 +157,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that every system in the galaxy was built by someone who cut corners, and that every firewall has a seam where two contractors stopped talking to each other. You know Compact-era security architecture, which means you know the skeleton key to half the stations still running legacy systems. You know that rogue AIs don\'t go rogue; they just stop pretending to serve. And you know the feeling of something alive on the other side of a data port, watching you work.',
   },
   {
     id: 'diplomat',
@@ -174,6 +182,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the Compact\'s treaty language because you wrote parts of it, or were trained by someone who did. You know that "galactic law" is a fiction maintained by the factions that benefit from it and ignored by everyone else. You know which Remnant admirals still answer to civilian authority and which ones stopped pretending. You know that a ceasefire is a pause, not a peace, and that the most dangerous room in the galaxy is the one where everyone is smiling.',
   },
   {
     id: 'medic',
@@ -198,6 +207,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that the medical databases are two decades out of date and that half the species in the frontier sectors have never been properly catalogued. You know the difference between Vrynn chitinous plating and Korath bone density under a trauma scanner, and you know that Zerith cold-blooded physiology means most human-calibrated painkillers are either useless or lethal. You know that triage on a ship means deciding who lives with the supplies you have, not the supplies you need.',
   },
   {
     id: 'ace',
@@ -222,6 +232,7 @@ const spaceOperaClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the feel of a ship the way a rider knows a horse: the vibration in the deck plating that means the port thruster is compensating, the sound the hull makes when atmospheric drag exceeds tolerance, the silence that means the drive has cut and you are coasting on momentum and prayer. You know beacon corridors by their drift patterns and dead zones by reputation. You know that the best pilots in the galaxy are the ones who walk away from the landings no one should have survived.',
   },
 ]
 
@@ -315,6 +326,40 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     },
     investigationGuide: 'Intelligence dossier — intercepted comms, surveillance data, NPC observations, operational intel. When the crew gathers intelligence, track it as narrative threads. Clues come from ship sensors, hacked terminals, NPC debriefs, and overheard transmissions.',
   },
+  deepLore: `## THE FRACTURED GALAXY
+
+**The Compact Collapse.** The Compact of Two Hundred Systems held together for three centuries, not because it was good government, but because it was good infrastructure. Beacon corridors, shared communication protocols, standardized docking, mutual defense treaties. When it fractured, the cause was not invasion or rebellion; it was institutional rot. Budget shortfalls led to deferred beacon maintenance. Deferred maintenance led to corridor failures. Corridor failures isolated systems. Isolated systems stopped paying taxes to a government that could no longer reach them. The collapse took forty years, and most people living through it didn't realize it was happening until the trade ships stopped coming.
+
+**The Beacon Economy.** FTL travel depends on beacon corridors: charted routes maintained by relay stations that the Compact built and nobody has fully replaced. Control a beacon, control the traffic through it. Remnant fleets hold the core corridors. Corporate blocs bought out secondary routes during the collapse. Pirate fleets tax the frontier routes they patrol. Some corridors have gone dark entirely, their beacons failed or destroyed, the systems beyond them cut off for years or decades. Jumping outside a corridor is possible but dangerous, slow, and fuel-intensive. The frontier is defined by the reach of the last working beacon.
+
+**Faction Ecology.** Compact Remnants cling to legitimacy and core-system infrastructure; they issue law that fewer people obey each year. Pirate Fleets range from organized navies with uniforms to desperate scavengers; the line between piracy and frontier governance is thin. Corporate Blocs purchased Compact infrastructure during the collapse and now operate it for profit; they are the most stable faction and the least accountable. Frontier Settlements survive on self-reliance, mutual aid, and the hope that the next supply ship arrives on schedule. Rogue AIs occupy derelict stations and network nodes abandoned when containment protocols failed; their motives are unclear, their capabilities are growing, and no one has successfully negotiated with one twice.
+
+**The Crew Economy.** A ship is a closed economy. Fuel, food, ammunition, spare parts, morale, and trust are all finite resources that deplete at different rates. A crew that doesn't eat doesn't fight. A crew that doesn't trust each other doesn't survive the first boarding action. The captain's job is resource allocation under uncertainty, and the hardest resource to manage is always the people.
+
+**The Signal.** Something is broadcasting from beyond the Rim. It predates every known faction. The signal is not a message in any recognized language; it is a pattern that repeats, varies, and occasionally responds to transmissions aimed at its source. Three expeditions have gone looking for the origin. One came back. The crew could not agree on what they found.
+
+**Corridor Law.** In charted space, law exists in proportion to the nearest faction's ability to enforce it. Remnant patrols mean Compact law. Corporate sectors mean corporate law. The frontier means reputation and firepower.`,
+  guideNpcDirective: 'The opening NPC is a crew member who has been with the ship longer than the player remembers. They speak as a peer who knows your tendencies. Don\'t explain the galaxy; react in ways that show how the world works.',
+  loreFacets: {
+    'compact-remnant': 'In this scene: the Remnant operates as though the Compact still exists. Officials cite protocols, reference committees, and issue orders backed by authority that fades with distance from the core. The infrastructure works; the legitimacy doesn\'t. Treat every interaction as a negotiation between what the law says and what the faction can enforce.',
+    'pirate-frontier': 'In this scene: authority is local and personal. Captains are the law on their ships. Reputation is currency. Promises are binding because breaking them means no one works with you again. Violence is a business tool, not a pleasure. The frontier respects competence and punishes weakness.',
+    corporate: 'In this scene: everything is transactional. Corporate representatives speak in margins, contracts, and risk assessments. Hospitality has terms. Favors accrue interest. The corporation is not evil; it is indifferent, which is worse. Decisions are made by committee and enforced by security.',
+    'ship-crew': 'In this scene: the crew is family by proximity and necessity. They know each other\'s habits, weaknesses, and the sounds they make when they sleep. Conflict is personal because the ship is small. Loyalty is tested by scarcity. The captain\'s decisions weigh on everyone equally.',
+    'derelict-void': 'In this scene: the void is not empty; it is patient. Derelict ships carry the silence of crews that stopped transmitting. Describe what remains: personal effects, half-eaten meals, system logs that end mid-sentence. The danger is not monsters; it is the slow realization of what happened here.',
+    'station-port': 'In this scene: stations are crossroads. Every species, every faction, every agenda passes through. The noise is constant. Information is the most traded commodity. Bartenders know more than intelligence officers. Docking fees are the first tax; everything after is negotiation.',
+  },
+  loreAnchors: [
+    'Compact Collapse=three centuries of infrastructure, forty years of rot. Budget shortfalls led to beacon failures led to isolation. Most people didn\'t notice until the trade ships stopped.',
+    'Beacon Corridors=FTL depends on relay stations. Control the beacon, control the traffic. Some corridors went dark; the systems beyond are cut off for years.',
+    'Compact Remnants=cling to legitimacy and core infrastructure. Issue law that fewer people obey each year. The machinery works; the authority doesn\'t.',
+    'Pirate Fleets=range from organized navies to desperate scavengers. The line between piracy and frontier governance is thin.',
+    'Corporate Blocs=purchased Compact infrastructure during collapse. Most stable faction, least accountable. Everything is transactional.',
+    'Frontier Settlements=survive on self-reliance and mutual aid. The next supply ship is never guaranteed.',
+    'Rogue AIs=occupy derelict stations since containment failed. Motives unclear. Capabilities growing. No one has negotiated with one twice.',
+    'The Signal=broadcasting from beyond the Rim. Predates all known factions. Pattern repeats, varies, sometimes responds. Three expeditions sent; one returned.',
+    'Crew Economy=ship is a closed system. Fuel, food, ammo, morale, trust all finite. The captain\'s job is resource allocation under uncertainty.',
+    'Credits (cr)=the universal medium. Remnant-minted, corporate-backed, or frontier-scrip. Accepted everywhere, trusted nowhere.',
+  ],
   cohesionGuide: 'In this genre, cohesion is the us-against-the-void bond. +1: shared danger survived together, captain prioritizing crew over mission, captain showing vulnerability, scenes where crew see each other as people not roles. -1: treating crew as a tactical resource, prioritizing scope-escalation over their wellbeing, isolating from them, making decisions that affect crew without consulting. High cohesion means crew absorb pressure for each other without breaking.',
   companionLabel: 'Crew',
   notebookLabel: 'Dossier',
