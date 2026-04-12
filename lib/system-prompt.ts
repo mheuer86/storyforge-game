@@ -1424,7 +1424,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${currentMessage ? (() => {
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${currentMessage ? (() => {
     const rollGate = detectRollGate(currentMessage, sceneNpcs)
     return rollGate ? '\n' + rollGate : ''
   })() : ''}${(() => {
