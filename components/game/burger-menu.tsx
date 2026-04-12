@@ -358,7 +358,7 @@ export function BurgerMenu({
             >
               Every hero needs a patron. Buy me a beer&nbsp;→
             </a>
-            {process.env.NODE_ENV === 'development' && <DebugPanel />}
+            {(process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && localStorage.getItem('storyforge_debug') === '1')) && <DebugPanel />}
           </SheetFooter>
         </SheetContent>
       </Sheet>
