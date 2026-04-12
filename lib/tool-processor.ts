@@ -490,7 +490,30 @@ function applyWorldChanges(
       )
     } else {
       const chapterNum = updated.meta?.chapterNumber ?? 1
-      const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(input.add_decision.witnessed && { witnessed: true }) }
+      // Auto-detect witness marks from content if Claude didn't flag it
+      const isWitnessed = input.add_decision.witnessed || (() => {
+        if (input.add_decision!.category !== 'moral') return false
+        const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
+        return /\b(witness|saw|watched|heard.*nothing|said nothing|looked away|didn.t intervene|didn.t stop|let it happen|child taken|child.*test|burned resonant|forged record|suppressing.*attunement)\b/.test(text)
+      })()
+      if (isWitnessed) {
+        dbg('WITNESS_MARK auto-detected: ' + input.add_decision.summary)
+        // Auto-tick origin counter for witness marks (seeing the cost of the system you serve)
+        const species = updated.character.species
+        const witnessCounterMap: Record<string, string> = {
+          'Synod-Raised': 'doubt', 'Minor House': 'fealty', 'Imperial Service': 'mandate',
+          'Ex-Cop': 'badge_debt', 'Old Money': 'complicity', 'Veteran': 'numbness',
+          'Corpo Dropout': 'exposure', 'Street Kid': 'gang_debt',
+        }
+        const counterName = witnessCounterMap[species]
+        if (counterName) {
+          const counters = { ...(updated.counters || {}) }
+          counters[counterName] = (counters[counterName] || 0) + 1
+          updated = { ...updated, counters }
+          dbg(`ORIGIN_COUNTER auto-ticked ${counterName} to ${counters[counterName]} (witness mark)`)
+        }
+      }
+      const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
       const activeDecisions = decisions.filter(d => d.status === 'active')
       if (activeDecisions.length >= 8) {
         const oldest = activeDecisions[0]
