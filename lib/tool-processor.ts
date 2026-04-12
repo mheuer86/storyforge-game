@@ -496,74 +496,60 @@ function applyWorldChanges(
         const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
         return /\b(witness|saw|watched|heard.*nothing|said nothing|looked away|didn.t intervene|didn.t stop|let it happen|child taken|child.*test|burned resonant|forged record|suppressing.*attunement)\b/.test(text)
       })()
-      let counterTicked = false
       if (isWitnessed) {
         dbg('WITNESS_MARK auto-detected: ' + input.add_decision.summary)
-        // Auto-tick origin counter for witness marks (seeing the cost of the system you serve)
-        const species = updated.character.species
-        const witnessCounterMap: Record<string, string> = {
-          'Synod-Raised': 'doubt', 'Minor House': 'fealty', 'Imperial Service': 'mandate',
-          'Ex-Cop': 'badge_debt', 'Old Money': 'complicity', 'Veteran': 'numbness',
-          'Corpo Dropout': 'exposure', 'Street Kid': 'gang_debt',
-        }
-        const counterName = witnessCounterMap[species]
-        if (counterName) {
-          const counters = { ...(updated.counters || {}) }
-          counters[counterName] = (counters[counterName] || 0) + 1
-          updated = { ...updated, counters }
-          dbg(`ORIGIN_COUNTER auto-ticked ${counterName} to ${counters[counterName]} (witness mark)`)
-          counterTicked = true
-        }
       }
-      // Also auto-tick origin counter from non-witness decisions that express origin tension
-      if (!isWitnessed && !counterTicked) {
+
+      // Bidirectional origin counter: conflict/hesitation → UP, enforcement/compliance → DOWN
+      {
         const species = updated.character.species
         const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
-        const originTriggers: Record<string, { counter: string; pattern: RegExp }> = {
+
+        // Conflict language: questioning, hesitating, showing mercy, choosing against the system
+        const conflictPattern = /\b(doubt|question|hesitat|said nothing|looked away|didn.t report|chose not to|mercy|compassion|let.*go|refuse.*order|disobey|defy|protect.*against|hide.*from.*synod|suppress.*attunement|heresy.*true|cover.*story)\b/
+        // Enforcement language: executing, delivering, complying, following orders without conflict
+        const enforcePattern = /\b(took.*from|deliver|executed|enforc|comply|followed.*order|carried out|filed.*charge|formally.*charg|detained|assessed|completed.*duty|didn.t look back|without hesitation)\b/
+
+        const counterMap: Record<string, string> = {
           // Epic Sci-Fi
-          'Synod-Raised': { counter: 'doubt', pattern: /\b(doubt|question|heresy|doctrine.*wrong|mercy|compassion.*heretic|pamphlet.*true|chose not to report)\b/ },
-          'Minor House': { counter: 'fealty', pattern: /\b(house name|dignity|smiled.*despised|trade.*pride|alliance.*cost|bargain)\b/ },
-          'Undrift': { counter: 'exposure', pattern: /\b(name.*used|biometric|drift.*public|identity.*revealed|spotted|recognized)\b/ },
-          'Imperial Service': { counter: 'mandate', pattern: /\b(personal.*loyalty|disobeyed|questioned.*order|cover.*identity|chose.*person)\b/ },
-          'Ascendant': { counter: 'debt', pattern: /\b(patron.*favor|door.*opened|owe|debt.*called|relied.*connection)\b/ },
-          'Spent Resonant': { counter: 'embers', pattern: /\b(drift.*touch|attunement|resonan.*ability|old.*power|remember.*could)\b/ },
+          'Synod-Raised': 'doubt', 'Heretic': 'doubt', 'Minor House': 'fealty', 'Hollow': 'fealty',
+          'Undrift': 'exposure', 'Hunted': 'exposure', 'Imperial Service': 'mandate', 'Dissident': 'mandate',
+          'Ascendant': 'debt', 'Owned': 'debt', 'Spent Resonant': 'embers', 'Rekindled': 'embers',
           // Noir
-          'Ex-Cop': { counter: 'badge_debt', pattern: /\b(badge|credential|department|old.*contact|police.*favor|acted.*cop)\b/ },
-          'Street': { counter: 'exposure', pattern: /\b(outside.*neighborhood|trust.*institution|name.*record|official.*channel)\b/ },
-          'Old Money': { counter: 'complicity', pattern: /\b(family.*connection|class.*privilege|institutional.*protect|name.*smooth)\b/ },
-          'Veteran': { counter: 'numbness', pattern: /\b(violence.*without|efficiency|tactical|people.*asset|clinical)\b/ },
-          'Immigrant': { counter: 'obligation', pattern: /\b(community.*favor|elder|promise.*community|identity.*leverag|obligation)\b/ },
+          'Ex-Cop': 'badge_debt', 'Street': 'exposure', 'Old Money': 'complicity',
+          'Veteran': 'numbness', 'Immigrant': 'obligation',
           // Cyberpunk
-          'Street Kid': { counter: 'gang_debt', pattern: /\b(gang.*obligation|territory|ward.*business|crew.*priorit)\b/ },
-          'Corpo Dropout': { counter: 'exposure', pattern: /\b(corp.*space|biometric|credential|old.*identity|recognized)\b/ },
-          'Nomad': { counter: 'city_rot', pattern: /\b(comfort|settled|city.*habit|clan.*ignored|forgot.*outside)\b/ },
-          'Undercity Born': { counter: 'surface_debt', pattern: /\b(surface.*op|database|official.*system|visible|traced)\b/ },
-          'Syndicate Blood': { counter: 'family_distance', pattern: /\b(against.*family|independent|trust.*outsider|defied)\b/ },
+          'Street Kid': 'gang_debt', 'Corpo Dropout': 'exposure', 'Nomad': 'city_rot',
+          'Undercity Born': 'surface_debt', 'Syndicate Blood': 'family_distance',
           // Space Opera
-          'Human': { counter: 'isolation', pattern: /\b(solo|alone|refused.*help|crew.*distance|kept.*myself)\b/ },
-          'Vrynn': { counter: 'signal_debt', pattern: /\b(diaspora|network.*exploit|vrynn.*intel|signal.*without)\b/ },
-          'Korath': { counter: 'compromise', pattern: /\b(lied|withheld|indirect|deceiv|manipulat)\b/ },
-          'Sylphari': { counter: 'detachment', pattern: /\b(patience.*paralysis|watched.*happen|refused.*act|will.*pass)\b/ },
-          'Zerith': { counter: 'reputation', pattern: /\b(broke.*deal|betrayed|survival.*over|abandoned|ran)\b/ },
+          'Human': 'isolation', 'Vrynn': 'signal_debt', 'Korath': 'compromise',
+          'Sylphari': 'detachment', 'Zerith': 'reputation',
           // Fantasy
-          'Elf': { counter: 'withdrawal', pattern: /\b(watched.*repeat|patience.*excuse|refused.*intervene|always.*does)\b/ },
-          'Dwarf': { counter: 'oath_weight', pattern: /\b(promise|oath|contract|word.*given|obligation.*layer)\b/ },
-          'Halfling': { counter: 'visibility', pattern: /\b(public|credit|attention|recognized|stood.*out|hero)\b/ },
-          'Dragonkin': { counter: 'inheritance', pattern: /\b(dream|ancient|instinct|memory.*surface|before.*sundering)\b/ },
+          'Elf': 'withdrawal', 'Dwarf': 'oath_weight', 'Halfling': 'visibility', 'Dragonkin': 'inheritance',
           // Grimdark
-          'Veldran': { counter: 'ledger', pattern: /\b(valuation|asset|profit|trade.*dignity|balance.*sheet)\b/ },
-          'Sylvara': { counter: 'paralysis', pattern: /\b(watched|waited|patience.*cost|observed.*instead|let.*unfold)\b/ },
-          'Stonemark': { counter: 'rigidity', pattern: /\b(refused.*adapt|held.*when|stubborn|rigid|structural)\b/ },
-          'Oathless': { counter: 'survival_debt', pattern: /\b(betray.*trust|survival|escape.*route|used.*people)\b/ },
-          'Ashfang': { counter: 'wrath', pattern: /\b(rage|fury|fear.*caused|dominion|violence.*first)\b/ },
+          'Veldran': 'ledger', 'Sylvara': 'paralysis', 'Stonemark': 'rigidity',
+          'Oathless': 'survival_debt', 'Ashfang': 'wrath',
         }
-        const trigger = originTriggers[species]
-        if (trigger && trigger.pattern.test(text)) {
-          const counters = { ...(updated.counters || {}) }
-          counters[trigger.counter] = (counters[trigger.counter] || 0) + 1
-          updated = { ...updated, counters }
-          counterTicked = true
-          dbg(`ORIGIN_COUNTER auto-ticked ${trigger.counter} to ${counters[trigger.counter]} (decision pattern: ${species})`)
+
+        const counterName = counterMap[species]
+        if (counterName) {
+          const hasConflict = conflictPattern.test(text)
+          const hasEnforce = enforcePattern.test(text)
+
+          if (hasConflict && !hasEnforce) {
+            // Questioning/resisting the system → counter UP
+            const counters = { ...(updated.counters || {}) }
+            counters[counterName] = (counters[counterName] || 0) + 1
+            updated = { ...updated, counters }
+            dbg(`ORIGIN_COUNTER ${counterName} UP to ${counters[counterName]} (conflict: ${species})`)
+          } else if (hasEnforce && !hasConflict) {
+            // Enforcing/complying with the system → counter DOWN (min 0)
+            const counters = { ...(updated.counters || {}) }
+            counters[counterName] = Math.max(0, (counters[counterName] || 0) - 1)
+            updated = { ...updated, counters }
+            dbg(`ORIGIN_COUNTER ${counterName} DOWN to ${counters[counterName]} (enforce: ${species})`)
+          }
+          // Both or neither → no tick (ambiguous moment, let origin_event handle it)
         }
       }
       const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
