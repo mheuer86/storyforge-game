@@ -57,9 +57,10 @@ export function createInitialGameState(
 
   // Select opening hook (same logic as buildInitialMessage, but earlier so we can inject frame/arc)
   const playerClass = selectedClass.name.toLowerCase()
+  const hookMatchTags = [playerClass, ...(selectedClass.hookTags || []).map(t => t.toLowerCase())]
   const allHooks = config.openingHooks
   const classHooks = allHooks.filter(h =>
-    typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
+    typeof h !== 'string' && h.classes && h.classes.some(c => hookMatchTags.some(tag => tag.includes(c.toLowerCase())))
   )
   const universalHooks = allHooks.filter(h =>
     typeof h === 'string' || !h.classes

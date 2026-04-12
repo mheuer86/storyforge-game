@@ -50,6 +50,7 @@ export interface CharacterClass {
   hitDieAvg: number  // average HP gained per level (before CON mod). Tanks: 6, mixed: 5, faces/casters: 4
   trait: Trait
   openingKnowledge?: string  // ~80-100 words, character interiority for chapter 1 world-seeding
+  hookTags?: string[]        // additional tags for hook matching (e.g. ['knight'] on a Crusader playbook)
 }
 
 export interface GenreTheme {
