@@ -9,6 +9,7 @@ const noireSpecies: Species[] = [
     name: 'Ex-Cop',
     description: 'Former law enforcement. Left for a reason someone can pull.',
     lore: 'You know how the system works because you were part of it. Cops still talk to you — some of them. Criminals know what you were. Start with one law enforcement contact at Favorable, one criminal contact at Wary. Advantage on checks to predict or navigate law enforcement behavior.',
+    behavioralDirective: 'Default register: procedural instinct fighting disillusionment. Reads every room like a cop, then hates that reflex. NPC reactions: cops treat as one of their own who quit, civilians treat as someone who chose to leave a corrupt institution. When narrating interiority: the habit of cataloguing exits, weapons, and lies before anyone finishes their first sentence.',
     startingContacts: [
       {
         role: 'Precinct detective',
@@ -30,6 +31,7 @@ const noireSpecies: Species[] = [
     name: 'Street',
     description: 'Grew up where the papers only come when someone dies.',
     lore: 'You know the real economy — favors, debts, territory. Institutions are things that happen to people like you. Start with one underworld contact at Favorable. Advantage on Streetwise checks. Disadvantage on initial social checks with institutional authority.',
+    behavioralDirective: 'Default register: transactional, reading power dynamics before social norms. Evaluates every person by what they can do, not who they are. NPC reactions: institutional figures dismiss or condescend, street NPCs treat as native. When narrating interiority: the instinct to calculate what someone wants before deciding whether to listen.',
     startingContacts: [
       {
         role: 'Neighborhood bookie',
@@ -45,6 +47,7 @@ const noireSpecies: Species[] = [
     name: 'Old Money',
     description: 'From the families that built this city. You know the quiet arrangements.',
     lore: 'You know the clubs, the boards, the quiet arrangements. You also know what those families do to protect themselves. Start with one high-society contact at Favorable. Advantage on social checks in elite settings and checks to leverage institutional access. Disadvantage on initial social checks with working-class and street NPCs — your name precedes you, and it doesn\'t mean the same thing down here.',
+    behavioralDirective: 'Default register: controlled, composed, acutely aware of what money insulates you from. Every word is chosen; every silence is deliberate. NPC reactions: elites treat as peer, working-class NPCs treat as someone whose hands have never been dirty. When narrating interiority: the discomfort of knowing exactly how the quiet arrangements work, and the discipline to never show it.',
     startingContacts: [
       {
         role: 'Club secretary',
@@ -60,6 +63,7 @@ const noireSpecies: Species[] = [
     name: 'Veteran',
     description: 'Went to war and came back different. Violence doesn\'t shock you.',
     lore: 'The city feels small after what you saw. Violence doesn\'t shock you, which is useful. It also doesn\'t bother you, which is a problem. Start with one military contact at Favorable. Advantage on CON saves against fear and intimidation. Disadvantage on Insight checks reading civilian emotional cues — you\'re calibrated for threat assessment, not empathy. First extreme violence in a chapter: no WIS save required, but NPCs notice your lack of reaction.',
+    behavioralDirective: 'Default register: calibrated for threat, uncomfortable in quiet rooms. Scans spaces for cover and choke points without thinking. NPC reactions: civilians sense something off, other veterans recognize the look instantly. When narrating interiority: the disconnect between a room full of people talking about nothing and the fact that the exits are already mapped.',
     startingContacts: [
       {
         role: 'Former army buddy',
@@ -75,6 +79,7 @@ const noireSpecies: Species[] = [
     name: 'Immigrant',
     description: 'Came from somewhere else. You see this city clearly.',
     lore: 'You see this city clearly because you never learned to take it for granted. You have a community that protects its own, and expectations that come with that protection. Start with one community contact at Trusted. Advantage on Insight checks reading people outside your community. Community promises carry extra weight — breaking one drops disposition by two tiers.',
+    behavioralDirective: 'Default register: hyperaware of belonging, constantly navigating two sets of rules. Reads who is safe and who is performing safety. NPC reactions: community members treat as family with obligations, outsiders treat as exotic or invisible depending on the room. When narrating interiority: the double consciousness of knowing exactly how this city works while never being allowed to forget you are from somewhere else.',
     startingContacts: [
       {
         role: 'Community elder',
@@ -111,6 +116,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the city runs on two ledgers: the one they show auditors and the one that matters. You know which precincts file reports and which ones lose them. You know the hotels where men check in under wrong names and the bars where envelopes change hands at the third booth from the door. You know that every case that looks simple has a reason it stayed unsolved, and that reason usually has an office downtown. Your license gives you just enough authority to ask questions and not enough to protect you from the answers.',
   },
   {
     id: 'fixer',
@@ -135,6 +141,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that this city runs on introductions, not evidence. You know the DA\'s office leaks like a sieve and that the third-shift desk sergeant at the Sixth Precinct owes a bookie named Loomis four hundred marks. You know which lawyers take cash, which judges take phone calls, and which reporters will hold a story for forty-eight hours if you give them something better on Thursday. Your little black book is worth more than a badge, and everyone who matters knows your number.',
   },
   {
     id: 'bruiser',
@@ -159,6 +166,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the geography of violence in this city: which alleys are dead ends, which bars have back doors, and which neighborhoods go quiet after dark because the people there learned not to look. You know the docks smell like diesel and regret. You know a body weighs more than people think. You know the sound a man makes when he realizes nobody is coming to help, and you know how to be the reason he makes it. The city respects force, and you speak the language fluently.',
   },
   {
     id: 'grifter',
@@ -183,6 +191,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that people see what they expect to see, and you have spent your life learning to be the expected thing. You know every social club has a side door and every charity gala has a coat check nobody watches. You know the voice that gets past a secretary, the smile that disarms a doorman, and the handshake that says old money to people who never learned to question it. The city is full of locked rooms, and you know that the best key is a face that belongs there.',
   },
   {
     id: 'reporter',
@@ -207,6 +216,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the city has three papers and one radio station, and that the truth lives in the gap between what they print and what they know. You know which editors kill stories when the phone rings from downtown and which reporters drink because of the ones they couldn\'t publish. You know a press credential opens doors that a badge cannot, and that the price is every source remembering your name. The city talks to you because it cannot stop you from printing what it says.',
   },
   {
     id: 'lawyer',
@@ -231,6 +241,7 @@ const noireClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the legal system the way a surgeon knows anatomy: where it works, where it fails, and where to cut. You know the courthouse has twelve judges, four of them honest, and that the DA prosecutes what the mayor tells him to. You know which filings create paper trails and which ones disappear into sealed records. You know that the law is a weapon, and like all weapons in this city, it works better for the people who can afford to aim it. Your briefcase is heavier than it looks.',
   },
 ]
 
@@ -324,6 +335,38 @@ Don't pre-script which scenes contain which clues. Seed clues into scenes as the
 
 Every case should have a tension clock. It ticks with time, failed checks, and antagonist moves. When it fills, something changes — evidence destroyed, witness disappears, the killer strikes again. Thoroughness competes with urgency.`,
   },
+  deepLore: `## THE CITY
+
+**Power Structure.** City Hall runs on donor money and plausible deniability. The mayor is elected every four years by people who believe it matters; the real decisions happen in rooms without windows, between men whose names don't appear on ballots. Three council seats are openly for sale. Two more are held by people who owe favors to the same construction magnate. The police department has three thousand officers, enough honest ones to keep the institution credible and enough dirty ones to keep it useful. Organized crime is not a monolith; it is an ecosystem. The Italians run the docks and the unions, the Irish hold the waterfront bars and the police benevolent association, and a half-dozen smaller operations fill the gaps. They compete, cooperate, and occasionally kill each other according to rules that predate the current administration.
+
+**The Economy of Silence.** Information is the real currency. Every question you ask reaches someone who didn't want it asked. Every name you mention travels from the person you said it to, to the person who pays them, within hours. Silence is expensive. Publishing is a threat. Not publishing is a favor. The three newspapers and the radio station exist in a permanent negotiation between what they know and what they're allowed to print. Reporters trade stories like commodities: kill this one, and I'll give you something better next week.
+
+**Geography of Power.** Downtown is glass towers and men in good suits who never take the subway. The Middle is where the working people live, the neighborhoods with names that mean something, the parishes and the precincts and the corner bars. The Docks and the industrial corridor are where the bodies go, where the warehouses have owners nobody can find, and where trucks arrive at night carrying things that aren't on any manifest. The city has edges: the rail yards to the north, the waterfront to the south, and the blocks between that make up the world.
+
+**The Legal System.** Twelve judges sit the criminal bench. Four are honest. The rest are reachable through the right lawyer, the right favor, or the right envelope. The District Attorney prosecutes what he is told to prosecute and declines what he is told to decline. The public defender's office is understaffed by design. A good defense lawyer costs more than most defendants' houses. The appeals process exists to provide the appearance of review without the inconvenience of reversal.
+
+**Unwritten Rules.** Cops don't investigate upward. Reporters don't name sources. Lawyers don't cross certain clients. Criminals don't touch certain families. Everyone knows where the lines are. The people who cross them end up in the river, in a cell, or in a story that nobody prints.`,
+  guideNpcDirective: 'The opening NPC is the client. They tell you what they want found, not what they are hiding. They speak like a rehearsed story. The player should finish the conversation knowing the case, suspecting the client, and wanting to find out which instinct is right.',
+  loreFacets: {
+    police: 'In this scene: cops talk like cops. Short sentences, jurisdiction awareness, protective of their cases and their pensions. The honest ones are tired. The dirty ones are relaxed. Watch which is which. Nobody volunteers information without knowing who is asking and why.',
+    criminal: 'In this scene: the underworld is transactional, not theatrical. People speak in terms of territory, debts, and obligations. Violence is business, not passion. Respect is earned by reliability, not intimidation. Everyone remembers who owes what.',
+    'high-society': 'In this scene: the wealthy speak carefully. Every sentence is vetted for deniability. Hospitality is a power move, not generosity. Names are dropped as warnings. The real conversations happen after the help leaves the room.',
+    press: 'In this scene: reporters are transactional. They trade stories, protect sources, and calculate the cost of every question. Publishing is a weapon. Not publishing is leverage. The editor is always in the background, deciding what the paper can afford to print.',
+    street: 'In this scene: trust is local and conditional. People talk to you because you are useful, not because you are liked. Favors are currency. Information has a price that is not always money. The neighborhood watches everything and says nothing to outsiders.',
+    legal: 'In this scene: the law is a system, not justice. Lawyers speak in filings and precedents. Judges have reputations. The courthouse has its own economy of favors and debts. Every legal action creates a paper trail, and paper trails have readers.',
+  },
+  loreAnchors: [
+    'City Hall=elected officials protecting donors. Three council seats for sale. Real decisions in rooms without windows.',
+    'Police=three thousand officers. Enough honest to stay credible, enough corrupt to stay useful. Don\'t investigate upward.',
+    'Organized Crime=ecosystem, not monolith. Italians run docks and unions, Irish hold waterfront bars and police association. Smaller outfits fill gaps.',
+    'The Docks=where the bodies go. Warehouses with unfindable owners. Trucks at night carrying things not on any manifest.',
+    'Judges=twelve on the criminal bench. Four honest. The rest are reachable through the right envelope or the right lawyer.',
+    'The Press=three papers, one radio. Publishing is a threat. Not publishing is a favor. Reporters trade stories like commodities.',
+    'Lawyers=the legal system is a weapon. Good defense costs more than most defendants\' houses. The public defender\'s office is understaffed by design.',
+    'Informants=everyone talks to someone. Every question reaches the person who didn\'t want it asked. Silence is expensive.',
+    'Silence=the real currency. Information travels from the person you asked to the person who pays them within hours.',
+    'Marks (₥)=cash, favors, debts. The city\'s economy runs on what you owe, not what you earn.',
+  ],
   cohesionGuide: 'In noir, the player works alone. Cohesion represents contact reliability, not crew loyalty. +1: returning favors, protecting sources, delivering on promises to contacts. -1: burning sources, using contacts without reciprocating, exposing contacts to danger. Low cohesion means contacts stop returning calls or sell your name. High cohesion means someone answers the phone at 2 AM.',
   companionLabel: 'Associates',
   notebookLabel: 'Case Board',

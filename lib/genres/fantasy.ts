@@ -9,6 +9,7 @@ const fantasySpecies: Species[] = [
     name: 'Human',
     description: 'Adaptable, politically dominant across most kingdoms.',
     lore: 'The common face of every kingdom. Nobody questions a human at a city gate or a market stall. No starting contact bonus, but no suspicion either. Advantage on checks to blend in or navigate bureaucracy — the systems were built by humans, for humans. The cost: no racial network. Other species look after their own; humans are on their own.',
+    behavioralDirective: 'Default register: pragmatic, present-focused, building from scratch what other folk inherit. NPC reactions: unremarkable, which is both safety and invisibility. When narrating interiority: the freedom and loneliness of belonging to no tradition older than your own memory.',
     startingContacts: [
       { role: 'local official', disposition: 'neutral', description: 'A minor bureaucrat who knows how the systems work and owes no particular loyalty' },
     ],
@@ -18,6 +19,7 @@ const fantasySpecies: Species[] = [
     name: 'Elf',
     description: 'Slender, long-lived, keen-eyed.',
     lore: 'Elven patience is cultural, not passive — it comes from living long enough to see hasty decisions rot. Welcomed in courts and academies; distrusted on the frontier where "elf" means "outsider who thinks they know better." Start with one court or academic contact at Favorable. Advantage on Perception and History checks (keen eyes, long memory). Frontier and common-folk NPCs start at Wary — earn their respect through action, not lineage.',
+    behavioralDirective: 'Default register: measured, long-viewed, carrying the weight of watching shorter-lived friends age and die. Patience is not passivity; it is the discipline of a species that has seen urgency ruin more than it saved. NPC reactions: courts and scholars treat as peer, common folk resent the calm. When narrating interiority: the melancholy of long memory and the temptation to stop caring about things that will not outlast you.',
     startingContacts: [
       { role: 'court scholar', disposition: 'favorable', description: 'An academic at the Collegium who respects elven lineage and long memory', affiliation: 'The Collegium' },
     ],
@@ -27,6 +29,7 @@ const fantasySpecies: Species[] = [
     name: 'Dwarf',
     description: 'Stocky, dense-boned, mountain-born.',
     lore: 'Dwarven bluntness isn\'t rudeness; it\'s efficiency. A dwarf\'s word is a contract, and a contract is unbreakable. Trade guilds know this, which is why dwarven merchants get better terms than anyone else. Start with one trade guild contact at Favorable. Advantage on Engineering, Appraisal, and CON saves (dense bones, stubborn constitution). Disadvantage on Deception checks — lying goes against everything your culture taught you, and your face shows it.',
+    behavioralDirective: 'Default register: direct, contractual, measuring the world by whether it keeps its promises. Words are binding; actions are proof. NPC reactions: merchants trust implicitly, diplomats find the bluntness inconvenient. When narrating interiority: the bedrock certainty of a culture built on stone and oath, and the frustration of a world where neither seems to hold anymore.',
     startingContacts: [
       { role: 'trade guild factor', disposition: 'favorable', description: 'A guild merchant who gives dwarves better terms because a dwarven contract is unbreakable', affiliation: 'Trade Guild' },
     ],
@@ -36,6 +39,7 @@ const fantasySpecies: Species[] = [
     name: 'Halfling',
     description: 'Small, nimble, deceptively tough.',
     lore: 'People see the size and stop looking. That\'s the advantage. Halflings are everywhere, owned by no kingdom, beholden to no lord — which makes them either invisible or suspect, depending on who\'s asking. Start with one traveling merchant or innkeeper contact at Favorable (halfling network, always passing through). Advantage on Stealth checks and checks to go unnoticed in crowds. Disadvantage on Intimidation — nobody fears someone they could pick up.',
+    behavioralDirective: 'Default register: observant, cheerful as camouflage, navigating a world built for larger people. Smallness is a tool, not a limitation. NPC reactions: overlooked by the powerful, trusted by the common, underestimated by everyone. When narrating interiority: the quiet competence of someone who learned that being beneath notice is the safest place in any room.',
     startingContacts: [
       { role: 'traveling innkeeper', disposition: 'favorable', description: 'A halfling innkeeper plugged into the network of travelers, always passing through' },
     ],
@@ -45,6 +49,7 @@ const fantasySpecies: Species[] = [
     name: 'Dragonkin',
     description: 'Tall, scaled, remnants of an ancient bloodline.',
     lore: 'The Wyrm Kingdoms fell three centuries ago, but the fear hasn\'t. Dragonkin are imposing, fast, and carry a reputation for violence they didn\'t earn. Some doors open because people are afraid to say no. Others close for the same reason. But the dragonkin carry something else: fragments of pre-Sundering knowledge. Oral traditions, inherited memory, dreams that map to Ancient ruin layouts. The other species lost their connection to the Ancients when the Wyrm Kingdoms burned. The dragonkin didn\'t. Start with one dragonkin exile contact at Favorable (scattered community, fiercely loyal). Advantage on Intimidation and Initiative. Advantage on checks involving Ancient ruins, pre-Sundering lore, or interpreting Ancient artifacts (inherited cultural memory). Most NPCs start at Wary — you\'re feared before you\'re known. Climbing to Trusted takes twice as long.',
+    behavioralDirective: 'Default register: ancient, carrying inherited memory that surfaces as instinct and dream. The world fears what it does not understand, and the dragonkin understand things nobody else remembers. NPC reactions: fear first, curiosity second, trust only after sustained proof. When narrating interiority: the weight of racial memory, dreams that map to places you have never been, and the loneliness of being the last species that remembers what was lost.',
     startingContacts: [
       { role: 'exile lorekeeper', disposition: 'favorable', description: 'A scattered dragonkin exile who preserves oral traditions and pre-Sundering knowledge', affiliation: 'Dragonkin Diaspora' },
     ],
@@ -76,6 +81,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the spaces between places: the threshold where a shadow is not the absence of light but a door. You know that the Sundering displaced things, and that those things settled in the gaps between walls, between breaths, between one step and the next. You know the guild marks that mean a lock was made to keep something in, not out. You know the difference between a room that is empty and a room that is waiting.',
   },
   {
     id: 'warden',
@@ -101,6 +107,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the oaths because you swore them, and you know the fortresses because you stood watch on their walls. You know that Thornwall\'s garrison has not sent a rider in weeks and that the Accord of Thorns is held together by habit, not conviction. You know the weight of a shield in formation and the sound a gate makes when it closes for the last time. You know that the things worth protecting are always smaller than the forces that threaten them.',
   },
   {
     id: 'arcanist',
@@ -126,6 +133,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know that every spell you cast is a fragment of something larger, a sentence from a book that no living person has read in full. You know the Collegium\'s archives are shrinking, not because books are being removed, but because fewer scholars each decade can read what remains. You know the physical cost of magic: the nosebleeds, the tremor in your hands after a sustained casting, the headaches that last for days. You know that the reservoir is not refilling, and that no one at the Collegium will say it aloud.',
   },
   {
     id: 'herald',
@@ -151,6 +159,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the old stories, and you know that the old stories are the last record of truths the world has lost. You know which songs make soldiers weep and which ones make lords reach for their swords. You know the Collegium records facts, but you record meaning, and meaning is what survives when the facts are forgotten. You know that every story you speak aloud becomes known to whoever hears it, and that knowledge is a weapon you hand to strangers every time you open your mouth.',
   },
   {
     id: 'keeper',
@@ -176,6 +185,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the prayers, and you know the silence that sometimes follows them. You know the gods were louder a generation ago, that your teacher\'s teacher spoke of visions that came clearly and often, and that now the divine connection thins like a river running dry. You know the churches preach certainty they no longer feel. You know the difference between faith and habit, and you know that what remains of divine power still answers, sometimes, if the need is genuine and the heart is aligned.',
   },
   {
     id: 'ranger',
@@ -201,6 +211,7 @@ const fantasyClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the land the way a body knows breath: without thinking, without stopping. You know that the Thornwood has been wrong since spring, that the animals are moving in patterns that don\'t follow season or sense, and that the old trails your predecessors mapped now lead to places that weren\'t there a year ago. You know the forests remember what the cities forgot. You know the scars in the earth where Ancient roads surface and vanish, and you know that following them is not always a choice.',
   },
 ]
 
@@ -284,6 +295,41 @@ Rest terminology: Short rest, Long rest.`,
     buildAssetState: null,
     investigationGuide: 'Lore codex — prophecy fragments, historical connections, magical phenomena, ancient texts, ruin surveys.\n\nInvestigation in this genre is archaeology under pressure. The player isn\'t gathering evidence; they\'re recovering knowledge that was deliberately or accidentally lost.\n\nThe truth is older than the question. What you\'re investigating turns out to be a recurrence of something that happened before, repeatedly. Finding the pattern is the breakthrough.\n\nSources are fragments. No source is complete. Every NPC scholar, every library, every ruin holds part of the story — and the parts contradict each other in ways that are themselves clues.\n\nTranslation matters. Language is a barrier. Old texts require interpretation, and interpretation introduces error. Some clues are mistranslations of older clues.\n\nThe gatekeeper is dead. The person who knew the whole truth died long ago. The investigation is about reconstructing their knowledge from what they left behind — letters, students, marginalia in books they owned.',
   },
+  deepLore: `## THE WORLD
+
+**The Sundering.** Something broke the connection between the present and the deep past. Scholars disagree on when, how, and whether it is still happening. The evidence is in the ruins: cities built with techniques no living mason understands, inscriptions in languages that died with whatever civilization wrote them, machines that hum when approached but do nothing anyone can decipher. The Sundering is not an event in the past; it is an ongoing condition. Knowledge degrades. Magic weakens. The connection between the living world and whatever came before grows thinner each generation. Some scholars believe it can be reversed. Others believe it is accelerating. The Collegium officially takes no position, which is itself a position.
+
+**The Five Kingdoms.** Thornwall in the north: military, pragmatic, the shield against whatever comes from the highlands. Crestlands in the east: mercantile, wealthy, built on trade routes that predate the Sundering. Meridia in the south: the cultural heart, the great universities, the Collegium\'s home. The Pale March in the west: sparse, hard, populated by people who distrust institutions because institutions have never reached them. The Heartlands in the center: the oldest settlements, the deepest ruins, the kingdom that claims to be the heir of whatever came before. The Accord of Thorns binds them in mutual defense, but the Accord was written in a legal language no living scholar fully commands, and the border lords interpret its terms to suit their needs.
+
+**The Collegium.** A multi-kingdom institution, part university, part archive, part intelligence service. The Collegium preserves what knowledge remains and studies what it cannot understand. Its archives are vast but increasingly illegible. Fewer scholars each decade can read the older texts. The Collegium knows less than it did a century ago, and the rate of loss is accelerating. Its political neutrality is genuine but fragile; every kingdom wants the Collegium\'s knowledge, and none want to fund it adequately.
+
+**Magic as Echo.** Magic in this world is not ascending; it is residue. Every spell draws on a diminishing reservoir that no one knows how to replenish. The physical cost is real: nosebleeds, tremors, fatigue, and for sustained casting, temporary sensory loss. The Collegium\'s oldest records describe magic as effortless. Current practitioners describe it as pulling water from a drying well. Some spells that worked a generation ago no longer function. New discoveries are not innovations; they are recoveries of lost techniques, and each recovery is smaller than the last.
+
+**Ancient Ruins.** Every kingdom has them. They predate the Sundering, built by a civilization whose name is lost. The inscriptions are in dead languages. The architecture follows principles no living engineer can explain. Some ruins are inert. Others respond to proximity, to magic, to specific words spoken in languages the speaker does not know. The ruins are not dungeons; they are evidence. Whatever built them understood things the current world has forgotten, and the Sundering erased the connection between that knowledge and anyone who could use it.
+
+**The Gods.** The divine connection is thinning. Priests a generation ago spoke of clear visions, direct guidance, unmistakable presence. Current priests describe echoes, impressions, and the growing suspicion that the names they use for the gods may not be the right ones. Divine magic still functions, but it is weaker, less reliable, and increasingly conditional. The churches preach certainty they no longer feel. Some theologians believe the gods are dying. Others believe they are withdrawing. The Keepers, who hold the last threads of divine favor, know only that what answers their prayers is quieter each year.`,
+  guideNpcDirective: 'The opening NPC is a local who knows the land but not the old knowledge. They speak practically: "The forest has been wrong since spring," not "The magical substrate is degrading." Describe symptoms, not causes.',
+  loreFacets: {
+    'court-political': 'In this scene: nobles speak in implications and inherited grudges. The Accord of Thorns is invoked as authority by people who haven\'t read it. Power is measured in land, oaths, and the soldiers who enforce both. Hospitality is a binding contract. Insults are remembered across generations.',
+    collegium: 'In this scene: scholars are precise, frustrated by imprecision, and haunted by the gap between what the archives contain and what they can understand. Knowledge is both sacred and inadequate. Every answer raises a question the previous generation could have answered but this one cannot. The institution preserves what it can no longer fully explain.',
+    'ruin-ancient': 'In this scene: the ruins are not empty; they are waiting. Describe what remains: inscriptions that glow faintly when read aloud, doors that open to specific words in dead languages, machinery that hums but does not function. The architecture follows rules no living builder understands. The danger is not traps; it is the disorientation of encountering intelligence that predates everything you know.',
+    'wild-forest': 'In this scene: the wilderness is not scenery; it is a living system that remembers what the cities forgot. Animals behave in patterns that don\'t follow natural logic. Old trails lead to places that weren\'t there last season. The forest does not threaten; it simply does not care whether you survive. Describe the sensory world: the quality of light, the sound of wind through canopy, the wrongness of silence where birdsong should be.',
+    'divine-sacred': 'In this scene: the divine is present but fading. Temples feel hollow in ways the architecture doesn\'t explain. Prayers are answered with impressions, not words. The priests speak with conviction that costs them effort to maintain. Describe the gap between the ritual and its effect: the candle lit for a god whose name may be wrong, the blessing spoken into silence that was once filled with response.',
+    'dragonkin-memory': 'In this scene: the dragonkin carry fragments of pre-Sundering knowledge as inherited dream and instinct. They recognize ruin layouts from dreams. They speak phrases in dead languages without knowing the grammar. This knowledge is powerful and unreliable, vivid and incomplete. Describe it as sensation: the déjà vu of standing in a room your body remembers but your mind has never seen.',
+  },
+  loreAnchors: [
+    'The Sundering=something broke the connection to the deep past. Still happening. Knowledge degrades, magic weakens, ruins remain illegible. Scholars disagree on everything except that it is getting worse.',
+    'Five Kingdoms=Thornwall (military north), Crestlands (mercantile east), Meridia (cultural south, Collegium\'s home), Pale March (sparse west), Heartlands (oldest settlements, deepest ruins).',
+    'Accord of Thorns=binds the kingdoms in mutual defense. Written in a legal language no living scholar commands. Border lords interpret to suit their needs.',
+    'The Collegium=multi-kingdom archive and university. Preserves knowledge it can no longer fully explain. Fewer scholars each decade can read the older texts.',
+    'Magic=residue, not ascending. Draws on a diminishing reservoir. Physical cost: nosebleeds, tremors, fatigue. Some spells that worked a generation ago no longer function.',
+    'Ancient Ruins=predate the Sundering. Dead language inscriptions. Architecture that follows principles no one understands. Some respond to proximity or spoken words.',
+    'The Gods=quieter each generation. Priests describe echoes where their teachers described visions. Divine magic weaker, less reliable, increasingly conditional.',
+    'Dragonkin Memory=inherited dream-knowledge from before the Sundering. Maps to ruin layouts, surfaces as instinct. Powerful and unreliable.',
+    'The Thornwood=has been wrong since spring. Animals move in unnatural patterns. Old trails lead to new places. The forest remembers what the cities forgot.',
+    'Gold (gp)=kingdom-minted. The trade economy of the Five Kingdoms.',
+    'Wyrm Kingdoms=fell three centuries ago. The fear remains. Dragonkin carry fragments of what was lost.',
+  ],
   cohesionGuide: 'In fantasy, cohesion is the fellowship bond. +1: shared hardship endured together, player consulting companions before major decisions, moments of vulnerability or trust between party members. -1: treating companions as tools, making unilateral decisions that affect the group, dismissing a companion\'s personal stakes. Companions in this genre have their own arcs — cohesion tracks whether the player is part of those arcs or just using the people in them.',
   companionLabel: 'Companions',
   notebookLabel: 'Codex',
