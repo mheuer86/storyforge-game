@@ -45,6 +45,7 @@ interface Character {
   inspiration: boolean
   exhaustion: number
   tempEffects: { name: string; effect: string; duration: string }[]
+  originPressure?: { name: string; level: 'low' | 'rising' | 'shifted' } | null
 }
 
 interface Ship {
@@ -59,7 +60,7 @@ interface World {
   npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation'; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
-  decisions: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; status: 'active' | 'superseded' | 'abandoned'; reason?: string; chapter: number }[]
+  decisions: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; status: 'active' | 'superseded' | 'abandoned'; reason?: string; chapter: number; witnessed?: boolean }[]
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
   notebook: Notebook | null
@@ -795,6 +796,16 @@ function CharacterSheet({ character, currencyLabel, mission }: { character: Char
         <p className="mt-0.5 text-sm text-foreground/50">
           {character.species.name} {character.class.name} · Level {character.level}
         </p>
+        {character.originPressure && (
+          <p className={cn(
+            'mt-1 text-[11px] uppercase tracking-wider',
+            character.originPressure.level === 'shifted' && 'text-destructive/80',
+            character.originPressure.level === 'rising' && 'text-warning/80',
+            character.originPressure.level === 'low' && 'text-foreground/30',
+          )}>
+            {character.originPressure.name}{character.originPressure.level === 'rising' ? ' (rising)' : character.originPressure.level === 'shifted' ? ' (shifted)' : ''}
+          </p>
+        )}
         {mission && (
           <p className="mt-1.5 text-xs text-primary/80 line-clamp-2">
             <span className="text-primary/60">▸ </span>{mission}
@@ -1256,31 +1267,56 @@ function WorldPanel({ world, partyBaseName, explorationLabel, companionLabel, in
 
           {/* Decisions — active non-operational choices */}
           {(() => {
-            const activeDecisions = world.decisions.filter((d) => d.status === 'active')
-            return activeDecisions.length > 0 ? (
-              <div>
-                <SectionLabel>Key Decisions</SectionLabel>
-                <div className="flex flex-col gap-2">
-                  {activeDecisions.map((decision) => (
-                    <div
-                      key={decision.id}
-                      className={cn(
-                        'rounded px-3 py-2 border',
-                        decision.category === 'moral' && 'border-blue-400/30 bg-blue-400/5',
-                        decision.category === 'tactical' && 'border-amber-400/30 bg-amber-400/5',
-                        decision.category === 'strategic' && 'border-violet-400/30 bg-violet-400/5',
-                        decision.category === 'relational' && 'border-rose-400/30 bg-rose-400/5',
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-foreground">{decision.summary}</div>
-                        <span className="text-[10px] uppercase tracking-wider text-foreground/40">{decision.category}</span>
-                      </div>
-                      <div className="text-xs text-foreground/60">{decision.context}</div>
-                      <div className="mt-1 text-[10px] text-foreground/30">Ch. {decision.chapter}</div>
+            const witnessMarks = world.decisions.filter((d) => d.status === 'active' && d.witnessed)
+            const activeDecisions = world.decisions.filter((d) => d.status === 'active' && !d.witnessed)
+            return (witnessMarks.length > 0 || activeDecisions.length > 0) ? (
+              <div className="flex flex-col gap-4">
+                {witnessMarks.length > 0 && (
+                  <div>
+                    <SectionLabel>Witness Marks</SectionLabel>
+                    <div className="flex flex-col gap-2">
+                      {witnessMarks.map((decision) => (
+                        <div
+                          key={decision.id}
+                          className="rounded px-3 py-2 border border-warning/30 bg-warning/5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-foreground">{decision.summary}</div>
+                            <span className="text-[10px] uppercase tracking-wider text-warning/70">witnessed</span>
+                          </div>
+                          <div className="text-xs text-foreground/60">{decision.context}</div>
+                          <div className="mt-1 text-[10px] text-foreground/30">Ch. {decision.chapter}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+                {activeDecisions.length > 0 && (
+                  <div>
+                    <SectionLabel>Key Decisions</SectionLabel>
+                    <div className="flex flex-col gap-2">
+                      {activeDecisions.map((decision) => (
+                        <div
+                          key={decision.id}
+                          className={cn(
+                            'rounded px-3 py-2 border',
+                            decision.category === 'moral' && 'border-blue-400/30 bg-blue-400/5',
+                            decision.category === 'tactical' && 'border-amber-400/30 bg-amber-400/5',
+                            decision.category === 'strategic' && 'border-violet-400/30 bg-violet-400/5',
+                            decision.category === 'relational' && 'border-rose-400/30 bg-rose-400/5',
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-foreground">{decision.summary}</div>
+                            <span className="text-[10px] uppercase tracking-wider text-foreground/40">{decision.category}</span>
+                          </div>
+                          <div className="text-xs text-foreground/60">{decision.context}</div>
+                          <div className="mt-1 text-[10px] text-foreground/30">Ch. {decision.chapter}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null
           })()}

@@ -1790,6 +1790,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             effect: `+${m.value} ${m.stat}`,
             duration: m.duration,
           })),
+          originPressure: (() => {
+            // Find the origin counter for this character's species
+            const counters = gameState.counters || {}
+            const counterNames = Object.keys(counters).filter(k => !['drift_exposure', 'corruption', 'chrome_stress', 'favor_balance', 'echo_debt', 'crew_trust'].includes(k))
+            if (counterNames.length === 0) return null
+            const name = counterNames[0]
+            const val = counters[name] || 0
+            return { name, level: val >= 5 ? 'shifted' as const : val >= 3 ? 'rising' as const : 'low' as const }
+          })(),
         }}
         ship={{
           name: gameState.world.shipName,
