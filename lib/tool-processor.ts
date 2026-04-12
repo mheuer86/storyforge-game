@@ -1176,13 +1176,22 @@ function applyNarrativeChanges(
     let arcs = [...(updated.arcs ?? [])]
 
     if (au.create_arc) {
-      // Dedup: match by ID or title similarity (Claude often recreates arcs with varied IDs)
+      // Dedup: match by ID, title similarity, or significant keyword overlap
       const newTitle = au.create_arc.title.toLowerCase()
-      const existing = arcs.find(a =>
-        a.id === au.create_arc!.id ||
-        a.title.toLowerCase() === newTitle ||
-        (a.title.toLowerCase().includes(newTitle.slice(0, 20)) || newTitle.includes(a.title.toLowerCase().slice(0, 20)))
-      )
+      const newWords = new Set(newTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
+      const existing = arcs.find(a => {
+        if (a.id === au.create_arc!.id) return true
+        const existingTitle = a.title.toLowerCase()
+        if (existingTitle === newTitle) return true
+        // Substring match (first 20 chars)
+        if (existingTitle.includes(newTitle.slice(0, 20)) || newTitle.includes(existingTitle.slice(0, 20))) return true
+        // Keyword overlap: if 2+ significant words match, it's likely the same arc
+        // (proper nouns like character/location names are strong signals)
+        const existingWords = new Set(existingTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
+        const overlap = [...newWords].filter(w => existingWords.has(w) || [...existingWords].some(ew => ew.startsWith(w) || w.startsWith(ew))).length
+        if (overlap >= 2) return true
+        return false
+      })
       if (!existing) {
         arcs.push({
           id: au.create_arc.id,
