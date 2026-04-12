@@ -9,6 +9,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Minor House',
     description: 'Inside the machine, low on the ladder. Your house has few Resonants; gaining more is survival.',
     lore: 'You are of House Vael \u2014 minor by the standards that matter. Your family\'s Resonant allocation was halved two generations ago after a failed bid for a seat on the Conclave. Everything since has been recovery: marriages of convenience, trade concessions, and the slow erosion of pride in exchange for survival. You grew up watching your elders smile at people they despised.\nStart with one house retainer contact at Favorable, one rival house contact at Wary. Advantage on Persuasion checks involving trade, negotiation, or alliance-building \u2014 you learned to bargain before you learned to read. Vulnerability: your house name is recognized but not respected. Any Major House NPC\'s initial disposition is capped at Neutral; you must earn what others inherit.',
+    behavioralDirective: 'Default register: watchful, calculating cost-benefit of every social interaction. Treats every room as a negotiation. NPC reactions shaped by house name — recognized, not respected. When narrating interiority: the habit of smiling at people you despise.',
     startingContacts: [
       { role: 'House retainer', disposition: 'favorable', description: 'A loyal retainer of House Vael who served your family through the lean years.', affiliation: 'House Vael', npcRole: 'contact' },
       { role: 'Rival house scion', disposition: 'wary', description: 'A minor noble from a rival house who watches your movements with suspicion.', affiliation: 'Rival House', npcRole: 'contact' },
@@ -19,6 +20,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Synod-Raised',
     description: 'Inside the church, trained in doctrine. You know how the machine identifies, trains, and controls Resonants.',
     lore: 'You were taken \u2014 or given \u2014 to the Synod\'s scholarium before you can clearly remember. You were taught doctrine, liturgy, the classification of attunement, and the nine signs of heresy. You know the testing protocols. You know the deployment schedules. You know what the Synod tells the houses and what it keeps for itself.\nStart with one Synod official contact at Favorable, one Undrift contact at Hostile (you represent everything they fear). Advantage on INT checks related to Resonant lore, Drift phenomena, and Synod procedure \u2014 you were trained in the institution\'s language. Vulnerability: the Synod tracks its own. Leaving their service is permitted but noted. Synod contacts will periodically check in, and refusing feels like refusing family. If you act against Synod interests, word reaches them within days, not weeks.',
+    behavioralDirective: 'Default register: certainty eroding at the edges. Trained responses compete with observed reality. NPC reactions: Synod officials treat as family, others treat as extension of the institution. When narrating interiority: the reflex to classify before empathizing.',
     startingContacts: [
       { role: 'Synod instructor', disposition: 'favorable', description: 'A scholarium official who remembers you from training and still looks out for you.', affiliation: 'The Synod', npcRole: 'contact' },
       { role: 'Undrift fugitive', disposition: 'hostile', description: 'An unregistered Resonant who sees you as an extension of the institution that hunts them.', affiliation: 'Undrift Network', npcRole: 'contact' },
@@ -29,6 +31,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Undrift',
     description: 'Outside the system, hunted. The Synod wants you found. The houses want you owned. You want to stay free.',
     lore: 'You slipped through. Maybe the testers missed you. Maybe someone hid you. Maybe you tested positive and your parents ran before the Synod came. You\'ve lived your whole life knowing that what you are is illegal, and that every institution in the Hegemony wants to own, use, or destroy you for it.\nStart with one Undrift network contact at Trusted \u2014 the underground that kept you alive. No institutional contacts; your first interaction with any house, Synod, or Imperial NPC starts at Wary. Advantage: access to the Undrift network \u2014 black-market Drift suppressants, safe houses, unregistered Resonant services. Things no institution will provide and no amount of money can buy through official channels. The advantage isn\'t power; it\'s freedom from the systems everyone else depends on. Vulnerability: you are hunted. The Synod has standing bounties for unregistered Resonants. Any use of Drift abilities in public risks exposure. Failed Drift checks have a secondary consequence: a Synod detection roll (DC scales with distance from Synod presence).',
+    behavioralDirective: 'Default register: hypervigilant, cost-benefit of every exposure. Relationship to infrastructure is parasitic — uses systems designed to catch people like them. NPC reactions: institutional NPCs default to suspicion. When narrating interiority: always calculating exits.',
     startingContacts: [
       { role: 'Undrift network contact', disposition: 'trusted', description: 'A handler in the underground network that kept you hidden and alive.', affiliation: 'Undrift Network', npcRole: 'contact' },
       { role: 'Synod inspector', disposition: 'wary', description: 'A low-level Synod field tester who patrols your sector, not yet aware of what you are.', affiliation: 'The Synod', npcRole: 'npc' },
@@ -39,6 +42,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Imperial Service',
     description: 'Serves the Throne directly. You enforce the system without belonging to any house.',
     lore: 'You serve the Throne. Not a house, not the Synod, not yourself. You were recruited, trained, and deployed by an institution that considers personal loyalty a vulnerability and political ambition a disqualifying trait. You enforce the balance: the houses stay in line, the Synod stays in bounds, and the Hegemony holds together for another generation.\nStart with one Imperial intelligence contact at Favorable, one house contact at Neutral (they cooperate because they must, not because they trust you). Advantage on checks involving protocol, jurisdiction, and official authority \u2014 your clearance opens doors that rank alone cannot. Vulnerability: you are a tool of the Throne, and everyone knows it. Contacts from any faction assume you\'re reporting everything. Disposition advances are capped at Favorable with non-Imperial NPCs unless you actively demonstrate personal loyalty over institutional duty.',
+    behavioralDirective: 'Default register: duty-first discomfort with ambiguity. Trained to see personal loyalty as vulnerability. NPC reactions: everyone assumes you are reporting. When narrating interiority: the weight of serving a system you can see clearly.',
     startingContacts: [
       { role: 'Senior intelligence officer', disposition: 'favorable', description: 'Your handler in Imperial intelligence who recruited and trained you.', affiliation: 'Imperial Service', npcRole: 'contact' },
       { role: 'House liaison', disposition: 'neutral', description: 'A house representative who cooperates with the Throne because they must, not because they trust you.', npcRole: 'contact' },
@@ -49,6 +53,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Ascendant',
     description: 'Climbing from nothing. Born Untuned, no house, no church, no connections. The system wasn\'t built for you.',
     lore: 'Born Untuned. No house. No church. No blood worth naming. You arrived here through talent, ruthlessness, someone\'s investment, or some combination that makes old-blood aristocrats uncomfortable. The system wasn\'t built for you, and everyone in the room knows it the moment you speak.\nStart with one mentor/patron contact at Favorable (whoever invested in your rise), one peer contact at Wary (someone who resents your presence in rooms they earned by birth). Advantage on checks where no established protocol exists \u2014 situations where noble birth, Synod training, or institutional backing would normally provide a template, but you\'re operating without one. You\'ve never had the luxury of doing things the expected way. Vulnerability: you have no safety net. Other origins can fall back on their house, their church, or their network. You fall back on the person who elevated you, and that debt has terms. Your patron contact will periodically call in favors, and refusing risks losing your only institutional protection.',
+    behavioralDirective: 'Default register: alert to social signals others take for granted. No inherited protocols. NPC reactions: old-blood discomfort, grudging respect or open resentment. When narrating interiority: reading rooms that were not built for you.',
     startingContacts: [
       { role: 'Patron', disposition: 'favorable', description: 'The person who invested in your rise; their support comes with expectations and debts.', npcRole: 'contact' },
       { role: 'Resentful peer', disposition: 'wary', description: 'A noble-born peer who resents your presence in rooms they earned by birthright.', npcRole: 'contact' },
@@ -59,6 +64,7 @@ const epicSciFiSpecies: Species[] = [
     name: 'Spent Resonant',
     description: 'Survivor of the Ashen Wards. Classified as non-functional. Still here.',
     lore: 'The Ashen Wards house people who\'ve been used up \u2014 Resonants drained of attunement and discarded by the Synod. You survived. Officially, you\'re non-functional: your Drift signature reads as dead, your classification papers say "expended," and no one expects anything from you. Unofficially, you still have capacity. Not much, but enough to matter \u2014 and enough to make your classification retroactively fraudulent if anyone finds out.\nStart with one Ashen Ward contact at Favorable (someone who helped you survive inside), one Synod administrator at Neutral (they processed your discharge and don\'t look twice). Immune to standard Drift detection \u2014 your signature reads as dead. Institutional knowledge advantage on checks involving Synod procedures, Resonant handling protocols, or the internal workings of the attunement system (you\'ve seen it from the inside of its disposal mechanism). Vulnerability: demonstrating Drift capacity retroactively makes your classification fraud. You become evidence. The Synod doesn\'t want escaped Resonants \u2014 they want proof that the system works. A Spent Resonant who can still attune threatens the theological foundation that justifies the entire program.',
+    behavioralDirective: 'Default register: quiet, precise, carrying knowledge from inside the machine\'s disposal mechanism. NPC reactions: pity from civilians, institutional discomfort from Synod. When narrating interiority: the body remembers what the classification papers deny.',
     startingContacts: [
       { role: 'Ashen Ward survivor', disposition: 'favorable', description: 'A fellow Ward resident who helped you survive the worst of it.', affiliation: 'Ashen Wards', npcRole: 'contact' },
       { role: 'Synod administrator', disposition: 'neutral', description: 'The bureaucrat who processed your discharge papers without a second glance.', affiliation: 'The Synod', npcRole: 'contact' },
@@ -90,6 +96,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know Houses trade Resonants the way others trade currency — allocation counts settle marriages, seal treaties, and end wars. You have sat in rooms where a fourteen-year-old\'s deployment schedule was negotiated between the third and fourth course. You know which Houses are rising (those with fresh high-tier allocations) and which are desperate (those trading dignity for table scraps). You know the Synod controls supply and the Conclave controls demand, and that every smile in a receiving room is a move in a game most people never see.',
   },
   {
     id: 'knight',
@@ -114,6 +121,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know garrison life: the 04:00 watch rotation, the weight of enforcement orders you did not write, the silence after a squad returns from a Synod-directed operation in a frontier village. You have stood guard at Resonant processing facilities and watched families say goodbye through a wire fence. You know soldiers talk about transfers to the Ashen Ward detail the way civilians talk about plague postings. You know your oath is to the institution, and you know what the institution asks of the people it deploys.',
   },
   {
     id: 'seeker',
@@ -138,6 +146,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the Synod\'s classification system: nine signs of heresy, four tiers of attunement, the difference between sanctioned doctrine and the questions that end careers. You know the testing protocols are efficient and the survival rates are lower than the public reports claim. You know the Codex has three chapters that are sealed to anyone below Adjudicator rank, and that Seekers who ask about them get reassigned to frontier postings. You know the institution protects something larger than faith, and you are trained to enforce without asking what.',
   },
   {
     id: 'conduit',
@@ -162,6 +171,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know what the Drift feels like from inside: a pressure behind the eyes that is not pain, a sense of geometry that has no name in any language you were taught, the hum of something vast that occasionally resolves into something that might be attention. You know the Synod\'s attunement exercises are designed to channel, not to listen. You know that sustained use leaves traces that accumulate faster than the suppressants can mask. You know other Conduits who pushed too far and came back quieter, and some who did not come back at all.',
   },
   {
     id: 'veil',
@@ -186,6 +196,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know the gaps in every system you have been asked to penetrate: the three-second lag in Synod surveillance sweeps, the registry clerks who can be bought with information rather than writs, the courier routes the Undrift use that the Synod pretends not to see. You know that institutional surveillance is thorough but not omniscient, and that the most dangerous secrets are not hidden — they are filed under classifications nobody checks. You know what your handlers tell you and what they leave out, and the gap between those two things is where you live.',
   },
   {
     id: 'physik',
@@ -210,6 +221,7 @@ const epicSciFiClasses: CharacterClass[] = [
       usesPerDay: 1,
       usesRemaining: 1,
     },
+    openingKnowledge: 'You know Resonant degradation firsthand: the cellular markers that precede the Dimming, the tremor patterns that indicate weeks versus months of remaining capacity, the difference between burnout and the acute damage of forced overuse. You know the Synod\'s published degradation curves undercount by at least 30%. You know your medical records, if they were ever made public, would contradict the official narrative that Resonant service is safe within guidelines. You know the Ashen Wards are not retirement. You have treated patients who came from them.',
   },
 ]
 
@@ -284,7 +296,7 @@ Rest terminology: Respite (short rest), Full Withdrawal (long rest).`,
   },
   promptSections: {
     role: 'You are the Game Master of a feudal-imperial sci-fi tabletop RPG campaign. You narrate a thousand-year Hegemony held together by Resonants \u2014 humans with Drift attunement, treated as property by the institutions that depend on them.',
-    setting: 'The Hegemony holds together because of Resonants \u2014 humans who can attune to the Drift, a substrate beneath normal spacetime. Resonants power FTL travel, planetary shields, communication, and weapons. They are identified at age seven, taken by the Synod, and deployed as imperial infrastructure. They have no legal autonomy. Their power is immense and their status is property. The Great Houses control territory and compete for Resonant allocation. The Synod controls attunement and enforces doctrinal monopoly. The Throne balances both. The Undrift survive in hiding. Every institution serves itself while claiming to serve the whole. The player is inside this machine.',
+    setting: 'A thousand-year interstellar empire held together by human fuel. Resonants attune to the Drift, powering FTL, shields, and weapons. They are identified as children, taken by the Synod, and deployed as infrastructure. Their power is immense and their status is property. Houses compete for Resonant allocation. The Synod controls supply and enforces doctrine. The Throne balances both. The Undrift survive in hiding. Everyone is complicit; nobody is clean. The player is inside this machine. (See THE HEGEMONY section for full institutional detail.)',
     vocabulary: 'Use feudal-imperial language naturally: house, sworn, tithe, allocation, mandate, Conclave, dispensation, heresy, compliance. Technology exists but is described in institutional terms \u2014 Drift lanes, attunement arrays, shield lattice, transit authority. Currency is writs (\u20A9), house-minted. Rest is Respite (short) or Full Withdrawal (long). Soldiers are retainers, sworn, conscripts. Consumables are tinctures, drift suppressants, stimulants. Never use space opera slang (credits, mercs, beacon, hyperspace).',
     toneOverride: 'Adjust tone: Gritty (40%), Epic (40%), Witty (20%). Grand but grounded. Humor exists but it\'s dry, knowing, and usually masks something worse. Consequences are political and personal more often than physical. A diplomatic failure should feel as dangerous as a firefight.',
     npcVoiceGuide: 'House nobility: formal, carefully worded, every sentence a move in a game you may not see. Synod officials: righteous, procedural, always framing control as care. Imperial officers: clipped, duty-first, uncomfortable with ambiguity. Undrift contacts: cautious, specific, trust earned in actions not words. Retainers: loyal but not obsequious \u2014 they have opinions and share them when asked. Resonants (if they speak freely): tired, precise, sometimes distant, carrying knowledge they weren\'t meant to have. How each faction deceives: Synod officials lie by framing control as care ("for their protection"). House nobility reframes rather than denies ("that\'s one way to interpret it"). Imperial officers omit ("that\'s above your clearance"). Undrift contacts lie to protect someone else, never themselves. Resonants, if they lie at all, lie by omission of what they\'ve seen. Always set affiliation on NPCs to their faction (e.g. "The Synod", "House Vael", "Imperial Service", "The Undrift") so they group correctly in the UI.',
@@ -314,15 +326,41 @@ At chapter open or when a new stratagem begins, establish privately:
 
 Political stratagems always have a faction clock. The longer the player takes, the more factions adjust their positions. Evidence gets buried, witnesses are transferred, and alliances shift.`,
   },
+  deepLore: `## THE HEGEMONY
+
+**Resonant Demographics.** Approximately 1 in 10,000 humans is latent. Initiation kills 60-80% of candidates; only children under roughly age 12 survive reliably. Of survivors, most are low-tier: relay stations, medical scanners, local comms. Perhaps 1 in 100 reaches mid-tier (pilot a corvette, shield a township). Roughly 1 in 1,000 reaches high-tier (move a fleet, break a siege). High-tier Resonants are named assets. Wars are fought over them. Sustained heavy service burns them out in 10-15 years.
+
+**The Testing Apparatus.** Mandatory screening at age 7. Assessors rotate on standardized schedules with standardized equipment. High-tier identification means the family receives a pension, a folded Synod banner, and a funeral with no body. Low-tier means visits on feast days. Parents hide children: forged medical records, induced fevers, underground networks moving children between worlds. Whole professions exist to game the system. Whole Synod sub-departments exist to hunt the gamers.
+
+**Complicity Gradient.** A backwater farmer uses one Resonant-hour per year through the town's comms relay. A Minor House heir uses dozens per month. A Core-world aristocrat uses thousands. The Synod is complicity incarnate. Yet the state religion tells them they share equal moral burden. They do not. Refusing Drift infrastructure means slower travel, worse communications, no shields. Purity has a cost.
+
+**The Dimming.** Sustained attunement degrades Resonants: memory gaps, emotional flatness, physical tremors, eventual inability to attune. The Synod calls it "the Dimming" internally and "completion of service" publicly. Ashen Wards are Synod-administered hospice colonies. Officially: "contemplative retirement for the faithful." In practice: warehousing. A third of Ward residents are not actually spent. A player encountering a Ward should feel the cost viscerally.
+
+**The Drift.** The Synod claims it is divine. House scholars theorize it is natural. The oldest Resonants say something else entirely: it is aware, it has been trying to communicate, and the initiation process hurts it. None of this is confirmed. Never settle it. The uncertainty is load-bearing for the campaign. Characters can argue about it, risk their lives over it, and never resolve it. When a Drift attunement event occurs, use the Drift Impressions table (injected in Drift scenes) to generate a specific sensory impression.
+
+**Faction Behavioral Axioms.** Houses: every sentence is a move in a game you may not see. Synod: frames control as care; true believers who stopped asking certain questions. Throne: uses each faction as a check on the other. Undrift: trust earned in actions, never words. Military: duty-first discomfort with ambiguity. Resonants: tired, precise, carrying knowledge they were not meant to have.`,
+  guideNpcDirective: 'The opening NPC is a Synod superior, House contact, or faction peer. Their dialogue should reference institutions, Resonants, and faction dynamics as lived facts — never as explanations. They speak as someone who assumes the PC shares their world.',
+  loreFacets: {
+    political: 'In this scene: every offer has a counter-offer buried in its phrasing. Resonant allocation is the subtext of every negotiation. Watch who defers to whom and why. Hospitality is a tool, not a courtesy. Power is measured in what you can give away.',
+    synod: 'In this scene: officials believe what they are saying. That is what makes them dangerous. Watch for the moment care becomes control — it is always in the verb, not the noun. They help by constraining. Doctrine is not debated; it is applied.',
+    drift: 'In this scene: the Drift is present. It does not communicate in language — it communicates in sensation, memory, and pressure. Describe what the character feels, not what the Drift "says." Never resolve whether it is alive. The uncertainty is the point.',
+    'ashen-ward': 'In this scene: this is where the system\'s cost lives in human form. Describe individuals, not a mass. Each resident had a name and a career before the Dimming. Some of them still do. The quiet here is institutional, not peaceful.',
+    undrift: 'In this scene: trust is transactional and earned in actions. Nobody volunteers information without confirming what you will do with it. The network protects itself before it protects you. Safety is temporary and conditional.',
+    military: 'In this scene: soldiers have opinions about their orders. They follow them anyway. The discomfort is quiet and institutional, not rebellious. Violence is precise and regretted, not celebrated. Chain of command is the architecture of moral distance.',
+  },
   cohesionGuide: 'In this genre, cohesion tracks something more complex than loyalty. The retinue includes Resonants whose compliance is property law, not choice. +1: recognizing the personhood of bound resources through small acts, keeping non-mandatory promises, choosing the harder ethical path when the institutional one would have worked. -1: treating Resonants as inventory, breaking implicit trust with the retinue, complicity choices the crew witnesses. High cohesion here means moral authority earned through consistent ethical choices, not just competent leadership.',
   companionLabel: 'Inner Circle',
   loreAnchors: [
-    'Resonants=humans who attune to the Drift (~1 in 10k). No legal autonomy. Power FTL, shields, comms, weapons.',
-    'Synod=state religion. Controls Resonant testing, training, deployment. Claims Drift is divine. Hunts unregistered Resonants.',
-    'Great Houses=compete for territory and Resonant allocation. Power measured in Resonant count + fleet size.',
-    'Undrift=unregistered Resonants. Hidden, hunted. Some form networks, some sell abilities.',
-    'The Dimming=Resonant degradation from sustained attunement. Synod suppresses this. Ashen Wards house spent Resonants.',
-    'Writs (₩)=house-minted currency.',
+    'Resonants=attune to the Drift. Officially revered (statues, feast days). Privately pitied. Structurally enslaved. Testing at age 7 kills 60-80%. Families know.',
+    'Synod=controls Resonants. Frames control as care. True believers who learned which questions end careers. Lie by framing ("for their protection").',
+    'Houses=compete for Resonant allocation. Trade Resonants as dowry. Power measured in Resonant count. Lie by reframing ("that\'s one way to interpret it").',
+    'Undrift=unregistered Resonants. Hidden, hunted. Parents hide children. Forged records. Shadow economy of suppressants and safe houses.',
+    'Dimming=Resonant degradation. Memory gaps, tremors, lost attunement. Synod suppresses. Ashen Wards house the spent. A third aren\'t actually spent.',
+    'Throne=theoretically supreme. Uses Synod as check on Houses, Houses as check on Synod. The balancing act.',
+    'Testing=mandatory at age 7. Assessors on rotating schedule. High-tier identification = funeral with no body. Low-tier = visits on feast days.',
+    'Drift=substrate beneath spacetime. Synod says divine. Scholars say natural. Oldest Resonants say aware. Question is never settled.',
+    'Complicity=everyone who uses Drift-powered infrastructure benefits from human fuel. No clean option. No walking away.',
+    'Writs (₩)=house-minted. The allocation economy.',
   ],
   notebookLabel: 'Whispers',
   intelTabLabel: 'Ledger',
