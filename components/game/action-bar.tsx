@@ -354,7 +354,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/[0.04] px-3 py-2">
           <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0 bg-destructive animate-pulse" />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-destructive/80 shrink-0">
-            Combat — Round {combatState.round}
+            Combat
           </span>
           <span className="text-[10px] text-destructive/20 shrink-0">·</span>
           {combatState.enemies.map((enemy) => {
