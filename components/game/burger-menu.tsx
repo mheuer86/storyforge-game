@@ -144,7 +144,12 @@ export function BurgerMenu({
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [apiKeyError, setApiKeyError] = useState('')
   const [savedSlot, setSavedSlot] = useState<number | null>(null)
-  const isDebug = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && localStorage.getItem('storyforge_debug') === '1')
+  const [isDebug, setIsDebug] = useState(process.env.NODE_ENV === 'development')
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('storyforge_debug') === '1') {
+      setIsDebug(true)
+    }
+  }, [])
 
   const openSaveLoad = (mode: 'save' | 'load') => {
     setSlots([getSaveSlot(1), getSaveSlot(2), getSaveSlot(3)])
