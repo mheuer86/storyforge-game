@@ -1016,8 +1016,9 @@ function applyNarrativeChanges(
     const hasSceneEnd = !!input.scene_end
     const hasPendingCheck = !!input.pending_check
     if (hasSceneEnd && !hasPendingCheck) {
+      const { _signalCloseDeferred, ...rest } = updated as GameState & { _signalCloseDeferred?: string }
       updated = {
-        ...updated,
+        ...rest as GameState,
         meta: {
           ...updated.meta,
           closeReady: true,
@@ -1026,9 +1027,15 @@ function applyNarrativeChanges(
         },
       }
     }
-    // If gated out, log why and defer — Claude will retry next turn
-    if (!hasSceneEnd) dbg('signal_close DEFERRED: missing scene_end')
-    if (hasPendingCheck) dbg('signal_close DEFERRED: pending_check in same turn')
+    // If gated out, log why and set flag so the prompt reminds Claude next turn
+    if (!hasSceneEnd) {
+      dbg('signal_close DEFERRED: missing scene_end')
+      ;(updated as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred = 'missing scene_end'
+    }
+    if (hasPendingCheck) {
+      dbg('signal_close DEFERRED: pending_check in same turn')
+      ;(updated as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred = 'pending_check'
+    }
   }
 
   if (input.close_chapter && !updated.meta.chapterClosed) {
