@@ -314,7 +314,12 @@ Rest terminology: Respite (short rest), Full Withdrawal (long rest).`,
     buildAssetState: (ship, shipName) => {
       const systemsLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
       const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
-      return `\nRETINUE: ${shipName}\nSERVICES: ${systemsLine}\nRETINUE OPTIONS: ${combatLine}`
+      // Detect flavor label from the system names present in the state
+      const systemIds = new Set(ship.systems.map(s => s.id))
+      const flavorLabel = systemIds.has('safehouses') ? 'NETWORK'
+        : systemIds.has('echoes') ? 'REMNANT'
+        : 'RETINUE'
+      return `\n${flavorLabel}: ${shipName}\nSERVICES: ${systemsLine}\n${flavorLabel} OPTIONS: ${combatLine}`
     },
     investigationGuide: `Ledger \u2014 political debts, faction promises, evidence of complicity, intercepted correspondence, testimony. Investigation in this genre is about power: who has it, who hid what, who betrayed whom.
 
@@ -349,6 +354,68 @@ Political stratagems always have a faction clock. The longer the player takes, t
     military: 'In this scene: soldiers have opinions about their orders. They follow them anyway. The discomfort is quiet and institutional, not rebellious. Violence is precise and regretted, not celebrated. Chain of command is the architecture of moral distance.',
   },
   cohesionGuide: 'In this genre, cohesion tracks something more complex than loyalty. The retinue includes Resonants whose compliance is property law, not choice. +1: recognizing the personhood of bound resources through small acts, keeping non-mandatory promises, choosing the harder ethical path when the institutional one would have worked. -1: treating Resonants as inventory, breaking implicit trust with the retinue, complicity choices the crew witnesses. High cohesion here means moral authority earned through consistent ethical choices, not just competent leadership.',
+  assetFlavors: {
+    'minor-house': {
+      name: 'Retinue',
+      systems: [
+        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informants.' },
+        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
+        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Shared Resonant access.' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
+      ],
+    },
+    'synod-raised': {
+      name: 'Retinue',
+      systems: [
+        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informants.' },
+        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
+        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Shared Resonant access.' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
+      ],
+    },
+    'imperial-service': {
+      name: 'Retinue',
+      systems: [
+        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informants.' },
+        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
+        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Shared Resonant access.' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
+      ],
+    },
+    'undrift': {
+      name: 'Network',
+      systems: [
+        { id: 'safehouses', name: 'Safehouses', level: 1, description: 'One local node.' },
+        { id: 'whispers', name: 'Whispers', level: 1, description: 'Cell-level rumor.' },
+        { id: 'couriers', name: 'Couriers', level: 1, description: 'One reliable runner.' },
+        { id: 'dampeners', name: 'Dampeners', level: 1, description: 'One suppression contact.' },
+        { id: 'trust', name: 'Trust', level: 1, description: 'Known to your cell.' },
+      ],
+    },
+    'spent-resonant': {
+      name: 'Remnant',
+      systems: [
+        { id: 'echoes', name: 'Echoes', level: 1, description: 'Fragmentary Drift sense.' },
+        { id: 'contacts_from_service', name: 'Contacts from Service', level: 1, description: 'One old handler or fellow Spent.' },
+        { id: 'provisions', name: 'Provisions', level: 1, description: 'Ashen Ward discharge kit.' },
+        { id: 'shelter', name: 'Shelter', level: 1, description: 'Forgotten corner of an Ashen Ward.' },
+        { id: 'presence', name: 'Presence', level: 1, description: 'Name recognized among Spent.' },
+      ],
+    },
+    'ascendant': {
+      name: 'Retinue',
+      systems: [
+        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
+        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informants.' },
+        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
+        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Shared Resonant access.' },
+        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
+      ],
+    },
+  },
   companionLabel: 'Inner Circle',
   loreAnchors: [
     'Resonants=attune to the Drift. Officially revered (statues, feast days). Privately pitied. Structurally enslaved. Testing at age 7 kills 60-80%. Families know.',

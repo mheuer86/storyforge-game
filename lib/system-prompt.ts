@@ -1359,7 +1359,15 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     : ''
 
   const timeLine = w.currentTime ? `TIME: ${w.currentTime}` : ''
-  const partyLabel = config.partyBaseName.toUpperCase()
+  // Resolve party label: use origin-keyed asset flavor name if available, else config default
+  const partyLabel = (() => {
+    if (config.assetFlavors) {
+      const speciesKey = c.species.toLowerCase().replace(/\s+/g, '-')
+      const flavor = config.assetFlavors[speciesKey]
+      if (flavor) return flavor.name.toUpperCase()
+    }
+    return config.partyBaseName.toUpperCase()
+  })()
   const pronouns = c.gender === 'he' ? 'he/him' : c.gender === 'she' ? 'she/her' : 'they/them'
   const exhaustionTag = (c.exhaustion ?? 0) > 0 ? ` | EXHAUSTION: ${c.exhaustion}/6` : ''
 
