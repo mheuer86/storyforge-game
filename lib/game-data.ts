@@ -46,7 +46,9 @@ export function createInitialGameState(
   gender: 'he' | 'she' | 'they' = 'they',
 ): GameState {
   const config = getGenreConfig(genre)
-  const selectedClass = config.classes.find((c) => c.id === classId)
+  // When playbooks exist for this origin, look up the class from there; otherwise fall back to universal classes
+  const classPool = (config.playbooks?.[speciesId]) || config.classes
+  const selectedClass = classPool.find((c) => c.id === classId)
   const selectedSpecies = config.species.find((s) => s.id === speciesId)
 
   if (!selectedClass || !selectedSpecies) {

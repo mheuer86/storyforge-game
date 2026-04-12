@@ -225,6 +225,88 @@ const epicSciFiClasses: CharacterClass[] = [
   },
 ]
 
+// ─── Origin Playbooks (Phase 4 — Synod-Raised proof of concept) ────
+
+const epicSciFiPlaybooks: Record<string, CharacterClass[]> = {
+  'synod-raised': [
+    {
+      id: 'censor',
+      name: 'Censor',
+      concept: 'The Synod\'s investigative arm. Sanctioned interrogator.',
+      primaryStat: 'INT',
+      proficiencies: ['Investigation', 'Insight', 'Religion', 'Arcana (Drift Lore)'],
+      stats: { STR: 10, DEX: 12, CON: 12, INT: 17, WIS: 14, CHA: 11 },
+      startingInventory: [
+        { id: 'inquisitors_codex', name: 'Inquisitor\'s Codex', description: 'Synod reference for identifying heresy and Drift anomalies', quantity: 1 },
+        { id: 'attunement_scanner', name: 'Attunement Scanner', description: 'Detects Drift residue', quantity: 1, charges: 3, maxCharges: 3 },
+        { id: 'binding_cuffs', name: 'Binding Cuffs', description: 'Drift-suppressing restraints', quantity: 1 },
+        { id: 'resonance_spike', name: 'Resonance Spike', description: 'Short-range Drift-disrupting blade, doubles as attunement probe', quantity: 1, damage: '1d4' },
+      ],
+      startingCredits: 120,
+      startingHp: 8,
+      startingAc: 12,
+      hitDieAvg: 4,
+      trait: {
+        name: 'Inquisition',
+        description: 'Once per chapter, after 1+ rounds of dialogue, force a WIS save on the target. If they fail: they reveal one truth. If they resist: they know you tried.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You were trained in doctrine before you were trained in anything else. The nine signs of heresy are reflex: you catalogue them the way a soldier catalogues exits. You know the classification tiers, the deployment schedules, the gap between what the Synod tells the houses and what it keeps for itself. You know the testing protocols are efficient and the survival rates are lower than the public reports claim. You know the Codex has sealed chapters. You know Censors who asked about them got frontier postings. You learned to classify before you learned to empathize, and you are not sure when that became a problem.',
+    },
+    {
+      id: 'crusader',
+      name: 'Crusader',
+      concept: 'The Pale Flame\'s martial arm. Faith expressed through force.',
+      primaryStat: 'STR',
+      proficiencies: ['Athletics', 'Intimidation', 'Perception', 'Heavy Weapons'],
+      stats: { STR: 17, DEX: 12, CON: 15, INT: 10, WIS: 13, CHA: 10 },
+      startingInventory: [
+        { id: 'house_blade', name: 'House Blade', description: 'Two-handed, Synod insignia on pommel', quantity: 1, damage: '1d10' },
+        { id: 'shield_generator', name: 'Shield Generator', description: 'Personal, +2 AC', quantity: 1, charges: 3, maxCharges: 3 },
+        { id: 'field_dressing', name: 'Field Dressing', description: 'Heals 1d6+2', quantity: 2, effect: 'heal 1d6+2' },
+        { id: 'sworn_oath_token', name: 'Sworn Oath Token', description: 'Identifies you as sworn to the Synod', quantity: 1 },
+      ],
+      startingCredits: 80,
+      startingHp: 12,
+      startingAc: 16,
+      hitDieAvg: 6,
+      trait: {
+        name: 'Unbroken',
+        description: 'Once per chapter, when reduced to 0 HP, drop to 1 HP instead.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You know garrison life from the Synod side: the 04:00 watch rotation, the weight of enforcement orders signed by Hierarchs who never leave the scholarium. You have stood guard at Resonant processing facilities and watched families say goodbye through a wire fence. You know soldiers talk about Ashen Ward detail the way civilians talk about plague postings. You know your oath is to the faith, and you know what the faith asks of the people it deploys. The uncomfortable orders come on the same paper as the ones that feel righteous.',
+    },
+    {
+      id: 'shepherd',
+      name: 'Shepherd',
+      concept: 'The Synod\'s gentle face. Feeds the hungry, heals the sick, reports the heretical.',
+      primaryStat: 'CHA',
+      proficiencies: ['Persuasion', 'Medicine', 'Insight', 'Religion'],
+      stats: { STR: 10, DEX: 11, CON: 11, INT: 14, WIS: 13, CHA: 17 },
+      startingInventory: [
+        { id: 'medical_satchel', name: 'Medical Satchel', description: 'Full field kit, advantage on Medicine checks', quantity: 1 },
+        { id: 'synod_registry', name: 'Synod Registry', description: 'Who\'s been tested, who\'s due, who\'s overdue', quantity: 1 },
+        { id: 'tincture_case', name: 'Tincture Case', description: 'Stimulant, sedative, or analgesic', quantity: 3 },
+        { id: 'calming_incense', name: 'Calming Incense', description: 'Creates atmosphere of trust; advantage on first Persuasion check in a scene', quantity: 1 },
+      ],
+      startingCredits: 100,
+      startingHp: 8,
+      startingAc: 11,
+      hitDieAvg: 4,
+      trait: {
+        name: 'Bitter Medicine',
+        description: 'Once per chapter, heal 1d8+WIS, but treatment has a side effect (pain, dependency, temporary sense loss). Also: once per chapter, may invoke care to gain a person\'s trust, then choose whether to report what they reveal.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You know care as the Synod teaches it: attentive, thorough, and never fully separate from observation. You have healed people you might later condemn and sat at bedsides where the conversation shifted from symptoms to confessions. You know the Synod Registry is a medical document and a surveillance tool in the same binding. You know the testing schedule for every family in your district. You know which parents are nervous and which have already made arrangements. The gentle face covers the institution\'s harder truths, and you are the face.',
+    },
+  ],
+}
+
 const epicSciFiTheme: GenreTheme = {
   logo: '/logo_epic-scifi.png',
   fontNarrative: "var(--font-newsreader), Georgia, serif",
@@ -269,6 +351,7 @@ const epicSciFiConfig: GenreConfig = {
   species: epicSciFiSpecies,
   speciesLabel: 'Origin',
   classes: epicSciFiClasses,
+  playbooks: epicSciFiPlaybooks,
   theme: epicSciFiTheme,
   currencyName: 'writs',
   currencyAbbrev: '\u20A9',
