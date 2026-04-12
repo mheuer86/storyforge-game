@@ -65,12 +65,14 @@ interface CharacterSetupProps {
 export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) {
   const config = getGenreConfig(genre)
   const genreSpecies = config.species
-  const genreClasses = config.classes
 
   const [characterName, setCharacterName] = useState('')
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(null)
   const [selectedGender, setSelectedGender] = useState<'he' | 'she' | 'they'>('they')
+
+  // When playbooks exist for the selected origin, use those; otherwise fall back to universal classes
+  const availableClasses = (selectedSpecies && config.playbooks?.[selectedSpecies.id]) || config.classes
 
   const canStart = characterName.trim() && selectedSpecies && selectedClass
 
@@ -153,7 +155,11 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               return (
                 <button
                   key={s.id}
-                  onClick={() => setSelectedSpecies(s)}
+                  onClick={() => {
+                    setSelectedSpecies(s)
+                    // Clear class selection when origin changes — available classes may differ per origin (playbooks)
+                    if (selectedSpecies?.id !== s.id) setSelectedClass(null)
+                  }}
                   className="snap-start min-w-[200px] w-[200px] shrink-0 group/species text-left"
                 >
                   {/* Portrait area — 3:4 aspect like the mock */}
@@ -175,11 +181,11 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-px bg-primary/30" />
             <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
-              Class
+              {selectedSpecies && config.playbooks?.[selectedSpecies.id] ? 'Playbook' : 'Class'}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
-            {genreClasses.map((c) => {
+            {availableClasses.map((c) => {
               const isSelected = selectedClass?.id === c.id
               return (
                 <button

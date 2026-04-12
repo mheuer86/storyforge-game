@@ -96,6 +96,7 @@ export interface GenreConfig {
   species: Species[]
   speciesLabel: string
   classes: CharacterClass[]
+  playbooks?: Record<string, CharacterClass[]>  // keyed by species/origin ID — when present, wizard uses these instead of classes
   theme: GenreTheme
   currencyName: string
   currencyAbbrev: string
