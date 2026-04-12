@@ -144,6 +144,7 @@ export function BurgerMenu({
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [apiKeyError, setApiKeyError] = useState('')
   const [savedSlot, setSavedSlot] = useState<number | null>(null)
+  const isDebug = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && localStorage.getItem('storyforge_debug') === '1')
 
   const openSaveLoad = (mode: 'save' | 'load') => {
     setSlots([getSaveSlot(1), getSaveSlot(2), getSaveSlot(3)])
@@ -226,8 +227,8 @@ export function BurgerMenu({
                     setExpandedChapter(expandedChapter === num ? null : num)
                   }
                 />
-                {/* Token usage stats (dev only) */}
-                {process.env.NODE_ENV === 'development' && tokenLog && tokenLog.length > 0 && (() => {
+                {/* Token usage stats (dev or debug flag) */}
+                {isDebug && tokenLog && tokenLog.length > 0 && (() => {
                   const totals = tokenLog.reduce((acc, t) => ({
                     input: acc.input + t.input,
                     output: acc.output + t.output,
@@ -358,7 +359,7 @@ export function BurgerMenu({
             >
               Every hero needs a patron. Buy me a beer&nbsp;→
             </a>
-            {(process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && localStorage.getItem('storyforge_debug') === '1')) && <DebugPanel />}
+            {isDebug && <DebugPanel />}
           </SheetFooter>
         </SheetContent>
       </Sheet>
