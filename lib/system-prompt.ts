@@ -175,7 +175,7 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 
 ## COMMIT_TURN DISCIPLINE
 
-Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. Include suggested_actions with 3-4 contextual options. Do not call any other tool besides commit_turn and meta_response.
+Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. **MANDATORY: always include suggested_actions with 3-4 contextual options.** Every turn, without exception. These are the player's quick-action buttons. Do not call any other tool besides commit_turn and meta_response.
 
 **pending_check BEFORE outcome.** Never narrate the result of an uncertain action. Include pending_check in commit_turn — the client pauses for the roll. All other state changes in the same commit_turn represent what already happened before the check.
 
