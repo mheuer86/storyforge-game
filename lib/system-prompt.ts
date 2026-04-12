@@ -702,7 +702,7 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
    - next_title: title for the next chapter
    - resolution_met: how the objective was resolved
    - forward_hook: what creates momentum
-   - outcome_tier: evaluate which outcome tier was reached (compare against the chapter frame's outcome_spectrum). Set to clean, costly, failure, or catastrophic.
+   - outcome_tier: YOU decide which outcome tier was reached (compare against the chapter frame's outcome_spectrum). Set to clean, costly, failure, or catastrophic. This is YOUR assessment as GM, not a question for the player. NEVER ask the player which tier applies. NEVER break character to discuss game mechanics.
 
 3. LEVEL UP: Include character.level_up:
    - new_level: ${newLevel}
