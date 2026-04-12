@@ -215,7 +215,7 @@ export function createInitialGameState(
     sceneSummaries: [],
     scopeSignals: 0,
     npcFailures: [],
-    counters: {},
+    counters: hookObj.startingCounters ? { ...hookObj.startingCounters } : {},
     rulesWarnings: [],
     pivotalScenes: [],
     rollSequences: [],
