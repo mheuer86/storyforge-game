@@ -104,8 +104,80 @@ function capNpcDisposition(
 }
 
 // ============================================================
-// Epic Sci-Fi: Drift Exposure
+// Origin counter evaluation — shared by all genres
 // ============================================================
+
+interface OriginCounterDef {
+  counter: string
+  shiftLabel: string
+  shiftWarning: string
+  risingWarning: string
+}
+
+function evaluateOriginCounters(
+  state: GameState,
+  originMap: Record<string, OriginCounterDef>,
+): GameState {
+  const species = state.character.species
+  const def = originMap[species]
+  if (!def) return state
+
+  const val = getCounter(state, def.counter)
+  if (val >= 5) {
+    // Identity shift — one-way gate
+    if (species !== def.shiftLabel) {
+      state = { ...state, character: { ...state.character, species: def.shiftLabel } }
+      state = addWarning(state, `⚠ IDENTITY SHIFT: ${species} → ${def.shiftLabel}. ${def.shiftWarning}`)
+    }
+  } else if (val >= 3) {
+    state = addWarning(state, `📌 ${def.counter.toUpperCase()} RISING (${val}): ${def.risingWarning}`)
+  }
+
+  return state
+}
+
+// ============================================================
+// Epic Sci-Fi: Drift Exposure + Origin Counters
+// ============================================================
+
+const epicSciFiOriginMap: Record<string, OriginCounterDef> = {
+  'Minor House': {
+    counter: 'fealty',
+    shiftLabel: 'Hollow',
+    shiftWarning: 'The character\'s relationship to their house has fundamentally changed. The name is a shell. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. House contacts notice the trades of dignity. NPCs who share this origin sense the change.',
+  },
+  'Synod-Raised': {
+    counter: 'doubt',
+    shiftLabel: 'Heretic',
+    shiftWarning: 'The character\'s relationship to the Synod has fundamentally changed. Doubt drives action, not erosion. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. Synod contacts sense the erosion. Evidence contradicting doctrine accumulates.',
+  },
+  'Undrift': {
+    counter: 'exposure',
+    shiftLabel: 'Hunted',
+    shiftWarning: 'Too visible. The network distances itself. Synod bounty upgrades. The exits are closing. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. Too many names used, too many biometric contacts. The network is nervous.',
+  },
+  'Imperial Service': {
+    counter: 'mandate',
+    shiftLabel: 'Dissident',
+    shiftWarning: 'Personal loyalty has overridden duty. Handler trust erodes. Reports are questioned. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. Personal loyalties are overriding orders. Handlers notice the drift.',
+  },
+  'Ascendant': {
+    counter: 'debt',
+    shiftLabel: 'Owned',
+    shiftWarning: 'The patron\'s investment has become a leash. Independence is theoretical. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. Favors called in, doors opened by others. The debt is becoming visible.',
+  },
+  'Spent Resonant': {
+    counter: 'embers',
+    shiftLabel: 'Rekindled',
+    shiftWarning: 'The Drift is coming back. Classification is provably fraudulent. The body remembers, and the Synod will too. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The pressure is building. Post-discharge Drift use is surfacing. The body remembers what the papers deny.',
+  },
+}
 
 const epicSciFiRules: GenreRules = {
   evaluate(state, commit, roll) {
@@ -127,13 +199,49 @@ const epicSciFiRules: GenreRules = {
       state = setFactionStance(state, 'The Synod', 'Suspicious — monitoring Drift activity')
     }
 
+    // Origin counters
+    state = evaluateOriginCounters(state, epicSciFiOriginMap)
+
     return state
   },
 }
 
 // ============================================================
-// Grimdark: Corruption
+// Grimdark: Corruption + Origin Counters
 // ============================================================
+
+const grimdarkOriginMap: Record<string, OriginCounterDef> = {
+  'House Veldran': {
+    counter: 'ledger',
+    shiftLabel: 'Climber',
+    shiftWarning: 'The house name has become a tool. Every alliance was a step on a ladder. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The ledger is getting heavy. Old debts leave marks. People remember what you traded.',
+  },
+  'House Sylvara': {
+    counter: 'paralysis',
+    shiftLabel: 'Watcher',
+    shiftWarning: 'Caution has become passivity. The character watches more than they act. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Hesitation is becoming a pattern. The weight of consequence slows every decision.',
+  },
+  'House Stonemark': {
+    counter: 'rigidity',
+    shiftLabel: 'Bound',
+    shiftWarning: 'The oath has become a cage. Duty supersedes judgment. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The oath is tightening. Situations that require flexibility are met with doctrine.',
+  },
+  'The Oathless': {
+    counter: 'survival_debt',
+    shiftLabel: 'Named',
+    shiftWarning: 'Survival debts have made the character visible. People know the name, and that\'s dangerous. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Too many debts owed to too many people. The oathless is becoming a known quantity.',
+  },
+  'House Ashfang': {
+    counter: 'wrath',
+    shiftLabel: 'Vessel',
+    shiftWarning: 'The anger has crystallized into something ancestral. The blood burns with purpose. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The anger is focused now. It has a direction and a weight that others can feel.',
+  },
+}
 
 const grimdarkRules: GenreRules = {
   evaluate(state, commit, roll) {
@@ -162,13 +270,49 @@ const grimdarkRules: GenreRules = {
       state = capNpcDisposition(state, n => n.affiliation === 'The Church', 'hostile')
     }
 
+    // Origin counters
+    state = evaluateOriginCounters(state, grimdarkOriginMap)
+
     return state
   },
 }
 
 // ============================================================
-// Cyberpunk: Chrome Stress + Deep Dive
+// Cyberpunk: Chrome Stress + Deep Dive + Origin Counters
 // ============================================================
+
+const cyberpunkOriginMap: Record<string, OriginCounterDef> = {
+  'Street Kid': {
+    counter: 'gang_debt',
+    shiftLabel: 'Burned',
+    shiftWarning: 'The gang has cut ties. Old favors are now threats. Every contact from the old life is a liability. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The old crew is calling in debts. Gang contacts are getting nervous about your trajectory.',
+  },
+  'Corpo Dropout': {
+    counter: 'exposure',
+    shiftLabel: 'Flagged',
+    shiftWarning: 'Corporate systems have positively identified you. Running is harder now. Every scan is a risk. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Digital traces are accumulating. The corp hasn\'t forgotten. Biometric contacts and identity use leave marks.',
+  },
+  'Undercity Born': {
+    counter: 'city_rot',
+    shiftLabel: 'Settled',
+    shiftWarning: 'The street has seeped in. What was survival is now identity. The character has stopped looking for a way out. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The city is getting comfortable. Old survival patterns are becoming permanent habits.',
+  },
+  'Nomad': {
+    counter: 'surface_debt',
+    shiftLabel: 'Visible',
+    shiftWarning: 'The nomad is tied down now. Roots have grown where wheels used to be. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The freedom is narrowing. Obligations and debts are anchoring the character to one place.',
+  },
+  'Syndicate Blood': {
+    counter: 'family_distance',
+    shiftLabel: 'Cut',
+    shiftWarning: 'The syndicate has disowned you, or you them. The blood tie is severed. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Family expectations and syndicate loyalty are pulling in opposite directions. Something will break.',
+  },
+}
 
 const cyberpunkRules: GenreRules = {
   evaluate(state, commit, roll) {
@@ -201,14 +345,50 @@ const cyberpunkRules: GenreRules = {
       state = addWarning(state, '⚠ DEEP DIVE OVERLOAD (3 this chapter): Cyberpsychosis episode imminent. The Netrunner must rest or risk an involuntary disconnection event with lasting consequences.')
     }
 
+    // Origin counters
+    state = evaluateOriginCounters(state, cyberpunkOriginMap)
+
     return state
   },
   chapterResetCounters: ['deep_dive_uses'],
 }
 
 // ============================================================
-// Noir: Favor Balance
+// Noir: Favor Balance + Origin Counters
 // ============================================================
+
+const noirOriginMap: Record<string, OriginCounterDef> = {
+  'Ex-Cop': {
+    counter: 'badge_debt',
+    shiftLabel: 'Ghost Badge',
+    shiftWarning: 'The badge is a liability now. Former colleagues avoid eye contact. The institution has quietly disowned you. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Internal affairs is circling. Old partners are distancing themselves. The badge opens fewer doors.',
+  },
+  'Street': {
+    counter: 'exposure',
+    shiftLabel: 'Known',
+    shiftWarning: 'Too many people know the face. The informant network is compromised. Moving unseen is no longer possible. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Word gets around. Too many conversations, too many scenes. People recognize you who shouldn\'t.',
+  },
+  'Old Money': {
+    counter: 'complicity',
+    shiftLabel: 'Insider',
+    shiftWarning: 'The connections have become entanglement. You know too much to leave, not enough to control. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The web is getting sticky. Every favor granted pulls you deeper into something you can\'t walk away from.',
+  },
+  'Veteran': {
+    counter: 'numbness',
+    shiftLabel: 'Cold',
+    shiftWarning: 'The numbness has won. Emotional responses are tactical now, not felt. People notice. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The detachment is showing. Situations that should provoke a reaction get clinical assessment instead.',
+  },
+  'Immigrant': {
+    counter: 'obligation',
+    shiftLabel: 'Bound',
+    shiftWarning: 'The debts have become chains. Freedom of action is theoretical. Every choice is filtered through what you owe. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The obligations are mounting. Creditors are getting impatient. Each new debt narrows the path.',
+  },
+}
 
 const noirRules: GenreRules = {
   evaluate(state, commit, roll) {
@@ -223,6 +403,97 @@ const noirRules: GenreRules = {
       state = addWarning(state, '⚠ FAVOR BALANCE OVERDRAWN (3+): Contacts demand reciprocity before helping. The next contact the Fixer reaches out to will require a returned favor before providing assistance.')
     }
 
+    // Origin counters
+    state = evaluateOriginCounters(state, noirOriginMap)
+
+    return state
+  },
+}
+
+// ============================================================
+// Space Opera: Origin Counters
+// ============================================================
+
+const spaceOperaOriginMap: Record<string, OriginCounterDef> = {
+  'Human': {
+    counter: 'isolation',
+    shiftLabel: 'The Captain',
+    shiftWarning: 'Isolation has become identity. The character commands, but no longer connects. The crew follows orders, not a person. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The distance is growing. Crew members stop volunteering personal information. Professional respect replaces warmth.',
+  },
+  'Vrynn': {
+    counter: 'signal_debt',
+    shiftLabel: 'Severed',
+    shiftWarning: 'Too many intercepted signals, too many broken channels. The network is burned. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Signal debts are accumulating. Channels that were secure are becoming compromised. Contacts go quiet.',
+  },
+  'Korath': {
+    counter: 'compromise',
+    shiftLabel: 'The Diplomat',
+    shiftWarning: 'Every position has been compromised. No ground left to stand on. Agreements are suspect. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Too many compromises. Each agreement weakens the next negotiating position. Allies question sincerity.',
+  },
+  'Sylphari': {
+    counter: 'detachment',
+    shiftLabel: 'The Observer',
+    shiftWarning: 'Clinical detachment has replaced engagement. Observes but no longer participates. People are data points. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The analytical distance is growing. Emotional situations are met with hypotheses, not responses.',
+  },
+  'Zerith': {
+    counter: 'reputation',
+    shiftLabel: 'Marked',
+    shiftWarning: 'The reputation has outrun the person. Every port knows the name. Anonymity is gone. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Word travels. Jobs are offered based on reputation, not need. The wrong people are starting to notice.',
+  },
+}
+
+const spaceOperaRules: GenreRules = {
+  evaluate(state, _commit, _roll) {
+    state = evaluateOriginCounters(state, spaceOperaOriginMap)
+    return state
+  },
+}
+
+// ============================================================
+// Fantasy: Origin Counters
+// ============================================================
+
+const fantasyOriginMap: Record<string, OriginCounterDef> = {
+  'Human': {
+    counter: 'ambition',
+    shiftLabel: 'Climber',
+    shiftWarning: 'Ambition has consumed the noble bearing. Every relationship is a rung on a ladder. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The ambition is showing. Court allies notice the calculating edge. Loyalty is questioned.',
+  },
+  'Elf': {
+    counter: 'withdrawal',
+    shiftLabel: 'Watcher',
+    shiftWarning: 'The elf has retreated past the point of return. Observation replaces participation. The world happens to them. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The withdrawal is deepening. Social situations provoke retreat. Companions worry about disengagement.',
+  },
+  'Dwarf': {
+    counter: 'oath_weight',
+    shiftLabel: 'Bound',
+    shiftWarning: 'The oath has become the person. There is no identity outside the vow. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The oath weighs heavier. Situations that conflict with the vow create visible distress. Flexibility is eroding.',
+  },
+  'Halfling': {
+    counter: 'visibility',
+    shiftLabel: 'Named',
+    shiftWarning: 'No longer invisible. Recognition brings danger. The anonymity that was armor is gone. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Too visible. Actions are drawing attention. People who should not know the name are learning it.',
+  },
+  'Dragonkin': {
+    counter: 'inheritance',
+    shiftLabel: 'Vessel',
+    shiftWarning: 'The bloodline is asserting itself. Becoming what their ancestors were, whether they chose it or not. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The inheritance stirs. Old powers or old patterns surface in moments of stress. The blood remembers.',
+  },
+}
+
+const fantasyRules: GenreRules = {
+  evaluate(state, _commit, _roll) {
+    state = evaluateOriginCounters(state, fantasyOriginMap)
     return state
   },
 }
@@ -236,6 +507,8 @@ const genreRulesMap: Partial<Record<Genre, GenreRules>> = {
   'grimdark': grimdarkRules,
   'cyberpunk': cyberpunkRules,
   'noire': noirRules,
+  'space-opera': spaceOperaRules,
+  'fantasy': fantasyRules,
 }
 
 // ============================================================

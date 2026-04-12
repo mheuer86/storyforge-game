@@ -52,7 +52,7 @@ interface CommitTurnInput {
     add_faction?: { name: string; stance: string }
     add_promise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }
     update_promise?: { id?: string; to?: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; what?: string }
-    add_decision?: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational' }
+    add_decision?: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; witnessed?: boolean }
     update_decision?: { id: string; status: 'active' | 'superseded' | 'abandoned'; reason?: string }
     set_operation?: { name: string; phase: string; objectives: ({ text: string; status?: string } | string)[]; tactical_facts?: string[]; asset_constraints?: string[]; abort_conditions?: string[]; signals?: string[]; assessments?: { claim: string; skill: string; result: number; confidence: string; rolled: boolean }[] } | null
     set_exploration?: { facility_name: string; status: string; hostile: boolean; explored: { name: string; notes: string }[]; current: { name: string; description: string }; unexplored: { name: string; hints: string }[]; resources: { name: string; current: string }[]; alert_level?: string } | null
@@ -74,18 +74,19 @@ interface CommitTurnInput {
     end?: { outcome: string; loot?: (InventoryItem & { max_charges?: number })[]; credits_gained?: number }
   }
   suggested_actions: string[]
-  chapter_frame?: { objective: string; crucible: string }
+  chapter_frame?: { objective: string; crucible: string; outcome_spectrum?: { clean: string; costly: string; failure: string; catastrophic: string } }
   signal_close?: { reason: string; self_assessment?: string }
-  close_chapter?: { summary: string; key_events: string[]; next_title: string; resolution_met: string; forward_hook: string }
+  close_chapter?: { summary: string; key_events: string[]; next_title: string; resolution_met: string; forward_hook: string; outcome_tier?: 'clean' | 'costly' | 'failure' | 'catastrophic' }
   debrief?: ChapterDebrief
   pending_check?: Record<string, unknown>
+  origin_event?: { counter: string; direction: 'up' | 'down'; reason: string }
   scene_end?: boolean
   scene_summary?: string
   tone_signature?: string
   objective_status?: 'in_progress' | 'resolved' | 'failed'
   pivotal_scenes?: { title: string; text: string }[]
   arc_updates?: {
-    create_arc?: { id: string; title: string; episodes: string[] }
+    create_arc?: { id: string; title: string; episodes: string[]; outcome_spectrum?: { clean: string; costly: string; failure: string; catastrophic: string } }
     advance_episode?: { arc_id: string; summary: string }
     resolve_arc?: { arc_id: string }
     abandon_arc?: { arc_id: string; reason: string }
@@ -489,7 +490,7 @@ function applyWorldChanges(
       )
     } else {
       const chapterNum = updated.meta?.chapterNumber ?? 1
-      const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum }
+      const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(input.add_decision.witnessed && { witnessed: true }) }
       const activeDecisions = decisions.filter(d => d.status === 'active')
       if (activeDecisions.length >= 8) {
         const oldest = activeDecisions[0]
@@ -1000,12 +1001,21 @@ function applyNarrativeChanges(
     if (isCloseSequence) {
       updated = {
         ...updated,
-        chapterFrame: { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible },
+        chapterFrame: {
+          objective: input.chapter_frame.objective,
+          crucible: input.chapter_frame.crucible,
+          ...(input.chapter_frame.outcome_spectrum && { outcomeSpectrum: input.chapter_frame.outcome_spectrum }),
+        },
       }
     } else if (!alreadyRefined && turnCount >= 5 && hasDefiningTrigger) {
       updated = {
         ...updated,
-        chapterFrame: { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible, refined: true },
+        chapterFrame: {
+          objective: input.chapter_frame.objective,
+          crucible: input.chapter_frame.crucible,
+          refined: true,
+          ...(input.chapter_frame.outcome_spectrum && { outcomeSpectrum: input.chapter_frame.outcome_spectrum }),
+        },
       }
       dbg(`Frame refined at turn ${turnCount}: "${input.chapter_frame.objective}"`)
     }
@@ -1054,6 +1064,7 @@ function applyNarrativeChanges(
       summary: ci.summary,
       keyEvents: ci.key_events,
       sceneSummaries: updated.sceneSummaries.length > 0 ? updated.sceneSummaries : undefined,
+      ...(ci.outcome_tier && { outcomeTier: ci.outcome_tier }),
     }
     const nextNum = currentNum + 1
     const nextChapter = {
@@ -1075,7 +1086,11 @@ function applyNarrativeChanges(
         selfAssessment: undefined,
       },
       chapterFrame: input.chapter_frame
-        ? { objective: input.chapter_frame.objective, crucible: input.chapter_frame.crucible }
+        ? {
+            objective: input.chapter_frame.objective,
+            crucible: input.chapter_frame.crucible,
+            ...(input.chapter_frame.outcome_spectrum && { outcomeSpectrum: input.chapter_frame.outcome_spectrum }),
+          }
         : ci.forward_hook
           ? { objective: ci.forward_hook, crucible: 'Establish in opening turns' }
           : null,
@@ -1202,11 +1217,14 @@ function applyNarrativeChanges(
             milestone,
             status: i === 0 ? 'active' as const : 'pending' as const,
           })),
+          ...(au.create_arc.outcome_spectrum && { outcomeSpectrum: au.create_arc.outcome_spectrum }),
         })
       }
     }
 
     if (au.advance_episode) {
+      // Capture outcome_tier from close_chapter to store on the completed episode
+      const closeTier = input.close_chapter?.outcome_tier
       arcs = arcs.map(a => {
         if (a.id !== au.advance_episode!.arc_id) return a
         let foundActive = false
@@ -1214,7 +1232,7 @@ function applyNarrativeChanges(
         const episodes = a.episodes.map(ep => {
           if (ep.status === 'active' && !foundActive) {
             foundActive = true
-            return { ...ep, status: 'complete' as const, summary: au.advance_episode!.summary }
+            return { ...ep, status: 'complete' as const, summary: au.advance_episode!.summary, ...(closeTier && { outcomeTier: closeTier }) }
           }
           if (foundActive && ep.status === 'pending' && !activatedNext) {
             activatedNext = true
@@ -1304,6 +1322,16 @@ export function applyToolResults(
       }
       if (input.combat) {
         updated = applyCombatChanges(input.combat, updated, statChanges, currLabel)
+      }
+      // Origin event: increment/decrement origin counter
+      if (input.origin_event) {
+        const { counter, direction, reason } = input.origin_event
+        const delta = direction === 'up' ? 1 : -1
+        const counters = { ...(updated.counters || {}) }
+        counters[counter] = (counters[counter] || 0) + delta
+        if (counters[counter] < 0) counters[counter] = 0
+        updated = { ...updated, counters }
+        dbg(`ORIGIN_EVENT ${counter} ${direction} (now ${counters[counter]}): ${reason}`)
       }
       updated = applyNarrativeChanges(input, updated, statChanges, trackEvent)
     }
