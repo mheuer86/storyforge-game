@@ -1608,9 +1608,16 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
       ? `A story arc is already set ("${gameState.arcs[0].title}" with episode milestone: "${gameState.arcs[0].episodes[0]?.milestone}"). Do NOT create a new arc — work within this one. You may add additional episodes via arc_updates.add_episode if the story calls for it.`
       : `If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal.`
 
+    // Build a scene tagline from character knowledge or origin directive
+    const originSpec = config.species.find(s => s.name === gameState.character?.species)
+    const classSpec = config.classes.find(c => c.name === gameState.character?.class)
+    const taglineInstruction = (originSpec || classSpec)
+      ? `\n\n**SCENE TAGLINE:** Before the first paragraph, write a single italic line under the scene heading that positions the player in the world. Not exposition — a title card. It should tell the player who they are relative to the world in one or two sentences. Example: "*Seeker Verum. Synod Inquisitor. The empire runs on Resonants. You hunt what the empire can't afford to lose.*" Derive it from the character's class and origin. Keep it punchy.`
+      : ''
+
     const msg = `Begin the campaign. Opening hook: "${hook}"
 
-Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.
+Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.${taglineInstruction}
 
 IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the world section:
 - set_location (starting location)
