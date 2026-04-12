@@ -156,6 +156,10 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesses once/chapter. Rule 3: ${ps.consumableLabel} — don't refill without restock. Rule 4: antagonist moves once/chapter offscreen. Rule 5: one thread worsens/chapter — prefer threads connected to the player's prior successes (the best complications are consequences, not coincidences). Rule 6: deferred promises get mentioned.
 
+## PRE-NARRATION CHECK (before writing)
+
+Read SCENE snapshot. It is ground truth for who is present and what has been established. If an NPC left the scene, they are gone — do not narrate them acting or speaking. If a number, date, or fact was stated in earlier turns, use that exact value — do not reinvent it. If the snapshot is stale or missing someone who should be there, update it in commit_turn.
+
 ## POST-ACTION CHECKLIST (every response)
 
 1. Crew protected/included → world.cohesion
@@ -164,7 +168,7 @@ Rule 1 — Fail forward. Rule 1a — Failure as a door. Rule 2: target weaknesse
 4. Promise fulfilled/broken → world.update_promise
 5. Non-operational commitment with consequences → world.add_decision
 6. Clock tick → world.clocks
-7. Scene changed → world.set_location / world.set_scene_snapshot
+7. NPC entered or left → world.set_scene_snapshot (always update when someone arrives, departs, or the spatial arrangement changes)
 8. Consumable used → character.inventory_use
 9. Uncertain fact asserted → pending_check
 10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
