@@ -126,6 +126,10 @@ export interface GenreConfig {
   cohesionGuide?: string     // genre-specific cohesion triggers (overrides generic +1/-1 rules)
   companionLabel: string     // "Companions", "Retainers", "Crew", etc.
   loreAnchors?: string[]     // compact world facts shipped every turn for complex genres
+  assetFlavors?: Record<string, {
+    name: string           // "Retinue", "Network", "Remnant"
+    systems: { id: string; name: string; level: number; description: string }[]
+  }>
   notebookLabel: string
   intelTabLabel: string
   intelNotebookLabel: string
