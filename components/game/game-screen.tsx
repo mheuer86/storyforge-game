@@ -406,6 +406,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               } else if (finalActions.length > 0) {
                 debugLogRef.current.push(`[${new Date().toISOString()}] QUICK_ACTIONS [${finalActions.join(' | ')}]`)
               }
+              // Flag if no commit_turn was received (narrative-only response)
+              if (!lastCommitInput && !isMetaQuestion) {
+                stateWithChanges = { ...stateWithChanges, _noCommitLastTurn: true } as GameState & { _noCommitLastTurn?: boolean }
+                debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ NO_COMMIT_TURN (narrative only, no state changes)`)
+              } else if (lastCommitInput) {
+                // Clear the flag if commit_turn was received
+                const { _noCommitLastTurn, ...rest } = stateWithChanges as GameState & { _noCommitLastTurn?: boolean }
+                stateWithChanges = rest as GameState
+              }
               const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
               let finalState: GameState = {
                 ...stateWithChanges,
