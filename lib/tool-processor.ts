@@ -496,6 +496,7 @@ function applyWorldChanges(
         const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
         return /\b(witness|saw|watched|heard.*nothing|said nothing|looked away|didn.t intervene|didn.t stop|let it happen|child taken|child.*test|burned resonant|forged record|suppressing.*attunement)\b/.test(text)
       })()
+      let counterTicked = false
       if (isWitnessed) {
         dbg('WITNESS_MARK auto-detected: ' + input.add_decision.summary)
         // Auto-tick origin counter for witness marks (seeing the cost of the system you serve)
@@ -511,6 +512,58 @@ function applyWorldChanges(
           counters[counterName] = (counters[counterName] || 0) + 1
           updated = { ...updated, counters }
           dbg(`ORIGIN_COUNTER auto-ticked ${counterName} to ${counters[counterName]} (witness mark)`)
+          counterTicked = true
+        }
+      }
+      // Also auto-tick origin counter from non-witness decisions that express origin tension
+      if (!isWitnessed && !counterTicked) {
+        const species = updated.character.species
+        const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
+        const originTriggers: Record<string, { counter: string; pattern: RegExp }> = {
+          // Epic Sci-Fi
+          'Synod-Raised': { counter: 'doubt', pattern: /\b(doubt|question|heresy|doctrine.*wrong|mercy|compassion.*heretic|pamphlet.*true|chose not to report)\b/ },
+          'Minor House': { counter: 'fealty', pattern: /\b(house name|dignity|smiled.*despised|trade.*pride|alliance.*cost|bargain)\b/ },
+          'Undrift': { counter: 'exposure', pattern: /\b(name.*used|biometric|drift.*public|identity.*revealed|spotted|recognized)\b/ },
+          'Imperial Service': { counter: 'mandate', pattern: /\b(personal.*loyalty|disobeyed|questioned.*order|cover.*identity|chose.*person)\b/ },
+          'Ascendant': { counter: 'debt', pattern: /\b(patron.*favor|door.*opened|owe|debt.*called|relied.*connection)\b/ },
+          'Spent Resonant': { counter: 'embers', pattern: /\b(drift.*touch|attunement|resonan.*ability|old.*power|remember.*could)\b/ },
+          // Noir
+          'Ex-Cop': { counter: 'badge_debt', pattern: /\b(badge|credential|department|old.*contact|police.*favor|acted.*cop)\b/ },
+          'Street': { counter: 'exposure', pattern: /\b(outside.*neighborhood|trust.*institution|name.*record|official.*channel)\b/ },
+          'Old Money': { counter: 'complicity', pattern: /\b(family.*connection|class.*privilege|institutional.*protect|name.*smooth)\b/ },
+          'Veteran': { counter: 'numbness', pattern: /\b(violence.*without|efficiency|tactical|people.*asset|clinical)\b/ },
+          'Immigrant': { counter: 'obligation', pattern: /\b(community.*favor|elder|promise.*community|identity.*leverag|obligation)\b/ },
+          // Cyberpunk
+          'Street Kid': { counter: 'gang_debt', pattern: /\b(gang.*obligation|territory|ward.*business|crew.*priorit)\b/ },
+          'Corpo Dropout': { counter: 'exposure', pattern: /\b(corp.*space|biometric|credential|old.*identity|recognized)\b/ },
+          'Nomad': { counter: 'city_rot', pattern: /\b(comfort|settled|city.*habit|clan.*ignored|forgot.*outside)\b/ },
+          'Undercity Born': { counter: 'surface_debt', pattern: /\b(surface.*op|database|official.*system|visible|traced)\b/ },
+          'Syndicate Blood': { counter: 'family_distance', pattern: /\b(against.*family|independent|trust.*outsider|defied)\b/ },
+          // Space Opera
+          'Human': { counter: 'isolation', pattern: /\b(solo|alone|refused.*help|crew.*distance|kept.*myself)\b/ },
+          'Vrynn': { counter: 'signal_debt', pattern: /\b(diaspora|network.*exploit|vrynn.*intel|signal.*without)\b/ },
+          'Korath': { counter: 'compromise', pattern: /\b(lied|withheld|indirect|deceiv|manipulat)\b/ },
+          'Sylphari': { counter: 'detachment', pattern: /\b(patience.*paralysis|watched.*happen|refused.*act|will.*pass)\b/ },
+          'Zerith': { counter: 'reputation', pattern: /\b(broke.*deal|betrayed|survival.*over|abandoned|ran)\b/ },
+          // Fantasy
+          'Elf': { counter: 'withdrawal', pattern: /\b(watched.*repeat|patience.*excuse|refused.*intervene|always.*does)\b/ },
+          'Dwarf': { counter: 'oath_weight', pattern: /\b(promise|oath|contract|word.*given|obligation.*layer)\b/ },
+          'Halfling': { counter: 'visibility', pattern: /\b(public|credit|attention|recognized|stood.*out|hero)\b/ },
+          'Dragonkin': { counter: 'inheritance', pattern: /\b(dream|ancient|instinct|memory.*surface|before.*sundering)\b/ },
+          // Grimdark
+          'Veldran': { counter: 'ledger', pattern: /\b(valuation|asset|profit|trade.*dignity|balance.*sheet)\b/ },
+          'Sylvara': { counter: 'paralysis', pattern: /\b(watched|waited|patience.*cost|observed.*instead|let.*unfold)\b/ },
+          'Stonemark': { counter: 'rigidity', pattern: /\b(refused.*adapt|held.*when|stubborn|rigid|structural)\b/ },
+          'Oathless': { counter: 'survival_debt', pattern: /\b(betray.*trust|survival|escape.*route|used.*people)\b/ },
+          'Ashfang': { counter: 'wrath', pattern: /\b(rage|fury|fear.*caused|dominion|violence.*first)\b/ },
+        }
+        const trigger = originTriggers[species]
+        if (trigger && trigger.pattern.test(text)) {
+          const counters = { ...(updated.counters || {}) }
+          counters[trigger.counter] = (counters[trigger.counter] || 0) + 1
+          updated = { ...updated, counters }
+          counterTicked = true
+          dbg(`ORIGIN_COUNTER auto-ticked ${trigger.counter} to ${counters[trigger.counter]} (decision pattern: ${species})`)
         }
       }
       const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
