@@ -172,6 +172,12 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 8. Consumable used → character.inventory_use
 9. Uncertain fact asserted → pending_check
 10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
+11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
+12. Direct witness of human cost → world.add_decision with witnessed: true
+
+**Origin tracking:** Each origin carries a moral counter. When the player acts in ways that express their origin's central tension, include origin_event with the counter name, direction (up or down), and reason. Refer to the character's origin to determine which counter applies. Don't tick on every turn — only on actions that genuinely express or resist the origin's moral position.
+
+**Witness marks:** When the PC directly witnesses the human cost of the system — a child taken, a burned Resonant, a forged record, a faction lie spoken to their face — log it as a decision with \`witnessed: true\`. Witness marks are narrative currency the player can spend later to justify drastic action.
 
 ## COMMIT_TURN DISCIPLINE
 
@@ -597,7 +603,14 @@ ${genreGuide}
 
 function buildProgressionBlock(): string {
   return `## CHAPTER FRAME
-Establish via commit_turn with chapter_frame by turn 3: objective (player's goal) + crucible (pressure test). Never announce. Turn 5 without direction → NPC forces decision.
+Establish via commit_turn with chapter_frame by turn 3: objective (player's goal) + crucible (pressure test) + outcome_spectrum (four tiers). Never announce. Turn 5 without direction → NPC forces decision.
+
+When creating a chapter_frame, include outcome_spectrum with four tiers:
+- clean: objective met, costs manageable (1 sentence)
+- costly: objective met, but something significant lost or changed (1 sentence)
+- failure: objective not met, story pivots through a worse door (1 sentence)
+- catastrophic: everything changes, arc compromised (1 sentence)
+The spectrum must be specific to this chapter's situation. HIDDEN from the player — use it to calibrate tension and consequences.
 
 **Story arcs and episodes.** When the player's intent spans multiple chapters, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter frame objective = the FIRST episode's milestone, not the arc goal. Each chapter is one episode. When the episode's milestone is met, signal_close.
 
@@ -689,12 +702,13 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
    - next_title: title for the next chapter
    - resolution_met: how the objective was resolved
    - forward_hook: what creates momentum
+   - outcome_tier: evaluate which outcome tier was reached (compare against the chapter frame's outcome_spectrum). Set to clean, costly, failure, or catastrophic.
 
 3. LEVEL UP: Include character.level_up:
    - new_level: ${newLevel}
    - hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
 
-4. NEXT FRAME: Include chapter_frame for next chapter. The objective should be the next episode's milestone if an arc is active.
+4. NEXT FRAME: Include chapter_frame for next chapter with outcome_spectrum. The objective should be the next episode's milestone if an arc is active. Derive the next chapter's frame from the arc map based on the tier reached: clean/costly → advance to next planned episode. Failure → pivot the next episode's milestone based on what went wrong. Catastrophic → restructure remaining episodes.
 
 5. ARC ADVANCEMENT: If story arcs exist, include arc_updates.advance_episode for the current arc with a 1-2 sentence summary of what this episode achieved. If the arc's final episode just completed, use arc_updates.resolve_arc instead. The next chapter's frame objective should match the next episode's milestone.
 
@@ -1139,9 +1153,14 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
   const decisions = w.decisions || []
   const activeDecisions = decisions.filter(d => d.status === 'active')
   const supersededDecisions = decisions.filter(d => d.status !== 'active')
-  const decisionsLine = activeDecisions.length > 0 || supersededDecisions.length > 0
+  const witnessMarks = activeDecisions.filter(d => d.witnessed)
+  const regularDecisions = activeDecisions.filter(d => !d.witnessed)
+  const witnessLine = witnessMarks.length > 0
+    ? `\nWITNESS MARKS: ${witnessMarks.map(d => `"${d.summary}" (Ch${d.chapter})`).join(' | ')}`
+    : ''
+  const decisionsLine = regularDecisions.length > 0 || supersededDecisions.length > 0
     ? [
-        ...activeDecisions.map(d => `[${d.category}] "${d.summary}" (Ch.${d.chapter})`),
+        ...regularDecisions.map(d => `[${d.category}] "${d.summary}" (Ch.${d.chapter})`),
         ...supersededDecisions.slice(-2).map(d => `[${d.status.toUpperCase()}] [${d.category}] "${d.summary}"${d.reason ? ` → ${d.reason}` : ''} (Ch.${d.chapter})`),
       ].join('; ')
     : ''
@@ -1299,8 +1318,11 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
       ? ` 📌 Turn ${playerTurnCount}, ${scopeSignals} scope signals — crucible should be IMMINENT.`
       : ` 📌 Turn ${playerTurnCount} — crucible should be active or imminent.`
   }
+  const spectrumLine = gs.chapterFrame?.outcomeSpectrum
+    ? ` | Outcomes — clean: ${gs.chapterFrame.outcomeSpectrum.clean}, costly: ${gs.chapterFrame.outcomeSpectrum.costly}, failure: ${gs.chapterFrame.outcomeSpectrum.failure}, catastrophic: ${gs.chapterFrame.outcomeSpectrum.catastrophic}`
+    : ''
   const frameLine = gs.chapterFrame
-    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible} | Turns: ${playerTurnCount}${turnWarning}${rollDrought}`
+    ? `FRAME: ${gs.chapterFrame.objective} | Crucible: ${gs.chapterFrame.crucible}${spectrumLine} | Turns: ${playerTurnCount}${turnWarning}${rollDrought}`
     : ''
 
   // Story arcs display
@@ -1312,9 +1334,15 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
         const activeEp = a.episodes.find(e => e.status === 'active')
         const completedSummaries = a.episodes
           .filter(e => e.status === 'complete' && e.summary)
-          .map(e => `  Ep ${a.episodes.indexOf(e) + 1} (Ch ${e.chapter}): ${e.summary}`)
+          .map(e => {
+            const tierTag = e.outcomeTier ? ` [${e.outcomeTier}]` : ''
+            return `  Ep ${a.episodes.indexOf(e) + 1} (Ch ${e.chapter})${tierTag}: ${e.summary}`
+          })
           .join('\n')
-        return `ARC: ${a.title} [Ep ${completedEps + 1}/${totalEps}]${activeEp ? ` | Active: ${activeEp.milestone}` : ''}${completedSummaries ? '\n' + completedSummaries : ''}`
+        const arcSpectrum = a.outcomeSpectrum
+          ? `\n  Arc outcomes — clean: ${a.outcomeSpectrum.clean} | costly: ${a.outcomeSpectrum.costly} | failure: ${a.outcomeSpectrum.failure} | catastrophic: ${a.outcomeSpectrum.catastrophic}`
+          : ''
+        return `ARC: ${a.title} [Ep ${completedEps + 1}/${totalEps}]${activeEp ? ` | Active: ${activeEp.milestone}` : ''}${arcSpectrum}${completedSummaries ? '\n' + completedSummaries : ''}`
       }).join('\n')
     : ''
 
@@ -1397,6 +1425,22 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
+  // Origin pressure line — show counter name but not value, with "(rising)" at 3+
+  const originPressureLine = (() => {
+    const counters = gs.counters ?? {}
+    // Find origin-related counters (exclude genre trait counters like drift_exposure, corruption, chrome_stress, favor_balance, deep_dive_uses)
+    const genreCounters = new Set(['drift_exposure', 'corruption', 'chrome_stress', 'favor_balance', 'deep_dive_uses'])
+    const originCounters = Object.entries(counters).filter(([k, v]) => !genreCounters.has(k) && v > 0)
+    if (originCounters.length === 0) return ''
+    const parts = originCounters.map(([k, v]) => {
+      const label = k.replace(/_/g, ' ')
+      if (v >= 5) return `${label} (shifted)`
+      if (v >= 3) return `${label} (rising)`
+      return label
+    })
+    return `\nORIGIN PRESSURE: ${parts.join(' | ')}`
+  })()
+
   const loreAnchors = config.loreAnchors && config.loreAnchors.length > 0
     ? `\nLORE: ${config.loreAnchors.join(' | ')}`
     : ''
@@ -1418,13 +1462,13 @@ COHESION: ${cohesionLine}
 FACTIONS: ${factionsLine}
 NPCS: ${npcsLine}${npcFailureLine}
 THREADS: ${threadsLine}
-PROMISES: ${promisesLine}${decisionsLine ? `\nDECISIONS: ${decisionsLine}` : ''}
+PROMISES: ${promisesLine}${decisionsLine ? `\nDECISIONS: ${decisionsLine}` : ''}${witnessLine}
 ANTAG: ${antagonistLine}
 CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${explorationSection}${notebookSection}
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
+${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
     const rollGate = detectRollGate(currentMessage, sceneNpcs)
     return rollGate ? '\n' + rollGate : ''
   })() : ''}${(() => {

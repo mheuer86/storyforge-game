@@ -271,6 +271,7 @@ const commitTurnDefinition: Anthropic.Tool = {
               summary: { type: 'string' },
               context: { type: 'string' },
               category: { type: 'string', enum: ['moral', 'tactical', 'strategic', 'relational'] },
+              witnessed: { type: 'boolean', description: 'True when the PC directly witnesses the human cost of the system. Witness marks are narrative currency the player can spend to justify drastic action.' },
             },
             required: ['id', 'summary', 'context', 'category'],
           },
@@ -617,8 +618,19 @@ const commitTurnDefinition: Anthropic.Tool = {
         properties: {
           objective: { type: 'string', description: 'Under 10 words.' },
           crucible: { type: 'string' },
+          outcome_spectrum: {
+            type: 'object',
+            description: 'Four outcome tiers for this chapter. Hidden from player. Guides consequence calibration.',
+            properties: {
+              clean: { type: 'string', description: 'Objective met, costs manageable. 1 sentence.' },
+              costly: { type: 'string', description: 'Objective met, something significant lost or changed. 1 sentence.' },
+              failure: { type: 'string', description: 'Objective not met, story pivots through a worse door. 1 sentence.' },
+              catastrophic: { type: 'string', description: 'Everything changes. Arc compromised. 1 sentence.' },
+            },
+            required: ['clean', 'costly', 'failure', 'catastrophic'],
+          },
         },
-        required: ['objective', 'crucible'],
+        required: ['objective', 'crucible', 'outcome_spectrum'],
       },
       signal_close: {
         type: 'object',
@@ -638,6 +650,7 @@ const commitTurnDefinition: Anthropic.Tool = {
           next_title: { type: 'string' },
           resolution_met: { type: 'string' },
           forward_hook: { type: 'string' },
+          outcome_tier: { type: 'string', enum: ['clean', 'costly', 'failure', 'catastrophic'], description: 'Which outcome tier was reached this chapter.' },
         },
         required: ['summary', 'key_events', 'next_title', 'resolution_met', 'forward_hook'],
       },
@@ -683,6 +696,18 @@ const commitTurnDefinition: Anthropic.Tool = {
         required: ['skill', 'stat', 'dc', 'modifier', 'reason'],
       },
 
+      // ── Origin Tracking ─────────────────────────────────────
+      origin_event: {
+        type: 'object',
+        description: 'Track origin-specific moral pressure. Include when the player\'s actions tick their origin counter.',
+        properties: {
+          counter: { type: 'string', description: 'Counter name matching the character origin (e.g. fealty, doubt, exposure, mandate, debt, embers, badge_debt, gang_debt, etc.)' },
+          direction: { type: 'string', enum: ['up', 'down'] },
+          reason: { type: 'string', description: 'Brief reason for the tick.' },
+        },
+        required: ['counter', 'direction', 'reason'],
+      },
+
       // ── Scene Management ───────────────────────────────────
       scene_end: { type: 'boolean', description: 'True when a scene boundary occurred.' },
       scene_summary: { type: 'string', description: '2-4 sentence summary of concluding scene.' },
@@ -718,6 +743,17 @@ const commitTurnDefinition: Anthropic.Tool = {
                 type: 'array',
                 description: '2-4 planned episode milestones. First becomes active.',
                 items: { type: 'string' },
+              },
+              outcome_spectrum: {
+                type: 'object',
+                description: 'Arc-level outcome tiers. What does the full arc look like at each tier?',
+                properties: {
+                  clean: { type: 'string' },
+                  costly: { type: 'string' },
+                  failure: { type: 'string' },
+                  catastrophic: { type: 'string' },
+                },
+                required: ['clean', 'costly', 'failure', 'catastrophic'],
               },
             },
             required: ['id', 'title', 'episodes'],

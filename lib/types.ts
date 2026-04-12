@@ -140,6 +140,7 @@ export interface Decision {
   status: 'active' | 'superseded' | 'abandoned'
   reason?: string           // Why it was superseded/abandoned
   chapter: number           // When it was made
+  witnessed?: boolean       // True when PC directly witnessed the human cost — narrative currency
 }
 
 export interface AntagonistMove {
@@ -382,12 +383,21 @@ export interface Chapter {
   debrief?: ChapterDebrief
   messages?: ChatMessage[]  // archived chat messages for completed chapters
   sceneSummaries?: SceneSummary[]  // preserved for cross-chapter memory (active arcs only)
+  outcomeTier?: 'clean' | 'costly' | 'failure' | 'catastrophic'  // which outcome tier was reached
+}
+
+export interface OutcomeSpectrum {
+  clean: string
+  costly: string
+  failure: string
+  catastrophic: string
 }
 
 export interface ChapterFrame {
   objective: string
   crucible: string
   refined?: boolean  // true after one mid-chapter refinement has been applied
+  outcomeSpectrum?: OutcomeSpectrum
 }
 
 export interface CloseData {
@@ -471,6 +481,7 @@ export interface StoryArc {
   title: string           // "Expose Coll before the hearing"
   status: 'active' | 'resolved' | 'abandoned'
   episodes: Episode[]
+  outcomeSpectrum?: OutcomeSpectrum  // arc-level outcome tiers
 }
 
 export interface Episode {
@@ -478,6 +489,7 @@ export interface Episode {
   milestone: string       // "Find out who accused Maret and why"
   status: 'pending' | 'active' | 'complete'
   summary?: string        // arc-scoped: what this episode achieved toward the arc goal (1-2 sentences)
+  outcomeTier?: 'clean' | 'costly' | 'failure' | 'catastrophic'  // which tier was reached
 }
 
 export interface PivotalScene {
