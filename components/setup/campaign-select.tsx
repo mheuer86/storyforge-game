@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { track } from '@vercel/analytics'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
@@ -43,6 +43,8 @@ function genreAccentColor(genre: string): string {
 export function CampaignSelect({ autoSave, slots, onContinue, onLoadSlot, onNewGame }: CampaignSelectProps) {
   const hasSlots = slots.some(Boolean)
   const [showOlderUpdates, setShowOlderUpdates] = useState(false)
+
+  useEffect(() => { window.scrollTo(0, 0) }, [])
 
   return (
     <div className="flex min-h-screen flex-col items-center px-6 py-16 pb-24">
