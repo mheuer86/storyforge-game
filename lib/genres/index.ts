@@ -24,6 +24,7 @@ export interface Species {
   name: string
   description: string
   lore: string
+  behavioralDirective?: string          // Claude-facing: how to play this origin's interiority during gameplay
   startingContacts?: StartingContact[]  // auto-created as NPCs on game init
 }
 
@@ -48,6 +49,7 @@ export interface CharacterClass {
   startingAc: number
   hitDieAvg: number  // average HP gained per level (before CON mod). Tanks: 6, mixed: 5, faces/casters: 4
   trait: Trait
+  openingKnowledge?: string  // ~80-100 words, character interiority for chapter 1 world-seeding
 }
 
 export interface GenreTheme {
@@ -118,6 +120,9 @@ export interface GenreConfig {
     buildAssetState: ((ship: ShipState, shipName: string) => string) | null
     investigationGuide: string
   }
+  deepLore?: string           // cached world lore section (~400-500 words) injected into core layer
+  guideNpcDirective?: string  // one-sentence directive for the opening NPC's exposition role
+  loreFacets?: Record<string, string>  // scene-keyed lore facets injected when conditions match
   cohesionGuide?: string     // genre-specific cohesion triggers (overrides generic +1/-1 rules)
   companionLabel: string     // "Companions", "Retainers", "Crew", etc.
   loreAnchors?: string[]     // compact world facts shipped every turn for complex genres

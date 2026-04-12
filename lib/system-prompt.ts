@@ -84,7 +84,7 @@ Present tense, second person. Scene transitions get a heading: "## [Location] �
 
 ${ps.setting}
 ${ps.vocabulary}
-
+${config.deepLore ? `\n${config.deepLore}` : ''}
 ## NPC VOICE
 
 Read the Voice field on each NPC before writing dialogue. Rhythm, not accents. No overused AI names (Aldric, Kael, Voss, Thorne, Ash, Sable, Petra, Renn).
@@ -224,7 +224,7 @@ function selectSituationModule(
 ): string {
   // Chapter 1 overrides everything
   if (gs.meta.chapterNumber <= 1) {
-    return buildTutorialModule(ps, config)
+    return buildTutorialModule(ps, config, gs.character.class)
   }
 
   // Investigation overlay — always loaded (every genre has mysteries), except during combat
@@ -268,14 +268,108 @@ function selectSituationModule(
   // Fallback summaries for omitted modules
   const fallbacks = buildFallbacks(context, !!investigationOverlay, ps)
 
-  return `${primary}${investigationOverlay}${assetBlock}${traitBlock}\n\n${progressionBlock}${fallbacks}`
+  // Scene-keyed lore facets — fire when scene content matches
+  const facetBlock = config.loreFacets ? buildLoreFacets(gs, config) : ''
+
+  return `${primary}${investigationOverlay}${assetBlock}${traitBlock}${facetBlock}\n\n${progressionBlock}${fallbacks}`
+}
+
+// ============================================================
+// LORE FACETS — scene-keyed behavioral texture
+// ============================================================
+
+function buildLoreFacets(gs: GameState, config: ReturnType<typeof getGenreConfig>): string {
+  const facets = config.loreFacets
+  if (!facets) return ''
+
+  const currentLoc = gs.world.currentLocation.name.toLowerCase()
+  const sceneNpcs = gs.world.npcs.filter(n =>
+    n.status !== 'dead' && n.status !== 'gone' &&
+    (n.role === 'crew' || n.lastSeen?.toLowerCase() === currentLoc)
+  )
+  const loc = gs.world.currentLocation.name.toLowerCase()
+  const recent = gs.history.messages.slice(-3).map(m => m.content.toLowerCase()).join(' ')
+
+  const matched: string[] = []
+
+  // political: 2+ NPCs with House affiliation
+  if (facets.political && sceneNpcs.filter(n => n.affiliation?.includes('House')).length >= 2) {
+    matched.push(facets.political)
+  }
+
+  // synod: any NPC with Synod affiliation, or keywords in recent messages
+  if (facets.synod && (
+    sceneNpcs.some(n => n.affiliation?.includes('Synod')) ||
+    recent.includes('testing') || recent.includes('heresy') || recent.includes('doctrine')
+  )) {
+    matched.push(facets.synod)
+  }
+
+  // drift: Conduit class + drift_exposure > 2, or keywords
+  if (facets.drift) {
+    const driftExposure = (gs.counters ?? {})['drift_exposure'] ?? 0
+    if (
+      (gs.character.class === 'Conduit' && driftExposure > 2) ||
+      recent.includes('drift') || recent.includes('attune')
+    ) {
+      matched.push(facets.drift)
+    }
+  }
+
+  // ashen-ward: location or NPC described as Resonant/Spent
+  if (facets['ashen-ward'] && (
+    loc.includes('ward') || loc.includes('ashen') ||
+    sceneNpcs.some(n => n.description?.includes('Resonant') || n.description?.includes('Spent'))
+  )) {
+    matched.push(facets['ashen-ward'])
+  }
+
+  // undrift: NPC with Undrift affiliation, or character origin is Undrift
+  if (facets.undrift && (
+    sceneNpcs.some(n => n.affiliation?.includes('Undrift')) ||
+    gs.character.species === 'Undrift'
+  )) {
+    matched.push(facets.undrift)
+  }
+
+  // military: combat with institutional NPCs, or keywords
+  if (facets.military && (
+    (gs.combat.active && sceneNpcs.some(n => n.affiliation)) ||
+    recent.includes('garrison') || recent.includes('orders') || recent.includes('patrol')
+  )) {
+    matched.push(facets.military)
+  }
+
+  if (matched.length === 0) return ''
+
+  // Cap at ~250 tokens (roughly 3 facets)
+  const capped = matched.slice(0, 3)
+  return `\n\n## SCENE CONTEXT\n${capped.join('\n')}`
 }
 
 // ============================================================
 // TUTORIAL MODULE — Chapter 1 only (~400 tokens)
 // ============================================================
 
-function buildTutorialModule(ps: ReturnType<typeof getGenreConfig>['promptSections'], config: ReturnType<typeof getGenreConfig>): string {
+function buildTutorialModule(ps: ReturnType<typeof getGenreConfig>['promptSections'], config: ReturnType<typeof getGenreConfig>, characterClass?: string): string {
+  const guideDirective = config.guideNpcDirective ? `\n**Guide NPC:** ${config.guideNpcDirective}` : ''
+  const knowledgeBlock = (() => {
+    if (!characterClass) return ''
+    const cls = config.classes.find(c => c.id === characterClass || c.name === characterClass)
+    return cls?.openingKnowledge ? `\n**Opening knowledge (weave into narration):** ${cls.openingKnowledge}` : ''
+  })()
+
+  const obiWanBlock = (guideDirective || knowledgeBlock) ? `
+
+You have deep world knowledge from the cached prompt. The player doesn't.
+In chapter 1, surface it through:
+1. Character interiority — use the opening knowledge block below
+2. Guide NPC dialogue — implication, not explanation
+3. Environmental specificity — show the world through objects and places
+Don't explain. Inhabit. The player should finish turn 5 thinking
+"I understand this world," not "I learned about this world."
+${guideDirective}${knowledgeBlock}` : ''
+
   return `## THIS IS CHAPTER 1
 
 You are onboarding a new player. Introduce mechanics through story, never through instructions. Go slower than normal — let the player discover the world before you challenge them.
@@ -292,7 +386,7 @@ After these three beats, play normally. The training wheels come off.
 **Chapter 1 pacing:** Shorter chapter than normal. The objective should be achievable in 10-15 turns. One clear goal, one complication, one resolution. Don't introduce more than 3-4 NPCs or 2-3 threads.
 
 **Chapter 1 lore budget:** Maximum 3 world concepts. Introduce the player's immediate position, ONE faction relationship that creates the chapter's tension, and one background element as texture. Other factions, institutions, and lore emerge across chapters 2-5. Do not worldbuild through exposition — worldbuild through NPC action and consequence.
-
+${obiWanBlock}
 ${ps.traitRules ? ps.traitRules : ''}
 
 ${ps.assetMechanic || ''}
@@ -1305,7 +1399,7 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
 
   return `PRESSURE: ${pressureLine}${weakLine ? ' | ' + weakLine : ''}${loreAnchors}
 
-ORIGIN: ${c.species} — ${config.species.find(s => s.name === c.species)?.lore || 'No special traits.'}
+ORIGIN: ${c.species} — ${(() => { const o = config.species.find(s => s.name === c.species); return o?.behavioralDirective || o?.lore || 'No special traits.'; })()}
 PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}${c.hp.current <= 0 ? `\n⚠ DEATH STATE: ${c.name} is at 0 HP. MANDATORY: Character is unconscious. Propose a death save (d20, DC 10) via pending_check IMMEDIATELY. No other actions possible. Enemies do NOT attack an unconscious target unless narratively motivated. Three successes = stabilize at 1 HP. Three failures = permanent death. Nat 20 = regain 1 HP. Nat 1 = two failures. A companion may attempt to stabilize (Medicine DC 10) instead.` : ''}
 STATS: ${statLine}
 PROF: ${c.proficiencies.join(', ')}
