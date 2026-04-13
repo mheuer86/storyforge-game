@@ -1404,7 +1404,8 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
               const c = nb.connections.find(c => c.id === id)
               return c ? `Lead:"${c.title}"` : id
             }).join(' + ')
-            return `${conn.tier.toUpperCase()}: "${conn.title}" (id:${conn.id}) — ${sourceLabels} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
+            const tierLabel = conn.tier === 'enriched' ? 'ENRICHED LEAD' : conn.tier.toUpperCase()
+            return `${tierLabel}: "${conn.title}" (id:${conn.id}) — ${sourceLabels} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
           }).join('\n')
         : '')
     : ''

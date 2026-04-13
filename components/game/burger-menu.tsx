@@ -1566,13 +1566,14 @@ function NotebookPanel({ notebook, notebookLabel, onConnect }: { notebook: Noteb
     const refs = notebook.connections.filter(c => c.sourceIds.includes(id) && (!c.status || c.status === 'active'))
     if (refs.length === 0) return null
     const hasBreakthrough = refs.some(c => c.tier === 'breakthrough')
-    return { count: refs.length, label: hasBreakthrough ? 'breakthrough' : 'lead' }
+    const hasEnriched = refs.some(c => c.tier === 'enriched')
+    return { count: refs.length, label: hasBreakthrough ? 'breakthrough' : hasEnriched ? 'enriched lead' : 'lead' }
   }
 
   // Categorize connections by tier
   const activeConns = notebook.connections.filter(c => !c.status || c.status === 'active')
   const breakthroughs = activeConns.filter(c => c.tier === 'breakthrough').reverse()
-  const leads = activeConns.filter(c => c.tier === 'lead').reverse()
+  const leads = activeConns.filter(c => c.tier === 'lead' || c.tier === 'enriched').reverse()
   const resolvedConns = notebook.connections.filter(c => c.status === 'solved' || c.status === 'archived' || c.status === 'disproven').reverse()
 
   // Evidence: active clues

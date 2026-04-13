@@ -921,16 +921,22 @@ function applyWorldChanges(
       const sourceIsConnection = sourceIds.map(id => notebook.connections.some(c => c.id === id))
       const hasConnectionSource = sourceIsConnection.some(Boolean)
       const allConnectionSources = sourceIsConnection.every(Boolean)
-      let tier: 'lead' | 'breakthrough' = 'lead'
-      if (allConnectionSources) {
+      const anyBreakthroughSource = sourceIds.some(id => {
+        const conn = notebook.connections.find(c => c.id === id)
+        return conn?.tier === 'breakthrough'
+      })
+      let tier: 'lead' | 'enriched' | 'breakthrough' = 'lead'
+      if (anyBreakthroughSource) {
+        // Breakthrough + anything → breakthrough (deeper breakthrough)
+        tier = 'breakthrough'
+      } else if (allConnectionSources) {
+        // Lead + Lead → breakthrough
         tier = 'breakthrough'
       } else if (hasConnectionSource) {
-        const anyBreakthrough = sourceIds.some(id => {
-          const conn = notebook.connections.find(c => c.id === id)
-          return conn?.tier === 'breakthrough'
-        })
-        tier = anyBreakthrough ? 'breakthrough' : 'lead'
+        // Lead + Clue → enriched lead
+        tier = 'enriched'
       }
+      // Clue + Clue → lead (default)
 
       const tainted = sourceIds.some(id => {
         const clue = notebook.clues.find(c => c.id === id)
@@ -962,7 +968,8 @@ function applyWorldChanges(
           tainted,
           ...(connInput.status ? { status: connInput.status } : {}),
         }]
-        statChanges.push({ type: 'new', label: tier === 'breakthrough' ? `Breakthrough: ${connInput.title}` : `Lead: ${connInput.title}` })
+        const tierLabel = tier === 'breakthrough' ? 'Breakthrough' : tier === 'enriched' ? 'Enriched Lead' : 'Lead'
+        statChanges.push({ type: 'new', label: `${tierLabel}: ${connInput.title}` })
       }
 
       const finalConnId = existingIdx >= 0 ? notebook.connections[existingIdx].id : connId

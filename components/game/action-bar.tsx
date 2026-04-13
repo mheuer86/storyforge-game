@@ -77,7 +77,7 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
           type: 'connection' as const,
           label: c.title,
           subtitle: c.revelation.slice(0, 60) + (c.revelation.length > 60 ? '...' : ''),
-          tag: up > 0 ? `→ ${up} breakthrough${up !== 1 ? 's' : ''}` : c.tier.toUpperCase(),
+          tag: up > 0 ? `→ ${up} breakthrough${up !== 1 ? 's' : ''}` : c.tier === 'enriched' ? 'ENRICHED LEAD' : c.tier.toUpperCase(),
         }
       }),
       // Then evidence
