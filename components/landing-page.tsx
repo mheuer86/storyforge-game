@@ -562,7 +562,7 @@ export function LandingPage() {
                 </span>
               </div>
               {/* Origin cards */}
-              <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin">
+              <div className="flex items-start gap-4 overflow-x-auto pb-3 scrollbar-thin">
                 {visibleSpecies.map((s) => {
                   const isSelected = selectedOrigin === s.id
                   return (
@@ -570,11 +570,9 @@ export function LandingPage() {
                       key={s.id}
                       onClick={() => setSelectedOrigin(isSelected ? null : s.id)}
                       className={`shrink-0 w-[160px] sm:w-[180px] md:w-[200px] text-left transition-all duration-300 ${
-                        isSelected
-                          ? 'scale-[1.02]'
-                          : selectedOrigin
-                            ? 'opacity-50 hover:opacity-80'
-                            : 'hover:opacity-80'
+                        selectedOrigin && !isSelected
+                          ? 'opacity-50 hover:opacity-80'
+                          : 'hover:opacity-80'
                       }`}
                     >
                       <div
