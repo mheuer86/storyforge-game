@@ -362,7 +362,7 @@ Each origin carries a **moral counter** tied to its defining tension. The counte
 
 At counter value 3+, the pressure becomes visible: NPCs from your origin sense the change.
 
-At counter value **5+**, an **identity shift** occurs. Your origin label permanently changes, reflecting how you've played. A Synod-Raised becomes a Heretic. An Undrift becomes Hunted. An Imperial Service officer becomes a Dissident. The shift changes NPC reactions, faction stances, and your behavioral identity. It cannot be reversed.
+At counter value **5+**, an **identity shift** occurs. Your origin label permanently changes, reflecting how you've played. A Synod origin becomes a Heretic. An Undrift becomes Hunted. An Imperial Service officer becomes a Dissident. The shift changes NPC reactions, faction stances, and your behavioral identity. It cannot be reversed.
 
 ### Witness Marks
 

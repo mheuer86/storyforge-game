@@ -94,8 +94,8 @@ There is also a legacy `systemPromptFlavor` object (`role`, `setting`, `vocabula
 Hooks can be plain strings or objects with:
 - `hook` -- the scenario text.
 - `title` -- optional display title for the hook selector.
-- `origins` -- optional array of origin/species IDs. When present, the hook only appears if the player chose one of these origins. Used for origin-tier hooks (e.g. institutional hooks available to `['synod-raised', 'minor-house', 'imperial-service']`) and origin-specific hooks.
-- `classes` -- optional array of class/playbook names. When present, further filters within origin. Combined with `origins` for playbook-specific hooks (e.g. `origins: ['synod-raised'], classes: ['Censor']`). Can also tag hooks that work across origins (e.g. `origins: ['synod-raised', 'imperial-service'], classes: ['Crusader', 'Warden']` for dual-tagged hooks).
+- `origins` -- optional array of origin/species IDs. When present, the hook only appears if the player chose one of these origins. Used for origin-tier hooks (e.g. institutional hooks available to `['synod', 'minor-house', 'imperial-service']`) and origin-specific hooks.
+- `classes` -- optional array of class/playbook names. When present, further filters within origin. Combined with `origins` for playbook-specific hooks (e.g. `origins: ['synod'], classes: ['Seeker']`). Can also tag hooks that work across origins (e.g. `origins: ['synod', 'imperial-service'], classes: ['Crusader', 'Warden']` for dual-tagged hooks).
 - `startingCounters` -- optional `Record<string, number>`. Initializes genre counters when this hook is selected (e.g. `{ exposure: 1 }` for Undrift hooks).
 - `frame` -- optional `{ objective: string; crucible: string }`. Pre-seeds the chapter frame so Claude starts with a tight chapter-1 goal instead of improvising. Objective scoped for ~20-25 turns.
 - `arc` -- optional `{ name: string; episode: string }`. Pre-seeds the first story arc with episode 1 marked active. Gives Claude a broader narrative thread from turn 1.
