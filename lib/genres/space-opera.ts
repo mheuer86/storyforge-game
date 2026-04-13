@@ -160,7 +160,7 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
     },
     {
       id: 'operative',
-      name: 'Operative',
+      name: 'Driftrunner',
       concept: 'Works back channels and institutional infrastructure built for humans. The problem-solver who knows which doors open and which shouldn\'t be opened.',
       hookTags: ['infiltrator', 'scout'],
       primaryStat: 'DEX',
@@ -625,7 +625,7 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
 
 **Human Playbooks:**
 - **Command Authority (Captain):** Halt a hostile encounter, rally the crew, or compel cooperation from factions that recognize galactic law. Fails on pirates and outlaws. Three uses on the same faction and they reclassify you from captain to threat.
-- **Smuggler's Luck (Operative):** One item goes undetected during a search. Luck has memory: repeated use in the same port escalates scrutiny.
+- **Smuggler's Luck (Driftrunner):** One item goes undetected during a search. Luck has memory: repeated use in the same port escalates scrutiny.
 - **First Through (Pioneer):** Advantage on the first check in an unknown environment. Only works on the genuinely unknown; no benefit on revisits.
 
 **Sylphari Playbooks:**
@@ -732,8 +732,9 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     // Captain
     { hook: 'Two factions on the verge of war have agreed to meet on neutral ground — your ship. The summit starts in six hours. Then the lead negotiator for one side is found dead in their quarters, and both delegations are blaming the crew.', title: 'Neutral Ground', classes: ['Captain'], frame: { objective: 'Find the killer before the summit collapses', crucible: 'Both delegations want blood, and your crew is the prime suspect' }, arc: { name: 'Neutral Ground', episode: 'Investigate the negotiator\'s death while keeping both delegations aboard' } },
 
-    // Operative
-    { hook: 'The cargo is a person. She says she\'s a defector from a Compact Remnant intelligence bureau and the data she\'s carrying will expose a network of compromised beacon operators. She paid for passage, not protection. But the ship that just dropped out of FTL behind you isn\'t customs — it\'s a black-ops corvette, and they\'re not hailing.', title: 'The Defector', classes: ['Operative'], frame: { objective: 'Get the defector to safe harbor alive', crucible: 'A black-ops corvette, a passenger who knows too much, and the question of whether her data is worth dying for' }, arc: { name: 'The Defector\'s Data', episode: 'Evade the corvette and decide whether to trust what the defector is carrying' } },
+    // Driftrunner
+    { hook: 'You owe Maren Voss forty thousand credits and she\'s done being patient. Her collector just docked at the same station you\'re refueling at, and the docking clamps won\'t release until the port fees clear. Then a stranger slides into the booth across from you in the cantina and offers exactly forty thousand credits to move one passenger and one sealed crate to a system three jumps past the last beacon. No questions. The stranger says the job needs to leave tonight. Voss\'s collector is walking the concourse. Tonight is also when you were planning to run.', title: 'Forty Thousand', classes: ['Driftrunner'], frame: { objective: 'Take the job, pay the debt, and get out before Voss\'s collector finds you', crucible: 'The exact amount you owe, from a stranger who knows you\'re desperate, for a job past the last beacon' }, arc: { name: 'The Forty Thousand Job', episode: 'Take the passenger and the crate aboard and clear the station before the collector closes in' } },
+    { hook: 'The cargo is a person. She says she\'s a defector from a Compact Remnant intelligence bureau and the data she\'s carrying will expose a network of compromised beacon operators. She paid for passage, not protection. But the ship that just dropped out of FTL behind you isn\'t customs — it\'s a black-ops corvette, and they\'re not hailing.', title: 'The Defector', classes: ['Driftrunner'], frame: { objective: 'Get the defector to safe harbor alive', crucible: 'A black-ops corvette, a passenger who knows too much, and the question of whether her data is worth dying for' }, arc: { name: 'The Defector\'s Data', episode: 'Evade the corvette and decide whether to trust what the defector is carrying' } },
 
     // Pioneer
     { hook: 'An anonymous client is offering a fortune to fly a sealed container through the Wraith Nebula — an uncharted region where navigation systems fail and ships disappear. No questions, payment on delivery. Three other crews already turned it down.', title: 'The Wraith Run', classes: ['Pioneer'], frame: { objective: 'Survive the Wraith Nebula crossing', crucible: 'No navigation, no comms, and whatever is in the container is worth dying for — to someone' }, arc: { name: 'The Wraith Run', episode: 'Prepare for the crossing and learn why three crews refused' } },
