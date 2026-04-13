@@ -551,6 +551,7 @@ function applyWorldChanges(
             'House Stonemark': 'rigidity', 'Bound': 'rigidity',
             'The Oathless': 'survival_debt', 'Named': 'survival_debt',
             'House Ashfang': 'wrath', 'Vessel': 'wrath',
+            'Church-Raised': 'zeal', 'The Pious': 'zeal',
           },
         }
         const counterMap = counterMaps[updated.meta?.genre || ''] || {}
