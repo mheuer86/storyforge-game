@@ -60,7 +60,7 @@ interface World {
   npcs: { name: string; description: string; lastSeen: string; subtype?: 'person' | 'vessel' | 'installation'; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone' }[]
   threads: { title: string; status: string; deteriorating: boolean }[]
   promises: { to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken' }[]
-  decisions: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; status: 'active' | 'superseded' | 'abandoned'; reason?: string; chapter: number; witnessed?: boolean }[]
+  decisions: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; status: 'active' | 'superseded' | 'abandoned' | 'spent'; reason?: string; chapter: number; witnessed?: boolean; spentOn?: string }[]
   antagonist: Antagonist | null
   tensionClocks: { id: string; name: string; status: 'active' | 'triggered' | 'resolved'; triggerEffect: string }[]
   notebook: Notebook | null
@@ -1268,10 +1268,11 @@ function WorldPanel({ world, partyBaseName, explorationLabel, companionLabel, in
           {/* Decisions — active non-operational choices */}
           {(() => {
             const witnessMarks = world.decisions.filter((d) => d.status === 'active' && d.witnessed)
+            const spentWitnesses = world.decisions.filter((d) => d.status === 'spent' && d.witnessed)
             const activeDecisions = world.decisions.filter((d) => d.status === 'active' && !d.witnessed)
-            return (witnessMarks.length > 0 || activeDecisions.length > 0) ? (
+            return (witnessMarks.length > 0 || spentWitnesses.length > 0 || activeDecisions.length > 0) ? (
               <div className="flex flex-col gap-4">
-                {witnessMarks.length > 0 && (
+                {(witnessMarks.length > 0 || spentWitnesses.length > 0) && (
                   <div>
                     <SectionLabel>Witness Marks</SectionLabel>
                     <div className="flex flex-col gap-2">
@@ -1286,6 +1287,21 @@ function WorldPanel({ world, partyBaseName, explorationLabel, companionLabel, in
                           </div>
                           <div className="text-xs text-foreground/60">{decision.context}</div>
                           <div className="mt-1 text-[10px] text-foreground/30">Ch. {decision.chapter}</div>
+                        </div>
+                      ))}
+                      {spentWitnesses.map((decision) => (
+                        <div
+                          key={decision.id}
+                          className="rounded px-3 py-2 border border-foreground/10 bg-foreground/[0.02] opacity-60"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-foreground/50 line-through">{decision.summary}</div>
+                            <span className="text-[10px] uppercase tracking-wider text-foreground/40">spent</span>
+                          </div>
+                          {decision.spentOn && (
+                            <div className="text-xs text-foreground/40 mt-0.5">Invoked: {decision.spentOn}</div>
+                          )}
+                          <div className="mt-1 text-[10px] text-foreground/20">Ch. {decision.chapter}</div>
                         </div>
                       ))}
                     </div>

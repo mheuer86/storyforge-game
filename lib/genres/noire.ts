@@ -90,6 +90,49 @@ const noireSpecies: Species[] = [
       },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'ghost-badge',
+    name: 'Ghost Badge',
+    description: 'The badge is a liability. The institution has quietly disowned you.',
+    lore: 'Former colleagues avoid eye contact. The precinct that was a second home has posted your photo in the wrong file. Internal affairs finished asking questions and started making statements. The badge opens nothing now; it just tells people what you used to be.',
+    behavioralDirective: 'Default register: institutional exile. The procedural instincts are intact but serve no authority. NPC reactions: cops treat you as a contamination risk. Criminals see a mark with no backup. When narrating interiority: the badge is in a drawer but the reflexes are still in the hands. The institution didn\'t just fire you; it pretended you were never there.',
+    hidden: true,
+  },
+  {
+    id: 'known',
+    name: 'Known',
+    description: 'Too many people know the face. Moving unseen is no longer possible.',
+    lore: 'The informant network is burned. Too many conversations in too many rooms with too many witnesses. The street that was invisible is now a stage, and everyone recognizes the performer.',
+    behavioralDirective: 'Default register: exposed and unable to retreat into anonymity. The street instincts scream to disappear but there is nowhere left to disappear to. NPC reactions: informants won\'t talk because being seen with you is a statement. Enemies know where to find you. When narrating interiority: every room has someone who recognizes you, and recognition in this city is never neutral.',
+    hidden: true,
+  },
+  {
+    id: 'insider',
+    name: 'Insider',
+    description: 'The connections became entanglement. You know too much to leave.',
+    lore: 'Every favor granted pulled you deeper. The old money connections that were a resource have become a cage. You know where the bodies are buried because you helped dig some of the holes. Leaving is no longer a question of courage; it is a question of what they\'ll do to keep you quiet.',
+    behavioralDirective: 'Default register: entangled past the point of extraction. The social fluency that navigated high society now maps the bars of the cage. NPC reactions: powerful contacts treat you as complicit, not connected. Those outside the circle sense you carry secrets you can\'t share. When narrating interiority: the web is visible from the inside, and every strand is a fact someone would kill to suppress.',
+    hidden: true,
+  },
+  {
+    id: 'cold',
+    name: 'Cold',
+    description: 'The numbness won. Emotional responses are tactical, not felt.',
+    lore: 'The detachment that was a survival mechanism has become the whole personality. Situations that should provoke a response get clinical assessment instead. People are variables. Grief is data. The war ended years ago but the shutdown never lifted.',
+    behavioralDirective: 'Default register: clinical, flat, processing the world as information rather than experience. NPC reactions: people sense the absence and recoil. Companions who relied on shared feeling find a wall. When narrating interiority: emotions arrive as observations, not sensations. "This would normally make a person angry" replaces anger. The efficiency is total. The cost is invisible from the inside.',
+    hidden: true,
+  },
+  {
+    id: 'bound',
+    name: 'Bound',
+    description: 'The debts became chains. Every choice is filtered through what you owe.',
+    lore: 'The obligations have compounded beyond repayment. The community that was a lifeline has become a creditor. Every decision is filtered through a calculus of debt, and the balance never tips toward freedom.',
+    behavioralDirective: 'Default register: every action is weighed against what you owe. The resilience is intact but it serves creditors, not the self. NPC reactions: community figures treat you as an asset to be directed. Outside contacts see someone who can\'t say no. When narrating interiority: freedom of choice is theoretical. The debts have their own gravity, and every path leads back to repayment.',
+    hidden: true,
+  },
 ]
 
 const noireClasses: CharacterClass[] = [

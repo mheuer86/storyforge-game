@@ -64,7 +64,7 @@ interface CharacterSetupProps {
 
 export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) {
   const config = getGenreConfig(genre)
-  const genreSpecies = config.species
+  const genreSpecies = config.species.filter(s => !s.hidden)
 
   const [characterName, setCharacterName] = useState('')
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)

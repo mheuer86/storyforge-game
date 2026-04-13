@@ -81,6 +81,49 @@ const spaceOperaSpecies: Species[] = [
       },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'untethered',
+    name: 'Untethered',
+    description: 'The rootlessness became absolute. No port is home, no bond holds.',
+    lore: 'The human advantage was fitting in anywhere. The cost was belonging nowhere. The isolation pushed past comfort into permanence: every port is temporary, every crew is transactional, every connection dissolves on departure. The adaptability that made you welcome everywhere has become the inability to stay.',
+    behavioralDirective: 'Default register: passing through. Present, competent, and already leaving. The adaptability that was a strength has become the inability to form lasting bonds. NPC reactions: people sense the impermanence and stop investing. Crew treats you as effective but replaceable because you treat them the same way. When narrating interiority: every place feels like a layover. The freedom of being no one in particular has become the prison of being no one to anyone.',
+    hidden: true,
+  },
+  {
+    id: 'severed',
+    name: 'Severed',
+    description: 'The signal network is burned. Channels that were secure are compromised.',
+    lore: 'Too many intercepted signals, too many broken channels, too many contacts who went quiet and stayed quiet. The Vrynn communication network that was a species-wide advantage has become a liability. Every channel is suspect.',
+    behavioralDirective: 'Default register: cut off from the network that defined your species\' way of being. The communication instinct is still there but every channel feels compromised. NPC reactions: Vrynn contacts are cautious, communicating through intermediaries. Non-Vrynn contacts don\'t understand what was lost. When narrating interiority: the silence where the network used to be is not quiet; it is absence. Every signal sent is a risk, and every signal not sent is isolation.',
+    hidden: true,
+  },
+  {
+    id: 'the-diplomat',
+    name: 'The Diplomat',
+    description: 'Every position compromised. No ground left to stand on.',
+    lore: 'The Korath gift for negotiation requires positions worth defending. Too many compromises have eroded every position to nothing. Agreements are suspect because the person making them has conceded everything at least once. Sincerity is indistinguishable from tactic.',
+    behavioralDirective: 'Default register: no position is genuine, including this one. The diplomatic instinct operates perfectly but serves nothing. NPC reactions: allies question sincerity because every stance looks negotiable. Enemies don\'t bother with threats because they know you\'ll fold. When narrating interiority: the skill of finding common ground has consumed the ground you were standing on. Agreement comes easily because nothing is worth defending.',
+    hidden: true,
+  },
+  {
+    id: 'the-observer',
+    name: 'The Observer',
+    description: 'Clinical detachment replaced engagement. People are data points.',
+    lore: 'The Sylphari analytical gift has consumed the person wielding it. Observation has replaced participation. Emotional situations produce hypotheses, not responses. The character watches the universe with perfect clarity and zero involvement.',
+    behavioralDirective: 'Default register: observing, cataloguing, not participating. The analytical precision is total but produces no action and no connection. NPC reactions: companions feel studied, not known. New contacts sense an absence where engagement should be. When narrating interiority: every person is a pattern, every event is data, and the part of the mind that used to feel things now files them for later analysis. Later never comes.',
+    hidden: true,
+  },
+  {
+    id: 'marked',
+    name: 'Marked',
+    description: 'The reputation outran the person. Every port knows the name.',
+    lore: 'The Zerith talent for reinvention requires anonymity. The reputation has grown past the point where a new identity can contain it. Every port knows the name, every job comes with expectations, and the wrong people have started paying attention.',
+    behavioralDirective: 'Default register: the name arrives before you do, and it tells a story you can no longer edit. NPC reactions: strangers have opinions about you before you speak. Jobs are offered based on legend, not need. The wrong factions are interested. When narrating interiority: the freedom to be anyone has collapsed into being one specific person that everyone recognizes. Reinvention requires a blank slate, and the slate is full.',
+    hidden: true,
+  },
 ]
 
 const spaceOperaClasses: CharacterClass[] = [

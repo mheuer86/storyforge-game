@@ -98,6 +98,49 @@ const cyberpunkSpecies: Species[] = [
       },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'burned',
+    name: 'Burned',
+    description: 'The gang cut ties. Old favors are threats now.',
+    lore: 'The old crew decided you were a liability. The favors that once kept you safe are now debts held by people who want you gone. Every contact from the old life is someone who knows enough to sell you out.',
+    behavioralDirective: 'Default register: the street that raised you has disowned you. Old survival instincts are intact but the network backing them is hostile. NPC reactions: former allies cross the street. New contacts smell desperation. Gang territory that was home is now enemy ground. When narrating interiority: the city feels the same but every familiar corner has turned unfriendly. The people who knew you best are the most dangerous.',
+    hidden: true,
+  },
+  {
+    id: 'flagged',
+    name: 'Flagged',
+    description: 'Corporate systems have identified you. Every scan is a risk.',
+    lore: 'The corp has your biometrics, your movement patterns, your known associates. Running is harder when the infrastructure itself is looking for you. Every security camera, payment terminal, and automated checkpoint is a potential trigger.',
+    behavioralDirective: 'Default register: the system sees you now. The corporate training that taught you to navigate infrastructure now tells you exactly how exposed you are. NPC reactions: corpo contacts go dark. Street contacts charge more because association carries risk. When narrating interiority: the city\'s infrastructure is no longer neutral. Every automated system is a potential eye, and you know exactly how the response protocols work because you used to write them.',
+    hidden: true,
+  },
+  {
+    id: 'settled',
+    name: 'Settled',
+    description: 'The street seeped in. What was survival is now identity.',
+    lore: 'The undercity was supposed to be temporary. The survival patterns were supposed to be tools, not personality. But the city has a way of becoming permanent, and the character has stopped looking for a way out. The rot is comfortable now.',
+    behavioralDirective: 'Default register: the undercity is no longer something to escape; it is home, and that acceptance carries a cost. NPC reactions: surface contacts see someone who has given up. Undercity contacts see someone who finally belongs. When narrating interiority: the ceiling feels right. The air tastes normal. The ambition to leave has been replaced by the expertise of staying, and the difference between adaptation and surrender is invisible from the inside.',
+    hidden: true,
+  },
+  {
+    id: 'visible',
+    name: 'Visible',
+    description: 'Tied down. Roots grew where wheels used to be.',
+    lore: 'The nomad\'s freedom was the ability to leave. Obligations and debts have anchored the character to one place. The vehicle is parked. The contacts are local. The horizon has narrowed to a neighborhood.',
+    behavioralDirective: 'Default register: the freedom is gone and the body knows it. The instinct to leave is still there but the reasons to stay have accumulated into an anchor. NPC reactions: locals trust you more because you can\'t run. Old nomad contacts lose respect. When narrating interiority: the road is still there but the weight of staying is heavier than the pull of leaving. Every obligation is a root, and roots don\'t travel.',
+    hidden: true,
+  },
+  {
+    id: 'cut',
+    name: 'Cut',
+    description: 'The syndicate has disowned you, or you them. The blood tie is severed.',
+    lore: 'Family and syndicate were the same thing. Now the blood tie is cut, whether by your choice or theirs. The name that opened every door in the family\'s territory now closes them. The skills remain; the protection does not.',
+    behavioralDirective: 'Default register: severed from the only identity that was never in question. The syndicate instincts are intact but serve no family. NPC reactions: family members treat you as dead or dangerous. Outside contacts see someone unmoored, either free or adrift depending on their perspective. When narrating interiority: the blood tie was the one thing that never needed earning. Its absence is not freedom; it is amputation.',
+    hidden: true,
+  },
 ]
 
 const cyberpunkClasses: CharacterClass[] = [

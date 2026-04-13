@@ -70,6 +70,57 @@ const epicSciFiSpecies: Species[] = [
       { role: 'Synod administrator', disposition: 'neutral', description: 'The bureaucrat who processed your discharge papers without a second glance.', affiliation: 'The Synod', npcRole: 'contact' },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'hollow',
+    name: 'Hollow',
+    description: 'The house name is a shell. You traded so much dignity that the smile is permanent and means nothing.',
+    lore: 'What was House Vael is now a mask you wear out of habit. The trades of dignity accumulated until there was nothing left behind the name. House contacts treat you as a tool, not a member. The smile stays because removing it would require feeling something.',
+    behavioralDirective: 'Default register: performing a role with nothing behind it. The cost-benefit calculation is automatic but the results no longer matter. NPC reactions: house contacts use you openly, rivals sense the hollowing and probe for leverage. When narrating interiority: the smile is permanent and means nothing. Gestures of loyalty feel like muscle memory, not conviction.',
+    hidden: true,
+  },
+  {
+    id: 'heretic',
+    name: 'Heretic',
+    description: 'Doubt became conviction. You act on what you\'ve seen, knowing the cost.',
+    lore: 'The erosion of certainty reached its foundation and found something solid underneath: what you saw was real, and the Synod\'s framing of it was not. You are no longer questioning from inside the institution. You are acting from outside it.',
+    behavioralDirective: 'Default register: acting on what you\'ve seen, knowing the cost. The trained responses are still there but overridden by conviction. NPC reactions: Synod contacts sense the change and distance themselves or try to pull you back. Others who doubted the Synod recognize you. When narrating interiority: certainty has replaced erosion, but it carries the weight of knowing exactly what you\'re defying and what it will cost.',
+    hidden: true,
+  },
+  {
+    id: 'hunted',
+    name: 'Hunted',
+    description: 'Too visible. The network distances itself. The exits are closing.',
+    lore: 'Too many names used, too many biometric contacts, too many moments where you were seen. The Undrift network that kept you alive is pulling back because you\'ve become a liability. The Synod bounty has upgraded. You are no longer hidden; you are being found.',
+    behavioralDirective: 'Default register: the exits are closing and you know it. Hypervigilance has shifted from calculated to desperate. NPC reactions: network contacts are reluctant, evasive, or apologetic. Institutional NPCs are actively looking, not passively suspicious. When narrating interiority: every room has fewer exits than it did last month. The infrastructure that protected you is the same infrastructure reporting you.',
+    hidden: true,
+  },
+  {
+    id: 'dissident',
+    name: 'Dissident',
+    description: 'Personal loyalty overrode duty. You serve people now, not the institution.',
+    lore: 'The line between duty and conscience has been crossed enough times that the institution noticed. Your handler questions your reports. Your clearance is under review. You still serve, but you serve people now, not the system that deployed you.',
+    behavioralDirective: 'Default register: serving people, not the institution. The training is intact but the loyalty has shifted. NPC reactions: handlers are suspicious and test you with loaded assignments. Civilian contacts trust you more than before, which makes you more dangerous to the Throne. When narrating interiority: the weight of the uniform feels different when you know who you\'re actually wearing it for.',
+    hidden: true,
+  },
+  {
+    id: 'owned',
+    name: 'Owned',
+    description: 'The patron\'s investment became a leash. Independence is theoretical.',
+    lore: 'Every door was opened by someone else\'s hand, and now the debt is the defining feature of your position. The patron\'s investment has compounded into control. You are in the room, but you are not free to leave it.',
+    behavioralDirective: 'Default register: every door was opened by someone else\'s hand. Alert to social signals but now also alert to the strings attached to every opportunity. NPC reactions: the patron treats you as an asset, not a person. Peers see you as an extension of the patron\'s influence. When narrating interiority: the room was not built for you, and now you realize it was built to contain you.',
+    hidden: true,
+  },
+  {
+    id: 'rekindled',
+    name: 'Rekindled',
+    description: 'The Drift is coming back. Classification is provably fraudulent. The body remembers, and the Synod will too.',
+    lore: 'The classification papers say "expended." The body says otherwise. The Drift capacity that was supposed to be burned out is surfacing, and each instance makes the fraud of your discharge more provable. You are no longer a spent asset. You are evidence.',
+    behavioralDirective: 'Default register: the body remembers, and the Synod will too. The quiet precision remains but now carries an undercurrent of returned power that frightens you as much as it frightens them. NPC reactions: civilians who knew you as Spent notice something has changed. Synod officials who encounter you feel institutional dread. When narrating interiority: the Drift sensation is familiar and unwelcome, like a language you thought you\'d forgotten.',
+    hidden: true,
+  },
 ]
 
 const epicSciFiClasses: CharacterClass[] = [

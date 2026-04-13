@@ -417,8 +417,8 @@ const noirRules: GenreRules = {
 const spaceOperaOriginMap: Record<string, OriginCounterDef> = {
   'Human': {
     counter: 'isolation',
-    shiftLabel: 'The Captain',
-    shiftWarning: 'Isolation has become identity. The character commands, but no longer connects. The crew follows orders, not a person. Narrate this as a character moment, not a mechanic.',
+    shiftLabel: 'Untethered',
+    shiftWarning: 'The rootlessness became absolute. Every port is temporary, every bond dissolves on departure. The character is no longer unrooted by circumstance but by identity. Narrate this as a character moment, not a mechanic.',
     risingWarning: 'The distance is growing. Crew members stop volunteering personal information. Professional respect replaces warmth.',
   },
   'Vrynn': {

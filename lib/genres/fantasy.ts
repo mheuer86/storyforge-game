@@ -54,6 +54,49 @@ const fantasySpecies: Species[] = [
       { role: 'exile lorekeeper', disposition: 'favorable', description: 'A scattered dragonkin exile who preserves oral traditions and pre-Sundering knowledge', affiliation: 'Dragonkin Diaspora' },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'climber',
+    name: 'Climber',
+    description: 'Ambition consumed the noble bearing. Every relationship is a rung.',
+    lore: 'The pragmatism that made humans effective in every kingdom has hardened into pure ambition. Court allies are stepping stones. Loyalty is a resource to be spent. The adaptability that was a strength has become a refusal to hold any ground that isn\'t higher ground.',
+    behavioralDirective: 'Default register: every interaction is an opportunity for advancement, and advancement is the only metric that matters. The pragmatism is ruthless now, not flexible. NPC reactions: court allies sense the calculating edge and guard their positions. New contacts see ambition before they see a person. When narrating interiority: the ladder is the only structure that makes sense. Standing still feels like falling.',
+    hidden: true,
+  },
+  {
+    id: 'watcher',
+    name: 'Watcher',
+    description: 'Retreated past the point of return. The world happens to you.',
+    lore: 'The elven tendency toward long observation has tipped into permanent withdrawal. The world moves too fast, too crudely, and the character has retreated into a perspective so distant that participation feels impossible. They watch. They understand. They do nothing.',
+    behavioralDirective: 'Default register: observing from a distance that has become unreachable. The long view has consumed the present. NPC reactions: companions mistake withdrawal for wisdom, then grow frustrated when wisdom produces no action. Enemies forget you are there. When narrating interiority: the world is perfectly legible from this distance. The problem is that helping requires closing the distance, and the distance has become the self.',
+    hidden: true,
+  },
+  {
+    id: 'bound',
+    name: 'Bound',
+    description: 'The oath became the person. No identity outside the vow.',
+    lore: 'Dwarven oaths were meant to anchor, not imprison. This one has consumed the person who swore it. There is no flexibility, no accommodation, no room for the world to be more complex than the words spoken in stone. The oath answers every question before the dwarf can.',
+    behavioralDirective: 'Default register: the oath is the identity. Every situation is filtered through the vow before it reaches the person. NPC reactions: allies respect the consistency but fear what happens when the oath conflicts with survival. Enemies exploit the predictability with precision. When narrating interiority: the oath is not a choice anymore; it is a reflex. The comfort of certainty has become a wall against every exit.',
+    hidden: true,
+  },
+  {
+    id: 'named',
+    name: 'Named',
+    description: 'No longer invisible. Recognition brings danger.',
+    lore: 'The halfling gift for passing unnoticed is gone. Too many actions, too many witnesses, too many stories told in too many taverns. The anonymity that was armor has been shed, and the small person in the big world is now a known quantity in a world that punishes the known.',
+    behavioralDirective: 'Default register: exposed, visible, and aware that visibility is the opposite of safety. The instinct to disappear is still there but the skill no longer works. NPC reactions: people who should not know the name call it out in public. Enemies no longer overlook you. When narrating interiority: every room feels watched. The comfort of being beneath notice is gone, and the world is much larger when it is looking directly at you.',
+    hidden: true,
+  },
+  {
+    id: 'vessel',
+    name: 'Vessel',
+    description: 'The bloodline is asserting itself. Becoming what the ancestors were.',
+    lore: 'The inherited memory that surfaced as instinct and dream has become something more insistent. The Wyrm Kingdoms fell three centuries ago, but something in the blood is rising. The dragonkin is becoming what their ancestors were, whether they chose it or not.',
+    behavioralDirective: 'Default register: the inheritance is no longer background noise; it is a voice, and it is getting louder. The ancient knowledge that was an advantage has become a claim on the person carrying it. NPC reactions: the fear deepens into something primal. People sense something older than the person standing in front of them. When narrating interiority: the dreams are instructions now. The memory is not inherited; it is inhabiting. The question is no longer what the ancestors knew, but what they want.',
+    hidden: true,
+  },
 ]
 
 const fantasyClasses: CharacterClass[] = [

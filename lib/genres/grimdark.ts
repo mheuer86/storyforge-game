@@ -60,6 +60,49 @@ const grimdarkSpecies: Species[] = [
       { role: 'rival faction merchant', disposition: 'wary', description: 'House Veldran profited from the Char Dominion\'s fall and prefers the past stay buried', affiliation: 'House Veldran' },
     ],
   },
+
+  // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
+
+  {
+    id: 'climber',
+    name: 'Climber',
+    description: 'The house name became a tool. Every alliance was a step on a ladder.',
+    lore: 'What was Veldran pragmatism has calcified into pure ambition. The ledger no longer tracks obligations; it tracks leverage. Old debts are weapons. Old allies are stepping stones. The house name still opens doors, but the person walking through them has no intention of closing them gently.',
+    behavioralDirective: 'Default register: every interaction is a transaction, and the balance must favor you. The calculating instinct is no longer tempered by obligation or loyalty. NPC reactions: old allies sense the shift and guard themselves. New contacts see usefulness, not a person. When narrating interiority: the ledger is always open, always tallying, and the only column that matters is gain.',
+    hidden: true,
+  },
+  {
+    id: 'watcher',
+    name: 'Watcher',
+    description: 'Caution became passivity. You observe more than you act.',
+    lore: 'The weight of every consequence slowed every decision until the decisions stopped coming. Sylvara caution was always the house\'s strength, but caution that prevents action is paralysis wearing a noble name. The character watches the world happen and calls it wisdom.',
+    behavioralDirective: 'Default register: observation has replaced participation. The analytical clarity remains but produces no action. NPC reactions: companions grow frustrated with inaction. Enemies stop considering you a threat, which is its own kind of danger. When narrating interiority: every option has a cost, every path has a consequence, and the safest choice is always to wait. The waiting has become the identity.',
+    hidden: true,
+  },
+  {
+    id: 'bound',
+    name: 'Bound',
+    description: 'The oath became a cage. Duty supersedes judgment.',
+    lore: 'Stonemark honor was a foundation. Now it is a prison. The oath has consumed the person who swore it. There is no identity outside the vow, no flexibility when the vow conflicts with reality, no room for the world to be more complicated than the words spoken years ago.',
+    behavioralDirective: 'Default register: the oath answers every question before the person can. Duty has replaced judgment entirely. NPC reactions: allies respect the consistency but fear the rigidity. Enemies exploit the predictability. When narrating interiority: the oath is a wall that blocks every exit. The comfort of certainty has become the prison of inflexibility.',
+    hidden: true,
+  },
+  {
+    id: 'named',
+    name: 'Named',
+    description: 'Survival debts made you visible. People know the name, and that\'s dangerous.',
+    lore: 'The oathless survives by being unknown. Too many debts to too many people have made the name a known quantity. The anonymity that was armor is gone. People who should not know the name are calling it in.',
+    behavioralDirective: 'Default register: exposed and aware of it. The survival instinct is intact but the tools have changed; hiding is no longer an option, so every interaction is damage control. NPC reactions: creditors appear. People who helped you expect repayment. The network of debts has become a web of visibility. When narrating interiority: the freedom of being nobody is gone. The name has weight now, and weight draws attention.',
+    hidden: true,
+  },
+  {
+    id: 'vessel',
+    name: 'Vessel',
+    description: 'The anger crystallized into something ancestral. The blood burns with purpose.',
+    lore: 'The Ashfang rage was always there, but it was personal. Now it has a direction that feels older than the person carrying it. The Char Dominion burned three centuries ago, and something in the blood remembers the heat. The anger is no longer a response to the world; it is an inheritance asserting itself.',
+    behavioralDirective: 'Default register: the rage has crystallized into something purposeful and ancestral. Others feel it before you speak. NPC reactions: fear deepens into something primal. Allies who understood personal anger cannot follow ancestral wrath. The Church\'s hostility intensifies; they recognize what is surfacing. When narrating interiority: the anger has a shape now, and it is not yours. The blood burns with a purpose you did not choose but cannot refuse.',
+    hidden: true,
+  },
 ]
 
 const grimdarkClasses: CharacterClass[] = [
