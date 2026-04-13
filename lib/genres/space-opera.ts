@@ -323,8 +323,8 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know what a boarding action sounds like from both sides of the airlock: the magnetic clamps, the shaped charge, the three-second silence before the breach. You know that the Compact called your species "labor" and that the labor they meant was war. You know the weak points in corporate security perimeters and the garrison rotations on Remnant stations. The galaxy puts you in front because you\'re the biggest. You stay in front because someone has to.',
     },
     {
-      id: 'architect',
-      name: 'Architect',
+      id: 'engineer',
+      name: 'Engineer',
       concept: 'Builds things. Engineering, not labor. Proves the caste wrong. Looks at wreckage and sees a station.',
       hookTags: ['scholar', 'warrior'],
       primaryStat: 'INT',
@@ -379,8 +379,8 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
   // ─── Vrynn: How do you stay connected? ───────────────────────────────
   'vrynn': [
     {
-      id: 'signal',
-      name: 'Signal',
+      id: 'codebreaker',
+      name: 'Codebreaker',
       concept: 'Uses the communication network. Information flows through you. The intelligence specialist who hears everything first.',
       hookTags: ['scholar', 'infiltrator'],
       primaryStat: 'INT',
@@ -405,8 +405,8 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know that every system in the galaxy was built by someone who cut corners, and that every firewall has a seam where two contractors stopped talking to each other. You know Compact-era security architecture, which means you know the skeleton key to half the stations still running legacy systems. You know that the communication network your species built is the only thing keeping distant systems in contact, and that the network is degrading faster than anyone admits.',
     },
     {
-      id: 'silence',
-      name: 'Silence',
+      id: 'shade',
+      name: 'Shade',
       concept: 'Operates without the network. Proves you\'re more than the ability everyone fears. The lone wolf who chose to be cut off.',
       hookTags: ['scout', 'warrior'],
       primaryStat: 'DEX',
@@ -431,8 +431,8 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know the weight of silence in a species defined by connection. You cut the network because you needed to know who you were without it, and the answer is still forming. You know that the galaxy fears Vrynn for their communication ability, and that a Vrynn who operates without it is something nobody planned for. You move through stations without pinging a single relay, and the compound eyes that everyone finds unreadable are the sharpest sensors in any room.',
     },
     {
-      id: 'beacon',
-      name: 'Beacon',
+      id: 'herald',
+      name: 'Herald',
       concept: 'Uses the gift openly, politically. The visibility is the point. The broadcaster who refuses to whisper.',
       hookTags: ['diplomat', 'scholar'],
       primaryStat: 'CHA',
@@ -635,13 +635,13 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
 
 **Korath Playbooks:**
 - **Adrenaline Surge (Vanguard):** Bonus attack after a successful hit. The Korath combat follow-through.
-- **Structural Insight (Architect):** Identify a structural weakness or engineering solution. Failure gives correct analysis that introduces a new problem.
+- **Structural Insight (Engineer):** Identify a structural weakness or engineering solution. Failure gives correct analysis that introduces a new problem.
 - **The Builder's Word (Voice):** Invoke Korath labor in a negotiation. The room knows it's true. The cost: the builders expect results from their representative.
 
 **Vrynn Playbooks:**
-- **System Override (Signal):** Auto-succeed on one hack or seize a machine for 1 minute. Leaves a trace. Repeated overrides escalate security permanently.
-- **Dark Running (Silence):** Operate off-grid for one scene: invisible to electronic surveillance. The cost: the crew can't reach you either.
-- **Open Broadcast (Beacon):** Broadcast on open channels. Everyone in range hears it. Shifts faction dynamics. The cost: you cannot unsay it.
+- **System Override (Codebreaker):** Auto-succeed on one hack or seize a machine for 1 minute. Leaves a trace. Repeated overrides escalate security permanently.
+- **Dark Running (Shade):** Operate off-grid for one scene: invisible to electronic surveillance. The cost: the crew can't reach you either.
+- **Open Broadcast (Herald):** Broadcast on open channels. Everyone in range hears it. Shifts faction dynamics. The cost: you cannot unsay it.
 
 **Zerith Playbooks:**
 - **Dead Eye (Corsair):** One ranged attack crits on 19-20. Advantage on all piloting checks.
@@ -748,14 +748,14 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     // Vanguard
     { hook: 'A frontier outpost went dark three days ago. The garrison commander was a friend. The relief force found the station intact but empty — no bodies, no damage, no explanation. They\'re asking for someone willing to go inside.', title: 'Dark Station', classes: ['Vanguard'], frame: { objective: 'Enter the station and find the garrison', crucible: 'An intact station with no people and no explanation' }, arc: { name: 'The Dark Station', episode: 'Board the station and discover what happened to the garrison' } },
 
-    // Architect
-    { hook: 'The station you just docked at is running on emergency protocols — life support cycling, airlocks glitching, docking clamps won\'t release. The station AI insists everything is nominal. It isn\'t. And your ship is locked in.', title: 'Nominal', classes: ['Architect'], frame: { objective: 'Free the ship from the malfunctioning station', crucible: 'A station AI denying reality, and your ship is trapped' }, arc: { name: 'Station Nominal', episode: 'Determine whether the AI is malfunctioning or lying' } },
+    // Engineer
+    { hook: 'The station you just docked at is running on emergency protocols — life support cycling, airlocks glitching, docking clamps won\'t release. The station AI insists everything is nominal. It isn\'t. And your ship is locked in.', title: 'Nominal', classes: ['Engineer'], frame: { objective: 'Free the ship from the malfunctioning station', crucible: 'A station AI denying reality, and your ship is trapped' }, arc: { name: 'Station Nominal', episode: 'Determine whether the AI is malfunctioning or lying' } },
 
-    // Signal
-    { hook: 'The ship\'s AI woke you at 0300 with a priority alert: someone accessed the encrypted partition while you were asleep. The intrusion came from inside the ship. The AI can\'t identify who.', title: 'Inside Job', classes: ['Signal'], frame: { objective: 'Find who breached the encrypted partition', crucible: 'The intruder is aboard your ship and the AI can\'t see them' }, arc: { name: 'The Inside Job', episode: 'Trace the intrusion to its source inside the ship' } },
+    // Codebreaker
+    { hook: 'The ship\'s AI woke you at 0300 with a priority alert: someone accessed the encrypted partition while you were asleep. The intrusion came from inside the ship. The AI can\'t identify who.', title: 'Inside Job', classes: ['Codebreaker'], frame: { objective: 'Find who breached the encrypted partition', crucible: 'The intruder is aboard your ship and the AI can\'t see them' }, arc: { name: 'The Inside Job', episode: 'Trace the intrusion to its source inside the ship' } },
 
-    // Silence
-    { hook: 'A pilot you know went missing on a charted beacon corridor. Search and rescue found the ship drifting, engines cold, flight recorder wiped. The cockpit was locked from the inside. No body.', title: 'Locked Cockpit', classes: ['Silence'], frame: { objective: 'Board the drifting ship and find your friend', crucible: 'A locked cockpit, no body, and a flight recorder someone deliberately erased' }, arc: { name: 'The Locked Cockpit', episode: 'Examine the drifting ship and recover what the flight recorder lost' } },
+    // Shade
+    { hook: 'A pilot you know went missing on a charted beacon corridor. Search and rescue found the ship drifting, engines cold, flight recorder wiped. The cockpit was locked from the inside. No body.', title: 'Locked Cockpit', classes: ['Shade'], frame: { objective: 'Board the drifting ship and find your friend', crucible: 'A locked cockpit, no body, and a flight recorder someone deliberately erased' }, arc: { name: 'The Locked Cockpit', episode: 'Examine the drifting ship and recover what the flight recorder lost' } },
 
     // Corsair
     { hook: 'The ship is running on fumes, limping into the nearest port after a pirate ambush damaged the FTL drive. The only station in range is controlled by a faction that remembers the last time you outflew their patrol squadron.', title: 'Fumes', classes: ['Corsair'], frame: { objective: 'Dock and repair without getting arrested', crucible: 'No fuel to go elsewhere, and the faction running this station has a score to settle' }, arc: { name: 'Running on Fumes', episode: 'Negotiate docking and find a way to repair the FTL drive' } },
@@ -772,27 +772,27 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     // Voice
     { hook: 'A Korath-built station in the frontier is being decommissioned by the Corporate Bloc that bought it. The corporation is stripping the station for parts. The three hundred Korath families who live on the station were told to relocate; they were not told where. The families are refusing to leave the station their grandparents built. The corporation\'s security deadline is one week. The families asked for a Voice because they need someone who can make the galaxy hear them before the security teams arrive.', title: 'The Decommission', classes: ['Voice'], frame: { objective: 'Buy the families time and find them a future before the deadline', crucible: 'Three hundred families on a station being sold for scrap, and the people who built it are the last ones the corporation asked' }, arc: { name: 'The Decommission', episode: 'Meet the families and assess what leverage you have against the corporation\'s timeline' } },
 
-    // Beacon
-    { hook: 'A frontier settlement is dying because nobody knows it exists. Cut off when its beacon corridor went dark two years ago, the settlement has been rationing food and recycling water. They have enough to last three more months. They built a transmitter from salvage and broadcast a plea. The broadcast reached you. It also reached a Corporate Bloc that sees the settlement\'s location as strategically valuable and is sending a "relief" ship that will arrive with contracts, not food. You can broadcast the settlement\'s situation on open channels before the corporate ship arrives. If you do, every faction in range hears it. Including the ones that would strip the settlement themselves.', title: 'The Broadcast', classes: ['Beacon'], frame: { objective: 'Decide how to help the settlement without making it a target', crucible: 'A dying settlement, a corporate ship with strings attached, and an open broadcast that could save or doom them' }, arc: { name: 'The Broadcast', episode: 'Reach the settlement and assess what an open broadcast would trigger' } },
+    // Herald
+    { hook: 'A frontier settlement is dying because nobody knows it exists. Cut off when its beacon corridor went dark two years ago, the settlement has been rationing food and recycling water. They have enough to last three more months. They built a transmitter from salvage and broadcast a plea. The broadcast reached you. It also reached a Corporate Bloc that sees the settlement\'s location as strategically valuable and is sending a "relief" ship that will arrive with contracts, not food. You can broadcast the settlement\'s situation on open channels before the corporate ship arrives. If you do, every faction in range hears it. Including the ones that would strip the settlement themselves.', title: 'The Broadcast', classes: ['Herald'], frame: { objective: 'Decide how to help the settlement without making it a target', crucible: 'A dying settlement, a corporate ship with strings attached, and an open broadcast that could save or doom them' }, arc: { name: 'The Broadcast', episode: 'Reach the settlement and assess what an open broadcast would trigger' } },
 
     // ── Archetype-Tagged Hooks (cross-species, match via hookTags) ───────
 
     // commander — Captain, Analyst, Sovereign
     { hook: 'The convoy you were hired to escort just lost its lead ship to a Remnant patrol enforcing a blockade nobody announced. The remaining transports are civilian: families, medical supplies, seed stock. Your employer is dead. The patrol commander is hailing with a lawful order to stand down. The colonists are begging you not to comply. They say the last convoy that submitted to "inspection" was stripped and its passengers conscripted.', title: 'Broken Convoy', classes: ['commander'], frame: { objective: 'Protect the convoy through the blockade', crucible: 'A lawful order, civilian lives, and no clean outcome' }, arc: { name: 'The Broken Convoy', episode: 'Decide whether to comply or run, and deal with the consequences' } },
 
-    // warrior — Pioneer, Vanguard, Silence, Corsair
+    // warrior — Pioneer, Vanguard, Shade, Corsair
     { hook: 'A warlord from the Outer Reach is offering amnesty and triple pay to any ex-military crew willing to run a blockade. The cargo is humanitarian supplies. The blockade is run by the faction you used to serve.', title: 'The Blockade', classes: ['warrior'], frame: { objective: 'Decide whether to run the blockade', crucible: 'Humanitarian need vs. firing on former comrades' }, arc: { name: 'The Blockade Run', episode: 'Assess the warlord\'s claims and scout the blockade\'s strength' } },
 
-    // diplomat — Captain, Sovereign, Voice, Beacon, Broker
+    // diplomat — Captain, Sovereign, Voice, Herald, Broker
     { hook: 'A quarantined system is dying. The quarantine is legal, enforced by three factions for three different reasons, none of which are medical. The system\'s population has twelve weeks of supplies. The factions won\'t negotiate with each other. They\'ll negotiate with you — but each wants something the others will kill to prevent.', title: 'Twelve Weeks', classes: ['diplomat'], frame: { objective: 'Break the quarantine through negotiation before twelve weeks expire', crucible: 'Three factions, three agendas, and a population that dies if nobody blinks' }, arc: { name: 'Twelve Weeks', episode: 'Open channels with all three factions and find the leverage point' } },
 
-    // infiltrator — Operative, Ghost, Signal, Broker
+    // infiltrator — Operative, Ghost, Codebreaker, Broker
     { hook: 'A dead hacker\'s neural implant arrived in a courier package addressed to you. No return sender. The implant contains a partial decryption key to a file that\'s been bouncing around darknet servers for months — a file three corporations have killed to suppress.', title: 'Dead Drop', classes: ['infiltrator'], frame: { objective: 'Use the partial key to access the suppressed file', crucible: 'Three corporations already killed for this file, and now you have a piece of the key' }, arc: { name: 'The Suppressed File', episode: 'Decrypt enough of the file to understand why people are dying for it' } },
 
-    // scout — Operative, Pioneer, Silence, Corsair, Wanderer
+    // scout — Operative, Pioneer, Shade, Corsair, Wanderer
     { hook: 'A former colleague sends you lab results that shouldn\'t exist: a biological sample from a patient who died two years ago, showing active cell division. The sample was collected yesterday. From a facility in a dark corridor that was supposed to be decommissioned.', title: 'Active Cells', classes: ['scout'], frame: { objective: 'Reach the decommissioned facility', crucible: 'Dead patient\'s cells are alive, the facility should be empty, and your colleague is scared' }, arc: { name: 'Active Cells', episode: 'Navigate the dark corridor and investigate the facility' } },
 
-    // scholar — Analyst, Ghost, Signal, Architect, Beacon
+    // scholar — Analyst, Ghost, Codebreaker, Engineer, Herald
     { hook: 'A Rogue AI that has been dormant for three years just sent a single transmission on a frequency only your ship can receive. The message is one word in a language the ship\'s translator doesn\'t recognize, followed by coordinates inside the AI\'s station. The station was declared hazardous and quarantined. The AI is inviting you in. Nobody has successfully negotiated with a Rogue AI twice. This would be your first time.', title: 'The Invitation', classes: ['scholar'], frame: { objective: 'Enter the AI\'s station and determine what it wants', crucible: 'A dormant AI waking up to invite you specifically, into a quarantined station, using a frequency only you can hear' }, arc: { name: 'The Invitation', episode: 'Approach the station and establish communication with the AI' } },
   ],
   initialChapterTitle: 'New Horizons',

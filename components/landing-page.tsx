@@ -182,7 +182,7 @@ interface DemoCharacter {
 
 const demoCharacters: Record<string, DemoCharacter> = {
   'space-opera': {
-    name: 'Kael Voss', species: 'Vrynn', class: 'Signal', level: 3,
+    name: 'Kael Voss', species: 'Vrynn', class: 'Codebreaker', level: 3,
     hp: { current: 22, max: 28 }, ac: 14,
     stats: { STR: 8, DEX: 16, CON: 12, INT: 14, WIS: 13, CHA: 10 },
     currency: 340, currencyLabel: 'Credits', trait: 'Smuggler\'s Luck',

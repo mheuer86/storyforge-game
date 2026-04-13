@@ -167,7 +167,7 @@ const epicSciFiOriginMap: Record<string, OriginCounterDef> = {
     lowRisingWarning: 'The compliance is becoming reflexive. The trades of dignity no longer register as trades. The system is absorbing the person.',
     startingValue: 5,
   },
-  'Synod-Raised': {
+  'Synod': {
     counter: 'doubt',
     shiftLabel: 'Heretic',
     shiftWarning: 'The character\'s relationship to the Synod has fundamentally changed. Doubt drives action, not erosion. Narrate this as a character moment, not a mechanic.',
@@ -255,7 +255,7 @@ const grimdarkOriginMap: Record<string, OriginCounterDef> = {
     shiftWarning: 'The anger has crystallized into something ancestral. The blood burns with purpose. Narrate this as a character moment, not a mechanic.',
     risingWarning: 'The anger is focused now. It has a direction and a weight that others can feel.',
   },
-  'Church-Raised': {
+  'Pale Flame': {
     counter: 'zeal',
     shiftLabel: 'The Pious',
     shiftWarning: 'The institution has consumed the person. Every judgment is the Church\'s judgment, delivered without doubt. Narrate this as a character moment, not a mechanic.',

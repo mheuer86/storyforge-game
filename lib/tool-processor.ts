@@ -512,7 +512,7 @@ function applyWorldChanges(
 
         const counterMaps: Record<string, Record<string, string>> = {
           'epic-scifi': {
-            'Synod-Raised': 'doubt', 'Heretic': 'doubt',
+            'Synod': 'doubt', 'Heretic': 'doubt',
             'Minor House': 'standing', 'Stricken': 'standing', 'Entrenched': 'standing',
             'Undrift': 'exposure', 'Hunted': 'exposure', 'Imperial Service': 'mandate', 'Dissident': 'mandate',
             'Spent Resonant': 'embers', 'Rekindled': 'embers',
@@ -551,7 +551,7 @@ function applyWorldChanges(
             'House Stonemark': 'rigidity', 'Bound': 'rigidity',
             'The Oathless': 'survival_debt', 'Named': 'survival_debt',
             'House Ashfang': 'wrath', 'Vessel': 'wrath',
-            'Church-Raised': 'zeal', 'The Pious': 'zeal',
+            'Pale Flame': 'zeal', 'The Pious': 'zeal',
           },
         }
         const counterMap = counterMaps[updated.meta?.genre || ''] || {}
