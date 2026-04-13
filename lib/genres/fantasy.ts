@@ -378,8 +378,8 @@ const fantasyPlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know the spaces between places: the threshold where a shadow is not the absence of light but a door. You know that the Sundering displaced things, and that those things settled in the gaps between walls, between breaths, between one step and the next. You know the guild marks that mean a lock was made to keep something in, not out. You know the difference between a room that is empty and a room that is waiting.',
     },
     {
-      id: 'hearth',
-      name: 'Hearth',
+      id: 'caretaker',
+      name: 'Caretaker',
       concept: 'Builds community in the gaps. The one who makes invisible spaces livable. The question: can you build something lasting when the world doesn\'t know you exist?',
       hookTags: ['diplomat'],
       primaryStat: 'WIS',
@@ -434,7 +434,7 @@ const fantasyPlaybooks: Record<string, CharacterClass[]> = {
   // ─── Dragonkin: Does the inheritance own you, or do you own it? ───────
   'dragonkin': [
     {
-      id: 'vessel-playbook',
+      id: 'channeler',
       name: 'Vessel',
       concept: 'The inheritance expressed through the body. Power surfacing as instinct, dream, transformation. The question: what does it cost to be a conduit for something older than you?',
       hookTags: ['warrior', 'channeler'],
@@ -617,7 +617,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
 
 **Halfling Playbooks:**
 - **The Price of Shadows (Shadow):** Vanish through somewhere and bring something back. After each use, a detail from the other side appears in the next scene. Sometimes useful. Sometimes wrong.
-- **The Network (Hearth):** Tap the halfling network for sanctuary, information, or a favor. Reciprocal: three favors without returning one and the network goes quiet.
+- **The Network (Caretaker):** Tap the halfling network for sanctuary, information, or a favor. Reciprocal: three favors without returning one and the network goes quiet.
 - **Unseen Record (Witness):** Recall a detail observed from a position of invisibility. Failure gives an accurate but incomplete observation.
 
 **Dragonkin Playbooks:**
@@ -737,8 +737,8 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     // Shadow
     { hook: 'A merchant hired the company to escort a cart through the Thornwood. Simple job. But the lock on the cart is guild-work, the kind used to seal things people kill to protect. And the merchant keeps looking over his shoulder at the tree line, not the road.', title: 'Guild-Work', classes: ['Shadow'], frame: { objective: 'Get the cart through the Thornwood and learn what\'s inside', crucible: 'A guild lock means guild cargo, and the merchant\'s fear means someone else wants it' }, arc: { name: 'The Guild Cart', episode: 'Escort the cart and discover what the merchant is really transporting' } },
 
-    // Hearth
-    { hook: 'A halfling community in the Pale March has been cut off by early snow. The nearest human town won\'t send supplies because "they\'re just halflings." The community has three weeks of food. The pass opens in five. Someone needs to get supplies through, and the human merchants want nothing to do with it.', title: 'Three Weeks', classes: ['Hearth'], frame: { objective: 'Get food to the halfling community before they starve', crucible: 'A community abandoned by the kingdom it lives in, and a supply run through early snow' }, arc: { name: 'Three Weeks', episode: 'Organize supplies and find a route through the snow to the community' } },
+    // Caretaker
+    { hook: 'A halfling community in the Pale March has been cut off by early snow. The nearest human town won\'t send supplies because "they\'re just halflings." The community has three weeks of food. The pass opens in five. Someone needs to get supplies through, and the human merchants want nothing to do with it.', title: 'Three Weeks', classes: ['Caretaker'], frame: { objective: 'Get food to the halfling community before they starve', crucible: 'A community abandoned by the kingdom it lives in, and a supply run through early snow' }, arc: { name: 'Three Weeks', episode: 'Organize supplies and find a route through the snow to the community' } },
 
     // Witness
     { hook: 'You watched the governor\'s meeting from the servants\' corridor. You saw the map they unrolled, the villages they circled, the word the governor used: "expendable." The villages are halfling settlements. Nobody in the room thought anyone was watching. You have the details. You don\'t have proof. And the governor\'s purge begins in a week.', title: 'Expendable', classes: ['Witness'], frame: { objective: 'Get proof of the governor\'s plan before the purge begins', crucible: 'You saw the plan to destroy halfling villages, and nobody knows you were in the room' }, arc: { name: 'Expendable', episode: 'Find physical evidence of the governor\'s plan and decide who to trust with it' } },
@@ -761,7 +761,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     // warrior — Knight, Warden, Holdfast, Emissary, Vessel, Exile
     { hook: 'A wounded knight arrives at your camp carrying orders that must reach the capital in three days. He says the prisoner his company was escorting has escaped. The prisoner must be found before dawn — not because of what he did, but because of what he knows. The knight won\'t say what that is. He is dying.', title: 'Before Dawn', classes: ['warrior'], frame: { objective: 'Track the escaped prisoner before dawn', crucible: 'A dying knight, an escaped prisoner with dangerous knowledge, and hours until sunrise' }, arc: { name: 'Before Dawn', episode: 'Tend the knight\'s wounds, learn what the prisoner knows, and pick up the trail' } },
 
-    // diplomat — Herald, Oracle, Emissary, Hearth, Exile
+    // diplomat — Herald, Oracle, Emissary, Caretaker, Exile
     { hook: 'A minor noble offers the company winter quarters and full pay to perform one task: deliver a marriage proposal to a neighboring house. The catch — the bride has already refused twice, and the last messenger came back missing three fingers.', title: 'Third Proposal', classes: ['diplomat'], frame: { objective: 'Deliver the proposal and return intact', crucible: 'Two refusals and a mutilated messenger suggest the bride\'s house doesn\'t want this alliance' }, arc: { name: 'The Third Proposal', episode: 'Reach the neighboring house and learn why the proposal keeps being refused with violence' } },
 
     // scout — Warden, Shadow, Witness

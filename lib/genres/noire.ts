@@ -384,8 +384,8 @@ const noirePlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know locks. Not the theory — the feel. The give of a tumbler, the resistance of a deadbolt, the particular click that means the mechanism has surrendered. You know that every building in this city was designed to keep people out and that every designer left a mistake: a window with a weak latch, a fire escape with a loose bolt, a service entrance where the cameras don\'t overlap. You know the weight of silence at 3 AM in someone else\'s house, and you know the difference between a floor that creaks and a floor that warns.',
     },
     {
-      id: 'connected',
-      name: 'Connected',
+      id: 'mobster',
+      name: 'Mobster',
       concept: 'Organized crime, obligations, hierarchy. The crime is institutional, which means the loyalty is mandatory.',
       hookTags: ['networker', 'muscle'],
       primaryStat: 'CHA',
@@ -677,7 +677,7 @@ The Office doesn't fight. It persists. Upgrading means investing in the ability 
 **Criminal Playbooks:**
 - **New Face (Grifter):** Cover holds for first contact. Blown covers are permanent — every NPC present drops to Wary minimum, no recovery above Neutral. Blowing cover in a crowded room is exponentially worse than one-on-one.
 - **Clean Exit (Thief):** Auto-succeed on escape or evasion. Clean — no witnesses, no traces. But no alibi either.
-- **Favor Owed (Connected):** Tab accumulates. After three unreturned favors, contacts demand reciprocity before helping. GM tracks the tab.
+- **Favor Owed (Mobster):** Tab accumulates. After three unreturned favors, contacts demand reciprocity before helping. GM tracks the tab.
 
 **Enforcer Playbooks:**
 - **Badge Weight (Cop):** Invoke police authority for immediate civilian cooperation. Creates a report that internal affairs reads. The people you badge remember.
@@ -788,9 +788,9 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     // Grifter
     { hook: 'A dying man gives you a key and a name. The name is fake — you know because you invented it three years ago for a job you thought was finished.', title: 'A Name You Made', classes: ['Grifter'], frame: { objective: 'Find what the key opens', crucible: 'An identity you created took on a life of its own, and someone just died for it' }, arc: { name: 'A Name You Made', episode: 'Trace the dying man\'s connection to the identity and find the lock that fits the key' } },
 
-    // Connected
-    { hook: 'Two of your clients hired you for the same job without knowing it. One wants the package delivered. The other wants it destroyed. Both paid upfront.', title: 'Both Sides', classes: ['Connected'], frame: { objective: 'Handle both clients without losing either', crucible: 'Two opposing contracts, both paid, and delivering on one means betraying the other' }, arc: { name: 'Both Sides', episode: 'Locate the package and assess whether there\'s a play that satisfies both' } },
-    { hook: 'Your best contact just burned you — gave your name to the wrong people as a fall guy for a warehouse robbery. You have until morning to prove you weren\'t involved, or make sure it doesn\'t matter.', title: 'Fall Guy', classes: ['Connected'], frame: { objective: 'Clear your name before morning', crucible: 'Your most trusted contact sold you out, and the people holding the bag want a face' }, arc: { name: 'Fall Guy', episode: 'Find your contact and learn why they gave up your name' } },
+    // Mobster
+    { hook: 'Two of your clients hired you for the same job without knowing it. One wants the package delivered. The other wants it destroyed. Both paid upfront.', title: 'Both Sides', classes: ['Mobster'], frame: { objective: 'Handle both clients without losing either', crucible: 'Two opposing contracts, both paid, and delivering on one means betraying the other' }, arc: { name: 'Both Sides', episode: 'Locate the package and assess whether there\'s a play that satisfies both' } },
+    { hook: 'Your best contact just burned you — gave your name to the wrong people as a fall guy for a warehouse robbery. You have until morning to prove you weren\'t involved, or make sure it doesn\'t matter.', title: 'Fall Guy', classes: ['Mobster'], frame: { objective: 'Clear your name before morning', crucible: 'Your most trusted contact sold you out, and the people holding the bag want a face' }, arc: { name: 'Fall Guy', episode: 'Find your contact and learn why they gave up your name' } },
 
     // Cop
     { hook: 'A bar fight that wasn\'t your fault leaves a man on the floor who turns out to be a city councilman\'s son. Now the councilman wants a meeting. Not with the police — with you.', title: 'The Councilman\'s Son', classes: ['Cop'], frame: { objective: 'Survive the meeting with the councilman', crucible: 'A powerful man wants to talk privately about violence done to his son, and that\'s never good' }, arc: { name: 'The Councilman\'s Son', episode: 'Meet the councilman and find out what he actually wants from you' } },
@@ -838,11 +838,11 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     { hook: 'Someone is living under an identity you built and discarded three years ago. They\'ve improved on the original: better paper trail, better social history. The identity is now married, employed, and under investigation for embezzlement. Your craft is being used, and it\'s being used badly.', title: 'The Stolen Face', classes: ['infiltrator'], frame: { objective: 'Find who is using the identity and sever the connection to you', crucible: 'Your work is on a suspect, and the investigation will trace the identity back to its maker' }, arc: { name: 'The Stolen Face', episode: 'Research the identity\'s current life and find out who inherited your work' } },
     { hook: 'A lockbox at a train station locker contains a key, a photograph of you taken yesterday, and a note: "The people in the photograph behind yours will kill you Thursday. The key opens the place where they\'ll try." The photograph behind yours shows a family of four.', title: 'Thursday', classes: ['infiltrator'], frame: { objective: 'Find the place the key opens before Thursday', crucible: 'Someone who photographs you unseen is offering help, or setting a trap, and the family in the photo may be leverage or victims' }, arc: { name: 'Thursday', episode: 'Identify the lock, the family, and the source of the photographs' } },
 
-    // muscle — Desperate, Thief, Connected, Cop, Private Muscle, Community Protector
+    // muscle — Desperate, Thief, Mobster, Cop, Private Muscle, Community Protector
     { hook: 'A neighborhood priest asks you to stand outside his church on Sunday. Just be visible. He won\'t say why. Four men in a car see you and leave. Monday, the car burns. Tuesday, the priest is gone. Wednesday, one of the four men shows up at your door. He isn\'t angry. He\'s asking for help.', title: 'The Priest', classes: ['muscle'], frame: { objective: 'Find the priest and learn what the four men wanted', crucible: 'A disappeared priest, a burned car, and an enemy who arrived asking for help instead of revenge' }, arc: { name: 'The Priest\'s Absence', episode: 'Talk to the man at your door and trace where the priest went' } },
     { hook: 'A woman hires you to walk her home from work every night for a week. She pays in cash, doesn\'t explain, and takes a different route each time. On the fifth night, she stops walking and points to a window three stories up. "That\'s where he watches from." The window is dark, but the curtain moves.', title: 'The Walk Home', classes: ['muscle'], frame: { objective: 'Identify the watcher and decide what to do about them', crucible: 'Five nights of silence, one pointed finger, and a window where someone has been waiting' }, arc: { name: 'The Watcher', episode: 'Investigate the building and identify who lives behind the window' } },
 
-    // networker — Street PI, Fixer Lawyer, Connected, Community Protector, Columnist, Information Broker
+    // networker — Street PI, Fixer Lawyer, Mobster, Community Protector, Columnist, Information Broker
     { hook: 'Two informants give you contradictory accounts of the same event on the same night. Both are reliable. Both are frightened. Both are telling the truth, which means someone staged the event twice — once for each audience.', title: 'Two Truths', classes: ['networker'], frame: { objective: 'Determine which version of the event was real and which was staged', crucible: 'Two trusted sources, two contradictory truths, and someone with the resources to stage reality' }, arc: { name: 'The Staged Event', episode: 'Interview both informants and find the discrepancy that reveals the staging' } },
   ],
   initialChapterTitle: 'The Job',
