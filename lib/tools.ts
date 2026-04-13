@@ -708,6 +708,17 @@ const commitTurnDefinition: Anthropic.Tool = {
         required: ['counter', 'direction', 'reason'],
       },
 
+      // ── Witness Mark Spending ────────────────────────────────
+      spend_witness: {
+        type: 'object',
+        description: 'Spend a witness mark to grant advantage on a morally drastic action. Only when the player agrees to spend.',
+        properties: {
+          decision_id: { type: 'string', description: 'The ID of the witnessed decision being spent.' },
+          spent_on: { type: 'string', description: 'Brief description of what the mark was spent on (e.g. "Defied Synod Seeker Voss").' },
+        },
+        required: ['decision_id', 'spent_on'],
+      },
+
       // ── Scene Management ───────────────────────────────────
       scene_end: { type: 'boolean', description: 'True when a scene boundary occurred.' },
       scene_summary: { type: 'string', description: '2-4 sentence summary of concluding scene.' },

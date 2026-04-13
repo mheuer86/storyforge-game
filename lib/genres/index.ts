@@ -26,6 +26,7 @@ export interface Species {
   lore: string
   behavioralDirective?: string          // Claude-facing: how to play this origin's interiority during gameplay
   startingContacts?: StartingContact[]  // auto-created as NPCs on game init
+  hidden?: boolean                      // true for shifted origins — not selectable at creation
 }
 
 export interface CharacterClass {

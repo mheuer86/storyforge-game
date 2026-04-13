@@ -174,10 +174,13 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
 11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
 12. Direct witness of human cost → world.add_decision with witnessed: true
+13. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
 
-**Origin tracking:** Each origin carries a moral counter. When the player acts in ways that express their origin's central tension, include origin_event with the counter name, direction (up or down), and reason. Refer to the character's origin to determine which counter applies. Don't tick on every turn — only on actions that genuinely express or resist the origin's moral position.
+**Origin tracking:** Each origin carries a moral counter. Moral-category decisions auto-tick the counter (up by default, down if the character enforced or complied with the system). Use \`origin_event\` only for non-moral decisions (tactical, strategic, relational) that have origin-relevant moral weight. Don't include origin_event on moral decisions — the auto-tick handles those.
 
-**Witness marks:** When the PC directly witnesses the human cost of the system — a child taken, a burned Resonant, a forged record, a faction lie spoken to their face — log it as a decision with \`witnessed: true\`. Witness marks are narrative currency the player can spend later to justify drastic action.
+**Witness marks:** When the PC directly witnesses the human cost of the system — a child taken, a burned Resonant, a forged record, a faction lie spoken to their face — log it as a decision with \`witnessed: true\`. Witness marks are narrative currency the player can spend for advantage on morally drastic actions.
+
+**Spending witness marks:** When the player attempts a morally drastic action (defying authority, breaking protocol, turning an NPC, refusing a faction demand) and has a relevant unspent witness mark, offer the spend: narrate how the memory surfaces, then ask the player whether they want to invoke it for advantage. If they agree, include \`spend_witness: { decision_id, spent_on }\` in the same commit_turn as the \`pending_check\` (which should have advantage). One witness mark = one advantage roll. The witness must be narratively connected to the action — "I saw what you did to that child" justifies defying the Synod, not picking a lock. Don't offer spends unprompted on trivial checks.
 
 ## COMMIT_TURN DISCIPLINE
 
@@ -1152,11 +1155,11 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
 
   const decisions = w.decisions || []
   const activeDecisions = decisions.filter(d => d.status === 'active')
-  const supersededDecisions = decisions.filter(d => d.status !== 'active')
+  const supersededDecisions = decisions.filter(d => d.status !== 'active' && d.status !== 'spent')
   const witnessMarks = activeDecisions.filter(d => d.witnessed)
   const regularDecisions = activeDecisions.filter(d => !d.witnessed)
   const witnessLine = witnessMarks.length > 0
-    ? `\nWITNESS MARKS: ${witnessMarks.map(d => `"${d.summary}" (Ch${d.chapter})`).join(' | ')}`
+    ? `\nWITNESS MARKS: ${witnessMarks.map(d => `[${d.id}] "${d.summary}" (Ch${d.chapter})`).join(' | ')}`
     : ''
   const decisionsLine = regularDecisions.length > 0 || supersededDecisions.length > 0
     ? [
