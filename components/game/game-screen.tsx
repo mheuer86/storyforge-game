@@ -1797,7 +1797,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             if (counterNames.length === 0) return null
             const name = counterNames[0]
             const val = counters[name] || 0
-            return { name, level: val >= 5 ? 'shifted' as const : val >= 3 ? 'rising' as const : 'low' as const }
+            return { name, level: val >= 10 ? 'shifted' as const : val >= 7 ? 'rising' as const : val <= 0 ? 'shifted' as const : val <= 2 ? 'rising' as const : 'low' as const }
           })(),
         }}
         ship={{

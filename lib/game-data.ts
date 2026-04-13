@@ -234,7 +234,11 @@ export function createInitialGameState(
     sceneSummaries: [],
     scopeSignals: 0,
     npcFailures: [],
-    counters: hookObj.startingCounters ? { ...hookObj.startingCounters } : {},
+    counters: {
+      ...(hookObj.startingCounters || {}),
+      // Two-way counters start at midpoint (Minor House standing)
+      ...(speciesId === 'minor-house' && { standing: 5 }),
+    },
     rulesWarnings: [],
     pivotalScenes: [],
     rollSequences: [],
