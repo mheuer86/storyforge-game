@@ -701,11 +701,22 @@ const commitTurnDefinition: Anthropic.Tool = {
         type: 'object',
         description: 'Track origin-specific moral pressure. Include when the player\'s actions tick their origin counter.',
         properties: {
-          counter: { type: 'string', description: 'Counter name matching the character origin (e.g. fealty, doubt, exposure, mandate, debt, embers, badge_debt, gang_debt, etc.)' },
+          counter: { type: 'string', description: 'Counter name matching the character origin (e.g. fealty, doubt, exposure, mandate, debt, embers, badge_debt, conscience, complicity, compromise, etc.)' },
           direction: { type: 'string', enum: ['up', 'down'] },
           reason: { type: 'string', description: 'Brief reason for the tick.' },
         },
         required: ['counter', 'direction', 'reason'],
+      },
+
+      // ── Witness Mark Spending ────────────────────────────────
+      spend_witness: {
+        type: 'object',
+        description: 'Spend a witness mark to grant advantage on a morally drastic action. Only when the player agrees to spend.',
+        properties: {
+          decision_id: { type: 'string', description: 'The ID of the witnessed decision being spent.' },
+          spent_on: { type: 'string', description: 'Brief description of what the mark was spent on (e.g. "Defied Synod Seeker Voss").' },
+        },
+        required: ['decision_id', 'spent_on'],
       },
 
       // ── Scene Management ───────────────────────────────────

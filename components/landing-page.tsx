@@ -182,7 +182,7 @@ interface DemoCharacter {
 
 const demoCharacters: Record<string, DemoCharacter> = {
   'space-opera': {
-    name: 'Kael Voss', species: 'Vrynn', class: 'Driftrunner', level: 3,
+    name: 'Kael Voss', species: 'Vrynn', class: 'Codebreaker', level: 3,
     hp: { current: 22, max: 28 }, ac: 14,
     stats: { STR: 8, DEX: 16, CON: 12, INT: 14, WIS: 13, CHA: 10 },
     currency: 340, currencyLabel: 'Credits', trait: 'Smuggler\'s Luck',
@@ -197,7 +197,7 @@ const demoCharacters: Record<string, DemoCharacter> = {
     tabs: ['Character', 'Ship', 'World', 'Chapters'],
   },
   fantasy: {
-    name: 'Sera Thornwood', species: 'Elf', class: 'Arcanist', level: 3,
+    name: 'Sera Thornwood', species: 'Elf', class: 'Warden', level: 3,
     hp: { current: 18, max: 24 }, ac: 12,
     stats: { STR: 8, DEX: 12, CON: 10, INT: 17, WIS: 14, CHA: 11 },
     currency: 85, currencyLabel: 'Gold', trait: 'Arcane Surge',
@@ -227,7 +227,7 @@ const demoCharacters: Record<string, DemoCharacter> = {
     tabs: ['Character', 'Company', 'World', 'Chapters'],
   },
   cyberpunk: {
-    name: 'Zero', species: 'Street Kid', class: 'Netrunner', level: 3,
+    name: 'Zero', species: 'Operative', class: 'Netrunner', level: 3,
     hp: { current: 20, max: 26 }, ac: 13,
     stats: { STR: 8, DEX: 14, CON: 12, INT: 17, WIS: 10, CHA: 11 },
     currency: 1200, currencyLabel: 'Eddies', trait: 'Deep Dive',
@@ -242,7 +242,7 @@ const demoCharacters: Record<string, DemoCharacter> = {
     tabs: ['Character', 'Tech Rig', 'World', 'Chapters'],
   },
   noire: {
-    name: 'Sam Harlow', species: 'Ex-Cop', class: 'Private Investigator', level: 3,
+    name: 'Sam Harlow', species: 'PI', class: 'Methodical', level: 3,
     hp: { current: 19, max: 22 }, ac: 11,
     stats: { STR: 10, DEX: 12, CON: 11, INT: 13, WIS: 16, CHA: 12 },
     currency: 180, currencyLabel: 'Cash', trait: 'Case Instinct',
@@ -277,6 +277,7 @@ const demoCharacters: Record<string, DemoCharacter> = {
 
 export function LandingPage() {
   const [activeGenre, setActiveGenre] = useState<Genre>('space-opera')
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null)
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
   const detailRef = useRef<HTMLDivElement>(null)
   const availableGenres = genres.filter((g) => g.available)
@@ -287,6 +288,7 @@ export function LandingPage() {
 
   const handleGenreSelect = useCallback((genreId: Genre, el?: HTMLButtonElement) => {
     setActiveGenre(genreId)
+    setSelectedOrigin(null)
     setSelectedAction(null)
     // Center the clicked card in the carousel
     if (el && carouselRef.current) {
@@ -546,61 +548,102 @@ export function LandingPage() {
           </blockquote>
         </div>
 
-        {/* 3b. Species/Origins */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
-            <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
-              {activeConfig.speciesLabel}
-            </span>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin">
-            {activeConfig.species.map((s) => (
-              <div key={s.id} className="shrink-0 w-[160px] sm:w-[180px] md:w-[200px] text-left">
-                <div className="relative aspect-[3/4] overflow-hidden mb-3 border border-border/10">
-                  <Image
-                    src={`/portraits/${activeGenre}/${s.id}.png`}
-                    alt={s.name}
-                    fill
-                    className="object-cover"
-                    sizes="200px"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/90 to-transparent">
-                    <p className="text-sm font-bold tracking-wide uppercase text-foreground">{s.name}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+        {/* 3b. Origins & Playbooks */}
+        {(() => {
+          const visibleSpecies = activeConfig.species.filter((s) => !s.hidden)
+          const expandedOrigin = selectedOrigin ? visibleSpecies.find((s) => s.id === selectedOrigin) : null
+          const expandedPlaybooks = expandedOrigin ? (activeConfig.playbooks?.[expandedOrigin.id] ?? []) : []
+          return (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
+                <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
+                  {activeConfig.speciesLabel}
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 3c. Classes Grid */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
-            <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
-              Classes
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            {activeConfig.classes.map((c) => (
+              {/* Origin cards */}
+              <div className="flex items-start gap-4 overflow-x-auto pb-3 scrollbar-thin">
+                {visibleSpecies.map((s) => {
+                  const isSelected = selectedOrigin === s.id
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSelectedOrigin(isSelected ? null : s.id)}
+                      className={`shrink-0 w-[160px] sm:w-[180px] md:w-[200px] text-left transition-all duration-300 ${
+                        selectedOrigin && !isSelected
+                          ? 'opacity-50 hover:opacity-80'
+                          : 'hover:opacity-80'
+                      }`}
+                    >
+                      <div
+                        className="relative aspect-[3/4] overflow-hidden mb-3 transition-all duration-300"
+                        style={{
+                          border: isSelected
+                            ? `2px solid ${activeConfig.theme.primary}`
+                            : '1px solid color-mix(in oklch, currentColor 10%, transparent)',
+                          boxShadow: isSelected
+                            ? `0 0 20px -5px ${activeConfig.theme.primary}`
+                            : 'none',
+                        }}
+                      >
+                        <Image
+                          src={`/portraits/${activeGenre}/${s.id}.png`}
+                          alt={s.name}
+                          fill
+                          className="object-cover"
+                          sizes="200px"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/90 to-transparent">
+                          <p className="text-sm font-bold tracking-wide uppercase text-foreground">{s.name}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+              {/* Expanded playbook panel */}
               <div
-                key={c.id}
-                className="flex flex-col gap-1.5 border border-border/10 bg-card/60 p-4 text-left shadow-md shadow-black/20"
+                className="overflow-hidden transition-all duration-400 ease-out"
+                style={{
+                  maxHeight: expandedOrigin ? '600px' : '0px',
+                  opacity: expandedOrigin ? 1 : 0,
+                  marginTop: expandedOrigin ? '1rem' : '0',
+                }}
               >
-                <div className="text-sm font-semibold text-foreground">{c.name}</div>
-                <div className="text-xs text-muted-foreground leading-snug">{c.concept}</div>
-                <div
-                  className="mt-1.5 inline-flex self-start rounded-sm px-2 py-0.5 font-mono text-[11px] font-medium"
-                  style={{ color: activeConfig.theme.primary, backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 12%, transparent)` }}
-                >
-                  {c.primaryStat}
-                </div>
+                {expandedOrigin && (
+                  <div
+                    className="border border-border/10 bg-card/40 p-5"
+                    style={{ borderTop: `2px solid ${activeConfig.theme.primary}` }}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-4">
+                      {expandedOrigin.name} playbooks
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {expandedPlaybooks.map((pb) => (
+                        <div
+                          key={pb.id}
+                          className="flex flex-col gap-2 border border-border/10 bg-background/40 p-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-foreground">{pb.name}</span>
+                            <span
+                              className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-medium"
+                              style={{ color: activeConfig.theme.primary, backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 12%, transparent)` }}
+                            >
+                              {pb.primaryStat}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{pb.concept}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )
+        })()}
       </section>
 
       {/* Section divider */}

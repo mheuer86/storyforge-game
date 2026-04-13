@@ -46,23 +46,36 @@ export function createInitialGameState(
   gender: 'he' | 'she' | 'they' = 'they',
 ): GameState {
   const config = getGenreConfig(genre)
-  const selectedClass = config.classes.find((c) => c.id === classId)
+  // When playbooks exist for this origin, look up the class from there; otherwise fall back to universal classes
+  const classPool = (config.playbooks?.[speciesId]) || config.classes
+  const selectedClass = classPool.find((c) => c.id === classId)
   const selectedSpecies = config.species.find((s) => s.id === speciesId)
 
   if (!selectedClass || !selectedSpecies) {
     throw new Error(`Invalid class (${classId}) or species (${speciesId}) for genre ${genre}`)
   }
 
-  // Select opening hook (same logic as buildInitialMessage, but earlier so we can inject frame/arc)
+  // Select opening hook — priority: origin-specific > class-tagged > universal
   const playerClass = selectedClass.name.toLowerCase()
+  const hookMatchTags = [playerClass, ...(selectedClass.hookTags || []).map(t => t.toLowerCase())]
   const allHooks = config.openingHooks
-  const classHooks = allHooks.filter(h =>
-    typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
+  // Origin-specific hooks (highest priority — most specific to this character)
+  const originHooks = allHooks.filter(h =>
+    typeof h !== 'string' && h.origins && h.origins.some(o => o.toLowerCase() === speciesId.toLowerCase())
   )
+  // Class-tagged hooks (exclude origin-locked hooks for other origins)
+  const classHooks = allHooks.filter(h => {
+    if (typeof h === 'string') return false
+    if (h.origins) return false // origin-tagged hooks handled separately
+    return h.classes && h.classes.some(c => hookMatchTags.some(tag => tag.includes(c.toLowerCase())))
+  })
   const universalHooks = allHooks.filter(h =>
-    typeof h === 'string' || !h.classes
+    typeof h === 'string' || (!h.classes && !h.origins)
   )
-  const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
+  // Priority: 80% origin hooks if available, else 70% class hooks, else universal
+  const pool = originHooks.length > 0 && Math.random() < 0.8 ? originHooks
+    : classHooks.length > 0 && Math.random() < 0.7 ? classHooks
+    : universalHooks.length > 0 ? universalHooks : allHooks
   const pickedHook = pool[Math.floor(Math.random() * pool.length)]
   const hookObj = typeof pickedHook === 'string' ? { hook: pickedHook } : pickedHook
   const hookTitle = hookObj.title || config.initialChapterTitle
@@ -221,7 +234,11 @@ export function createInitialGameState(
     sceneSummaries: [],
     scopeSignals: 0,
     npcFailures: [],
-    counters: hookObj.startingCounters ? { ...hookObj.startingCounters } : {},
+    counters: {
+      ...(hookObj.startingCounters || {}),
+      // Two-way counters start at midpoint (Minor House standing)
+      ...(speciesId === 'minor-house' && { standing: 5 }),
+    },
     rulesWarnings: [],
     pivotalScenes: [],
     rollSequences: [],

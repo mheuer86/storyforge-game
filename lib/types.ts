@@ -137,10 +137,11 @@ export interface Decision {
   summary: string           // "Trust Voss despite the forged credentials"
   context: string           // "Confrontation in the docking bay — Voss couldn't explain the forgery"
   category: 'moral' | 'tactical' | 'strategic' | 'relational'
-  status: 'active' | 'superseded' | 'abandoned'
+  status: 'active' | 'superseded' | 'abandoned' | 'spent'
   reason?: string           // Why it was superseded/abandoned
   chapter: number           // When it was made
   witnessed?: boolean       // True when PC directly witnessed the human cost — narrative currency
+  spentOn?: string          // What the witness mark was spent on (e.g. "Defied Synod Seeker Voss")
 }
 
 export interface AntagonistMove {
@@ -205,7 +206,7 @@ export interface Clue {
   connected?: string[]
 }
 
-export type ConnectionTier = 'lead' | 'breakthrough'
+export type ConnectionTier = 'lead' | 'enriched' | 'breakthrough'
 
 export interface ClueConnection {
   id: string

@@ -26,6 +26,7 @@ export interface Species {
   lore: string
   behavioralDirective?: string          // Claude-facing: how to play this origin's interiority during gameplay
   startingContacts?: StartingContact[]  // auto-created as NPCs on game init
+  hidden?: boolean                      // true for shifted origins — not selectable at creation
 }
 
 export interface CharacterClass {
@@ -50,6 +51,7 @@ export interface CharacterClass {
   hitDieAvg: number  // average HP gained per level (before CON mod). Tanks: 6, mixed: 5, faces/casters: 4
   trait: Trait
   openingKnowledge?: string  // ~80-100 words, character interiority for chapter 1 world-seeding
+  hookTags?: string[]        // additional tags for hook matching (e.g. ['knight'] on a Crusader playbook)
 }
 
 export interface GenreTheme {
@@ -96,6 +98,7 @@ export interface GenreConfig {
   species: Species[]
   speciesLabel: string
   classes: CharacterClass[]
+  playbooks?: Record<string, CharacterClass[]>  // keyed by species/origin ID — when present, wizard uses these instead of classes
   theme: GenreTheme
   currencyName: string
   currencyAbbrev: string
