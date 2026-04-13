@@ -246,14 +246,20 @@ const grimdarkOriginMap: Record<string, OriginCounterDef> = {
   'The Oathless': {
     counter: 'survival_debt',
     shiftLabel: 'Named',
-    shiftWarning: 'Survival debts have made the character visible. People know the name, and that\'s dangerous. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'Too many debts owed to too many people. The oathless is becoming a known quantity.',
+    shiftWarning: 'Too many obligations accepted. The freedom that defined the character is consumed by debts. Effectively sworn without the ceremony. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The obligations are accumulating. Every favor accepted erodes the freedom that defines the unsworn.',
   },
   'House Ashfang': {
     counter: 'wrath',
     shiftLabel: 'Vessel',
     shiftWarning: 'The anger has crystallized into something ancestral. The blood burns with purpose. Narrate this as a character moment, not a mechanic.',
     risingWarning: 'The anger is focused now. It has a direction and a weight that others can feel.',
+  },
+  'Church-Raised': {
+    counter: 'zeal',
+    shiftLabel: 'The Pious',
+    shiftWarning: 'The institution has consumed the person. Every judgment is the Church\'s judgment, delivered without doubt. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Doctrine is answering questions faster than conscience can ask them. The gap between mission and machinery is closing.',
   },
 }
 
