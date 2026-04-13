@@ -701,7 +701,7 @@ const commitTurnDefinition: Anthropic.Tool = {
         type: 'object',
         description: 'Track origin-specific moral pressure. Include when the player\'s actions tick their origin counter.',
         properties: {
-          counter: { type: 'string', description: 'Counter name matching the character origin (e.g. fealty, doubt, exposure, mandate, debt, embers, badge_debt, gang_debt, etc.)' },
+          counter: { type: 'string', description: 'Counter name matching the character origin (e.g. fealty, doubt, exposure, mandate, debt, embers, badge_debt, conscience, complicity, compromise, etc.)' },
           direction: { type: 'string', enum: ['up', 'down'] },
           reason: { type: 'string', description: 'Brief reason for the tick.' },
         },
