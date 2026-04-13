@@ -302,35 +302,35 @@ const grimdarkRules: GenreRules = {
 // ============================================================
 
 const cyberpunkOriginMap: Record<string, OriginCounterDef> = {
-  'Street Kid': {
-    counter: 'gang_debt',
-    shiftLabel: 'Burned',
-    shiftWarning: 'The gang has cut ties. Old favors are now threats. Every contact from the old life is a liability. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The old crew is calling in debts. Gang contacts are getting nervous about your trajectory.',
+  'Operative': {
+    counter: 'debt',
+    shiftLabel: 'Owned',
+    shiftWarning: 'Too many debts, too many claims. The operative is owned by everyone and free to no one. Every choice is a payment, and the debts have interest. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Obligations are compounding. Fixers, clients, and crew members all hold markers. The word "freelance" is starting to feel like a joke.',
   },
-  'Corpo Dropout': {
+  'Fixer': {
     counter: 'exposure',
-    shiftLabel: 'Flagged',
-    shiftWarning: 'Corporate systems have positively identified you. Running is harder now. Every scan is a risk. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'Digital traces are accumulating. The corp hasn\'t forgotten. Biometric contacts and identity use leave marks.',
+    shiftLabel: 'Burned',
+    shiftWarning: 'Too many people know the fixer\'s name. The network that was an asset is now a target. Clients are selling information. Contacts are afraid to be seen together. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The exposure is growing. Too many people know too much. Every connection is a potential leak.',
   },
-  'Undercity Born': {
-    counter: 'city_rot',
-    shiftLabel: 'Settled',
-    shiftWarning: 'The street has seeped in. What was survival is now identity. The character has stopped looking for a way out. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The city is getting comfortable. Old survival patterns are becoming permanent habits.',
+  'Ripperdoc': {
+    counter: 'conscience',
+    shiftLabel: 'Hollowed',
+    shiftWarning: 'The conscience broke. Patient after patient, implant after implant, the clinical detachment consumed the empathy. The hands still work; the person behind them has retreated. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The weight of what you install is accumulating. More patients with chrome drift, more rejection cases. The detachment that lets you work is growing.',
   },
-  'Nomad': {
-    counter: 'surface_debt',
-    shiftLabel: 'Visible',
-    shiftWarning: 'The nomad is tied down now. Roots have grown where wheels used to be. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The freedom is narrowing. Obligations and debts are anchoring the character to one place.',
+  'Corporate': {
+    counter: 'complicity',
+    shiftLabel: 'Apparatus',
+    shiftWarning: 'Indistinguishable from the institution. The person and the corp are the same thing. Decisions are policy. Relationships are org chart positions. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The corporate logic is deepening. Every compromise, every efficiency report, every restructuring builds the machine further into the person.',
   },
-  'Syndicate Blood': {
-    counter: 'family_distance',
-    shiftLabel: 'Cut',
-    shiftWarning: 'The syndicate has disowned you, or you them. The blood tie is severed. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'Family expectations and syndicate loyalty are pulling in opposite directions. Something will break.',
+  'Unplugged': {
+    counter: 'compromise',
+    shiftLabel: 'Compromised',
+    shiftWarning: 'The line between Unplugged and everyone else is rhetorical now. The body is still mostly organic. The principles are not. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Compromises are accumulating. Each use of augmented infrastructure, each exception "just this once," erodes the conviction.',
   },
 }
 
@@ -378,41 +378,41 @@ const cyberpunkRules: GenreRules = {
 // ============================================================
 
 const noirOriginMap: Record<string, OriginCounterDef> = {
-  'Ex-Cop': {
-    counter: 'badge_debt',
-    shiftLabel: 'Ghost Badge',
-    shiftWarning: 'The badge is a liability now. Former colleagues avoid eye contact. The institution has quietly disowned you. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'Internal affairs is circling. Old partners are distancing themselves. The badge opens fewer doors.',
+  'PI': {
+    counter: 'compromise',
+    shiftLabel: 'Compromised',
+    shiftWarning: 'The lines you crossed have erased the distinction between you and the people you investigate. The cases still get solved; the question of whether solving them serves justice has stopped being asked. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The lines are accumulating. Each case takes a little more from you. The objectivity that defined your work is harder to find.',
   },
-  'Street': {
-    counter: 'exposure',
-    shiftLabel: 'Known',
-    shiftWarning: 'Too many people know the face. The informant network is compromised. Moving unseen is no longer possible. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'Word gets around. Too many conversations, too many scenes. People recognize you who shouldn\'t.',
-  },
-  'Old Money': {
+  'Lawyer': {
     counter: 'complicity',
-    shiftLabel: 'Insider',
-    shiftWarning: 'The connections have become entanglement. You know too much to leave, not enough to control. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The web is getting sticky. Every favor granted pulls you deeper into something you can\'t walk away from.',
+    shiftLabel: 'Entangled',
+    shiftWarning: 'The system you operated has made you part of its machinery. You know too many names, too many arrangements. Walking away means leaving behind information that powerful people need controlled. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The web is getting sticky. Every motion filed pulls you deeper into the machinery. The system you serve is becoming indistinguishable from the system you navigate.',
   },
-  'Veteran': {
+  'Criminal': {
+    counter: 'notoriety',
+    shiftLabel: 'Marked',
+    shiftWarning: 'Too visible. Too known. The silence you were is now noise. The people who enforce silence officially have decided you are a problem worth solving. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'Word is spreading. Too many jobs, too many witnesses. The anonymity that protected you is thinning.',
+  },
+  'Enforcer': {
     counter: 'numbness',
     shiftLabel: 'Cold',
-    shiftWarning: 'The numbness has won. Emotional responses are tactical now, not felt. People notice. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The detachment is showing. Situations that should provoke a reaction get clinical assessment instead.',
+    shiftWarning: 'The numbness has won. Emotional responses are tactical now, not felt. People notice the absence and recoil. The efficiency is total; the cost is invisible from the inside. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The detachment is showing. Situations that should provoke a reaction get clinical assessment instead. People are becoming variables.',
   },
-  'Immigrant': {
-    counter: 'obligation',
-    shiftLabel: 'Bound',
-    shiftWarning: 'The debts have become chains. Freedom of action is theoretical. Every choice is filtered through what you owe. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The obligations are mounting. Creditors are getting impatient. Each new debt narrows the path.',
+  'Reporter': {
+    counter: 'leverage',
+    shiftLabel: 'Exposed',
+    shiftWarning: 'The story became bigger than your ability to control who knows your name. Sources are afraid to be seen with you. Powerful people have stopped ignoring you and started planning. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The leverage is mounting. Every source adds a thread. Every story published makes dangerous people remember your name.',
   },
 }
 
 const noirRules: GenreRules = {
   evaluate(state, commit, roll) {
-    // Detect Favor Owed usage
+    // Detect Favor Owed usage (Criminal/Connected playbook)
     if (traitFired(commit, roll, 'Favor Owed')) {
       state = incrementCounter(state, 'favor_balance')
     }
@@ -420,7 +420,7 @@ const noirRules: GenreRules = {
     // Threshold warning
     const balance = getCounter(state, 'favor_balance')
     if (balance >= 3) {
-      state = addWarning(state, '⚠ FAVOR BALANCE OVERDRAWN (3+): Contacts demand reciprocity before helping. The next contact the Fixer reaches out to will require a returned favor before providing assistance.')
+      state = addWarning(state, '⚠ FAVOR BALANCE OVERDRAWN (3+): Contacts demand reciprocity before helping. The next contact reached out to will require a returned favor before providing assistance.')
     }
 
     // Origin counters

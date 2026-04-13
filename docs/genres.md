@@ -244,26 +244,27 @@ Cities are vertical, stratified by wealth. Cyberware is ubiquitous. The net is a
 
 Every run is a transaction: take the job, get the eddies, keep the crew alive long enough to do it again. But the jobs have a way of pulling you into systems bigger than you bargained for, and the chrome you bolt on to survive those systems has a way of making you forget why surviving mattered in the first place.
 
-### Origins (5)
+### Origins (5) — Position-Based
 
-| Origin | Description | Advantage | Vulnerability |
-|--------|-------------|-----------|---------------|
-| **Street Kid** | Born in the gutter wards. Knows every shortcut, every unwritten rule. | Streetwise checks | Disadvantage on initial social checks with corpo or institutional NPCs. Active liability: gang obligations surface once per chapter. |
-| **Corpo Dropout** | Former corporate employee. Polished accent, expensive habits, one bad decision. | Social checks in corporate environments | Gang and street NPCs start at Wary. Active liability: your former corp has a file on you and wants you controllable. |
-| **Nomad** | Arrived from the badlands with a car, a gun, and clan instincts. | Survival and vehicle-related checks | City fixers start at Wary. Active liability: clan requests come with emotional weight -- these are family, not clients. |
-| **Undercity Born** | Grew up in the maintenance warrens and black-market tunnels beneath the city. | Navigate, hide, or find things in urban infrastructure | Disadvantage in high-society or corporate settings. Active liability: undercity debts that don't convert to eddies. |
-| **Syndicate Blood** | Raised inside organized crime. Knows how authority actually works. | Intimidation and reading power dynamics | Acting against syndicate interests gets reported. Betrayal drops every syndicate NPC by two disposition tiers. |
+Central system: "The city runs on human-machine integration."
 
-### Classes (6)
+| Origin | Position | Counter | Shifted To |
+|--------|----------|---------|------------|
+| **Operative** | Freelance talent in the gig economy. Pure capability for rent. | `debt` — obligations compound from fixers, clients, crew | Owned |
+| **Fixer** | The connective tissue. Brokers between corps, gangs, talent. | `exposure` — you know too much about too many people | Burned |
+| **Ripperdoc** | Maintains the bodies. Sees what the chrome costs up close. | `conscience` — you install what erodes people | Hollowed |
+| **Corporate** | Inside the machine. Profits from the system you can see clearly. | `complicity` — every efficiency report is built on exploitation | Apparatus |
+| **Unplugged** | Rejects augmentation. Proves the merge isn't inevitable. | `compromise` — every use of augmented infrastructure erodes conviction | Compromised |
 
-| Class | Concept | Primary | Trait | Cost |
-|-------|---------|---------|-------|------|
-| **Ghost** | Infiltrator / Social Engineer | DEX | **Zero Trace** -- leave no trace on one security scan, camera network, or access log (1/day) | The absence itself can be noticed. After 3 uses per chapter, Insight checks against human emotion get disadvantage. |
-| **Razorback** | Chrome Street Samurai / Enforcer | STR | **Adrenaline Overclocked** -- bonus melee attack after a successful hit (1/day) | Chrome stress accumulates. At threshold (3 uses per chapter without rest), involuntary aggression -- WIS save to resist violent impulses in social scenes. |
-| **Netrunner** | Hacker / Remote Operator | INT | **Deep Dive** -- auto-succeed on a Hacking check or seize a networked device (1/day) | Each use adds neural stress. After 3 cumulative uses without a rest chapter, the GM introduces a cyberpsychosis episode. |
-| **Broker** | Information Broker / Connected Operator | CHA | **Marker Called** -- call in a contact for one thing: information, a door opened, a small job done (1/day) | Contact unavailable until next chapter. After three unreturned markers, next contact demands something first. |
-| **Medtech** | Combat Medic / Body Modder | WIS | **Field Triage** -- stabilize a downed ally or gain advantage on Medicine checks as a bonus action (1/day) | After 3 uses per chapter without a personal connection scene, bedside manner degrades. NPC patients start at Wary. |
-| **Solo** | Contract Killer / Survivor | CON | **Dead Man Walking** -- ignore all damage from one attack (1/day) | You felt it; you just don't stop. |
+### Playbooks (15, origin-bound, 3 per origin)
+
+| Origin | INT playbook | STR/DEX/CON playbook | CHA playbook |
+|--------|-------------|---------------------|-------------|
+| **Operative** | Netrunner (Deep Dive) | Razorback (Adrenaline Overclocked), Ghost (Zero Trace) | -- |
+| **Fixer** | Analyst (Pattern Recognition) | Fence (Hidden Cargo) | Dealmaker (Marker Called) |
+| **Ripperdoc** | Engineer (Jury-Rig) | Surgeon (Field Triage) | Street Doc (Seen Worse) |
+| **Corporate** | Auditor (Clearance Override) | Enforcer (Dead Man Walking) | Executive (Corporate Authority) |
+| **Unplugged** | Deprogrammer (Shutdown) | Purist (Unaugmented) | Voice (Rally) |
 
 ### Asset: Tech Rig
 
@@ -277,12 +278,16 @@ Personal tech rig uses modular upgrades at levels 1-3:
 
 Integrity runs like hull condition. Below 30%: disadvantage on tech checks.
 
-### Hooks
+### Hooks (39 total)
 
-- **Blackout** -- The city goes dark. Not a power failure -- a targeted blackout in a six-block radius. In the silence, a voice on every local channel says a name. It's yours.
-- **Dead Crew** -- A rival crew is dead. Their equipment, their job board, and their contacts are up for grabs -- but so is whoever killed them.
-- **Someone Home** (Netrunner) -- You found something in the net that found you back. Not ICE, not a daemon -- a consciousness. It's living in decommissioned infrastructure and won't let you log out until you do something for it. Your deck is burning through battery and your body is getting cold in the chair.
-- **Bad Chrome** (Medtech) -- A patient you saved comes back -- different. The cyberware you installed is behaving autonomously. Two more former patients report the same thing. Someone in your supply chain has been slipping modified implants into your inventory.
+4 universal + 18 playbook-tagged (3 per old class) + 10 origin-specific (2 per origin) + 9 archetype-tagged (infiltrator, enforcer, networker, technician, analyst). Every playbook has 4+ targeted hooks plus universals.
+
+Notable hooks:
+- **The Fourteen-Year-Old** (Ripperdoc) -- A teenager asks for a full combat suite. Military loadout. She has the eddies. She's fourteen.
+- **Sublevel 4** (Corporate) -- Your quarterly review lists you on a project that doesn't exist. The corp enrolled you in something, and refusing to show up is its own answer.
+- **The Pilot Program** (Unplugged) -- A corp offers your community free chrome. Half want it. The other half see the trap. The families who want it have children who can't compete without it.
+- **Mirror** (technician archetype) -- A street drug that disables all cyberware for 40 minutes. One in ten users flatline when the chrome reboots.
+- **Three Meetings** (networker archetype) -- A gang leader, a corporate VP, and an NCPD lieutenant in the same bar. None know the others are coming. Your fixer booked all three.
 
 ---
 
