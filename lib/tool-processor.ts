@@ -80,6 +80,7 @@ interface CommitTurnInput {
   debrief?: ChapterDebrief
   pending_check?: Record<string, unknown>
   origin_event?: { counter: string; direction: 'up' | 'down'; reason: string }
+  spend_witness?: { decision_id: string; spent_on: string }
   scene_end?: boolean
   scene_summary?: string
   tone_signature?: string
@@ -500,56 +501,79 @@ function applyWorldChanges(
         dbg('WITNESS_MARK auto-detected: ' + input.add_decision.summary)
       }
 
-      // Bidirectional origin counter: conflict/hesitation → UP, enforcement/compliance → DOWN
+      // Origin counter auto-tick: moral decisions tick by default, enforcement language reverses direction
       {
         const species = updated.character.species
         const text = (input.add_decision!.summary + ' ' + input.add_decision!.context).toLowerCase()
+        const isMoral = input.add_decision!.category === 'moral'
 
-        // Conflict language: questioning, hesitating, showing mercy, choosing against the system
-        const conflictPattern = /\b(doubt|question|hesitat|said nothing|looked away|didn.t report|chose not to|mercy|compassion|let.*go|refuse.*order|disobey|defy|protect.*against|hide.*from.*synod|suppress.*attunement|heresy.*true|cover.*story)\b/
-        // Enforcement language: executing, delivering, complying, following orders without conflict
-        const enforcePattern = /\b(took.*from|deliver|executed|enforc|comply|followed.*order|carried out|filed.*charge|formally.*charg|detained|assessed|completed.*duty|didn.t look back|without hesitation)\b/
+        // Enforcement language: complying, executing orders, delivering someone, following through without resistance
+        const enforcePattern = /\b(took.*from|deliver|hand.*over|turn.*in|executed|enforc|comply|followed.*order|carried out|filed.*charge|formally.*charg|detained|assessed|completed.*duty|didn.t look back|without hesitation|signed.*over|reported|surrendered|obeyed|submitted|cooperat(?:ed|ing))\b/
 
-        const counterMap: Record<string, string> = {
-          // Epic Sci-Fi
-          'Synod-Raised': 'doubt', 'Heretic': 'doubt', 'Minor House': 'fealty', 'Hollow': 'fealty',
-          'Undrift': 'exposure', 'Hunted': 'exposure', 'Imperial Service': 'mandate', 'Dissident': 'mandate',
-          'Ascendant': 'debt', 'Owned': 'debt', 'Spent Resonant': 'embers', 'Rekindled': 'embers',
-          // Noir
-          'Ex-Cop': 'badge_debt', 'Street': 'exposure', 'Old Money': 'complicity',
-          'Veteran': 'numbness', 'Immigrant': 'obligation',
-          // Cyberpunk
-          'Street Kid': 'gang_debt', 'Corpo Dropout': 'exposure', 'Nomad': 'city_rot',
-          'Undercity Born': 'surface_debt', 'Syndicate Blood': 'family_distance',
-          // Space Opera
-          'Human': 'isolation', 'Vrynn': 'signal_debt', 'Korath': 'compromise',
-          'Sylphari': 'detachment', 'Zerith': 'reputation',
-          // Fantasy
-          'Elf': 'withdrawal', 'Dwarf': 'oath_weight', 'Halfling': 'visibility', 'Dragonkin': 'inheritance',
-          // Grimdark
-          'Veldran': 'ledger', 'Sylvara': 'paralysis', 'Stonemark': 'rigidity',
-          'Oathless': 'survival_debt', 'Ashfang': 'wrath',
+        const counterMaps: Record<string, Record<string, string>> = {
+          'epic-scifi': {
+            'Synod': 'doubt', 'Heretic': 'doubt',
+            'Minor House': 'standing', 'Stricken': 'standing', 'Entrenched': 'standing',
+            'Undrift': 'exposure', 'Hunted': 'exposure', 'Imperial Service': 'mandate', 'Dissident': 'mandate',
+            'Spent Resonant': 'embers', 'Rekindled': 'embers',
+          },
+          'noire': {
+            'PI': 'compromise', 'Compromised': 'compromise',
+            'Lawyer': 'complicity', 'Entangled': 'complicity',
+            'Criminal': 'notoriety', 'Marked': 'notoriety',
+            'Enforcer': 'numbness', 'Cold': 'numbness',
+            'Reporter': 'leverage', 'Exposed': 'leverage',
+          },
+          'cyberpunk': {
+            'Operative': 'debt', 'Owned': 'debt',
+            'Fixer': 'exposure', 'Burned': 'exposure',
+            'Ripperdoc': 'conscience', 'Hollowed': 'conscience',
+            'Corporate': 'complicity', 'Apparatus': 'complicity',
+            'Unplugged': 'compromise', 'Compromised': 'compromise',
+          },
+          'space-opera': {
+            'Human': 'isolation', 'Untethered': 'isolation',
+            'Vrynn': 'signal_debt', 'Severed': 'signal_debt',
+            'Korath': 'compromise', 'The Diplomat': 'compromise',
+            'Sylphari': 'detachment', 'The Observer': 'detachment',
+            'Zerith': 'reputation', 'Marked': 'reputation',
+          },
+          'fantasy': {
+            'Human': 'ambition', 'Climber': 'ambition',
+            'Elf': 'withdrawal', 'Watcher': 'withdrawal',
+            'Dwarf': 'oath_weight', 'Bound': 'oath_weight',
+            'Halfling': 'visibility', 'Named': 'visibility',
+            'Dragonkin': 'inheritance', 'Vessel': 'inheritance',
+          },
+          'grimdark': {
+            'House Veldran': 'ledger', 'Climber': 'ledger',
+            'House Sylvara': 'paralysis', 'Watcher': 'paralysis',
+            'House Stonemark': 'rigidity', 'Bound': 'rigidity',
+            'The Oathless': 'survival_debt', 'Named': 'survival_debt',
+            'House Ashfang': 'wrath', 'Vessel': 'wrath',
+            'Pale Flame': 'zeal', 'The Pious': 'zeal',
+          },
         }
+        const counterMap = counterMaps[updated.meta?.genre || ''] || {}
 
         const counterName = counterMap[species]
-        if (counterName) {
-          const hasConflict = conflictPattern.test(text)
+        if (counterName && isMoral) {
           const hasEnforce = enforcePattern.test(text)
 
-          if (hasConflict && !hasEnforce) {
-            // Questioning/resisting the system → counter UP
-            const counters = { ...(updated.counters || {}) }
-            counters[counterName] = (counters[counterName] || 0) + 1
-            updated = { ...updated, counters }
-            dbg(`ORIGIN_COUNTER ${counterName} UP to ${counters[counterName]} (conflict: ${species})`)
-          } else if (hasEnforce && !hasConflict) {
-            // Enforcing/complying with the system → counter DOWN (min 0)
+          if (hasEnforce) {
+            // Moral decision with enforcement language → counter DOWN (min 0)
             const counters = { ...(updated.counters || {}) }
             counters[counterName] = Math.max(0, (counters[counterName] || 0) - 1)
             updated = { ...updated, counters }
             dbg(`ORIGIN_COUNTER ${counterName} DOWN to ${counters[counterName]} (enforce: ${species})`)
+          } else {
+            // Moral decision without enforcement → counter UP (default)
+            const counters = { ...(updated.counters || {}) }
+            counters[counterName] = (counters[counterName] || 0) + 1
+            updated = { ...updated, counters }
+            dbg(`ORIGIN_COUNTER ${counterName} UP to ${counters[counterName]} (moral: ${species})`)
           }
-          // Both or neither → no tick (ambiguous moment, let origin_event handle it)
+          // Non-moral decisions don't auto-tick — use origin_event for those
         }
       }
       const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
@@ -898,16 +922,22 @@ function applyWorldChanges(
       const sourceIsConnection = sourceIds.map(id => notebook.connections.some(c => c.id === id))
       const hasConnectionSource = sourceIsConnection.some(Boolean)
       const allConnectionSources = sourceIsConnection.every(Boolean)
-      let tier: 'lead' | 'breakthrough' = 'lead'
-      if (allConnectionSources) {
+      const anyBreakthroughSource = sourceIds.some(id => {
+        const conn = notebook.connections.find(c => c.id === id)
+        return conn?.tier === 'breakthrough'
+      })
+      let tier: 'lead' | 'enriched' | 'breakthrough' = 'lead'
+      if (anyBreakthroughSource) {
+        // Breakthrough + anything → breakthrough (deeper breakthrough)
+        tier = 'breakthrough'
+      } else if (allConnectionSources) {
+        // Lead + Lead → breakthrough
         tier = 'breakthrough'
       } else if (hasConnectionSource) {
-        const anyBreakthrough = sourceIds.some(id => {
-          const conn = notebook.connections.find(c => c.id === id)
-          return conn?.tier === 'breakthrough'
-        })
-        tier = anyBreakthrough ? 'breakthrough' : 'lead'
+        // Lead + Clue → enriched lead
+        tier = 'enriched'
       }
+      // Clue + Clue → lead (default)
 
       const tainted = sourceIds.some(id => {
         const clue = notebook.clues.find(c => c.id === id)
@@ -939,7 +969,8 @@ function applyWorldChanges(
           tainted,
           ...(connInput.status ? { status: connInput.status } : {}),
         }]
-        statChanges.push({ type: 'new', label: tier === 'breakthrough' ? `Breakthrough: ${connInput.title}` : `Lead: ${connInput.title}` })
+        const tierLabel = tier === 'breakthrough' ? 'Breakthrough' : tier === 'enriched' ? 'Enriched Lead' : 'Lead'
+        statChanges.push({ type: 'new', label: `${tierLabel}: ${connInput.title}` })
       }
 
       const finalConnId = existingIdx >= 0 ? notebook.connections[existingIdx].id : connId
@@ -1386,15 +1417,38 @@ export function applyToolResults(
         updated = applyCombatChanges(input.combat, updated, statChanges, currLabel)
       }
       // Origin event: increment/decrement origin counter
+      // Skip if a moral add_decision already auto-ticked this counter (avoid double-tick)
       if (input.origin_event) {
-        const { counter, direction, reason } = input.origin_event
-        const delta = direction === 'up' ? 1 : -1
-        const counters = { ...(updated.counters || {}) }
-        counters[counter] = (counters[counter] || 0) + delta
-        if (counters[counter] < 0) counters[counter] = 0
-        updated = { ...updated, counters }
-        dbg(`ORIGIN_EVENT ${counter} ${direction} (now ${counters[counter]}): ${reason}`)
+        const alreadyAutoTicked = input.world?.add_decision?.category === 'moral'
+        if (alreadyAutoTicked) {
+          dbg(`ORIGIN_EVENT skipped (moral decision already auto-ticked): ${input.origin_event.counter}`)
+        } else {
+          const { counter, direction, reason } = input.origin_event
+          const delta = direction === 'up' ? 1 : -1
+          const counters = { ...(updated.counters || {}) }
+          counters[counter] = (counters[counter] || 0) + delta
+          if (counters[counter] < 0) counters[counter] = 0
+          updated = { ...updated, counters }
+          dbg(`ORIGIN_EVENT ${counter} ${direction} (now ${counters[counter]}): ${reason}`)
+        }
       }
+
+      // ── Witness Mark Spending ──
+      if (input.spend_witness) {
+        const { decision_id, spent_on } = input.spend_witness
+        const world = { ...updated.world }
+        const decisions = [...(world.decisions || [])]
+        const idx = decisions.findIndex(d => d.id === decision_id && d.witnessed && d.status === 'active')
+        if (idx >= 0) {
+          decisions[idx] = { ...decisions[idx], status: 'spent' as const, spentOn: spent_on }
+          world.decisions = decisions
+          updated = { ...updated, world }
+          dbg(`WITNESS_MARK spent: "${decisions[idx].summary}" → ${spent_on}`)
+        } else {
+          dbg(`WITNESS_MARK spend failed: decision ${decision_id} not found or not an active witness mark`)
+        }
+      }
+
       updated = applyNarrativeChanges(input, updated, statChanges, trackEvent)
     }
 

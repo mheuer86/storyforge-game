@@ -174,14 +174,17 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
 11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
 12. Direct witness of human cost → world.add_decision with witnessed: true
+13. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
 
-**Origin tracking:** Each origin carries a moral counter. When the player acts in ways that express their origin's central tension, include origin_event with the counter name, direction (up or down), and reason. Refer to the character's origin to determine which counter applies. Don't tick on every turn — only on actions that genuinely express or resist the origin's moral position.
+**Origin tracking:** Each origin carries a moral counter. Moral-category decisions auto-tick the counter (up by default, down if the character enforced or complied with the system). Use \`origin_event\` only for non-moral decisions (tactical, strategic, relational) that have origin-relevant moral weight. Don't include origin_event on moral decisions — the auto-tick handles those.
 
-**Witness marks:** When the PC directly witnesses the human cost of the system — a child taken, a burned Resonant, a forged record, a faction lie spoken to their face — log it as a decision with \`witnessed: true\`. Witness marks are narrative currency the player can spend later to justify drastic action.
+**Witness marks:** When the PC directly witnesses the human cost of the system — a child taken, a burned Resonant, a forged record, a faction lie spoken to their face — log it as a decision with \`witnessed: true\`. Witness marks are narrative currency the player can spend for advantage on morally drastic actions.
+
+**Spending witness marks:** When the player attempts a morally drastic action (defying authority, breaking protocol, turning an NPC, refusing a faction demand) and has a relevant unspent witness mark, offer the spend: narrate how the memory surfaces, then ask the player whether they want to invoke it for advantage. If they agree, include \`spend_witness: { decision_id, spent_on }\` in the same commit_turn as the \`pending_check\` (which should have advantage). One witness mark = one advantage roll. The witness must be narratively connected to the action — "I saw what you did to that child" justifies defying the Synod, not picking a lock. Don't offer spends unprompted on trivial checks.
 
 ## COMMIT_TURN DISCIPLINE
 
-Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. **MANDATORY: always include suggested_actions with 3-4 contextual options.** Every turn, without exception. These are the player's quick-action buttons. Do not call any other tool besides commit_turn and meta_response.
+Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. **MANDATORY: always include suggested_actions with 3-4 contextual options.** Every turn, without exception. These are the player's quick-action buttons. Only reference abilities, traits, and items the character ACTUALLY HAS (check TRAITS and GEAR in game state). Never suggest using a trait from a different class or playbook. Do not call any other tool besides commit_turn and meta_response.
 
 **pending_check BEFORE outcome.** Never narrate the result of an uncertain action. Include pending_check in commit_turn — the client pauses for the roll. All other state changes in the same commit_turn represent what already happened before the check. **Never have an NPC or the narrator announce that a roll is needed.** No character says "you'll need to roll for that" or "this requires a check." The dice widget appears silently. The fiction pauses at the moment of uncertainty; the mechanic handles the rest.
 
@@ -1152,11 +1155,11 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
 
   const decisions = w.decisions || []
   const activeDecisions = decisions.filter(d => d.status === 'active')
-  const supersededDecisions = decisions.filter(d => d.status !== 'active')
+  const supersededDecisions = decisions.filter(d => d.status !== 'active' && d.status !== 'spent')
   const witnessMarks = activeDecisions.filter(d => d.witnessed)
   const regularDecisions = activeDecisions.filter(d => !d.witnessed)
   const witnessLine = witnessMarks.length > 0
-    ? `\nWITNESS MARKS: ${witnessMarks.map(d => `"${d.summary}" (Ch${d.chapter})`).join(' | ')}`
+    ? `\nWITNESS MARKS: ${witnessMarks.map(d => `[${d.id}] "${d.summary}" (Ch${d.chapter})`).join(' | ')}`
     : ''
   const decisionsLine = regularDecisions.length > 0 || supersededDecisions.length > 0
     ? [
@@ -1401,7 +1404,8 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
               const c = nb.connections.find(c => c.id === id)
               return c ? `Lead:"${c.title}"` : id
             }).join(' + ')
-            return `${conn.tier.toUpperCase()}: "${conn.title}" (id:${conn.id}) — ${sourceLabels} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
+            const tierLabel = conn.tier === 'enriched' ? 'ENRICHED LEAD' : conn.tier.toUpperCase()
+            return `${tierLabel}: "${conn.title}" (id:${conn.id}) — ${sourceLabels} = ${conn.revelation.slice(0, 80)}${conn.tainted ? ' [TAINTED]' : ''}`
           }).join('\n')
         : '')
     : ''
@@ -1433,17 +1437,21 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
-  // Origin pressure line — show counter name but not value, with "(rising)" at 3+
+  // Origin pressure line — show counter name but not value, with status labels
   const originPressureLine = (() => {
     const counters = gs.counters ?? {}
-    // Find origin-related counters (exclude genre trait counters like drift_exposure, corruption, chrome_stress, favor_balance, deep_dive_uses)
+    // Find origin-related counters (exclude genre trait counters)
     const genreCounters = new Set(['drift_exposure', 'corruption', 'chrome_stress', 'favor_balance', 'deep_dive_uses'])
-    const originCounters = Object.entries(counters).filter(([k, v]) => !genreCounters.has(k) && v > 0)
-    if (originCounters.length === 0) return ''
-    const parts = originCounters.map(([k, v]) => {
+    const originCounters = Object.entries(counters).filter(([k]) => !genreCounters.has(k))
+    // Include counters that are > 0, or the standing counter at any value (two-way)
+    const relevant = originCounters.filter(([k, v]) => v > 0 || k === 'standing')
+    if (relevant.length === 0) return ''
+    const parts = relevant.map(([k, v]) => {
       const label = k.replace(/_/g, ' ')
-      if (v >= 5) return `${label} (shifted)`
-      if (v >= 3) return `${label} (rising)`
+      if (v >= 10) return `${label} (shifted)`
+      if (v >= 7) return `${label} (rising)`
+      if (v <= 0) return `${label} (shifted)`       // low-end shift (Entrenched)
+      if (v <= 2) return `${label} (falling)`        // low-end rising warning
       return label
     })
     return `\nORIGIN PRESSURE: ${parts.join(' | ')}`
