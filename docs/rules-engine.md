@@ -36,7 +36,7 @@ Either method firing counts as a trait use for counter purposes.
 |-----------|---------|----------------|
 | 3+ | Synod notice event imminent | `setFactionStance('The Synod', 'Suspicious -- monitoring Drift activity')` |
 | 6+ | Active Synod search in progress | `setFactionStance('The Synod', 'Hostile -- active search')` |
-| 10+ | Synod bounty active, agents hunting | `setFactionStance('The Synod', 'Hostile -- active bounty on Conduit')` |
+| 10+ | Synod bounty active, agents hunting | `setFactionStance('The Synod', 'Hostile -- active bounty on Resonant')` |
 
 Thresholds are evaluated highest-first (if-else chain), so only the highest matching threshold applies per turn.
 
@@ -49,7 +49,7 @@ Thresholds are evaluated highest-first (if-else chain), so only the highest matc
 |-----------|---------|----------------|
 | 3+ | Church NPCs now start at Hostile | `capNpcDisposition(affiliation === 'The Church', 'hostile')` |
 | 5+ | Common folk capped at Wary | `capNpcDisposition(non-crew + non-combat, 'wary')` |
-| 8+ | Church actively hunting | `setFactionStance('The Church', 'Hostile -- hunting the Hexblade')` + `capNpcDisposition(non-crew + non-combat, 'wary')` |
+| 8+ | Church actively hunting | `setFactionStance('The Church', 'Hostile -- hunting the curseworker')` + `capNpcDisposition(non-crew + non-combat, 'wary')` |
 | 10+ | Physical manifestation visible | `capNpcDisposition(ALL non-crew, 'wary')` -- combat NPCs now included |
 
 **Chapter decay:** On chapter close, `resetChapterCounters` degrades `ship.systems` entries for `morale` and `provisions` by 1 level each (if above 1). Appends `[degraded]` / `[depleted]` to description. The GM can restore them through in-chapter contracts and victories.
