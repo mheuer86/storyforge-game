@@ -206,7 +206,7 @@ export interface Clue {
   connected?: string[]
 }
 
-export type ConnectionTier = 'lead' | 'breakthrough'
+export type ConnectionTier = 'lead' | 'enriched' | 'breakthrough'
 
 export interface ClueConnection {
   id: string
