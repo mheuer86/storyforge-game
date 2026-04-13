@@ -7,12 +7,12 @@ const epicSciFiSpecies: Species[] = [
   {
     id: 'minor-house',
     name: 'Minor House',
-    description: 'Inside the machine, low on the ladder. Your house has few Resonants; gaining more is survival.',
-    lore: 'You are of House Vael \u2014 minor by the standards that matter. Your family\'s Resonant allocation was halved two generations ago after a failed bid for a seat on the Conclave. Everything since has been recovery: marriages of convenience, trade concessions, and the slow erosion of pride in exchange for survival. You grew up watching your elders smile at people they despised.\nStart with one house retainer contact at Favorable, one rival house contact at Wary. Advantage on Persuasion checks involving trade, negotiation, or alliance-building \u2014 you learned to bargain before you learned to read. Vulnerability: your house name is recognized but not respected. Any Major House NPC\'s initial disposition is capped at Neutral; you must earn what others inherit.',
-    behavioralDirective: 'Default register: watchful, calculating cost-benefit of every social interaction. Treats every room as a negotiation. NPC reactions shaped by house name — recognized, not respected. When narrating interiority: the habit of smiling at people you despise.',
+    description: 'At the bottom of the ladder, whether you were born there or climbed to it. Your position in the Hegemony is precarious; every step forward costs something you can\'t get back.',
+    lore: 'You are of House Vael, or you serve it, or you owe it. Minor by the standards that matter. Whether your family\'s Resonant allocation was halved two generations ago or you arrived through talent and someone else\'s investment, the position is the same: inside the machine, low on the ladder, trading dignity for survival. You grew up watching people smile at people they despised, or you learned to do it yourself.\nStart with one house contact at Favorable (a retainer who remembers the lean years, or a patron who invested in your rise), one rival house contact at Wary. Advantage on Persuasion checks involving trade, negotiation, or alliance-building. Vulnerability: your name is recognized but not respected. Any Major House NPC\'s initial disposition is capped at Neutral; you must earn what others inherit.',
+    behavioralDirective: 'Default register: watchful, calculating cost-benefit of every social interaction. Treats every room as a negotiation. NPC reactions shaped by house name or patron\'s name, recognized but not respected. When narrating interiority: the habit of smiling at people you despise, the weight of every trade that got you here, and the question of what you\'ll trade next.',
     startingContacts: [
-      { role: 'House retainer', disposition: 'favorable', description: 'A loyal retainer of House Vael who served your family through the lean years.', affiliation: 'House Vael', npcRole: 'contact' },
-      { role: 'Rival house scion', disposition: 'wary', description: 'A minor noble from a rival house who watches your movements with suspicion.', affiliation: 'Rival House', npcRole: 'contact' },
+      { role: 'House contact', disposition: 'favorable', description: 'A loyal retainer who served through the lean years, or a patron who invested in your rise. Their support comes with expectations.', affiliation: 'House Vael', npcRole: 'contact' },
+      { role: 'Rival house scion', disposition: 'wary', description: 'A noble from a rival house who watches your movements with suspicion.', affiliation: 'Rival House', npcRole: 'contact' },
     ],
   },
   {
@@ -49,17 +49,6 @@ const epicSciFiSpecies: Species[] = [
     ],
   },
   {
-    id: 'ascendant',
-    name: 'Ascendant',
-    description: 'Climbing from nothing. Born Untuned, no house, no church, no connections. The system wasn\'t built for you.',
-    lore: 'Born Untuned. No house. No church. No blood worth naming. You arrived here through talent, ruthlessness, someone\'s investment, or some combination that makes old-blood aristocrats uncomfortable. The system wasn\'t built for you, and everyone in the room knows it the moment you speak.\nStart with one mentor/patron contact at Favorable (whoever invested in your rise), one peer contact at Wary (someone who resents your presence in rooms they earned by birth). Advantage on checks where no established protocol exists \u2014 situations where noble birth, Synod training, or institutional backing would normally provide a template, but you\'re operating without one. You\'ve never had the luxury of doing things the expected way. Vulnerability: you have no safety net. Other origins can fall back on their house, their church, or their network. You fall back on the person who elevated you, and that debt has terms. Your patron contact will periodically call in favors, and refusing risks losing your only institutional protection.',
-    behavioralDirective: 'Default register: alert to social signals others take for granted. No inherited protocols. NPC reactions: old-blood discomfort, grudging respect or open resentment. When narrating interiority: reading rooms that were not built for you.',
-    startingContacts: [
-      { role: 'Patron', disposition: 'favorable', description: 'The person who invested in your rise; their support comes with expectations and debts.', npcRole: 'contact' },
-      { role: 'Resentful peer', disposition: 'wary', description: 'A noble-born peer who resents your presence in rooms they earned by birthright.', npcRole: 'contact' },
-    ],
-  },
-  {
     id: 'spent-resonant',
     name: 'Spent Resonant',
     description: 'Survivor of the Ashen Wards. Classified as non-functional. Still here.',
@@ -74,11 +63,19 @@ const epicSciFiSpecies: Species[] = [
   // ─── Shifted Origins (post-identity-shift, not selectable at creation) ───
 
   {
-    id: 'hollow',
-    name: 'Hollow',
-    description: 'The house name is a shell. You traded so much dignity that the smile is permanent and means nothing.',
-    lore: 'What was House Vael is now a mask you wear out of habit. The trades of dignity accumulated until there was nothing left behind the name. House contacts treat you as a tool, not a member. The smile stays because removing it would require feeling something.',
-    behavioralDirective: 'Default register: performing a role with nothing behind it. The cost-benefit calculation is automatic but the results no longer matter. NPC reactions: house contacts use you openly, rivals sense the hollowing and probe for leverage. When narrating interiority: the smile is permanent and means nothing. Gestures of loyalty feel like muscle memory, not conviction.',
+    id: 'stricken',
+    name: 'Stricken',
+    description: 'The system has written you off. Too much conscience, not enough compliance. The doors are closed.',
+    lore: 'You refused too many trades, sheltered too many people, said no too many times. The Hegemony doesn\'t punish conscience; it simply stops inviting you to the rooms where things happen. The house name still exists but the doors are closed. Your standing is spent.',
+    behavioralDirective: 'Default register: free, and freedom in this system means being alone. The watchfulness remains but no longer serves a strategy. NPC reactions: house contacts are embarrassed by association. Major House figures don\'t remember your name. The system hasn\'t exiled you; it has simply stopped seeing you. When narrating interiority: the conscience is clear and the room is empty.',
+    hidden: true,
+  },
+  {
+    id: 'entrenched',
+    name: 'Entrenched',
+    description: 'You played the game so well you became it. The calculation is automatic, the conscience is a memory.',
+    lore: 'Every trade was defensible. Every compromise was strategic. Every smile was an investment. The accumulation was invisible until the person behind the strategy stopped being a separate thing. Standing is unassailable. The cost was the capacity to question whether the standing was worth having.',
+    behavioralDirective: 'Default register: the system\'s answer is always your answer, because you stopped being a separate thing. The cost-benefit calculation is total and reflexive. NPC reactions: house contacts trust you completely because you are predictable. Major House figures treat you as reliable. When narrating interiority: the calculation is finished. There is no inner conflict because there is no inner anything. The smile is genuine now, and that is the worst part.',
     hidden: true,
   },
   {
@@ -103,14 +100,6 @@ const epicSciFiSpecies: Species[] = [
     description: 'Personal loyalty overrode duty. You serve people now, not the institution.',
     lore: 'The line between duty and conscience has been crossed enough times that the institution noticed. Your handler questions your reports. Your clearance is under review. You still serve, but you serve people now, not the system that deployed you.',
     behavioralDirective: 'Default register: serving people, not the institution. The training is intact but the loyalty has shifted. NPC reactions: handlers are suspicious and test you with loaded assignments. Civilian contacts trust you more than before, which makes you more dangerous to the Throne. When narrating interiority: the weight of the uniform feels different when you know who you\'re actually wearing it for.',
-    hidden: true,
-  },
-  {
-    id: 'owned',
-    name: 'Owned',
-    description: 'The patron\'s investment became a leash. Independence is theoretical.',
-    lore: 'Every door was opened by someone else\'s hand, and now the debt is the defining feature of your position. The patron\'s investment has compounded into control. You are in the room, but you are not free to leave it.',
-    behavioralDirective: 'Default register: every door was opened by someone else\'s hand. Alert to social signals but now also alert to the strings attached to every opportunity. NPC reactions: the patron treats you as an asset, not a person. Peers see you as an extension of the patron\'s influence. When narrating interiority: the room was not built for you, and now you realize it was built to contain you.',
     hidden: true,
   },
   {
@@ -599,86 +588,6 @@ const epicSciFiPlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You manage people the way the Throne manages factions: through leverage, information, and the careful maintenance of useful relationships. You know which house envoys can be turned and which Synod officials have doubts they don\'t voice publicly. You know the difference between an asset and an ally, and you know that the Throne prefers assets. Your cover identities are maintained by the service. Your real identity belongs to it. Every relationship you build is reported, and every friendship you maintain serves two purposes. The loneliness is institutional.',
     },
   ],
-  'ascendant': [
-    {
-      id: 'savant',
-      name: 'Savant',
-      concept: 'Self-taught, resourceful, fills gaps others can\'t. The improviser who learned outside every institution.',
-      hookTags: ['seeker', 'veil'],
-      primaryStat: 'INT',
-      proficiencies: ['Investigation', 'Sleight of Hand', 'Tech (Security)', 'Survival'],
-      stats: { STR: 10, DEX: 14, CON: 12, INT: 17, WIS: 12, CHA: 11 },
-      startingInventory: [
-        { id: 'improvised_toolkit', name: 'Improvised Toolkit', description: 'Cobbled from salvage and black-market parts — works on everything, recognized by nothing', quantity: 1 },
-        { id: 'forged_credentials', name: 'Forged Credentials', description: 'Identity documents purchased at considerable cost — one use before they\'re checked', quantity: 1 },
-        { id: 'data_slate', name: 'Data Slate', description: 'Unregistered personal terminal loaded with self-taught technical references', quantity: 1 },
-        { id: 'concealed_blade', name: 'Concealed Blade', description: 'Practical, hidden, no house markings', quantity: 1, damage: '1d4' },
-      ],
-      startingCredits: 100,
-      startingHp: 8,
-      startingAc: 13,
-      hitDieAvg: 4,
-      trait: {
-        name: 'No Protocol',
-        description: 'Once per chapter, solve a problem using an approach no institution would sanction. Bypass a system, jury-rig a solution, or exploit a gap in procedure that trained operatives would never see. The solution works, but it\'s ugly and leaves evidence of improvisation.',
-        usesPerDay: 1,
-        usesRemaining: 1,
-      },
-      openingKnowledge: 'You learned from stolen manuals, copied schematics, and mentors who taught you in exchange for work the guilds wouldn\'t touch. You know the Synod\'s attunement scanners have a maintenance cycle that creates a thirty-second gap every four hours because you read the service manual a technician left in a canteen. You know which house archives have public terminals and which ones just have poor security. Nobody trained you in the system\'s language, so you learned its architecture instead. The institutions see credentials first and competence second. You have the second.',
-    },
-    {
-      id: 'bulwark',
-      name: 'Bulwark',
-      concept: 'Earned position through physicality. Fights, guards, does the work others won\'t.',
-      hookTags: ['knight'],
-      primaryStat: 'STR',
-      proficiencies: ['Athletics', 'Intimidation', 'Survival', 'Perception'],
-      stats: { STR: 17, DEX: 13, CON: 15, INT: 10, WIS: 11, CHA: 10 },
-      startingInventory: [
-        { id: 'earned_blade', name: 'Earned Blade', description: 'Heavy weapon with no house insignia — won, not inherited', quantity: 1, damage: '1d10' },
-        { id: 'shield_generator', name: 'Shield Generator', description: 'Secondhand, repaired twice — +2 AC', quantity: 1, charges: 3, maxCharges: 3 },
-        { id: 'field_dressing', name: 'Field Dressing', description: 'Heals 1d6+2', quantity: 2, effect: 'heal 1d6+2' },
-        { id: 'patrons_letter', name: 'Patron\'s Letter', description: 'Introduces you as someone worth employing — the debt is in the subtext', quantity: 1 },
-      ],
-      startingCredits: 50,
-      startingHp: 12,
-      startingAc: 15,
-      hitDieAvg: 6,
-      trait: {
-        name: 'Unbroken',
-        description: 'Once per chapter, when reduced to 0 HP, drop to 1 HP instead.',
-        usesPerDay: 1,
-        usesRemaining: 1,
-      },
-      openingKnowledge: 'You earned your place the way people without names earn anything: by being harder to replace than to keep. You know the guard rotations because you pulled them. You know the weight of a shield generator because you carried a secondhand one for three years before someone noticed you were better than the house-born soldiers next to you. You know the quiet resentment of old-blood retainers who trained half as hard and inherited twice the rank. Your patron saw something worth investing in. The investment has terms.',
-    },
-    {
-      id: 'upstart',
-      name: 'Upstart',
-      concept: 'Reads rooms that weren\'t built for them. Navigates social systems by observation, not inheritance.',
-      hookTags: ['envoy'],
-      primaryStat: 'CHA',
-      proficiencies: ['Persuasion', 'Insight', 'Deception', 'Perception'],
-      stats: { STR: 10, DEX: 11, CON: 11, INT: 12, WIS: 14, CHA: 17 },
-      startingInventory: [
-        { id: 'borrowed_finery', name: 'Borrowed Finery', description: 'Quality garments that pass inspection but don\'t quite fit the way inherited ones do', quantity: 1 },
-        { id: 'patrons_signet', name: 'Patron\'s Signet', description: 'Identifies you as sponsored — opens doors with asterisks', quantity: 1 },
-        { id: 'observation_journal', name: 'Observation Journal', description: 'Notes on court protocols, social hierarchies, and who owes what to whom', quantity: 1 },
-        { id: 'ceremonial_sidearm', name: 'Ceremonial Sidearm', description: 'Purchased, not bestowed — the wrong people notice the difference', quantity: 1, damage: '1d6' },
-      ],
-      startingCredits: 120,
-      startingHp: 8,
-      startingAc: 11,
-      hitDieAvg: 4,
-      trait: {
-        name: 'Outsider\'s Eye',
-        description: 'Once per chapter, read a social situation that the participants take for granted and identify the unspoken rule, the hidden hierarchy, or the assumption everyone shares but nobody states. Works on any social group; the more insular the group, the more revealing the insight.',
-        usesPerDay: 1,
-        usesRemaining: 1,
-      },
-      openingKnowledge: 'You read rooms the way a translator reads a foreign text: carefully, deliberately, aware that you are missing context the native speakers were born into. You know which fork to use at a house dinner because you watched and memorized, not because anyone taught you. You know the micro-expressions that old-blood aristocrats make when someone uses the wrong honorific, and you know how to turn that discomfort into an opening. Your patron gave you access. Your observation gave you understanding. The gap between those two things is where you operate, and it is narrower every year.',
-    },
-  ],
   'spent-resonant': [
     {
       id: 'remnant',
@@ -942,16 +851,6 @@ Political stratagems always have a faction clock. The longer the player takes, t
         { id: 'presence', name: 'Presence', level: 1, description: 'Name recognized among Spent.' },
       ],
     },
-    'ascendant': {
-      name: 'Retinue',
-      systems: [
-        { id: 'sworn', name: 'Sworn', level: 1, description: '2 guards, basic arms.' },
-        { id: 'intelligence', name: 'Intelligence', level: 1, description: 'Local informants.' },
-        { id: 'household', name: 'Household', level: 1, description: 'Basic quarters, one servant.' },
-        { id: 'drift_capacity', name: 'Drift Capacity', level: 1, description: 'Shared Resonant access.' },
-        { id: 'reputation', name: 'Reputation', level: 1, description: 'Known within your house.' },
-      ],
-    },
   },
   companionLabel: 'Inner Circle',
   loreAnchors: [
@@ -1017,9 +916,6 @@ Political stratagems always have a faction clock. The longer the player takes, t
     // Imperial Service (3) — balance enforcement, institutional duty
     { hook: 'A Synod Adjudicator has been assassinated on a frontier world. The Throne suspects a house, the houses suspect the Synod did it themselves, and the Synod suspects the Undrift. You\'ve been sent to determine the truth before the factions use the death to justify the war they\'ve been preparing for.', title: 'The Adjudicator', origins: ['imperial-service'], frame: { objective: 'Determine who killed the Adjudicator before factions escalate', crucible: 'Every faction benefits from a different answer — the truth may benefit none of them' }, arc: { name: 'The Adjudicator\'s Death', episode: 'Examine the scene and interview the first witnesses' } },
     { hook: 'Your handler has gone silent. The last message was a single word: "compromised." Your cover identity on a house world is still intact, but without extraction protocols, you\'re operating alone in territory where Imperial Service agents don\'t officially exist.', title: 'Compromised', origins: ['imperial-service'], frame: { objective: 'Determine whether your handler is alive and whether your cover holds', crucible: 'Operating alone without extraction in territory that doesn\'t acknowledge your existence' }, arc: { name: 'The Silent Handler', episode: 'Assess your situation and find a secure communication channel' } },
-    // Ascendant (3) — climbing, proving, surviving without a net
-    { hook: 'Your patron has called in a favor. A simple one, they say: attend a house gathering in their place, represent their interests, don\'t embarrass them. The gathering turns out to be a Conclave session where Resonant allocation for the next decade is being negotiated. You are the least important person in the room and everyone knows it.', title: 'The Gathering', origins: ['ascendant'], frame: { objective: 'Survive the Conclave session without losing your patron\'s standing', crucible: 'A room built for bloodlines, and you\'re the only person without one' }, arc: { name: 'The Patron\'s Favor', episode: 'Navigate the Conclave session and identify what your patron actually needs' } },
-    { hook: 'You\'ve been offered a position that shouldn\'t exist: a house wants to hire a non-affiliated operative to investigate their own Resonant allocation records. They suspect internal fraud but can\'t investigate without the Synod finding out. You\'re perfect because you\'re nobody — and if it goes wrong, you\'re disposable.', title: 'Disposable', origins: ['ascendant'], frame: { objective: 'Investigate the house\'s allocation records without being caught by the Synod', crucible: 'You\'re valuable because you\'re expendable — and the house will remind you' }, arc: { name: 'The Allocation Fraud', episode: 'Access the records and determine the scope of the fraud' } },
     // Spent Resonant (3) — living with the cost, reclaiming agency
     { hook: 'A letter arrives at your Ward bunk. No sender. Inside: a name, a location, and a photograph of a child who looks like the person you were before the Dimming. The child is on the testing schedule for next month. Someone thinks you should know.', title: 'The Letter', origins: ['spent-resonant'], frame: { objective: 'Find out who sent the letter and what they expect you to do', crucible: 'A child who might be yours, on a testing schedule you understand from the inside' }, arc: { name: 'The Unnamed Child', episode: 'Verify the photograph and determine the child\'s identity' }, startingCounters: { embers: 1 } },
     { hook: 'The Ashen Ward physician has asked to see you privately. She says your latest readings are anomalous — your attunement signature, which should be flat, flickered during the last routine scan. She hasn\'t filed it yet. She wants to know what you want her to do.', title: 'The Flicker', origins: ['spent-resonant'], frame: { objective: 'Decide what to do about the anomalous reading before it\'s filed', crucible: 'The classification that protects you is the same one that imprisoned you — and it may no longer be accurate' }, arc: { name: 'The Anomalous Reading', episode: 'Understand what the flicker means and whether it can be hidden' }, startingCounters: { embers: 1 } },

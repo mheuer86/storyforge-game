@@ -512,9 +512,10 @@ function applyWorldChanges(
 
         const counterMaps: Record<string, Record<string, string>> = {
           'epic-scifi': {
-            'Synod-Raised': 'doubt', 'Heretic': 'doubt', 'Minor House': 'fealty', 'Hollow': 'fealty',
+            'Synod-Raised': 'doubt', 'Heretic': 'doubt',
+            'Minor House': 'standing', 'Stricken': 'standing', 'Entrenched': 'standing',
             'Undrift': 'exposure', 'Hunted': 'exposure', 'Imperial Service': 'mandate', 'Dissident': 'mandate',
-            'Ascendant': 'debt', 'Owned': 'debt', 'Spent Resonant': 'embers', 'Rekindled': 'embers',
+            'Spent Resonant': 'embers', 'Rekindled': 'embers',
           },
           'noire': {
             'Ex-Cop': 'badge_debt', 'Ghost Badge': 'badge_debt',

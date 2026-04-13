@@ -112,6 +112,11 @@ interface OriginCounterDef {
   shiftLabel: string
   shiftWarning: string
   risingWarning: string
+  // Two-way shift: optional low-end threshold (counter reaching 0)
+  lowShiftLabel?: string
+  lowShiftWarning?: string
+  lowRisingWarning?: string
+  startingValue?: number  // Non-zero starting value for two-way counters
 }
 
 function evaluateOriginCounters(
@@ -123,14 +128,25 @@ function evaluateOriginCounters(
   if (!def) return state
 
   const val = getCounter(state, def.counter)
-  if (val >= 5) {
-    // Identity shift — one-way gate
+
+  // High-end shift (counter >= 10)
+  if (val >= 10) {
     if (species !== def.shiftLabel) {
       state = { ...state, character: { ...state.character, species: def.shiftLabel } }
       state = addWarning(state, `⚠ IDENTITY SHIFT: ${species} → ${def.shiftLabel}. ${def.shiftWarning}`)
     }
-  } else if (val >= 3) {
+  } else if (val >= 7) {
     state = addWarning(state, `📌 ${def.counter.toUpperCase()} RISING (${val}): ${def.risingWarning}`)
+  }
+
+  // Low-end shift (counter <= 0, only for two-way counters)
+  if (def.lowShiftLabel && val <= 0) {
+    if (species !== def.lowShiftLabel) {
+      state = { ...state, character: { ...state.character, species: def.lowShiftLabel } }
+      state = addWarning(state, `⚠ IDENTITY SHIFT: ${species} → ${def.lowShiftLabel}. ${def.lowShiftWarning || ''}`)
+    }
+  } else if (def.lowRisingWarning && val <= 2 && val > 0) {
+    state = addWarning(state, `📌 ${def.counter.toUpperCase()} FALLING (${val}): ${def.lowRisingWarning}`)
   }
 
   return state
@@ -142,10 +158,14 @@ function evaluateOriginCounters(
 
 const epicSciFiOriginMap: Record<string, OriginCounterDef> = {
   'Minor House': {
-    counter: 'fealty',
-    shiftLabel: 'Hollow',
-    shiftWarning: 'The character\'s relationship to their house has fundamentally changed. The name is a shell. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The pressure is building. House contacts notice the trades of dignity. NPCs who share this origin sense the change.',
+    counter: 'standing',
+    shiftLabel: 'Stricken',
+    shiftWarning: 'The system has written the character off. Too much conscience, not enough compliance. The doors are closed. Narrate this as a character moment, not a mechanic.',
+    risingWarning: 'The standing is eroding. House contacts notice the refusals. The system is losing patience with someone who won\'t play the game.',
+    lowShiftLabel: 'Entrenched',
+    lowShiftWarning: 'The character has played the game so well they became it. The calculation is automatic, the conscience is a memory. Narrate this as a character moment, not a mechanic.',
+    lowRisingWarning: 'The compliance is becoming reflexive. The trades of dignity no longer register as trades. The system is absorbing the person.',
+    startingValue: 5,
   },
   'Synod-Raised': {
     counter: 'doubt',
@@ -164,12 +184,6 @@ const epicSciFiOriginMap: Record<string, OriginCounterDef> = {
     shiftLabel: 'Dissident',
     shiftWarning: 'Personal loyalty has overridden duty. Handler trust erodes. Reports are questioned. Narrate this as a character moment, not a mechanic.',
     risingWarning: 'The pressure is building. Personal loyalties are overriding orders. Handlers notice the drift.',
-  },
-  'Ascendant': {
-    counter: 'debt',
-    shiftLabel: 'Owned',
-    shiftWarning: 'The patron\'s investment has become a leash. Independence is theoretical. Narrate this as a character moment, not a mechanic.',
-    risingWarning: 'The pressure is building. Favors called in, doors opened by others. The debt is becoming visible.',
   },
   'Spent Resonant': {
     counter: 'embers',

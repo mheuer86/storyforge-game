@@ -1436,17 +1436,21 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
     : ''
 
-  // Origin pressure line — show counter name but not value, with "(rising)" at 3+
+  // Origin pressure line — show counter name but not value, with status labels
   const originPressureLine = (() => {
     const counters = gs.counters ?? {}
-    // Find origin-related counters (exclude genre trait counters like drift_exposure, corruption, chrome_stress, favor_balance, deep_dive_uses)
+    // Find origin-related counters (exclude genre trait counters)
     const genreCounters = new Set(['drift_exposure', 'corruption', 'chrome_stress', 'favor_balance', 'deep_dive_uses'])
-    const originCounters = Object.entries(counters).filter(([k, v]) => !genreCounters.has(k) && v > 0)
-    if (originCounters.length === 0) return ''
-    const parts = originCounters.map(([k, v]) => {
+    const originCounters = Object.entries(counters).filter(([k]) => !genreCounters.has(k))
+    // Include counters that are > 0, or the standing counter at any value (two-way)
+    const relevant = originCounters.filter(([k, v]) => v > 0 || k === 'standing')
+    if (relevant.length === 0) return ''
+    const parts = relevant.map(([k, v]) => {
       const label = k.replace(/_/g, ' ')
-      if (v >= 5) return `${label} (shifted)`
-      if (v >= 3) return `${label} (rising)`
+      if (v >= 10) return `${label} (shifted)`
+      if (v >= 7) return `${label} (rising)`
+      if (v <= 0) return `${label} (shifted)`       // low-end shift (Entrenched)
+      if (v <= 2) return `${label} (falling)`        // low-end rising warning
       return label
     })
     return `\nORIGIN PRESSURE: ${parts.join(' | ')}`
