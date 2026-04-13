@@ -277,6 +277,7 @@ const demoCharacters: Record<string, DemoCharacter> = {
 
 export function LandingPage() {
   const [activeGenre, setActiveGenre] = useState<Genre>('space-opera')
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null)
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
   const detailRef = useRef<HTMLDivElement>(null)
   const availableGenres = genres.filter((g) => g.available)
@@ -287,6 +288,7 @@ export function LandingPage() {
 
   const handleGenreSelect = useCallback((genreId: Genre, el?: HTMLButtonElement) => {
     setActiveGenre(genreId)
+    setSelectedOrigin(null)
     setSelectedAction(null)
     // Center the clicked card in the carousel
     if (el && carouselRef.current) {
@@ -547,55 +549,103 @@ export function LandingPage() {
         </div>
 
         {/* 3b. Origins & Playbooks */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
-            <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
-              {activeConfig.speciesLabel}
-            </span>
-          </div>
-          <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-thin">
-            {activeConfig.species.filter((s) => !s.hidden).map((s) => {
-              const playbooks = activeConfig.playbooks?.[s.id] ?? []
-              return (
-                <div key={s.id} className="shrink-0 w-[180px] sm:w-[200px] md:w-[220px] text-left">
-                  {/* Origin portrait */}
-                  <div className="relative aspect-[3/4] overflow-hidden mb-3 border border-border/10">
-                    <Image
-                      src={`/portraits/${activeGenre}/${s.id}.png`}
-                      alt={s.name}
-                      fill
-                      className="object-cover"
-                      sizes="220px"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/90 to-transparent">
-                      <p className="text-sm font-bold tracking-wide uppercase text-foreground">{s.name}</p>
-                    </div>
-                  </div>
-                  {/* Playbooks for this origin */}
-                  {playbooks.length > 0 && (
-                    <div className="flex flex-col gap-1.5">
-                      {playbooks.map((pb) => (
+        {(() => {
+          const visibleSpecies = activeConfig.species.filter((s) => !s.hidden)
+          const expandedOrigin = selectedOrigin ? visibleSpecies.find((s) => s.id === selectedOrigin) : null
+          const expandedPlaybooks = expandedOrigin ? (activeConfig.playbooks?.[expandedOrigin.id] ?? []) : []
+          return (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-px" style={{ backgroundColor: activeConfig.theme.primary, opacity: 0.4 }} />
+                <span className="text-sm font-semibold uppercase tracking-[0.15em]" style={{ color: activeConfig.theme.primary }}>
+                  {activeConfig.speciesLabel}
+                </span>
+              </div>
+              {/* Origin cards */}
+              <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin">
+                {visibleSpecies.map((s) => {
+                  const isSelected = selectedOrigin === s.id
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSelectedOrigin(isSelected ? null : s.id)}
+                      className={`shrink-0 w-[160px] sm:w-[180px] md:w-[200px] text-left transition-all duration-300 ${
+                        isSelected
+                          ? 'scale-[1.02]'
+                          : selectedOrigin
+                            ? 'opacity-50 hover:opacity-80'
+                            : 'hover:opacity-80'
+                      }`}
+                    >
+                      <div
+                        className="relative aspect-[3/4] overflow-hidden mb-3 transition-all duration-300"
+                        style={{
+                          border: isSelected
+                            ? `2px solid ${activeConfig.theme.primary}`
+                            : '1px solid color-mix(in oklch, currentColor 10%, transparent)',
+                          boxShadow: isSelected
+                            ? `0 0 20px -5px ${activeConfig.theme.primary}`
+                            : 'none',
+                        }}
+                      >
+                        <Image
+                          src={`/portraits/${activeGenre}/${s.id}.png`}
+                          alt={s.name}
+                          fill
+                          className="object-cover"
+                          sizes="200px"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-background/90 to-transparent">
+                          <p className="text-sm font-bold tracking-wide uppercase text-foreground">{s.name}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+              {/* Expanded playbook panel */}
+              <div
+                className="overflow-hidden transition-all duration-400 ease-out"
+                style={{
+                  maxHeight: expandedOrigin ? '600px' : '0px',
+                  opacity: expandedOrigin ? 1 : 0,
+                  marginTop: expandedOrigin ? '1rem' : '0',
+                }}
+              >
+                {expandedOrigin && (
+                  <div
+                    className="border border-border/10 bg-card/40 p-5"
+                    style={{ borderTop: `2px solid ${activeConfig.theme.primary}` }}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-4">
+                      {expandedOrigin.name} playbooks
+                    </p>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {expandedPlaybooks.map((pb) => (
                         <div
                           key={pb.id}
-                          className="flex items-center justify-between border border-border/10 bg-card/60 px-3 py-2"
+                          className="flex flex-col gap-2 border border-border/10 bg-background/40 p-4"
                         >
-                          <span className="text-xs font-semibold text-foreground">{pb.name}</span>
-                          <span
-                            className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-medium"
-                            style={{ color: activeConfig.theme.primary, backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 12%, transparent)` }}
-                          >
-                            {pb.primaryStat}
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-foreground">{pb.name}</span>
+                            <span
+                              className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-medium"
+                              style={{ color: activeConfig.theme.primary, backgroundColor: `color-mix(in oklch, ${activeConfig.theme.primary} 12%, transparent)` }}
+                            >
+                              {pb.primaryStat}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{pb.concept}</p>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </section>
 
       {/* Section divider */}
