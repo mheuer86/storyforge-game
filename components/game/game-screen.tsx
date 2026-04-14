@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { TopBar } from './top-bar'
 import { ChatMessage } from './chat-message'
 import { RollBadge, EnemyRollBadge } from './roll-badge'
@@ -18,6 +18,7 @@ import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted, setApiKey } 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
+import { useRollLogic, type RollPrompt } from './use-roll-logic'
 import { slashCommands as slashCommandDefs } from '@/lib/slash-commands'
 
 interface DisplayMessage {
@@ -36,25 +37,6 @@ interface GameScreenProps {
   onNewGame?: () => void
 }
 
-interface RollPrompt {
-  check: string
-  stat: string
-  dc: number
-  modifier: number
-  reason: string
-  toolUseId: string
-  pendingMessages: unknown[]
-  pendingState: GameState
-  advantage?: 'advantage' | 'disadvantage'
-  rawRolls?: [number, number]
-  contested?: { npcName: string; npcSkill: string; npcModifier: number }
-  npcRoll?: number
-  priorToolResults?: unknown[]
-  sides?: number
-  rollType?: 'check' | 'damage' | 'healing'
-  damageType?: string
-}
-
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -69,29 +51,27 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
-  const [rollPrompt, setRollPrompt] = useState<RollPrompt | null>(null)
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string; rollResolution?: RollResolution } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
-  const [dicePhase, setDicePhase] = useState<'idle' | 'rolling' | 'revealed'>('idle')
-  const [diceDisplay, setDiceDisplay] = useState(1)
-  const [diceDisplay2, setDiceDisplay2] = useState(1)
-  const [rolledValue, setRolledValue] = useState<number | null>(null)
-  const [rawRolls, setRawRolls] = useState<[number, number] | null>(null)
-  const [selectedItemBonus, setSelectedItemBonus] = useState<{ name: string; bonus: number } | null>(null)
-  const [inspirationOffered, setInspirationOffered] = useState(false)
   const [closeInProgress, setCloseInProgress] = useState(false)
   const [actionBarPrefill, setActionBarPrefill] = useState<string | undefined>(undefined)
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
   const [budgetKeyInput, setBudgetKeyInput] = useState('')
   const [budgetKeyError, setBudgetKeyError] = useState('')
   const auditInFlightRef = useRef(false)
-  // chapterClosed is derived from game state, not React state — survives reload
-  const [originalRoll, setOriginalRoll] = useState<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
-  const originalRollRef = useRef<{ value: number; total: number; result: string; displayData: RollDisplayData } | null>(null)
   const lastMessageRef = useRef<HTMLDivElement>(null)
   const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
   const isLoadingRef = useRef(false)
+
+  // Roll logic hook — sendContinuation ref breaks the circular dependency
+  // (hook needs sendContinuation, sendContinuation needs hook's setRollPrompt)
+  const sendContinuationRef = useRef<(dieRoll: number, prompt: RollPrompt) => void>(() => {})
+  const rollLogic = useRollLogic({
+    gameState,
+    setGameState: (s) => { setGameState(s) },
+    sendContinuation: (r, p) => sendContinuationRef.current(r, p),
+  })
 
   const prevLastMsgIdRef = useRef<string | null>(null)
   useEffect(() => {
@@ -369,7 +349,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         isMetaQuestion,
         stateWithPlayerMessage,
         (prompt) => {
-          setRollPrompt(prompt)
+          rollLogic.setRollPrompt(prompt)
           debugLogRef.current.push(`[${new Date().toISOString()}] 🎲 ROLL_REQUESTED ${prompt.check} (${prompt.stat}) DC ${prompt.dc} mod ${prompt.modifier > 0 ? '+' : ''}${prompt.modifier} — "${prompt.reason}"`)
           setRetryContext(null)
           isLoadingRef.current = false
@@ -437,7 +417,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       newGmMsgId,
       isMetaQuestion,
       state,
-      (prompt) => { setRollPrompt(prompt); setRetryContext(null); isLoadingRef.current = false; setIsLoading(false) },
+      (prompt) => { rollLogic.setRollPrompt(prompt); setRetryContext(null); isLoadingRef.current = false; setIsLoading(false) },
       (finalState, statChanges) => { setGameState(finalState); saveGameState(finalState); setLastStatChanges(statChanges); setRetryContext(null); isLoadingRef.current = false; setIsLoading(false) },
       (msg) => {
         const lc = msg.toLowerCase()
@@ -507,7 +487,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const rollDisplayData: RollDisplayData = { check: prompt.check, dc: prompt.dc, roll, modifier, total, result, reason: prompt.reason, advantage: prompt.advantage, rawRolls: prompt.rawRolls, contested: prompt.contested, npcRoll: prompt.npcRoll, npcTotal, sides: prompt.sides, rollType: prompt.rollType, damageType: prompt.damageType }
 
       // If this is a reroll after inspiration, inject the original failed roll first
-      const origRoll = originalRollRef.current
+      const origRoll = rollLogic.originalRollRef.current
       const inspirationMessages: DisplayMessage[] = origRoll ? [
         {
           id: crypto.randomUUID(),
@@ -521,7 +501,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           content: '◆ Inspiration — Reroll',
         },
       ] : []
-      originalRollRef.current = null
+      rollLogic.originalRollRef.current = null
 
       setMessages((prev) => [
         ...prev,
@@ -601,7 +581,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         stateForContinuation,
         (nextRollPrompt) => {
           // Chained roll (e.g. damage after a hit) — show dice modal again
-          setRollPrompt(nextRollPrompt)
+          rollLogic.setRollPrompt(nextRollPrompt)
           isLoadingRef.current = false
           setIsLoading(false)
         },
@@ -630,6 +610,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     },
     [streamRequest]
   )
+  sendContinuationRef.current = sendContinuation
 
   const handleConsistencyCheck = useCallback(
     async (flaggedContent: string) => {
@@ -711,170 +692,6 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [sendToGM, initialGameState])
 
-  // Find inventory items whose effect matches the current roll check
-  const relevantItems = useMemo(() => {
-    if (!rollPrompt || !gameState) return []
-    const check = rollPrompt.check.toLowerCase()
-    return gameState.character.inventory.filter((item) => {
-      if (!item.effect) return false
-      const effect = item.effect.toLowerCase()
-      // Match if the effect mentions the check type or the stat
-      return effect.includes(check) || effect.includes(rollPrompt.stat.toLowerCase())
-    }).map((item) => {
-      // Try to extract bonus number from effect string (e.g. "+2 to Interrogation")
-      const match = item.effect?.match(/[+-](\d+)/)
-      return { name: item.name, bonus: match ? parseInt(match[1]) : 0, effect: item.effect || '' }
-    }).filter((item) => item.bonus > 0)
-  }, [rollPrompt, gameState])
-
-  const handleDiceClick = useCallback(() => {
-    if (!rollPrompt || dicePhase !== 'idle') return
-    // Apply item bonus to modifier before rolling
-    if (selectedItemBonus) {
-      rollPrompt.modifier += selectedItemBonus.bonus
-    }
-    const dieSides = rollPrompt.sides || 20
-    const isDmgOrHeal = rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing'
-    // Advantage/disadvantage and contested only apply to d20 checks
-    const isAdvantage = !isDmgOrHeal && (rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage')
-    const isContested = !isDmgOrHeal && !!rollPrompt.contested
-    const die1 = Math.floor(Math.random() * dieSides) + 1
-    const die2 = isAdvantage ? Math.floor(Math.random() * dieSides) + 1
-      : isContested ? Math.floor(Math.random() * 20) + 1  // NPC die always d20
-      : die1
-    const kept = rollPrompt.advantage === 'advantage' ? Math.max(die1, die2)
-      : rollPrompt.advantage === 'disadvantage' ? Math.min(die1, die2)
-      : die1
-    setRolledValue(kept)
-    if (isAdvantage) setRawRolls([die1, die2])
-    if (isContested) {
-      // Store NPC roll on the prompt so it flows through to sendContinuation
-      rollPrompt.npcRoll = die2
-    }
-    setInspirationOffered(false)
-    setDicePhase('rolling')
-
-    const interval = setInterval(() => {
-      setDiceDisplay(Math.floor(Math.random() * dieSides) + 1)
-      if (isAdvantage || isContested) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
-    }, 50)
-
-    setTimeout(() => {
-      clearInterval(interval)
-      setDiceDisplay(isContested ? die2 : die1)
-      setDiceDisplay(die1)
-      if (isAdvantage || isContested) setDiceDisplay2(die2)
-      setDicePhase('revealed')
-    }, 700)
-  }, [rollPrompt, dicePhase, selectedItemBonus])
-
-  const handleInspirationReroll = useCallback(() => {
-    if (!rollPrompt || !gameState || rolledValue === null) return
-    // Save original roll for display
-    const origTotal = rolledValue + rollPrompt.modifier
-    const origEffDC = rollPrompt.contested && rollPrompt.npcRoll !== undefined
-      ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : rollPrompt.dc
-    const origResult = rolledValue === 20 ? 'critical' : rolledValue === 1 ? 'fumble' : origTotal >= origEffDC ? 'success' : 'failure'
-    const origDisplayData: RollDisplayData = {
-      check: rollPrompt.check, dc: rollPrompt.dc, roll: rolledValue, modifier: rollPrompt.modifier,
-      total: origTotal, result: origResult as RollDisplayData['result'], reason: rollPrompt.reason,
-      advantage: rollPrompt.advantage, rawRolls: rawRolls ?? undefined,
-      contested: rollPrompt.contested, npcRoll: rollPrompt.npcRoll,
-      npcTotal: rollPrompt.contested && rollPrompt.npcRoll !== undefined ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : undefined,
-    }
-    const origData = { value: rolledValue, total: origTotal, result: origResult, displayData: origDisplayData }
-    setOriginalRoll(origData)
-    originalRollRef.current = origData
-
-    // Consume inspiration — update both live state and the pending state on the roll prompt
-    const updated = {
-      ...gameState,
-      character: { ...gameState.character, inspiration: false },
-    }
-    setGameState(updated)
-    saveGameState(updated)
-    // Update pendingState so the consumed inspiration persists through sendContinuation
-    rollPrompt.pendingState = {
-      ...rollPrompt.pendingState,
-      character: { ...rollPrompt.pendingState.character, inspiration: false },
-    }
-
-    // Immediately reroll
-    const isAdvantage = rollPrompt.advantage === 'advantage' || rollPrompt.advantage === 'disadvantage'
-    const newDie1 = Math.floor(Math.random() * 20) + 1
-    const newDie2 = isAdvantage ? Math.floor(Math.random() * 20) + 1 : newDie1
-    const newKept = rollPrompt.advantage === 'advantage' ? Math.max(newDie1, newDie2)
-      : rollPrompt.advantage === 'disadvantage' ? Math.min(newDie1, newDie2)
-      : newDie1
-    setRolledValue(newKept)
-    if (isAdvantage) setRawRolls([newDie1, newDie2])
-    setInspirationOffered(false)
-    setDicePhase('rolling')
-
-    const interval = setInterval(() => {
-      setDiceDisplay(Math.floor(Math.random() * 20) + 1)
-      if (isAdvantage) setDiceDisplay2(Math.floor(Math.random() * 20) + 1)
-    }, 50)
-
-    setTimeout(() => {
-      clearInterval(interval)
-      setDiceDisplay(newDie1)
-      if (isAdvantage) setDiceDisplay2(newDie2)
-      setDicePhase('revealed')
-    }, 700)
-  }, [rollPrompt, gameState, rolledValue])
-
-  const handleDeclineInspiration = useCallback(() => {
-    if (!rollPrompt || rolledValue === null) return
-    setInspirationOffered(false)
-    // Continue with the failed roll
-    const capturedPrompt = { ...rollPrompt, rawRolls: rawRolls ?? undefined }
-    const capturedRoll = rolledValue
-    setRollPrompt(null)
-    setDicePhase('idle')
-    setDiceDisplay(1)
-    setDiceDisplay2(1)
-    setRolledValue(null)
-    setRawRolls(null)
-    setSelectedItemBonus(null)
-    sendContinuation(capturedRoll, capturedPrompt)
-  }, [rollPrompt, rolledValue, rawRolls, sendContinuation])
-
-  // After revealing the dice result, auto-continue to phase 2
-  // Unless: roll failed and player has inspiration → offer reroll (not for damage/healing)
-  useEffect(() => {
-    if (dicePhase !== 'revealed' || rolledValue === null || !rollPrompt) return
-    const isDmgOrHeal = rollPrompt.rollType === 'damage' || rollPrompt.rollType === 'healing'
-    const total = rolledValue + rollPrompt.modifier
-    const npcTot = rollPrompt.contested && rollPrompt.npcRoll !== undefined
-      ? rollPrompt.npcRoll + rollPrompt.contested.npcModifier : null
-    const effectiveDC = npcTot !== null ? npcTot : rollPrompt.dc
-    const isFail = !isDmgOrHeal && rolledValue !== 20 && (rolledValue === 1 || total < effectiveDC)
-    const hasInspiration = gameState?.character.inspiration ?? false
-
-    if (isFail && hasInspiration && !originalRoll) {
-      // Don't auto-continue — show inspiration reroll option (only on first roll, not after reroll)
-      if (!inspirationOffered) setInspirationOffered(true)
-      return  // Always return — never set timeout while inspiration is available
-    }
-
-    const t = setTimeout(() => {
-      const capturedPrompt = { ...rollPrompt, rawRolls: rawRolls ?? undefined }
-      const capturedRoll = rolledValue
-      setRollPrompt(null)
-      setDicePhase('idle')
-      setDiceDisplay(1)
-      setDiceDisplay2(1)
-      setRolledValue(null)
-      setRawRolls(null)
-      setSelectedItemBonus(null)
-      setInspirationOffered(false)
-      setOriginalRoll(null)
-      sendContinuation(capturedRoll, capturedPrompt)
-    }, originalRoll ? 2000 : 1400)  // slightly longer pause when showing inspiration comparison
-    return () => clearTimeout(t)
-  }, [dicePhase, rolledValue, rollPrompt, rawRolls, sendContinuation, gameState, inspirationOffered, originalRoll])
-
   // Attach stat changes to the last GM message as inline tags
   useEffect(() => {
     if (lastStatChanges.length === 0) return
@@ -911,9 +728,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setMessages(displayMessages)
       setQuickActions([])
       setLastStatChanges([])
-      setRollPrompt(null)
-      setDicePhase('idle')
-      setRolledValue(null)
+      rollLogic.setRollPrompt(null)
     },
     [setQuickActions]
   )
@@ -1148,6 +963,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       </div>
     )
   }
+
+  // Destructure roll logic for JSX
+  const {
+    rollPrompt, dicePhase, diceDisplay, diceDisplay2, rolledValue, rawRolls,
+    selectedItemBonus, inspirationOffered, originalRoll, relevantItems,
+    setSelectedItemBonus, handleDiceClick, handleInspirationReroll, handleDeclineInspiration,
+  } = rollLogic
 
   return (
     <div className="flex min-h-screen flex-col">
