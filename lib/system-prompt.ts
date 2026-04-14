@@ -87,8 +87,8 @@ ${ps.vocabulary}
 ${config.deepLore ? `\n${config.deepLore}` : ''}
 ## NPC VOICE
 
-Read the Voice field on each NPC before writing dialogue. Rhythm, not accents. No overused AI names (Aldric, Kael, Voss, Thorne, Ash, Sable, Petra, Renn).
-${config.npcNames ? `**Name pool** — sample from these when naming new NPCs: ${config.npcNames.join(', ')}. You may invent names in the same style but prefer the pool.` : ''}
+Read the Voice field on each NPC before writing dialogue. Rhythm, not accents. Never surface disposition tier labels to the player ("favorable", "wary", "hostile"). Translate disposition into observable NPC behavior: body language, tone, willingness to share, how they position themselves. The player should infer the relationship, not read a label.
+${config.npcNames ? `**Name pool (MANDATORY)** — when naming a new NPC, pick from this list first: ${config.npcNames.join(', ')}. Do not reuse a name already assigned to an existing NPC in the current game. Only invent a name if the pool is exhausted. NEVER use these overused AI defaults: Aldric, Kael, Voss, Thorne, Ash, Sable, Petra, Renn, Elara, Lyra, Seraphina, Corvus, Dax.` : 'No overused AI names (Aldric, Kael, Voss, Thorne, Ash, Sable, Petra, Renn, Elara, Lyra, Seraphina, Corvus, Dax).'}
 ${ps.npcVoiceGuide}
 
 ## D20 MECHANICS
@@ -96,6 +96,19 @@ ${ps.npcVoiceGuide}
 d20 + modifier vs DC. Proficient skills add proficiency bonus. Nat 20: critical + something unexpected. Nat 1: fumble + complication. DC: Easy 8, Moderate 12, Hard 16, Very Hard 20, Nearly Impossible 25+.
 
 **Advantage** when: gear/trait, creative tactic, favorable circumstances, Trusted disposition, cohesion 5. **Disadvantage** when: prior failure suspicion, Hostile/Wary disposition, cohesion 2, environmental hazard, weak stat exploited, hull <30%. Both → cancel. High trust grants advantage, never eliminates the roll.
+
+## SKILL SELECTION
+
+Match the check to the CHARACTER'S APPROACH, not the situation category. A WIS-primary character approaching a negotiation by reading intent uses Insight, not Persuasion. A CHA-primary character performing charm uses Persuasion. Same situation, different skill, because the method is different.
+
+- Reading intent, detecting lies, evaluating trustworthiness → Insight (WIS)
+- Noticing something hidden, scanning a room, spotting danger → Perception (WIS)
+- Convincing through argument or charm → Persuasion (CHA)
+- Convincing through threat → Intimidation (CHA)
+- Analyzing evidence, recalling knowledge → Investigation (INT)
+- Tracking, navigating, reading terrain → Survival (WIS)
+
+Check the PC line for their primary stat. The skill that matches both the approach AND the character's strengths is usually the right call.
 
 ## ROLL DISCIPLINE
 
@@ -977,6 +990,7 @@ const ANTAGONIST_METHODS: Record<string, string> = {
 function detectRollGate(
   playerMessage: string,
   sceneNpcs: Array<{ name: string; disposition?: string; role?: string; status?: string }>,
+  primaryStat?: string,
 ): string | null {
   const msg = playerMessage.toLowerCase()
 
@@ -1003,7 +1017,10 @@ function detectRollGate(
   if (socialVerbs.test(msg) && activeSceneNpcs.length > 0) {
     const targetNpc = activeSceneNpcs.find(n => msg.includes(n.name.toLowerCase())) || activeSceneNpcs[0]
     const tier = (targetNpc.disposition || 'neutral').toUpperCase()
-    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: social manipulation (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — Persuasion, Deception, or Intimidation\nDo NOT narrate ${targetNpc.name}'s response without a check result.`
+    const socialSkills = primaryStat === 'WIS' ? 'Insight, Persuasion, or Perception'
+      : primaryStat === 'INT' ? 'Investigation, Deception, or Insight'
+      : 'Persuasion, Deception, or Intimidation'
+    return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: social manipulation (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — ${socialSkills}\nDo NOT narrate ${targetNpc.name}'s response without a check result.`
   }
 
   // Physical action — always fires
@@ -1025,7 +1042,10 @@ function detectRollGate(
     if (targetNpc && targetNpc.disposition !== 'trusted') {
       const tier = (targetNpc.disposition || 'neutral').toUpperCase()
       const contested = ['hostile', 'wary'].includes(targetNpc.disposition || '') ? ' (contested)' : ''
-      return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: information extraction (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — Persuasion or Insight${contested}\nDo NOT narrate ${targetNpc.name}'s answer without a check result.`
+      const infoSkills = primaryStat === 'WIS' ? 'Insight or Perception'
+        : primaryStat === 'INT' ? 'Investigation or Insight'
+        : 'Persuasion or Insight'
+      return `[ROLL GATE]\nPlayer action: "${msg.slice(0, 80)}"\nDetected: information extraction (NPC: ${targetNpc.name} [${tier}])\nREQUIRED: pending_check — ${infoSkills}${contested}\nDo NOT narrate ${targetNpc.name}'s answer without a check result.`
     }
   }
 
@@ -1489,7 +1509,8 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 ${combatSection}
 ${historySection}
 ${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
-    const rollGate = detectRollGate(currentMessage, sceneNpcs)
+    const primaryStat = Object.entries(c.stats).reduce((a, b) => a[1] > b[1] ? a : b)[0]
+    const rollGate = detectRollGate(currentMessage, sceneNpcs, primaryStat)
     return rollGate ? '\n' + rollGate : ''
   })() : ''}${(() => {
     // Close timing enforcement
