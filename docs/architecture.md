@@ -44,7 +44,8 @@ API route handler. Core responsibilities:
 - **Tool loop** (`runToolLoop`): streams Claude response, collects tool calls, handles pending_check interception. Typically single-pass (narrative + commit_turn). Chapter close allows up to 3 rounds but targets 1 (all steps batched into a single commit_turn).
 - **Roll resolution continuation**: when `rollResolution` is present, reconstructs the conversation from `pendingMessages`, appends the roll result as a tool_result, and continues the Claude stream
 - **Auto-chain damage**: after a successful combat hit roll, automatically sends a damage roll_prompt to the client without going back to Claude (parses weapon damage from inventory)
-- **Overload retry**: catches 529/503/502, sends `retrying` event with delay, retries once
+- **Overload retry**: catches 529/503/502, retries up to 3 times with exponential backoff (5s/10s/20s)
+- **ensureActions**: after `runToolLoop` completes, checks if `commit_turn` included `suggested_actions`. If missing, makes a lightweight follow-up call (cache-warm) asking Claude for just the action buttons. Fires before the `done` event so the player sees one continuous loading state
 - **Branching paths**: normal turn, roll resolution, chapter close, audit (Haiku), summarize (Haiku), meta question
 
 Model: configurable via `STORYFORGE_MODEL` env var, defaults to `claude-sonnet-4-6`.
@@ -60,17 +61,32 @@ Exported tool sets:
 - `auditTools` = [commit_turn]
 - `metaTools` = [meta_response]
 
-### `lib/tool-processor.ts`
+### `lib/tool-processor.ts` (dispatcher)
 
-Applies `commit_turn` input to GameState. Domain handlers:
-
-- **Character**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns
-- **World**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier), location, time, scene snapshot, threads, promises, decisions, factions, antagonist (establish/move/defeat), cohesion (score derivation from log), ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
-- **Combat**: start (spawn enemies), end (loot, credits)
-- **Story Arcs**: arc_updates (create_arc, advance_episode, resolve_arc, abandon_arc, add_episode). Arcs persist across chapters; episodes are chapter-scoped milestones decomposed at chapter start. Arc advancement happens during the close sequence.
-- **Meta**: suggested_actions, chapter_frame, signal_close, close_chapter (archives messages, resets chapter-scoped state via `resetChapterCounters`), debrief, scene_end
+Dispatcher that routes `commit_turn` input to domain handlers in `lib/tool-handlers/`. Also handles `origin_event` and `spend_witness` inline, plus `_roll_record` and `_story_summary` internal tools. Exports shared types (`CommitTurnInput`, `StatChange`) and the `dbg()` debug helper used by all handlers.
 
 Returns: updated GameState + array of `StatChange` objects for UI display.
+
+### `lib/tool-handlers/`
+
+Domain handlers that apply `commit_turn` mutations to GameState:
+
+- **`character.ts`**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns
+- **`world.ts`**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier), location, time, scene snapshot, threads, promises, decisions (with origin counter auto-tick), factions, antagonist (establish/move/defeat), cohesion, ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
+- **`combat.ts`**: start (spawn enemies), update enemies, end (loot, credits), auto-end when no enemies remain
+- **`narrative.ts`**: chapter_frame (with mid-chapter refinement gating), signal_close, close_chapter (archives messages, resets chapter-scoped state), debrief, scene summaries, objective status, pivotal scenes, story arcs (create/advance/resolve/abandon/add_episode)
+
+### `lib/stream-parser.ts`
+
+Extracted stream event processor. Pure state machine: `processStreamEvent(event, state, gmMsgId, isMetaQuestion, callbacks)` takes a parsed stream event, updates accumulated parser state, and calls callbacks for React side effects. Used by `streamRequest` in game-screen.tsx.
+
+### `lib/npc-utils.ts`
+
+Shared NPC fuzzy name matching: `findNpcByName(npcs, name)` and `findNpcIndexByName(npcs, name)`. Used by world handler and game-data deduplication.
+
+### `components/game/use-roll-logic.ts`
+
+Roll state machine hook. Owns 7 roll-related states (`rollPrompt`, `dicePhase`, `diceDisplay`, `diceDisplay2`, `rolledValue`, `rawRolls`, `selectedItemBonus`, `inspirationOffered`, `originalRoll`), `relevantItems` memo, and 3 handlers (`handleDiceClick`, `handleInspirationReroll`, `handleDeclineInspiration`). Auto-continue effect included. Communicates with `sendContinuation` via ref bridge to break circular dependency.
 
 ### `lib/rules-engine.ts`
 
