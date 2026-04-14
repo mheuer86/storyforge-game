@@ -1467,7 +1467,7 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
 
   return `PRESSURE: ${pressureLine}${weakLine ? ' | ' + weakLine : ''}${loreAnchors}
 
-ORIGIN: ${c.species} — ${(() => { const o = config.species.find(s => s.name === c.species); return o?.behavioralDirective || o?.lore || 'No special traits.'; })()}
+ORIGIN: ${c.species} — ${(() => { const o = config.species.find(s => s.name === c.species); return o?.behavioralDirective || o?.lore || 'No special traits.'; })()}${(() => { const o = config.species.find(s => s.name === c.species); if (o?.hidden && o?.shiftedMechanic) { const m = o.shiftedMechanic; return `\nSHIFTED MECHANIC: ${m.name} — ${m.description} COST: ${m.cost}`; } return ''; })()}
 PC: ${c.name} | ${c.species} ${c.class} L${c.level} | HP ${c.hp.current}/${c.hp.max} | AC ${c.ac} | ${c.credits} ${config.currencyAbbrev}${ledgerSuffix} | Prof +${c.proficiencyBonus} | PP ${10 + getStatModifier(c.stats.WIS)} | Insp: ${c.inspiration ? 'YES' : 'no'}${exhaustionTag} | ${pronouns}${c.hp.current <= 0 ? `\n⚠ DEATH STATE: ${c.name} is at 0 HP. MANDATORY: Character is unconscious. Propose a death save (d20, DC 10) via pending_check IMMEDIATELY. No other actions possible. Enemies do NOT attack an unconscious target unless narratively motivated. Three successes = stabilize at 1 HP. Three failures = permanent death. Nat 20 = regain 1 HP. Nat 1 = two failures. A companion may attempt to stabilize (Medicine DC 10) instead.` : ''}
 STATS: ${statLine}
 PROF: ${c.proficiencies.join(', ')}

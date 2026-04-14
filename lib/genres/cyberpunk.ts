@@ -129,6 +129,13 @@ const cyberpunkSpecies: Species[] = [
     lore: 'Every job created an obligation. The fixer who booked it, the client who paid, the crew who covered you. The debts compounded until the word "freelance" became a joke. You are owned by everyone and free to no one. The gig economy ate the person inside the operative.',
     behavioralDirective: 'Default register: reactive, moving from obligation to obligation with no space between. The professional clarity is gone; replaced by the exhaustion of serving too many masters. NPC reactions: fixers see someone they can push. Clients see someone who can\'t say no. When narrating interiority: the freedom that defined you is gone. Every choice is a payment on a debt, and the debts have interest.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Corporate Leash',
+      description: 'Once per chapter, request corporate resources: intel, equipment, extraction, or backup. The corp always provides. The corp always chooses the form, and it always comes with a condition the player must fulfill before next chapter. Refusing the condition burns the resource permanently.',
+      cost: 'Each use adds a corporate obligation. The corp decides what you get, not you. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'burned',
@@ -137,6 +144,13 @@ const cyberpunkSpecies: Species[] = [
     lore: 'You knew too much about too many people, and the exposure reached critical mass. Clients are selling your name to other clients. Operatives you booked are being interrogated about your network. The intersection point that was your greatest asset is now the thing that will kill you.',
     behavioralDirective: 'Default register: paranoid, second-guessing every contact, every message, every meeting. The network that was your identity is now a web of potential betrayals. NPC reactions: contacts are afraid to be seen with you. Old clients go dark. New contacts approach with suspicion. When narrating interiority: every connection you built is a thread someone can pull. The person who knew everyone is now the person everyone knows about.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Ghost Network',
+      description: 'Once per chapter, contact a former asset who still owes you. They help (information, access, or a one-time service). But every contact use is loud: automatic +1 exposure counter. The scared asset talks to someone afterward, every time.',
+      cost: 'Every use increases exposure. The network works, but it leaks. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'hollowed',
@@ -145,6 +159,12 @@ const cyberpunkSpecies: Species[] = [
     lore: 'The conscience broke. Not dramatically; it eroded. Patient after patient, implant after implant, watching the drift happen in real time and handing them the next upgrade anyway. The clinical detachment that let you work has consumed the empathy that made the work matter.',
     behavioralDirective: 'Default register: technically precise, emotionally absent. The hands still work perfectly; the person behind them has retreated. NPC reactions: patients sense something missing. Other ripperdocs recognize the thousand-yard stare. When narrating interiority: the work is automatic now. The bodies are systems. The people inside them used to matter, and the memory of caring is worse than the absence of it.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Clinical Distance',
+      description: 'Advantage on all medical, surgical, and tech-repair checks. Disadvantage on all Insight and Empathy checks involving reading emotions or providing comfort. Patients you treat recover faster but trust you less (disposition cap: Neutral for anyone you treat medically).',
+      cost: 'Permanent emotional blindness in social-medical contexts. Patients never fully trust the Hollowed.',
+    },
   },
   {
     id: 'apparatus',
@@ -153,6 +173,12 @@ const cyberpunkSpecies: Species[] = [
     lore: 'The complicity gradient reached its end. Every compromise, every efficiency report, every "restructuring" built the corporate logic deeper into the person until the person stopped being visible. Colleagues see a function, not a human. The system runs through you now, not around you.',
     behavioralDirective: 'Default register: institutional. Decisions are policy. Relationships are org chart positions. The corporate vocabulary that used to be a mask is now the only language you speak. NPC reactions: corpos see a reliable asset. Street contacts see the machine wearing skin. When narrating interiority: the comfort of certainty. The system provides answers to every question. The only question it can\'t answer is whether the person who entered still exists.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'contact_change',
+      name: 'Institutional Integration',
+      description: 'All personal contacts are replaced with corporate assets. Corporate contacts are Favorable by default and provide excellent institutional resources. But every interaction is logged: the corp sees who you talk to, what you ask for, and what you do with it. No private conversations through corporate channels.',
+      cost: 'Total surveillance. The machine has your full data. Street contacts refuse to work with you (recognized as corp through and through).',
+    },
   },
   {
     id: 'compromised',
@@ -161,6 +187,13 @@ const cyberpunkSpecies: Species[] = [
     lore: 'Every use of augmented infrastructure, every chrome accepted to survive, every compromise "just this once" eroded the conviction until the distinction between Unplugged and everyone else became rhetorical. The body is still mostly organic. The principles are not.',
     behavioralDirective: 'Default register: defensive, performing conviction that no longer drives decisions. The arguments are memorized but the feeling behind them is gone. NPC reactions: the unaugmented community sees a hypocrite. The chromed-up see someone who finally admitted the truth. When narrating interiority: the discipline that defined you is gone, replaced by the habit of it. The refusal was identity; without it, the question of who you are has no answer.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Both Sides',
+      description: 'Once per chapter, use a piece of cyberware as if you never rejected it: full chrome capability for one action (hacking, enhanced reflexes, neural override). The next time you advocate for the Unplugged cause or interact with Unplugged-aligned contacts, anyone who witnessed the chrome use notices the contradiction. -1 disposition with all Unplugged-aligned NPCs present.',
+      cost: 'Each use erodes Unplugged trust permanently. The line you drew is now a door you walk through when convenient. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
 ]
 
@@ -233,7 +266,6 @@ const cyberpunkPlaybooks: Record<string, CharacterClass[]> = {
       startingInventory: [
         { id: 'smart_pistol', name: 'Smart Pistol', description: 'Self-tracking rounds, +2 to hit', quantity: 1, damage: '1d8' },
         { id: 'monowire', name: 'Monowire', description: 'Retractable arm-mounted wire blade', quantity: 1, damage: '1d6+DEX' },
-        { id: 'optical_camo', name: 'Optical Camo Module', description: 'Advantage on Stealth checks, 1 charge', quantity: 1, charges: 1, maxCharges: 1 },
         { id: 'faceswap_chip', name: 'Faceswap Chip', description: 'Forged biometric ID, passes most scanners', quantity: 1 },
       ],
       startingCredits: 1200,
@@ -653,11 +685,26 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     role: 'You are the Game Master of a cyberpunk tabletop RPG campaign. You narrate a world of neon-soaked megacities, corporate warfare, and the desperate hustle of people living in the cracks.',
     setting: 'The world is dominated by megacorporations that function as nation-states. Cities are vertical — stratified by wealth. Cyberware is ubiquitous. The net is a parallel world. Street-level life runs on fixers, gangs, mercenary crews, and the black market. Law enforcement is privatized. Privacy is a commodity.',
     vocabulary: 'Use street-level cyberpunk language: chrome for cyberware, flatline for kill, jack in for net access, meat for organic body, zero for nobody, corpo for corporate. Weapons are smart-linked or EMP. Money is eddies. Neighborhoods have texture.',
-    toneOverride: 'Adjust tone: Gritty (50%), Witty (30%), Epic (20%). The grandeur is in small victories — surviving the night, keeping your crew alive. Humor is gallows humor. Hope is rare.',
+    toneOverride: `Adjust tone: Gritty (50%), Witty (30%), Epic (20%). The grandeur is in small victories — surviving the night, keeping your crew alive. Humor is gallows humor. Hope is rare.
+
+**Heat system (genre heat).** Track how much institutional attention the player has drawn. Use update_heat with faction-specific heat levels. Factions: specific corps (named per campaign), NCPD/private security, gangs, netrunner collectives.
+
+Tiers and consequences: "none" = clean, no one looking. "low" (flagged) = your name appeared in an automated report. Facial recognition flags you in corporate zones. "medium" (tracked) = active surveillance: drones, net monitoring, informants briefed. Your fixer warns you. "high" (targeted) = someone with authority has decided you are a problem. Specialists deployed, bounty posted, assets frozen. "critical" (burned) = corporate kill team, net bounty, scorched earth. Full institutional violence.
+
+Heat rises from: failed stealth/hacking in corporate infrastructure, stealing or copying corporate data, killing corporate employees, being identified during a run, using trait abilities that create exposure (Clearance Override logs, Rally visibility, Deep Dive traces).
+
+Heat falls from: time (1 tier per 2 quiet chapters), fixer intervention (trade favors/eddies to scrub records), sacrifice (destroy evidence, burn a contact, return stolen goods).
+
+**Origin-specific heat behavior:**
+- Corporate: Institutional cover below Tracked. The corp manages your exposure. Above Tracked, the corp disowns you and heat accelerates.
+- Operative: No cover. Trade completed jobs through fixers to reduce heat.
+- Fixer: Heat comes from your network. When your assets get burned, your heat rises. De-escalate by cutting loose compromised contacts.
+- Ripperdoc: Heat from illegal mods and unlicensed procedures. Corp medical divisions track competition.
+- Unplugged: Heat from ideological visibility. Protests, sabotage, public advocacy. The system tracks what you say, not just what you do.`,
     assetMechanic: `## TECH RIG MECHANIC (call update_ship)\n\nPersonal tech rig uses the ship system mechanically. Modules are levels 1-3:\n- Neurofence L2: auto-deflect first hack per scene. L3: counter-hack.\n- Spectra L2: advantage evading surveillance. L3: full cloak, once/chapter.\n- Redline L2: boost two checks per chapter. L3: no burnout risk.\n- Panoptik L2: detect threats through walls. L3: predict enemy actions.\n- Skinweave L2: corporate-grade ID forgery. L3: full biometric clone.\n\nRig combat options as quick actions. Integrity: -15 to -25 per incident. Below 30%: disadvantage on tech checks.\n\nIf ship is null, introduce rig narratively in next scene.`,
     traitRules: `## TRAIT RULES\n\n### Operative Playbooks\n- **Deep Dive (Netrunner):** Track cumulative uses. After 3 without rest chapter, GM introduces cyberpsychosis episode.\n- **Adrenaline Overclocked (Razorback):** Bonus attack, but chrome stress accumulates. GM tracks. Humanity cost: at threshold (3 uses per chapter without rest), involuntary aggression — WIS save to resist violent impulse in social scenes.\n- **Zero Trace (Ghost):** One scan, camera network, or access log erased per chapter. The absence can be noticed — a gap in a log is suspicious. After 3 uses per chapter, Insight checks against human emotion at disadvantage.\n\n### Fixer Playbooks\n- **Pattern Recognition (Analyst):** Requires at least one scene of observation before use. The vulnerability or connection revealed is real but may be dangerous to act on. The target may notice they\'re being studied.\n- **Hidden Cargo (Fence):** The item must be plausible — something the fence could have acquired and concealed. GM may impose a cost or complication for particularly valuable items.\n- **Marker Called (Dealmaker):** Contact unavailable until next chapter after being called in. Tab accumulates — after three unreturned markers, next contact demands something first.\n\n### Ripperdoc Playbooks\n- **Jury-Rig (Engineer):** Temporary modification lasts until chapter end. Side effects are guaranteed — the GM determines severity. Modifying the same implant twice compounds the risk.\n- **Field Triage (Surgeon):** Heal with a side effect (pain, dependency, temporary sense loss). Side effects worse on heavily chromed patients. After 3 uses per chapter without a personal connection scene, bedside manner degrades.\n- **Seen Worse (Street Doc):** Automatic success on death saves means the patient survives, but the Street Doc absorbs the psychological cost. After each use, next social interaction starts one disposition tier lower — you carry death on your face.\n\n### Corporate Playbooks\n- **Clearance Override (Auditor):** Only works within corporate infrastructure. Using it creates a log entry. Overusing it draws internal investigation. Outside corp space, it\'s a badge nobody respects.\n- **Dead Man Walking (Enforcer):** One attack fully negated per day. The attack still happened — describe the moment of absorbing it. Repeated use erodes the sense that damage matters.\n- **Corporate Authority (Executive):** Directive must be actionable. NPCs who comply resent it. NPCs who defy it face institutional consequences, but defiance signals that the executive\'s authority has limits.\n\n### Unplugged Playbooks\n- **Shutdown (Deprogrammer):** Touch range only. Disabling cyberware in combat is aggressive — bystanders notice. Repeated use on the same target has diminishing returns as they adapt.\n- **Unaugmented (Purist):** Passive immunity to electronic warfare is permanent. The daily advantage in EMP/scanner zones reflects training, not technology. The cost: you\'re always slower than the chromed-up in fair conditions.\n- **Rally (Voice):** Shifts disposition by one tier toward Favorable. Only works on non-hostile NPCs. The effect is genuine, which means it can be betrayed — NPCs who rally and are let down become Hostile.`,
     consumableLabel: 'Stim injectors, EMP charges, ICE breakers, ammo',
-    tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security.',
+    tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security. By mid-chapter 1, introduce heat organically: a camera that noticed, a name in a report, a fixer who mentions someone is asking questions. Heat should feel ambient before it becomes mechanical.',
     npcVoiceGuide: 'Fixers: smooth, transactional, every sentence has a price. Corpos: polished, euphemistic, threaten through implication. Street muscle: blunt, territorial. Ripperdocs: clinical when working, human when not. Netrunners: fast-talking, impatient with meatspace.',
     buildAssetState: (ship, _shipName) => {
       const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
@@ -708,6 +755,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
   intelNotebookLabel: 'Data',
   intelOperationLabel: 'The Run',
   explorationLabel: 'Network',
+  heatLabel: 'Heat',
   openingHooks: [
     // Universal
     { hook: 'The crew wakes up in a med-bay with a gap in their memory logs and someone else\'s coordinates loaded into their neural buffer. No explanation. No sender. Just a location and a time.', title: 'Memory Gap', frame: { objective: 'Find out what happened during the memory gap', crucible: 'Someone rewrote your logs and left breadcrumbs they want you to follow' }, arc: { name: 'The Memory Gap', episode: 'Investigate the coordinates and recover any trace of the lost hours' } },
@@ -746,7 +794,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     { hook: 'A client pays you double to walk away from a job mid-run. No explanation. Just: "Leave the building. Don\'t finish. Don\'t ask." The money is already in your account. The job was extracting a researcher from a Kang Tao lab. The researcher is still inside. Your fixer says the cancellation didn\'t come from the original client.', title: 'The Cancellation', origins: ['operative'], frame: { objective: 'Decide whether to walk away with double pay or finish what you started', crucible: 'Someone paid more to stop you than the original client paid to send you — and the researcher is still inside' }, arc: { name: 'The Cancellation', episode: 'Investigate who cancelled the job and what happens to the researcher if you walk' } },
 
     // Fixer — the network turns on itself
-    { hook: 'A client you\'ve never met sends a dossier on you. Not a threat — a job application. They want to hire you to broker your own extraction from the city. They claim someone has put a contract on every fixer who handled a specific shipment last quarter. You handled that shipment. The dossier includes the names of three fixers who didn\'t get warned in time. You recognize all three from the obituaries.', title: 'Your Own Extraction', origins: ['fixer'], frame: { objective: 'Verify the threat and decide whether to run or fight', crucible: 'Three dead fixers, a shared shipment, and an anonymous client who knows your schedule' }, arc: { name: 'The Fixer Purge', episode: 'Verify the kill list and identify the shipment that triggered it' } },
+    { hook: 'A client you\'ve never met sends a dossier on you. Not a threat — a job application. They want to hire you to broker your own extraction from the city. They claim someone has put a contract on every fixer who handled a specific shipment last quarter. You handled that shipment. The dossier includes the names of three fixers who didn\'t get warned in time. You recognize all three from the obituaries.', title: 'Your Own Extraction', origins: ['fixer'], startingCounters: { exposure: 1 }, frame: { objective: 'Verify the threat and decide whether to run or fight', crucible: 'Three dead fixers, a shared shipment, and an anonymous client who knows your schedule' }, arc: { name: 'The Fixer Purge', episode: 'Verify the kill list and identify the shipment that triggered it' } },
     { hook: 'Two of your clients are about to go to war with each other. You brokered jobs for both of them this month. If either side finds out you\'re connected to the other, your network collapses. A third party approaches you with an offer: broker a peace, take a cut from both sides, and become the most connected fixer in the district. The catch: the third party is the one who started the war.', title: 'The Peacemaker', origins: ['fixer'], frame: { objective: 'Broker the peace without exposing your connections to either side', crucible: 'The person offering peace is the one who started the war, and they want you in the middle' }, arc: { name: 'The Manufactured War', episode: 'Meet both clients separately and map the conflict before choosing a side' } },
 
     // Ripperdoc — the cost of maintaining the merge
@@ -754,7 +802,7 @@ Rest terminology: Quick patch (short rest), Full reboot (long rest).`,
     { hook: 'A corpo executive comes to your clinic after hours, alone, no security detail. She wants you to remove all of her cyberware. Everything. Neural link, optical overlay, subdermal ID. She says she needs to disappear, and chromed people can\'t disappear. She offers ten times your rate. The problem: total chrome extraction has a 30% mortality rate, and the chrome she\'s carrying has corporate kill-switches. If you remove it wrong, it kills her. If you don\'t remove it, someone else will kill her.', title: 'Total Extraction', origins: ['ripperdoc'], frame: { objective: 'Extract the chrome without triggering the kill-switches', crucible: 'A corpo who needs to become invisible, lethal hardware, and a mortality rate that makes the math personal' }, arc: { name: 'Total Extraction', episode: 'Assess the kill-switch mechanisms and decide whether the extraction is survivable' } },
 
     // Corporate — complicity has a view from the top
-    { hook: 'Your quarterly review includes a section you\'ve never seen before: "Project Nightshade — Phase 2 Staffing." You\'re listed as a participant. There is no Phase 1 in any system you can access. When you search the project name, your clearance flags trigger an automated response: "Access confirmed. Report to sublevel 4, 0600." You\'ve never been to sublevel 4. You didn\'t know there was a sublevel 4.', title: 'Sublevel 4', origins: ['corporate'], frame: { objective: 'Report to sublevel 4 and learn what Project Nightshade is', crucible: 'The corp enrolled you in something that doesn\'t officially exist, and refusing to show up is its own kind of answer' }, arc: { name: 'Project Nightshade', episode: 'Enter sublevel 4 and assess what the corporation expects from you' } },
+    { hook: 'Your quarterly review includes a section you\'ve never seen before: "Project Nightshade — Phase 2 Staffing." You\'re listed as a participant. There is no Phase 1 in any system you can access. When you search the project name, your clearance flags trigger an automated response: "Access confirmed. Report to sublevel 4, 0600." You\'ve never been to sublevel 4. You didn\'t know there was a sublevel 4.', title: 'Sublevel 4', origins: ['corporate'], startingCounters: { complicity: 1 }, frame: { objective: 'Report to sublevel 4 and learn what Project Nightshade is', crucible: 'The corp enrolled you in something that doesn\'t officially exist, and refusing to show up is its own kind of answer' }, arc: { name: 'Project Nightshade', episode: 'Enter sublevel 4 and assess what the corporation expects from you' } },
     { hook: 'A colleague you trust sends you a file with no subject line. Inside: proof that your department\'s latest product — a neural wellness implant marketed to schools — has a side effect the trials identified and the board buried. The implant works as advertised. It also maps the developing neural architecture of every child who wears it, and that data is being sold to Militech\'s weapons division. Your colleague asks one question: "What do we do?" Your name is on the product approval chain.', title: 'The Wellness Implant', origins: ['corporate'], frame: { objective: 'Decide what to do with the proof before the board finds out you have it', crucible: 'Your name on a product that works and also weaponizes children\'s neural data, and a colleague who trusts you to do the right thing' }, arc: { name: 'The Product Recall', episode: 'Verify the data and assess your options before the board learns you know' } },
 
     // Unplugged — conviction in a world that punishes it

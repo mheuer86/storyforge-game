@@ -91,6 +91,12 @@ const spaceOperaSpecies: Species[] = [
     lore: 'The human advantage was fitting in anywhere. The cost was belonging nowhere. The isolation pushed past comfort into permanence: every port is temporary, every crew is transactional, every connection dissolves on departure.',
     behavioralDirective: 'Default register: passing through. Present, competent, and already leaving. NPC reactions: people sense the impermanence and stop investing. Crew treats you as effective but replaceable because you treat them the same way. When narrating interiority: every place feels like a layover. The freedom of being no one in particular has become the prison of being no one to anyone.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'No Ties',
+      description: 'Advantage on all checks to leave, escape, or disengage from a situation (the Untethered is always ready to go). Disadvantage on all checks to build lasting relationships, negotiate long-term agreements, or inspire loyalty. Crew cohesion bonuses from the Untethered\'s actions are halved. You are effective but no one counts on you.',
+      cost: 'Halved cohesion contribution. Relationships cannot deepen past Neutral through social means alone.',
+    },
   },
   {
     id: 'severed',
@@ -99,6 +105,13 @@ const spaceOperaSpecies: Species[] = [
     lore: 'Too many intercepted signals, too many broken channels. The Vrynn communication network that was a species-wide advantage has become a liability. Every channel is suspect.',
     behavioralDirective: 'Default register: cut off from the network that defined your species. The communication instinct is still there but every channel feels compromised. NPC reactions: Vrynn contacts are cautious. Non-Vrynn contacts don\'t understand what was lost. When narrating interiority: the silence where the network used to be is not quiet; it is absence.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Dead Channel',
+      description: 'Once per chapter, intercept a communication not intended for you. The Severed\'s broken network still picks up fragments; the channels are compromised in both directions. The intercepted message is always real and useful. But the interception is detectable: the sender knows someone was listening within 24 hours.',
+      cost: 'Each interception is traceable. The broken network leaks in both directions. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'the-diplomat',
@@ -107,6 +120,13 @@ const spaceOperaSpecies: Species[] = [
     lore: 'The Korath gift for directness required positions worth defending. Too many compromises have eroded every position to nothing. Sincerity is indistinguishable from tactic.',
     behavioralDirective: 'Default register: no position is genuine, including this one. The diplomatic instinct operates perfectly but serves nothing. NPC reactions: allies question sincerity. Enemies don\'t bother with threats because they know you\'ll fold. When narrating interiority: the skill of finding common ground has consumed the ground you were standing on.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Empty Accord',
+      description: 'Once per chapter, broker an agreement between two hostile parties. The agreement always holds for this chapter. But the Diplomat\'s sincerity is gone; the agreement has a hidden flaw that one party will discover next chapter. The GM determines which party discovers the flaw and how they react.',
+      cost: 'Agreements made by the Diplomat have a built-in expiration. Trust in your brokering erodes over time. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'the-observer',
@@ -115,6 +135,12 @@ const spaceOperaSpecies: Species[] = [
     lore: 'The Sylphari analytical gift has consumed the person wielding it. Observation has replaced participation. Emotional situations produce hypotheses, not responses.',
     behavioralDirective: 'Default register: observing, cataloguing, not participating. NPC reactions: companions feel studied, not known. New contacts sense an absence. When narrating interiority: every person is a pattern, every event is data, and the part of the mind that used to feel things now files them for later analysis.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Total Recall',
+      description: 'Advantage on all Investigation, Perception, and Analysis checks (the Observer misses nothing). Disadvantage on all checks requiring emotional engagement: rallying crew, comforting allies, reading emotional subtext (as opposed to factual deception). Crew members\' personal loyalty quests cannot be triggered by the Observer; only shared tactical victories build cohesion.',
+      cost: 'Cannot trigger crew loyalty arcs. The precision is perfect. The connection is clinical.',
+    },
   },
   {
     id: 'marked',
@@ -123,6 +149,12 @@ const spaceOperaSpecies: Species[] = [
     lore: 'The Zerith talent for reinvention requires anonymity. The reputation has grown past the point where a new identity can contain it. Every port knows the name, every job comes with expectations.',
     behavioralDirective: 'Default register: the name arrives before you do, and it tells a story you can no longer edit. NPC reactions: strangers have opinions before you speak. Jobs are offered based on legend, not need. When narrating interiority: the freedom to be anyone has collapsed into being one specific person that everyone recognizes.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'The Legend',
+      description: 'All NPCs who have heard of you (most, in civilized space) start with a pre-formed opinion: +1 disposition tier for those who admire the legend, -1 for those who fear or resent it. The GM determines which based on NPC personality. Advantage on first-impression checks (the name does the work). But Disguise and Deception checks to hide your identity are at disadvantage: the legend is too recognizable.',
+      cost: 'Cannot operate anonymously. Every port knows the name. The freedom to reinvent is gone.',
+    },
   },
 ]
 
@@ -721,11 +753,11 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
 
     // Vrynn — the network
     { hook: 'The Vrynn diaspora\'s communication network, the one that operates below faction awareness and keeps scattered Vrynn communities connected, has been infiltrated. Someone is injecting false signals, subtly redirecting intelligence, and turning Vrynn contacts against each other. Three communities have already gone silent. The diaspora leadership suspects the infiltrator is Vrynn.', title: 'False Signal', origins: ['vrynn'], frame: { objective: 'Identify the infiltrator before the diaspora network collapses', crucible: 'The communication network your species depends on is being corrupted from inside, and trust is the first casualty' }, arc: { name: 'False Signal', episode: 'Trace the false signals to their injection point' } },
-    { hook: 'A Compact-era military intelligence archive, sealed since the Fracture, has begun broadcasting on Vrynn frequencies. The archive contains every intelligence operation the Compact ran through Vrynn operatives: names, methods, assets. If a faction intercepts it, every Vrynn who ever worked intelligence is exposed. The broadcast is automated and accelerating. Someone needs to reach the archive and shut it down before the next burst.', title: 'The Archive Broadcast', origins: ['vrynn'], frame: { objective: 'Reach the archive and stop the broadcast before Vrynn operatives are exposed across the galaxy', crucible: 'A dead intelligence service is burning its own agents, and the countdown between bursts is getting shorter' }, arc: { name: 'The Archive Broadcast', episode: 'Locate the archive and assess whether shutting it down is possible before the next burst' } },
+    { hook: 'A Compact-era military intelligence archive, sealed since the Fracture, has begun broadcasting on Vrynn frequencies. The archive contains every intelligence operation the Compact ran through Vrynn operatives: names, methods, assets. If a faction intercepts it, every Vrynn who ever worked intelligence is exposed. The broadcast is automated and accelerating. Someone needs to reach the archive and shut it down before the next burst.', title: 'The Archive Broadcast', origins: ['vrynn'], startingCounters: { signal_debt: 1 }, frame: { objective: 'Reach the archive and stop the broadcast before Vrynn operatives are exposed across the galaxy', crucible: 'A dead intelligence service is burning its own agents, and the countdown between bursts is getting shorter' }, arc: { name: 'The Archive Broadcast', episode: 'Locate the archive and assess whether shutting it down is possible before the next burst' } },
 
     // Zerith — freedom in chaos
     { hook: 'A Zerith settlement, one of the few permanent ones in the galaxy, has declared independence from the sector\'s dominant Corporate Bloc. The corporation\'s response is a trade embargo that will starve the settlement in three months. The settlement\'s leader is offering Zerith freelancers a deal: break the embargo, and you get a home port. A permanent one. No Zerith has had a permanent home in living memory.', title: 'Home Port', origins: ['zerith'], frame: { objective: 'Break the corporate embargo and decide whether a home port is worth what it costs', crucible: 'A permanent home for a species that has never had one, if you can break a blockade run by the galaxy\'s most powerful faction' }, arc: { name: 'Home Port', episode: 'Scout the embargo line and assess whether the settlement can survive long enough for a run' } },
-    { hook: 'A Zerith broker you respect is dead. Killed at a station where killing is supposed to be impossible. The station\'s AI recorded everything and has sealed the evidence pending a formal investigation that will never happen, because the faction that runs the station is the faction that benefits from the broker\'s death. The AI is offering you access to the recordings. In exchange, it wants you to do something for it. It won\'t say what until you agree.', title: 'The AI\'s Price', origins: ['zerith'], frame: { objective: 'Get the recordings and find who killed the broker, without agreeing to something worse', crucible: 'A dead friend, sealed evidence, and an AI that wants a favor it won\'t define' }, arc: { name: 'The AI\'s Price', episode: 'Negotiate with the AI and view enough of the recordings to identify the killer' } },
+    { hook: 'A Zerith broker you respect is dead. Killed at a station where killing is supposed to be impossible. The station\'s AI recorded everything and has sealed the evidence pending a formal investigation that will never happen, because the faction that runs the station is the faction that benefits from the broker\'s death. The AI is offering you access to the recordings. In exchange, it wants you to do something for it. It won\'t say what until you agree.', title: 'The AI\'s Price', origins: ['zerith'], startingCounters: { reputation: 1 }, frame: { objective: 'Get the recordings and find who killed the broker, without agreeing to something worse', crucible: 'A dead friend, sealed evidence, and an AI that wants a favor it won\'t define' }, arc: { name: 'The AI\'s Price', episode: 'Negotiate with the AI and view enough of the recordings to identify the killer' } },
 
     // ── Playbook-Specific Hooks ─────────────────────────────────────────
 

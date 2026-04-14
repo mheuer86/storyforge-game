@@ -19,6 +19,14 @@ export interface StartingContact {
   npcRole?: 'crew' | 'contact' | 'npc'  // defaults to 'contact'
 }
 
+export interface ShiftedMechanic {
+  type: 'trait' | 'contact_change' | 'faction_shift' | 'passive'
+  name: string                          // display name for UI callout, e.g. "Whatever It Takes"
+  description: string                   // full mechanical description (Claude-facing)
+  cost: string                          // what the shifted character loses or pays
+  usesPerChapter?: number               // for trait-type mechanics; omit for passives/contacts
+}
+
 export interface Species {
   id: string
   name: string
@@ -27,6 +35,7 @@ export interface Species {
   behavioralDirective?: string          // Claude-facing: how to play this origin's interiority during gameplay
   startingContacts?: StartingContact[]  // auto-created as NPCs on game init
   hidden?: boolean                      // true for shifted origins — not selectable at creation
+  shiftedMechanic?: ShiftedMechanic     // mechanical property gained when shifting TO this origin
 }
 
 export interface CharacterClass {

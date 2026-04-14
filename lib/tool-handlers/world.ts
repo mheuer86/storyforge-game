@@ -222,7 +222,7 @@ export function applyWorldChanges(
           },
           'noire': {
             'PI': 'compromise', 'Compromised': 'compromise',
-            'Lawyer': 'complicity', 'Entangled': 'complicity',
+            'The Machine': 'complicity', 'Entangled': 'complicity',
             'Criminal': 'notoriety', 'Marked': 'notoriety',
             'Enforcer': 'numbness', 'Cold': 'numbness',
             'Reporter': 'leverage', 'Exposed': 'leverage',

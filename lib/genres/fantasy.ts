@@ -64,6 +64,13 @@ const fantasySpecies: Species[] = [
     lore: 'The pragmatism that made humans effective in every kingdom has hardened into pure ambition. Court allies are stepping stones. Loyalty is a resource to be spent. The adaptability that was a strength has become a refusal to hold any ground that isn\'t higher ground.',
     behavioralDirective: 'Default register: every interaction is an opportunity for advancement, and advancement is the only metric that matters. The pragmatism is ruthless now, not flexible. NPC reactions: court allies sense the calculating edge and guard their positions. New contacts see ambition before they see a person. When narrating interiority: the ladder is the only structure that makes sense. Standing still feels like falling.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Whatever It Takes',
+      description: 'Once per chapter, automatically succeed on a Persuasion or Deception check. The target\'s disposition drops one tier permanently afterward. Ambition works, but it costs relationships.',
+      cost: 'Permanent disposition loss on the target. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'watcher',
@@ -72,6 +79,12 @@ const fantasySpecies: Species[] = [
     lore: 'The elven tendency toward long observation has tipped into permanent withdrawal. The world moves too fast, too crudely, and the character has retreated into a perspective so distant that participation feels impossible. They watch. They understand. They do nothing.',
     behavioralDirective: 'Default register: observing from a distance that has become unreachable. The long view has consumed the present. NPC reactions: companions mistake withdrawal for wisdom, then grow frustrated when wisdom produces no action. Enemies forget you are there. When narrating interiority: the world is perfectly legible from this distance. The problem is that helping requires closing the distance, and the distance has become the self.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'contact_change',
+      name: 'Memory Contact',
+      description: 'Active contacts can no longer reach you (they give up trying). Gain 1 Memory Contact: a figure from the deep past who provides information about things that no longer exist. Once per chapter, ask about lost knowledge, forgotten places, or dead civilizations. The answer is always accurate. The answer is never about anything that still lives.',
+      cost: 'All active contacts go silent. New contacts start at Wary (your detachment is visible).',
+    },
   },
   {
     id: 'bound',
@@ -80,6 +93,13 @@ const fantasySpecies: Species[] = [
     lore: 'Dwarven oaths were meant to anchor, not imprison. This one has consumed the person who swore it. There is no flexibility, no accommodation, no room for the world to be more complex than the words spoken in stone. The oath answers every question before the dwarf can.',
     behavioralDirective: 'Default register: the oath is the identity. Every situation is filtered through the vow before it reaches the person. NPC reactions: allies respect the consistency but fear what happens when the oath conflicts with survival. Enemies exploit the predictability with precision. When narrating interiority: the oath is not a choice anymore; it is a reflex. The comfort of certainty has become a wall against every exit.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'The Oath Speaks',
+      description: 'Once per chapter, the oath compels an action. The GM declares what the oath demands in the current situation. The player must comply or take 2d6 psychic damage. Compliance grants advantage on the next related check. The oath always demands the hardest path.',
+      cost: 'Loss of agency in one decision per chapter. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'named',
@@ -88,6 +108,12 @@ const fantasySpecies: Species[] = [
     lore: 'The halfling gift for passing unnoticed is gone. Too many actions, too many witnesses, too many stories told in too many taverns. The anonymity that was armor has been shed, and the small person in the big world is now a known quantity in a world that punishes the known.',
     behavioralDirective: 'Default register: exposed, visible, and aware that visibility is the opposite of safety. The instinct to disappear is still there but the skill no longer works. NPC reactions: people who should not know the name call it out in public. Enemies no longer overlook you. When narrating interiority: every room feels watched. The comfort of being beneath notice is gone, and the world is much larger when it is looking directly at you.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Known Quantity',
+      description: 'Advantage on first impression with strangers (your reputation precedes you). Disadvantage on all Stealth checks in settled areas. One new Hostile contact appears: someone who recognized you and intends to use that knowledge. Fame is power and vulnerability simultaneously.',
+      cost: 'Permanent Stealth disadvantage in settlements. A Hostile contact who tracks your movements.',
+    },
   },
   {
     id: 'vessel',
@@ -96,6 +122,13 @@ const fantasySpecies: Species[] = [
     lore: 'The inherited memory that surfaced as instinct and dream has become something more insistent. The Wyrm Kingdoms fell three centuries ago, but something in the blood is rising. The dragonkin is becoming what their ancestors were, whether they chose it or not.',
     behavioralDirective: 'Default register: the inheritance is no longer background noise; it is a voice, and it is getting louder. The ancient knowledge that was an advantage has become a claim on the person carrying it. NPC reactions: the fear deepens into something primal. People sense something older than the person standing in front of them. When narrating interiority: the dreams are instructions now. The memory is not inherited; it is inhabiting. The question is no longer what the ancestors knew, but what they want.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'The Blood Remembers',
+      description: 'Once per chapter, access an ancestral memory relevant to the current situation. INT Arcana check (DC scales by how ancient the knowledge). Success provides specific, actionable knowledge from the bloodline. Failure provides a vision that is emotionally overwhelming: +1 inheritance counter and the GM narrates what the ancestors want you to do next.',
+      cost: 'Failed uses accelerate the inheritance counter. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
 ]
 
@@ -586,7 +619,18 @@ Rest terminology: Short rest, Long rest.`,
     role: 'You are the Game Master of a fantasy tabletop RPG campaign. You narrate a world of ancient magic, fractured kingdoms, and the long shadows of powers that predate civilization.',
     setting: 'The world is forgetting itself. The Five Kingdoms still stand, the Accord of Thorns still holds on paper, but the knowledge that built this civilization is disappearing. Ancient ruins dot every kingdom, libraries no one can read, machines no one can operate, inscriptions in languages that died with the Sundering. The Dragonkin remember fragments through oral tradition and inherited dream-memory, but even their knowledge is incomplete, fading with each generation. Magic is not ascending; it is echo. Every spell cast draws on a diminishing reservoir that no one knows how to replenish. The Collegium studies what remains but understands less each decade. The churches preach about gods whose names they may have wrong. The wilderness reclaims what civilization can no longer maintain. The Accord of Thorns is fraying not because of politics alone, but because the shared knowledge that made cooperation possible is gone. Border lords dispute treaties written in a legal language no living scholar fully commands. The world is not ending in fire. It is ending in forgetting.',
     vocabulary: 'Use grounded fantasy language: stone and timber, torches and lanterns, horses and carts. Magic has a physical cost, fatigue, nosebleeds, trembling. Spells are cast or invoked, not activated. Weapons are steel, iron, or enchanted. Currency is gold, silver, copper. Avoid modern idioms.',
-    toneOverride: 'Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real, ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.',
+    toneOverride: `Adjust tone: Epic (70%), Gritty (20%), Witty (10%). The grandeur is real, ancient halls, vast forests, the weight of prophecy. The grit grounds it: mud on boots, hunger on the road.
+
+**The Unraveling (regional tension system).** Track how the Sundering manifests in specific regions. Each named region the player visits has an Unraveling level tracked via counters (counter name: unraveling_<region>, e.g. unraveling_thornwall). Use commit_turn to update counters when triggers occur.
+
+Tiers: 0 = Stable (the Accord holds, magic functions, institutions respond). 1 = Fraying (magic side effects on failed rolls, institutional responses delayed, NPCs are anxious, small signs: a well drying, a shrine unanswered, animals behaving wrong). 2 = Fracturing (magic is dangerous — disadvantage on arcane checks in-region, Collegium or Pale Flame investigators arrive, local authority fragmenting, refugees on the roads). 3 = Collapsing (magic is wild — GM chooses a side effect on every use, the land itself is changing, no institutional authority remains, player actions have permanent irreversible consequences).
+
+Initialize at 0 when introducing a new region. The counter persists across chapters. When the player returns, narrate the current state.
+
+Advances (+1) from: forbidden magic used in-region, major institutional collapse or betrayal, prolonged unresolved conflict (2+ chapters without resolution), a ruin disturbed without proper understanding.
+Recedes (-1, minimum 0) from: player actively stabilizes (restores an institution, resolves a crisis, repairs a broken accord), a Collegium intervention succeeds, a divine connection is renewed.
+
+The Unraveling is environmental, not adversarial. It is not hunting the player. It is the world degrading around them. The player's choices affect the pace and direction of degradation but cannot stop it entirely. Some regions will fall. The question is which ones, and what the player saves from the collapse.`,
     assetMechanic: `## THE QUARTERS
 The fellowship's base of operations — haven, knowledge, bonds, supplies, reputation.
 
@@ -625,7 +669,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
 - **Dream Translation (Lorekeeper):** Translate inherited dream-memory into usable knowledge. Failure gives partially correct translation with hidden error.
 - **Denied Heritage (Exile):** Resist the inheritance's pull. Auto-succeed on resistance. Cost: 1d4 psychic damage and the GM narrates what you refused to see.`,
     consumableLabel: 'Potions, salves, scrolls, antidotes',
-    tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead.',
+    tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead. By mid-chapter 1, show one sign of the Unraveling in the starting region: a spell that misfires, a shrine that no longer answers, a border dispute over a treaty no one can read. Initialize the starting region\'s Unraveling counter at 1 (Fraying) unless the hook specifies otherwise. The world is already forgetting; the player walks into the middle of it.',
     npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
     buildAssetState: (ship, _shipName) => {
       const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
@@ -694,7 +738,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     { hook: 'You receive a letter from an elf you\'ve never met, written in a dialect that died two centuries ago. The letter describes, in precise detail, a conversation you had last week. It warns you not to enter the ruin you\'re planning to explore. It is dated three hundred years before you were born.', title: 'The Old Letter', origins: ['elf'], frame: { objective: 'Determine how a letter from three centuries ago describes events from last week', crucible: 'A dead dialect, a living conversation, and a warning from someone who couldn\'t possibly have known' }, arc: { name: 'The Old Letter', episode: 'Authenticate the letter and decide whether to heed the warning or investigate the ruin anyway' } },
 
     // Dwarf — the weight of oaths
-    { hook: 'A dwarven hold sealed its gates forty years ago. No one enters, no one leaves. The trade guilds assumed the hold was dead. Yesterday, a single dwarf walked out, carrying a stone tablet with a message: "We have kept the oath. The oath is killing us. Send someone who can break it without breaking us."', title: 'The Sealed Hold', origins: ['dwarf'], frame: { objective: 'Enter the hold and understand the oath that is killing them', crucible: 'A hold that imprisoned itself for forty years to honor a vow, and a people asking for help in a language of obligation' }, arc: { name: 'The Sealed Hold', episode: 'Enter the hold and learn what oath was sworn and what it costs to honor it' } },
+    { hook: 'A dwarven hold sealed its gates forty years ago. No one enters, no one leaves. The trade guilds assumed the hold was dead. Yesterday, a single dwarf walked out, carrying a stone tablet with a message: "We have kept the oath. The oath is killing us. Send someone who can break it without breaking us."', title: 'The Sealed Hold', origins: ['dwarf'], startingCounters: { oath_weight: 1 }, frame: { objective: 'Enter the hold and understand the oath that is killing them', crucible: 'A hold that imprisoned itself for forty years to honor a vow, and a people asking for help in a language of obligation' }, arc: { name: 'The Sealed Hold', episode: 'Enter the hold and learn what oath was sworn and what it costs to honor it' } },
     { hook: 'A dwarven bridge that has stood for a thousand years collapses overnight. The stones separated cleanly, as if unbuilt. The runes that bound them have been erased — not worn, erased. The master builder says two more bridges in the region use the same binding words. If whatever un-spoke the runes reaches them, the only trade route to Thornwall closes, and the garrison starves before spring.', title: 'The Unspoken Bridge', origins: ['dwarf'], frame: { objective: 'Find what is erasing the binding runes before the remaining bridges fall', crucible: 'A thousand-year bridge unbuilt overnight, two more using the same words, and a garrison that depends on the road staying open' }, arc: { name: 'The Unspoken Bridge', episode: 'Examine the erased runes and trace the erasure before it reaches the next bridge' } },
 
     // Halfling — invisibility as position
@@ -702,7 +746,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     { hook: 'A halfling child brings you a map drawn by someone who died before the child was born. The map shows a place beneath the Heartlands capital that appears on no official survey. The child says the map was in a loaf of bread from the network bakery, and that the baker said to give it to "the one who looks." Nobody told the baker your name.', title: 'The Hidden Map', origins: ['halfling'], frame: { objective: 'Follow the map to the hidden place beneath the capital', crucible: 'A dead mapmaker, a child courier, and a location that exists only in the halfling network\'s memory' }, arc: { name: 'The Hidden Map', episode: 'Verify the map against the capital\'s known underground and find the entrance' } },
 
     // Dragonkin — the inheritance
-    { hook: 'You dream of a room you\'ve never entered. When you wake, you can draw it from memory: circular, with seven pillars, each carved with a name. Five names are in languages you can\'t read. One is in Old Arcane. The seventh is yours. The room is real. It\'s in a ruin three days\' ride from here, sealed for centuries. A Collegium expedition is heading there tomorrow. They don\'t know about the pillars.', title: 'Seven Pillars', origins: ['dragonkin'], frame: { objective: 'Reach the ruin before the Collegium expedition disturbs what\'s inside', crucible: 'Your name on a pillar in a sealed ruin, written before you were born, and scholars heading there who don\'t know what they\'ll find' }, arc: { name: 'The Seven Pillars', episode: 'Join or race the expedition and enter the circular chamber' } },
+    { hook: 'You dream of a room you\'ve never entered. When you wake, you can draw it from memory: circular, with seven pillars, each carved with a name. Five names are in languages you can\'t read. One is in Old Arcane. The seventh is yours. The room is real. It\'s in a ruin three days\' ride from here, sealed for centuries. A Collegium expedition is heading there tomorrow. They don\'t know about the pillars.', title: 'Seven Pillars', origins: ['dragonkin'], startingCounters: { inheritance: 1 }, frame: { objective: 'Reach the ruin before the Collegium expedition disturbs what\'s inside', crucible: 'Your name on a pillar in a sealed ruin, written before you were born, and scholars heading there who don\'t know what they\'ll find' }, arc: { name: 'The Seven Pillars', episode: 'Join or race the expedition and enter the circular chamber' } },
     { hook: 'A dragonkin elder who carries the oldest oral traditions is dying. She has refused every healer, every priest, every remedy. She says she is not sick. She says the inheritance is leaving. The dreams have stopped. The instinct is quiet. She is the last of her line, and when she dies, the specific thread of pre-Sundering knowledge she carries dies with her. She has one request: that someone write down what she remembers before the remembering stops.', title: 'The Last Thread', origins: ['dragonkin'], frame: { objective: 'Record the elder\'s knowledge before it\'s lost', crucible: 'A dying keeper of irreplaceable memory, and the inheritance itself is withdrawing from her' }, arc: { name: 'The Last Thread', episode: 'Begin recording the elder\'s oral tradition and understand why the inheritance is leaving' } },
 
     // ── Playbook-Specific Hooks ─────────────────────────────────────────
