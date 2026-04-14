@@ -62,7 +62,7 @@ function resolveRoll(roll: number, modifier: number, dc: number, rollType?: stri
   return 'failure'
 }
 
-const ROLL_REMINDER = ' Narrate the outcome, then call commit_turn with all state changes and suggested_actions.'
+const ROLL_REMINDER = ' Narrate the outcome, then call commit_turn with ONLY the state changes caused by this roll result (e.g. hp_delta from damage). Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
 
 function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
@@ -394,17 +394,38 @@ export async function POST(req: NextRequest) {
 
           const resultText = rollResultText(roll, modifier, effectiveDC, result, advantage, rawRolls, contested, npcRoll, npcTotal, rollType, damageType)
 
+          // Build a reminder of what the pre-roll commit_turn already applied,
+          // so Claude doesn't re-send the same state changes after the roll.
+          let alreadyAppliedNote = ''
+          const lastAssistantMsg = (pendingMessages as Anthropic.MessageParam[]).findLast(m => m.role === 'assistant')
+          if (lastAssistantMsg && Array.isArray(lastAssistantMsg.content)) {
+            const commitBlock = (lastAssistantMsg.content as Anthropic.ContentBlock[]).find(
+              (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === 'commit_turn'
+            )
+            if (commitBlock) {
+              const ci = commitBlock.input as Record<string, unknown>
+              const applied: string[] = []
+              if (ci.inventory_use) applied.push(`inventory_use (${(ci.inventory_use as { id: string }).id})`)
+              if (ci.credits_delta) applied.push(`credits_delta (${ci.credits_delta})`)
+              if (ci.add_ledger_entry) applied.push('add_ledger_entry')
+              if (ci.trait_update) applied.push('trait_update')
+              if (applied.length > 0) {
+                alreadyAppliedNote = ` ALREADY APPLIED from your pre-roll commit_turn: ${applied.join(', ')}. Do NOT re-send these.`
+              }
+            }
+          }
+
           // For auto-chained damage/healing rolls, the toolUseId was generated client-side
           // and has no matching tool_use in Claude's messages. Send as text instead of tool_result.
           const isAutoChained = toolUseId.startsWith('dmg-auto-')
           const resultContent: Anthropic.ContentBlockParam[] = isAutoChained
             ? [
                 ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-                { type: 'text' as const, text: resultText },
+                { type: 'text' as const, text: resultText + alreadyAppliedNote },
               ]
             : [
                 ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-                { type: 'tool_result' as const, tool_use_id: toolUseId, content: resultText },
+                { type: 'tool_result' as const, tool_use_id: toolUseId, content: resultText + alreadyAppliedNote },
               ]
 
           const continuationMessages: Anthropic.MessageParam[] = [

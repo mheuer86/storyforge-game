@@ -214,9 +214,9 @@ const epicSciFiPlaybooks: Record<string, CharacterClass[]> = {
       name: 'Shepherd',
       concept: 'The Synod\'s gentle face. Feeds the hungry, heals the sick, reports the heretical.',
       hookTags: ['physik', 'envoy'],
-      primaryStat: 'CHA',
+      primaryStat: 'WIS',
       proficiencies: ['Persuasion', 'Medicine', 'Insight', 'Religion'],
-      stats: { STR: 10, DEX: 11, CON: 11, INT: 14, WIS: 13, CHA: 17 },
+      stats: { STR: 10, DEX: 11, CON: 11, INT: 14, WIS: 17, CHA: 13 },
       startingInventory: [
         { id: 'medical_satchel', name: 'Medical Satchel', description: 'Full field kit, advantage on Medicine checks', quantity: 1 },
         { id: 'synod_registry', name: 'Synod Registry', description: 'Who\'s been tested, who\'s due, who\'s overdue', quantity: 1 },

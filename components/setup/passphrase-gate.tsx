@@ -152,7 +152,7 @@ export function PassphraseGate({ children }: PassphraseGateProps) {
               <div className="flex flex-col gap-2 border border-border/15 rounded-lg p-4 text-left text-foreground/60">
                 <p>Your key is stored in your browser only. It is never sent to or stored on our servers.</p>
                 <p>Cost per chapter is under 1EUR, paid directly to Anthropic through your own account.</p>
-                <p>You can remove your key at any time from the in-game menu.</p>
+                <p>You can remove your key at any time from the in-game menu. Remove it after use on shared devices.</p>
                 <p className="text-foreground/40 mt-1">Technical users: you can also set <code className="text-primary/50">localStorage.setItem(&apos;storyforge_api_key&apos;, &apos;sk-ant-...&apos;)</code> in the browser console, or <a href="https://github.com/mheuer86/storyforge-game" target="_blank" rel="noopener noreferrer" className="text-primary/60 hover:text-primary/80 transition-colors">run the game locally</a> with your key in .env.local.</p>
               </div>
             </div>

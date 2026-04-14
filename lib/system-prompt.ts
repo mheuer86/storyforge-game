@@ -1434,11 +1434,11 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     ? `\n${(config.heatLabel ?? 'HEAT').toUpperCase()}: ${heatEntries.map(h => `${h.faction}=${h.level} (${h.reasons.join(',')})`).join(' | ')}`
     : ''
 
-  // --- Ledger ---
+  // --- Ledger (show last 5 for dedup visibility) ---
   const ledger = w.ledger ?? []
-  const lastTx = ledger.length > 0 ? ledger[ledger.length - 1] : null
-  const ledgerSuffix = lastTx
-    ? ` | Last: ${lastTx.amount > 0 ? '+' : ''}${lastTx.amount} (${lastTx.description}, ${lastTx.day})`
+  const recentLedger = ledger.slice(-5)
+  const ledgerSuffix = recentLedger.length > 0
+    ? ` | LEDGER: ${recentLedger.map(e => `${e.amount > 0 ? '+' : ''}${e.amount} ${e.description}`).join(', ')}`
     : ''
 
   // Origin pressure line — show counter name but not value, with status labels

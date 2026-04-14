@@ -35,10 +35,18 @@ export function applyCharacterChanges(
     const ledgerAlreadyExists = ledgerEntry && (updated.world.ledger ?? []).some(
       e => e.amount === ledgerEntry.amount && e.description === ledgerEntry.description
     )
+    // ── Turn-based dedup: reject if same amount was charged within last 2 turns ──
+    const currentTurn = updated.history.messages.filter(m => m.role === 'player').length
+    const recentCredits: { amount: number; turn: number }[] = (updated.meta as unknown as Record<string, unknown>)._recentCreditChanges as { amount: number; turn: number }[] ?? []
+    const isTurnDuplicate = input.credits_delta < 0 && recentCredits.some(
+      r => r.amount === input.credits_delta && currentTurn - r.turn <= 1
+    )
     if (creditChangesThisBatch.includes(input.credits_delta)) {
       dbg('DUPLICATE credit change rejected (same batch): ' + input.credits_delta)
     } else if (ledgerAlreadyExists) {
       dbg('DUPLICATE credit change rejected (ledger entry already exists): ' + input.credits_delta + ' ' + ledgerEntry?.description)
+    } else if (isTurnDuplicate) {
+      dbg('DUPLICATE credit change rejected (same amount within 2 turns): ' + input.credits_delta)
     } else {
       creditChangesThisBatch.push(input.credits_delta)
       const newCredits = char.credits + input.credits_delta
@@ -48,6 +56,9 @@ export function applyCharacterChanges(
         statChanges.push({ type: 'gain', label: `+${input.credits_delta} ${currLabel}` })
       }
       char.credits = newCredits
+      // Track for future dedup (keep last 5 entries)
+      const updatedCredits = [...recentCredits.filter(r => currentTurn - r.turn <= 3), { amount: input.credits_delta!, turn: currentTurn }]
+      ;(updated.meta as unknown as Record<string, unknown>)._recentCreditChanges = updatedCredits
     }
   }
 
@@ -71,36 +82,50 @@ export function applyCharacterChanges(
 
   if (input.inventory_use) {
     const useId = input.inventory_use.id.toLowerCase()
-    let matched = false
-    char.inventory = char.inventory.map((item) => {
-      const id = item.id.toLowerCase()
-      const name = item.name.toLowerCase()
-      const slug = name.replace(/\s+/g, '_')
-      const matchById = id === useId || id.startsWith(useId) || useId.startsWith(id)
-      const matchByName = name === useId || name.startsWith(useId) || slug === useId || slug.startsWith(useId)
-      if ((matchById || matchByName) && !matched) {
-        matched = true
-        if (item.charges !== undefined) {
-          const newCharges = input.inventory_use!.set_charges !== undefined
-            ? Math.max(0, input.inventory_use!.set_charges)
-            : Math.max(0, item.charges - 1)
-          if (newCharges === item.charges) return item
-          if (newCharges <= 0) {
-            statChanges.push({ type: 'loss', label: `${item.name} depleted` })
+    const currentTurn = updated.history.messages.filter(m => m.role === 'player').length
+
+    // ── Layer 1 dedup: reject if same item was used within last 2 turns ──
+    const recentUses: { itemId: string; turn: number }[] = (updated.meta as unknown as Record<string, unknown>)._recentItemUses as { itemId: string; turn: number }[] ?? []
+    const isDuplicate = recentUses.some(u => u.itemId === useId && currentTurn - u.turn <= 1)
+    if (isDuplicate) {
+      dbg(`DUPLICATE inventory_use rejected (same item within 2 turns): ${useId}`)
+    } else {
+      let matched = false
+      char.inventory = char.inventory.map((item) => {
+        const id = item.id.toLowerCase()
+        const name = item.name.toLowerCase()
+        const slug = name.replace(/\s+/g, '_')
+        const matchById = id === useId || id.startsWith(useId) || useId.startsWith(id)
+        const matchByName = name === useId || name.startsWith(useId) || slug === useId || slug.startsWith(useId)
+        if ((matchById || matchByName) && !matched) {
+          matched = true
+          if (item.charges !== undefined) {
+            const newCharges = input.inventory_use!.set_charges !== undefined
+              ? Math.max(0, input.inventory_use!.set_charges)
+              : Math.max(0, item.charges - 1)
+            if (newCharges === item.charges) return item
+            if (newCharges <= 0) {
+              statChanges.push({ type: 'loss', label: `${item.name} depleted` })
+            } else {
+              statChanges.push({ type: 'loss', label: `${item.name} ${item.charges} → ${newCharges}` })
+            }
+            return { ...item, charges: newCharges }
+          } else if (item.quantity > 1) {
+            statChanges.push({ type: 'loss', label: `${item.name} ${item.quantity} → ${item.quantity - 1}` })
+            return { ...item, quantity: item.quantity - 1 }
           } else {
-            statChanges.push({ type: 'loss', label: `${item.name} ${item.charges} → ${newCharges}` })
+            statChanges.push({ type: 'loss', label: `${item.name} used` })
+            return { ...item, quantity: 0 }
           }
-          return { ...item, charges: newCharges }
-        } else if (item.quantity > 1) {
-          statChanges.push({ type: 'loss', label: `${item.name} ${item.quantity} → ${item.quantity - 1}` })
-          return { ...item, quantity: item.quantity - 1 }
-        } else {
-          statChanges.push({ type: 'loss', label: `${item.name} used` })
-          return { ...item, quantity: 0 }
         }
+        return item
+      })
+      // Track this use for future dedup (keep only last 5 entries)
+      if (matched) {
+        const updatedUses = [...recentUses.filter(u => currentTurn - u.turn <= 3), { itemId: useId, turn: currentTurn }]
+        ;(updated.meta as unknown as Record<string, unknown>)._recentItemUses = updatedUses
       }
-      return item
-    })
+    }
   }
 
   if (input.temp_modifier_add) {
