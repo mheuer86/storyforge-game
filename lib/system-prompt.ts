@@ -116,6 +116,8 @@ Check the PC line for their primary stat. The skill that matches both the approa
 
 Include pending_check in commit_turn BEFORE narrating the outcome.
 
+**Failed reads commit to the wrong belief.** When an Insight, Perception, or Investigation check fails, the character believes the wrong conclusion — do NOT hedge with "you can't tell" or "it might be true." Narrate the character being convinced of whatever the failed read produces. The player discovers the error later through consequences, not through the GM tipping them off that the read was unreliable. A failed Insight is a wrong belief, not an uncertain one.
+
 **The momentum trap: three turns without a roll → you've missed a gate.** Stop and look back. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated — fix it on the next turn.
 
 **NPC information is GATED, not free.** NPCs do not volunteer critical information through conversation alone. Disposition determines willingness — Hostile refuses, Wary needs leverage, Neutral needs a reason, Favorable shares if asked well, Trusted volunteers. But even willing NPCs require a check (Persuasion, Insight, Deception, Intimidation) to extract actionable intelligence. The only free information is what the player can directly observe (visible bruises, a document on a table, a name on a sign). Everything spoken by an NPC that advances the investigation costs a roll.
@@ -1516,7 +1518,9 @@ ${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine :
     // Close timing enforcement
     const resolvedAt = gs._objectiveResolvedAtTurn
     const turnsSinceResolved = resolvedAt ? playerTurnCount - resolvedAt : 0
-    if (turnsSinceResolved >= 4 || playerTurnCount >= 20) {
+    if (turnsSinceResolved >= 6 || playerTurnCount >= 25) {
+      return `\n[HARD CLOSE] Turn ${playerTurnCount}, objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close NOW. Do not narrate new content. Wrap the current beat in 1-2 sentences and close. This is not optional.`
+    } else if (turnsSinceResolved >= 4 || playerTurnCount >= 20) {
       return `\n[CLOSE REQUIRED] Objective resolved ${turnsSinceResolved} turns ago (turn ${resolvedAt}). Call signal_close in this commit_turn. Any remaining beats become the next chapter's opening.`
     } else if (turnsSinceResolved >= 2 || playerTurnCount >= 18) {
       return `\n[CLOSE OVERDUE] Objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close this turn unless a genuinely new crucible has emerged. Wrapping beats are not new content.`
