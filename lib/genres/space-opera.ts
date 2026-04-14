@@ -277,9 +277,9 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
       name: 'Sovereign',
       concept: 'Refuses the service role. Leads in their own right. Makes everyone uncomfortable because Sylphari aren\'t supposed to be in charge.',
       hookTags: ['commander', 'diplomat'],
-      primaryStat: 'CHA',
-      proficiencies: ['Persuasion', 'Intimidation', 'Insight', 'Galactic Lore'],
-      stats: { STR: 10, DEX: 11, CON: 12, INT: 14, WIS: 14, CHA: 17 },
+      primaryStat: 'WIS',
+      proficiencies: ['Perception', 'Intimidation', 'Insight', 'Galactic Lore'],
+      stats: { STR: 10, DEX: 11, CON: 12, INT: 14, WIS: 17, CHA: 14 },
       startingInventory: [
         { id: 'holdout_pistol_s', name: 'Holdout Pistol', description: 'Compact, concealable sidearm', quantity: 1, damage: '1d6 energy' },
         { id: 'personal_shield_s', name: 'Personal Shield', description: 'Absorbs 5 damage once per day', quantity: 1, charges: 1, maxCharges: 1 },

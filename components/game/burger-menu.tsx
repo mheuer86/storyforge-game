@@ -345,14 +345,14 @@ export function BurgerMenu({
               </Button>
             )}
             {/* API key status */}
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground/40">
-              <span>{isByok() ? `API key: ...${getApiKey()?.slice(-6)}` : 'Demo mode'}</span>
+            <div className="flex items-center justify-between text-xs text-muted-foreground/60">
+              <span>{isByok() ? `API key: sk-...${getApiKey()?.slice(-4)}` : 'Demo mode'}</span>
               {isByok() ? (
-                <button onClick={() => { clearApiKey(); window.location.reload() }} className="text-destructive/50 hover:text-destructive/80 transition-colors">
+                <button onClick={() => { clearApiKey(); window.location.reload() }} className="text-destructive/70 hover:text-destructive transition-colors">
                   Remove key
                 </button>
               ) : (
-                <button onClick={() => setApiKeyDialogOpen(true)} className="text-primary/50 hover:text-primary/80 transition-colors">
+                <button onClick={() => setApiKeyDialogOpen(true)} className="text-primary/60 hover:text-primary/80 transition-colors">
                   Add API key
                 </button>
               )}
