@@ -71,7 +71,7 @@ Returns: updated GameState + array of `StatChange` objects for UI display.
 
 Domain handlers that apply `commit_turn` mutations to GameState:
 
-- **`character.ts`**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns
+- **`character.ts`**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns. **Dedup**: inventory_use rejects same item within 2 player turns (`meta._recentItemUses`); credits_delta rejects same negative amount within 2 turns (`meta._recentCreditChanges`), same amount in batch, or matching ledger entry
 - **`world.ts`**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier), location, time, scene snapshot, threads, promises, decisions (with origin counter auto-tick), factions, antagonist (establish/move/defeat), cohesion, ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
 - **`combat.ts`**: start (spawn enemies), update enemies, end (loot, credits), auto-end when no enemies remain
 - **`narrative.ts`**: chapter_frame (with mid-chapter refinement gating), signal_close, close_chapter (archives messages, resets chapter-scoped state), debrief, scene summaries, objective status, pivotal scenes, story arcs (create/advance/resolve/abandon/add_episode)
