@@ -344,6 +344,7 @@ export interface ChatMessage {
   rollData?: RollDisplayData
   statChanges?: { type: 'gain' | 'loss' | 'new' | 'neutral'; label: string }[]
   rollBreakdown?: RollBreakdown
+  originShift?: { from: string; to: string; mechanic: string; cost: string }
 }
 
 export interface RollRecord {

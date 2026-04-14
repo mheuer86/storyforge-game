@@ -13,7 +13,7 @@ import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { runRulesEngine } from '@/lib/rules-engine'
 import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
-import { type Genre, applyGenreTheme } from '@/lib/genre-config'
+import { type Genre, applyGenreTheme, getGenreConfig } from '@/lib/genre-config'
 import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted, setApiKey } from '@/lib/api-key'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { track } from '@vercel/analytics'
@@ -29,6 +29,7 @@ interface DisplayMessage {
   statChanges?: StatChange[]
   rollData?: RollDisplayData
   rollBreakdown?: RollBreakdown
+  originShift?: { from: string; to: string; mechanic: string; cost: string }
   sceneBreak?: string  // location/time header attached to this GM message
 }
 
@@ -51,6 +52,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
+  const [lastOriginShift, setLastOriginShift] = useState<{ from: string; to: string; mechanic: string; cost: string } | null>(null)
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string; rollResolution?: RollResolution } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
   const [closeInProgress, setCloseInProgress] = useState(false)
@@ -356,6 +358,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setIsLoading(false)
         },
         (finalState, statChanges) => {
+          // Detect origin shift: species changed between request and response
+          const prevSpecies = stateWithPlayerMessage.character?.species
+          const newSpecies = finalState.character?.species
+          if (prevSpecies && newSpecies && prevSpecies !== newSpecies) {
+            try {
+              const genre = finalState.meta?.genre as Genre
+              const config = getGenreConfig(genre)
+              const shiftedOrigin = config.species.find(s => s.name === newSpecies)
+              const m = shiftedOrigin?.shiftedMechanic
+              setLastOriginShift({
+                from: prevSpecies,
+                to: newSpecies,
+                mechanic: m ? `${m.name}: ${m.description}` : '',
+                cost: m?.cost || '',
+              })
+            } catch {
+              setLastOriginShift({ from: prevSpecies, to: newSpecies, mechanic: '', cost: '' })
+            }
+          }
           setGameState(finalState)
           saveGameState(finalState)
           setLastStatChanges(statChanges)
@@ -675,6 +696,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       ...(msg.rollData && { rollData: msg.rollData }),
       ...(msg.statChanges && { statChanges: msg.statChanges }),
       ...(msg.rollBreakdown && { rollBreakdown: msg.rollBreakdown }),
+      ...(msg.originShift && { originShift: msg.originShift }),
     }))
     setMessages(displayMessages)
 
@@ -704,6 +726,30 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     })
   }, [lastStatChanges])
 
+  // Attach origin shift callout to the last GM message and persist in history
+  useEffect(() => {
+    if (!lastOriginShift) return
+    setMessages((prev) => {
+      const lastGmIdx = prev.findLastIndex((m) => m.type === 'gm' && !m.isError)
+      if (lastGmIdx === -1) return prev
+      const updated = [...prev]
+      updated[lastGmIdx] = { ...updated[lastGmIdx], originShift: lastOriginShift }
+      return updated
+    })
+    // Persist into game state history so it survives reload
+    setGameState((prev) => {
+      if (!prev) return prev
+      const msgs = [...prev.history.messages]
+      const lastGmIdx = msgs.findLastIndex((m) => m.role === 'gm')
+      if (lastGmIdx === -1) return prev
+      msgs[lastGmIdx] = { ...msgs[lastGmIdx], originShift: lastOriginShift }
+      const updated = { ...prev, history: { ...prev.history, messages: msgs } }
+      saveGameState(updated)
+      return updated
+    })
+    setLastOriginShift(null)
+  }, [lastOriginShift])
+
   const handleSave = useCallback(
     (slot: 1 | 2 | 3) => {
       if (!gameState) return
@@ -724,6 +770,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         ...(msg.rollData && { rollData: msg.rollData }),
         ...(msg.statChanges && { statChanges: msg.statChanges }),
         ...(msg.rollBreakdown && { rollBreakdown: msg.rollBreakdown }),
+        ...(msg.originShift && { originShift: msg.originShift }),
       }))
       setMessages(displayMessages)
       setQuickActions([])
@@ -1036,6 +1083,26 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     {message.rollBreakdown && (
                       <div className="mt-2">
                         <EnemyRollBadge breakdown={message.rollBreakdown} />
+                      </div>
+                    )}
+                    {message.originShift && (
+                      <div className="mt-3 max-w-[85%] rounded-lg border border-destructive/30 bg-destructive/5 px-5 py-4">
+                        <div className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-destructive/70">Identity Shift</div>
+                        <div className="mt-1.5 text-sm" style={{ fontFamily: 'var(--font-narrative)' }}>
+                          <span className="text-muted-foreground">{message.originShift.from}</span>
+                          <span className="mx-2 text-destructive/50">&rarr;</span>
+                          <span className="font-medium text-destructive">{message.originShift.to}</span>
+                        </div>
+                        {message.originShift.mechanic && (
+                          <div className="mt-2 text-xs leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
+                            {message.originShift.mechanic}
+                          </div>
+                        )}
+                        {message.originShift.cost && (
+                          <div className="mt-1.5 text-[10px] font-mono uppercase tracking-wider text-destructive/50">
+                            Cost: {message.originShift.cost}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
