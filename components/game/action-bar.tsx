@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { HelpCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { slashCommands } from '@/lib/slash-commands'
@@ -31,7 +31,7 @@ interface ActionBarProps {
   onOpenIntel?: () => void
 }
 
-export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, combatState, onOpenIntel }: ActionBarProps) {
+export const ActionBar = memo(function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, combatState, onOpenIntel }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
@@ -445,4 +445,4 @@ export function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlas
       </form>
     </div>
   )
-}
+})

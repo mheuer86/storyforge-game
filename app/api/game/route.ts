@@ -502,7 +502,7 @@ export async function POST(req: NextRequest) {
             actualMessage = initialResult
           } else {
             actualMessage = initialResult.message
-            send({ type: 'chapter_title', title: initialResult.chapterTitle } as unknown as StreamEvent)
+            send({ type: 'chapter_title', title: initialResult.chapterTitle })
           }
         }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
