@@ -291,6 +291,27 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     ) => {
       // Auto-detect forge:dev prefix as meta question (dev only)
       if (process.env.NODE_ENV === 'development' && playerMessage.toLowerCase().startsWith('forge:dev')) {
+        // forge:dev shift — simulate an origin shift for UI testing
+        if (playerMessage.toLowerCase().startsWith('forge:dev shift')) {
+          const species = currentState.character?.species
+          if (species) {
+            try {
+              const genre = currentState.meta?.genre as Genre
+              const config = getGenreConfig(genre)
+              const currentOrigin = config.species.find(s => s.name === species)
+              // Find the counter for this origin from the counter map, then find the shifted origin
+              const shiftedOrigin = config.species.find(s => s.hidden && s.shiftedMechanic)
+              if (shiftedOrigin) {
+                const m = shiftedOrigin.shiftedMechanic!
+                setLastOriginShift({ from: species, to: shiftedOrigin.name, mechanic: `${m.name}: ${m.description}`, cost: m.cost })
+                const updatedState = { ...currentState, character: { ...currentState.character, species: shiftedOrigin.name } }
+                setGameState(updatedState)
+                saveGameState(updatedState)
+              }
+            } catch { /* ignore */ }
+          }
+          return
+        }
         isMetaQuestion = true
       }
       if (isLoadingRef.current) return
