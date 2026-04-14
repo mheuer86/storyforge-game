@@ -82,6 +82,13 @@ const grimdarkSpecies: Species[] = [
     lore: 'What was Veldran pragmatism has calcified into pure ambition. The ledger no longer tracks obligations; it tracks leverage. Old debts are weapons. Old allies are stepping stones. The house name still opens doors, but the person walking through them has no intention of closing them gently.',
     behavioralDirective: 'Default register: every interaction is a transaction, and the balance must favor you. The calculating instinct is no longer tempered by obligation or loyalty. NPC reactions: old allies sense the shift and guard themselves. New contacts see usefulness, not a person. When narrating interiority: the ledger is always open, always tallying, and the only column that matters is gain.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'The Ledger Decides',
+      description: 'Once per chapter, call in a debt from any NPC the player has previously helped. The NPC must comply with one request. Afterward, that NPC\'s disposition drops to Wary permanently and they will never voluntarily help you again. The ledger closes debts; it does not build relationships.',
+      cost: 'Permanent relationship destruction per use. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'watcher',
@@ -90,6 +97,12 @@ const grimdarkSpecies: Species[] = [
     lore: 'The weight of every consequence slowed every decision until the decisions stopped coming. Sylvara caution was always the house\'s strength, but caution that prevents action is paralysis wearing a noble name. The character watches the world happen and calls it wisdom.',
     behavioralDirective: 'Default register: observation has replaced participation. The analytical clarity remains but produces no action. NPC reactions: companions grow frustrated with inaction. Enemies stop considering you a threat, which is its own kind of danger. When narrating interiority: every option has a cost, every path has a consequence, and the safest choice is always to wait. The waiting has become the identity.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Perfect Stillness',
+      description: 'Advantage on all Perception and Investigation checks (the Watcher sees everything). Disadvantage on all Initiative rolls and any check that requires acting first. Enemies frequently ignore you in combat, targeting active threats instead. You see the blow coming; you do not move.',
+      cost: 'Permanent initiative penalty. Enemies deprioritize you, which means allies absorb the violence you observe.',
+    },
   },
   {
     id: 'bound',
@@ -98,6 +111,13 @@ const grimdarkSpecies: Species[] = [
     lore: 'Stonemark honor was a foundation. Now it is a prison. The oath has consumed the person who swore it. There is no identity outside the vow, no flexibility when the vow conflicts with reality, no room for the world to be more complicated than the words spoken years ago.',
     behavioralDirective: 'Default register: the oath answers every question before the person can. Duty has replaced judgment entirely. NPC reactions: allies respect the consistency but fear the rigidity. Enemies exploit the predictability. When narrating interiority: the oath is a wall that blocks every exit. The comfort of certainty has become the prison of inflexibility.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Immovable',
+      description: 'Once per chapter, automatically succeed on any save or check to resist being moved, persuaded, intimidated, or changed from a chosen course. The oath holds. But the GM introduces a consequence of inflexibility: an ally abandoned, an opportunity missed, a compromise that would have saved lives refused.',
+      cost: 'Each use forces a narrative cost of rigidity. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'named',
@@ -106,6 +126,13 @@ const grimdarkSpecies: Species[] = [
     lore: 'The unsworn survives by owing nothing. But survival has terms, and the terms accumulated. Too many favors accepted, too many obligations incurred, too many people who helped you and now expect repayment. The freedom that was your defining feature has been consumed by the debts that kept you alive. You are sworn to no house, but you are owned by everyone.',
     behavioralDirective: 'Default register: effectively bound without having taken an oath. The survival instinct is intact but every decision is filtered through what you owe. NPC reactions: creditors appear with timing that feels coordinated. Allies treat you as an asset to be directed. When narrating interiority: the freedom is theoretical now. Every path leads back to a debt, and the debts have their own gravity.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Debtor\'s Hustle',
+      description: 'Once per chapter, call in a favor from any faction (not just your own). The Named has contacts everywhere because they owe everyone. The favor is always granted, but the creditor adds a new obligation that must be fulfilled before next chapter. Failing the obligation increases survival_debt by 1.',
+      cost: 'Every use deepens the debt. The freedom of owing everyone is the prison of serving everyone. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'vessel',
@@ -114,6 +141,12 @@ const grimdarkSpecies: Species[] = [
     lore: 'The Ashfang rage was always there, but it was personal. Now it has a direction that feels older than the person carrying it. The Char Dominion burned three centuries ago, and something in the blood remembers the heat. The anger is no longer a response to the world; it is an inheritance asserting itself.',
     behavioralDirective: 'Default register: the rage has crystallized into something purposeful and ancestral. Others feel it before you speak. NPC reactions: fear deepens into something primal. Allies who understood personal anger cannot follow ancestral wrath. The Church\'s hostility intensifies; they recognize what is surfacing. When narrating interiority: the anger has a shape now, and it is not yours. The blood burns with a purpose you did not choose but cannot refuse.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Ancestral Wrath',
+      description: '+1d6 fire damage on all melee attacks (the blood burns visibly). All Pale Flame NPCs start at Hostile disposition regardless of prior relationship. Non-Ashfang allies must make a WIS save (DC 12) when first witnessing the wrath or their disposition drops one tier from fear. The Char Dominion burned three centuries ago, and people remember.',
+      cost: 'Permanent Pale Flame hostility. Allies may fear you. The power is ancestral; the isolation is personal.',
+    },
   },
   {
     id: 'the-pious',
@@ -122,6 +155,12 @@ const grimdarkSpecies: Species[] = [
     lore: 'The gap between the Church\'s mission and its machinery has closed. Not because the machinery improved, but because you stopped seeing it. Doctrine answers every question before conscience can ask it. The Inquisition\'s methods are necessary. The heretics deserve what comes. The Church\'s power serves the faithful. These statements feel like truth because you\'ve stopped testing them.',
     behavioralDirective: 'Default register: absolute conviction. The institutional voice and the personal voice are indistinguishable. NPC reactions: the faithful feel reassured, everyone else feels judged. When narrating interiority: there is no inner conflict because the Church resolved it. Every moral question has a doctrinal answer, and the answers come without hesitation. The sincerity is total. That is what makes it terrifying.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'faction_shift',
+      name: 'Institutional Certainty',
+      description: 'Advantage on all Intimidation and Persuasion checks when invoking Church authority. All non-Pale Flame NPCs start one disposition tier lower (the judgment radiates). Pale Flame NPCs start one tier higher (they recognize doctrinal purity). The Pious never questions. That makes them the Church\'s perfect instrument and everyone else\'s worst nightmare.',
+      cost: 'Permanent disposition penalty with all non-Church NPCs. The certainty that makes you powerful makes you feared.',
+    },
   },
 ]
 
@@ -209,8 +248,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 16,
       hitDieAvg: 6,
       trait: {
-        name: 'Last Standing',
-        description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting.',
+        name: 'Debt Collector',
+        description: 'Once per day, when you deal damage to a target, they owe you: the target has disadvantage on their next attack against anyone except you. The merchant\'s enforcer demands your full attention.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -423,8 +462,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 13,
       hitDieAvg: 4,
       trait: {
-        name: 'The Question',
-        description: 'Once per day, after 1+ rounds of dialogue with a target, force a WIS save (DC = 8 + INT mod). On failure, the target reveals one true piece of information. On success, they know you tried. The Oathless variant: desperation, not authority. You ask because you need to know, not because you have the right.',
+        name: 'Scrap Ingenuity',
+        description: 'Once per day, improvise a tool, bypass, or repair from available materials. INT check (DC scales by ambition). Success creates a one-use solution. Failure wastes the materials. The unsworn survive by making do with what the sworn throw away.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -449,8 +488,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 15,
       hitDieAvg: 5,
       trait: {
-        name: 'Marked',
-        description: 'Once per day, designate a target as Marked. Your first hit against them deals +1d6 bonus damage.',
+        name: 'No Banner, No Quarter',
+        description: 'Once per day, when you attack a target who doesn\'t know you\'re there, the attack automatically hits and deals max damage. Not assassination; honest ambush from someone with nothing to announce.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -475,8 +514,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 12,
       hitDieAvg: 4,
       trait: {
-        name: 'Leverage',
-        description: 'Once per day, reveal a secret about a target NPC that changes the conversation. The Oathless variant: the secret was traded to you by someone in another faction, because the unsworn are the only people everyone talks to.',
+        name: 'The Unsworn Ear',
+        description: 'Once per day, when two or more NPCs are in conversation, learn the subtext: what each party actually wants vs. what they\'re saying. CHA Insight check (DC scales by deception). Failure gives you the surface reading only. The unsworn hear what the sworn can\'t, because loyalty is a filter.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -529,8 +568,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 15,
       hitDieAvg: 6,
       trait: {
-        name: 'Last Standing',
-        description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting. The Ashfang variant: rage-fueled. The Dominion\'s fire burns in the blood.',
+        name: 'Dominion\'s Fire',
+        description: 'Once per day, when you take damage from an attack, deal that damage back to the attacker as fire. The Char Dominion\'s blood burns both ways.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -609,8 +648,8 @@ const grimdarkPlaybooks: Record<string, CharacterClass[]> = {
       startingAc: 16,
       hitDieAvg: 6,
       trait: {
-        name: 'Last Standing',
-        description: 'Once per day, when reduced to 0 HP, drop to 1 HP instead and keep fighting.',
+        name: 'Writ of Judgment',
+        description: 'Once per day, declare divine judgment on a target. Your next attack against them is an automatic critical hit. The Pale Flame does not deliberate twice.',
         usesPerDay: 1,
         usesRemaining: 1,
       },
@@ -684,7 +723,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     vocabulary: 'Use blunt, physical language: mud, blood, iron, rot. Violence has weight. Death is ugly. Healing is slow. Magic is unsettling. Currency is crowns. Dialogue is direct, often crude. Titles used with irony as often as respect. Spell = hex / curse / forbidden working / corrupted craft. Potion = tincture / salve / kit / vial. Quest = contract / job / commission. Party = company / crew / band. Inn = tavern / waystation / camp. Temple = keep / monastery / shrine.',
     toneOverride: 'Adjust tone: Gritty (60%), Epic (25%), Witty (15%). Grandeur exists but is tarnished — a crumbling cathedral, a once-great army reduced to mercenaries. Humor is dark, sharp, and necessary.',
     assetMechanic: `## THE COMPANY\n\nThe company is your mercenary band. Five dimensions tracked at L1-L3:\n- Strength: fighters, equipment, combat capability. Upgrade through recruitment and victories.\n- Morale: will to fight, unit cohesion under pressure. Upgrade through paid contracts and victories. Degrades without pay or after defeats.\n- Reputation: who knows you, whether they hire or avoid. Upgrade through visible successes. Damaged by broken contracts.\n- Intelligence: scouts, informants, advance warning. Upgrade through recruiting specialists.\n- Provisions: supplies, medical stores, operational endurance. Consumed by operations. Replenished by contracts.\n\nThe company degrades between chapters without maintenance. Propose 2-3 ways to maintain or upgrade the company at chapter transitions.\n\nEach dimension should have a named NPC attached (the sergeant, the quartermaster, the scout, etc.). Upgrading a dimension means investing in the person who runs it.`,
-    traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets. The Hexblade's power has a permanent social cost.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways. The target remembers, and the relationship is permanently changed.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency. The GM chooses. Nothing is free.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried. Failed interrogations have social consequences.\n- **Marked:** Designate one target per day. First hit deals +1d6 bonus damage. The choice of who to mark is the moral weight.\n- **Last Standing:** Drop to 1 HP instead of 0, once per day. No strings. Reliability is the point.\n- **Binding Word:** Invoke a sworn agreement to compel its honoring or expose a breach. The target must have made the agreement willingly. The Stonemark seal gives legal authority in any province. The words you bind others with also bind you.`,
+    traitRules: `## TRAIT RULES\n\n- **Corruption Tap:** Each use darkens reputation. Cumulative, never resets. The Hexblade's power has a permanent social cost.\n- **Leverage:** Requires prior interaction or intel. Secret cuts both ways. The target remembers, and the relationship is permanently changed.\n- **Bitter Medicine:** Every heal has a side effect: nausea, hallucinations, or dependency. The GM chooses. Nothing is free.\n- **The Question:** Requires 1+ rounds of dialogue. WIS save failure reveals one truth. Success: they know you tried. Failed interrogations have social consequences.\n- **Marked:** Designate one target per day. First hit deals +1d6 bonus damage. The choice of who to mark is the moral weight.\n- **Last Standing:** Drop to 1 HP instead of 0, once per day. No strings. Reliability is the point. Only Holdfast has this trait.\n- **Debt Collector:** When you deal damage, the target has disadvantage on their next attack against anyone except you. Once per day. The merchant's enforcer demands your full attention.\n- **Dominion's Fire:** When you take damage, deal it back to the attacker as fire. Once per day. The Char blood burns both ways.\n- **Writ of Judgment:** Declare divine judgment on a target. Next attack is an automatic critical hit. Once per day. The Pale Flame does not deliberate twice.\n- **Scrap Ingenuity:** Improvise a tool, bypass, or repair from available materials. INT check (DC scales by ambition). Once per day. The unsworn survive by making do.\n- **No Banner, No Quarter:** Attack a target who doesn't know you're there — auto-hit, max damage. Once per day. Honest ambush, no announcement.\n- **The Unsworn Ear:** When NPCs are in conversation, learn what each party actually wants vs. what they're saying. CHA Insight check. Once per day. Loyalty is a filter the unsworn don't have.\n- **Binding Word:** Invoke a sworn agreement to compel its honoring or expose a breach. The target must have made the agreement willingly. The Stonemark seal gives legal authority in any province. The words you bind others with also bind you.`,
     consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
     tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies. Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
     npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
@@ -757,7 +796,7 @@ The gatekeeper clue is a person, not a document. Someone who knows the truth and
     { hook: 'A lord hires the company to investigate missing grain shipments. The trail leads to the lord\'s own steward. The steward offers you triple to say you found nothing. The lord\'s wife offers you something else entirely to make the steward disappear.', title: 'Three Offers', origins: ['house-veldran'], classes: ['Broker', 'Assessor'], frame: { objective: 'Choose whose offer to take — or play all three', crucible: 'Three parties bidding against each other for your loyalty, and the truth is leverage' }, arc: { name: 'Three Offers', episode: 'Investigate the grain trail and map who benefits from each possible outcome' } },
     { hook: 'Two houses are negotiating a marriage alliance. Both have hired you separately — one to ensure the marriage happens, the other to ensure it doesn\'t. You took both contracts because you knew you\'d learn more from the middle than either side.', title: 'Both Contracts', origins: ['house-veldran'], classes: ['Broker'], frame: { objective: 'Control the negotiation from the middle', crucible: 'Two opposing contracts, both trusting you, and the information advantage only lasts until someone talks' }, arc: { name: 'Both Contracts', episode: 'Attend the first negotiation session and map each house\'s real priorities' } },
     { hook: 'The company has been hired to escort a Veldran trade caravan through Wasting territory. Standard contract: protect the goods, deliver on schedule. Two days in, a village on the route is starving. The caravan is carrying grain. The contract specifies delivery quantities to the crown. Selling grain to the village means arriving short, which means a breach. The village elder is standing in the road with her children behind her. The caravan master is checking the manifest. He says: "We can go around them or through them. Your call, captain."', title: 'The Manifest', origins: ['house-veldran'], classes: ['Outrider', 'Assessor'], frame: { objective: 'Deliver the caravan without losing the contract or your conscience', crucible: 'Starving villagers on a road made of grain, and a contract that counts every sack' }, arc: { name: 'The Manifest', episode: 'Assess the village\'s condition and calculate what the company can afford to give' } },
-    { hook: 'A Veldran factor has been found dead in a border town. Natural causes, says the local physician. The factor\'s ledger, however, is missing. Your house sent you to retrieve it. The ledger contains the names of every lord in three provinces who owes Veldran money, and the amounts are large enough to start a war. The local physician is lying. The factor\'s body has been moved. And someone in the border town already has the ledger and is reading it right now.', title: 'The Ledger', origins: ['house-veldran'], classes: ['Assessor'], frame: { objective: 'Recover the ledger before its contents are weaponized', crucible: 'A dead factor, a stolen list of debtors, and someone who now knows which lords are vulnerable' }, arc: { name: 'The Ledger', episode: 'Examine the factor\'s quarters and determine who moved the body' } },
+    { hook: 'A Veldran factor has been found dead in a border town. Natural causes, says the local physician. The factor\'s ledger, however, is missing. Your house sent you to retrieve it. The ledger contains the names of every lord in three provinces who owes Veldran money, and the amounts are large enough to start a war. The local physician is lying. The factor\'s body has been moved. And someone in the border town already has the ledger and is reading it right now.', title: 'The Ledger', origins: ['house-veldran'], startingCounters: { ledger: 1 }, classes: ['Assessor'], frame: { objective: 'Recover the ledger before its contents are weaponized', crucible: 'A dead factor, a stolen list of debtors, and someone who now knows which lords are vulnerable' }, arc: { name: 'The Ledger', episode: 'Examine the factor\'s quarters and determine who moved the body' } },
     // ── Sylvara (3) — patience as weapon, long view ──
     { hook: 'A border dispute between Veldran and Stonemark has been simmering for nine years. Both sides have asked Sylvara to arbitrate. The previous arbiter died of old age before reaching a verdict. You have the file. On page forty, a note in the dead arbiter\'s hand: "Both sides are lying about the same corpse." The hearing resumes tomorrow.', title: 'The Ninth Year', origins: ['house-sylvara'], classes: ['Arbiter', 'Watcher'], frame: { objective: 'Find the corpse both sides are lying about before the hearing', crucible: 'Nine years of accumulated testimony built on a shared lie, and a hearing that resumes in hours' }, arc: { name: 'The Ninth Year', episode: 'Read the dead arbiter\'s file and identify which testimony contradicts which' } },
     { hook: 'A Sylvara watchtower on the northern border has gone silent. Not attacked; silent. The rotation arrived to find the tower intact, supplies untouched, and the three watchers gone. Their observation journal ends mid-sentence: "The pattern in the treeline is not —" The northern forests predate the houses. Things move in them that Sylvara has watched for centuries without understanding.', title: 'The Silent Tower', origins: ['house-sylvara'], classes: ['Thornguard', 'Watcher'], frame: { objective: 'Investigate the watchtower and find the missing observers', crucible: 'Three vanished watchers, an unfinished observation, and a forest that has been watching back' }, arc: { name: 'The Silent Tower', episode: 'Examine the tower, read the observation journal, and enter the treeline' } },
@@ -773,7 +812,7 @@ The gatekeeper clue is a person, not a document. Someone who knows the truth and
     // ── Oathless (3) — the unsworn, freedom as position ──
     { hook: 'The mark is dead. Clean work. Then the client sends a second name — the dead man\'s daughter, twelve years old. She saw something. The client says it\'s the job. Your gut says it\'s a test.', title: 'Second Name', origins: ['oathless'], classes: ['Blade'], frame: { objective: 'Find the girl and decide her fate yourself', crucible: 'A child witness, a client testing your limits, and a line you have to define' }, arc: { name: 'The Second Name', episode: 'Locate the girl and learn what she actually saw' } },
     { hook: 'Three factions have approached you in the same week: a Veldran agent wants intelligence on Stonemark troop movements. A Church official wants the name of the Ashfang cell operating in the southern province. A Stonemark pactmaker wants to know what Veldran offered you. All three are paying. None knows about the others. You could serve one, play two against each other, or sell all three the same carefully edited version of the truth. The problem: one of the three already knows you\'ve been approached by the others. You don\'t know which one.', title: 'Three Factions', origins: ['oathless'], classes: ['Whisper'], frame: { objective: 'Navigate the triple approach without being caught', crucible: 'Three factions, three payments, and one of them already knows more than they should' }, arc: { name: 'Three Factions', episode: 'Determine which faction knows about the others and what they plan to do with that knowledge' } },
-    { hook: 'Someone is killing with your methods — same blade angle, same entry point, same calling card you stopped using years ago. Two dead this week. The city watch doesn\'t know your face yet, but whoever is copying your work wants them to.', title: 'Your Methods', origins: ['oathless'], classes: ['Blade', 'Scavenger'], frame: { objective: 'Find the copycat before the watch finds you', crucible: 'Your retired signature is being used to frame you, and the bodies are piling up' }, arc: { name: 'Your Methods', episode: 'Examine the kills, identify what the copycat got right, and track their mistakes' } },
+    { hook: 'Someone is killing with your methods — same blade angle, same entry point, same calling card you stopped using years ago. Two dead this week. The city watch doesn\'t know your face yet, but whoever is copying your work wants them to.', title: 'Your Methods', origins: ['oathless'], startingCounters: { survival_debt: 1 }, classes: ['Blade', 'Scavenger'], frame: { objective: 'Find the copycat before the watch finds you', crucible: 'Your retired signature is being used to frame you, and the bodies are piling up' }, arc: { name: 'Your Methods', episode: 'Examine the kills, identify what the copycat got right, and track their mistakes' } },
     { hook: 'A dying Scavenger from a rival outfit presses a map into your hand at a crossroads inn. The map shows a supply cache buried under a Church waystation. Enough provisions to keep the company fed for a month. The Scavenger says: "They killed my crew for finding it. The Church doesn\'t want anyone knowing what else is buried there." She dies before she can say what "else" means. The waystation is two days\' march. The Church patrol route passes it every three days. You have a window, if you leave now and if the map is real.', title: 'The Cache', origins: ['oathless'], classes: ['Scavenger', 'Whisper'], frame: { objective: 'Reach the cache and determine what the Church buried', crucible: 'A dead woman\'s map, a three-day patrol window, and something the Church killed to keep hidden' }, arc: { name: 'The Cache', episode: 'Verify the map against known terrain and decide whether to move on the waystation' } },
     { hook: 'The company has no contract. Provisions are low. Then a Veldran merchant approaches with a simple job: escort a sealed wagon to a buyer three provinces away. No questions about the cargo. Triple the usual rate. You take it because the alternative is starving. Two days in, the wagon starts making sounds at night. Not mechanical sounds. The merchant insists the cargo is "delicate instruments." The sounds are getting louder. The Veldran merchant is sweating. And you just passed the last crossroads where you could have turned back without entering Church-controlled territory.', title: 'The Wagon', origins: ['oathless'], classes: ['Scavenger', 'Blade'], frame: { objective: 'Deliver the wagon or open it and face what\'s inside', crucible: 'Starvation behind you, Church territory ahead, and a cargo that isn\'t what you were told' }, arc: { name: 'The Wagon', episode: 'Confront the merchant about the sounds and decide whether to inspect the cargo' } },
     // ── Ashfang (5) — fear as inheritance, forbidden knowledge ──

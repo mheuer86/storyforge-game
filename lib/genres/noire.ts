@@ -29,11 +29,11 @@ const noireSpecies: Species[] = [
     ],
   },
   {
-    id: 'lawyer',
-    name: 'Lawyer',
-    description: 'You operate the system\'s machinery. You know how silence is manufactured.',
-    lore: 'Procedure, precedent, courtrooms, sealed records. You know how silence is manufactured because you\'ve manufactured it, or defended against it, or exploited it. The law is both the city\'s immune system and its disease. Start with one courthouse clerk at Favorable (procedural access, knows the filing calendar). One client with complications at Neutral (current case, real problems). Advantage on checks involving legal procedure, institutional knowledge, and reading contractual implications. The cost: the system you serve produces the silence. Every motion filed, every deal struck, every client protected is a transaction within the power structure.',
-    behavioralDirective: 'Default register: precise, weighing every word for its legal and social implications. Speaks in positions, not opinions. NPC reactions: judges treat as a known quantity, opposing counsel as a professional threat, clients as a tool they bought. When narrating interiority: the habit of framing every situation as a case, the awareness that every argument has a counter-argument and that truth is whatever survives the process, and the growing difficulty of distinguishing advocacy from complicity.',
+    id: 'the-machine',
+    name: 'The Machine',
+    description: 'You operate the system\'s machinery. You know how power is manufactured.',
+    lore: 'Courtrooms, city hall, filing offices, sealed records. You know how power is manufactured because you\'ve manufactured it, defended it, or exploited it. The system is both the city\'s immune system and its disease. Start with one courthouse clerk at Favorable (procedural access, knows the filing calendar). One institutional contact at Neutral (useful but watching you). Advantage on checks involving legal procedure, institutional knowledge, political maneuvering, and reading contractual implications. The cost: you ARE the system. Every motion filed, every vote counted, every backroom deal is a transaction within the power structure that made this city what it is.',
+    behavioralDirective: 'Default register: precise, weighing every word for its legal, political, and social implications. Speaks in positions, not opinions. NPC reactions: judges and officials treat as a known quantity, opponents as a professional threat, constituents and clients as tools or obligations. When narrating interiority: the habit of framing every situation as leverage or liability, the awareness that every institutional action has a counter-move, and the growing difficulty of distinguishing public service from complicity.',
     startingContacts: [
       {
         role: 'Courthouse clerk',
@@ -43,9 +43,9 @@ const noireSpecies: Species[] = [
         npcRole: 'contact',
       },
       {
-        role: 'Current client',
+        role: 'Institutional contact',
         disposition: 'neutral',
-        description: 'Has a real problem and enough money to pay for your time. Trusts the retainer, not the person.',
+        description: 'Someone inside the machine who finds you useful. Trusts the arrangement, not the person.',
         npcRole: 'contact',
       },
     ],
@@ -126,6 +126,13 @@ const noireSpecies: Species[] = [
     lore: 'Every case required crossing a line: a lie to a source, a break-in, evidence withheld. The lines accumulated until the investigator and the investigated became indistinguishable. You know where the bodies are buried because you helped bury some of them. The license is still valid. The objectivity is not.',
     behavioralDirective: 'Default register: still performing the investigator role, but the performance has replaced the substance. The instincts are intact; the moral authority behind them is gone. NPC reactions: clients sense something off but can\'t name it. Cops see someone who\'s been in the dark too long. Sources trust you more now because you\'re compromised too. When narrating interiority: the competence is total. The ethics are theoretical. The cases still get solved; the question of whether solving them serves justice or just serves the next client has stopped being asked.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Dirty Hands',
+      description: 'Once per chapter, use an illegal or unethical method to solve a problem (plant evidence, coerce a witness, break and enter without consequences). The method always works. But the case it solves is tainted: any legal proceedings based on your evidence can be challenged, and one NPC who trusted you learns what you did.',
+      cost: 'Tainted cases and eroding trust. The competence is total; the integrity is gone. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
   {
     id: 'entangled',
@@ -134,6 +141,12 @@ const noireSpecies: Species[] = [
     lore: 'Every motion filed pulled you deeper. Every sealed record added your name to the chain of custody. The legal system that was a tool has become a web, and you\'re no longer the spider. You know too many case numbers, too many names, too many arrangements. Walking away means leaving behind information that powerful people need to stay controlled.',
     behavioralDirective: 'Default register: institutional, speaking in the language of procedure because it\'s the only safe language left. Every word is calculated against its legal implications. NPC reactions: powerful contacts treat you as complicit, not merely useful. Opposing counsel sees someone who can\'t afford to fight. When narrating interiority: the system is visible from the inside, every gear and lever, and you are one of the gears. The expertise that let you navigate the system has been consumed by it.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Part of the Machine',
+      description: 'Advantage on all checks involving legal procedure, institutional knowledge, and navigating bureaucracy. Disadvantage on all checks to act against institutional interests (whistleblowing, exposing corruption, helping someone the system wants crushed). The system protects you because you protect the system.',
+      cost: 'Mechanically penalized for acting against the institutions you serve. The expertise is the cage.',
+    },
   },
   {
     id: 'marked',
@@ -142,6 +155,12 @@ const noireSpecies: Species[] = [
     lore: 'The quiet professional became a known quantity. Too many jobs, too many witnesses, too many people who remember the face. The anonymity that was your greatest asset has evaporated. The people who enforce silence officially have decided you\'re a problem worth solving, and the people who used to hire you have decided you\'re a liability worth cutting.',
     behavioralDirective: 'Default register: hunted, calculating every public movement against the growing list of people who know your name. The professional confidence is replaced by operational paranoia. NPC reactions: former associates avoid contact. New contacts approach with suspicion or opportunity. Law enforcement has a file. When narrating interiority: every room has someone who recognizes you, and recognition in this city is a death sentence on a delayed fuse.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Heat Magnet',
+      description: 'All Attention (heat) gains are doubled. But the notoriety also means automatic advantage on Intimidation checks: everyone knows your name, and the name carries weight. New criminal contacts start at Favorable (they respect the reputation). Law enforcement contacts start at Hostile.',
+      cost: 'Doubled heat accumulation. Law enforcement is permanently hostile. The reputation is power and a death sentence.',
+    },
   },
   {
     id: 'cold',
@@ -150,6 +169,12 @@ const noireSpecies: Species[] = [
     lore: 'The detachment that was a survival mechanism has become the whole personality. Situations that should provoke a response get clinical assessment instead. People are variables. Grief is data. The violence stopped being a tool and became the default setting.',
     behavioralDirective: 'Default register: clinical, flat, processing the world as information rather than experience. NPC reactions: people sense the absence and recoil. Employers value the efficiency. Anyone who relies on shared feeling finds a wall. When narrating interiority: emotions arrive as observations, not sensations. "This would normally make a person angry" replaces anger. The efficiency is total. The cost is invisible from the inside.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'passive',
+      name: 'Dead Nerves',
+      description: 'Immune to Intimidation and fear effects (nothing reaches the feeling anymore). Advantage on checks requiring emotional detachment (interrogation, triage, crime scene analysis). Disadvantage on all checks requiring empathy, comfort, or genuine emotional connection. Companions\' disposition cannot rise above Neutral through social interaction alone; only shared action builds trust with the Cold.',
+      cost: 'Companion disposition capped at Neutral socially. The efficiency is total. The humanity is gone.',
+    },
   },
   {
     id: 'exposed',
@@ -158,6 +183,13 @@ const noireSpecies: Species[] = [
     lore: 'Every story published added your name to powerful people\'s lists. Every source protected extended the web of obligations. The leverage that made you effective has become the thing that makes you a target. The story outgrew the storyteller, and the storyteller is now part of the story.',
     behavioralDirective: 'Default register: cornered, performing confidence while calculating exits. The instinct to follow stories has been replaced by the awareness that the story is now about you. NPC reactions: sources are afraid to be seen with you. Editors are calculating the cost of your byline. Powerful people have stopped ignoring you and started planning. When narrating interiority: the truth you were chasing has turned around and is chasing you. The notebook is full of things that will get someone killed, and you\'re at the top of the list.',
     hidden: true,
+    shiftedMechanic: {
+      type: 'trait',
+      name: 'Nuclear Option',
+      description: 'Once per chapter, threaten to publish everything you know about a target (person, institution, or faction). The threat is credible because the information is real. The target must either comply with one demand or escalate to direct action (violence, legal attack, or disappearance). The compliance is genuine but the enemy you make is permanent.',
+      cost: 'Each use creates a permanent enemy who will actively work against you. The leverage works once per target, ever. Replaces origin trait usage slot.',
+      usesPerChapter: 1,
+    },
   },
 ]
 
@@ -245,10 +277,36 @@ const noirePlaybooks: Record<string, CharacterClass[]> = {
       },
       openingKnowledge: 'You know the cases that smell wrong: the ones the real agencies won\'t touch, the ones the police closed too fast, the ones where the retainer is paid in crumpled bills by someone who had to choose between hiring you and eating this week. You know your office is the kind where the radiator clanks and the phone rings at midnight from numbers you shouldn\'t answer. You know that taking the case nobody else will is either a calling or a personality disorder, and on most days you can\'t tell the difference. But the person sitting across from you needs help, and you\'re the one who showed up.',
     },
+    {
+      id: 'old-hand',
+      name: 'Old Hand',
+      concept: 'Twenty years on the job left marks: the instinct that saved your life, the pattern recognition that solved the case, the cynicism that makes sure you get paid before you start.',
+      hookTags: ['investigator', 'operator'],
+      primaryStat: 'WIS',
+      proficiencies: ['Perception', 'Insight', 'Investigation', 'Streetwise'],
+      stats: { STR: 11, DEX: 10, CON: 14, INT: 14, WIS: 17, CHA: 11 },
+      startingInventory: [
+        { id: 'service_revolver_oh', name: 'Service Revolver', description: 'The one you kept when you left. Six shots, well-maintained.', quantity: 1, damage: '1d8' },
+        { id: 'old_case_files', name: 'Old Case Files', description: 'A box of files from cases that didn\'t close right. Names, dates, patterns.', quantity: 1 },
+        { id: 'reading_glasses', name: 'Reading Glasses', description: 'For the fine print. Which is where they hide everything.', quantity: 1 },
+        { id: 'worn_notebook_oh', name: 'Worn Notebook', description: 'Decades of observations. The handwriting gets worse; the observations get better.', quantity: 1 },
+      ],
+      startingCredits: 100,
+      startingHp: 9,
+      startingAc: 11,
+      hitDieAvg: 4,
+      trait: {
+        name: 'Seen This Before',
+        description: 'Once per chapter, when a situation mirrors a past case, declare the pattern and predict the next move. WIS check (DC scales by how much time has passed and how deliberately the pattern was disguised). Success gives the party advance warning of what comes next: an ambush, a betrayal, a lie. Failure means the pattern has changed and the old playbook is wrong, leading to a confident wrong prediction.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You know the city the way a surgeon knows scar tissue: you can read what happened by what\'s left behind. Twenty years gave you the patterns, and the patterns don\'t change as much as people think. The cop skimming evidence bags in \'98 used the same trick the cop in \'84 used, who learned it from the cop in \'71. The councilman\'s nephew crashes a car, and the report reads the same way it read when you were a beat cop and someone else\'s nephew crashed a different car. You left the job, or the job left you, but the files came with you. The box under your desk contains every case that closed wrong. You\'re not retired. You\'re just no longer supervised.',
+    },
   ],
 
-  // ─── Lawyer: You operate the system\'s machinery ─────────────────────
-  'lawyer': [
+  // ─── The Machine: You operate the system\'s machinery ────────────────
+  'the-machine': [
     {
       id: 'defense-attorney',
       name: 'Defense Attorney',
@@ -276,32 +334,6 @@ const noirePlaybooks: Record<string, CharacterClass[]> = {
       openingKnowledge: 'You know the legal system the way a surgeon knows anatomy: where it works, where it fails, and where to cut. You know the courthouse has twelve judges, four of them honest, and that the DA prosecutes what the mayor tells him to. You know which filings create paper trails and which ones disappear into sealed records. You know that the law is a weapon, and like all weapons in this city, it works better for the people who can afford to aim it. Your briefcase is heavier than it looks.',
     },
     {
-      id: 'fixer-lawyer',
-      name: 'Fixer Lawyer',
-      concept: 'Makes problems disappear for clients who can pay. The skill is identical to a defense attorney; the clientele is the difference.',
-      hookTags: ['operator', 'networker'],
-      primaryStat: 'INT',
-      proficiencies: ['Deception', 'Investigation', 'Persuasion', 'Insight'],
-      stats: { STR: 8, DEX: 11, CON: 12, INT: 17, WIS: 13, CHA: 15 },
-      startingInventory: [
-        { id: 'briefcase_f', name: 'Leather Briefcase', description: 'Case files, boilerplate NDAs, and an envelope of cash for emergencies', quantity: 1 },
-        { id: 'bar_credential_f', name: 'Bar Credential', description: 'Opens every door that operates within the law. Some that don\'t.', quantity: 1 },
-        { id: 'disposable_phone', name: 'Disposable Phone', description: 'Replaced weekly. The number changes; the clients don\'t.', quantity: 1 },
-        { id: 'cash_envelope', name: 'Cash Envelope', description: 'Walking-around money. Not a bribe — a retainer for services not yet specified.', quantity: 1 },
-      ],
-      startingCredits: 200,
-      startingHp: 7,
-      startingAc: 10,
-      hitDieAvg: 4,
-      trait: {
-        name: 'Sealed Record',
-        description: 'Once per chapter, invoke legal privilege to suppress one piece of information from becoming public. A filing withdrawn, a record sealed, a deposition buried. The information stays hidden. But the filing itself tells anyone watching that something was worth hiding, and the person who benefits now owes you.',
-        usesPerDay: 1,
-        usesRemaining: 1,
-      },
-      openingKnowledge: 'You know the number to call at 2 AM when a client\'s son wraps a car around a telephone pole with someone else\'s daughter in the passenger seat. You know which judges take weekend calls, which reporters will hold a story for forty-eight hours, and which police captains understand the difference between a favor and a bribe. Your briefcase contains solutions to problems that don\'t officially exist. The city runs on arrangements, and you are the person who arranges them.',
-    },
-    {
       id: 'prosecutor',
       name: 'Prosecutor Turned',
       concept: 'Knows the institution from inside, now works against it or alongside it in complicated ways. The files in your head are the most dangerous thing you carry.',
@@ -326,6 +358,32 @@ const noirePlaybooks: Record<string, CharacterClass[]> = {
         usesRemaining: 1,
       },
       openingKnowledge: 'You know the DA\'s office from the inside: which ADAs are ambitious, which ones are honest, which ones were told to lose a case and did it. You know the case numbering system, the evidence chain of custody procedures, and the three ways a conviction gets buried without anyone saying the word "buried." You know why you left, even if you tell different people different reasons. The files in your head are worth more than anything in your briefcase, and the people still in that office know exactly what you took with you when you walked out.',
+    },
+    {
+      id: 'politician',
+      name: 'Politician',
+      concept: 'Reads the room before it reads itself. Power isn\'t held by the loudest voice; it\'s held by the person who counted the silences.',
+      hookTags: ['operator', 'networker'],
+      primaryStat: 'WIS',
+      proficiencies: ['Insight', 'Persuasion', 'Deception', 'Perception'],
+      stats: { STR: 8, DEX: 10, CON: 12, INT: 14, WIS: 17, CHA: 15 },
+      startingInventory: [
+        { id: 'pocket_notebook_pol', name: 'Pocket Notebook', description: 'Names, debts, alliances, vote counts. The real ledger of city government.', quantity: 1 },
+        { id: 'city_hall_badge', name: 'City Hall Badge', description: 'Opens municipal buildings, committee rooms, and the offices of people who owe you.', quantity: 1 },
+        { id: 'pocket_flask_pol', name: 'Pocket Flask', description: 'For the meetings that happen after the meeting.', quantity: 1 },
+        { id: 'pocket_derringer_pol', name: 'Pocket Derringer', description: 'Two shots. Carried since the redistricting fight.', quantity: 1, damage: '1d6' },
+      ],
+      startingCredits: 160,
+      startingHp: 7,
+      startingAc: 10,
+      hitDieAvg: 4,
+      trait: {
+        name: 'Read the Room',
+        description: 'Once per chapter, identify who in a scene holds real power vs. who holds visible power. WIS Insight check (DC scales by how well the power structure is concealed). Success reveals the actual decision-maker, their leverage, and who they answer to. Failure gives you the official story, which may be dangerously wrong to act on.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You know that every room has two meetings happening at once: the one on the agenda and the one in the glances. You know which council members vote with the mayor and which ones vote with the man who paid for the mayor\'s campaign. You know that a committee hearing is a performance, and the verdict was decided in a phone call the night before. The city runs on procedure the way a theater runs on scripts: the actors say their lines, but the director made the choices. You learned to read directors. That\'s why you\'re still in the building. That\'s also why certain people wish you weren\'t.',
     },
   ],
 
@@ -408,6 +466,32 @@ const noirePlaybooks: Record<string, CharacterClass[]> = {
         usesRemaining: 1,
       },
       openingKnowledge: 'You know who owes what. The bookie on Elm, the councilman\'s driver, the woman who runs the laundry that isn\'t a laundry. Your little black book isn\'t contacts; it\'s a map of the city\'s nervous system, drawn in debts and favors. When someone needs a problem solved without a paper trail, they call you. When you need something, you call them. The economy is reciprocal, and you\'re always counting. The organization you serve didn\'t recruit you; it absorbed you, and the loyalty it expects isn\'t optional.',
+    },
+    {
+      id: 'fixer-lawyer',
+      name: 'Fixer Lawyer',
+      concept: 'Makes problems disappear for clients who can pay. The skill is identical to a defense attorney; the clientele is the difference.',
+      hookTags: ['operator', 'networker'],
+      primaryStat: 'INT',
+      proficiencies: ['Deception', 'Investigation', 'Persuasion', 'Insight'],
+      stats: { STR: 8, DEX: 11, CON: 12, INT: 17, WIS: 13, CHA: 15 },
+      startingInventory: [
+        { id: 'briefcase_f', name: 'Leather Briefcase', description: 'Case files, boilerplate NDAs, and an envelope of cash for emergencies', quantity: 1 },
+        { id: 'bar_credential_f', name: 'Bar Credential', description: 'Opens every door that operates within the law. Some that don\'t.', quantity: 1 },
+        { id: 'disposable_phone', name: 'Disposable Phone', description: 'Replaced weekly. The number changes; the clients don\'t.', quantity: 1 },
+        { id: 'cash_envelope', name: 'Cash Envelope', description: 'Walking-around money. Not a bribe — a retainer for services not yet specified.', quantity: 1 },
+      ],
+      startingCredits: 200,
+      startingHp: 7,
+      startingAc: 10,
+      hitDieAvg: 4,
+      trait: {
+        name: 'Sealed Record',
+        description: 'Once per chapter, invoke legal privilege to suppress one piece of information from becoming public. A filing withdrawn, a record sealed, a deposition buried. The information stays hidden. But the filing itself tells anyone watching that something was worth hiding, and the person who benefits now owes you.',
+        usesPerDay: 1,
+        usesRemaining: 1,
+      },
+      openingKnowledge: 'You know the number to call at 2 AM when a client\'s son wraps a car around a telephone pole with someone else\'s daughter in the passenger seat. You know which judges take weekend calls, which reporters will hold a story for forty-eight hours, and which police captains understand the difference between a favor and a bribe. Your briefcase contains solutions to problems that don\'t officially exist. The city runs on arrangements, and you are the person who arranges them.',
     },
   ],
 
@@ -668,16 +752,18 @@ The Office doesn't fight. It persists. Upgrading means investing in the ability 
 - **Case Instinct (Methodical):** Player proposes a connection between known facts. GM evaluates plausibility. Strong reasoning lowers DC. Failure is free but consumes narrative time.
 - **Street Ear (Street PI):** Player taps a street contact for local information. If the question touches the wrong person or the wrong topic, the contact goes silent and the use is consumed.
 - **Last Resort (Desperate):** Reroll a failed check. The GM always imposes a consequence on success: damage, a burned contact, heat gained, or a moral line crossed. The success is never free.
+- **Seen This Before (Old Hand):** Declare a pattern match with a past case and predict the next move. WIS check. Success gives advance warning of an ambush, betrayal, or lie. Failure means the pattern has changed and the prediction is confidently wrong. The old playbook is only as good as the world's willingness to repeat itself.
 
-**Lawyer Playbooks:**
+**The Machine Playbooks:**
 - **Motion to Compel (Defense Attorney):** Legal force — the institution must comply if it operates within the law. But the filing is public record. The antagonist's lawyer sees your name, the case number, and what was requested.
-- **Sealed Record (Fixer Lawyer):** Suppress information through legal procedure. The information stays hidden, but the motion tells anyone watching that something was worth suppressing.
 - **Case File (Prosecutor Turned):** Recall an institutional detail from DA's office tenure. Accurate and valuable. The problem: the DA's office tracks who accessed what, and you're not supposed to remember.
+- **Read the Room (Politician):** Identify who holds real power vs. visible power in a scene. WIS Insight check. Success reveals the actual decision-maker, their leverage, and who they answer to. Failure gives the official story, which may be dangerously wrong to act on.
 
 **Criminal Playbooks:**
 - **New Face (Grifter):** Cover holds for first contact. Blown covers are permanent — every NPC present drops to Wary minimum, no recovery above Neutral. Blowing cover in a crowded room is exponentially worse than one-on-one.
 - **Clean Exit (Thief):** Auto-succeed on escape or evasion. Clean — no witnesses, no traces. But no alibi either.
 - **Favor Owed (Mobster):** Tab accumulates. After three unreturned favors, contacts demand reciprocity before helping. GM tracks the tab.
+- **Sealed Record (Fixer Lawyer):** Suppress information through legal procedure. The information stays hidden, but the motion tells anyone watching that something was worth suppressing. The person who benefits now owes you.
 
 **Enforcer Playbooks:**
 - **Badge Weight (Cop):** Invoke police authority for immediate civilian cooperation. Creates a report that internal affairs reads. The people you badge remember.
@@ -760,9 +846,9 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     { hook: 'Someone hires you to find their missing business partner. Three days in, you discover the partner isn\'t missing — they\'re hiding. From your client. The retainer\'s already spent, and the partner begs you not to report back.', title: 'The Client\'s Lie', origins: ['pi'], frame: { objective: 'Decide what to tell the client', crucible: 'The person you were hired to find is hiding from the person who hired you, and you already took the money' }, arc: { name: 'The Client\'s Lie', episode: 'Find out why the partner is hiding and what the client will do with the information' } },
     { hook: 'A stranger leaves a decade-old case file on your doorstep. Missing teenager, no leads, no suspects, case closed by a detective who retired the next year. The teenager\'s name appears in yesterday\'s police blotter under a different surname.', title: 'The Cold File', origins: ['pi'], frame: { objective: 'Find the connection between the cold case and the current arrest', crucible: 'Someone wanted this file reopened, and they chose you instead of the police' }, arc: { name: 'The Cold File', episode: 'Cross-reference the two identities and find the detective who closed the case' } },
 
-    // Lawyer — operating the system's machinery
-    { hook: 'A man walks into your office fifteen minutes before his arraignment. He says he didn\'t kill his wife. He says he knows who did. He says the person who did it is the prosecutor assigned to his case. His hearing starts in fifteen minutes and he wants you to walk in there with him.', title: 'Fifteen Minutes', origins: ['lawyer'], frame: { objective: 'Get through the arraignment and buy time to investigate', crucible: 'Fifteen minutes to decide if a stranger is telling the truth about a prosecutor' }, arc: { name: 'Fifteen Minutes', episode: 'Survive the arraignment and assess the defendant\'s claims about the prosecutor' } },
-    { hook: 'A woman hires you to file a wrongful death suit against a company whose name you recognize — your firm represented them last year. You didn\'t work the case, but your signature is on a filing. Someone used your credentials to bury a document. The woman\'s husband is dead, and your name helped make it happen.', title: 'Your Signature', origins: ['lawyer'], frame: { objective: 'Find the buried document and who forged your signature', crucible: 'Your credentials were used to bury evidence in a wrongful death, and you\'re the only one who can prove it' }, arc: { name: 'Your Signature', episode: 'Pull the case file and identify the filing that carries your forged signature' } },
+    // The Machine — operating the system's machinery
+    { hook: 'A man walks into your office fifteen minutes before his arraignment. He says he didn\'t kill his wife. He says he knows who did. He says the person who did it is the prosecutor assigned to his case. His hearing starts in fifteen minutes and he wants you to walk in there with him.', title: 'Fifteen Minutes', origins: ['the-machine'], frame: { objective: 'Get through the arraignment and buy time to investigate', crucible: 'Fifteen minutes to decide if a stranger is telling the truth about a prosecutor' }, arc: { name: 'Fifteen Minutes', episode: 'Survive the arraignment and assess the defendant\'s claims about the prosecutor' } },
+    { hook: 'A woman hires you to file a wrongful death suit against a company whose name you recognize — your firm represented them last year. You didn\'t work the case, but your signature is on a filing. Someone used your credentials to bury a document. The woman\'s husband is dead, and your name helped make it happen.', title: 'Your Signature', origins: ['the-machine'], startingCounters: { complicity: 2 }, frame: { objective: 'Find the buried document and who forged your signature', crucible: 'Your credentials were used to bury evidence in a wrongful death, and you\'re the only one who can prove it' }, arc: { name: 'Your Signature', episode: 'Pull the case file and identify the filing that carries your forged signature' } },
 
     // Criminal — you are the silence
     { hook: 'The mark you conned last month just showed up at your door — not angry, but terrified. Someone used the fake identity you sold them to commit a murder, and now both of you are connected to the body.', title: 'Old Debts', origins: ['criminal'], frame: { objective: 'Sever the connection between your identity work and the murder', crucible: 'A fake ID you crafted is on a crime scene, and the trail leads straight to your door' }, arc: { name: 'Old Debts', episode: 'Learn which identity was used, on which victim, and who actually pulled the trigger' } },
@@ -773,7 +859,7 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     { hook: 'You\'re sent to clear a building before demolition. The tenants were supposed to be relocated. They weren\'t. Sixteen families, four hours until the crew arrives, and your employer says the permits are signed. The children are playing in the hallway when you walk in.', title: 'The Line', origins: ['enforcer'], frame: { objective: 'Decide what to do about the families before the demolition crew arrives', crucible: 'Sixteen families, four hours, and the person who pays you expects the building empty' }, arc: { name: 'The Line', episode: 'Confront the tenants and decide whose side you\'re on' } },
 
     // Reporter — turning silence into noise
-    { hook: 'A source slides you documents proving a construction magnate bribed the building inspector before a collapse that killed nine people. Then your editor kills the story. No explanation.', title: 'Killed Story', origins: ['reporter'], frame: { objective: 'Find out who pressured the editor to kill the story', crucible: 'Nine people are dead, the proof is in your hands, and your own paper won\'t run it' }, arc: { name: 'The Killed Story', episode: 'Confront the editor and identify who has leverage over the paper' } },
+    { hook: 'A source slides you documents proving a construction magnate bribed the building inspector before a collapse that killed nine people. Then your editor kills the story. No explanation.', title: 'Killed Story', origins: ['reporter'], startingCounters: { leverage: 1 }, frame: { objective: 'Find out who pressured the editor to kill the story', crucible: 'Nine people are dead, the proof is in your hands, and your own paper won\'t run it' }, arc: { name: 'The Killed Story', episode: 'Confront the editor and identify who has leverage over the paper' } },
     { hook: 'You\'re writing a routine obituary when you notice the deceased appears in three sealed court cases. The family calls hourly asking when it runs. The courthouse clerk who pulled the case numbers is found dead the next morning. Your editor wants the obit on page six. The case numbers are on a napkin in your pocket.', title: 'The Obituary', origins: ['reporter'], frame: { objective: 'Investigate the sealed cases before someone removes the last traces', crucible: 'A dead clerk, sealed cases, and an obituary that someone needs published or buried' }, arc: { name: 'The Obituary', episode: 'Research the sealed cases and find out why the clerk had to die' } },
 
     // ── Playbook-Specific Hooks ─────────────────────────────────────────
