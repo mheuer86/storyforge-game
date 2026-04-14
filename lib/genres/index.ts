@@ -1,4 +1,4 @@
-import type { InventoryItem, Trait, ShipState } from '../types'
+import type { InventoryItem, Trait, ShipState, DispositionTier } from '../types'
 
 import spaceOperaConfig from './space-opera'
 import fantasyConfig from './fantasy'
@@ -13,7 +13,7 @@ export type Genre = 'space-opera' | 'fantasy' | 'grimdark' | 'cyberpunk' | 'noir
 
 export interface StartingContact {
   role: string              // "trade agent", "mentor", "rival" — GM names them
-  disposition: 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted'
+  disposition: DispositionTier
   description: string       // who they are, e.g. "A Veldran trade agent who owes you a favor"
   affiliation?: string      // faction name, e.g. "The Synod"
   npcRole?: 'crew' | 'contact' | 'npc'  // defaults to 'contact'

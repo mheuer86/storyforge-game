@@ -66,6 +66,7 @@ export interface Faction {
 }
 
 export type DispositionTier = 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted'
+export const DISPOSITION_TIERS: readonly DispositionTier[] = ['hostile', 'wary', 'neutral', 'favorable', 'trusted'] as const
 
 export interface NPC {
   name: string

@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { runRulesEngine } from '@/lib/rules-engine'
+import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme } from '@/lib/genre-config'
 import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted, setApiKey } from '@/lib/api-key'
@@ -206,12 +207,72 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
-      const statChanges: StatChange[] = []
-      let lastRollBreakdown: RollBreakdown | undefined
-      let finalActions: string[] = []
-      let sceneEndSummary: string | undefined
-      let sceneToneSignature: string | undefined
-      let lastCommitInput: Record<string, unknown> | undefined
+      let parserState = createParserState(currentState)
+
+      const callbacks: StreamParserCallbacks = {
+        onTextUpdate: (text) => {
+          setRetryCountdown(null)
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: text } : m))
+          )
+        },
+        onChapterTitle: (_title, headerContent) => {
+          setMessages((prev) =>
+            prev.map((m) => m.type === 'chapter-header' ? { ...m, content: headerContent } : m)
+          )
+        },
+        onRollPrompt: (prompt) => onRollPrompt(prompt),
+        onTokenUsage: (u) => {
+          setTokenLog(prev => [...prev, {
+            input: u.inputTokens, output: u.outputTokens,
+            cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
+            timestamp: new Date().toISOString(),
+          }])
+          debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
+          if (!isByok()) {
+            trackDemoUsage(u.inputTokens + u.outputTokens + u.cacheWriteTokens + u.cacheReadTokens)
+          }
+        },
+        onQuickActions: (actions) => setQuickActions(actions),
+        onRollBreakdown: (breakdown) => {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, rollBreakdown: breakdown } : m))
+          )
+        },
+        onRetrying: (delayMs) => {
+          const totalSeconds = Math.ceil(delayMs / 1000)
+          setRetryCountdown(totalSeconds)
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, content: '' } : m))
+          )
+          const interval = setInterval(() => {
+            setRetryCountdown((prev) => {
+              if (prev === null || prev <= 1) { clearInterval(interval); return null }
+              return prev - 1
+            })
+          }, 1000)
+        },
+        onError: (message) => {
+          setRetryCountdown(null)
+          onError(message)
+        },
+        onDone: (finalState, statChanges) => onDone(finalState, statChanges),
+        onDebug: (message) => {
+          debugLogRef.current.push(`[${new Date().toISOString()}] ${message}`)
+        },
+        applyTools,
+      }
+
+      // Also handle meta_response message type updates
+      const metaCallbacks: StreamParserCallbacks = {
+        ...callbacks,
+        onTextUpdate: (text) => {
+          setRetryCountdown(null)
+          setMessages((prev) =>
+            prev.map((m) => (m.id === gmMsgId ? { ...m, type: isMetaQuestion ? 'meta-response' : m.type, content: text } : m))
+          )
+        },
+      }
 
       while (true) {
         const { done, value } = await reader.read()
@@ -225,281 +286,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           if (!line.trim()) continue
           try {
             const event = JSON.parse(line) as StreamEvent
-
-            if (event.type === 'text') {
-              setRetryCountdown(null)
-              gmText += event.content
-              setMessages((prev) =>
-                prev.map((m) => (m.id === gmMsgId ? { ...m, content: gmText } : m))
-              )
-            }
-
-            // Hook-derived chapter title for new games
-            if ((event as Record<string, unknown>).type === 'chapter_title') {
-              const title = (event as Record<string, unknown>).title as string
-              if (title) {
-                stateWithChanges = {
-                  ...stateWithChanges,
-                  meta: { ...stateWithChanges.meta, chapterTitle: title },
-                  history: {
-                    ...stateWithChanges.history,
-                    chapters: stateWithChanges.history.chapters.map((ch, i) =>
-                      i === stateWithChanges.history.chapters.length - 1 ? { ...ch, title } : ch
-                    ),
-                  },
-                }
-                // Update the displayed chapter header
-                const headerContent = `Chapter ${stateWithChanges.meta.chapterNumber}: ${title}`
-                setMessages((prev) =>
-                  prev.map((m) => m.type === 'chapter-header' ? { ...m, content: headerContent } : m)
-                )
-              }
-            }
-
-            if (event.type === 'roll_prompt') {
-              onRollPrompt({
-                check: event.check,
-                stat: event.stat,
-                dc: event.dc,
-                modifier: event.modifier,
-                reason: event.reason,
-                toolUseId: event.toolUseId,
-                pendingMessages: event.pendingMessages,
-                pendingState: stateWithChanges,
-                advantage: event.advantage,
-                contested: event.contested,
-                priorToolResults: event.priorToolResults,
-                sides: event.sides,
-                rollType: event.rollType,
-                damageType: event.damageType,
-              })
-            }
-
-            if (event.type === 'token_usage') {
-              const u = event.usage
-              setTokenLog(prev => [...prev, {
-                input: u.inputTokens, output: u.outputTokens,
-                cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
-                timestamp: new Date().toISOString(),
-              }])
-              debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
-              // Track demo usage (only counts when not using BYOK)
-              if (!isByok()) {
-                trackDemoUsage(u.inputTokens + u.outputTokens + u.cacheWriteTokens + u.cacheReadTokens)
-              }
-            }
-
-            if (event.type === 'tools') {
-              // Extract suggested_actions from commit_turn
-              const commitTool = event.results.findLast((r) => r.tool === 'commit_turn')
-              if (commitTool) {
-                lastCommitInput = commitTool.input as Record<string, unknown>
-                // Debug log: capture the full commit_turn input
-                const ci = commitTool.input as Record<string, unknown>
-                const logParts: string[] = []
-                if (ci.world && typeof ci.world === 'object') {
-                  const w = ci.world as Record<string, unknown>
-                  if (w.set_location) logParts.push(`set_location=${JSON.stringify(w.set_location)}`)
-                  if (w.set_scene_snapshot) logParts.push(`snapshot="${w.set_scene_snapshot}"`)
-                  if (w.add_npcs) logParts.push(`add_npcs=${(w.add_npcs as Array<{name: string}>).map(n => n.name).join(',')}`)
-                  if (w.update_npcs) logParts.push(`update_npcs=${(w.update_npcs as Array<{name: string}>).map(n => n.name).join(',')}`)
-                  if (w.disposition_changes) logParts.push(`dispositions=${JSON.stringify(w.disposition_changes)}`)
-                  if (w.set_exploration) logParts.push('set_exploration=yes')
-                  if (w.cohesion) logParts.push(`cohesion=${JSON.stringify(w.cohesion)}`)
-                }
-                if (ci.scene_end) logParts.push(`scene_end=true`)
-                if (ci.scene_summary) logParts.push(`scene_summary="${ci.scene_summary}"`)
-                if (ci.tone_signature) logParts.push(`tone="${ci.tone_signature}"`)
-                if (ci.chapter_frame) logParts.push(`frame=${JSON.stringify(ci.chapter_frame)}`)
-                if (ci.signal_close) logParts.push(`signal_close=${JSON.stringify(ci.signal_close)}`)
-                if (ci.objective_status) logParts.push(`objective_status=${ci.objective_status}`)
-                if (ci.arc_updates) logParts.push(`arc_updates=${JSON.stringify(ci.arc_updates)}`)
-                if (ci.character && typeof ci.character === 'object') {
-                  const ch = ci.character as Record<string, unknown>
-                  if (ch.hp_delta) logParts.push(`hp_delta=${ch.hp_delta}`)
-                  if (ch.credits_delta) logParts.push(`credits_delta=${ch.credits_delta}`)
-                }
-                debugLogRef.current.push(`[${new Date().toISOString()}] COMMIT_TURN ${logParts.join(' | ')}`)
-                const commitInput = commitTool.input as { suggested_actions?: string[] }
-                if (commitInput.suggested_actions && commitInput.suggested_actions.length > 0) {
-                  finalActions = commitInput.suggested_actions
-                  setQuickActions(finalActions)
-                }
-
-                // Extract enemy roll breakdown from commit_turn.character.roll_breakdown
-                const charInput = commitTool.input as { character?: { roll_breakdown?: RollBreakdown } }
-                if (charInput.character?.roll_breakdown) {
-                  lastRollBreakdown = charInput.character.roll_breakdown
-                }
-
-                // Extract scene boundary from commit_turn
-                const sceneInput = commitTool.input as { scene_end?: boolean; scene_summary?: string; tone_signature?: string; world?: { set_location?: unknown } }
-                // Auto-detect scene boundary: if set_location present but no scene_end, force it
-                const hasLocationChange = !!sceneInput.world?.set_location
-                const hasSceneEnd = !!sceneInput.scene_end
-                if (hasSceneEnd || hasLocationChange) {
-                  if (sceneInput.scene_summary) {
-                    sceneEndSummary = sceneInput.scene_summary
-                  } else if (hasLocationChange && !hasSceneEnd) {
-                    // Location change without scene_end — create a minimal summary
-                    sceneEndSummary = '[Scene boundary detected from location change]'
-                  }
-                  if (sceneInput.tone_signature) {
-                    sceneToneSignature = sceneInput.tone_signature
-                  }
-                  // If scene_end without scene_summary, messages stay raw (no worse than before).
-                  // Claude should almost always include scene_summary per prompt instructions.
-                }
-              }
-
-              const metaTool = event.results.find((r) => r.tool === 'meta_response')
-              if (metaTool) {
-                const metaContent = (metaTool.input as { content: string }).content
-                // Only use tool content as fallback — if Claude streamed text, that's the real answer.
-                if (!gmText.trim()) {
-                  gmText = metaContent
-                }
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === gmMsgId ? { ...m, type: 'meta-response', content: gmText } : m
-                  )
-                )
-              }
-
-              // Apply state changes from commit_turn and other internal tools (excluding meta_response)
-              const stateResults = event.results.filter(
-                (r) => r.tool !== 'meta_response'
-              )
-              if (stateResults.length > 0) {
-                stateWithChanges = applyTools(stateResults, stateWithChanges, statChanges)
-                delete (stateWithChanges as GameState & { _sceneBreaks?: string[] })._sceneBreaks
-                // Debug log: state changes and scene summary status
-                if (statChanges.length > 0) {
-                  debugLogRef.current.push(`[${new Date().toISOString()}] STATE_CHANGES ${statChanges.map(s => `[${s.type}] ${s.label}`).join(' | ')}`)
-                }
-                const ss = stateWithChanges.sceneSummaries ?? []
-                if (ss.length > 0) {
-                  debugLogRef.current.push(`[${new Date().toISOString()}] SCENE_SUMMARIES count=${ss.length} latest="${ss[ss.length - 1].text.slice(0, 80)}..."`)
-                }
-                if (stateWithChanges._pendingSceneSummary) {
-                  debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ PENDING_SCENE_SUMMARY flag=true (location changed without scene_end)`)
-                }
-                if (stateWithChanges._objectiveResolvedAtTurn) {
-                  const currentTurn = stateWithChanges.history.messages.filter(m => m.role === 'player').length
-                  const since = currentTurn - stateWithChanges._objectiveResolvedAtTurn
-                  debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_STATUS resolved_at_turn=${stateWithChanges._objectiveResolvedAtTurn} turns_since=${since}`)
-                }
-                const arcs = stateWithChanges.arcs ?? []
-                if (arcs.length > 0) {
-                  debugLogRef.current.push(`[${new Date().toISOString()}] ARCS ${arcs.map(a => `${a.id}[${a.status}]`).join(', ')}`)
-                }
-              }
-            }
-
-            if (event.type === 'done') {
-              setRetryCountdown(null)
-              // Clear stale quick actions if the GM didn't provide new ones
-              // But preserve them during meta questions (meta responses don't call commit_turn)
-              if (finalActions.length === 0 && !isMetaQuestion) {
-                setQuickActions([])
-                debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ QUICK_ACTIONS none (Claude did not include suggested_actions)`)
-              } else if (finalActions.length > 0) {
-                debugLogRef.current.push(`[${new Date().toISOString()}] QUICK_ACTIONS [${finalActions.join(' | ')}]`)
-              }
-              // Flag if no commit_turn was received (narrative-only response)
-              if (!lastCommitInput && !isMetaQuestion) {
-                stateWithChanges = { ...stateWithChanges, _noCommitLastTurn: true } as GameState & { _noCommitLastTurn?: boolean }
-                debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ NO_COMMIT_TURN (narrative only, no state changes)`)
-              } else if (lastCommitInput) {
-                // Clear the flag if commit_turn was received
-                const { _noCommitLastTurn, ...rest } = stateWithChanges as GameState & { _noCommitLastTurn?: boolean }
-                stateWithChanges = rest as GameState
-              }
-              const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
-              let finalState: GameState = {
-                ...stateWithChanges,
-                history: {
-                  ...stateWithChanges.history,
-                  messages: [
-                    ...stateWithChanges.history.messages,
-                    {
-                      id: gmMsgId,
-                      role: gmRole as 'gm' | 'meta-response',
-                      content: gmText,
-                      timestamp: new Date().toISOString(),
-                      ...(statChanges.length > 0 && { statChanges }),
-                      ...(lastRollBreakdown && { rollBreakdown: lastRollBreakdown }),
-                    },
-                  ],
-                },
-              }
-              // Attach rollBreakdown to the GM display message
-              if (lastRollBreakdown) {
-                setMessages((prev) =>
-                  prev.map((m) => (m.id === gmMsgId ? { ...m, rollBreakdown: lastRollBreakdown } : m))
-                )
-              }
-
-              // Append scene summary if a scene boundary occurred
-              if (sceneEndSummary) {
-                const existing = finalState.sceneSummaries ?? []
-                const lastScene = existing[existing.length - 1]
-                const fromIdx = lastScene ? lastScene.toMessageIndex + 1 : 0
-                const toIdx = finalState.history.messages.length - 1
-                const sceneNum = (lastScene?.sceneNumber ?? 0) + 1
-                finalState.sceneSummaries = [
-                  ...existing,
-                  { text: sceneEndSummary, sceneNumber: sceneNum, fromMessageIndex: fromIdx, toMessageIndex: toIdx, ...(sceneToneSignature && { toneSignature: sceneToneSignature }) },
-                ]
-              }
-
-              // Detect scope signals from commit_turn and increment counter
-              if (lastCommitInput) {
-                let signals = 0
-                const world = lastCommitInput.world as Record<string, unknown> | undefined
-                if (world) {
-                  if (world.set_location) signals++
-                  const addNpcs = world.add_npcs as unknown[] | undefined
-                  if (addNpcs && addNpcs.length >= 3) signals++
-                  const antagonist = world.antagonist as { action?: string } | undefined
-                  if (antagonist?.action === 'establish') signals++
-                  const clocks = world.clocks as { action?: string }[] | undefined
-                  if (clocks?.some(c => c.action === 'establish')) signals++
-                  if (world.add_timer) signals++
-                  if (world.set_operation) signals++
-                }
-                if (signals > 0) {
-                  finalState.scopeSignals = (finalState.scopeSignals ?? 0) + signals
-                }
-              }
-
-              // Run rules engine (persistent counters, threshold warnings)
-              finalState = runRulesEngine(finalState, lastCommitInput ?? null)
-
-              onDone(finalState, statChanges)
-            }
-
-            if (event.type === 'retrying') {
-              const totalSeconds = Math.ceil(event.delayMs / 1000)
-              setRetryCountdown(totalSeconds)
-              // Clear the GM message while retrying
-              setMessages((prev) =>
-                prev.map((m) => (m.id === gmMsgId ? { ...m, content: '' } : m))
-              )
-              gmText = ''
-              // Tick down every second
-              const interval = setInterval(() => {
-                setRetryCountdown((prev) => {
-                  if (prev === null || prev <= 1) { clearInterval(interval); return null }
-                  return prev - 1
-                })
-              }, 1000)
-            }
-
-            if (event.type === 'error') {
-              setRetryCountdown(null)
-              onError(event.message)
-            }
+            // Use meta callbacks for tools events (meta_response fallback needs type update)
+            const cb = event.type === 'tools' ? metaCallbacks : callbacks
+            parserState = processStreamEvent(event, parserState, gmMsgId, isMetaQuestion, cb)
           } catch {
             // Skip malformed lines
           }

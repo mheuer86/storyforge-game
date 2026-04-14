@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk'
+import { DISPOSITION_TIERS } from './types'
 
 // ============================================================
 // commit_turn — single tool for all game state mutations
@@ -140,7 +141,7 @@ const commitTurnDefinition: Anthropic.Tool = {
                 role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
                 subtype: { type: 'string', enum: ['person', 'vessel', 'installation'] },
                 vulnerability: { type: 'string' },
-                disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'] },
+                disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
                 affiliation: { type: 'string' },
                 status: { type: 'string', enum: ['active', 'dead', 'defeated', 'gone'] },
                 voice_note: { type: 'string' },
@@ -163,7 +164,7 @@ const commitTurnDefinition: Anthropic.Tool = {
                 role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
                 subtype: { type: 'string', enum: ['person', 'vessel', 'installation'] },
                 vulnerability: { type: 'string' },
-                disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'] },
+                disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
                 affiliation: { type: 'string' },
                 status: { type: 'string', enum: ['active', 'dead', 'defeated', 'gone'] },
                 voice_note: { type: 'string' },
@@ -426,7 +427,7 @@ const commitTurnDefinition: Anthropic.Tool = {
               type: 'object',
               properties: {
                 npc_name: { type: 'string' },
-                new_disposition: { type: 'string', enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'] },
+                new_disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
                 reason: { type: 'string' },
               },
               required: ['npc_name', 'new_disposition', 'reason'],
