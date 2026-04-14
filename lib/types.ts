@@ -526,6 +526,7 @@ export type StreamEvent =
       damageType?: string
     }
   | { type: 'tools'; results: ToolCallResult[] }
+  | { type: 'chapter_title'; title: string }
   | { type: 'done' }
   | { type: 'retrying'; delayMs: number; reason: string }
   | { type: 'error'; message: string }

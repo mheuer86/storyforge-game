@@ -75,8 +75,8 @@ export function processStreamEvent(
     return s
   }
 
-  if ((event as Record<string, unknown>).type === 'chapter_title') {
-    const title = (event as Record<string, unknown>).title as string
+  if (event.type === 'chapter_title') {
+    const title = event.title
     if (title) {
       s.gameState = {
         ...s.gameState,
