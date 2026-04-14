@@ -1,5 +1,6 @@
 import type { GameState, ToolCallResult, Enemy, InventoryItem, TempModifier, AntagonistMove, CohesionLogEntry, UpdateShipInput, ChapterDebrief, DispositionTier, TensionClock, RollRecord, RollBreakdown, Notebook } from './types'
 import { resetChapterCounters } from './rules-engine'
+import { findNpcByName } from './npc-utils'
 import { getGenreConfig } from './genres'
 import type { Genre } from './genres'
 
@@ -319,11 +320,7 @@ function applyWorldChanges(
         combatTier: n.combat_tier,
         combatNotes: n.combat_notes,
       }
-      const nameLower = npc.name.toLowerCase()
-      const existing = world.npcs.find((x) => {
-        const xLower = x.name.toLowerCase()
-        return xLower === nameLower || xLower.startsWith(nameLower) || nameLower.startsWith(xLower)
-      })
+      const existing = findNpcByName(world.npcs, npc.name)
       if (existing) {
         const canonical = existing.name.length <= npc.name.length ? existing.name : npc.name
         world.npcs = world.npcs.map((x) =>
@@ -335,11 +332,11 @@ function applyWorldChanges(
       }
       if (npc.affiliation && !world.factions.some((f) => f.name === npc.affiliation)) {
         // Derive initial faction stance from the NPC's disposition
-        const stanceFromDisposition: Record<string, string> = {
+        const stanceFromDisposition: Record<DispositionTier, string> = {
           trusted: 'Allied', favorable: 'Friendly', neutral: 'Neutral',
           wary: 'Wary', hostile: 'Hostile',
         }
-        const initialStance = stanceFromDisposition[npc.disposition?.toLowerCase() ?? ''] ?? 'Neutral'
+        const initialStance = stanceFromDisposition[(npc.disposition ?? 'neutral') as DispositionTier] ?? 'Neutral'
         world.factions = [...world.factions, { name: npc.affiliation, stance: initialStance }]
       }
     }
@@ -363,11 +360,7 @@ function applyWorldChanges(
         ...(n.combat_notes !== undefined && { combatNotes: n.combat_notes }),
       }
       dbg('updateNpc: ' + JSON.stringify(npcUpdate))
-      const updateName = n.name.toLowerCase()
-      const matched = world.npcs.find((x) => {
-        const xLower = x.name.toLowerCase()
-        return xLower === updateName || xLower.startsWith(updateName) || updateName.startsWith(xLower)
-      })
+      const matched = findNpcByName(world.npcs, n.name)
       dbg('matched npc: ' + (matched ? matched.name : 'NONE'))
       if (matched) {
         world.npcs = world.npcs.map((x) => {

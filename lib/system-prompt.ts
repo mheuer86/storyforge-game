@@ -1,4 +1,4 @@
-import type { GameState } from './types'
+import type { GameState, DispositionTier } from './types'
 import { getStatModifier, formatModifier } from './game-data'
 import { getGenreConfig, type Genre } from './genre-config'
 
@@ -1097,7 +1097,7 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
   const backgroundNpcs = relevantNpcs.filter(n => !isScenePresent(n))
 
   // Disposition → inline mechanical consequences (Claude reads state literally, rules aspirationally)
-  const dispositionConsequences: Record<string, string> = {
+  const dispositionConsequences: Record<DispositionTier, string> = {
     hostile: 'refuses help, attacks if provoked, contested checks required for any interaction',
     wary: 'withholds information, requires proof or leverage, disadvantage on Persuasion',
     neutral: 'cooperates if given a reason, no free information, requires a check to extract intel',
@@ -1108,7 +1108,7 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
   // Scene-present: full detail (voice, description, vulnerability, combat, disposition consequences)
   const sceneNpcLines = sceneNpcs.map((n) => {
     const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
-    const tierKey = (n.disposition || 'neutral').toLowerCase()
+    const tierKey = (n.disposition || 'neutral') as DispositionTier
     const consequences = dispositionConsequences[tierKey] || dispositionConsequences.neutral
     const role = n.role ?? 'npc'
     const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
@@ -1286,17 +1286,21 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
   }
 
   // Roll drought — count turns since last roll
+  // Thresholds are context-aware: crucible/combat keeps strict pacing,
+  // development/hook allows longer dialogue stretches before triggering.
   const rollLog = gs.history.rollLog
   const lastRollTimestamp = rollLog.length > 0 ? rollLog[rollLog.length - 1].timestamp : null
   const messagesSinceLastRoll = lastRollTimestamp
     ? gs.history.messages.filter(m => m.role === 'player' && m.timestamp > lastRollTimestamp).length
     : playerTurnCount
+  const inHighTension = pacingAct === 'crucible' || gs.combat.active
+  const [droughtSoft, droughtHard, droughtMandatory] = inHighTension ? [2, 3, 5] : [4, 5, 7]
   let rollDrought = ''
-  if (messagesSinceLastRoll >= 5) {
+  if (messagesSinceLastRoll >= droughtMandatory) {
     rollDrought = ` 🚨 ROLL DROUGHT (${messagesSinceLastRoll} turns): MANDATORY — propose a pending_check before ANY narrative progression. The player's next action requires a roll, no exceptions.`
-  } else if (messagesSinceLastRoll >= 3) {
+  } else if (messagesSinceLastRoll >= droughtHard) {
     rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Next player action MUST include a pending_check. No free information, no ungated progress.`
-  } else if (messagesSinceLastRoll >= 2) {
+  } else if (messagesSinceLastRoll >= droughtSoft) {
     rollDrought = ` ⚠ ROLL DROUGHT (${messagesSinceLastRoll} turns): Look for a roll trigger — don't let the narrative coast.`
   }
 

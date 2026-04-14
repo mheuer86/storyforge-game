@@ -83,7 +83,8 @@ function rollResultText(roll: number, modifier: number, dc: number, result: Roll
   return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.${ROLL_REMINDER}`
 }
 
-const RETRY_DELAY_MS = 12_000
+const MAX_RETRIES = 3
+const RETRY_DELAYS_MS = [5_000, 10_000, 20_000] // exponential backoff
 
 function isOverloaded(error: unknown): boolean {
   if (error instanceof Anthropic.APIError) {
@@ -291,6 +292,34 @@ export async function POST(req: NextRequest) {
         controller.close()
       }
 
+      // Follow-up helper: if commit_turn is missing suggested_actions, ask Claude
+      // for just the actions before sending 'done'. Fires inside the loading state
+      // so the player sees no gap between narrative and action buttons.
+      async function ensureActions(
+        loopResult: ToolLoopResult,
+        systemPrompt: Anthropic.TextBlockParam[],
+        tools: Anthropic.Tool[],
+      ) {
+        const commitResult = loopResult.toolResults.find(r => r.tool === 'commit_turn')
+        const actions = (commitResult?.input as { suggested_actions?: string[] } | undefined)?.suggested_actions
+        if (actions && actions.length > 0) return
+
+        const followUpMessages: Anthropic.MessageParam[] = [
+          ...loopResult.messages,
+          { role: 'user', content: 'You did not include suggested_actions in your commit_turn. Call commit_turn now with ONLY suggested_actions (3-4 contextual options for the player based on the current scene). No other fields needed.' },
+        ]
+        const followUp = await runToolLoop(systemPrompt, followUpMessages, send, false, { tools, maxRounds: 1 })
+        const followUpCommit = followUp.toolResults.find(r => r.tool === 'commit_turn')
+        const followUpActions = (followUpCommit?.input as { suggested_actions?: string[] } | undefined)?.suggested_actions
+        if (followUpActions && followUpActions.length > 0) {
+          if (commitResult) {
+            (commitResult.input as Record<string, unknown>).suggested_actions = followUpActions
+          } else {
+            loopResult.toolResults.push({ tool: 'commit_turn', input: { suggested_actions: followUpActions } })
+          }
+        }
+      }
+
       // Select tools: meta gets meta_response only, everything else gets commit_turn + meta_response
       const contextTools = isMetaQuestion ? metaTools : gameTools
 
@@ -385,6 +414,7 @@ export async function POST(req: NextRequest) {
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+          await ensureActions(loopResult, systemPrompt, contextTools)
           finish(loopResult.toolResults)
           return
         }
@@ -448,7 +478,7 @@ export async function POST(req: NextRequest) {
         // ── Chapter close: Haiku for phase 1, Sonnet for phases 2-3 (debrief + curation) ──
         if (isChapterClose) {
           const phase = closePhase ?? 1
-          const CLOSE_MODEL = phase === 1 ? 'claude-haiku-4-5-20251001' : MODEL
+          const CLOSE_MODEL = MODEL // All close phases use Sonnet — Haiku misjudges outcome tiers
           const [phaseInstructions, phaseState] = buildClosePhasePrompt(gameState, phase as 1 | 2 | 3)
           const phaseSystem: Anthropic.TextBlockParam[] = [
             { type: 'text', text: phaseInstructions },
@@ -487,11 +517,22 @@ export async function POST(req: NextRequest) {
           return
         }
 
+        if (!isMetaQuestion) await ensureActions(loopResult, systemPrompt, contextTools)
+
         finish(loopResult.toolResults)
       } catch (error) {
-        if (isOverloaded(error)) {
-          send({ type: 'retrying', delayMs: RETRY_DELAY_MS, reason: 'Claude is taking a break' })
-          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+        if (!isOverloaded(error)) {
+          send({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' })
+          controller.close()
+          return
+        }
+
+        let succeeded = false
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          const delayMs = RETRY_DELAYS_MS[attempt]
+          send({ type: 'retrying', delayMs, reason: `Claude is taking a break (attempt ${attempt + 1}/${MAX_RETRIES})` })
+          await new Promise((resolve) => setTimeout(resolve, delayMs))
+
           try {
             const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
             const retryMessages = rollResolution
@@ -518,13 +559,21 @@ export async function POST(req: NextRequest) {
               loopResult.toolResults.push({ tool: '_roll_record', input: { id: crypto.randomUUID(), check: rollResolution.check, stat: rollResolution.stat ?? '', dc: rollResolution.dc, roll: rollResolution.roll, modifier: rollResolution.modifier, total: rollResolution.roll + rollResolution.modifier, result, reason: rollResolution.reason, timestamp: new Date().toISOString(), ...(rollResolution.advantage && { advantage: rollResolution.advantage }), ...(rollResolution.rawRolls && { rawRolls: rollResolution.rawRolls }) } as unknown as Record<string, unknown> })
             }
 
+            if (!isMetaQuestion) await ensureActions(loopResult, retrySystem, retryTools)
             finish(loopResult.toolResults)
+            succeeded = true
+            break
           } catch (retryError) {
-            send({ type: 'error', message: retryError instanceof Error ? retryError.message : 'Unknown error' })
-            controller.close()
+            if (!isOverloaded(retryError) || attempt === MAX_RETRIES - 1) {
+              send({ type: 'error', message: retryError instanceof Error ? retryError.message : 'Unknown error' })
+              controller.close()
+              return
+            }
+            // Otherwise loop continues to next attempt
           }
-        } else {
-          send({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' })
+        }
+        if (!succeeded) {
+          send({ type: 'error', message: 'Claude is overloaded. Please try again later.' })
           controller.close()
         }
       }

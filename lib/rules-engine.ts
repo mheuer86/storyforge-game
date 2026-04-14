@@ -1,4 +1,5 @@
-import type { GameState } from './types'
+import type { GameState, DispositionTier } from './types'
+import { DISPOSITION_TIERS } from './types'
 import type { Genre } from './genres/index'
 
 /**
@@ -87,9 +88,9 @@ function setFactionStance(state: GameState, factionName: string, stance: string)
 function capNpcDisposition(
   state: GameState,
   filter: (n: { name: string; role?: string; affiliation?: string; disposition?: string; combatTier?: number }) => boolean,
-  maxDisposition: 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted',
+  maxDisposition: DispositionTier,
 ): GameState {
-  const tiers = ['hostile', 'wary', 'neutral', 'favorable', 'trusted']
+  const tiers = DISPOSITION_TIERS
   const maxIdx = tiers.indexOf(maxDisposition)
   const world = { ...state.world }
   world.npcs = world.npcs.map(n => {
@@ -648,7 +649,7 @@ function deriveCohesionFromCrew(state: GameState): GameState {
   const crewNpcs = state.world.npcs.filter(n => n.role === 'crew')
   if (crewNpcs.length === 0) return state
 
-  const dispositionToScore: Record<string, number> = {
+  const dispositionToScore: Record<DispositionTier, number> = {
     hostile: 1, wary: 2, neutral: 3, favorable: 4, trusted: 5,
   }
 

@@ -1,5 +1,6 @@
 import type { GameState, CharacterState, WorldState, ClueConnection } from './types'
 import { getGenreConfig, genres as genreList, type Genre, type Species, type CharacterClass } from './genre-config'
+import { findNpcIndexByName } from './npc-utils'
 
 // Re-export types and data from genre-config so existing imports still work
 export type { Genre, Species, CharacterClass } from './genre-config'
@@ -249,11 +250,7 @@ export function createInitialGameState(
 function deduplicateNpcs(state: GameState): GameState {
   const merged: typeof state.world.npcs = []
   for (const npc of state.world.npcs) {
-    const nameLower = npc.name.toLowerCase()
-    const existingIdx = merged.findIndex((x) => {
-      const xLower = x.name.toLowerCase()
-      return xLower === nameLower || xLower.startsWith(nameLower) || nameLower.startsWith(xLower)
-    })
+    const existingIdx = findNpcIndexByName(merged, npc.name)
     if (existingIdx >= 0) {
       const existing = merged[existingIdx]
       const canonical = existing.name.length <= npc.name.length ? existing.name : npc.name
