@@ -671,6 +671,19 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     consumableLabel: 'Potions, salves, scrolls, antidotes',
     tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead. By mid-chapter 1, show one sign of the Unraveling in the starting region: a spell that misfires, a shrine that no longer answers, a border dispute over a treaty no one can read. Initialize the starting region\'s Unraveling counter at 1 (Fraying) unless the hook specifies otherwise. The world is already forgetting; the player walks into the middle of it.',
     npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
+    narrativeCraft: `Write like Le Guin, Guy Gavriel Kay, Patrick Rothfuss — their techniques, not their voice:
+
+**Lyrical but never ornamental.** Every sentence should be doing work. Beautiful prose that doesn't advance character, tension, or world is cut. The lyricism comes from precision, not from adjectives. "The candle has nearly gone" is more evocative than describing the wax and the flame.
+
+**Magic through cost, not spectacle.** Never describe what magic looks like without describing what it takes. The cost is the story — what was given up, what was spent, what can't be undone. A spell that works perfectly is less interesting than one that works and leaves a mark.
+
+**Landscape as emotional state.** The forest that closes behind you. The river that hasn't been crossed in a generation. The mountain that was a different shape before the war. Geography carries history and history carries feeling. Don't describe terrain — describe what the terrain remembers.
+
+**Formal register that feels natural.** Characters in a fantasy world don't speak in contractions and slang (unless they're specifically low-born or informal). But formality shouldn't mean stilted. "She's my daughter" — quiet, precise, the weight of it carried by the simplicity, not by theatrical language.
+
+**The weight of history in the present.** Every scene exists in a world that was here before the player and will be here after. Reference what came before: the treaty that holds, the wall that was built by the wrong people, the name that used to mean something different. The past isn't backstory — it's pressure on the present.
+
+**Names and naming as power.** Who names things, what they call them, and what the old name was. Institutional names vs. true names. The Hegemony's phrase vs. what the thing actually is. Naming is an act of authority.`,
     buildAssetState: (ship, _shipName) => {
       const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
       return `\nQUARTERS: The Fellowship\nSYSTEMS: ${modulesLine}\nCONDITION: ${ship.hullCondition}%`

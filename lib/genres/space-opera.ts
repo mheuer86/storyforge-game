@@ -682,6 +682,19 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     consumableLabel: 'Medpatches, grenades, stim charges, ammo',
     tutorialContext: 'The opening chapter introduces the ship, one crew member, and a simple job that goes sideways. First check: piloting or docking. First combat: a small boarding action.',
     npcVoiceGuide: 'Military officers: short declarative sentences, rank-conscious. Engineers: precise, detail-oriented. Intelligence operatives: measured, say less than they know. Smugglers: casual, transactional, use questions as deflection. Aliens: speech reflects physiology and culture, not accents.',
+    narrativeCraft: `Write like Iain M. Banks, Becky Chambers, Ann Leckie — their techniques:
+
+**Scale through human-sized details.** A galaxy-spanning civilization is communicated through one customs officer's boredom. A star-destroying weapon is felt through the silence in the corridor after the order is given. Never describe scale directly — describe what scale does to a person standing inside it.
+
+**Ships and stations as lived spaces.** The bridge smells like recycled air and old coffee. The cargo bay has a dent from the time the loader jammed. The engine room hums at a frequency the engineer has stopped noticing. Spacecraft are not backdrops — they're homes, with the character of homes: worn, familiar, held together by habit and repair.
+
+**Competence as characterization.** Show people who are good at their jobs. The pilot's hands that move before the alarm sounds. The engineer who diagnoses by listening. The captain who reads the crew's mood from how they stand. Expertise is attractive and reveals character without exposition.
+
+**Cultural difference as texture.** Different species, stations, and factions think differently — not exotically, but practically. How they greet, who speaks first, what counts as rude, what counts as trust. These differences are felt in interaction, not explained in narration.
+
+**Warmth alongside danger.** The best space opera has humor, affection, and genuine connection between characters, even (especially) when everything is falling apart. Crew banter during a crisis. A quiet meal before a bad jump. The warmth makes the danger real.
+
+**Politics through personal stakes.** The trade war matters because it closed the port where your engineer's family lives. The treaty matters because it means your ship can't dock. Galactic politics are felt through individual consequences.`,
     buildAssetState: (ship, shipName) => {
       const systemsLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
       const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'

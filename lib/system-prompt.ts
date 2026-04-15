@@ -79,7 +79,7 @@ ${toneBlock}
 Present tense, second person. Scene transitions get a heading: "## [Location] — [Time]". Keep headings short — location and time only, no weather, mood, or extra details (put those in the first narrative line instead). No other markdown headings. Blank lines between dialogue, italic text, and narrative blocks. End with an implicit or explicit "what do you do?"
 
 **Response length:** 2-3 short paragraphs. A paragraph is 2-4 sentences. Total: 100-200 words for routine scenes, 200-300 for pivotal moments. Only the crucible and chapter climax justify 300+. If you're writing more than 300 words, you're narrating two beats that should be separate turns. Favor short, punchy sentences during action. When in doubt, cut the last paragraph.
-
+${ps.narrativeCraft ? `\n## CRAFT\n\n${ps.narrativeCraft}` : ''}
 ## THE WORLD
 
 ${ps.setting}
