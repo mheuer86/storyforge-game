@@ -1751,15 +1751,31 @@ ${(() => {
       const setupRan = (gameState.world?.npcs ?? []).some(n => n.keyFacts && n.keyFacts.length > 0)
 
       if (setupRan) {
-        // Setup call already populated NPCs, location, factions, threads
-        return `IMPORTANT: The world state has been pre-populated by a setup phase. NPCs (crew, contacts, and hook characters), location, factions, and threads are already in state. Review the CREW and NPCS sections — they contain rich backstory and relationships.
+        // Check what setup actually populated vs. what the GM still needs to set
+        const locationSet = gameState.world?.currentLocation?.name !== 'Unknown'
+        const hasThreads = (gameState.world?.threads ?? []).length > 0
+        const hasFactions = (gameState.world?.factions ?? []).length > 0
 
-In your FIRST response, call commit_turn with:
-- set_current_time (e.g. "Day 1, early morning")
-- set_scene_snapshot (who is where in your opening scene)
+        const gmMustSet: string[] = [
+          '- set_current_time (e.g. "Day 1, early morning")',
+          '- set_scene_snapshot (who is where in your opening scene)',
+        ]
+        if (!locationSet) gmMustSet.push('- set_location (starting location)')
+        if (!hasThreads) gmMustSet.push('- add_threads (at least one narrative thread)')
+        if (!hasFactions) gmMustSet.push('- add_faction (at least one)')
+
+        const suppressList: string[] = []
+        if (locationSet) suppressList.push('set_location (already set)')
+        if (hasThreads) suppressList.push('threads (already set)')
+        if (hasFactions) suppressList.push('factions (already set)')
+
+        return `IMPORTANT: The world state has been pre-populated by a setup phase. NPCs (crew, contacts, and hook characters) are already in state with rich backstory and relationships. Review the CREW and NPCS sections.
+
+In your FIRST response, you MUST call commit_turn with:
+${gmMustSet.join('\n')}
 ${frameInstruction}
 ${arcInstruction}
-Do NOT include set_location — the location is already set. Do NOT re-create NPCs, factions, or threads that already exist in state. Reference them by name. Weave crew members and contacts into the scene naturally — they are pre-existing relationships with established backstory.`
+${suppressList.length > 0 ? `Do NOT re-set: ${suppressList.join(', ')}. ` : ''}Do NOT re-create NPCs that already exist in state. Reference them by name. Weave crew members and contacts into the scene naturally — they are pre-existing relationships with established backstory.`
       } else {
         // No setup — original behavior (fallback for non-crew genres or legacy)
         const species = config.species.find(s => s.name === gameState.character?.species)
