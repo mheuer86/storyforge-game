@@ -35,7 +35,7 @@ export interface StreamParserCallbacks {
   onRollBreakdown: (breakdown: RollBreakdown) => void
   onRetrying: (delayMs: number) => void
   onError: (message: string) => void
-  onDone: (finalState: GameState, statChanges: StatChange[]) => void
+  onDone: (finalState: GameState, statChanges: StatChange[], gmText: string, lastCommitInput: Record<string, unknown> | undefined) => void
   onDebug: (message: string) => void
   applyTools: (results: ToolCallResult[], state: GameState, statChanges: StatChange[]) => GameState
 }
@@ -339,7 +339,7 @@ function processDoneEvent(
   // Rules engine
   finalState = runRulesEngine(finalState, s.lastCommitInput ?? null)
 
-  callbacks.onDone(finalState, s.statChanges)
+  callbacks.onDone(finalState, s.statChanges, s.gmText, s.lastCommitInput)
 
   s.gameState = finalState
   return s

@@ -910,6 +910,79 @@ ${messageLog}`
   return [instructions, dynamicBlock]
 }
 
+/**
+ * Build the prompt for shadow extraction mode.
+ * Reads the GM's narrative and extracts state mutations into a commit_turn.
+ * Used for validating extraction quality before the full narration/extraction split.
+ */
+export function buildExtractionPrompt(gameState: GameState, narrativeText: string): [string, string] {
+  const compressedState = compressGameState(gameState)
+  const genre = (gameState.meta.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+
+  const instructions = `You are the state extractor for a ${config.name} RPG. You are NOT the narrative GM. Your job is mechanical: read the GM's narrative and extract every state change into a single commit_turn.
+
+## YOUR TASK
+
+Read the GM NARRATIVE below. Compare it against the CURRENT STATE. Extract every state change the narrative describes or clearly implies into a single commit_turn call.
+
+## EXTRACTION RULES
+
+- Extract ONLY what is stated or clearly implied in the narrative. Do NOT invent events.
+- Do NOT generate any narrative text. Your only output is a commit_turn call.
+- Do NOT include suggested_actions or pending_check — those are handled separately.
+- If the narrative describes no state changes, output nothing (no tool calls needed).
+- Be thorough: capture every NPC appearance, location change, item gain/loss, and status shift.
+
+## WHAT TO EXTRACT
+
+### LOCATION & SCENE
+- Did the narrative describe moving to a new location? → world.set_location
+- Did the time of day change? → world.set_current_time
+- Did the scene setting change? → world.set_scene_snapshot (who is present, what's happening)
+
+### NPCs
+- Did any new character speak, act, or get described by name/role? → world.add_npcs (with name, description, last_seen, role, disposition estimate, voice_note capturing how they speak)
+- Did an existing NPC's situation change? → world.update_npcs (last_seen, status, add_key_fact for anchoring details, add_signature_line for memorable quotes)
+- Did an NPC's attitude visibly shift? → world.disposition_changes
+
+### CHARACTER
+- Did the PC take damage or heal? → character.hp_delta
+- Did the PC gain or spend ${config.currencyAbbrev}? → character.credits_delta + world.add_ledger_entry
+- Did the PC pick up, use, or lose items? → character.inventory_add / inventory_use / inventory_remove
+- Did a temporary effect start or end? → character.temp_modifier_add / temp_modifier_remove
+
+### COMBAT
+- Did combat begin? → combat.start (list enemies with HP, attack_bonus)
+- Did enemies take damage or get defeated? → combat.update_enemies
+- Did combat end? → combat.end (outcome, loot)
+
+### NARRATIVE TRACKING
+- Did a new storyline emerge? → world.add_threads
+- Did an existing thread advance or resolve? → world.update_threads
+- Did the PC make or break a promise? → world.add_promise / world.update_promise
+- Did the PC make a meaningful choice? → world.add_decision (moral, tactical, strategic, relational)
+- Should a tension clock advance? → world.clocks
+
+### OPERATIONS & EXPLORATION
+- Did an operation phase change? → world.set_operation
+- Did exploration zones change? → world.set_exploration
+
+### OTHER
+- Did faction heat change? → world.update_heat
+- Did a timer expire? → world.update_timer
+- Did crew cohesion shift? → world.cohesion
+- Did the narrative carry origin-relevant moral weight? → origin_event`
+
+  const dynamicBlock = `${compressedState}
+
+## GM NARRATIVE
+
+${narrativeText}`
+
+  return [instructions, dynamicBlock]
+}
+
 // ============================================================
 // CONTEXT DETECTION
 // ============================================================
