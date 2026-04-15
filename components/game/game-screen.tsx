@@ -391,6 +391,17 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 try {
                   const event = JSON.parse(line) as StreamEvent
                   if (event.type === 'tools') {
+                    // Log raw setup output for debugging
+                    for (const r of event.results) {
+                      if (r.tool === 'chapter_setup') {
+                        const inp = r.input as Record<string, unknown>
+                        const npcs = (inp.npcs as Array<Record<string, unknown>>) ?? []
+                        debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_RAW npcs: ${npcs.map(n => `${n.name}[${(n.key_facts as string[])?.length ?? 0}f,${(n.relations as unknown[])?.length ?? 0}r]`).join(', ')}`)
+                        if (inp.location) debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_RAW location: ${(inp.location as Record<string, string>).name}`)
+                        if (inp.threads) debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_RAW threads: ${(inp.threads as Array<Record<string, string>>).map(t => t.title).join(', ')}`)
+                        if (inp.factions) debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_RAW factions: ${(inp.factions as Array<Record<string, string>>).map(f => f.name).join(', ')}`)
+                      }
+                    }
                     stateWithPlayerMessage = applyToolResults(event.results, stateWithPlayerMessage, setupChanges, track)
                   }
                 } catch { /* skip */ }
@@ -399,7 +410,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             if (setupChanges.length > 0) {
               setGameState(stateWithPlayerMessage)
               saveGameState(stateWithPlayerMessage)
-              debugLogRef.current.push(`[${new Date().toISOString()}] ✓ CHAPTER_SETUP enriched ${setupChanges.length} NPCs/state`)
+              // Log what actually made it into state
+              const loc = stateWithPlayerMessage.world?.currentLocation?.name ?? 'Unknown'
+              const threads = stateWithPlayerMessage.world?.threads?.length ?? 0
+              const factions = stateWithPlayerMessage.world?.factions?.length ?? 0
+              debugLogRef.current.push(`[${new Date().toISOString()}] ✓ CHAPTER_SETUP applied: ${setupChanges.length} changes, location=${loc}, threads=${threads}, factions=${factions}`)
             }
           }
         } catch (e) {
