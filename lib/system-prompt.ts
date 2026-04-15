@@ -1902,9 +1902,9 @@ TASK — populate state for Chapter 1:
    - Full entries with description, disposition, voice_note, key_facts, relations.
    - Name from the pool (avoid crew and contact names).
 
-4. SET LOCATION: Short name (2-4 words, e.g. "Ashridge Camp", "The Collapsed Mill"). Description: 2-3 sentences max, physical detail only (terrain, shelter, sight lines). No objectives or narrative context.
+4. SET LOCATION: Short name (2-4 words, e.g. "Ashridge Camp", "The Collapsed Mill"). Description: MAX 30 words. Physical detail only (terrain, shelter, sight lines). No objectives, narrative context, or plot.
 
-5. ADD FACTIONS: 1-2 factions relevant to the immediate situation. Do NOT create a faction for every NPC — most NPCs don't need an affiliation.
+5. ADD FACTIONS: 1-2 factions relevant to the immediate situation. NPC affiliations MUST match a faction name exactly from this list — do not invent affiliations that aren't in your factions array. Most NPCs need no affiliation at all.
 
 6. ADD THREAD: One narrative thread from the hook, flagged as deteriorating if urgent.
 
