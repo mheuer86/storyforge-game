@@ -162,6 +162,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     preState: GameState,
     gmText: string,
     gmCommitInput: Record<string, unknown>,
+    playerMessage: string,
     turnNum: number,
     gmDurationMs: number,
   ) => {
@@ -173,7 +174,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
-          message: '',
+          message: playerMessage,
           gameState: preState,
           isMetaQuestion: false,
           isInitial: false,
@@ -545,7 +546,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           }
           // Trigger shadow extraction (non-blocking, compare-only)
           if (SHADOW_EXTRACTION_ENABLED && !isInitial && !isMetaQuestion && lastCommitInput && gmText) {
-            runShadowExtraction(stateWithPlayerMessage, gmText, lastCommitInput, turnNum, gmDurationMs)
+            runShadowExtraction(stateWithPlayerMessage, gmText, lastCommitInput, playerMessage, turnNum, gmDurationMs)
           }
         },
         (msg) => {

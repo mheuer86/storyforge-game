@@ -470,14 +470,28 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Shadow extraction: background extraction for quality validation ──
+        // Uses the GM's full system prompt (cached) + conversation history (cached)
+        // + GM narrative as assistant turn + extraction instruction as final user turn.
+        // This gives the extractor full context for scene boundaries, disposition arcs, etc.
         if (isShadowExtraction && narrativeText) {
-          const [extractInstructions, extractState] = buildExtractionPrompt(gameState, narrativeText)
-          const extractSystem: Anthropic.TextBlockParam[] = [
-            { type: 'text', text: extractInstructions },
-            { type: 'text', text: extractState },
-          ]
+          // Reuse the GM's system prompt — will hit prompt cache from the recent GM call
+          const extractSystem = buildSystemBlocks(gameState, false)
+
+          // Rebuild conversation history (same as GM saw), then append GM's response + extraction instruction
+          const historyMessages = buildMessagesForClaude(gameState, message, false)
           const extractMessages: Anthropic.MessageParam[] = [
-            { role: 'user', content: 'Extract state changes from the narrative now.' },
+            ...historyMessages,
+            { role: 'assistant', content: narrativeText },
+            { role: 'user', content: `[EXTRACTION MODE] You are now the state extractor. Read your narrative above and the full conversation history. Extract every state change into a single commit_turn call.
+
+Rules:
+- Extract ONLY what is stated or clearly implied. Do NOT invent events.
+- Do NOT generate narrative text. Output ONLY a commit_turn tool call.
+- Do NOT include suggested_actions or pending_check.
+- Be thorough: location changes, NPC updates, disposition shifts, thread progress, scene boundaries, clocks, promises, decisions.
+- If the scene location or present characters changed significantly from the scene snapshot, include scene_end: true with a scene_summary.
+- If the chapter objective appears resolved or failed, include signal_close.
+- Compare the narrative against the full conversation to identify what changed THIS turn.` },
           ]
           const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
