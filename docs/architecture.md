@@ -63,7 +63,7 @@ Exported tool sets:
 
 ### `lib/tool-processor.ts` (dispatcher)
 
-Dispatcher that routes `commit_turn` input to domain handlers in `lib/tool-handlers/`. Also handles `origin_event` and `spend_witness` inline, plus `_roll_record` and `_story_summary` internal tools. Exports shared types (`CommitTurnInput`, `StatChange`) and the `dbg()` debug helper used by all handlers.
+Dispatcher that routes `commit_turn` input to domain handlers in `lib/tool-handlers/`. Also handles `origin_event` and `spend_witness` inline, plus `_roll_record` and `_story_summary` internal tools. Exports shared types (`CommitTurnInput`, `StatChange`) and the `dbg()` debug helper used by all handlers. Post-turn `detectNpcDrift()` checks for relationship consistency, identity-thin NPCs, and name collisions (console-only).
 
 Returns: updated GameState + array of `StatChange` objects for UI display.
 
@@ -72,7 +72,7 @@ Returns: updated GameState + array of `StatChange` objects for UI display.
 Domain handlers that apply `commit_turn` mutations to GameState:
 
 - **`character.ts`**: hp_delta/hp_set, credits, inventory add/remove/use (charges), temp modifiers, trait updates, level-up (HP max, proficiency bonus), stat increases, exhaustion, inspiration, roll breakdowns. **Dedup**: inventory_use rejects same item within 2 player turns (`meta._recentItemUses`); credits_delta rejects same negative amount within 2 turns (`meta._recentCreditChanges`), same amount in batch, or matching ledger entry
-- **`world.ts`**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier), location, time, scene snapshot, threads, promises, decisions (with origin counter auto-tick), factions, antagonist (establish/move/defeat), cohesion, ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
+- **`world.ts`**: NPCs (add/update with disposition, tempLoad, signature lines, combat tier, structured relations, keyFacts), location, time, scene snapshot, threads, promises, decisions (with origin counter auto-tick), factions, antagonist (establish/move/defeat), cohesion, ship state, tension clocks (establish/advance/trigger/resolve), notebook (clues, connections with tier derivation and taint propagation), operation state, exploration state, timers, heat trackers, ledger
 - **`combat.ts`**: start (spawn enemies), update enemies, end (loot, credits), auto-end when no enemies remain
 - **`narrative.ts`**: chapter_frame (with mid-chapter refinement gating), signal_close, close_chapter (archives messages, resets chapter-scoped state), debrief, scene summaries, objective status, pivotal scenes, story arcs (create/advance/resolve/abandon/add_episode)
 

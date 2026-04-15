@@ -147,6 +147,23 @@ const commitTurnDefinition: Anthropic.Tool = {
                 voice_note: { type: 'string' },
                 combat_tier: { type: 'number', enum: [1, 2, 3, 4, 5] },
                 combat_notes: { type: 'string' },
+                relations: {
+                  type: 'array',
+                  description: 'Structured relationships to other characters.',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string', description: 'Name of the related character' },
+                      type: { type: 'string', description: 'Relationship type (e.g. sister, father, employer, rival)' },
+                    },
+                    required: ['name', 'type'],
+                  },
+                },
+                key_facts: {
+                  type: 'array',
+                  description: 'Immutable identity anchors (max 3). Physical traits, defining events, or key roles that should never contradict.',
+                  items: { type: 'string' },
+                },
               },
               required: ['name', 'description', 'last_seen'],
             },
@@ -190,6 +207,23 @@ const commitTurnDefinition: Anthropic.Tool = {
                 add_signature_line: {
                   type: 'string',
                   description: 'Preserve an exact NPC quote that captures their voice at a pivotal moment. Max 4 per NPC. Use sparingly — only lines that define the character.',
+                },
+                add_relation: {
+                  type: 'object',
+                  description: 'Add a relationship to this NPC.',
+                  properties: {
+                    name: { type: 'string', description: 'Name of the related character' },
+                    type: { type: 'string', description: 'Relationship type (e.g. sister, father, employer, rival)' },
+                  },
+                  required: ['name', 'type'],
+                },
+                remove_relation: {
+                  type: 'string',
+                  description: 'Remove a relationship by related character name (exact match).',
+                },
+                add_key_fact: {
+                  type: 'string',
+                  description: 'Add an identity anchor fact. Max 3 per NPC. Use for facts that must never contradict.',
                 },
               },
               required: ['name'],

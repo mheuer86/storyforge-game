@@ -73,6 +73,8 @@ export interface NPC {
   description: string
   lastSeen: string
   relationship?: string
+  relations?: { name: string; type: string }[]  // structured relationships: [{name: 'Donald', type: 'sister'}]
+  keyFacts?: string[]  // immutable identity anchors, max 3: ["burn-scarred left arm", "nearly died in the fire"]
   role?: 'crew' | 'contact' | 'npc'
   subtype?: 'person' | 'vessel' | 'installation'  // vessels/installations shown separately from characters
   vulnerability?: string  // what hits this companion harder (used internally by cohesion system)

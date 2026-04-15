@@ -144,7 +144,7 @@ Rebuilt every turn from current `GameState`. Structured as labeled text blocks:
 | CREW | Crew NPCs with voice notes, vulnerabilities, `tempLoad` entries (severity + description), `signatureLines` |
 | COHESION | Score/5 + label + recent changes |
 | FACTIONS | Faction stances |
-| NPCS | Split into [SCENE] (full detail: role, disposition, voice, vulnerability, combat tier) and [BG] (one-line: name + disposition). Scene-present = at current location or mentioned in last 3 messages. Capped at 15 relevant NPCs. |
+| NPCS | Scene-present NPCs bypass the cap; background fills remaining slots up to 20. [SCENE] NPCs: full detail with role, disposition, voice, vulnerability, combat tier, structured relations, key facts. [BG] NPCs: name + disposition + relation summaries. Dense scenes (6+ present): authoritative SCENE ROSTER with relationship graph injected above. |
 | NPC WARNINGS | Approach failure tracking (2 failures = warning, 3 = closed approach) |
 | THREADS | Status (WORSENING/STABLE) + title + status text |
 | PROMISES | To whom, what, status |

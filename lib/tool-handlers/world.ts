@@ -29,6 +29,8 @@ export function applyWorldChanges(
         voiceNote: n.voice_note,
         combatTier: n.combat_tier,
         combatNotes: n.combat_notes,
+        relations: n.relations,
+        keyFacts: n.key_facts,
       }
       const existing = findNpcByName(world.npcs, npc.name)
       if (existing) {
@@ -90,6 +92,22 @@ export function applyWorldChanges(
             const lines = updated.signatureLines ?? []
             if (lines.length < 4) {  // cap at 4
               updated.signatureLines = [...lines, n.add_signature_line]
+            }
+          }
+          if (n.add_relation) {
+            const rel = n.add_relation
+            const rels = updated.relations ?? []
+            if (!rels.some(r => r.name === rel.name && r.type === rel.type)) {
+              updated.relations = [...rels, rel]
+            }
+          }
+          if (n.remove_relation) {
+            updated.relations = (updated.relations ?? []).filter(r => r.name !== n.remove_relation)
+          }
+          if (n.add_key_fact) {
+            const facts = updated.keyFacts ?? []
+            if (facts.length < 3) {  // cap at 3
+              updated.keyFacts = [...facts, n.add_key_fact]
             }
           }
           return updated

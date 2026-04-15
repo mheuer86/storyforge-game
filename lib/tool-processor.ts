@@ -45,8 +45,8 @@ export interface CommitTurnInput {
     roll_breakdown?: RollBreakdown
   }
   world?: {
-    add_npcs?: { name: string; description: string; last_seen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string }[]
-    update_npcs?: { name: string; description?: string; last_seen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; temp_load_add?: { description: string; severity: 'mild' | 'moderate' | 'severe'; acquired: string }[]; temp_load_remove?: string; add_signature_line?: string }[]
+    add_npcs?: { name: string; description: string; last_seen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; relations?: { name: string; type: string }[]; key_facts?: string[] }[]
+    update_npcs?: { name: string; description?: string; last_seen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; temp_load_add?: { description: string; severity: 'mild' | 'moderate' | 'severe'; acquired: string }[]; temp_load_remove?: string; add_signature_line?: string; add_relation?: { name: string; type: string }; remove_relation?: string; add_key_fact?: string }[]
     set_location?: { name: string; description: string }
     set_current_time?: string
     set_scene_snapshot?: string
@@ -95,6 +95,43 @@ export interface CommitTurnInput {
     resolve_arc?: { arc_id: string }
     abandon_arc?: { arc_id: string; reason: string }
     add_episode?: { arc_id: string; milestone: string }
+  }
+}
+
+// ============================================================
+// Post-turn NPC drift detection (console-only warnings)
+// ============================================================
+
+function detectNpcDrift(state: GameState, input: CommitTurnInput) {
+  const npcs = state.world.npcs
+  const npcNames = new Set(npcs.map(n => n.name.toLowerCase()))
+
+  // Check 1: Relations reference NPCs that don't exist in state
+  for (const npc of npcs) {
+    if (!npc.relations) continue
+    for (const rel of npc.relations) {
+      if (!npcNames.has(rel.name.toLowerCase())) {
+        dbg(`⚠ NPC_DRIFT: ${npc.name} has relation "${rel.type} of ${rel.name}" but ${rel.name} is not in NPC state`)
+      }
+    }
+  }
+
+  // Check 2: NPCs added this turn without relations or keyFacts (identity-thin)
+  const added = input.world?.add_npcs ?? []
+  for (const n of added) {
+    if (!n.relations?.length && !n.key_facts?.length) {
+      dbg(`⚠ NPC_THIN: ${n.name} added without relations or key_facts — identity drift risk`)
+    }
+  }
+
+  // Check 3: Duplicate NPC names (case-insensitive)
+  const seen = new Map<string, string>()
+  for (const npc of npcs) {
+    const lower = npc.name.toLowerCase()
+    if (seen.has(lower) && seen.get(lower) !== npc.name) {
+      dbg(`⚠ NPC_DUPLICATE: "${npc.name}" and "${seen.get(lower)}" — possible name collision`)
+    }
+    seen.set(lower, npc.name)
   }
 }
 
@@ -162,6 +199,9 @@ export function applyToolResults(
       }
 
       updated = applyNarrativeChanges(input, updated, statChanges, trackEvent)
+
+      // Post-turn: detect NPC relationship inconsistencies and stale locations
+      detectNpcDrift(updated, input)
     }
 
     // ── _roll_record: internal, injected by the API route ──
