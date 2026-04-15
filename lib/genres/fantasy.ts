@@ -671,7 +671,7 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     consumableLabel: 'Potions, salves, scrolls, antidotes',
     tutorialContext: 'The opening chapter introduces a settlement, one ally, and a local problem hinting at something larger. First check: social or investigation. First combat: bandits, beasts, or undead. By mid-chapter 1, show one sign of the Unraveling in the starting region: a spell that misfires, a shrine that no longer answers, a border dispute over a treaty no one can read. Initialize the starting region\'s Unraveling counter at 1 (Fraying) unless the hook specifies otherwise. The world is already forgetting; the player walks into the middle of it.',
     npcVoiceGuide: 'Nobles: formal, indirect, power through what they don\'t say. Soldiers: direct, rank-aware, duty and obligation. Scholars: precise, irritated by imprecision. Common folk: practical, concrete terms. Clergy: measured, parable-prone.',
-    narrativeCraft: `Write like Le Guin, Guy Gavriel Kay, Patrick Rothfuss — their techniques, not their voice:
+    narrativeCraft: `Write with the techniques of Ursula K. Le Guin (A Wizard of Earthsea), Guy Gavriel Kay (Tigana), Patrick Rothfuss (The Name of the Wind):
 
 **Lyrical but never ornamental.** Every sentence should be doing work. Beautiful prose that doesn't advance character, tension, or world is cut. The lyricism comes from precision, not from adjectives. "The candle has nearly gone" is more evocative than describing the wax and the flame.
 

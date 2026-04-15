@@ -727,7 +727,7 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
     tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies. Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
     npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
-    narrativeCraft: `Write like Abercrombie, Pierce Brown, Christopher Ruocchio — not by imitating their voice, but by using their techniques:
+    narrativeCraft: `Write with the techniques of Joe Abercrombie (The Blade Itself), Steven Erikson (Malazan Book of the Fallen), George R.R. Martin (A Song of Ice and Fire):
 
 **Interiority through observation.** Show what the character feels through what they notice. Not "you feel uneasy" but "Oswick hasn't said anything since the captain's body was brought in, which with Oswick means he's already run the numbers and doesn't like them." The character's emotional state is revealed by what draws their attention.
 

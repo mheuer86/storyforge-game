@@ -706,7 +706,7 @@ Heat falls from: time (1 tier per 2 quiet chapters), fixer intervention (trade f
     consumableLabel: 'Stim injectors, EMP charges, ICE breakers, ammo',
     tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security. By mid-chapter 1, introduce heat organically: a camera that noticed, a name in a report, a fixer who mentions someone is asking questions. Heat should feel ambient before it becomes mechanical.',
     npcVoiceGuide: 'Fixers: smooth, transactional, every sentence has a price. Corpos: polished, euphemistic, threaten through implication. Street muscle: blunt, territorial. Ripperdocs: clinical when working, human when not. Netrunners: fast-talking, impatient with meatspace.',
-    narrativeCraft: `Write like Gibson, Stephenson, Philip K. Dick — not their voice, their techniques:
+    narrativeCraft: `Write with the techniques of William Gibson (Neuromancer), Neal Stephenson (Snow Crash), Philip K. Dick (Do Androids Dream of Electric Sheep?):
 
 **Technology through wear, not specs.** Don't describe what chrome does; describe what it's done to someone. "Cheap mid-stack chrome that starts dropping fingers after five years." "The particular wrongness of hardware installed by someone in a hurry and left for someone else to fix." Technology is texture — weathered, failing, intimate.
 
