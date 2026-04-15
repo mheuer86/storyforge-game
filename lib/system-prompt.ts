@@ -1759,7 +1759,7 @@ In your FIRST response, call commit_turn with:
 - set_scene_snapshot (who is where in your opening scene)
 ${frameInstruction}
 ${arcInstruction}
-Do NOT re-create NPCs, factions, or threads that already exist in state. Reference them by name. Weave crew members and contacts into the scene naturally — they are pre-existing relationships with established backstory.`
+Do NOT include set_location — the location is already set. Do NOT re-create NPCs, factions, or threads that already exist in state. Reference them by name. Weave crew members and contacts into the scene naturally — they are pre-existing relationships with established backstory.`
       } else {
         // No setup — original behavior (fallback for non-crew genres or legacy)
         const species = config.species.find(s => s.name === gameState.character?.species)
