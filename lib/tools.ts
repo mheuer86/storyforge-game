@@ -868,6 +868,90 @@ const metaResponseDefinition: Anthropic.Tool = {
 }
 
 // ============================================================
+// chapter_setup — batch initialization for Chapter 1
+// ============================================================
+
+const chapterSetupDefinition: Anthropic.Tool = {
+  name: 'chapter_setup',
+  description: 'Batch-initialize NPCs, location, factions, and threads for Chapter 1. Called once before the GM narrates. No prose output.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      npcs: {
+        type: 'array',
+        description: 'NPCs to create or enrich. Existing NPCs (matched by name) are updated; new names are created.',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            description: { type: 'string', description: 'Who they are + one personality detail.' },
+            last_seen: { type: 'string' },
+            disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
+            voice_note: { type: 'string' },
+            role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
+            affiliation: { type: 'string' },
+            key_facts: {
+              type: 'array',
+              description: 'Identity anchors (max 3). Physical traits, defining events, or key roles.',
+              items: { type: 'string' },
+            },
+            relations: {
+              type: 'array',
+              description: 'Structured relationships to other characters.',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string', description: 'Name of the related character' },
+                  type: { type: 'string', description: 'Relationship type (e.g. relies on, rival of, hunted by)' },
+                },
+                required: ['name', 'type'],
+              },
+            },
+          },
+          required: ['name'],
+        },
+      },
+      location: {
+        type: 'object',
+        description: 'Starting location for the chapter.',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+        },
+        required: ['name', 'description'],
+      },
+      factions: {
+        type: 'array',
+        description: 'Factions relevant to the opening situation.',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            stance: { type: 'string' },
+          },
+          required: ['name', 'stance'],
+        },
+      },
+      threads: {
+        type: 'array',
+        description: 'Narrative threads from the hook.',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+            status: { type: 'string' },
+            deteriorating: { type: 'boolean' },
+          },
+          required: ['id', 'title', 'status', 'deteriorating'],
+        },
+      },
+    },
+    required: ['npcs', 'location'],
+  },
+}
+
+// ============================================================
 // Exports
 // ============================================================
 
@@ -878,3 +962,6 @@ export const auditTools: Anthropic.Tool[] = [commitTurnDefinition]
 
 /** Subset for meta questions — meta_response only. */
 export const metaTools: Anthropic.Tool[] = [metaResponseDefinition]
+
+/** Setup tools for Chapter 1 initialization — chapter_setup only. */
+export const setupTools: Anthropic.Tool[] = [chapterSetupDefinition]

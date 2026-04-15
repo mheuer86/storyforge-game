@@ -201,6 +201,22 @@ The initial turn prompt tells Claude the crew already exists and to reference th
 
 Currently implemented for: Grimdark (4 crew: sergeant, quartermaster, scout, chaplain).
 
+### Chapter 1 Setup Call
+
+A pre-narration Sonnet call that runs before the GM's first response. Populates rich, hook-specific state so the GM narrates from established context instead of inventing everything mid-sentence.
+
+**What it generates** (via `chapter_setup` tool):
+- Crew enrichment: 2-3 keyFacts and inter-crew relations per crew member, derived from the hook
+- Origin contacts: created as named NPCs with hook-relevant ties (not disconnected strangers)
+- Hook-implied NPCs: 1-2 characters the hook implies (antagonists, witnesses, employers)
+- Starting location with tactical detail
+- Factions relevant to the immediate situation
+- Opening narrative thread
+
+**Architecture:** Client fires `isChapter1Setup` before the initial turn. API runs the setup call with `setupTools` (only `chapter_setup`). Tool results are applied to GameState. Then the normal initial turn fires with enriched state. The GM prompt detects setup has run (crew have keyFacts) and adjusts instructions accordingly.
+
+**Cost:** ~1,800 input + ~2,000 output tokens, ~2-4 seconds. One-time per campaign.
+
 ---
 
 ## 8. Hidden Systems
