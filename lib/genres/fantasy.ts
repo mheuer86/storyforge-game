@@ -825,7 +825,14 @@ The Quarters doesn't fight. It sustains. Upgrading happens through the campaign'
     'Sorrel', 'Cael', 'Arden', 'Lirael', 'Tiernan', 'Morvaine', 'Glynn', 'Eira',
     'Corwin', 'Daeris', 'Fennel', 'Islene', 'Branwen', 'Taliesin', 'Neve',
     'Gareth', 'Elowynn', 'Bereth', 'Cirin', 'Morwenna', 'Taran', 'Aelwen',
-    'Ossian', 'Rhiannon', 'Kedrin', 'Wrennen', 'Lowen',
+    'Ossian', 'Rhiannon', 'Kedrin', 'Wrennen', 'Lowen', 'Anwen', 'Beren',
+    'Ceridwen', 'Drystan', 'Elowen', 'Faelan', 'Gwynn', 'Hadrian', 'Iona',
+    'Jorvyn', 'Katriel', 'Lucan', 'Maelis', 'Niamh', 'Orin', 'Peregrine',
+    'Quillon', 'Rowenna', 'Seren', 'Tamsin', 'Uthyr', 'Vesper', 'Wynne',
+    'Alaric', 'Briseis', 'Cadogan', 'Deirdre', 'Emrys', 'Fiora', 'Galen',
+    'Heledd', 'Idris', 'Jessamy', 'Kester', 'Linnet', 'Meraud', 'Niven',
+    'Olwen', 'Phelan', 'Rhydian', 'Sabine', 'Tristan', 'Undine', 'Varen',
+    'Wistrel', 'Ygraine', 'Arden', 'Bryony', 'Cedwyn', 'Dara', 'Erynn',
   ],
 }
 

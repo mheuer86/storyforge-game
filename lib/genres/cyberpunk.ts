@@ -841,7 +841,14 @@ Heat falls from: time (1 tier per 2 quiet chapters), fixer intervention (trade f
     'Kali', 'Vex', 'Santos', 'Nika', 'Mercer', 'Tran', 'Glitch', 'Okafor',
     'Splicer', 'Reyes', 'Null', 'Tanaka', 'Cass', 'Devlin', 'Ashe', 'Miko',
     'Roque', 'Haze', 'Petrov', 'Lux', 'Corbin', 'Zara', 'Dex', 'Vasquez',
-    'Ghost', 'Niles', 'Kwon',
+    'Ghost', 'Niles', 'Kwon', 'Axiom', 'Blitz', 'Chrome', 'Drift', 'Ember',
+    'Flux', 'Grit', 'Hex', 'Ion', 'Juke', 'Knox', 'Link', 'Moth',
+    'Neon', 'Oxide', 'Prism', 'Quell', 'Rivet', 'Spark', 'Torque',
+    'Unit', 'Volt', 'Wire', 'Xero', 'Yung', 'Zero', 'Arc', 'Blade',
+    'Cruz', 'Dao', 'Elec', 'Fuse', 'Gauge', 'Holt', 'Ishi', 'Jax',
+    'Kenji', 'Lagos', 'Mesa', 'Nyx', 'Onyx', 'Pike', 'Ren', 'Scion',
+    'Tek', 'Umbra', 'Vale', 'Wren', 'Yakuza', 'Zephyr', 'Analog',
+    'Byte', 'Cipher', 'Diode', 'Echo', 'Forge', 'Grid', 'Helix',
   ],
 }
 
