@@ -309,7 +309,8 @@ export async function POST(req: NextRequest) {
           ...loopResult.messages,
           { role: 'user', content: 'You did not include suggested_actions in your commit_turn. Call commit_turn now with ONLY suggested_actions (3-4 contextual options for the player based on the current scene). No other fields needed.' },
         ]
-        const followUp = await runToolLoop(systemPrompt, followUpMessages, send, false, { tools, maxRounds: 1 })
+        const noop = () => {}  // suppress text streaming — this is a tool-only follow-up
+        const followUp = await runToolLoop(systemPrompt, followUpMessages, noop, false, { tools, maxRounds: 1 })
         const followUpCommit = followUp.toolResults.find(r => r.tool === 'commit_turn')
         const followUpActions = (followUpCommit?.input as { suggested_actions?: string[] } | undefined)?.suggested_actions
         if (followUpActions && followUpActions.length > 0) {
