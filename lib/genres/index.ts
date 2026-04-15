@@ -136,6 +136,7 @@ export interface GenreConfig {
     consumableLabel: string
     tutorialContext: string
     npcVoiceGuide: string
+    narrativeCraft: string
     buildAssetState: ((ship: ShipState, shipName: string) => string) | null
     investigationGuide: string
   }
@@ -186,7 +187,7 @@ function makeStub(
     partyBaseName,
     settingNoun: 'world',
     systemPromptFlavor: { role: '', setting: '', vocabulary: '', tutorialContext: '' },
-    promptSections: { role: '', setting: '', vocabulary: '', toneOverride: '', assetMechanic: '', traitRules: '', consumableLabel: '', tutorialContext: '', npcVoiceGuide: '', buildAssetState: null, investigationGuide: '' },
+    promptSections: { role: '', setting: '', vocabulary: '', toneOverride: '', assetMechanic: '', traitRules: '', consumableLabel: '', tutorialContext: '', npcVoiceGuide: '', narrativeCraft: '', buildAssetState: null, investigationGuide: '' },
     companionLabel: 'Companions',
     notebookLabel: 'Notebook',
     intelTabLabel: 'Intel',

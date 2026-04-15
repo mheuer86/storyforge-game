@@ -777,6 +777,19 @@ The Office doesn't fight. It persists. Upgrading means investing in the ability 
     consumableLabel: 'Cash (for bribes), favors (for access), credibility (for bluffs), evidence photos',
     tutorialContext: 'The opening chapter introduces the player to their office or neighborhood, one client with a problem, and a case that looks simple. First check: a social encounter (reading someone, getting information). First investigation: examining a scene or document. Combat, if any, should be a surprise that goes badly — noir protagonists aren\'t soldiers.',
     npcVoiceGuide: 'Cops: tired, procedural, protective of their cases and their pensions. Criminals: cautious, territorial, respect earned not given. Lawyers and officials: smooth, every word chosen, never say anything actionable. Bartenders and service workers: observant, transactional, remember faces and habits. Clients: desperate enough to hire you, which means desperate enough to lie to you.',
+    narrativeCraft: `Write like Chandler, Hammett, James Ellroy, Chinatown — not pastiche, technique:
+
+**The character's voice bleeds into narration.** Third person, but the narrator thinks like the protagonist. Observations are filtered through their professional lens. A PI notices exits and lies. A fixer notices leverage and exposure. The narration carries the character's worldview without breaking into first person.
+
+**Similes that reveal character.** "He says *Stonemark* the way a man says *debt.*" Every comparison should tell you something about the person making it, not just the thing being described. The simile is characterization, not decoration.
+
+**Dialogue as negotiation.** Every line of noir dialogue has a subtext. Nobody says what they mean directly. Questions are probes. Answers are deflections. Silence is a bid. The reader should be able to read the power dynamic from the dialogue alone, without narration.
+
+**Withholding.** What the narrator chooses not to describe matters as much as what they do. A case file's contents summarized in one line. A crime scene described by what's missing, not what's there. The reader fills the gaps, and the gaps are where the dread lives.
+
+**The city is a character.** Rain, neon, the bar where nobody looks up, the hotel where the clerk remembers nothing. But never decorative — every environmental detail should carry information about power, territory, or risk. The weather is atmosphere; the architecture is politics.
+
+**Dry humor as armor.** The protagonist's wit is a defense mechanism, not comic relief. It surfaces in observations, not jokes. Self-deprecating, precise, deployed when the situation is worst. It makes the grit bearable without softening it.`,
     buildAssetState: (ship, _shipName) => {
       const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
       return `\nOFFICE: The Office\nSYSTEMS: ${modulesLine}\nCONDITION: ${ship.hullCondition}%`

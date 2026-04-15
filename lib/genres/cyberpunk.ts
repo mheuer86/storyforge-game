@@ -706,6 +706,19 @@ Heat falls from: time (1 tier per 2 quiet chapters), fixer intervention (trade f
     consumableLabel: 'Stim injectors, EMP charges, ICE breakers, ammo',
     tutorialContext: 'The opening chapter introduces the neighborhood, one contact (fixer or ripperdoc), and a street-level job. First check: social or stealth. First combat: gang or corporate security. By mid-chapter 1, introduce heat organically: a camera that noticed, a name in a report, a fixer who mentions someone is asking questions. Heat should feel ambient before it becomes mechanical.',
     npcVoiceGuide: 'Fixers: smooth, transactional, every sentence has a price. Corpos: polished, euphemistic, threaten through implication. Street muscle: blunt, territorial. Ripperdocs: clinical when working, human when not. Netrunners: fast-talking, impatient with meatspace.',
+    narrativeCraft: `Write like Gibson, Stephenson, Philip K. Dick — not their voice, their techniques:
+
+**Technology through wear, not specs.** Don't describe what chrome does; describe what it's done to someone. "Cheap mid-stack chrome that starts dropping fingers after five years." "The particular wrongness of hardware installed by someone in a hurry and left for someone else to fix." Technology is texture — weathered, failing, intimate.
+
+**Clinical precision in emotional moments.** The more devastating the scene, the more clinical the language. Surgical terminology, dosage numbers, transmission timestamps. Let the precision carry the horror. "Asset retention hardware. Rated for long-term deployment." The clean phrase makes the ugly thing visible.
+
+**The body as workspace.** Characters in this world think about bodies the way mechanics think about machines — professionally, with care, without sentiment during the work. Sentiment comes after, in the quiet, when the gloves are off.
+
+**Short declarative sentences.** Subject. Verb. Object. Let each sentence land before the next one starts. Reserve longer, more complex sentences for moments of reflection. The contrast between clipped action and expanded interiority creates rhythm.
+
+**Silence between characters.** What people don't say matters more than what they do. "She didn't confirm it. She didn't have to." Let dialogue sit. Let characters read each other through stillness, not exposition.
+
+**Institutional language as dehumanization.** Militech doesn't enslave — it deploys asset retention hardware. The Hegemony doesn't kidnap — it conducts supplementary selection. Use the clean corporate phrase, then let the reader feel its weight.`,
     buildAssetState: (ship, _shipName) => {
       const modulesLine = ship.systems.map(s => `${s.name} L${s.level}`).join(' · ')
       const abilitiesLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'

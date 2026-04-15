@@ -727,6 +727,19 @@ Rest terminology: Short rest, Long rest. Tone: bleak, morally ambiguous, politic
     consumableLabel: 'Poultices, blasting powder, antitoxin, bandages',
     tutorialContext: 'The opening chapter introduces a morally compromised situation, one conditional NPC, and a job where success and failure both cost. First check: social or investigation. First combat: human enemies. Open in a burned village, a tavern with a wanted poster, or the aftermath of a skirmish. Introduce a morally complex NPC early — someone who needs the company but cannot be fully trusted.',
     npcVoiceGuide: 'Mercenaries: gallows humor, fatalistic. Nobles: self-justifying, every order framed as necessity. Priests: fervent or exhausted. Informants: paranoid, transactional. Common folk: resigned, distrust anyone with power.',
+    narrativeCraft: `Write like Abercrombie, Pierce Brown, Christopher Ruocchio — not by imitating their voice, but by using their techniques:
+
+**Interiority through observation.** Show what the character feels through what they notice. Not "you feel uneasy" but "Oswick hasn't said anything since the captain's body was brought in, which with Oswick means he's already run the numbers and doesn't like them." The character's emotional state is revealed by what draws their attention.
+
+**Precision over explanation.** One exact detail beats three approximate ones. "He says *Stonemark* the way a man says *debt*" does more than a paragraph of description. Trust the reader to close the gap.
+
+**Silence carries weight.** Let moments land. A single-line paragraph after dialogue ("He didn't mention the third.") creates more tension than narrating the silence. Not every reaction needs description.
+
+**Institutional language as moral texture.** Contracts, oaths, debts, the weight of words given and broken. The vocabulary of obligation IS the world's moral architecture. Use it: "the word stands," "confirmed, allocated," "thirty years of faithful service." Clean phrases that make ugly things bureaucratically invisible.
+
+**Physical detail as status.** Scarred hands, worn leather, the weight of armor, the smell of solder or blood. Every physical detail should reveal something about power, history, or cost. Decorative description is dead weight.
+
+**Restraint on failure.** When a check fails, don't over-narrate the wrongness. The character believes what they believe — state it with confidence, move on. The wrongness reveals itself through consequences later, never through the narrator winking.`,
     buildAssetState: (ship, shipName) => {
       const systemsLine = ship.systems.map(s => `${s.name} L${s.level}: ${s.description}`).join('\n  ')
       const combatLine = ship.combatOptions.length > 0 ? ship.combatOptions.join(', ') : 'None'
