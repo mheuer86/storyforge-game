@@ -65,25 +65,27 @@ function resolveRoll(roll: number, modifier: number, dc: number, rollType?: stri
   return 'failure'
 }
 
-const ROLL_REMINDER = ' Narrate the outcome, then call commit_turn with ONLY the state changes caused by this roll result (e.g. hp_delta from damage). Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
+const ROLL_REMINDER_SUCCESS = ' Narrate the outcome, then call commit_turn with ONLY the state changes caused by this roll result (e.g. hp_delta from damage). Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
+
+const ROLL_REMINDER_FAILURE = ' This is a FAILURE. The character does NOT learn what they were trying to learn. Do NOT reveal the truth. For Insight/Perception/Investigation failures: narrate the character believing a wrong conclusion — do NOT hedge with "you can\'t tell" or hint at doubt. Do NOT create clues containing accurate information. The player discovers the error later through consequences. For Persuasion/other failures: the approach fails and something gets worse (disposition drop, closed door, time lost, complication). Then call commit_turn with ONLY the state changes caused by this failure. Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
 
 function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
   if (rollType === 'damage') {
-    return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.${ROLL_REMINDER}`
+    return `Damage roll: ${roll} + ${modifier} = ${total}${damageType ? ` ${damageType}` : ''} damage.${ROLL_REMINDER_SUCCESS}`
   }
   if (rollType === 'healing') {
-    return `Healing roll: ${roll} + ${modifier} = ${total} HP healed.${ROLL_REMINDER}`
+    return `Healing roll: ${roll} + ${modifier} = ${total} HP healed.${ROLL_REMINDER_SUCCESS}`
   }
   const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
   const contestedNote = contested && npcRoll !== undefined && npcTotal !== undefined
     ? ` Contested vs ${contested.npcName}'s ${contested.npcSkill}: NPC rolled ${npcRoll} + ${contested.npcModifier} = ${npcTotal}.`
     : ''
   const vsText = contested && npcTotal !== undefined ? `vs ${contested.npcName}'s ${npcTotal}` : `vs DC ${dc}`
-  if (result === 'critical') return `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.${ROLL_REMINDER}`
-  if (result === 'fumble') return `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.${ROLL_REMINDER}`
-  if (result === 'success') return `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.${ROLL_REMINDER}`
-  return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.${ROLL_REMINDER}`
+  if (result === 'critical') return `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.${ROLL_REMINDER_SUCCESS}`
+  if (result === 'fumble') return `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.${ROLL_REMINDER_FAILURE}`
+  if (result === 'success') return `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.${ROLL_REMINDER_SUCCESS}`
+  return `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.${ROLL_REMINDER_FAILURE}`
 }
 
 const MAX_RETRIES = 3
