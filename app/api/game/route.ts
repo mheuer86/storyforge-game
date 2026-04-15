@@ -123,7 +123,7 @@ async function runToolLoop(
   initialMessages: Anthropic.MessageParam[],
   send: SendFn,
   interceptRolls: boolean,
-  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number },
+  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
@@ -139,7 +139,7 @@ async function runToolLoop(
   for (let round = 0; round < rounds; round++) {
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
-      max_tokens: 2048,
+      max_tokens: options?.maxTokens ?? 2048,
       system: systemPrompt,
       tools: cachedTools,
       messages,
@@ -528,7 +528,7 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: 'Execute chapter setup now.' },
           ]
 
-          const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1 })
+          const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1, maxTokens: 4096 })
           finish(loopResult.toolResults)
           return
         }
