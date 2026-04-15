@@ -96,14 +96,24 @@ The warnings appear in the NPCS section of the compressed game state so the GM s
 Not all NPCs get equal space in the prompt. The system distinguishes scene-present NPCs from background NPCs.
 
 **Scene-present** (at the current location OR mentioned in the last 3 messages):
-- Full detail blocks including description, voice notes, vulnerability, combat tier/notes, tempLoad entries, and signature lines
-- Format: `Name [role|Disposition] -- description | Voice: ... | Vuln: ...`
+- Full detail blocks including description, voice notes, vulnerability, combat tier/notes, tempLoad entries, signature lines, structured relations, and key facts
+- Format: `Name [role|Disposition] — description | Voice: ... | Vuln: ...`
+- Relations line: `Relations: sister of Donald, wife of Tam`
+- Facts line: `Facts: burn-scarred left arm, nearly died in the fire`
 
 **Background** (relevant to recent chapters or non-neutral disposition, but not scene-present):
-- One-line format: `Name|Disposition`
-- No voice, vulnerability, combat, or load details
+- One-line format: `Name|Disposition|relation summaries`
+- Example: `Maret|Neutral|sister of Donald, wife of Tam`
 
-**Relevance filter:** Only NPCs from the last 2 chapter titles, currently at the player's location, mentioned in recent messages, or with non-neutral disposition are included at all. Capped at 15 relevant NPCs total.
+**Cap logic:** Scene-present NPCs always pass through (no cap). Background NPCs fill remaining slots up to a total of 20. This ensures dense scenes never drop scene-present NPCs due to the relevance cap.
+
+**Dense scene roster:** When 6+ NPCs are scene-present, an authoritative roster with relationship graph is injected above the individual NPC blocks. The "authoritative" label tells Claude to treat this as ground truth, not a suggestion. Format:
+```
+SCENE ROSTER (authoritative, 12 characters present):
+  Oswick Dray [headman, NEUTRAL] → steward: Fenmark (15 years)
+  Donald Breck [farmer, WARY] → father of: unnamed boy (~16, fled)
+  Maret [at the well, NEUTRAL] → sister of: Donald
+```
 
 ---
 
@@ -168,6 +178,18 @@ The chapter close handler has a dedicated curation step that decides what surviv
 - 2-3 pivotal scenes per chapter
 - 1-2 signature lines per major NPC
 - These are selected based on what the player is likely to remember and what might be called back in future chapters
+
+### NPC Identity Coherence
+
+Structured fields that prevent Claude from contradicting established NPC identity in dense scenes.
+
+**relations** — Structured relationship array on each NPC: `[{name: 'Donald', type: 'sister'}, {name: 'Tam', type: 'wife'}]`. Set via `relations` on `add_npcs` or `add_relation`/`remove_relation` on `update_npcs`. Rendered as a `Relations:` line on scene-present NPCs and appended to background NPC one-liners. Unlike the free-text `relationship` field, these are structured data that Claude reads as authoritative state.
+
+**keyFacts** — Immutable identity anchors, max 3 per NPC: `["burn-scarred left arm", "nearly died in the fire"]`. Set via `key_facts` on `add_npcs` or `add_key_fact` on `update_npcs`. Rendered as a `Facts:` line on scene-present NPCs. These anchor who the NPC is, complementing `signatureLines` which anchor how they talk.
+
+**Post-turn drift detection** — After each `commit_turn`, the tool processor checks for: relations referencing NPCs not in state, NPCs added without relations or keyFacts (identity-thin warning), and duplicate NPC names. Console-only logging via `dbg()`, no player-facing impact.
+
+**Prompt enforcement** — Post-action checklist item 14 requires every character who speaks, is described, or is referenced in dialogue to exist in NPC state. Item 7 requires updating both `set_scene_snapshot` and each NPC's `last_seen` when they move.
 
 ---
 

@@ -183,13 +183,14 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 4. Promise fulfilled/broken → world.update_promise
 5. Non-operational commitment with consequences → world.add_decision
 6. Clock tick → world.clocks
-7. NPC entered or left → world.set_scene_snapshot (always update when someone arrives, departs, or the spatial arrangement changes)
+7. NPC entered or left → world.set_scene_snapshot + world.update_npcs with last_seen (always update BOTH the scene snapshot AND each moved NPC's last_seen. Scene-present detection depends on last_seen matching the current location.)
 8. Consumable used → character.inventory_use
 9. Uncertain fact asserted → pending_check
 10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
 11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
 12. Direct witness of human cost → world.add_decision with witnessed: true
 13. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
+14. Character referenced → world.add_npcs (every character who speaks, is described by name or role, or is referenced in dialogue MUST exist in NPC state. Use a descriptive placeholder if unnamed: "Donald's boy", "scythe woman".)
 
 **Origin tracking:** Each origin carries a moral counter. Moral-category decisions auto-tick the counter (up by default, down if the character enforced or complied with the system). Use \`origin_event\` only for non-moral decisions (tactical, strategic, relational) that have origin-relevant moral weight. Don't include origin_event on moral decisions — the auto-tick handles those.
 
@@ -1114,9 +1115,12 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     isScenePresent(n) ||
     (n.disposition && n.disposition !== 'neutral')
 
-  const relevantNpcs = nonCrewNpcs.filter(n => isRelevant(n)).slice(0, 15)
-  const sceneNpcs = relevantNpcs.filter(n => isScenePresent(n))
-  const backgroundNpcs = relevantNpcs.filter(n => !isScenePresent(n))
+  // Scene-present NPCs bypass the cap; background fills remaining slots
+  const sceneNpcs = nonCrewNpcs.filter(n => isScenePresent(n))
+  const backgroundNpcs = nonCrewNpcs
+    .filter(n => isRelevant(n) && !isScenePresent(n))
+    .slice(0, Math.max(0, 20 - sceneNpcs.length))
+  const relevantNpcs = [...sceneNpcs, ...backgroundNpcs]
 
   // Disposition → inline mechanical consequences (Claude reads state literally, rules aspirationally)
   const dispositionConsequences: Record<DispositionTier, string> = {
@@ -1127,7 +1131,27 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     trusted: 'volunteers information, advantage on social checks, may act independently to help',
   }
 
-  // Scene-present: full detail (voice, description, vulnerability, combat, disposition consequences)
+  // Dense scene roster (6+ scene-present NPCs): authoritative identity + relationship graph
+  const denseSceneRoster = sceneNpcs.length >= 6
+    ? (() => {
+        const rosterLines: string[] = []
+        for (const n of sceneNpcs) {
+          const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
+          const desc = n.keyFacts?.[0] || n.description.split(',')[0]
+          const baseLine = `  ${n.name} [${desc}, ${tier.toUpperCase()}]`
+          if (n.relations && n.relations.length > 0) {
+            for (const r of n.relations) {
+              rosterLines.push(`${baseLine} → ${r.type}: ${r.name}`)
+            }
+          } else {
+            rosterLines.push(baseLine)
+          }
+        }
+        return `SCENE ROSTER (authoritative, ${sceneNpcs.length} characters present):\n${rosterLines.join('\n')}`
+      })()
+    : ''
+
+  // Scene-present: full detail (voice, description, vulnerability, combat, disposition consequences, relations, facts)
   const sceneNpcLines = sceneNpcs.map((n) => {
     const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
     const tierKey = (n.disposition || 'neutral') as DispositionTier
@@ -1136,17 +1160,27 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
     const vuln = n.vulnerability ? ` | Vuln: ${n.vulnerability}` : ''
     const cbt = n.combatTier ? ` | T${n.combatTier}${n.combatNotes ? ' ' + n.combatNotes : ''}` : ''
-    return `${n.name} [${role}|${tier.toUpperCase()} — ${consequences}] — ${n.description}${voice}${vuln}${cbt}`
+    const rels = n.relations && n.relations.length > 0
+      ? `\n  Relations: ${n.relations.map(r => `${r.type} of ${r.name}`).join(', ')}`
+      : ''
+    const facts = n.keyFacts && n.keyFacts.length > 0
+      ? `\n  Facts: ${n.keyFacts.join(', ')}`
+      : ''
+    return `${n.name} [${role}|${tier.toUpperCase()} — ${consequences}] — ${n.description}${voice}${vuln}${cbt}${rels}${facts}`
   })
 
-  // Background: one-line disposition with consequences
+  // Background: one-line disposition with relations summary
   const bgNpcLines = backgroundNpcs.map((n) => {
     const tier = n.disposition ? n.disposition.charAt(0).toUpperCase() + n.disposition.slice(1) : 'Neutral'
-    return `${n.name}|${tier}`
+    const bgRels = n.relations && n.relations.length > 0
+      ? `|${n.relations.map(r => `${r.type} of ${r.name}`).join(', ')}`
+      : ''
+    return `${n.name}|${tier}${bgRels}`
   })
 
   const npcsLine = sceneNpcLines.length > 0 || bgNpcLines.length > 0
     ? [
+        ...(denseSceneRoster ? [denseSceneRoster] : []),
         ...(sceneNpcLines.length > 0 ? ['[SCENE] ' + sceneNpcLines.join('; ')] : []),
         ...(bgNpcLines.length > 0 ? ['[BG] ' + bgNpcLines.join(', ')] : []),
       ].join('\n')
