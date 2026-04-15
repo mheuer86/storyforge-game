@@ -189,7 +189,17 @@ Structured fields that prevent Claude from contradicting established NPC identit
 
 **Post-turn drift detection** — After each `commit_turn`, the tool processor checks for: relations referencing NPCs not in state, NPCs added without relations or keyFacts (identity-thin warning), and duplicate NPC names. Console-only logging via `dbg()`, no player-facing impact.
 
-**Prompt enforcement** — Post-action checklist item 14 requires every character who speaks, is described, or is referenced in dialogue to exist in NPC state. Item 7 requires updating both `set_scene_snapshot` and each NPC's `last_seen` when they move.
+**Prompt enforcement** — Post-action checklist item 14 requires every character who speaks, is described, or is referenced in dialogue to exist in NPC state. Item 7 requires updating both `set_scene_snapshot` and each NPC's `last_seen` when they move. Item 14 also requires verifying NPC names aren't already in use before assignment.
+
+### Starting Crew Initialization
+
+Genres with company/ship/retinue assets define `startingCrew` templates on GenreConfig (hooks can override). Templates specify role description, disposition, asset dimension attachment, and voice note — but no names or keyFacts.
+
+At game init (`game-data.ts`), names are randomly picked from the genre's `npcNames` pool and full `role: 'crew'` NPCs are pre-populated in `world.npcs`. This means crew members exist in state from turn 1 with unique names per campaign. Claude establishes `keyFacts` and `relations` organically during the opening narrative.
+
+The initial turn prompt tells Claude the crew already exists and to reference them by name, then use `update_npcs` to add identity anchors based on how it introduces them.
+
+Currently implemented for: Grimdark (4 crew: sergeant, quartermaster, scout, chaplain).
 
 ---
 
