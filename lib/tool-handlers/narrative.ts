@@ -42,10 +42,9 @@ export function applyNarrativeChanges(
   }
 
   if (input.signal_close) {
-    // Gate: signal_close requires scene_end (don't close mid-scene) and no pending_check (don't close mid-roll)
-    const hasSceneEnd = !!input.scene_end
+    // Gate: only block signal_close if there's a pending_check (don't close mid-roll)
     const hasPendingCheck = !!input.pending_check
-    if (hasSceneEnd && !hasPendingCheck) {
+    if (!hasPendingCheck) {
       const { _signalCloseDeferred, ...rest } = updated as GameState & { _signalCloseDeferred?: string }
       updated = {
         ...rest as GameState,
@@ -56,11 +55,6 @@ export function applyNarrativeChanges(
           ...(input.signal_close.self_assessment && { selfAssessment: input.signal_close.self_assessment }),
         },
       }
-    }
-    // If gated out, log why and set flag so the prompt reminds Claude next turn
-    if (!hasSceneEnd) {
-      dbg('signal_close DEFERRED: missing scene_end')
-      ;(updated as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred = 'missing scene_end'
     }
     if (hasPendingCheck) {
       dbg('signal_close DEFERRED: pending_check in same turn')
