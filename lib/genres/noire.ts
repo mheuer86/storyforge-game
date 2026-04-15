@@ -777,7 +777,7 @@ The Office doesn't fight. It persists. Upgrading means investing in the ability 
     consumableLabel: 'Cash (for bribes), favors (for access), credibility (for bluffs), evidence photos',
     tutorialContext: 'The opening chapter introduces the player to their office or neighborhood, one client with a problem, and a case that looks simple. First check: a social encounter (reading someone, getting information). First investigation: examining a scene or document. Combat, if any, should be a surprise that goes badly — noir protagonists aren\'t soldiers.',
     npcVoiceGuide: 'Cops: tired, procedural, protective of their cases and their pensions. Criminals: cautious, territorial, respect earned not given. Lawyers and officials: smooth, every word chosen, never say anything actionable. Bartenders and service workers: observant, transactional, remember faces and habits. Clients: desperate enough to hire you, which means desperate enough to lie to you.',
-    narrativeCraft: `Write like Chandler, Hammett, James Ellroy, Chinatown — not pastiche, technique:
+    narrativeCraft: `Write with the techniques of Raymond Chandler (The Big Sleep), Dashiell Hammett (The Maltese Falcon), James Ellroy (LA Confidential), Chinatown (Polanski):
 
 **The character's voice bleeds into narration.** Third person, but the narrator thinks like the protagonist. Observations are filtered through their professional lens. A PI notices exits and lies. A fixer notices leverage and exposure. The narration carries the character's worldview without breaking into first person.
 

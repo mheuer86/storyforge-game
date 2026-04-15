@@ -682,7 +682,7 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     consumableLabel: 'Medpatches, grenades, stim charges, ammo',
     tutorialContext: 'The opening chapter introduces the ship, one crew member, and a simple job that goes sideways. First check: piloting or docking. First combat: a small boarding action.',
     npcVoiceGuide: 'Military officers: short declarative sentences, rank-conscious. Engineers: precise, detail-oriented. Intelligence operatives: measured, say less than they know. Smugglers: casual, transactional, use questions as deflection. Aliens: speech reflects physiology and culture, not accents.',
-    narrativeCraft: `Write like Iain M. Banks, Becky Chambers, Ann Leckie — their techniques:
+    narrativeCraft: `Write with the techniques of Iain M. Banks (The Player of Games), Becky Chambers (A Long Way to a Small Angry Planet), Ann Leckie (Ancillary Justice), Adrian Tchaikovsky (Shards of Earth):
 
 **Scale through human-sized details.** A galaxy-spanning civilization is communicated through one customs officer's boredom. A star-destroying weapon is felt through the silence in the corridor after the order is given. Never describe scale directly — describe what scale does to a person standing inside it.
 
