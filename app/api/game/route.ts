@@ -9,6 +9,7 @@ import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/t
 
 let client: Anthropic = new Anthropic()
 const MODEL = process.env.STORYFORGE_MODEL || 'claude-sonnet-4-6'
+const THINKING_BUDGET = parseInt(process.env.STORYFORGE_THINKING_BUDGET || '0', 10) // 0 = disabled, e.g. 8000 for extended thinking
 
 export const runtime = 'nodejs'
 export const maxDuration = 90
@@ -127,7 +128,7 @@ async function runToolLoop(
   initialMessages: Anthropic.MessageParam[],
   send: SendFn,
   interceptRolls: boolean,
-  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number },
+  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number; thinkingBudget?: number },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
@@ -141,12 +142,17 @@ async function runToolLoop(
 
   const rounds = options?.maxRounds ?? 2
   for (let round = 0; round < rounds; round++) {
+    const thinkingBudget = options?.thinkingBudget || 0
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
       max_tokens: options?.maxTokens ?? 2048,
       system: systemPrompt,
       tools: cachedTools,
       messages,
+      ...(thinkingBudget > 0 && {
+        thinking: { type: 'enabled' as const, budget_tokens: thinkingBudget },
+        temperature: 1, // required when thinking is enabled
+      }),
     })
 
     for await (const event of stream) {
@@ -165,6 +171,7 @@ async function runToolLoop(
       outputTokens: usage.output_tokens,
       cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
       cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+      ...(thinkingBudget > 0 && { thinkingBudget }),
     }})
 
     const toolCalls = completed.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
@@ -439,7 +446,7 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: resultContent },
           ]
 
-          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true)
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { thinkingBudget: THINKING_BUDGET })
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
           await ensureActions(loopResult, systemPrompt, contextTools)
           finish(loopResult.toolResults)
@@ -567,7 +574,7 @@ export async function POST(req: NextRequest) {
 
         // Normal turns: 2 rounds max. Narrative + commit_turn should be 1 round.
         // 2 gives headroom if Claude doesn't include everything in one call.
-        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools })
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, thinkingBudget: THINKING_BUDGET })
 
         if (loopResult.hitRoll) {
           send({ type: 'done' })
@@ -604,7 +611,7 @@ export async function POST(req: NextRequest) {
                 })()
 
             const retryTools = isMetaQuestion ? metaTools : gameTools
-            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: retryTools })
+            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: retryTools, thinkingBudget: THINKING_BUDGET })
 
             if (loopResult.hitRoll) {
               send({ type: 'done' })

@@ -1098,7 +1098,6 @@ function WorldPanel({ world, partyBaseName, explorationLabel, companionLabel, in
                 {world.factions.map((faction, i) => (
                   <div key={`${i}-${faction.name}`} className="rounded-lg border border-border/10 bg-secondary/5 px-3 py-2.5">
                     <div className="font-medium text-foreground">{faction.name}</div>
-                    <div className="text-xs text-foreground/60">{faction.stance}</div>
                   </div>
                 ))}
               </div>

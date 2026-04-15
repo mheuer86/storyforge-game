@@ -272,7 +272,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
             timestamp: new Date().toISOString(),
           }])
-          debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
+          debugLogRef.current.push(`[${new Date().toISOString()}] TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}${u.thinkingBudget ? ` thinking_budget=${u.thinkingBudget}` : ''}`)
           if (!isByok()) {
             trackDemoUsage(u.inputTokens + u.outputTokens + u.cacheWriteTokens + u.cacheReadTokens)
           }
