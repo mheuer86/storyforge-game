@@ -19,6 +19,13 @@ export interface StartingContact {
   npcRole?: 'crew' | 'contact' | 'npc'  // defaults to 'contact'
 }
 
+export interface StartingCrewTemplate {
+  description: string          // "Sergeant. Keeps the line when things go wrong."
+  disposition: DispositionTier
+  assetDimension?: string      // which company/ship system they're attached to
+  voiceNote?: string           // speech rhythm in 10 words
+}
+
 export interface ShiftedMechanic {
   type: 'trait' | 'contact_change' | 'faction_shift' | 'passive'
   name: string                          // display name for UI callout, e.g. "Whatever It Takes"
@@ -148,10 +155,11 @@ export interface GenreConfig {
   intelOperationLabel: string
   explorationLabel: string
   heatLabel?: string           // genre-specific name for heat system (default: "Heat")
-  openingHooks: (string | { hook: string; title?: string; classes?: string[]; origins?: string[]; startingCounters?: Record<string, number>; frame?: { objective: string; crucible: string }; arc?: { name: string; episode: string } })[]
+  openingHooks: (string | { hook: string; title?: string; classes?: string[]; origins?: string[]; startingCounters?: Record<string, number>; startingCrew?: StartingCrewTemplate[]; frame?: { objective: string; crucible: string }; arc?: { name: string; episode: string } })[]
   initialChapterTitle: string
   locationNames: string[]
   npcNames?: string[]        // genre-appropriate NPC name pool — Claude samples from these instead of defaulting to "Aldric"
+  startingCrew?: StartingCrewTemplate[]  // crew templates — dynamically named from npcNames at init
 }
 
 // ─── Stubs ──────────────────────────────────────────────────────────

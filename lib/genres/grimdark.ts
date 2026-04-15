@@ -842,6 +842,32 @@ The gatekeeper clue is a person, not a document. Someone who knows the truth and
     'Gorath', 'Brita', 'Leofric', 'Thyra', 'Caskwell', 'Anneke', 'Dunstan',
     'Ragna', 'Blaeric', 'Hildeth', 'Yoren',
   ],
+  startingCrew: [
+    {
+      description: 'Sergeant. Keeps the line when things go wrong.',
+      disposition: 'favorable',
+      assetDimension: 'strength',
+      voiceNote: 'Clipped, tired, protective',
+    },
+    {
+      description: 'Quartermaster. Counts rations like a man counting heartbeats.',
+      disposition: 'neutral',
+      assetDimension: 'provisions',
+      voiceNote: 'Dry, numbers-first, always worried',
+    },
+    {
+      description: 'Scout. First to spot trouble, last to be believed.',
+      disposition: 'favorable',
+      assetDimension: 'intelligence',
+      voiceNote: 'Nervous, precise, always scanning the horizon',
+    },
+    {
+      description: 'Chaplain. Patches wounds and spirits in equal measure.',
+      disposition: 'favorable',
+      assetDimension: 'morale',
+      voiceNote: 'Calm, measured, quotes scripture when stressed',
+    },
+  ],
 }
 
 

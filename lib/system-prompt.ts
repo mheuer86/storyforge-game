@@ -190,7 +190,7 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
 12. Direct witness of human cost → world.add_decision with witnessed: true
 13. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
-14. Character referenced → world.add_npcs (every character who speaks, is described by name or role, or is referenced in dialogue MUST exist in NPC state. Use a descriptive placeholder if unnamed: "Donald's boy", "scythe woman".)
+14. Character referenced → world.add_npcs (every character who speaks, is described by name or role, or is referenced in dialogue MUST exist in NPC state. Use a descriptive placeholder if unnamed: "Donald's boy", "scythe woman". Before naming a new NPC, verify the name is not already used by an existing NPC in the NPCS or CREW section.)
 
 **Origin tracking:** Each origin carries a moral counter. Moral-category decisions auto-tick the counter (up by default, down if the character enforced or complied with the system). Use \`origin_event\` only for non-moral decisions (tactical, strategic, relational) that have origin-relevant moral weight. Don't include origin_event on moral decisions — the auto-tick handles those.
 
@@ -1763,6 +1763,11 @@ ${(() => {
       const contacts = species?.startingContacts
       if (!contacts || contacts.length === 0) return 'See origin lore for starting contact details.'
       return contacts.map(c => `- ${c.role} at ${c.disposition}${c.affiliation ? ` (${c.affiliation})` : ''}: ${c.description}`).join('\n')
+    })()}
+${(() => {
+      const crewNpcs = gameState.world?.npcs?.filter(n => n.role === 'crew') ?? []
+      if (crewNpcs.length === 0) return ''
+      return `\nSTARTING CREW: ${crewNpcs.length} crew members are already in state (see CREW section). Reference them by name in your opening narrative. They are pre-existing companions — weave them into the scene naturally. In your first commit_turn, use update_npcs to add key_facts and add_relation for each crew member based on how you introduce them. This establishes their identity anchors for the rest of the campaign.`
     })()}`
 
     return { message: msg, chapterTitle: hookTitle }

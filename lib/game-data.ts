@@ -179,6 +179,20 @@ export function createInitialGameState(
     decisions: [],
   }
 
+  // Pre-populate starting crew with random names from genre pool
+  const crewTemplates = (hookObj as { startingCrew?: typeof config.startingCrew }).startingCrew ?? config.startingCrew ?? []
+  if (crewTemplates.length > 0 && config.npcNames && config.npcNames.length > 0) {
+    const shuffled = [...config.npcNames].sort(() => Math.random() - 0.5)
+    world.npcs = crewTemplates.map((tpl, i) => ({
+      name: shuffled[i % shuffled.length],
+      description: tpl.description,
+      lastSeen: `With the ${config.partyBaseName.toLowerCase()}`,
+      role: 'crew' as const,
+      disposition: tpl.disposition,
+      voiceNote: tpl.voiceNote,
+    }))
+  }
+
   // Build initial chapter frame from hook (if provided)
   const initialFrame = hookObj.frame
     ? { objective: hookObj.frame.objective, crucible: hookObj.frame.crucible }
