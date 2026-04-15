@@ -1902,7 +1902,7 @@ TASK — populate state for Chapter 1:
    - Full entries with description, disposition, voice_note, key_facts, relations.
    - Name from the pool (avoid crew and contact names).
 
-4. SET LOCATION: Where is the company/player right now? Name + 1-2 sentences of PHYSICAL detail only (terrain, shelter, sight lines). Do NOT include objectives, narrative context, or plot information in the description.
+4. SET LOCATION: Short name (2-4 words, e.g. "Ashridge Camp", "The Collapsed Mill"). Description: 2-3 sentences max, physical detail only (terrain, shelter, sight lines). No objectives or narrative context.
 
 5. ADD FACTIONS: 1-2 factions relevant to the immediate situation. Do NOT create a faction for every NPC — most NPCs don't need an affiliation.
 
