@@ -359,6 +359,52 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
 
+      // ── Chapter 1 setup: enrich crew/contacts before GM narrates ──
+      if (isInitial && (stateWithPlayerMessage.world?.npcs ?? []).some(n => n.role === 'crew') && !(stateWithPlayerMessage.world?.npcs ?? []).some(n => n.keyFacts && n.keyFacts.length > 0)) {
+        try {
+          const setupResponse = await fetch('/api/game', {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify({
+              message: '',
+              gameState: stateWithPlayerMessage,
+              isMetaQuestion: false,
+              isInitial: false,
+              isChapter1Setup: true,
+            }),
+          })
+          if (setupResponse.ok && setupResponse.body) {
+            const reader = setupResponse.body.getReader()
+            const decoder = new TextDecoder()
+            let buf = ''
+            const setupChanges: StatChange[] = []
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buf += decoder.decode(value, { stream: true })
+              const lines = buf.split('\n')
+              buf = lines.pop() ?? ''
+              for (const line of lines) {
+                if (!line.trim()) continue
+                try {
+                  const event = JSON.parse(line) as StreamEvent
+                  if (event.type === 'tools') {
+                    stateWithPlayerMessage = applyToolResults(event.results, stateWithPlayerMessage, setupChanges, track)
+                  }
+                } catch { /* skip */ }
+              }
+            }
+            if (setupChanges.length > 0) {
+              setGameState(stateWithPlayerMessage)
+              saveGameState(stateWithPlayerMessage)
+              debugLogRef.current.push(`[${new Date().toISOString()}] ✓ CHAPTER_SETUP enriched ${setupChanges.length} NPCs/state`)
+            }
+          }
+        } catch (e) {
+          debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CHAPTER_SETUP failed: ${e instanceof Error ? e.message : 'unknown'} — continuing without setup`)
+        }
+      }
+
       const gmMsgId = crypto.randomUUID()
       setMessages((prev) => [
         ...prev,

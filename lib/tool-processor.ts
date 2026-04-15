@@ -5,6 +5,7 @@ import { applyCharacterChanges } from './tool-handlers/character'
 import { applyWorldChanges } from './tool-handlers/world'
 import { applyCombatChanges } from './tool-handlers/combat'
 import { applyNarrativeChanges } from './tool-handlers/narrative'
+import { applySetupChanges, type ChapterSetupInput } from './tool-handlers/setup'
 
 export interface StatChange {
   type: 'gain' | 'loss' | 'new' | 'neutral'
@@ -214,6 +215,12 @@ export function applyToolResults(
           rollLog: [...updated.history.rollLog, rollRecord],
         },
       }
+    }
+
+    // ── chapter_setup: batch initialization for Chapter 1 ──
+    if (result.tool === 'chapter_setup') {
+      const input = result.input as unknown as ChapterSetupInput
+      updated = applySetupChanges(input, updated, statChanges)
     }
 
     // ── _story_summary: internal, from summarize flow ──

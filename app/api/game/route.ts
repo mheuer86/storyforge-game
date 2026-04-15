@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage } from '@/lib/system-prompt'
-import { gameTools, auditTools, metaTools } from '@/lib/tools'
+import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage, buildChapter1SetupPrompt } from '@/lib/system-prompt'
+import { gameTools, auditTools, metaTools, setupTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
@@ -27,6 +27,7 @@ const requestSchema = z.object({
   isConsistencyCheck: z.boolean().optional(),
   isChapterClose: z.boolean().optional(),
   closePhase: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+  isChapter1Setup: z.boolean().optional(),
   isAudit: z.boolean().optional(),
   isSummarize: z.boolean().optional(),
   flaggedMessage: z.string().optional(),
@@ -275,7 +276,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isAudit, isSummarize, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -511,6 +512,22 @@ export async function POST(req: NextRequest) {
 
 
           const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2 })
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Chapter 1 setup: pre-narration state population ──
+        if (isChapter1Setup) {
+          const [setupInstructions, setupState] = buildChapter1SetupPrompt(gameState)
+          const setupSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: setupInstructions },
+            { type: 'text', text: setupState },
+          ]
+          const setupMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Execute chapter setup now.' },
+          ]
+
+          const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1 })
           finish(loopResult.toolResults)
           return
         }

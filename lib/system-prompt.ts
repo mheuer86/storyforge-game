@@ -1746,7 +1746,34 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
 
 Write the opening scene based on this hook. The character's class determines what kind of trouble finds them — the reason this problem lands on THIS character should be obvious from who they are. Their origin shapes how the world receives them: who trusts them on sight, who's suspicious, what doors open and close. Adapt the hook, the NPCs, and the starting situation to make both class and origin feel load-bearing from the first scene. Follow the tutorial-as-narrative structure for this first chapter.${taglineInstruction}
 
-IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the world section:
+${(() => {
+      // Detect if setup call has already populated state (crew have keyFacts, contacts exist, location set)
+      const setupRan = (gameState.world?.npcs ?? []).some(n => n.keyFacts && n.keyFacts.length > 0)
+
+      if (setupRan) {
+        // Setup call already populated NPCs, location, factions, threads
+        return `IMPORTANT: The world state has been pre-populated by a setup phase. NPCs (crew, contacts, and hook characters), location, factions, and threads are already in state. Review the CREW and NPCS sections — they contain rich backstory and relationships.
+
+In your FIRST response, call commit_turn with:
+- set_current_time (e.g. "Day 1, early morning")
+- set_scene_snapshot (who is where in your opening scene)
+${frameInstruction}
+${arcInstruction}
+Do NOT re-create NPCs, factions, or threads that already exist in state. Reference them by name. Weave crew members and contacts into the scene naturally — they are pre-existing relationships with established backstory.`
+      } else {
+        // No setup — original behavior (fallback for non-crew genres or legacy)
+        const species = config.species.find(s => s.name === gameState.character?.species)
+        const contacts = species?.startingContacts
+        const contactsBlock = (!contacts || contacts.length === 0)
+          ? 'See origin lore for starting contact details.'
+          : contacts.map(c => `- ${c.role} at ${c.disposition}${c.affiliation ? ` (${c.affiliation})` : ''}: ${c.description}`).join('\n')
+
+        const crewNpcs = gameState.world?.npcs?.filter(n => n.role === 'crew') ?? []
+        const crewBlock = crewNpcs.length > 0
+          ? `\nSTARTING CREW: ${crewNpcs.length} crew members are already in state (see CREW section). Reference them by name in your opening narrative. They are pre-existing companions — weave them into the scene naturally. In your first commit_turn, use update_npcs to add key_facts and add_relation for each crew member based on how you introduce them. This establishes their identity anchors for the rest of the campaign.`
+          : ''
+
+        return `IMPORTANT: In your FIRST response, call commit_turn with ALL of these in the world section:
 - set_location (starting location)
 - set_current_time (e.g. "Day 1, early morning")
 - set_scene_snapshot (who is where)
@@ -1758,16 +1785,8 @@ ${arcInstruction}
 The world state is blank — you must populate it.
 
 ORIGIN CONTACTS: Create these as named NPCs with the specified disposition, a personality, and a voice note. These are pre-existing relationships — they should feel established, not freshly met.
-${(() => {
-      const species = config.species.find(s => s.name === gameState.character?.species)
-      const contacts = species?.startingContacts
-      if (!contacts || contacts.length === 0) return 'See origin lore for starting contact details.'
-      return contacts.map(c => `- ${c.role} at ${c.disposition}${c.affiliation ? ` (${c.affiliation})` : ''}: ${c.description}`).join('\n')
-    })()}
-${(() => {
-      const crewNpcs = gameState.world?.npcs?.filter(n => n.role === 'crew') ?? []
-      if (crewNpcs.length === 0) return ''
-      return `\nSTARTING CREW: ${crewNpcs.length} crew members are already in state (see CREW section). Reference them by name in your opening narrative. They are pre-existing companions — weave them into the scene naturally. In your first commit_turn, use update_npcs to add key_facts and add_relation for each crew member based on how you introduce them. This establishes their identity anchors for the rest of the campaign.`
+${contactsBlock}${crewBlock}`
+      }
     })()}`
 
     return { message: msg, chapterTitle: hookTitle }
@@ -1796,4 +1815,91 @@ ${(() => {
   return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
 
 Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}${opContext}`
+}
+
+// ============================================================
+// Chapter 1 Setup Prompt — pre-narration state population
+// ============================================================
+
+export function buildChapter1SetupPrompt(gameState: GameState): [string, string] {
+  const genre = (gameState.meta?.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+  const hook = gameState.meta?.selectedHook ?? ''
+  const frame = gameState.chapterFrame
+
+  const species = config.species.find(s => s.name === gameState.character?.species)
+  const originLore = species?.lore ?? ''
+  const originName = species?.name ?? 'Unknown'
+
+  // Crew already in state (from game-data.ts init)
+  const crewNpcs = gameState.world?.npcs?.filter(n => n.role === 'crew') ?? []
+  const crewBlock = crewNpcs.length > 0
+    ? crewNpcs.map(n => {
+        const voice = n.voiceNote ? ` | Voice: ${n.voiceNote}` : ''
+        return `- ${n.name} — ${n.description}${voice}`
+      }).join('\n')
+    : 'No crew in state.'
+
+  // Origin contacts (templates, not yet created as NPCs)
+  const contacts = species?.startingContacts ?? []
+  const contactsBlock = contacts.length > 0
+    ? contacts.map(c => `- ${c.role} [${c.disposition}]${c.affiliation ? ` (${c.affiliation})` : ''}: ${c.description}`).join('\n')
+    : 'No starting contacts defined.'
+
+  // World lore (compact anchors preferred over full deepLore)
+  const loreBlock = config.loreAnchors?.join('\n') ?? ''
+
+  const instructions = `You are a campaign setup agent for a ${config.name} RPG. Your job: populate the opening game state with rich, hook-specific detail. Output ONLY a chapter_setup tool call. No narration, no prose, no commentary.
+
+WORLD LORE:
+${loreBlock}
+
+ORIGIN: ${originName}
+${originLore ? `ORIGIN LORE: ${originLore.slice(0, 400)}` : ''}
+PLAYER: ${gameState.character?.name ?? 'Unknown'}, ${gameState.character?.class ?? 'Unknown'} of ${originName}
+
+HOOK: "${hook}"
+${frame ? `CHAPTER FRAME: ${frame.objective} / ${frame.crucible}` : ''}
+
+COMPANY CREW (already in state — enrich them, do not re-create):
+${crewBlock}
+
+ORIGIN CONTACTS (templates — create as named NPCs with hook-relevant ties):
+${contactsBlock}
+
+NAME POOL (use for new NPCs and contacts):
+${config.npcNames?.join(', ') ?? 'Use genre-appropriate names.'}
+
+TASK — populate state for Chapter 1:
+
+1. ENRICH EACH CREW MEMBER (include in npcs array with their existing name):
+   - key_facts: 2-3 facts grounding this person in the hook's situation. What happened to THEM? What do they carry from before?
+   - relations: to at least one other crew member. Specific shared history, not generic bonds.
+
+2. CREATE ORIGIN CONTACTS (include in npcs array as new entries):
+   - Name each contact from the name pool (do NOT reuse crew names: ${crewNpcs.map(n => n.name).join(', ')}).
+   - role: 'contact', disposition and affiliation from their template.
+   - key_facts and relations that connect them to the hook situation. They should feel like part of the story, not random strangers.
+
+3. CREATE 1-2 HOOK-IMPLIED NPCs:
+   - Characters the hook implies: antagonists, witnesses, employers, messengers.
+   - Full entries with description, disposition, voice_note, key_facts, relations.
+   - Name from the pool (avoid crew and contact names).
+
+4. SET LOCATION: Where is the company/player right now? Name + tactical description.
+
+5. ADD FACTIONS: At least one relevant to the immediate situation.
+
+6. ADD THREAD: One narrative thread from the hook, flagged as deteriorating if urgent.
+
+Output a single chapter_setup tool call.`
+
+  // Minimal state snapshot (the setup agent doesn't need full game rules)
+  const stateSnapshot = `CURRENT STATE:
+Location: ${gameState.world?.currentLocation?.name ?? 'Not set'}
+NPCs in state: ${gameState.world?.npcs?.map(n => `${n.name} [${n.role}]`).join(', ') ?? 'None'}
+Factions: ${gameState.world?.factions?.map(f => f.name).join(', ') ?? 'None'}
+Threads: ${gameState.world?.threads?.length ?? 0}`
+
+  return [instructions, stateSnapshot]
 }
