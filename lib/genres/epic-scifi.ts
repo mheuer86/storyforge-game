@@ -871,6 +871,14 @@ Political stratagems always have a faction clock. The longer the player takes, t
     'Theron', 'Maelich', 'Solvaine', 'Corveth', 'Aurane', 'Kassad', 'Bellerin',
     'Tyrath', 'Naeven', 'Jorvane', 'Pallix', 'Cresseth', 'Ulvaine', 'Rathek',
     'Selenne', 'Damaris', 'Vesken', 'Oriane', 'Kolveth', 'Talenne', 'Gavren',
+    'Aldren', 'Belvaine', 'Caereth', 'Delvane', 'Erissol', 'Fendrath',
+    'Galthen', 'Helvaine', 'Ivoreth', 'Jaeren', 'Kelvaine', 'Lossaran',
+    'Maeveth', 'Noravel', 'Osseren', 'Pellith', 'Quelane', 'Raveth',
+    'Sotheren', 'Telvaine', 'Uvaren', 'Vellith', 'Wythane', 'Xaerun',
+    'Ysolenne', 'Zarveth', 'Aethren', 'Brevane', 'Colvaine', 'Dareth',
+    'Elvaine', 'Fennoch', 'Goreth', 'Halvaine', 'Issaren', 'Jelvane',
+    'Kaerveth', 'Lorenne', 'Melvaine', 'Narveth', 'Orvaine', 'Pelleth',
+    'Quorvane', 'Rossaren', 'Selvaine', 'Tarveth', 'Ulvenne', 'Vorane',
   ],
 }
 

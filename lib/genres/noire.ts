@@ -943,6 +943,14 @@ Every case should have a tension clock. It ticks with time, failed checks, and a
     'Birch', 'Casella', 'Donnelly', 'Roth', 'Navarro', 'Brennan', 'Kovac',
     'Margolis', 'Tierney', 'Volpe', 'Ogden', 'Sabo', 'Wexler', 'Palmieri',
     'Hennessy', 'Krol', 'Whitfield', 'Renko', 'Szabo', 'Loomis', 'Cafferty',
+    'Pulaski', 'Gant', 'Morello', 'Falk', 'Braddock', 'Costigan', 'Dressler',
+    'Echols', 'Finch', 'Guzman', 'Hargrove', 'Iverson', 'Jelinek', 'Kuzma',
+    'Lundgren', 'Montoya', 'Nesbitt', 'O\'Brien', 'Padilla', 'Quarles',
+    'Rosenfeld', 'Salazar', 'Trask', 'Unger', 'Vanek', 'Whalen', 'Zarek',
+    'Bianchi', 'Coughlin', 'Devereaux', 'Estrada', 'Flannery', 'Gorski',
+    'Hutton', 'Ianello', 'Jurek', 'Kowalski', 'Lehane', 'Mooney', 'Nieves',
+    'Orloff', 'Pratt', 'Rawlings', 'Stahl', 'Tulley', 'Urbina', 'Voss',
+    'Wendell', 'Yates', 'Zukowski', 'Ash', 'Beckett', 'Crane', 'Dolan',
   ],
 }
 

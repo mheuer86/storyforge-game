@@ -840,7 +840,15 @@ The gatekeeper clue is a person, not a document. Someone who knows the truth and
     'Tove', 'Aldwin', 'Sigra', 'Kord', 'Wulfric', 'Etta', 'Haldren', 'Maren',
     'Brant', 'Helga', 'Torsten', 'Gerta', 'Rickard', 'Edda', 'Osmund', 'Vitta',
     'Gorath', 'Brita', 'Leofric', 'Thyra', 'Caskwell', 'Anneke', 'Dunstan',
-    'Ragna', 'Blaeric', 'Hildeth', 'Yoren',
+    'Ragna', 'Blaeric', 'Hildeth', 'Yoren', 'Ashild', 'Calder', 'Drenna',
+    'Evert', 'Falke', 'Gunhild', 'Hafdan', 'Ingrun', 'Jorik', 'Kelda',
+    'Norvin', 'Oddrun', 'Pernilla', 'Solveig', 'Thrain', 'Ulfhild', 'Valdis',
+    'Wynstan', 'Aelric', 'Beorna', 'Cynewulf', 'Dagny', 'Eldric', 'Frida',
+    'Grimhild', 'Halvar', 'Ketil', 'Lothaire', 'Magnhild', 'Njal', 'Orla',
+    'Revna', 'Skarth', 'Torvald', 'Vedis', 'Wulfen', 'Ylva', 'Alfhild',
+    'Bjarn', 'Cedric', 'Dagna', 'Eadric', 'Folkvar', 'Gisla', 'Hrodgar',
+    'Jareth', 'Kolfinna', 'Ludvik', 'Nessa', 'Olvir', 'Ranveig', 'Sigurd',
+    'Thordis', 'Vigdis', 'Astrid', 'Corva', 'Drest', 'Elfwyn', 'Fenn',
   ],
   startingCrew: [
     {
