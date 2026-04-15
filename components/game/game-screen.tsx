@@ -422,10 +422,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       }
 
       // ── Chapter 1 setup: enrich crew/contacts before GM narrates ──
-      const crewNpcs = (stateWithPlayerMessage.world?.npcs ?? []).filter(n => n.role === 'crew')
+      const startingNpcs = (stateWithPlayerMessage.world?.npcs ?? []).filter(n => n.role === 'crew' || n.role === 'contact')
       const hasKeyFacts = (stateWithPlayerMessage.world?.npcs ?? []).some(n => n.keyFacts && n.keyFacts.length > 0)
-      debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_CHECK isInitial=${isInitial} crew=${crewNpcs.length} hasKeyFacts=${hasKeyFacts} npcs=${(stateWithPlayerMessage.world?.npcs ?? []).map(n => `${n.name}[${n.role}]`).join(',')}`)
-      if (isInitial && crewNpcs.length > 0 && !hasKeyFacts) {
+      debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_CHECK isInitial=${isInitial} npcsForSetup=${startingNpcs.length} hasKeyFacts=${hasKeyFacts} npcs=${(stateWithPlayerMessage.world?.npcs ?? []).map(n => `${n.name}[${n.role}]`).join(',')}`)
+      if (isInitial && startingNpcs.length > 0 && !hasKeyFacts) {
         setSetupPhase(true)
         try {
           const setupResponse = await fetch('/api/game', {
