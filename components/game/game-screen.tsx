@@ -49,6 +49,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [tokenLog, setTokenLog] = useState<Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>>([])
   const debugLogRef = useRef<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [setupPhase, setSetupPhase] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<string | undefined>(undefined)
   const [lastStatChanges, setLastStatChanges] = useState<StatChange[]>([])
@@ -361,6 +362,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
       // ── Chapter 1 setup: enrich crew/contacts before GM narrates ──
       if (isInitial && (stateWithPlayerMessage.world?.npcs ?? []).some(n => n.role === 'crew') && !(stateWithPlayerMessage.world?.npcs ?? []).some(n => n.keyFacts && n.keyFacts.length > 0)) {
+        setSetupPhase(true)
         try {
           const setupResponse = await fetch('/api/game', {
             method: 'POST',
@@ -402,6 +404,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           }
         } catch (e) {
           debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CHAPTER_SETUP failed: ${e instanceof Error ? e.message : 'unknown'} — continuing without setup`)
+        } finally {
+          setSetupPhase(false)
         }
       }
 
@@ -1183,6 +1187,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       <span className="text-sm text-muted-foreground">
                         Claude is taking a break — retrying in <span className="font-mono font-medium text-foreground">{retryCountdown}s</span>
                       </span>
+                    </div>
+                  ) : setupPhase ? (
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+                      <span className="text-sm text-muted-foreground">Setting up your campaign...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
