@@ -10,6 +10,7 @@ import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overla
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
+import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
 import { runRulesEngine } from '@/lib/rules-engine'
 import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
@@ -62,6 +63,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [budgetKeyInput, setBudgetKeyInput] = useState('')
   const [budgetKeyError, setBudgetKeyError] = useState('')
   const auditInFlightRef = useRef(false)
+  const shadowInFlightRef = useRef(0)
+  const SHADOW_EXTRACTION_ENABLED = true
   const lastMessageRef = useRef<HTMLDivElement>(null)
   const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
@@ -154,6 +157,64 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [])
 
+  /** Shadow extraction: background comparison of GM commit_turn vs extraction model. */
+  const runShadowExtraction = useCallback(async (
+    preState: GameState,
+    gmText: string,
+    gmCommitInput: Record<string, unknown>,
+    turnNum: number,
+    gmDurationMs: number,
+  ) => {
+    if (shadowInFlightRef.current >= 2) return
+    shadowInFlightRef.current++
+    const extractStart = Date.now()
+    try {
+      const response = await fetch('/api/game', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          message: '',
+          gameState: preState,
+          isMetaQuestion: false,
+          isInitial: false,
+          isShadowExtraction: true,
+          narrativeText: gmText,
+        }),
+      })
+      if (!response.ok || !response.body) return
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      let extractionCommit: Record<string, unknown> | undefined
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line)
+            if (event.type === 'tools') {
+              const commit = (event.results as Array<{ tool: string; input: unknown }>)
+                .find(r => r.tool === 'commit_turn')
+              if (commit) extractionCommit = commit.input as Record<string, unknown>
+            }
+          } catch { /* skip malformed */ }
+        }
+      }
+      const extractMs = Date.now() - extractStart
+      const diffs = diffCommitTurns(gmCommitInput, extractionCommit)
+      const logLines = formatShadowDiffs(diffs, turnNum, gmDurationMs, extractMs)
+      debugLogRef.current.push(...logLines)
+    } catch {
+      debugLogRef.current.push(`[${new Date().toISOString()}] SHADOW_EXTRACTION T${turnNum} FAILED`)
+    } finally {
+      shadowInFlightRef.current--
+    }
+  }, [])
+
   // Scene summaries are now generated inline by Claude (scene_end + scene_summary in commit_turn).
   // The old fixed-interval Haiku summarizer has been removed.
 
@@ -163,7 +224,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     isMetaQuestion: boolean,
     currentState: GameState,
     onRollPrompt: (prompt: RollPrompt) => void,
-    onDone: (finalState: GameState, statChanges: StatChange[]) => void,
+    onDone: (finalState: GameState, statChanges: StatChange[], gmText: string, lastCommitInput: Record<string, unknown> | undefined) => void,
     onError: (msg: string) => void,
   ) => {
     let gmText = ''
@@ -239,7 +300,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setRetryCountdown(null)
           onError(message)
         },
-        onDone: (finalState, statChanges) => onDone(finalState, statChanges),
+        onDone: (finalState, statChanges, gmText, lastCommitInput) => onDone(finalState, statChanges, gmText, lastCommitInput),
         onDebug: (message) => {
           debugLogRef.current.push(`[${new Date().toISOString()}] ${message}`)
         },
@@ -434,6 +495,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       ])
       setRetryContext({ playerMessage, state: stateWithPlayerMessage, isMetaQuestion, isInitial, gmMsgId })
 
+      const gmStartTime = Date.now()
       await streamRequest(
         { message: playerMessage, gameState: stateWithPlayerMessage, isMetaQuestion, isInitial },
         gmMsgId,
@@ -446,7 +508,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           isLoadingRef.current = false
           setIsLoading(false)
         },
-        (finalState, statChanges) => {
+        (finalState, statChanges, gmText, lastCommitInput) => {
+          const gmDurationMs = Date.now() - gmStartTime
           // Detect origin shift: species changed between request and response
           const prevSpecies = stateWithPlayerMessage.character?.species
           const newSpecies = finalState.character?.species
@@ -480,6 +543,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               runAudit(finalState)
             }
           }
+          // Trigger shadow extraction (non-blocking, compare-only)
+          if (SHADOW_EXTRACTION_ENABLED && !isInitial && !isMetaQuestion && lastCommitInput && gmText) {
+            runShadowExtraction(stateWithPlayerMessage, gmText, lastCommitInput, turnNum, gmDurationMs)
+          }
         },
         (msg) => {
           const lc = msg.toLowerCase()
@@ -507,7 +574,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         },
       )
     },
-    [streamRequest, runAudit]
+    [streamRequest, runAudit, runShadowExtraction]
   )
 
   const handleRetry = useCallback(() => {

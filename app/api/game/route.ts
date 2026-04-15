@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildMessagesForClaude, buildInitialMessage, buildChapter1SetupPrompt } from '@/lib/system-prompt'
+import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildExtractionPrompt, buildMessagesForClaude, buildInitialMessage, buildChapter1SetupPrompt } from '@/lib/system-prompt'
 import { gameTools, auditTools, metaTools, setupTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
@@ -30,6 +30,8 @@ const requestSchema = z.object({
   isChapter1Setup: z.boolean().optional(),
   isAudit: z.boolean().optional(),
   isSummarize: z.boolean().optional(),
+  isShadowExtraction: z.boolean().optional(),
+  narrativeText: z.string().max(8000).optional(),
   flaggedMessage: z.string().optional(),
   rollResolution: z.object({
     roll: z.number().min(1).max(100),
@@ -276,7 +278,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -454,6 +456,21 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: 'Audit the current game state now.' },
           ]
           const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Shadow extraction: background extraction for quality validation ──
+        if (isShadowExtraction && narrativeText) {
+          const [extractInstructions, extractState] = buildExtractionPrompt(gameState, narrativeText)
+          const extractSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: extractInstructions },
+            { type: 'text', text: extractState },
+          ]
+          const extractMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Extract state changes from the narrative now.' },
+          ]
+          const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
           return
         }
