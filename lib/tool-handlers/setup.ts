@@ -64,8 +64,15 @@ export function applySetupChanges(
         dbg(`SETUP new NPC: ${n.name} [${n.role ?? 'npc'}|${n.disposition ?? 'neutral'}]`)
       }
 
-      // Don't auto-create factions from NPC affiliations in setup — use the explicit factions array only.
-      // The normal add_npcs handler auto-creates factions, but setup would create too many.
+    }
+  }
+
+  // Ensure every NPC affiliation has a matching faction (referential integrity)
+  const affiliations = new Set(world.npcs.filter(n => n.affiliation).map(n => n.affiliation!))
+  for (const aff of affiliations) {
+    if (!world.factions.some(f => f.name === aff)) {
+      world.factions = [...world.factions, { name: aff, stance: 'Unknown' }]
+      dbg(`SETUP auto-faction for orphan affiliation: ${aff}`)
     }
   }
 
