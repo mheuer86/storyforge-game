@@ -482,16 +482,36 @@ export async function POST(req: NextRequest) {
           const extractMessages: Anthropic.MessageParam[] = [
             ...historyMessages,
             { role: 'assistant', content: narrativeText },
-            { role: 'user', content: `[EXTRACTION MODE] You are now the state extractor. Read your narrative above and the full conversation history. Extract every state change into a single commit_turn call.
+            { role: 'user', content: `[EXTRACTION MODE] You are now the state extractor. Read your narrative above and the full conversation history. Extract every state change into a single commit_turn call. Output ONLY a commit_turn tool call — no narrative text. Do NOT include suggested_actions or pending_check.
 
-Rules:
-- Extract ONLY what is stated or clearly implied. Do NOT invent events.
-- Do NOT generate narrative text. Output ONLY a commit_turn tool call.
-- Do NOT include suggested_actions or pending_check.
-- Be thorough: location changes, NPC updates, disposition shifts, thread progress, scene boundaries, clocks, promises, decisions.
-- If the scene location or present characters changed significantly from the scene snapshot, include scene_end: true with a scene_summary.
-- If the chapter objective appears resolved or failed, include signal_close.
-- Compare the narrative against the full conversation to identify what changed THIS turn.` },
+## PRIORITY EXTRACTIONS (most commonly missed)
+
+**Scene snapshot** — ALWAYS update set_scene_snapshot. Describe who is present, where they are spatially, and what just changed. Compare against the last snapshot in state — if anything moved, update it.
+
+**NPC updates** — If ANY named NPC spoke, moved, reacted, or revealed information this turn, emit update_npcs for them. Update last_seen to their current location. Add key_facts for anchoring details (relationships revealed, secrets shared, abilities demonstrated). Add signature_lines for memorable quotes.
+
+**Disposition changes** — Read dialogue tone against the conversation arc. If an NPC was resistant and is now cooperating, or was friendly and is now hostile, emit disposition_changes. Compare their behavior THIS turn against their behavior 2-3 turns ago — the shift may be gradual.
+
+**Scene boundaries** — If the player physically moved to a new location, or if the set of present NPCs changed significantly (someone arrived or left), include scene_end: true with a scene_summary covering the scene that just ended (2-4 sentences). Also include set_location if the location name changed.
+
+**Time tracking** — If the narrative indicates time passing (dawn→morning, "an hour later", "by nightfall"), include set_current_time.
+
+## CONTEXTUAL EXTRACTIONS (require conversation history)
+
+**Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating.
+
+**Promises** — Did the PC commit to something, or fulfill/break a prior commitment? Check active promises in state.
+
+**Decisions** — Did the PC make a choice that closes off alternatives? (alliances, accusations, commitments, moral choices) These are player-driven, not GM-driven.
+
+**Clocks** — Should a tension clock tick? Check active clocks — if the narrative describes progress or setback toward a clock's trigger, advance it.
+
+**Signal close** — Compare the chapter frame objective against what happened. If the objective is clearly resolved or failed by this turn's events, include signal_close with a reason.
+
+## RULES
+- Extract ONLY what is stated or clearly implied. Do NOT invent events or infer beyond what the text supports.
+- When in doubt about a disposition shift, include it — false negatives are worse than false positives here.
+- If nothing changed this turn, output nothing (no tool call needed).` },
           ]
           const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1 })
           finish(loopResult.toolResults)
