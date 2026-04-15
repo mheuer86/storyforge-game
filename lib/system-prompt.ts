@@ -1732,7 +1732,7 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
       : `Include chapter_frame with an objective derived from the hook and a crucible (the pressure test this hook leads to). The objective must be achievable in 12-18 turns — it's the NEXT MILESTONE, not the arc resolution.`
 
     const arcInstruction = hasPresetArcs
-      ? `A story arc is already set ("${gameState.arcs[0].title}" with episode milestone: "${gameState.arcs[0].episodes[0]?.milestone}"). Do NOT create a new arc — work within this one. You may add additional episodes via arc_updates.add_episode if the story calls for it.`
+      ? `A story arc is ALREADY SET (id: "${gameState.arcs[0].id}", title: "${gameState.arcs[0].title}"). Do NOT include arc_updates.create_arc — it will create a duplicate. You may add episodes via arc_updates.add_episode if needed.`
       : `If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal.`
 
     // Build a scene tagline from character knowledge or origin directive
