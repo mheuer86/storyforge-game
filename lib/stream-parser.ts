@@ -30,7 +30,7 @@ export interface StreamParserCallbacks {
   onTextUpdate: (gmText: string) => void
   onChapterTitle: (title: string, headerContent: string) => void
   onRollPrompt: (prompt: StreamRollPrompt) => void
-  onTokenUsage: (usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number }) => void
+  onTokenUsage: (usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number; thinkingBudget?: number }) => void
   onQuickActions: (actions: string[]) => void
   onRollBreakdown: (breakdown: RollBreakdown) => void
   onRetrying: (delayMs: number) => void

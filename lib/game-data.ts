@@ -193,6 +193,23 @@ export function createInitialGameState(
     }))
   }
 
+  // Pre-populate starting contacts (noir, cyberpunk, etc.) — same pattern as crew
+  const selectedOrigin = config.species.find(o => o.id === speciesId)
+  const contactTemplates = selectedOrigin?.startingContacts ?? []
+  if (contactTemplates.length > 0 && config.npcNames && config.npcNames.length > 0) {
+    const usedNames = new Set(world.npcs.map(n => n.name))
+    const available = config.npcNames.filter(n => !usedNames.has(n)).sort(() => Math.random() - 0.5)
+    const contactNpcs = contactTemplates.map((tpl, i) => ({
+      name: available[i % available.length],
+      description: tpl.description,
+      lastSeen: 'In the city',
+      role: (tpl.npcRole ?? 'contact') as 'crew' | 'contact' | 'npc',
+      disposition: tpl.disposition,
+      ...(tpl.affiliation && { affiliation: tpl.affiliation }),
+    }))
+    world.npcs = [...world.npcs, ...contactNpcs]
+  }
+
   // Build initial chapter frame from hook (if provided)
   const initialFrame = hookObj.frame
     ? { objective: hookObj.frame.objective, crucible: hookObj.frame.crucible }
