@@ -831,7 +831,7 @@ export function detectRollGateStructured(
       return {
         category: 'info', skills,
         targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
-        contested: ['hostile', 'wary'].includes(target.disposition || ''),
+        contested: false, // Info extraction is NOT contested — only social manipulation is
         playerAction: action,
       }
     }
