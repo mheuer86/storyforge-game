@@ -821,10 +821,9 @@ export function detectRollGateStructured(
     return { category: 'technical', skills, playerAction: action }
   }
   if ((infoVerbs.test(msg) || questionWords.test(msg)) && activeNpcs.length > 0) {
-    const target = activeNpcs.find(n =>
-      msg.includes(n.name.toLowerCase()) ||
-      (n.disposition && ['hostile', 'wary', 'neutral'].includes(n.disposition))
-    )
+    // Prefer NPC named in the message; fall back to first non-trusted NPC
+    const target = activeNpcs.find(n => msg.includes(n.name.toLowerCase()))
+      || activeNpcs.find(n => n.disposition && ['hostile', 'wary', 'neutral'].includes(n.disposition))
     if (target && target.disposition !== 'trusted') {
       const skills = primaryStat === 'WIS' ? ['Insight', 'Perception']
         : primaryStat === 'INT' ? ['Investigation', 'Insight']
