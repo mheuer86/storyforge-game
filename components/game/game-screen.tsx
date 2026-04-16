@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
+import { buildSupplementalCommit } from '@/lib/extraction-merge'
 import { runRulesEngine } from '@/lib/rules-engine'
 import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
@@ -65,10 +66,42 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const auditInFlightRef = useRef(false)
   const shadowInFlightRef = useRef(0)
   const SHADOW_EXTRACTION_ENABLED = true
+  // Extraction merge gating: Option C — input appears immediately, brief wait if player submits during extraction
+  const extractionResultRef = useRef<{ supplementalResults: ToolCallResult[]; fieldNames: string } | null>(null)
+  const extractionDoneRef = useRef(true)  // true = no extraction pending (safe to proceed)
+  const extractionResolversRef = useRef<Array<() => void>>([])
+  const gameStateRef = useRef<GameState | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
   const lastMessageRef = useRef<HTMLDivElement>(null)
   const prevMessageCountRef = useRef(-1)
   const hasStarted = useRef(false)
   const isLoadingRef = useRef(false)
+
+  // Keep gameStateRef in sync for async callbacks that need fresh state
+  useEffect(() => { gameStateRef.current = gameState }, [gameState])
+
+  // Extraction gating helpers
+  const waitForExtraction = useCallback((): Promise<void> => {
+    if (extractionDoneRef.current) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      extractionResolversRef.current.push(resolve)
+    })
+  }, [])
+
+  const applyExtractionMerge = useCallback(() => {
+    const result = extractionResultRef.current
+    if (!result || result.supplementalResults.length === 0) return
+    setGameState(prev => {
+      if (!prev) return prev
+      const statChanges: StatChange[] = []
+      const merged = applyToolResults(result.supplementalResults, prev, statChanges)
+      delete (merged as GameState & { _sceneBreaks?: string[] })._sceneBreaks
+      saveGameState(merged)
+      debugLogRef.current.push(`[${new Date().toISOString()}] EXTRACTION_APPLIED ${result.fieldNames}`)
+      return merged
+    })
+    extractionResultRef.current = null
+  }, [])
 
   // Roll logic hook — sendContinuation ref breaks the circular dependency
   // (hook needs sendContinuation, sendContinuation needs hook's setRollPrompt)
@@ -157,7 +190,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
   }, [])
 
-  /** Shadow extraction: background comparison of GM commit_turn vs extraction model. */
+  /** Shadow extraction: background extraction model produces its own commit_turn.
+   *  Results are diffed for debug logging AND applied as supplemental state merge. */
   const runShadowExtraction = useCallback(async (
     preState: GameState,
     gmText: string,
@@ -166,7 +200,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     turnNum: number,
     gmDurationMs: number,
   ) => {
-    if (shadowInFlightRef.current >= 2) return
+    if (shadowInFlightRef.current >= 2) {
+      extractionDoneRef.current = true
+      extractionResolversRef.current.forEach(r => r())
+      extractionResolversRef.current = []
+      return
+    }
     shadowInFlightRef.current++
     const extractStart = Date.now()
     try {
@@ -206,13 +245,37 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
       const extractMs = Date.now() - extractStart
+
+      // Diff (kept for debug logging)
       const diffs = diffCommitTurns(gmCommitInput, extractionCommit)
       const logLines = formatShadowDiffs(diffs, turnNum, gmDurationMs, extractMs)
       debugLogRef.current.push(...logLines)
+
+      // Build supplemental merge from extraction-only fields
+      if (extractionCommit) {
+        const supplementalResults = buildSupplementalCommit(extractionCommit, gmCommitInput, diffs)
+        if (supplementalResults.length > 0) {
+          const fieldNames = Object.keys(supplementalResults[0].input)
+            .filter(k => k !== 'suggested_actions')
+            .join(', ')
+          extractionResultRef.current = { supplementalResults, fieldNames }
+          debugLogRef.current.push(
+            `[${new Date().toISOString()}] EXTRACTION_MERGE T${turnNum} supplementing: ${fieldNames}`
+          )
+        } else {
+          debugLogRef.current.push(
+            `[${new Date().toISOString()}] EXTRACTION_MERGE T${turnNum} nothing to supplement`
+          )
+        }
+      }
     } catch {
       debugLogRef.current.push(`[${new Date().toISOString()}] SHADOW_EXTRACTION T${turnNum} FAILED`)
     } finally {
       shadowInFlightRef.current--
+      // Signal completion to any waiting gaters
+      extractionDoneRef.current = true
+      extractionResolversRef.current.forEach(r => r())
+      extractionResolversRef.current = []
     }
   }, [])
 
@@ -544,9 +607,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               runAudit(finalState)
             }
           }
-          // Trigger shadow extraction (non-blocking, compare-only)
+          // Trigger extraction (non-blocking, with supplemental merge)
           if (SHADOW_EXTRACTION_ENABLED && !isInitial && !isMetaQuestion && lastCommitInput && gmText) {
-            runShadowExtraction(stateWithPlayerMessage, gmText, lastCommitInput, playerMessage, turnNum, gmDurationMs)
+            // Reset extraction state for new turn
+            extractionDoneRef.current = false
+            extractionResultRef.current = null
+            runShadowExtraction(
+              stateWithPlayerMessage, gmText, lastCommitInput, playerMessage, turnNum, gmDurationMs
+            ).then(() => {
+              // If extraction finished and player hasn't submitted yet, merge now
+              if (extractionResultRef.current && !isLoadingRef.current) {
+                applyExtractionMerge()
+              }
+            })
+          } else {
+            // No extraction — mark as done so gating is a no-op
+            extractionDoneRef.current = true
           }
         },
         (msg) => {
@@ -938,21 +1014,37 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   )
 
   const handleActionSelect = useCallback(
-    (action: string) => {
+    async (action: string) => {
       if (!gameState || isLoadingRef.current) return
-      sendToGM(action, gameState, false, false)
+      // Gate: if extraction is in-flight, wait for it and merge before proceeding
+      if (!extractionDoneRef.current) {
+        setIsSyncing(true)
+        await waitForExtraction()
+        applyExtractionMerge()
+        setIsSyncing(false)
+      }
+      const freshState = gameStateRef.current ?? gameState
+      sendToGM(action, freshState, false, false)
     },
-    [gameState, sendToGM]
+    [gameState, sendToGM, waitForExtraction, applyExtractionMerge]
   )
 
   const handleCustomAction = useCallback(
-    (action: string, isMetaQuestion: boolean) => {
+    async (action: string, isMetaQuestion: boolean) => {
       if (!gameState || isLoadingRef.current) return
+      // Gate: wait for extraction merge if in-flight
+      if (!extractionDoneRef.current) {
+        setIsSyncing(true)
+        await waitForExtraction()
+        applyExtractionMerge()
+        setIsSyncing(false)
+      }
+      const freshState = gameStateRef.current ?? gameState
       // closeReady stays on game state — the button reappears after the GM responds.
       // The player typing means "one more thing before I close", not "cancel the close".
-      sendToGM(action, gameState, isMetaQuestion, false)
+      sendToGM(action, freshState, isMetaQuestion, false)
     },
-    [gameState, sendToGM]
+    [gameState, sendToGM, waitForExtraction, applyExtractionMerge]
   )
 
   const handleConnectEvidence = useCallback(() => {
@@ -961,17 +1053,23 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [])
 
   const handleSlashCommand = useCallback(
-    (commandName: string, args: string) => {
+    async (commandName: string, args: string) => {
       if (!gameState || isLoadingRef.current) return
+      // Gate: wait for extraction merge if in-flight
+      if (!extractionDoneRef.current) {
+        setIsSyncing(true)
+        await waitForExtraction()
+        applyExtractionMerge()
+        setIsSyncing(false)
+      }
+      const freshState = gameStateRef.current ?? gameState
       const cmd = slashCommandDefs.find(c => c.name === commandName)
       if (!cmd) return
       const instruction = cmd.buildInstruction(args)
-      // Send as a normal player message with the instruction injected
-      // The player sees their slash command, the GM gets the instruction
       const displayText = args ? `/${commandName} ${args}` : `/${commandName}`
-      sendToGM(instruction, gameState, false, false, displayText)
+      sendToGM(instruction, freshState, false, false, displayText)
     },
-    [gameState, sendToGM]
+    [gameState, sendToGM, waitForExtraction, applyExtractionMerge]
   )
 
   const handleDismissClose = useCallback(() => {
@@ -1575,6 +1673,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             onCustomAction={handleCustomAction}
             onSlashCommand={handleSlashCommand}
             disabled={isLoading}
+            isSyncing={isSyncing}
             closeReady={!!gameState.meta.closeReady}
             closeReason={gameState.meta.closeReason}
             onCloseChapter={handleCloseChapter}

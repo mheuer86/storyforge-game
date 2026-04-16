@@ -20,6 +20,7 @@ interface ActionBarProps {
   onCustomAction: (action: string, isMetaQuestion: boolean) => void
   onSlashCommand?: (commandName: string, args: string) => void
   disabled?: boolean
+  isSyncing?: boolean
   closeReady?: boolean
   closeReason?: string
   onCloseChapter?: () => void
@@ -31,7 +32,7 @@ interface ActionBarProps {
   onOpenIntel?: () => void
 }
 
-export const ActionBar = memo(function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, combatState, onOpenIntel }: ActionBarProps) {
+export const ActionBar = memo(function ActionBar({ quickActions, onActionSelect, onCustomAction, onSlashCommand, disabled = false, isSyncing = false, closeReady, closeReason, onCloseChapter, prefill, onPrefillConsumed, notebook, operationState, combatState, onOpenIntel }: ActionBarProps) {
   const [inputValue, setInputValue] = useState('')
   const [isMetaMode, setIsMetaMode] = useState(false)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
@@ -379,6 +380,14 @@ export const ActionBar = memo(function ActionBar({ quickActions, onActionSelect,
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Syncing indicator — shown briefly when player submits during extraction */}
+      {isSyncing && (
+        <div className="flex items-center justify-center gap-2 py-1">
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary/60" />
+          <span className="text-[11px] text-muted-foreground/60 font-mono tracking-wide">syncing...</span>
         </div>
       )}
 
