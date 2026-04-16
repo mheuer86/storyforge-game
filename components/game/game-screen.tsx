@@ -59,6 +59,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [retryContext, setRetryContext] = useState<{ playerMessage: string; state: GameState; isMetaQuestion: boolean; isInitial: boolean; gmMsgId: string; rollResolution?: RollResolution } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
   const [closeInProgress, setCloseInProgress] = useState(false)
+  const closeInProgressRef = useRef(false)
   const [actionBarPrefill, setActionBarPrefill] = useState<string | undefined>(undefined)
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
   const [budgetKeyInput, setBudgetKeyInput] = useState('')
@@ -341,7 +342,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             trackDemoUsage(u.inputTokens + u.outputTokens + u.cacheWriteTokens + u.cacheReadTokens)
           }
         },
-        onQuickActions: (actions) => setQuickActions(actions),
+        onQuickActions: (actions) => { if (!closeInProgressRef.current) setQuickActions(actions) },
         onRollBreakdown: (breakdown) => {
           setMessages((prev) =>
             prev.map((m) => (m.id === gmMsgId ? { ...m, rollBreakdown: breakdown } : m))
@@ -554,12 +555,18 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
       // ── Roll-first: detect roll gate and derive check before calling GM ──
       if (!isMetaQuestion && !isInitial && !stateWithPlayerMessage.combat.active) {
-        const sceneNpcs = (stateWithPlayerMessage.world?.npcs ?? []).map(n => ({
-          name: n.name,
-          disposition: n.disposition,
-          role: n.role,
-          status: n.status,
-        }))
+        // Filter to NPCs present in the current scene (via scene snapshot or lastSeen matching location)
+        const snapshot = stateWithPlayerMessage.world?.sceneSnapshot
+        const locationName = stateWithPlayerMessage.world?.currentLocation?.name?.toLowerCase() || ''
+        const allNpcs = stateWithPlayerMessage.world?.npcs ?? []
+        const sceneNpcs = allNpcs
+          .filter(n => {
+            // If we have a scene snapshot, only include NPCs mentioned in it
+            if (snapshot) return snapshot.toLowerCase().includes(n.name.toLowerCase())
+            // Fallback: include NPCs whose lastSeen mentions current location, or crew/contacts
+            return n.role === 'crew' || n.role === 'contact' || (n.lastSeen && n.lastSeen.toLowerCase().includes(locationName))
+          })
+          .map(n => ({ name: n.name, disposition: n.disposition, role: n.role, status: n.status }))
         const stats = stateWithPlayerMessage.character?.stats
         const primaryStat = stats ? Object.entries(stats).reduce((a, b) => a[1] > b[1] ? a : b)[0] : undefined
         const gate = detectRollGateStructured(playerMessage, sceneNpcs, primaryStat)
@@ -1140,6 +1147,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setLastStatChanges([])
 
     setCloseInProgress(true)
+    closeInProgressRef.current = true
     const preCloseState = gameState
     // Safety: snapshot messages before close sequence in case it fails mid-way
     try {
@@ -1258,10 +1266,12 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       setGameState(closedState)
       saveGameState(closedState)
       setCloseInProgress(false)
+      closeInProgressRef.current = false
       isLoadingRef.current = false
       setIsLoading(false)
     } catch {
       setCloseInProgress(false)
+      closeInProgressRef.current = false
       isLoadingRef.current = false
       setIsLoading(false)
     }
