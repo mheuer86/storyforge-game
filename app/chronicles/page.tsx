@@ -16,7 +16,7 @@ const genreColor: Record<string, string> = {
 
 export const metadata = {
   title: 'Tales of Storyforge',
-  description: 'Short stories generated from real playthroughs. Every story is different — because every playthrough is yours.',
+  description: 'Literary fiction from real playthroughs. Every story is different — because every playthrough is yours.',
 }
 
 export default function ChroniclesPage() {
@@ -39,8 +39,8 @@ export default function ChroniclesPage() {
             Tales of Storyforge
           </h1>
           <p className="mt-3 max-w-lg text-sm sm:text-base leading-relaxed text-white/60">
-            Real playthroughs, rendered as short fiction. Every chronicle below came from an actual game session —
-            the dice rolls, the choices, the consequences. Your playthrough would produce a different story.
+            Literary fiction from actual game sessions. Every chronicle below came from a real playthrough —
+            the dice rolls, the choices, the consequences. Your story would read differently.
             That&apos;s the point.
           </p>
         </div>

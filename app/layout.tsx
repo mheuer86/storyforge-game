@@ -46,11 +46,11 @@ const geistPixel = localFont({
 
 export const metadata: Metadata = {
   title: 'Storyforge — Play a story you\'d actually want to read',
-  description: 'A text RPG with real rules, real dice, and real consequences. Six genres, persistent worlds, NPC memory. Powered by Claude. Bring your own API key.',
+  description: 'A literary fiction RPG. Six genres, real rules, prose worth reading. Powered by Claude. Bring your own API key.',
   metadataBase: new URL('https://storyforge-game.com'),
   openGraph: {
     title: 'Storyforge — Play a story you\'d actually want to read',
-    description: 'A text RPG with real rules, real dice, and real consequences. Six genres, persistent worlds, NPC memory. Powered by Claude.',
+    description: 'A literary fiction RPG. Six genres, real rules, prose worth reading. Powered by Claude.',
     url: 'https://storyforge-game.com',
     siteName: 'Storyforge',
     type: 'website',
@@ -59,14 +59,14 @@ export const metadata: Metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Storyforge — AI-Powered Text RPG',
+        alt: 'Storyforge — Literary Fiction RPG',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Storyforge — Play a story you\'d actually want to read',
-    description: 'A text RPG with real rules, real dice, and real consequences. Powered by Claude.',
+    description: 'A literary fiction RPG. Six genres, real rules, prose worth reading. Powered by Claude.',
     images: ['/og-image.jpg'],
   },
   icons: {

@@ -867,7 +867,7 @@ export function LandingPage() {
           Tales of Storyforge.
         </h2>
         <p className="mb-10 text-center text-sm text-muted-foreground">
-          Real playthroughs, adapted into short fiction. Every story started with a dice roll.
+          Real playthroughs, rendered as short fiction. Every story started with a single dice roll.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -905,7 +905,7 @@ export function LandingPage() {
           Not a chatbot wearing a fantasy hat.
         </h2>
         <p className="mb-10 text-center text-sm text-muted-foreground">
-          Real mechanics. Real consequences. The AI enforces the rules, including on itself.
+          Real mechanics drive real fiction. The AI enforces the rules, including on itself.
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           {[

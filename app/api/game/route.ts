@@ -492,7 +492,7 @@ export async function POST(req: NextRequest) {
 
 **Disposition changes** — Read dialogue tone against the conversation arc. If an NPC was resistant and is now cooperating, or was friendly and is now hostile, emit disposition_changes. Compare their behavior THIS turn against their behavior 2-3 turns ago — the shift may be gradual.
 
-**Scene boundaries** — If the player physically moved to a new location, or if the set of present NPCs changed significantly (someone arrived or left), include scene_end: true with a scene_summary covering the scene that just ended (2-4 sentences). Also include set_location if the location name changed.
+**Scene boundaries** — ONLY include scene_end: true when BOTH conditions are met: (a) The location name changed OR the set of present characters changed substantially (someone arrived or left, not just repositioned within the scene), AND (b) at least 3 player turns have passed since the last scene_end in the conversation history. Check the scene summaries in state — aim for roughly 1 summary per 5-8 turns. Do NOT fire scene_end for movement within the same location, minor cast adjustments, or back-to-back turns. When you do fire scene_end, include a scene_summary (2-4 sentences covering the scene that just ended) and set_location if the location name changed.
 
 **Time tracking** — If the narrative indicates time passing (dawn→morning, "an hour later", "by nightfall"), include set_current_time.
 
