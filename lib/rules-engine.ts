@@ -812,7 +812,11 @@ export function detectRollGateStructured(
     }
   }
   if (physicalVerbs.test(msg)) {
-    return { category: 'physical', skills: ['Athletics', 'Acrobatics'], playerAction: action }
+    // Suppress false positives: "push the drive", "break the news", "run the operation", etc.
+    const nonPhysicalContext = /\b(push.*(drive|throttle|engine|button|limit|luck|agenda|issue|point)|break.*(news|silence|camp|fast|cover|ice|deal)|run.*(operation|errand|scan|diagnostic|numbers|check)|throw.*(party|shade|weight|support)|force.*(habit|hand|issue|nature)|grab.*(attention|drink|seat|food|coffee|bite)|catch.*(breath|drift|eye|meaning|up))\b/i
+    if (!nonPhysicalContext.test(msg)) {
+      return { category: 'physical', skills: ['Athletics', 'Acrobatics'], playerAction: action }
+    }
   }
   if (techVerbs.test(msg)) {
     const skills = primaryStat === 'INT' ? ['Electronics', 'Investigation']
