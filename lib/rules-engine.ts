@@ -786,63 +786,53 @@ export function detectRollGateStructured(
   const msg = playerMessage.toLowerCase()
   if (msg.length === 0) return null
 
-  const stealthVerbs = /\b(quiet|sneak|stealth|careful|avoid|hide|creep|silent|don't.*alert|don't.*awake|unnoticed|undetected|slip past|slip through)\b/i
-  const socialVerbs = /\b(convince|persuade|lie|bluff|intimidate|threaten|negotiate|talk.*into|charm|deceive|pretend|cover story)\b/i
-  const physicalVerbs = /\b(climb|break|force|sprint|jump|swim|lift|push|pull|pry|smash|run|escape|flee|dodge|grab|throw|catch)\b/i
-  const techVerbs = /\b(hack|pick|lockpick|repair|fix|patch|heal|stabilize|decrypt|bypass|override|crack|splice|restore|hotwire|rig)\b/i
-  const infoVerbs = /\b(ask|question|find out|what happened|what do you know|tell me|any idea|suspicion|investigate|examine|search|check|inspect|analyze|screen|review|look for|scan|study)\b/i
-  const questionWords = /\b(what|why|how|who|where|when|any|tell me|do you know|does .* know)\b/i
+  // Roll-first only fires for HIGH-CONFIDENCE patterns where the action
+  // unambiguously requires a check. Ambiguous cases fall through to the GM.
+  // False positives are worse than false negatives here — a missed roll-first
+  // just means the GM handles it (old flow), but a false positive interrupts
+  // the player with an unwanted dice prompt.
 
   const activeNpcs = sceneNpcs.filter(n => n.status !== 'dead' && n.status !== 'gone')
   const action = msg.slice(0, 80)
 
+  // Skip long multi-clause messages — these are plans/orders, not single actions
+  if (msg.length > 120) return null
+
+  // ── Stealth: high confidence, rarely figurative ──
+  const stealthVerbs = /\b(sneak|stealth|creep|slip past|slip through|unnoticed|undetected)\b/i
   if (stealthVerbs.test(msg)) {
     return { category: 'stealth', skills: ['Stealth'], playerAction: action }
   }
+
+  // ── Social manipulation: only explicit persuasion verbs + named NPC target ──
+  const socialVerbs = /\b(convince|persuade|intimidate|threaten|negotiate|talk.*into|charm|deceive|bluff)\b/i
   if (socialVerbs.test(msg) && activeNpcs.length > 0) {
-    const target = activeNpcs.find(n => msg.includes(n.name.toLowerCase())) || activeNpcs[0]
-    const skills = primaryStat === 'WIS' ? ['Insight', 'Persuasion']
-      : primaryStat === 'INT' ? ['Investigation', 'Deception']
-      : ['Persuasion', 'Deception', 'Intimidation']
-    return {
-      category: 'social', skills,
-      targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
-      contested: ['hostile', 'wary'].includes(target.disposition || ''),
-      playerAction: action,
+    // Require a named NPC in the message — no fallback to random NPC
+    const target = activeNpcs.find(n => msg.includes(n.name.toLowerCase()))
+    if (target) {
+      const skills = primaryStat === 'WIS' ? ['Insight', 'Persuasion']
+        : primaryStat === 'INT' ? ['Investigation', 'Deception']
+        : ['Persuasion', 'Deception', 'Intimidation']
+      return {
+        category: 'social', skills,
+        targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
+        contested: ['hostile', 'wary'].includes(target.disposition || ''),
+        playerAction: action,
+      }
     }
   }
-  if (physicalVerbs.test(msg)) {
-    // Suppress false positives: "push the drive", "break the news", "run the operation", etc.
-    const nonPhysicalContext = /\b(push.*(drive|throttle|engine|button|limit|luck|agenda|issue|point)|break.*(news|silence|camp|fast|cover|ice|deal)|run.*(operation|errand|scan|diagnostic|numbers|check)|throw.*(party|shade|weight|support)|force.*(habit|hand|issue|nature)|grab.*(attention|drink|seat|food|coffee|bite)|catch.*(breath|drift|eye|meaning|up))\b/i
-    if (!nonPhysicalContext.test(msg)) {
-      return { category: 'physical', skills: ['Athletics', 'Acrobatics'], playerAction: action }
-    }
-  }
+
+  // ── Technical: only unambiguous tech verbs ──
+  const techVerbs = /\b(hack|lockpick|decrypt|bypass|override|hotwire|splice)\b/i
   if (techVerbs.test(msg)) {
     const skills = primaryStat === 'INT' ? ['Electronics', 'Investigation']
       : primaryStat === 'WIS' ? ['Medicine', 'Perception']
       : ['Electronics', 'Medicine']
     return { category: 'technical', skills, playerAction: action }
   }
-  if ((infoVerbs.test(msg) || questionWords.test(msg)) && activeNpcs.length > 0) {
-    // Prefer NPC named in the message; fall back to first non-trusted NPC
-    const target = activeNpcs.find(n => msg.includes(n.name.toLowerCase()))
-      || activeNpcs.find(n => n.disposition && ['hostile', 'wary', 'neutral'].includes(n.disposition))
-    if (target && target.disposition !== 'trusted') {
-      const skills = primaryStat === 'WIS' ? ['Insight', 'Perception']
-        : primaryStat === 'INT' ? ['Investigation', 'Insight']
-        : ['Persuasion', 'Insight']
-      return {
-        category: 'info', skills,
-        targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
-        contested: false, // Info extraction is NOT contested — only social manipulation is
-        playerAction: action,
-      }
-    }
-  }
-  if (infoVerbs.test(msg)) {
-    return { category: 'search', skills: ['Investigation', 'Perception'], playerAction: action }
-  }
+
+  // Physical, info extraction, search — all dropped from roll-first.
+  // Too many false positives. The GM handles these through the normal flow.
   return null
 }
 
