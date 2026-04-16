@@ -1,4 +1,4 @@
-import type { GameState, DispositionTier } from './types'
+import type { GameState, DispositionTier, StatBlock } from './types'
 import { DISPOSITION_TIERS } from './types'
 import type { Genre } from './genres/index'
 
@@ -727,4 +727,216 @@ export function resetChapterCounters(state: GameState): GameState {
   }
 
   return state
+}
+
+// ============================================================
+// ROLL-FIRST: Derive check parameters from player input + game state
+// ============================================================
+
+export interface RollGateResult {
+  category: 'stealth' | 'social' | 'physical' | 'technical' | 'info' | 'search'
+  skills: string[]
+  targetNpc?: { name: string; disposition: string }
+  contested?: boolean
+  playerAction: string
+}
+
+export interface ApplicableModifier {
+  source: string
+  bonus: number
+  type: 'trait' | 'equipment' | 'temp'
+  consumable: boolean
+  traitIndex?: number
+  itemId?: string
+}
+
+export interface DerivedCheck {
+  skill: string
+  stat: keyof StatBlock
+  dc: number
+  modifier: number
+  reason: string
+  contested?: { npcName: string; npcSkill: string; npcModifier: number }
+  applicableModifiers: ApplicableModifier[]
+}
+
+const SKILL_STAT_MAP: Record<string, keyof StatBlock> = {
+  'Athletics': 'STR',
+  'Acrobatics': 'DEX', 'Stealth': 'DEX', 'Sleight of Hand': 'DEX',
+  'Investigation': 'INT', 'Hacking': 'INT', 'Electronics': 'INT', 'Medicine': 'INT',
+  'Insight': 'WIS', 'Perception': 'WIS', 'Survival': 'WIS',
+  'Persuasion': 'CHA', 'Deception': 'CHA', 'Intimidation': 'CHA', 'Performance': 'CHA',
+}
+
+const DISPOSITION_DC: Record<string, number> = {
+  hostile: 16, wary: 14, neutral: 12, favorable: 10, trusted: 8,
+}
+
+function abilityMod(stat: number): number {
+  return Math.floor((stat - 10) / 2)
+}
+
+/** Detect whether the player's input requires a roll (keyword-based).
+ *  Returns structured result for DC derivation, or null if no roll detected. */
+export function detectRollGateStructured(
+  playerMessage: string,
+  sceneNpcs: Array<{ name: string; disposition?: string; role?: string; status?: string }>,
+  primaryStat?: string,
+): RollGateResult | null {
+  const msg = playerMessage.toLowerCase()
+  if (msg.length === 0) return null
+
+  const stealthVerbs = /\b(quiet|sneak|stealth|careful|avoid|hide|creep|silent|don't.*alert|don't.*awake|unnoticed|undetected|slip past|slip through)\b/i
+  const socialVerbs = /\b(convince|persuade|lie|bluff|intimidate|threaten|negotiate|talk.*into|charm|deceive|pretend|cover story)\b/i
+  const physicalVerbs = /\b(climb|break|force|sprint|jump|swim|lift|push|pull|pry|smash|run|escape|flee|dodge|grab|throw|catch)\b/i
+  const techVerbs = /\b(hack|pick|lockpick|repair|fix|patch|heal|stabilize|decrypt|bypass|override|crack|splice|restore|hotwire|rig)\b/i
+  const infoVerbs = /\b(ask|question|find out|what happened|what do you know|tell me|any idea|suspicion|investigate|examine|search|check|inspect|analyze|screen|review|look for|scan|study)\b/i
+  const questionWords = /\b(what|why|how|who|where|when|any|tell me|do you know|does .* know)\b/i
+
+  const activeNpcs = sceneNpcs.filter(n => n.status !== 'dead' && n.status !== 'gone')
+  const action = msg.slice(0, 80)
+
+  if (stealthVerbs.test(msg)) {
+    return { category: 'stealth', skills: ['Stealth'], playerAction: action }
+  }
+  if (socialVerbs.test(msg) && activeNpcs.length > 0) {
+    const target = activeNpcs.find(n => msg.includes(n.name.toLowerCase())) || activeNpcs[0]
+    const skills = primaryStat === 'WIS' ? ['Insight', 'Persuasion']
+      : primaryStat === 'INT' ? ['Investigation', 'Deception']
+      : ['Persuasion', 'Deception', 'Intimidation']
+    return {
+      category: 'social', skills,
+      targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
+      contested: ['hostile', 'wary'].includes(target.disposition || ''),
+      playerAction: action,
+    }
+  }
+  if (physicalVerbs.test(msg)) {
+    return { category: 'physical', skills: ['Athletics', 'Acrobatics'], playerAction: action }
+  }
+  if (techVerbs.test(msg)) {
+    const skills = primaryStat === 'INT' ? ['Electronics', 'Investigation']
+      : primaryStat === 'WIS' ? ['Medicine', 'Perception']
+      : ['Electronics', 'Medicine']
+    return { category: 'technical', skills, playerAction: action }
+  }
+  if ((infoVerbs.test(msg) || questionWords.test(msg)) && activeNpcs.length > 0) {
+    const target = activeNpcs.find(n =>
+      msg.includes(n.name.toLowerCase()) ||
+      (n.disposition && ['hostile', 'wary', 'neutral'].includes(n.disposition))
+    )
+    if (target && target.disposition !== 'trusted') {
+      const skills = primaryStat === 'WIS' ? ['Insight', 'Perception']
+        : primaryStat === 'INT' ? ['Investigation', 'Insight']
+        : ['Persuasion', 'Insight']
+      return {
+        category: 'info', skills,
+        targetNpc: { name: target.name, disposition: target.disposition || 'neutral' },
+        contested: ['hostile', 'wary'].includes(target.disposition || ''),
+        playerAction: action,
+      }
+    }
+  }
+  if (infoVerbs.test(msg)) {
+    return { category: 'search', skills: ['Investigation', 'Perception'], playerAction: action }
+  }
+  return null
+}
+
+/** Derive full check parameters from a roll gate detection + game state.
+ *  Returns everything needed for the dice UI without an API call. */
+export function deriveCheckParameters(
+  gate: RollGateResult,
+  gameState: GameState,
+): DerivedCheck {
+  const c = gameState.character
+  const skill = gate.skills[0]
+  const stat = SKILL_STAT_MAP[skill] || 'WIS'
+  const statVal = c.stats[stat]
+  const isProficient = c.proficiencies.some(p => p.toLowerCase() === skill.toLowerCase())
+  const baseMod = abilityMod(statVal) + (isProficient ? c.proficiencyBonus : 0)
+
+  let dc: number
+  let reason: string
+  let contested: DerivedCheck['contested']
+
+  switch (gate.category) {
+    case 'social':
+    case 'info': {
+      const disp = gate.targetNpc?.disposition || 'neutral'
+      dc = DISPOSITION_DC[disp] ?? 12
+      reason = `${skill} — ${gate.playerAction}`
+      if (gate.contested && gate.targetNpc) {
+        const npcSkill = gate.category === 'social' ? 'Composure' : 'Deception'
+        contested = { npcName: gate.targetNpc.name, npcSkill, npcModifier: 2 }
+      }
+      break
+    }
+    case 'stealth':
+      dc = gameState.combat.active ? 14 : 12
+      reason = `Stealth — ${gate.playerAction}`
+      break
+    case 'physical':
+      dc = 12
+      reason = `${skill} — ${gate.playerAction}`
+      break
+    case 'technical':
+      dc = 13
+      reason = `${skill} — ${gate.playerAction}`
+      break
+    case 'search':
+      dc = 12
+      reason = `${skill} — ${gate.playerAction}`
+      break
+    default:
+      dc = 12
+      reason = `${skill} check`
+  }
+
+  // Context modifiers
+  const hasActiveClock = (gameState.world.tensionClocks ?? []).some(cl => cl.status === 'active')
+  if (hasActiveClock && (gate.category === 'search' || gate.category === 'technical')) {
+    dc += 2
+  }
+
+  // Surface applicable modifiers from traits, equipment, temp modifiers
+  const applicableModifiers: ApplicableModifier[] = []
+
+  c.traits.forEach((trait, idx) => {
+    if (trait.usesRemaining <= 0) return
+    const desc = trait.description.toLowerCase()
+    const skillLower = skill.toLowerCase()
+    const categoryTerms: Record<string, string[]> = {
+      stealth: ['stealth', 'sneak', 'hide', 'undetected'],
+      social: ['persuasion', 'deception', 'intimidation', 'social', 'convince', 'charm'],
+      physical: ['athletics', 'acrobatics', 'strength', 'climb', 'jump'],
+      technical: ['electronics', 'hack', 'repair', 'medicine', 'technical'],
+      info: ['insight', 'perception', 'investigation', 'information', 'read', 'detect'],
+      search: ['investigation', 'perception', 'search', 'examine'],
+    }
+    const terms = categoryTerms[gate.category] || []
+    if (desc.includes(skillLower) || terms.some(t => desc.includes(t)) || desc.includes('any check') || desc.includes('next check')) {
+      const bonusMatch = desc.match(/\+(\d+)/)
+      const bonus = bonusMatch ? parseInt(bonusMatch[1]) : 2
+      applicableModifiers.push({ source: trait.name, bonus, type: 'trait', consumable: true, traitIndex: idx })
+    }
+  })
+
+  c.inventory.forEach(item => {
+    if (!item.effect) return
+    const eff = item.effect.toLowerCase()
+    if (eff.includes('check') || eff.includes('roll') || eff.includes('bonus') || eff.includes('advantage')) {
+      const bonusMatch = eff.match(/\+(\d+)/)
+      const bonus = bonusMatch ? parseInt(bonusMatch[1]) : 1
+      applicableModifiers.push({ source: item.name, bonus, type: 'equipment', consumable: (item.charges ?? 0) > 0 || item.quantity <= 1, itemId: item.id })
+    }
+  })
+
+  c.tempModifiers.forEach(mod => {
+    if (mod.stat === stat || mod.stat === 'all') {
+      applicableModifiers.push({ source: mod.name, bonus: mod.value, type: 'temp', consumable: false })
+    }
+  })
+
+  return { skill, stat, dc, modifier: baseMod, reason, contested, applicableModifiers }
 }

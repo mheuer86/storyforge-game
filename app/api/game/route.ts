@@ -56,6 +56,21 @@ const requestSchema = z.object({
     rollType: z.enum(['check', 'damage', 'healing']).optional(),
     damageType: z.string().optional(),
   }).optional(),
+  rollFirstResult: z.object({
+    roll: z.number().min(1).max(20),
+    check: z.string(),
+    stat: z.string(),
+    dc: z.number(),
+    modifier: z.number(),
+    reason: z.string(),
+    result: z.enum(['critical', 'success', 'failure', 'fumble']),
+    total: z.number(),
+    advantage: z.enum(['advantage', 'disadvantage']).optional(),
+    rawRolls: z.tuple([z.number().min(1).max(20), z.number().min(1).max(20)]).optional(),
+    contested: z.object({ npcName: z.string(), npcSkill: z.string(), npcModifier: z.number() }).optional(),
+    npcRoll: z.number().min(1).max(20).optional(),
+    npcTotal: z.number().optional(),
+  }).optional(),
 })
 
 function resolveRoll(roll: number, modifier: number, dc: number, rollType?: string): RollRecord['result'] {
@@ -287,7 +302,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, rollFirstResult, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   const encoder = new TextEncoder()
@@ -448,6 +463,57 @@ export async function POST(req: NextRequest) {
 
           const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { thinkingBudget: THINKING_BUDGET })
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+          await ensureActions(loopResult, systemPrompt, contextTools)
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── Roll-first: client derived the check, player already rolled, GM narrates the full scene ──
+        if (rollFirstResult) {
+          const { roll, dc, modifier, check, stat, result, total, reason, advantage, rawRolls, contested, npcRoll, npcTotal } = rollFirstResult
+
+          const rollRecord: RollRecord = {
+            id: crypto.randomUUID(),
+            check, stat, dc, roll, modifier, total, result, reason,
+            timestamp: new Date().toISOString(),
+            ...(advantage && { advantage }),
+            ...(rawRolls && { rawRolls }),
+            ...(contested && { contested }),
+            ...(npcRoll !== undefined && { npcRoll, npcTotal }),
+          }
+
+          // Build the roll result text (same format as rollResolution)
+          const advNote = advantage && rawRolls ? ` (${advantage}: rolled ${rawRolls[0]} and ${rawRolls[1]}, kept ${roll})` : ''
+          const contestedNote = contested && npcRoll !== undefined && npcTotal !== undefined
+            ? ` Contested: ${contested.npcName}'s ${contested.npcSkill} ${npcRoll} + ${contested.npcModifier} = ${npcTotal}.` : ''
+          const vsText = contested && npcTotal !== undefined ? `vs ${contested.npcName}'s ${npcTotal}` : `vs DC ${dc}`
+          const resultText = result === 'critical' ? `Natural 20! Critical success${advNote}.${contestedNote} Total: ${total} ${vsText}. Exceptional outcome.`
+            : result === 'fumble' ? `Natural 1! Fumble${advNote}.${contestedNote} Total: ${total} ${vsText}. Failure with complication.`
+            : result === 'success' ? `Success${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}.`
+            : `Failure${advNote}.${contestedNote} Roll: ${roll} + ${modifier} modifier = ${total} ${vsText}. Apply the "fail with a cost" rule.`
+          const reminder = (result === 'success' || result === 'critical') ? ROLL_REMINDER_SUCCESS : ROLL_REMINDER_FAILURE
+
+          // Build conversation with roll result embedded in the player's turn
+          const conversationMessages = buildMessagesForClaude(gameState, message, false)
+          // Replace the last user message with one that includes the roll result
+          const lastMsgIdx = conversationMessages.length - 1
+          const playerMsg = typeof conversationMessages[lastMsgIdx]?.content === 'string'
+            ? conversationMessages[lastMsgIdx].content as string : message
+          conversationMessages[lastMsgIdx] = {
+            role: 'user',
+            content: `${playerMsg}\n\n[ROLL RESULT: ${check} (${stat}) — ${resultText}${reminder}]\n\nNarrate the full scene including the attempt and its outcome in one continuous narrative.`,
+          }
+
+          const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, thinkingBudget: THINKING_BUDGET })
+          loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
+
+          // Handle chained rolls (e.g. damage after a combat hit)
+          if (loopResult.hitRoll) {
+            send({ type: 'done' })
+            controller.close()
+            return
+          }
+
           await ensureActions(loopResult, systemPrompt, contextTools)
           finish(loopResult.toolResults)
           return

@@ -21,6 +21,17 @@ export interface RollPrompt {
   sides?: number
   rollType?: 'check' | 'damage' | 'healing'
   damageType?: string
+  // Roll-first: check was derived client-side, no pending GM conversation
+  rollFirst?: boolean
+  rollFirstPlayerMessage?: string
+  applicableModifiers?: Array<{
+    source: string
+    bonus: number
+    type: 'trait' | 'equipment' | 'temp'
+    consumable: boolean
+    traitIndex?: number
+    itemId?: string
+  }>
 }
 
 interface RelevantItem {

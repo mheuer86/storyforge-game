@@ -12,7 +12,7 @@ import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickAc
 import { applyToolResults, type StatChange } from '@/lib/tool-processor'
 import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
 import { buildSupplementalCommit } from '@/lib/extraction-merge'
-import { runRulesEngine } from '@/lib/rules-engine'
+import { runRulesEngine, detectRollGateStructured, deriveCheckParameters } from '@/lib/rules-engine'
 import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
 import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
 import { type Genre, applyGenreTheme, getGenreConfig } from '@/lib/genre-config'
@@ -552,6 +552,43 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
 
+      // ── Roll-first: detect roll gate and derive check before calling GM ──
+      if (!isMetaQuestion && !isInitial && !stateWithPlayerMessage.combat.active) {
+        const sceneNpcs = (stateWithPlayerMessage.world?.npcs ?? []).map(n => ({
+          name: n.name,
+          disposition: n.disposition,
+          role: n.role,
+          status: n.status,
+        }))
+        const stats = stateWithPlayerMessage.character?.stats
+        const primaryStat = stats ? Object.entries(stats).reduce((a, b) => a[1] > b[1] ? a : b)[0] : undefined
+        const gate = detectRollGateStructured(playerMessage, sceneNpcs, primaryStat)
+        if (gate) {
+          const check = deriveCheckParameters(gate, stateWithPlayerMessage)
+          debugLogRef.current.push(`[${new Date().toISOString()}] 🎲 ROLL_FIRST ${check.skill} (${check.stat}) DC ${check.dc} mod ${check.modifier > 0 ? '+' : ''}${check.modifier} — derived from "${gate.playerAction}"`)
+
+          // Show dice UI immediately — no GM call yet
+          rollLogic.setRollPrompt({
+            check: check.skill,
+            stat: check.stat,
+            dc: check.dc,
+            modifier: check.modifier,
+            reason: check.reason,
+            toolUseId: '', // no pending tool call
+            pendingMessages: [],
+            pendingState: stateWithPlayerMessage,
+            ...(check.contested && { contested: check.contested }),
+            rollFirst: true,
+            rollFirstPlayerMessage: playerMessage,
+            applicableModifiers: check.applicableModifiers,
+          })
+          setRetryContext(null)
+          isLoadingRef.current = false
+          setIsLoading(false)
+          return // dice UI is showing — sendContinuation will handle the rest
+        }
+      }
+
       const gmMsgId = crypto.randomUUID()
       setMessages((prev) => [
         ...prev,
@@ -828,8 +865,20 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
 
+      // Roll-first: send player message + roll result as a fresh turn (no pending conversation)
+      // Fallback: send rollResolution to continue the pending conversation
+      const requestBody = prompt.rollFirst
+        ? {
+            message: prompt.rollFirstPlayerMessage || '',
+            gameState: stateForContinuation,
+            isMetaQuestion: false,
+            isInitial: false,
+            rollFirstResult: { roll, check: prompt.check, stat: prompt.stat, dc: prompt.dc, modifier, reason: prompt.reason, result, total, ...(prompt.advantage && { advantage: prompt.advantage }), ...(prompt.rawRolls && { rawRolls: prompt.rawRolls }), ...(prompt.contested && { contested: prompt.contested }), ...(prompt.npcRoll !== undefined && { npcRoll: prompt.npcRoll, npcTotal }) },
+          }
+        : { message: '', gameState: stateForContinuation, isMetaQuestion: false, isInitial: false, rollResolution }
+
       await streamRequest(
-        { message: '', gameState: stateForContinuation, isMetaQuestion: false, isInitial: false, rollResolution },
+        requestBody,
         gmMsgId,
         false,
         stateForContinuation,
