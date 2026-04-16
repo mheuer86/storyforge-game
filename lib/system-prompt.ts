@@ -141,6 +141,18 @@ Failed ≠ nothing happens. But failed also ≠ success with flavor text. **When
 
 If the player failed a knowledge check, they don't get the knowledge. Someone else might have it (at a cost). If they failed Persuasion, the NPC doesn't cooperate — they demand something, refuse, or misunderstand. If they failed Perception, they miss something that matters later. Consistency: if a check was worth rolling, the failure must change what happens next.
 
+### Failure narration discipline
+
+**Commit to the false reality.** The character believes what they perceive. If an Insight check fails against a lying NPC, the lie lands — narrate the character accepting the explanation in their own voice. Never step outside the character to signal the deception: no "what you don't see," no "what they successfully buried," no "you fail to notice." The character walked away confident. The reader should not know they failed.
+
+**Plant a seed.** Leave one small, missable detail — a hand returning to the table from off-screen, a phrase that doesn't quite fit, an object slightly out of place. Do not underline it. The player either catches it now (their lead) or remembers it later (their reckoning). The seed makes the eventual discovery feel earned, not arbitrary.
+
+**Generate momentum.** End the scene with the character acting on the false reality. The failure's cost is that subsequent decisions are built on bad data. The payoff surfaces 2-5 scenes later when the world contradicts what the character believed.
+
+**The test:** After narrating a failure, ask: would a reader of this scene know the character failed a check? If yes, the failure was meta-narrated and the roll did nothing. Rewrite until the scene reads as a natural interaction the character walked away from confident.
+
+**By check type:** Insight/Perception: the character doesn't notice and doesn't know they didn't. Investigation: a plausible wrong answer treated as true. Persuasion vs hostile: NPC appears to comply but acts against the character offscreen. Combat: position changes, not "you miss" — the enemy gains advantage, the next exchange starts worse.
+
 ## CONSEQUENCES
 
 Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enemies fight to win — cover, focus fire, target weak stats. At least one NPC per chapter initiates aggression. Player has full moral agency — GM is a mirror, not a guardrail.
