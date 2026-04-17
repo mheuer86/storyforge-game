@@ -537,6 +537,28 @@ export async function POST(req: NextRequest) {
         if (isAudit) {
           const AUDIT_MODEL = 'claude-haiku-4-5-20251001'
           const [auditInstructions, auditState] = buildAuditPrompt(gameState)
+
+          // Emit audit blocks for the debug log export.
+          const playerTurns = gameState.history.messages.filter(m => m.role === 'player').length
+          send({
+            type: 'debug_context',
+            label: 'AUDIT_START',
+            content: `Audit fired. chapter=${gameState.meta.chapterNumber} player_turn=${playerTurns}`,
+            tokenEstimate: 0,
+          })
+          send({
+            type: 'debug_context',
+            label: 'AUDIT_SYSTEM_STATIC',
+            content: auditInstructions,
+            tokenEstimate: Math.ceil(auditInstructions.length / 4),
+          })
+          send({
+            type: 'debug_context',
+            label: 'AUDIT_SYSTEM_DYNAMIC',
+            content: auditState,
+            tokenEstimate: Math.ceil(auditState.length / 4),
+          })
+
           const auditSystem: Anthropic.TextBlockParam[] = [
             { type: 'text', text: auditInstructions },
             { type: 'text', text: auditState },
@@ -545,6 +567,18 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: 'Audit the current game state now.' },
           ]
           const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
+
+          // Emit audit result summary for the debug log.
+          const toolNames = loopResult.toolResults.map(r => r.tool)
+          const commitInput = loopResult.toolResults.find(r => r.tool === 'commit_turn')?.input as Record<string, unknown> | undefined
+          const correctionFields = commitInput ? Object.keys(commitInput) : []
+          send({
+            type: 'debug_context',
+            label: 'AUDIT_RESULT',
+            content: `tools_called=${toolNames.join(',') || 'none'} correction_fields=${correctionFields.join(',') || 'none'}\n${JSON.stringify(commitInput ?? {}, null, 2)}`,
+            tokenEstimate: 0,
+          })
+
           finish(loopResult.toolResults)
           return
         }
