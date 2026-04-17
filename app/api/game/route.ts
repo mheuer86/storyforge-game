@@ -354,6 +354,20 @@ export async function POST(req: NextRequest) {
       try {
         const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
 
+        // Emit the static + dynamic system blocks for the debug log export.
+        // Gated to the main turn entry (not retries/follow-ups) so we capture
+        // one snapshot per player turn. Static block hits the prompt cache,
+        // but logging it lets us audit total context size.
+        for (const block of systemPrompt) {
+          const label = block.cache_control ? 'SYSTEM_STATIC' : 'SYSTEM_DYNAMIC'
+          send({
+            type: 'debug_context',
+            label,
+            content: block.text,
+            tokenEstimate: Math.ceil(block.text.length / 4),
+          })
+        }
+
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
           const { roll, dc, modifier, reason, check, stat, pendingMessages, toolUseId, advantage, rawRolls, contested, npcRoll, npcTotal, priorToolResults: priorResults, sides, rollType, damageType } = rollResolution

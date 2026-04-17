@@ -534,6 +534,7 @@ export type StreamEvent =
   | { type: 'retrying'; delayMs: number; reason: string }
   | { type: 'error'; message: string }
   | { type: 'token_usage'; usage: TokenUsage }
+  | { type: 'debug_context'; label: string; content: string; tokenEstimate: number }
 
 export interface TokenUsage {
   inputTokens: number
