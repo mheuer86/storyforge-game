@@ -90,7 +90,10 @@ export function applyWorldChanges(
           }
           if (n.add_signature_line) {
             const lines = updated.signatureLines ?? []
-            if (lines.length < 4) {  // cap at 4
+            const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+            const incoming = norm(n.add_signature_line)
+            const isDuplicate = lines.some(l => norm(l) === incoming)
+            if (!isDuplicate && lines.length < 4) {  // cap at 4
               updated.signatureLines = [...lines, n.add_signature_line]
             }
           }
@@ -298,17 +301,26 @@ export function applyWorldChanges(
         }
       }
       const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
-      const activeDecisions = decisions.filter(d => d.status === 'active')
-      if (activeDecisions.length >= 8) {
-        const oldest = activeDecisions[0]
-        world.decisions = decisions.map(d =>
-          d.id === oldest.id ? { ...d, status: 'superseded' as const, reason: 'overtaken by events' } : d
-        )
-        world.decisions = [...world.decisions, newDecision]
+      const normSummary = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+      const incomingSummary = normSummary(newDecision.summary)
+      const isDuplicate = decisions.some(d =>
+        d.status === 'active' && normSummary(d.summary) === incomingSummary
+      )
+      if (isDuplicate) {
+        dbg(`DECISION_DEDUP skipped duplicate: ${newDecision.summary.slice(0, 80)}`)
       } else {
-        world.decisions = [...decisions, newDecision]
+        const activeDecisions = decisions.filter(d => d.status === 'active')
+        if (activeDecisions.length >= 8) {
+          const oldest = activeDecisions[0]
+          world.decisions = decisions.map(d =>
+            d.id === oldest.id ? { ...d, status: 'superseded' as const, reason: 'overtaken by events' } : d
+          )
+          world.decisions = [...world.decisions, newDecision]
+        } else {
+          world.decisions = [...decisions, newDecision]
+        }
+        statChanges.push({ type: 'new', label: `Decision: ${input.add_decision.summary}` })
       }
-      statChanges.push({ type: 'new', label: `Decision: ${input.add_decision.summary}` })
     }
   }
   if (input.update_decision) {
