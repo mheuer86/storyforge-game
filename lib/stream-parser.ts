@@ -2,6 +2,19 @@ import type { GameState, StreamEvent, ToolCallResult, RollBreakdown } from './ty
 import type { StatChange } from './tool-processor'
 import { runRulesEngine } from './rules-engine'
 
+// ─── Debug context dedup ─────────────────────────────────────────────
+// The static system block is ~2200 tokens and changes only when the
+// situation module switches. Emit the full block only on first sight
+// and on change; emit a one-liner otherwise so the exported log stays
+// readable.
+const lastDebugHash = new Map<string, string>()
+
+function fingerprint(s: string): string {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) ^ s.charCodeAt(i)
+  return (h >>> 0).toString(16).padStart(8, '0')
+}
+
 // ─── Parser state: accumulated across stream events ──────────────────
 
 export interface StreamParserState {
@@ -120,9 +133,16 @@ export function processStreamEvent(
   }
 
   if (event.type === 'debug_context') {
-    callbacks.onDebug(
-      `=== BEGIN ${event.label} (~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
-    )
+    const hash = fingerprint(event.content)
+    const prior = lastDebugHash.get(event.label)
+    if (prior === hash) {
+      callbacks.onDebug(`=== ${event.label} unchanged (hash: ${hash}, ~${event.tokenEstimate} tokens) ===`)
+    } else {
+      lastDebugHash.set(event.label, hash)
+      callbacks.onDebug(
+        `=== BEGIN ${event.label} (hash: ${hash}, ~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
+      )
+    }
     return s
   }
 
