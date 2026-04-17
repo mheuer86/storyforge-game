@@ -141,8 +141,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
   /** Silent background audit — fires every AUDIT_INTERVAL player turns. */
   const runAudit = useCallback(async (state: GameState) => {
-    if (auditInFlightRef.current) return
+    const playerTurns = state.history.messages.filter(m => m.role === 'player').length
+    if (auditInFlightRef.current) {
+      debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_SKIPPED already in flight, player_turn=${playerTurns}`)
+      return
+    }
     auditInFlightRef.current = true
+    debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_FIRED chapter=${state.meta.chapterNumber} player_turn=${playerTurns}`)
     try {
       const response = await fetch('/api/game', {
         method: 'POST',
@@ -155,7 +160,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           isAudit: true,
         }),
       })
-      if (!response.ok || !response.body) return
+      if (!response.ok || !response.body) {
+        debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ AUDIT_FAILED http status=${response.status}`)
+        return
+      }
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
@@ -178,15 +186,25 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               if (corrections.length > 0) {
                 auditedState = applyToolResults(corrections, auditedState, statChanges, track)
               }
+            } else if (event.type === 'debug_context') {
+              const body = event.label.startsWith('AUDIT_START') || event.label.startsWith('AUDIT_RESULT')
+                ? `${event.label}: ${event.content}`
+                : `=== BEGIN ${event.label} (~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
+              debugLogRef.current.push(`[${new Date().toISOString()}] ${body}`)
             }
           } catch { /* skip malformed */ }
         }
       }
       if (statChanges.length > 0) {
+        debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_APPLIED ${statChanges.length} corrections: ${statChanges.map(c => c.label).join(' | ')}`)
         setGameState(auditedState)
         saveGameState(auditedState)
+      } else {
+        debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_CLEAN no corrections applied`)
       }
-    } catch { /* audit failure is non-critical */ } finally {
+    } catch (e) {
+      debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ AUDIT_FAILED ${e instanceof Error ? e.message : 'unknown'}`)
+    } finally {
       auditInFlightRef.current = false
     }
   }, [])
