@@ -191,6 +191,18 @@ async function runToolLoop(
 
     const toolCalls = completed.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
 
+    // Truncation surfaces as stop_reason='max_tokens'. The loop breaks on
+    // stop_reason !== 'tool_use' below, so truncated tool calls look identical
+    // to normal completion in the token_usage event. Emit an explicit signal.
+    if (completed.stop_reason === 'max_tokens') {
+      send({
+        type: 'debug_context',
+        label: 'TRUNCATION_WARNING',
+        content: `model=${options?.model || MODEL} round=${round} tools_sent=${cachedTools.length > 0} output_tokens=${usage.output_tokens} tool_use_blocks=${toolCalls.length}`,
+        tokenEstimate: 0,
+      })
+    }
+
     if (completed.stop_reason !== 'tool_use' || toolCalls.length === 0) break
 
     const roundResults: Anthropic.ToolResultBlockParam[] = []
@@ -610,6 +622,18 @@ export async function POST(req: NextRequest) {
 
 **Time tracking** — If the narrative indicates time passing (dawn→morning, "an hour later", "by nightfall"), include set_current_time.
 
+## OPERATIONAL EXTRACTIONS (priority-tier, state-dense)
+
+**Operation objectives** — If an active operation is in state, compare its objectives against the narrative. When the narrative describes completing, failing, or clearly advancing an objective, emit update_objective with the correct status. Do not invent objectives — only update ones that exist in operationState.objectives.
+
+**Operation phase transitions** — Active operations flow planning → active → extraction → complete/failed. Emit a phase update when the narrative clearly signals the shift (plan approved → "go", objectives met → extraction begins, exfil complete → complete, catastrophic failure → failed). Do not promote phases on ambiguous beats.
+
+**Exploration state** — When an active explorationState exists and the narrative enters, explores, or leaves an area, update explored / current / unexplored accordingly. Move the named area from unexplored → current on entry, and from current → explored on exit. If the narrative describes the facility's alert level changing (silent → alerted → locked down), update it.
+
+**Ship / asset updates** — Hull damage taken or repaired, system damage (shields, weapons, drives) flipping between operational and damaged, and newly acquired upgrades or assets should all be emitted. Check current ship/asset state before writing — only report deltas.
+
+**Tactical facts** — When the narrative confirms a new fact about an active operation (exact enemy count, patrol timing, door code, interior layout), append it to tacticalFacts. These are facts the PC now knows for planning; do not append rumors or speculation.
+
 ## CONTEXTUAL EXTRACTIONS (require conversation history)
 
 **Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating.
@@ -625,9 +649,9 @@ export async function POST(req: NextRequest) {
 ## RULES
 - Extract ONLY what is stated or clearly implied. Do NOT invent events or infer beyond what the text supports.
 - When in doubt about a disposition shift, include it — false negatives are worse than false positives here.
-- If nothing changed this turn, output nothing (no tool call needed).` },
+- If the narrative describes any state change covered above, emit commit_turn. Err toward emitting when uncertain — false positives are recoverable, false negatives are not.` },
           ]
-          const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1 })
+          const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1, maxTokens: 8192 })
           finish(loopResult.toolResults)
           return
         }
