@@ -119,6 +119,13 @@ export function processStreamEvent(
     return s
   }
 
+  if (event.type === 'debug_context') {
+    callbacks.onDebug(
+      `=== BEGIN ${event.label} (~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
+    )
+    return s
+  }
+
   if (event.type === 'tools') {
     s = processToolsEvent(event, s, callbacks)
     return s
