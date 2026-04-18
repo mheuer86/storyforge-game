@@ -88,9 +88,9 @@ export function applyWorldChanges(
               e => !e.description.toLowerCase().includes(removeStr)
             )
           }
-          if (n.add_signature_line) {
+          if (typeof n.add_signature_line === 'string' && n.add_signature_line.length > 0) {
             const lines = updated.signatureLines ?? []
-            const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+            const norm = (s: unknown) => typeof s === 'string' ? s.trim().toLowerCase().replace(/\s+/g, ' ') : ''
             const incoming = norm(n.add_signature_line)
             const isDuplicate = lines.some(l => norm(l) === incoming)
             if (!isDuplicate && lines.length < 4) {  // cap at 4
@@ -301,13 +301,13 @@ export function applyWorldChanges(
         }
       }
       const newDecision = { ...input.add_decision, status: 'active' as const, chapter: chapterNum, ...(isWitnessed && { witnessed: true }) }
-      const normSummary = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+      const normSummary = (s: unknown) => typeof s === 'string' ? s.trim().toLowerCase().replace(/\s+/g, ' ') : ''
       const incomingSummary = normSummary(newDecision.summary)
-      const isDuplicate = decisions.some(d =>
+      const isDuplicate = incomingSummary.length > 0 && decisions.some(d =>
         d.status === 'active' && normSummary(d.summary) === incomingSummary
       )
       if (isDuplicate) {
-        dbg(`DECISION_DEDUP skipped duplicate: ${newDecision.summary.slice(0, 80)}`)
+        dbg(`DECISION_DEDUP skipped duplicate: ${String(newDecision.summary ?? '').slice(0, 80)}`)
       } else {
         const activeDecisions = decisions.filter(d => d.status === 'active')
         if (activeDecisions.length >= 8) {
