@@ -196,10 +196,12 @@ async function runToolLoop(
     // to normal completion in the token_usage event. Emit an explicit signal.
     if (completed.stop_reason === 'max_tokens') {
       send({
-        type: 'debug_context',
-        label: 'TRUNCATION_WARNING',
-        content: `model=${options?.model || MODEL} round=${round} tools_sent=${cachedTools.length > 0} output_tokens=${usage.output_tokens} tool_use_blocks=${toolCalls.length}`,
-        tokenEstimate: 0,
+        type: 'truncation_warning',
+        outputTokens: usage.output_tokens,
+        toolUseBlocks: toolCalls.length,
+        round,
+        hasTools: cachedTools.length > 0,
+        model: options?.model || MODEL,
       })
     }
 
@@ -636,15 +638,19 @@ export async function POST(req: NextRequest) {
 
 ## CONTEXTUAL EXTRACTIONS (require conversation history)
 
-**Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating.
+**Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating. When adding a new thread, populate Stage 1 fields when they can be inferred from the narrative: owner (the NPC name or faction driving it — not "unknown"), resolution_criteria (what would resolve it), failure_mode (what happens if ignored), relevant_npcs (secondary NPCs whose presence surfaces it). If you cannot infer a field, omit it; missing values are logged for measurement.
 
-**Promises** — Did the PC commit to something, or fulfill/break a prior commitment? Check active promises in state.
+**Promises** — Did the PC commit to something, or fulfill/break a prior commitment? Check active promises in state. When adding a new promise, populate anchored_to with the thread ID(s) or arc ID(s) this commitment locks into shape. Missing anchors are logged.
 
-**Decisions** — Did the PC make a choice that closes off alternatives? (alliances, accusations, commitments, moral choices) These are player-driven, not GM-driven.
+**Decisions** — Did the PC make a choice that closes off alternatives? (alliances, accusations, commitments, moral choices) These are player-driven, not GM-driven. When adding a new decision, populate anchored_to with the thread ID(s) or arc ID(s) this choice constrains. Missing anchors are logged.
 
 **Clocks** — Should a tension clock tick? Check active clocks — if the narrative describes progress or setback toward a clock's trigger, advance it.
 
 **Signal close** — Compare the chapter frame objective against what happened. If the objective is clearly resolved or failed by this turn's events, include signal_close with a reason.
+
+**Reframe detection** — If the prior chapter objective resolved AND this turn establishes a new crucible of a DIFFERENT kind (different type of pressure, not a continuation of the same investigation), emit \`reframe\` with new_objective, new_crucible, and reason. Criterion: the chapter's central question has changed shape. If the narrative continues the same investigation in more detail, do NOT reframe. Reframe is an alternative to signal_close for when the chapter has room left to run but its center of pressure has moved. One reframe per chapter is the expected ceiling.
+
+**Do NOT create arcs eagerly.** Arcs require the retrospective judgment of "this will span multiple chapters and define campaign-level stakes." That judgment is usually only possible at chapter close. When in doubt, create a thread instead. A thread can be promoted to an arc later if it turns out to span chapters with no single resolution. An arc cannot easily be downgraded to a thread without breaking the arc/episode structure. If you DO emit arc_updates.create_arc, it must include spans_chapters >= 3, a stakes_definition (what this defines about the character's stance, distinct from the title), and 2-4 episodes. The handler rejects arcs that fail these gates.
 
 ## RULES
 - Extract ONLY what is stated or clearly implied. Do NOT invent events or infer beyond what the text supports.
