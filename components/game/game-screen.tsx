@@ -350,7 +350,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         body: JSON.stringify(body),
       })
 
-      if (!response.ok) throw new Error(`API error: ${response.status}`)
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '')
+        console.error('[SF] /api/game non-OK', response.status, response.statusText, errText.slice(0, 2000))
+        throw new Error(`API ${response.status} ${response.statusText}: ${errText.slice(0, 200)}`)
+      }
       if (!response.body) throw new Error('No response body')
 
       const reader = response.body.getReader()
@@ -444,6 +448,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         }
       }
     } catch (error) {
+      console.error('[SF] streamRequest caught', error)
       onError(error instanceof Error ? error.message : 'Something went wrong')
     }
   }, [applyTools, setQuickActions])
@@ -1229,7 +1234,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             saveGameState(phaseState)
             resolve(phaseState)
           },
-          () => reject(new Error(`Close phase ${phase} failed`)),
+          (msg) => reject(new Error(`Close phase ${phase} failed: ${msg}`)),
         )
       })
     }
