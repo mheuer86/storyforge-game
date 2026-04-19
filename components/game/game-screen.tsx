@@ -191,6 +191,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 ? `${event.label}: ${event.content}`
                 : `=== BEGIN ${event.label} (~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
               debugLogRef.current.push(`[${new Date().toISOString()}] ${body}`)
+            } else if (event.type === 'truncation_warning') {
+              debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ AUDIT_TRUNCATION_WARNING model=${event.model} round=${event.round} output_tokens=${event.outputTokens} tool_use_blocks=${event.toolUseBlocks} has_tools=${event.hasTools}`)
             }
           } catch { /* skip malformed */ }
         }

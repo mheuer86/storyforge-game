@@ -1,4 +1,4 @@
-import type { GameState, ChapterDebrief } from '../types'
+import type { GameState, ChapterDebrief, ChapterFrameHistoryEntry } from '../types'
 import { dbg, type CommitTurnInput, type StatChange } from '../tool-processor'
 import { resetChapterCounters } from '../rules-engine'
 
@@ -41,10 +41,51 @@ export function applyNarrativeChanges(
     }
   }
 
+  // Reframe: update chapterFrame, reset close-pressure state, archive prior frame.
+  // Handled before signal_close so a turn that does both (rare) still reframes rather than closes.
+  if (input.reframe && !input.close_chapter) {
+    const prior = updated.chapterFrame
+    const turnCount = updated.history.messages.filter(m => m.role === 'player').length
+    const historyEntry: ChapterFrameHistoryEntry | null = prior
+      ? {
+          objective: prior.objective,
+          crucible: prior.crucible,
+          ...(prior.outcomeSpectrum && { outcomeSpectrum: prior.outcomeSpectrum }),
+          reason: input.reframe.reason,
+          replacedAtTurn: turnCount,
+        }
+      : null
+
+    const nextSpectrum = input.reframe.new_outcome_spectrum ?? prior?.outcomeSpectrum
+
+    const { _objectiveResolvedAtTurn, ...rest } = updated
+    updated = {
+      ...rest as GameState,
+      chapterFrame: {
+        objective: input.reframe.new_objective,
+        crucible: input.reframe.new_crucible,
+        refined: false,
+        ...(nextSpectrum && { outcomeSpectrum: nextSpectrum }),
+        history: historyEntry ? [...(prior?.history ?? []), historyEntry] : (prior?.history ?? []),
+      },
+      meta: {
+        ...updated.meta,
+        closeReady: false,
+        closeReason: undefined,
+        selfAssessment: undefined,
+      },
+    }
+    statChanges.push({ type: 'neutral', label: `Chapter reframed: ${input.reframe.new_objective}` })
+    dbg(`REFRAME turn=${turnCount} new_objective="${input.reframe.new_objective}" reason="${input.reframe.reason}"`)
+  }
+
   if (input.signal_close) {
-    // Gate: only block signal_close if there's a pending_check (don't close mid-roll)
+    // Gate: block signal_close if there's a pending_check (don't close mid-roll)
+    // or a reframe in the same turn (reframe says the chapter has room to run).
     const hasPendingCheck = !!input.pending_check
-    if (!hasPendingCheck) {
+    if (input.reframe) {
+      dbg('signal_close SUPPRESSED: reframe in same turn (chapter continues under new frame)')
+    } else if (!hasPendingCheck) {
       const { _signalCloseDeferred, ...rest } = updated as GameState & { _signalCloseDeferred?: string }
       updated = {
         ...rest as GameState,
@@ -166,8 +207,9 @@ export function applyNarrativeChanges(
     }
   }
 
-  // Objective status tracking: record when objective flips to resolved/failed
-  if (input.objective_status && (input.objective_status === 'resolved' || input.objective_status === 'failed') && !updated._objectiveResolvedAtTurn) {
+  // Objective status tracking: record when objective flips to resolved/failed.
+  // Skip if a reframe fired this turn — the new objective can't be resolved the moment it's set.
+  if (input.objective_status && (input.objective_status === 'resolved' || input.objective_status === 'failed') && !updated._objectiveResolvedAtTurn && !input.reframe) {
     const turnCount = updated.history.messages.filter(m => m.role === 'player').length
     updated = { ...updated, _objectiveResolvedAtTurn: turnCount } as typeof updated
   }
@@ -205,34 +247,54 @@ export function applyNarrativeChanges(
     let arcs = [...(updated.arcs ?? [])]
 
     if (au.create_arc) {
-      // Dedup: match by ID, title similarity, or significant keyword overlap
-      const newTitle = au.create_arc.title.toLowerCase()
-      const newWords = new Set(newTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
-      const existing = arcs.find(a => {
-        if (a.id === au.create_arc!.id) return true
-        const existingTitle = a.title.toLowerCase()
-        if (existingTitle === newTitle) return true
-        // Substring match (first 20 chars)
-        if (existingTitle.includes(newTitle.slice(0, 20)) || newTitle.includes(existingTitle.slice(0, 20))) return true
-        // Keyword overlap: if 2+ significant words match, it's likely the same arc
-        // (proper nouns like character/location names are strong signals)
-        const existingWords = new Set(existingTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
-        const overlap = [...newWords].filter(w => existingWords.has(w) || [...existingWords].some(ew => ew.startsWith(w) || w.startsWith(ew))).length
-        if (overlap >= 2) return true
-        return false
-      })
-      if (!existing) {
-        arcs.push({
-          id: au.create_arc.id,
-          title: au.create_arc.title,
-          status: 'active',
-          episodes: au.create_arc.episodes.map((milestone, i) => ({
-            chapter: updated.meta.chapterNumber,
-            milestone,
-            status: i === 0 ? 'active' as const : 'pending' as const,
-          })),
-          ...(au.create_arc.outcome_spectrum && { outcomeSpectrum: au.create_arc.outcome_spectrum }),
+      // Validation gates — reject arcs that are thread-shaped or over-budget.
+      const ca = au.create_arc
+      const activeArcCount = arcs.filter(a => a.status === 'active').length
+      const episodeCount = ca.episodes?.length ?? 0
+      const stakes = (ca.stakes_definition ?? '').trim()
+      const title = (ca.title ?? '').trim()
+      const spans = ca.spans_chapters ?? 0
+      const rejections: string[] = []
+      if (episodeCount < 2 || episodeCount > 4) rejections.push(`episodes=${episodeCount} (must be 2-4)`)
+      if (spans < 3) rejections.push(`spans_chapters=${spans} (must be >= 3)`)
+      if (!stakes) rejections.push('stakes_definition missing or empty')
+      else if (stakes.toLowerCase() === title.toLowerCase()) rejections.push('stakes_definition duplicates title')
+      if (activeArcCount >= 5) rejections.push(`active arcs already at cap (${activeArcCount})`)
+
+      if (rejections.length > 0) {
+        dbg(`ARC_CREATE_REJECTED id="${ca.id}" title="${title}" reasons=[${rejections.join('; ')}] payload=${JSON.stringify(ca)}`)
+      } else {
+        // Dedup: match by ID, title similarity, or significant keyword overlap
+        const newTitle = title.toLowerCase()
+        const newWords = new Set(newTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
+        const existing = arcs.find(a => {
+          if (a.id === ca.id) return true
+          const existingTitle = a.title.toLowerCase()
+          if (existingTitle === newTitle) return true
+          // Substring match (first 20 chars)
+          if (existingTitle.includes(newTitle.slice(0, 20)) || newTitle.includes(existingTitle.slice(0, 20))) return true
+          // Keyword overlap: if 2+ significant words match, it's likely the same arc
+          const existingWords = new Set(existingTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
+          const overlap = [...newWords].filter(w => existingWords.has(w) || [...existingWords].some(ew => ew.startsWith(w) || w.startsWith(ew))).length
+          if (overlap >= 2) return true
+          return false
         })
+        if (!existing) {
+          arcs.push({
+            id: ca.id,
+            title: ca.title,
+            status: 'active',
+            episodes: ca.episodes.map((milestone, i) => ({
+              chapter: updated.meta.chapterNumber,
+              milestone,
+              status: i === 0 ? 'active' as const : 'pending' as const,
+            })),
+            ...(ca.outcome_spectrum && { outcomeSpectrum: ca.outcome_spectrum }),
+          })
+          dbg(`ENTITY_WRITE add_arc result=new id=${ca.id} title="${ca.title}" episodes=${ca.episodes.length} spans_chapters=${ca.spans_chapters} stakes="${(ca.stakes_definition ?? '').slice(0, 80)}"`)
+        } else {
+          dbg(`ENTITY_WRITE add_arc result=dup_rejected id=${ca.id} matched_existing="${existing.id}"`)
+        }
       }
     }
 

@@ -403,6 +403,20 @@ export function loadGameState(): GameState | null {
         state.world.notebook = nb
       }
     }
+    // Strip malformed decisions (summary or category missing/undefined) — one-time cleanup
+    // for saves that captured the [undefined] "undefined" records pre-validation.
+    if (Array.isArray(state.world.decisions)) {
+      const validCategories = new Set(['moral', 'tactical', 'strategic', 'relational'])
+      const before = state.world.decisions.length
+      state.world.decisions = state.world.decisions.filter(d => {
+        const summaryValid = typeof d?.summary === 'string' && d.summary.trim().length > 0
+        const categoryValid = validCategories.has(d?.category as string)
+        return summaryValid && categoryValid
+      })
+      if (state.world.decisions.length !== before) {
+        console.log(`[SF] migrated: stripped ${before - state.world.decisions.length} malformed decision(s)`)
+      }
+    }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
     if (cleaned !== state) saveGameState(cleaned)

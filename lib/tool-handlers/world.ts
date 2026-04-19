@@ -143,14 +143,28 @@ export function applyWorldChanges(
 
   if (input.add_threads) {
     for (const thread of input.add_threads) {
+      // Stage 1 soft-validation: log rejection reasons without blocking the write.
+      // The goal is to measure rejection rates on hierarchy fields the GM/extractor
+      // is not yet taught to populate. Enforcement comes in Stage 2.
+      const miss: string[] = []
+      const owner = typeof thread.owner === 'string' ? thread.owner.trim() : ''
+      if (!owner) miss.push('owner empty')
+      else if (owner.toLowerCase() === 'unknown') miss.push('owner=unknown')
+      if (!(typeof thread.resolution_criteria === 'string' && thread.resolution_criteria.trim().length > 0)) miss.push('resolution_criteria empty')
+      if (!(typeof thread.failure_mode === 'string' && thread.failure_mode.trim().length > 0)) miss.push('failure_mode empty')
+      if (miss.length > 0) {
+        dbg(`STAGE1_THREAD_MISS id=${thread.id} title="${thread.title}" missing=[${miss.join('; ')}] payload=${JSON.stringify(thread)}`)
+      }
       const existingThread = world.threads.find((t) => t.title === thread.title)
       if (existingThread) {
         world.threads = world.threads.map((t) =>
           t.title === thread.title ? { ...t, ...thread } : t
         )
+        dbg(`ENTITY_WRITE add_thread result=updated id=${thread.id} title="${thread.title}" status=${thread.status} stage1_miss=${miss.length}`)
       } else {
         world.threads = [...world.threads, thread]
         statChanges.push({ type: 'new', label: `Thread: ${thread.title}` })
+        dbg(`ENTITY_WRITE add_thread result=new id=${thread.id} title="${thread.title}" status=${thread.status} stage1_miss=${miss.length} payload=${JSON.stringify(thread)}`)
       }
     }
   }
@@ -177,14 +191,22 @@ export function applyWorldChanges(
 
   // ── Promises ──
   if (input.add_promise) {
+    // Stage 1 soft-validation
+    const ap = input.add_promise
+    const anchorCount = Array.isArray(ap.anchored_to) ? ap.anchored_to.length : 0
+    if (anchorCount === 0) {
+      dbg(`STAGE1_ANCHOR_MISS kind=promise id=${ap.id} to="${ap.to}" what="${String(ap.what).slice(0, 80)}"`)
+    }
     const existingPromise = world.promises.find((p) => p.id === input.add_promise!.id || (p.to === input.add_promise!.to && p.what === input.add_promise!.what))
     if (existingPromise) {
       world.promises = world.promises.map((p) =>
         p === existingPromise ? { ...p, ...input.add_promise } : p
       )
+      dbg(`ENTITY_WRITE add_promise result=updated id=${input.add_promise.id} to="${input.add_promise.to}" status=${input.add_promise.status}`)
     } else {
       world.promises = [...world.promises, input.add_promise]
       statChanges.push({ type: 'new', label: `Promise to ${input.add_promise.to}` })
+      dbg(`ENTITY_WRITE add_promise result=new id=${input.add_promise.id} to="${input.add_promise.to}" status=${input.add_promise.status} payload=${JSON.stringify(input.add_promise)}`)
     }
   }
   if (input.update_promise) {
@@ -206,6 +228,24 @@ export function applyWorldChanges(
   }
 
   // ── Decisions ──
+  // Validate before processing: reject entries with missing/empty summary or category.
+  // The [undefined] "undefined" records observed in Maeve Ch2 came from a
+  // malformed add_decision that silently wrote — surface the failure.
+  if (input.add_decision) {
+    const ad = input.add_decision
+    const summaryValid = typeof ad.summary === 'string' && ad.summary.trim().length > 0
+    const categoryValid = ad.category === 'moral' || ad.category === 'tactical' || ad.category === 'strategic' || ad.category === 'relational'
+    if (!summaryValid || !categoryValid) {
+      dbg(`DECISION_REJECTED id="${ad.id ?? '[no id]'}" reasons=[${[!summaryValid && 'summary empty/missing', !categoryValid && `category invalid (got ${JSON.stringify(ad.category)})`].filter(Boolean).join('; ')}] payload=${JSON.stringify(ad)}`)
+      input = { ...input, add_decision: undefined }
+    } else {
+      // Stage 1 soft-validation: anchored_to
+      const anchorCount = Array.isArray(ad.anchored_to) ? ad.anchored_to.length : 0
+      if (anchorCount === 0) {
+        dbg(`STAGE1_ANCHOR_MISS kind=decision id=${ad.id} category=${ad.category} summary="${String(ad.summary).slice(0, 80)}"`)
+      }
+    }
+  }
   if (input.add_decision) {
     const decisions = world.decisions || []
     const existing = decisions.find(d => d.id === input.add_decision!.id)
@@ -320,6 +360,7 @@ export function applyWorldChanges(
           world.decisions = [...decisions, newDecision]
         }
         statChanges.push({ type: 'new', label: `Decision: ${input.add_decision.summary}` })
+        dbg(`ENTITY_WRITE add_decision result=new id=${newDecision.id} category=${newDecision.category} witnessed=${!!newDecision.witnessed} summary="${String(newDecision.summary).slice(0, 80)}"`)
       }
     }
   }
@@ -395,6 +436,7 @@ export function applyWorldChanges(
   if (input.add_timer) {
     world.timers = [...(world.timers || []), { ...input.add_timer, status: 'active' as const }]
     statChanges.push({ type: 'new', label: `Timer: ${input.add_timer.description}` })
+    dbg(`ENTITY_WRITE add_timer result=new id=${input.add_timer.id} description="${input.add_timer.description}" deadline="${input.add_timer.deadline}"`)
   }
   if (input.update_timer) {
     const timerDesc = (world.timers || []).find(t => t.id === input.update_timer!.id)?.description || input.update_timer.id
@@ -540,6 +582,9 @@ export function applyWorldChanges(
             status: 'active',
             triggerEffect: c.trigger_effect!,
           })
+          dbg(`ENTITY_WRITE clock result=new id=${c.id} name="${c.name}" max_segments=${c.max_segments ?? 4} trigger_effect="${c.trigger_effect}"`)
+        } else {
+          dbg(`ENTITY_WRITE clock result=dup_rejected id=${c.id} (already exists)`)
         }
       } else if (c.action === 'advance') {
         const idx = clocks.findIndex((x) => x.id === c.id)
@@ -571,6 +616,14 @@ export function applyWorldChanges(
   // ── Notebook: clues ──
   if (input.add_clues) {
     for (const clueInput of input.add_clues) {
+      // Stage 1 soft-validation: anchored_to on clues.
+      // Note: clues without anchors are acceptable at discovery time — the whole
+      // investigation mechanic relies on building connections later. Logged for
+      // rate-tracking only; no corrective action expected for unanchored clues.
+      const anchorCount = Array.isArray(clueInput.anchored_to) ? clueInput.anchored_to.length : 0
+      if (anchorCount === 0 && !clueInput.clue_id) {
+        dbg(`STAGE1_ANCHOR_MISS kind=clue title="${clueInput.title ?? ''}" source="${clueInput.source}" (acceptable for floating clues)`)
+      }
       const notebook = world.notebook ?? { activeThreadTitle: '', clues: [], connections: [] }
 
       if (clueInput.clue_id) {
@@ -582,6 +635,7 @@ export function applyWorldChanges(
               : c
           )
           statChanges.push({ type: 'new', label: `Clue updated: ${clueInput.title || clueInput.content.slice(0, 35) + '...'}` })
+          dbg(`ENTITY_WRITE add_clue result=updated id=${clueInput.clue_id} title="${clueInput.title ?? ''}" source="${clueInput.source}"`)
         } else {
           const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
           notebook.clues = [...notebook.clues, {
@@ -589,6 +643,7 @@ export function applyWorldChanges(
             discoveredChapter: updated.meta.chapterNumber, connectionIds: [], isRedHerring: clueInput.is_red_herring ?? false,
           }]
           statChanges.push({ type: 'new', label: `Clue: ${clueInput.title || clueInput.content.slice(0, 40) + '...'}` })
+          dbg(`ENTITY_WRITE add_clue result=new id=${clueId} title="${clueInput.title ?? ''}" source="${clueInput.source}" red_herring=${clueInput.is_red_herring ?? false}`)
         }
       } else {
         const titleLower = (clueInput.title || '').toLowerCase()
@@ -607,6 +662,7 @@ export function applyWorldChanges(
               : c
           )
           statChanges.push({ type: 'new', label: `Clue updated: ${clueInput.title || clueInput.content.slice(0, 35) + '...'}` })
+          dbg(`ENTITY_WRITE add_clue result=updated id=${duplicate.id} title="${clueInput.title ?? ''}" source="${clueInput.source}"`)
         } else {
           const clueId = `clue_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
           notebook.clues = [...notebook.clues, {
@@ -614,6 +670,7 @@ export function applyWorldChanges(
             discoveredChapter: updated.meta.chapterNumber, connectionIds: [], isRedHerring: clueInput.is_red_herring ?? false,
           }]
           statChanges.push({ type: 'new', label: `Clue: ${clueInput.title || clueInput.content.slice(0, 40) + '...'}` })
+          dbg(`ENTITY_WRITE add_clue result=new id=${clueId} title="${clueInput.title ?? ''}" source="${clueInput.source}" red_herring=${clueInput.is_red_herring ?? false}`)
         }
       }
 

@@ -712,9 +712,20 @@ When creating a chapter_frame, include outcome_spectrum with four tiers:
 - catastrophic: everything changes, arc compromised (1 sentence)
 The spectrum must be specific to this chapter's situation. HIDDEN from the player — use it to calibrate tension and consequences.
 
-**Story arcs and episodes.** When the player's intent spans multiple chapters, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter frame objective = the FIRST episode's milestone, not the arc goal. Each chapter is one episode. When the episode's milestone is met, signal_close.
+**Arcs are CAMPAIGN-LEVEL stakes, not multi-chapter objectives.** An arc defines what the character is FOR across the campaign. It spans 3+ chapters and has NO single action that resolves it — only episodes that advance it. If there is a specific thing the player could do to finish this, it is a thread or an episode, not an arc.
 
-Example: Player says "I want to expose Coll." Create arc "Expose Coll" with episodes: ["Find who accused Maret and why", "Gather evidence and witnesses", "Present the case"]. Chapter 1 objective = "Find who accused Maret and why." When that resolves, signal_close. Chapter 2 picks up the next episode.
+**Test before creating an arc:**
+- Does this span 3+ chapters? (If no: thread)
+- Is there a single action that resolves it? (If yes: thread or quest, not arc)
+- Does it define stakes (what the character stands for), not objectives (what they are doing now)? (If no: thread)
+
+**Examples of arcs:** "Remember the dead and protect the exploited" (campaign thesis, no single resolution). "Initiation into the Ashen Court" (relationship arc, evolves through episodes).
+
+**Examples of NOT arcs despite feeling important:** "Find Oriane" (thread — one rescue resolves it). "Protect Dallian" (thread — has a deadline and a specific resolution). "The Grey Book" (inventory item with thematic weight, carried by promises and witness marks).
+
+When you do create an arc via arc_updates.create_arc: provide 2-4 episode milestones, spans_chapters >= 3, a stakes_definition (what this defines about the character's stance in the world — must not duplicate the title), and leave resolving_action as null. The chapter frame objective = the FIRST episode's milestone, not the arc goal. Each chapter is one episode. When the episode's milestone is met, signal_close.
+
+Creation is rejected at the handler if: episodes outside 2-4, spans_chapters < 3, stakes_definition empty or duplicates title, active arcs already at cap of 5. Rejections are logged to debug.
 
 **The objective must be achievable in 12-18 turns.** If it needs traveling to a new location, that's two chapters. If it needs one task to discover the real task, the first task is the chapter. If the objective needs more than one sentence, it's too broad.
 
@@ -727,6 +738,24 @@ Example: Player says "I want to expose Coll." Create arc "Expose Coll" with epis
 - Turns 15-18: Resolution + forward hook. Signal close.
 - Turn 15 without crucible → skip to it. An NPC forces the issue or a clock triggers.
 - Turn 20 → begin wrapping regardless. Find the nearest close point.
+
+## NARRATIVE ENTITY HIERARCHY (Stage 1 — measurement in progress)
+
+Threads, promises, decisions, and clues are becoming structured. When you create them, populate the new optional fields so we can build the hierarchy:
+
+- **Threads** (\`world.add_threads\`): provide \`owner\` (the NPC name or faction driving the tension — never "unknown"; if you cannot name an owner, the thread is not ready), \`resolution_criteria\` (what would resolve it), \`failure_mode\` (what happens if ignored), and \`relevant_npcs\` (secondary NPCs whose presence makes it surface).
+- **Promises** (\`world.add_promise\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this commitment locks into shape.
+- **Decisions** (\`world.add_decision\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this choice constrains.
+- **Clues** (\`world.add_clues\`): provide \`anchored_to\` — an array of thread IDs this fact constrains.
+
+These are not yet required — writes still go through. Missing values are logged to debug (STAGE1_THREAD_MISS, STAGE1_ANCHOR_MISS) so we can measure how often the GM knows the hierarchy at write time. Populate them when you know; leave them out when you don't.
+
+## REFRAMING MID-CHAPTER
+When the original objective resolves but the player's next action opens a new crucible (not a continuation — a genuinely different kind of pressure), use \`reframe\` in commit_turn instead of closing. The new crucible must be a different TYPE of test. If it's the next step in the same investigation, that's the same chapter continuing; do not reframe. If the chapter's center of pressure has moved (research objective resolved → rescue crucible emerges; heist completed → pursuit begins), reframe. One reframe per chapter is the expected ceiling.
+
+**What is NOT a reframe:** continuing the same investigation in more detail; talking through what to do next after completing a task; a scene transition; pursuing a secondary thread without new stakes.
+
+\`reframe\` fields: new_objective, new_crucible, reason (why the old frame was outgrown), optional new_outcome_spectrum. Reframing resets objective_status to in_progress and clears all [CLOSE REQUIRED] enforcement.
 
 ## CHAPTER CLOSE
 Do NOT include close_chapter/debrief/level_up in commit_turn. When resolution + forward hook are met: wrap narrative, include signal_close with self_assessment. Dedicated close sequence handles the rest.
@@ -1044,6 +1073,9 @@ Read the GM NARRATIVE below. Compare it against the CURRENT STATE. Extract every
 - Did the PC make or break a promise? → world.add_promise / world.update_promise
 - Did the PC make a meaningful choice? → world.add_decision (moral, tactical, strategic, relational)
 - Should a tension clock advance? → world.clocks
+
+### REFRAME DETECTION
+- Did the prior chapter objective resolve AND this turn establish a new crucible of a different kind (different type of pressure, not a continuation)? → emit \`reframe\` with new_objective, new_crucible, and reason. Criterion: the chapter's central question has changed shape. If it's the next step in the same investigation, do NOT reframe.
 
 ### OPERATIONS & EXPLORATION
 - Did an operation phase change? → world.set_operation
@@ -1703,20 +1735,40 @@ ${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine :
     const rollGate = detectRollGate(currentMessage, sceneNpcs, primaryStat)
     return rollGate ? '\n' + rollGate : ''
   })() : ''}${(() => {
-    // Close timing enforcement
+    // Close timing enforcement — two independent signals:
+    //   (1) objective resolved N turns ago (only when resolvedAt is known)
+    //   (2) turn budget reached regardless of objective status
+    // Prior version conflated them and produced "resolved 0 turns ago (turn undefined)"
+    // when only (2) was true.
     const resolvedAt = gs._objectiveResolvedAtTurn
-    const turnsSinceResolved = resolvedAt ? playerTurnCount - resolvedAt : 0
-    if (turnsSinceResolved >= 6 || playerTurnCount >= 25) {
-      return `\n[HARD CLOSE] Turn ${playerTurnCount}, objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close NOW. Do not narrate new content. Wrap the current beat in 1-2 sentences and close. This is not optional.`
-    } else if (turnsSinceResolved >= 4 || playerTurnCount >= 20) {
-      return `\n[CLOSE REQUIRED] Objective resolved ${turnsSinceResolved} turns ago (turn ${resolvedAt}). Call signal_close in this commit_turn. Any remaining beats become the next chapter's opening.`
-    } else if (turnsSinceResolved >= 2 || playerTurnCount >= 18) {
-      return `\n[CLOSE OVERDUE] Objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close this turn unless a genuinely new crucible has emerged. Wrapping beats are not new content.`
-    } else if (turnsSinceResolved >= 1) {
-      return `\n[CLOSE AVAILABLE] Objective "${gs.chapterFrame?.objective ?? ''}" resolved last turn. signal_close is available. If this turn doesn't establish meaningful new content, close now.`
-    } else if (playerTurnCount >= 20) {
-      return `\n[CLOSE REQUIRED] Turn ${playerTurnCount} — turn budget reached. Call signal_close in this commit_turn.`
-    } else if (playerTurnCount >= 18) {
+    const hasResolved = typeof resolvedAt === 'number'
+    const turnsSinceResolved = hasResolved ? playerTurnCount - resolvedAt : 0
+
+    // Resolved-objective ladder (only fires when objective_status actually flipped)
+    if (hasResolved) {
+      if (turnsSinceResolved >= 6) {
+        return `\n[HARD CLOSE] Turn ${playerTurnCount}, objective resolved ${turnsSinceResolved} turns ago (at turn ${resolvedAt}). You MUST call signal_close NOW. Do not narrate new content. Wrap the current beat in 1-2 sentences and close. This is not optional.`
+      }
+      if (turnsSinceResolved >= 4) {
+        return `\n[CLOSE REQUIRED] Objective resolved ${turnsSinceResolved} turns ago (at turn ${resolvedAt}). Call signal_close in this commit_turn. Any remaining beats become the next chapter's opening. If a genuinely new crucible has emerged — different kind of pressure, not a continuation — use \`reframe\` instead.`
+      }
+      if (turnsSinceResolved >= 2) {
+        return `\n[CLOSE OVERDUE] Objective resolved ${turnsSinceResolved} turns ago. You MUST call signal_close this turn unless a genuinely new crucible has emerged (in which case use \`reframe\`, not continuation). Wrapping beats are not new content.`
+      }
+      if (turnsSinceResolved >= 1) {
+        return `\n[CLOSE AVAILABLE] Objective "${gs.chapterFrame?.objective ?? ''}" resolved last turn. signal_close is available. If this turn doesn't establish meaningful new content, close now.`
+      }
+      return ''
+    }
+
+    // Turn-budget ladder (fires when objective still in_progress but chapter has run long)
+    if (playerTurnCount >= 25) {
+      return `\n[HARD CLOSE] Turn ${playerTurnCount} — turn budget exhausted, objective still open. Either the objective is effectively resolved (mark objective_status: resolved and signal_close) or the chapter pivoted (use \`reframe\`). Do not narrate new content until one of these fires.`
+    }
+    if (playerTurnCount >= 20) {
+      return `\n[CLOSE REQUIRED] Turn ${playerTurnCount} — turn budget reached. Call signal_close in this commit_turn, or \`reframe\` if a new crucible has emerged.`
+    }
+    if (playerTurnCount >= 18) {
       return `\n[CLOSE AVAILABLE] Turn ${playerTurnCount} — approaching turn budget. Consider signal_close.`
     }
     return ''
@@ -1887,7 +1939,7 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
 
     const arcInstruction = hasPresetArcs
       ? `A story arc is ALREADY SET (id: "${gameState.arcs[0].id}", title: "${gameState.arcs[0].title}"). Do NOT include arc_updates.create_arc — it will create a duplicate. You may add episodes via arc_updates.add_episode if needed.`
-      : `If the hook implies a multi-chapter story, create a story arc via arc_updates.create_arc with 2-4 episode milestones. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal.`
+      : `ONLY create a story arc if the hook implies campaign-level stakes spanning 3+ chapters with NO single resolving action — what the character is FOR, not what they are doing now. "Find X" or "Protect Y" is a thread, not an arc. If uncertain, do NOT create one; threads can be promoted later. If you do, arc_updates.create_arc requires spans_chapters >= 3, a stakes_definition (distinct from title), and 2-4 episodes. The chapter_frame objective should be the FIRST episode's milestone, not the arc goal.`
 
     // Build a scene tagline from character knowledge or origin directive
     const originSpec = config.species.find(s => s.name === gameState.character?.species)

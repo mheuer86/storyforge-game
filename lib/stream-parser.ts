@@ -132,6 +132,13 @@ export function processStreamEvent(
     return s
   }
 
+  if (event.type === 'truncation_warning') {
+    callbacks.onDebug(
+      `⚠ TRUNCATION_WARNING model=${event.model} round=${event.round} output_tokens=${event.outputTokens} tool_use_blocks=${event.toolUseBlocks} has_tools=${event.hasTools}`
+    )
+    return s
+  }
+
   if (event.type === 'debug_context') {
     const hash = fingerprint(event.content)
     const prior = lastDebugHash.get(event.label)

@@ -250,6 +250,10 @@ const commitTurnDefinition: Anthropic.Tool = {
                 title: { type: 'string' },
                 status: { type: 'string' },
                 deteriorating: { type: 'boolean' },
+                owner: { type: 'string', description: 'NPC name or faction that drives this thread. Should not be "unknown" — if you cannot name an owner, the thread is not ready to be created. Stage 1 measurement: missing values are logged.' },
+                resolution_criteria: { type: 'string', description: 'What would resolve this thread? Concrete, not abstract. Stage 1 measurement.' },
+                failure_mode: { type: 'string', description: 'What happens if this thread is ignored past the point of return? Stage 1 measurement.' },
+                relevant_npcs: { type: 'array', items: { type: 'string' }, description: 'Secondary NPCs whose presence makes this thread surface in a scene. Stage 1 measurement.' },
               },
               required: ['id', 'title', 'status', 'deteriorating'],
             },
@@ -284,6 +288,7 @@ const commitTurnDefinition: Anthropic.Tool = {
               to: { type: 'string' },
               what: { type: 'string' },
               status: { type: 'string', enum: ['open', 'strained', 'fulfilled', 'broken'] },
+              anchored_to: { type: 'array', items: { type: 'string' }, description: 'Thread IDs (or arc IDs) this promise locks into shape. Stage 1 measurement: missing values are logged.' },
             },
             required: ['id', 'to', 'what', 'status'],
           },
@@ -307,6 +312,7 @@ const commitTurnDefinition: Anthropic.Tool = {
               context: { type: 'string' },
               category: { type: 'string', enum: ['moral', 'tactical', 'strategic', 'relational'] },
               witnessed: { type: 'boolean', description: 'True when the PC directly witnesses the human cost of the system. Witness marks are narrative currency the player can spend to justify drastic action.' },
+              anchored_to: { type: 'array', items: { type: 'string' }, description: 'Thread IDs (or arc IDs) this decision constrains. Stage 1 measurement: missing values are logged.' },
             },
             required: ['id', 'summary', 'context', 'category'],
           },
@@ -531,6 +537,7 @@ const commitTurnDefinition: Anthropic.Tool = {
                 is_red_herring: { type: 'boolean' },
                 thread_title: { type: 'string' },
                 status: { type: 'string', enum: ['active', 'solved', 'archived'] },
+                anchored_to: { type: 'array', items: { type: 'string' }, description: 'Thread IDs this clue constrains. Stage 1 measurement: missing values are logged. OK to leave empty when the clue is freshly discovered and has no clear anchor yet.' },
               },
               required: ['title', 'content', 'source', 'tags'],
             },
@@ -646,6 +653,27 @@ const commitTurnDefinition: Anthropic.Tool = {
         items: { type: 'string' },
         minItems: 3,
         maxItems: 4,
+      },
+      reframe: {
+        type: 'object',
+        description: 'Reframe the chapter mid-chapter when the original objective resolves but a genuinely NEW crucible emerges — not a continuation of the same investigation, a different kind of pressure. Alternative to signal_close. Resets objective_status and clears close enforcement. Use sparingly: if it is the next step in the same task, that is the same chapter continuing, not a reframe.',
+        properties: {
+          new_objective: { type: 'string', description: 'The new objective. Under 10 words.' },
+          new_crucible: { type: 'string', description: 'The new pressure test — must be a DIFFERENT kind of test than the old one.' },
+          reason: { type: 'string', description: 'Why the old frame was outgrown. One sentence.' },
+          new_outcome_spectrum: {
+            type: 'object',
+            description: 'Optional: new four-tier outcome spectrum for the reframed chapter. If omitted, the old spectrum carries forward.',
+            properties: {
+              clean: { type: 'string' },
+              costly: { type: 'string' },
+              failure: { type: 'string' },
+              catastrophic: { type: 'string' },
+            },
+            required: ['clean', 'costly', 'failure', 'catastrophic'],
+          },
+        },
+        required: ['new_objective', 'new_crucible', 'reason'],
       },
       chapter_frame: {
         type: 'object',
@@ -781,14 +809,29 @@ const commitTurnDefinition: Anthropic.Tool = {
         properties: {
           create_arc: {
             type: 'object',
-            description: 'Create a new story arc with planned episode milestones.',
+            description: 'Create a new story arc. Arcs are CAMPAIGN-LEVEL stakes spanning 3+ chapters with NO single resolving action — only episodes that advance them. If there is a specific thing the player could do to finish this, it is a thread, not an arc. Rejected on creation if episodes.length is outside 2-4, spans_chapters < 3, stakes_definition is empty or duplicates the title, or active arcs would exceed 5.',
             properties: {
-              id: { type: 'string', description: 'snake_case identifier, e.g. "expose_coll"' },
-              title: { type: 'string', description: 'The arc goal: "Expose Coll before the hearing"' },
+              id: { type: 'string', description: 'snake_case identifier, e.g. "the_names" or "ashen_court_initiation"' },
+              title: { type: 'string', description: 'The arc identity: "Remember the dead and protect the exploited"' },
               episodes: {
                 type: 'array',
-                description: '2-4 planned episode milestones. First becomes active.',
+                description: '2-4 planned episode milestones. First becomes active. Rejected if outside 2-4.',
                 items: { type: 'string' },
+                minItems: 2,
+                maxItems: 4,
+              },
+              spans_chapters: {
+                type: 'number',
+                description: 'Estimated number of chapters this arc spans. Must be 3 or higher. If you think 2 chapters, this is a thread, not an arc.',
+                minimum: 3,
+              },
+              stakes_definition: {
+                type: 'string',
+                description: 'What this arc defines about the character\'s position in the world — what they are FOR. Not an objective ("Find X"), a stance ("Remember the dead and protect the exploited"). Must not duplicate the title.',
+              },
+              resolving_action: {
+                type: 'null',
+                description: 'MUST be null. If there is a single resolving action, this is a thread, not an arc. This field is a forcing function for the test.',
               },
               outcome_spectrum: {
                 type: 'object',
@@ -802,7 +845,7 @@ const commitTurnDefinition: Anthropic.Tool = {
                 required: ['clean', 'costly', 'failure', 'catastrophic'],
               },
             },
-            required: ['id', 'title', 'episodes'],
+            required: ['id', 'title', 'episodes', 'spans_chapters', 'stakes_definition'],
           },
           advance_episode: {
             type: 'object',

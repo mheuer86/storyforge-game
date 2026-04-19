@@ -403,6 +403,15 @@ export interface ChapterFrame {
   crucible: string
   refined?: boolean  // true after one mid-chapter refinement has been applied
   outcomeSpectrum?: OutcomeSpectrum
+  history?: ChapterFrameHistoryEntry[]  // prior frames captured by reframe
+}
+
+export interface ChapterFrameHistoryEntry {
+  objective: string
+  crucible: string
+  outcomeSpectrum?: OutcomeSpectrum
+  reason: string            // why the frame was outgrown
+  replacedAtTurn: number    // player turn count when the reframe fired
 }
 
 export interface CloseData {
@@ -535,6 +544,14 @@ export type StreamEvent =
   | { type: 'error'; message: string }
   | { type: 'token_usage'; usage: TokenUsage }
   | { type: 'debug_context'; label: string; content: string; tokenEstimate: number }
+  | {
+      type: 'truncation_warning'
+      outputTokens: number
+      toolUseBlocks: number
+      round: number
+      hasTools: boolean
+      model: string
+    }
 
 export interface TokenUsage {
   inputTokens: number
