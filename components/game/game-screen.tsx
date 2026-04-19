@@ -81,6 +81,22 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   // Keep gameStateRef in sync for async callbacks that need fresh state
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
 
+  // Trace close-state transitions to find what unmounts the overlay
+  const prevCloseStateRef = useRef<{ chapterClosed: boolean; hasCloseData: boolean; closeInProgress: boolean } | null>(null)
+  useEffect(() => {
+    if (!gameState) return
+    const curr = {
+      chapterClosed: !!gameState.meta.chapterClosed,
+      hasCloseData: !!gameState.meta.closeData,
+      closeInProgress,
+    }
+    const prev = prevCloseStateRef.current
+    if (prev && (prev.chapterClosed !== curr.chapterClosed || prev.hasCloseData !== curr.hasCloseData || prev.closeInProgress !== curr.closeInProgress)) {
+      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_STATE chapterClosed ${prev.chapterClosed}→${curr.chapterClosed} | closeData ${prev.hasCloseData}→${curr.hasCloseData} | inProgress ${prev.closeInProgress}→${curr.closeInProgress} | chapterNumber=${gameState.meta.chapterNumber}`)
+    }
+    prevCloseStateRef.current = curr
+  }, [gameState, closeInProgress])
+
   // Extraction gating helpers
   const waitForExtraction = useCallback((): Promise<void> => {
     if (extractionDoneRef.current) return Promise.resolve()
@@ -1172,6 +1188,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setCloseInProgress(true)
     closeInProgressRef.current = true
     const preCloseState = gameState
+    debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_START chapter=${preCloseState.meta.chapterNumber} title="${preCloseState.meta.chapterTitle}" closeReady=${!!preCloseState.meta.closeReady} chapterClosed=${!!preCloseState.meta.chapterClosed} closeData=${!!preCloseState.meta.closeData}`)
     // Safety: snapshot messages before close sequence in case it fails mid-way
     try {
       localStorage.setItem('storyforge_preclose_messages', JSON.stringify({
@@ -1215,9 +1232,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     try {
       // Phase 1: Close + Level-up + Audit + Frame
       let currentState = await runClosePhase(1, gameState)
+      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_PHASE1_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} level=${currentState.character.level} completedChapters=${currentState.history.chapters.filter(ch => ch.status === 'complete').length}`)
 
       // Phase 2: Skill Points + Debrief
       currentState = await runClosePhase(2, currentState)
+      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_PHASE2_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} profs=${currentState.character.proficiencies.length}`)
 
       // Phase 3: Narrative Curation (pivotal scenes + signature lines)
       // Deferred to background — player sees overlay immediately after phase 1+2.
@@ -1286,13 +1305,15 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         ...currentState,
         meta: { ...currentState.meta, chapterClosed: true, closeData },
       }
+      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_BUILD_DONE completedChNum=${closeData.completedChapterNumber} completedTitle="${closeData.completedChapterTitle}" nextTitle="${closeData.nextChapterTitle}" levelOld=${closeData.levelUp.oldLevel} levelNew=${closeData.levelUp.newLevel} hasDebrief=${!!closeData.debrief} keyEvents=${closeData.keyEvents.length} hasNextFrame=${!!closeData.nextFrame}`)
       setGameState(closedState)
       saveGameState(closedState)
       setCloseInProgress(false)
       closeInProgressRef.current = false
       isLoadingRef.current = false
       setIsLoading(false)
-    } catch {
+    } catch (e) {
+      debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CLOSE_FAILED ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`)
       setCloseInProgress(false)
       closeInProgressRef.current = false
       isLoadingRef.current = false
