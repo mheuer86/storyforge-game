@@ -92,7 +92,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
     const prev = prevCloseStateRef.current
     if (prev && (prev.chapterClosed !== curr.chapterClosed || prev.hasCloseData !== curr.hasCloseData || prev.closeInProgress !== curr.closeInProgress)) {
-      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_STATE chapterClosed ${prev.chapterClosed}→${curr.chapterClosed} | closeData ${prev.hasCloseData}→${curr.hasCloseData} | inProgress ${prev.closeInProgress}→${curr.closeInProgress} | chapterNumber=${gameState.meta.chapterNumber}`)
+      const line = `CLOSE_STATE chapterClosed ${prev.chapterClosed}→${curr.chapterClosed} | closeData ${prev.hasCloseData}→${curr.hasCloseData} | inProgress ${prev.closeInProgress}→${curr.closeInProgress} | chapterNumber=${gameState.meta.chapterNumber}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${line}`)
+      console.log('[SF CLOSE]', line)
     }
     prevCloseStateRef.current = curr
   }, [gameState, closeInProgress])
@@ -1178,7 +1180,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [gameState])
 
   const handleCloseChapter = useCallback(async () => {
-    if (!gameState) return
+    console.log('[SF CLOSE] handleCloseChapter ENTRY gameState=', !!gameState, 'isLoading=', isLoadingRef.current)
+    if (!gameState) { console.log('[SF CLOSE] bail: no gameState'); return }
     // Force-reset loading state — a stuck ref shouldn't block chapter close
     isLoadingRef.current = false
     isLoadingRef.current = true
@@ -1188,7 +1191,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     setCloseInProgress(true)
     closeInProgressRef.current = true
     const preCloseState = gameState
-    debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_START chapter=${preCloseState.meta.chapterNumber} title="${preCloseState.meta.chapterTitle}" closeReady=${!!preCloseState.meta.closeReady} chapterClosed=${!!preCloseState.meta.chapterClosed} closeData=${!!preCloseState.meta.closeData}`)
+    const startLine = `CLOSE_START chapter=${preCloseState.meta.chapterNumber} title="${preCloseState.meta.chapterTitle}" closeReady=${!!preCloseState.meta.closeReady} chapterClosed=${!!preCloseState.meta.chapterClosed} closeData=${!!preCloseState.meta.closeData}`
+    debugLogRef.current.push(`[${new Date().toISOString()}] ${startLine}`)
+    console.log('[SF CLOSE]', startLine)
     // Safety: snapshot messages before close sequence in case it fails mid-way
     try {
       localStorage.setItem('storyforge_preclose_messages', JSON.stringify({
@@ -1230,13 +1235,19 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
 
     try {
+      console.log('[SF CLOSE] starting phase 1')
       // Phase 1: Close + Level-up + Audit + Frame
       let currentState = await runClosePhase(1, gameState)
-      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_PHASE1_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} level=${currentState.character.level} completedChapters=${currentState.history.chapters.filter(ch => ch.status === 'complete').length}`)
+      const p1 = `CLOSE_PHASE1_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} level=${currentState.character.level} completedChapters=${currentState.history.chapters.filter(ch => ch.status === 'complete').length}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${p1}`)
+      console.log('[SF CLOSE]', p1)
 
+      console.log('[SF CLOSE] starting phase 2')
       // Phase 2: Skill Points + Debrief
       currentState = await runClosePhase(2, currentState)
-      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_PHASE2_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} profs=${currentState.character.proficiencies.length}`)
+      const p2 = `CLOSE_PHASE2_DONE chapter=${currentState.meta.chapterNumber} chapterClosed=${!!currentState.meta.chapterClosed} profs=${currentState.character.proficiencies.length}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${p2}`)
+      console.log('[SF CLOSE]', p2)
 
       // Phase 3: Narrative Curation (pivotal scenes + signature lines)
       // Deferred to background — player sees overlay immediately after phase 1+2.
@@ -1305,7 +1316,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         ...currentState,
         meta: { ...currentState.meta, chapterClosed: true, closeData },
       }
-      debugLogRef.current.push(`[${new Date().toISOString()}] CLOSE_BUILD_DONE completedChNum=${closeData.completedChapterNumber} completedTitle="${closeData.completedChapterTitle}" nextTitle="${closeData.nextChapterTitle}" levelOld=${closeData.levelUp.oldLevel} levelNew=${closeData.levelUp.newLevel} hasDebrief=${!!closeData.debrief} keyEvents=${closeData.keyEvents.length} hasNextFrame=${!!closeData.nextFrame}`)
+      const bd = `CLOSE_BUILD_DONE completedChNum=${closeData.completedChapterNumber} completedTitle="${closeData.completedChapterTitle}" nextTitle="${closeData.nextChapterTitle}" levelOld=${closeData.levelUp.oldLevel} levelNew=${closeData.levelUp.newLevel} hasDebrief=${!!closeData.debrief} keyEvents=${closeData.keyEvents.length} hasNextFrame=${!!closeData.nextFrame}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${bd}`)
+      console.log('[SF CLOSE]', bd)
       setGameState(closedState)
       saveGameState(closedState)
       setCloseInProgress(false)
@@ -1313,7 +1326,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       isLoadingRef.current = false
       setIsLoading(false)
     } catch (e) {
-      debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CLOSE_FAILED ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`)
+      const err = `⚠ CLOSE_FAILED ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${err}`)
+      console.error('[SF CLOSE]', err, e)
       setCloseInProgress(false)
       closeInProgressRef.current = false
       isLoadingRef.current = false
