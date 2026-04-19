@@ -1,5 +1,5 @@
 import type { GameState, StreamEvent, ToolCallResult, RollBreakdown } from './types'
-import type { StatChange } from './tool-processor'
+import { drainDbg, type StatChange } from './tool-processor'
 import { runRulesEngine } from './rules-engine'
 
 // ─── Debug context dedup ─────────────────────────────────────────────
@@ -258,7 +258,13 @@ function processToolsEvent(
   // Apply state changes (excluding meta_response)
   const stateResults = event.results.filter((r) => r.tool !== 'meta_response')
   if (stateResults.length > 0) {
+    // Drain any dbg() output emitted during applyTools (handler-level writes:
+    // ENTITY_WRITE, STAGE1_*, REFRAME, ARC_CREATE_REJECTED, DECISION_REJECTED, etc.).
+    // Drain before + after so messages emitted on other paths (e.g. audit) are
+    // also captured, not just those from this apply.
+    for (const m of drainDbg()) callbacks.onDebug(m)
     s.gameState = callbacks.applyTools(stateResults, s.gameState, s.statChanges)
+    for (const m of drainDbg()) callbacks.onDebug(m)
     delete (s.gameState as GameState & { _sceneBreaks?: string[] })._sceneBreaks
 
     if (s.statChanges.length > 0) {

@@ -9,7 +9,7 @@ import { BurgerMenu } from './burger-menu'
 import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overlay'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
-import { applyToolResults, type StatChange } from '@/lib/tool-processor'
+import { applyToolResults, drainDbg, type StatChange } from '@/lib/tool-processor'
 import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
 import { buildSupplementalCommit } from '@/lib/extraction-merge'
 import { runRulesEngine, detectRollGateStructured, deriveCheckParameters } from '@/lib/rules-engine'
@@ -98,6 +98,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const merged = applyToolResults(result.supplementalResults, prev, statChanges)
       delete (merged as GameState & { _sceneBreaks?: string[] })._sceneBreaks
       saveGameState(merged)
+      for (const m of drainDbg()) debugLogRef.current.push(`[${new Date().toISOString()}] ${m}`)
       debugLogRef.current.push(`[${new Date().toISOString()}] EXTRACTION_APPLIED ${result.fieldNames}`)
       return merged
     })
@@ -185,6 +186,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               )
               if (corrections.length > 0) {
                 auditedState = applyToolResults(corrections, auditedState, statChanges, track)
+                for (const m of drainDbg()) debugLogRef.current.push(`[${new Date().toISOString()}] AUDIT_${m}`)
               }
             } else if (event.type === 'debug_context') {
               const body = event.label.startsWith('AUDIT_START') || event.label.startsWith('AUDIT_RESULT')
@@ -552,6 +554,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                       }
                     }
                     stateWithPlayerMessage = applyToolResults(event.results, stateWithPlayerMessage, setupChanges, track)
+                    for (const m of drainDbg()) debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_${m}`)
                   }
                 } catch { /* skip */ }
               }

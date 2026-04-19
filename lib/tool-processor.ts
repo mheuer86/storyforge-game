@@ -14,10 +14,20 @@ export interface StatChange {
 
 // Debug log visible in burger menu — stores last 20 entries
 export const debugLog: string[] = []
+// Pending queue drained by stream-parser after each applyToolResults so dbg()
+// output reaches the exported debug log. Without this, handler dbg() calls are
+// invisible to the user — capped at the 20-entry ring buffer and console only.
+const pendingDbg: string[] = []
 export function dbg(msg: string) {
   debugLog.push(`${new Date().toLocaleTimeString()} ${msg}`)
   if (debugLog.length > 20) debugLog.shift()
+  pendingDbg.push(msg)
   console.log('[SF]', msg)
+}
+export function drainDbg(): string[] {
+  const out = pendingDbg.slice()
+  pendingDbg.length = 0
+  return out
 }
 
 // ============================================================
