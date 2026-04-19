@@ -221,7 +221,12 @@ export const ActionBar = memo(function ActionBar({ quickActions, onActionSelect,
         <div className="flex flex-col gap-2">
           {/* closeReason kept in state for debug log but not shown to player — too meta */}
           <button
-            onClick={onCloseChapter}
+            onClick={(e) => {
+              console.log('[SF CLOSE] button clicked, disabled=', disabled, 'closeReady=', closeReady)
+              if (!onCloseChapter) return
+              onCloseChapter()
+              e.currentTarget.blur()
+            }}
             disabled={disabled}
             className="rounded-lg bg-primary/10 border border-primary/30 px-4 py-3 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-40"
           >
