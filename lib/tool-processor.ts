@@ -117,12 +117,16 @@ export interface CommitTurnInput {
 function detectNpcDrift(state: GameState, input: CommitTurnInput) {
   const npcs = state.world.npcs
   const npcNames = new Set(npcs.map(n => n.name.toLowerCase()))
+  const pcName = state.character.name.toLowerCase()
 
-  // Check 1: Relations reference NPCs that don't exist in state
+  // Check 1: Relations reference NPCs that don't exist in state.
+  // PC-targeted relations are valid — the PC lives on state.character, not state.world.npcs.
   for (const npc of npcs) {
     if (!npc.relations) continue
     for (const rel of npc.relations) {
-      if (!npcNames.has(rel.name.toLowerCase())) {
+      const target = rel.name.toLowerCase()
+      if (target === pcName) continue
+      if (!npcNames.has(target)) {
         dbg(`⚠ NPC_DRIFT: ${npc.name} has relation "${rel.type} of ${rel.name}" but ${rel.name} is not in NPC state`)
       }
     }

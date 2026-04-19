@@ -83,7 +83,7 @@ function resolveRoll(roll: number, modifier: number, dc: number, rollType?: stri
 
 const ROLL_REMINDER_SUCCESS = ' Narrate the outcome, then call commit_turn with ONLY the state changes caused by this roll result (e.g. hp_delta from damage). Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
 
-const ROLL_REMINDER_FAILURE = ' This is a FAILURE. Apply the FAIL FORWARD rules from the system prompt. The character does NOT learn what they were trying to learn. Commit to the false reality — narrate from inside the character\'s perspective as if what they perceive is true. Never step outside to signal the deception ("what you don\'t see", "what they buried", "you\'re wrong"). Plant one small, missable seed detail for later discovery. End with the character acting on the false belief. For Insight/Perception/Investigation failures, choose the outcome that fits: (A) RED HERRING — wrong conclusion believed as fact. Add a clue with a confident title, set is_red_herring: true. (B) NO READ — the character cannot get a read. No clue. "Her expression is unreadable." (C) AMBIGUOUS SIGNAL — notices something, cannot interpret it. No clue, but plant a seed. Never reveal the truth. Never label a clue as "false" or "misleading." For Persuasion/other failures: the approach fails and something gets worse (disposition drop, closed door, time lost, complication). The NPC may appear to comply but act against the character offscreen. Then call commit_turn with ONLY the state changes caused by this failure. Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
+const ROLL_REMINDER_FAILURE = ' FAILURE. The attempt happened; the world registered the push. Narrate what the world did in RESPONSE to the attempt — not what the character missed. Three patterns, preferred order: (1) THE COMPROMISE — a third outcome neither full success nor full failure would produce (NPC half-agrees, door opens partway, request carries a condition). (2) THE COST — task succeeds, character pays in a different currency (information delivered but relationship cools, door opens but reputation notices, standing shifts). (3) THE GAP — character gets most of what they needed but misses one specific piece (a named hole that drives the next action). FORBIDDEN: narrator-reveal ("you don\'t notice that...", "the superintendent made a phone call you didn\'t see"), meta-commentary on the miss ("what you don\'t yet see is...", "the seed you don\'t plant..."), invention of names/facts/connections not established in narrative (a failed check cannot produce NEW information — only a response from the world to the attempt). TEST: after narrating, does the player know something the CHARACTER doesn\'t? If yes, rewrite. Commit to the false reality from inside the character\'s perspective. For Insight/Perception: reads wrongly OR notices nothing; no "what they missed" sidebars. For Investigation: plausible wrong answer treated as true — add a clue with is_red_herring: true; never label it "false" or "misleading" in-narrative. For Persuasion vs hostile: appears to comply, may act against offscreen. For Combat: position changes, not "you miss." Then call commit_turn with ONLY the state changes caused by this failure. Do NOT re-send inventory_use, credits_delta, or other changes from the pre-roll commit_turn — those were already applied.'
 
 function rollResultText(roll: number, modifier: number, dc: number, result: RollRecord['result'], advantage?: 'advantage' | 'disadvantage', rawRolls?: [number, number], contested?: { npcName: string; npcSkill: string; npcModifier: number }, npcRoll?: number, npcTotal?: number, rollType?: string, damageType?: string): string {
   const total = roll + modifier
@@ -702,7 +702,27 @@ export async function POST(req: NextRequest) {
 ## RULES
 - Extract ONLY what is stated or clearly implied. Do NOT invent events or infer beyond what the text supports.
 - When in doubt about a disposition shift, include it — false negatives are worse than false positives here.
-- If the narrative describes any state change covered above, emit commit_turn. Err toward emitting when uncertain — false positives are recoverable, false negatives are not.` },
+- If the narrative describes any state change covered above, emit commit_turn. Err toward emitting when uncertain — false positives are recoverable, false negatives are not.
+
+## ANTI-INVENTION (critical)
+
+"Clearly implied" is a narrow standard. It means the text contains enough for a reader to conclude the fact without leaping. It does NOT mean the text suggests a theme that the fact would fit. Examples:
+
+**Narrative says:** "The ledger shows a consulting fee line item, dated six weeks before the collapse."
+- ✅ STATED / CLEARLY IMPLIED: a payment was made to someone as a consulting fee; the timing is six weeks before the collapse.
+- ❌ INVENTED: the specific amount "$40,000" — the text does not state an amount. Do NOT put a number in the clue content.
+
+**Narrative says:** "Nine people died in the collapse."
+- ✅ STATED: nine fatalities.
+- ❌ INVENTED: "Voss attended the memorial" — the text mentions neither a memorial nor Voss attending one.
+
+**Narrative says:** Carla cannot place a name to the silent partner behind the holding company. She sits with her working theory.
+- ✅ STATED: the silent partner's identity is unknown to Carla.
+- ❌ INVENTED: "Morello" as a specific name — if the narrative did not introduce that name in-scene, the extractor CANNOT surface it. Names, numbers, and connections appear in state ONLY after the narrative has introduced them.
+
+**Rule:** If the fact requires filling in a blank (a specific number, a specific name, a specific connection the text did not draw), it's invention. Omit it. The prose can be evocative and atmospheric without the extractor inventing concrete specifics to match.
+
+**Test before emitting any fact:** Can you quote the phrase from the narrative that states or clearly implies this fact? If no, do not emit it.` },
           ]
           const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1, maxTokens: 8192 })
           finish(loopResult.toolResults)
