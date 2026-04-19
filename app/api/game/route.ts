@@ -160,7 +160,7 @@ async function runToolLoop(
     const thinkingBudget = options?.thinkingBudget || 0
     const stream = await client.messages.stream({
       model: options?.model || MODEL,
-      max_tokens: options?.maxTokens ?? 2048,
+      max_tokens: options?.maxTokens ?? 6144,
       system: systemPrompt,
       tools: cachedTools,
       messages,
@@ -203,6 +203,53 @@ async function runToolLoop(
         hasTools: cachedTools.length > 0,
         model: options?.model || MODEL,
       })
+      // Recovery: if this is round 0 of a normal turn (tools available, not in a
+      // rolled close phase) and we produced no usable tool output, replay the
+      // round once at a higher cap. Better than a hung UI.
+      const callerMax = options?.maxTokens ?? 6144
+      const canRetry = round === 0 && callerMax < 16_000 && cachedTools.length > 0 && toolCalls.length <= 1
+      if (canRetry) {
+        const retryStream = await client.messages.stream({
+          model: options?.model || MODEL,
+          max_tokens: 16_000,
+          system: systemPrompt,
+          tools: cachedTools,
+          messages,
+          ...(thinkingBudget > 0 && {
+            thinking: { type: 'enabled' as const, budget_tokens: thinkingBudget },
+            temperature: 1,
+          }),
+        })
+        for await (const event of retryStream) {
+          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            const text = event.delta.text.replace(/<\/s>/g, '')
+            if (text) send({ type: 'text', content: text })
+          }
+        }
+        const retryCompleted = await retryStream.finalMessage()
+        const retryUsage = retryCompleted.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+        send({ type: 'token_usage', usage: {
+          inputTokens: retryUsage.input_tokens,
+          outputTokens: retryUsage.output_tokens,
+          cacheWriteTokens: retryUsage.cache_creation_input_tokens ?? 0,
+          cacheReadTokens: retryUsage.cache_read_input_tokens ?? 0,
+        }})
+        const retryToolCalls = retryCompleted.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+        // Overwrite the truncated frame with the retry outcome so the loop below uses it
+        Object.assign(completed, retryCompleted)
+        toolCalls.length = 0
+        toolCalls.push(...retryToolCalls)
+        if (retryCompleted.stop_reason === 'max_tokens') {
+          send({
+            type: 'truncation_warning',
+            outputTokens: retryUsage.output_tokens,
+            toolUseBlocks: retryToolCalls.length,
+            round,
+            hasTools: cachedTools.length > 0,
+            model: options?.model || MODEL,
+          })
+        }
+      }
     }
 
     if (completed.stop_reason !== 'tool_use' || toolCalls.length === 0) break
