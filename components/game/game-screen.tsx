@@ -8,7 +8,7 @@ import { ActionBar } from './action-bar'
 import { BurgerMenu } from './burger-menu'
 import { ChapterCloseOverlay, ChapterCloseLoading } from './chapter-close-overlay'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions } from '@/lib/game-data'
+import { loadGameState, saveGameState, saveToSlot, saveQuickActions, loadQuickActions, ensureSchemaVersionAndMigrate } from '@/lib/game-data'
 import { applyToolResults, drainDbg, type StatChange } from '@/lib/tool-processor'
 import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
 import { buildSupplementalCommit } from '@/lib/extraction-merge'
@@ -1098,7 +1098,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   )
 
   const handleLoad = useCallback(
-    (state: GameState) => {
+    (incoming: GameState) => {
+      // Mirror the loadGameState migration pipeline: slot-switch must run the
+      // migrator too, not just page reload.
+      const state = ensureSchemaVersionAndMigrate(incoming)
       saveGameState(state)
       setGameState(state)
       applyGenreTheme(state.meta.genre as Genre)
