@@ -333,12 +333,15 @@ async function runToolLoop(
 
 function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string, currentMessage?: string): Anthropic.TextBlockParam[] {
   const [core, situation, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
-  // Cache breakpoints: ephemeral on core (invariant across turns) so the
-  // cache survives situation-module changes. Situation module carries no
-  // cache_control, so it can vary per turn without invalidating the core prefix.
+  // Two cache breakpoints: one after core (always stable), one after situation
+  // (stable within a context). Anthropic caches the prefix through each
+  // breakpoint, so the longest matching prefix hits on each call. When the
+  // situation module is unchanged turn-to-turn (common case), the full
+  // [core + situation] prefix hits. When context flips, [core] still hits and
+  // only situation writes fresh. Dynamic block always writes fresh.
   return [
     { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: situation },
+    { type: 'text', text: situation, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: dynamicState },
   ]
 }
