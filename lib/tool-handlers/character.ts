@@ -91,6 +91,7 @@ export function applyCharacterChanges(
       dbg(`DUPLICATE inventory_use rejected (same item within 2 turns): ${useId}`)
     } else {
       let matched = false
+      let depletedReject = false
       char.inventory = char.inventory.map((item) => {
         const id = item.id.toLowerCase()
         const name = item.name.toLowerCase()
@@ -100,6 +101,13 @@ export function applyCharacterChanges(
         if ((matchById || matchByName) && !matched) {
           matched = true
           if (item.charges !== undefined) {
+            // Reject use if item is depleted and this isn't a set_charges (recharge) call.
+            // Prevents silent no-op where GM narrates use of a 0-charge item.
+            if (item.charges <= 0 && input.inventory_use!.set_charges === undefined) {
+              depletedReject = true
+              dbg(`CHARGES_EXHAUSTED inventory_use rejected: ${item.name} has 0 charges`)
+              return item
+            }
             const newCharges = input.inventory_use!.set_charges !== undefined
               ? Math.max(0, input.inventory_use!.set_charges)
               : Math.max(0, item.charges - 1)
@@ -121,9 +129,15 @@ export function applyCharacterChanges(
         return item
       })
       // Track this use for future dedup (keep only last 5 entries)
-      if (matched) {
+      if (matched && !depletedReject) {
         const updatedUses = [...recentUses.filter(u => currentTurn - u.turn <= 3), { itemId: useId, turn: currentTurn }]
         ;(updated.meta as unknown as Record<string, unknown>)._recentItemUses = updatedUses
+      }
+      // Flag the depleted-use attempt so the next turn's dynamic state can
+      // surface a warning. GM narrated a use that didn't happen; they should
+      // know so the following narration doesn't compound the inconsistency.
+      if (depletedReject) {
+        ;(updated.meta as unknown as Record<string, unknown>)._depletedItemUseAttempt = useId
       }
     }
   }

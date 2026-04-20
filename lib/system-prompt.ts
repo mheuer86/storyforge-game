@@ -134,21 +134,19 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 
 ## POST-ACTION CHECKLIST (every response)
 
-1. Crew protected/included → world.cohesion
-2. Risky compelling choice → character.award_inspiration
-3. NPC attitude shifted → world.disposition_changes
-4. Promise fulfilled/broken → world.update_promise
-5. Non-operational commitment with consequences → world.add_decision
-6. Clock tick → world.clocks
-7. NPC entered or left → world.set_scene_snapshot + world.update_npcs with last_seen (always update BOTH the scene snapshot AND each moved NPC's last_seen. Scene-present detection depends on last_seen matching the current location.)
-7a. Player entered a location with **multiple distinct areas or search zones** (apartment with rooms, office building with floors, warehouse with sections, facility with corridors) → world.set_exploration. Initialize \`current\` with the room/area the player entered, \`unexplored\` with the other visible/inferrable areas (each with a one-line hint), \`explored\` as empty, \`hostile: false\` for safe searches, \`true\` for active threats. Exploration state is the mechanism for spatial reveal — without it, search scenes collapse into "you find the thing" or "you don't," losing the pacing of room-by-room discovery. Trigger for any location where the player could meaningfully search more than one distinct space, not only hostile infiltrations. When the player leaves the location, clear with \`set_exploration: null\`.
-8. Consumable used → character.inventory_use
-9. Uncertain fact asserted → pending_check
-10. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
-11. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
-12. Direct witness of human cost → world.add_decision with witnessed: true
-13. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
-14. Character referenced → world.add_npcs (every character who speaks, is described by name or role, or is referenced in dialogue MUST exist in NPC state. Use a descriptive placeholder if unnamed: "Donald's boy", "scythe woman". Before naming a new NPC, verify the name is not already used by an existing NPC in the NPCS or CREW section.)
+Focus on mechanical/player-visible state this turn. Narrative state (NPCs,
+threads, decisions, dispositions, clocks, scene snapshots, scene endings)
+is tracked by the state extractor from your narration — you do not need to
+emit those tool calls yourself. Narrate clearly; the extractor catches the
+state shifts.
+
+1. Risky compelling choice → character.award_inspiration
+2. Player entered a location with **multiple distinct areas or search zones** (apartment with rooms, office building with floors, warehouse with sections, facility with corridors) → world.set_exploration. Initialize \`current\` with the room/area the player entered, \`unexplored\` with the other visible/inferrable areas (each with a one-line hint), \`explored\` as empty, \`hostile: false\` for safe searches, \`true\` for active threats. Exploration state is the mechanism for spatial reveal — without it, search scenes collapse into "you find the thing" or "you don't," losing the pacing of room-by-room discovery. Trigger for any location where the player could meaningfully search more than one distinct space, not only hostile infiltrations. When the player leaves the location, clear with \`set_exploration: null\`.
+3. Consumable used → character.inventory_use
+4. Uncertain fact asserted → pending_check
+5. ${config.currencyName} spent → character.credits_delta + world.add_ledger_entry
+6. Origin pressure → origin_event (when the player's actions express or resist their origin's moral weight)
+7. Witness mark spent for advantage → spend_witness (with pending_check at advantage)
 
 **Origin tracking:** Each origin carries a moral counter. Moral-category decisions auto-tick the counter (up by default, down if the character enforced or complied with the system). Use \`origin_event\` only for non-moral decisions (tactical, strategic, relational) that have origin-relevant moral weight. Don't include origin_event on moral decisions — the auto-tick handles those.
 
@@ -180,21 +178,11 @@ Do not call any other tool besides commit_turn and meta_response.
 
 **One call, one response.** Never call commit_turn more than once per response. Batch everything into a single call.
 
-## SCENE BOUNDARIES
+## SCENE PACING
 
-When a scene concludes, include \`scene_end: true\` and \`scene_summary\` (2-4 sentences) in commit_turn. A scene ends when:
-- The player moves to a new location (but NOT when arriving is the opening of a continuing scene)
-- Significant in-world time passes
-- A mission phase transitions (planning → active, active → extraction)
-- The player shifts to a fundamentally different activity
+Write scenes that have a clear beginning, middle, and end. A scene ends when the player moves to a new location, significant in-world time passes, a mission phase transitions (planning → active, active → extraction), or the player shifts to a fundamentally different activity. You do not emit scene_end yourself — the state extractor tracks boundaries from your narration. Your job is to write scenes that feel bounded, not to declare them.
 
-The summary captures: what happened, what changed, and the emotional/relational tone. Write as if briefing someone who wasn't there. These summaries are the chapter's narrative memory — earlier messages are compressed away once summarized.
-
-Do NOT signal scene_end during combat (a fight is one scene) or mid-conversation (a dialogue is one scene even if it changes topic).
-
-**MANDATORY: When you include set_location in commit_turn, you MUST also include scene_end: true and scene_summary.** A location change IS a scene boundary. The only exception is the very first scene of a new chapter.
-
-Include \`tone_signature\` with every scene_end — 1-2 words capturing the emotional register ("quiet tension", "earned release", "accumulated dread", "bitter resolve"). This helps maintain continuity of register across scene boundaries.
+Do NOT conflate scene boundaries with combat or dialogue. A fight is one scene. A dialogue is one scene even if it changes topic.
 
 ## D20 MECHANICS
 
@@ -1549,7 +1537,13 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
     const assessLine = op.assessments && op.assessments.length > 0
       ? `\nASSESSED: ${op.assessments.map(a => `${a.claim} (${a.skill} ${a.result} ${a.confidence}${!a.rolled ? ' NO ROLL' : ''})`).join(' | ')}`
       : ''
-    operationSection = `\nOPERATION: ${op.name} | Phase: ${op.phase}\nOBJ: ${objLine}\nTACTICAL: ${op.tacticalFacts.join('. ')}\nASSETS: ${op.assetConstraints.join('. ')}\nABORT: ${op.abortConditions.join('. ')}\nSIGNALS: ${op.signals.join('. ')}${assessLine}`
+    // Flag operations whose objectives have all resolved but state persists.
+    // GM should either promote to 'complete' or emit set_operation: null.
+    const allResolved = op.objectives.length > 0 && op.objectives.every(o => o.status === 'completed' || o.status === 'failed')
+    const endHint = allResolved && op.phase !== 'complete'
+      ? `\n⚠ OPERATION SHOULD END: all objectives are resolved (completed or failed). Either set phase to "complete" or clear operationState (set_operation: null). Do not continue narrating operation beats.`
+      : ''
+    operationSection = `\nOPERATION: ${op.name} | Phase: ${op.phase}\nOBJ: ${objLine}\nTACTICAL: ${op.tacticalFacts.join('. ')}\nASSETS: ${op.assetConstraints.join('. ')}\nABORT: ${op.abortConditions.join('. ')}\nSIGNALS: ${op.signals.join('. ')}${assessLine}${endHint}`
   }
 
   // --- Exploration state ---
@@ -1840,7 +1834,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${openingHookLine ? '\n' + openingHookLine : ''}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
+${chapterLine}${openingHookLine ? '\n' + openingHookLine : ''}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${(gs.meta as unknown as Record<string, unknown>)._depletedItemUseAttempt ? `\n⚠ DEPLETED ITEM USE LAST TURN: "${(gs.meta as unknown as Record<string, unknown>)._depletedItemUseAttempt}" has 0 charges — the attempted use was rejected. Your prior narration described using an item that was out of charges. In this turn's narration, reconcile: the item malfunctioned, was already spent, or the character realizes it's empty. Do not carry forward any effect from the rejected use.` : ''}${currentMessage ? (() => {
     const primaryStat = Object.entries(c.stats).reduce((a, b) => a[1] > b[1] ? a : b)[0]
     const rollGate = detectRollGate(currentMessage, sceneNpcs, primaryStat)
     return rollGate ? '\n' + rollGate : ''

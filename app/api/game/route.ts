@@ -339,9 +339,12 @@ function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isCons
   // situation module is unchanged turn-to-turn (common case), the full
   // [core + situation] prefix hits. When context flips, [core] still hits and
   // only situation writes fresh. Dynamic block always writes fresh.
+  // 1h TTL (costs 20% more per write vs 5m, but eliminates within-session
+  // expiration during reading pauses). Net win for the typical play pattern
+  // where turns are 1-5 minutes apart.
   return [
-    { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: situation, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: core, cache_control: { type: 'ephemeral', ttl: '1h' } },
+    { type: 'text', text: situation, cache_control: { type: 'ephemeral', ttl: '1h' } },
     { type: 'text', text: dynamicState },
   ]
 }
@@ -676,11 +679,13 @@ export async function POST(req: NextRequest) {
 
 **Scene snapshot** — ALWAYS update set_scene_snapshot. Describe who is present, where they are spatially, and what just changed. Compare against the last snapshot in state — if anything moved, update it.
 
-**NPC updates** — If ANY named NPC spoke, moved, reacted, or revealed information this turn, emit update_npcs for them. Update last_seen to their current location. Add key_facts for anchoring details (relationships revealed, secrets shared, abilities demonstrated). Add signature_lines for memorable quotes.
+**NPC presence** — Every named or role-descriptive character who appears in the narrative MUST exist in NPC state. If they're new (not in NPCS list), emit add_npcs with name, description, and last_seen. If they exist already, emit update_npcs with updated last_seen, key_facts for new anchoring details, and signature_lines for memorable quotes. Unnamed but distinct characters get placeholder names ("Donald's boy", "scythe woman"). Before naming a new NPC, verify the name isn't already used by an existing one.
 
 **Disposition changes** — Read dialogue tone against the conversation arc. If an NPC was resistant and is now cooperating, or was friendly and is now hostile, emit disposition_changes. Compare their behavior THIS turn against their behavior 2-3 turns ago — the shift may be gradual.
 
-**Scene boundaries** — ONLY include scene_end: true when BOTH conditions are met: (a) The location name changed OR the set of present characters changed substantially (someone arrived or left, not just repositioned within the scene), AND (b) at least 3 player turns have passed since the last scene_end in the conversation history. Check the scene summaries in state — aim for roughly 1 summary per 5-8 turns. Do NOT fire scene_end for movement within the same location, minor cast adjustments, or back-to-back turns. When you do fire scene_end, include a scene_summary (2-4 sentences covering the scene that just ended) and set_location if the location name changed.
+**Crew cohesion** — If the player protected, included, or sided with their crew, bump cohesion up. If they left a crew member exposed, overrode them, or chose self over team, bump down. Silent turns (crew not in focus) don't shift cohesion.
+
+**Scene boundaries** — ONLY include scene_end: true when BOTH conditions are met: (a) The location name changed OR the set of present characters changed substantially (someone arrived or left, not just repositioned within the scene), AND (b) at least 3 player turns have passed since the last scene_end in the conversation history. Check the scene summaries in state — aim for roughly 1 summary per 5-8 turns. Do NOT fire scene_end for movement within the same location, minor cast adjustments, or back-to-back turns. When you do fire scene_end, include scene_summary (2-4 sentences covering the scene that just ended), tone_signature (1-2 words capturing the emotional register — "quiet tension", "earned release", "accumulated dread", "bitter resolve"), and set_location if the location name changed. **Mandatory:** if set_location is emitted, scene_end must also fire — a location change IS a scene boundary, unless it's the very first scene of a new chapter.
 
 **Time tracking** — If the narrative indicates time passing (dawn→morning, "an hour later", "by nightfall"), include set_current_time.
 
