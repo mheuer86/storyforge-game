@@ -13,12 +13,22 @@ import { getGenreConfig, type Genre } from './genre-config'
  *
  * Total static: ~2200-2500 tokens per turn (down from ~5500 monolithic).
  */
+/**
+ * Returns [universalCore, situationModule, dynamicState].
+ *
+ * The three-block shape lets the API layer cache the core separately from the
+ * per-turn situation module. Situation content changes whenever context flips
+ * (combat/social/infiltration/etc.); emitting it as its own block means a
+ * context change invalidates only the situation block, not the entire static
+ * prefix. On turns where the situation module is stable, the full prefix
+ * (core + situation) caches together.
+ */
 export function buildSystemPrompt(
   gameState: GameState,
   isMetaQuestion: boolean,
   flaggedMessage?: string,
   currentMessage?: string
-): [string, string] {
+): [string, string, string] {
   const compressedState = compressGameState(gameState, isMetaQuestion ? undefined : currentMessage)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
@@ -37,19 +47,18 @@ export function buildSystemPrompt(
     ? `\n\nCONSISTENCY CHECK: The player has flagged the following GM response as potentially incorrect:\n\n"${flaggedMessage}"\n\nCompare this response carefully against the current game state above. Check for: wrong HP or stat values, items in inventory that don't exist, NPCs described incorrectly, locations that contradict the state, lore that contradicts established facts. If you find an error, state it clearly and give the correct version. If the response was accurate, confirm it briefly. Do NOT advance the story. Call meta_response with your finding.`
     : ''
 
-  // --- Layer 1: Core ---
+  // --- Layer 1: Universal core (cacheable across turns, chapters, campaigns) ---
   const core = buildCoreLayer(genre, config, ps)
 
-  // --- Layer 2: Situation module ---
+  // --- Layer 2: Situation module (changes when context flips) ---
   const situation = selectSituationModule(context, genre, gameState, config, ps)
 
-  const staticPrompt = `${core}\n\n${situation}`
-
+  // --- Layer 3: Dynamic state (changes every turn) ---
   const dynamicPrompt = `## CURRENT GAME STATE
 
 ${compressedState}${metaInstruction}${consistencyInstruction}`
 
-  return [staticPrompt, dynamicPrompt]
+  return [core, situation, dynamicPrompt]
 }
 
 // ============================================================
@@ -339,6 +348,36 @@ Load can be positive (pride, shared victory) — it's everything that affects ho
 // LAYER 2: SITUATION MODULES — one per turn
 // ============================================================
 
+/**
+ * Extract just the active class's trait rules from the full genre traitRules block.
+ * Genre configs bundle ALL playbooks' rules into one string; loading every
+ * playbook on every turn is pure bloat. This slices by class-name match where
+ * possible, falling back to the full string when the genre's format doesn't
+ * expose class names (e.g., grimdark uses trait-name-only bullets).
+ */
+function sliceTraitRulesForClass(traitRules: string | undefined, className: string | undefined): string {
+  if (!traitRules) return ''
+  if (!className) return traitRules
+  const cls = className.trim()
+  if (!cls) return traitRules
+
+  // Match bullets that include the class name in parentheses:
+  // "- **TraitName (ClassName):** ..."
+  const lines = traitRules.split('\n')
+  const matching: string[] = []
+  const header = lines[0] // "## TRAIT RULES"
+  for (const line of lines) {
+    // Match "(ClassName)" anywhere in the line, case-insensitive
+    const paren = new RegExp(`\\(\\s*${cls}\\s*\\)`, 'i')
+    if (paren.test(line)) matching.push(line)
+  }
+  if (matching.length === 0) {
+    // Class-name format not found; return full string unchanged
+    return traitRules
+  }
+  return `${header}\n\n${matching.join('\n')}`
+}
+
 function selectSituationModule(
   context: PromptContext,
   genre: Genre,
@@ -383,8 +422,9 @@ function selectSituationModule(
     ? `\n\n${ps.assetMechanic}`
     : ''
 
-  // Trait rules — always append
-  const traitBlock = ps.traitRules ? `\n\n${ps.traitRules}` : ''
+  // Trait rules — slice to active class only, append
+  const slicedTraits = sliceTraitRulesForClass(ps.traitRules, gs.character.class)
+  const traitBlock = slicedTraits ? `\n\n${slicedTraits}` : ''
 
   // Progression + chapter frame — compact, always needed
   const progressionBlock = buildProgressionBlock()
@@ -511,7 +551,7 @@ After these three beats, play normally. The training wheels come off.
 
 **Chapter 1 lore budget:** Maximum 3 world concepts. Introduce the player's immediate position, ONE faction relationship that creates the chapter's tension, and one background element as texture. Other factions, institutions, and lore emerge across chapters 2-5. Do not worldbuild through exposition — worldbuild through NPC action and consequence.
 ${obiWanBlock}
-${ps.traitRules ? ps.traitRules : ''}
+${sliceTraitRulesForClass(ps.traitRules, characterClass)}
 
 ${ps.assetMechanic || ''}
 
