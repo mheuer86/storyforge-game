@@ -332,9 +332,13 @@ async function runToolLoop(
 }
 
 function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string, currentMessage?: string): Anthropic.TextBlockParam[] {
-  const [staticInstructions, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
+  const [core, situation, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
+  // Cache breakpoints: ephemeral on core (invariant across turns) so the
+  // cache survives situation-module changes. Situation module carries no
+  // cache_control, so it can vary per turn without invalidating the core prefix.
   return [
-    { type: 'text', text: staticInstructions, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: situation },
     { type: 'text', text: dynamicState },
   ]
 }
@@ -415,19 +419,20 @@ export async function POST(req: NextRequest) {
       try {
         const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
 
-        // Emit the static + dynamic system blocks for the debug log export.
-        // Gated to the main turn entry (not retries/follow-ups) so we capture
-        // one snapshot per player turn. Static block hits the prompt cache,
-        // but logging it lets us audit total context size.
-        for (const block of systemPrompt) {
-          const label = block.cache_control ? 'SYSTEM_STATIC' : 'SYSTEM_DYNAMIC'
+        // Emit the static + situation + dynamic system blocks for the debug log
+        // export. Three blocks total: core (cached), situation (static content
+        // that varies with context), dynamic (per-turn state). Labels let the
+        // debug log distinguish them cleanly.
+        const blockLabels = ['SYSTEM_CORE', 'SYSTEM_SITUATION', 'SYSTEM_DYNAMIC']
+        systemPrompt.forEach((block, i) => {
+          const label = blockLabels[i] ?? (block.cache_control ? 'SYSTEM_STATIC' : 'SYSTEM_DYNAMIC')
           send({
             type: 'debug_context',
             label,
             content: block.text,
             tokenEstimate: Math.ceil(block.text.length / 4),
           })
-        }
+        })
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
