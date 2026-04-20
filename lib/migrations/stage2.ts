@@ -14,7 +14,7 @@
 //  - write (future, Part C): apply actions, stamp schemaVersion=2, save a
 //    pre-migration snapshot for rollback.
 
-import type { GameState, Thread, Decision, Promise, Clue, NPC, Faction, StoryArc } from '../types'
+import type { GameState, Thread, Decision, Promise, Clue, StoryArc } from '../types'
 
 export type Confidence = 'high' | 'medium' | 'low'
 export type EntityKind = 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'npc' | 'faction'
@@ -155,18 +155,14 @@ function backfillThread(thread: Thread & Record<string, unknown>, state: GameSta
     }
   }
 
-  // RETRIEVAL_CUE — use first meaningful sentence of status (minus the owner if known)
-  if (!(typeof thread.retrieval_cue === 'string' && thread.retrieval_cue.trim().length > 0)) {
-    const cue = firstSentence(thread.status, 100)
-    if (cue) {
-      actions.push({
-        kind: 'thread', id: thread.id, label, field: 'retrieval_cue',
-        currentValue: null, proposedValue: cue,
-        confidence: 'low', source: 'first_sentence_of_status',
-      })
-    }
-    void titleTokens; void statusTokens  // reserved for future refinement
-  }
+  // RETRIEVAL_CUE — NOT backfilled for existing entities. Deterministic text
+  // extraction can't infer salience ("when does this matter?") — only state
+  // descriptions. The dry-run showed that heuristic cues like "Active —
+  // partial name surfaced from torn address book" are status dumps, not
+  // salience pointers. Better to leave old entities cue-less and let future
+  // retrieval fall back to name/description when cue is absent. New entities
+  // created after Part A's prompt updates get real cues from the GM.
+  void thread.retrieval_cue; void titleTokens; void statusTokens
 }
 
 // ── Decision heuristics ─────────────────────────────────────
@@ -197,17 +193,8 @@ function backfillDecision(decision: Decision & Record<string, unknown>, state: G
     }
   }
 
-  // RETRIEVAL_CUE — first sentence of context (or summary if context empty)
-  if (!(typeof decision.retrieval_cue === 'string' && decision.retrieval_cue.trim().length > 0)) {
-    const cue = firstSentence(decision.context || decision.summary, 100)
-    if (cue) {
-      actions.push({
-        kind: 'decision', id: decision.id, label, field: 'retrieval_cue',
-        currentValue: null, proposedValue: cue,
-        confidence: 'low', source: 'first_sentence_of_context',
-      })
-    }
-  }
+  // RETRIEVAL_CUE — not backfilled (see note on backfillThread).
+  void decision.retrieval_cue
 }
 
 // ── Promise heuristics ──────────────────────────────────────
@@ -245,15 +232,8 @@ function backfillPromise(promise: Promise & Record<string, unknown>, state: Game
     }
   }
 
-  // RETRIEVAL_CUE — default to recipient-centric
-  if (!(typeof promise.retrieval_cue === 'string' && promise.retrieval_cue.trim().length > 0)) {
-    const cue = `When ${promise.to} is present or the commitment is tested`
-    actions.push({
-      kind: 'promise', id: promise.id, label, field: 'retrieval_cue',
-      currentValue: null, proposedValue: cue,
-      confidence: 'low', source: 'template_from_recipient',
-    })
-  }
+  // RETRIEVAL_CUE — not backfilled (see note on backfillThread).
+  void promise.retrieval_cue
 }
 
 // ── Clue heuristics ─────────────────────────────────────────
@@ -295,82 +275,31 @@ function backfillClue(clue: Clue & Record<string, unknown>, state: GameState, ac
     // No review flag: floating clues are acceptable.
   }
 
-  // RETRIEVAL_CUE — from tags
-  if (!(typeof clue.retrieval_cue === 'string' && clue.retrieval_cue.trim().length > 0)) {
-    const cue = (clue.tags ?? []).length > 0
-      ? `Relates to ${(clue.tags as string[]).slice(0, 3).join(', ')}`
-      : firstSentence(clue.content, 80)
-    if (cue) {
-      actions.push({
-        kind: 'clue', id: clue.id, label, field: 'retrieval_cue',
-        currentValue: null, proposedValue: cue,
-        confidence: 'low', source: 'tags_or_first_sentence',
-      })
-    }
-  }
+  // RETRIEVAL_CUE — not backfilled (see note on backfillThread).
+  void clue.retrieval_cue
 }
 
 // ── Arc heuristics ──────────────────────────────────────────
 
-function backfillArc(arc: StoryArc & Record<string, unknown>, _state: GameState, actions: MigrationAction[], reviews: MigrationReview[]) {
-  const label = arc.title
+function backfillArc(arc: StoryArc & Record<string, unknown>, _state: GameState, _actions: MigrationAction[], _reviews: MigrationReview[]) {
+  // SPANS_CHAPTERS — skipped. Migration runs on saves where most arcs have
+  // episodes from only the current chapter; deriving spans from episode
+  // chapters at migration time always under-counts. The arc was created with
+  // a declared spans_chapters (the create_arc schema requires ≥3); trust it.
+  void arc.spans_chapters
 
-  // SPANS_CHAPTERS — derive from episodes
-  if (!(typeof arc.spans_chapters === 'number' && arc.spans_chapters >= 3)) {
-    const chapters = (arc.episodes ?? []).map(e => e.chapter).filter(n => typeof n === 'number')
-    if (chapters.length > 0) {
-      const span = Math.max(...chapters) - Math.min(...chapters) + 1
-      if (span >= 3) {
-        actions.push({
-          kind: 'arc', id: arc.id, label, field: 'spans_chapters',
-          currentValue: null, proposedValue: String(span),
-          confidence: 'high', source: 'episode_chapter_range',
-        })
-      } else {
-        reviews.push({ kind: 'arc', id: arc.id, label, reason: `episodes span only ${span} chapters — this may not be an arc` })
-      }
-    }
-  }
+  // STAKES_DEFINITION — grandfathered. Old arcs predate the validator and are
+  // legitimate narrative state; forcing fixes would cost the player rewrites.
+  // New arcs are already validator-gated on stakes_definition at create time.
+  void arc.stakesDefinition
 
-  // STAKES_DEFINITION — grandfathered. Don't backfill (violates validator).
-  if (!arc.stakesDefinition) {
-    reviews.push({ kind: 'arc', id: arc.id, label, reason: 'stakes_definition missing; grandfather or author manually' })
-  }
-
-  // RETRIEVAL_CUE — derive from stakesDefinition or title
-  if (!(typeof arc.retrieval_cue === 'string' && arc.retrieval_cue.trim().length > 0)) {
-    const stakes = typeof arc.stakesDefinition === 'string' ? arc.stakesDefinition : ''
-    const cue = stakes ? firstSentence(stakes, 100) : `Chapters that advance ${arc.title}`
-    actions.push({
-      kind: 'arc', id: arc.id, label, field: 'retrieval_cue',
-      currentValue: null, proposedValue: cue,
-      confidence: stakes ? 'medium' : 'low',
-      source: stakes ? 'stakes_first_sentence' : 'title_template',
-    })
-  }
+  // RETRIEVAL_CUE — not backfilled (see note on backfillThread). Semantic
+  // salience requires LLM judgment; template cues add noise without value.
+  void arc.retrieval_cue
 }
 
-// ── NPC / Faction cues ──────────────────────────────────────
-
-function backfillNpcCue(npc: NPC & Record<string, unknown>, actions: MigrationAction[]) {
-  if (typeof npc.retrieval_cue === 'string' && npc.retrieval_cue.trim().length > 0) return
-  const cue = firstSentence(npc.description, 80) || `Contact last seen at ${npc.lastSeen ?? 'unknown location'}`
-  actions.push({
-    kind: 'npc', id: npc.name, label: npc.name, field: 'retrieval_cue',
-    currentValue: null, proposedValue: cue,
-    confidence: 'low', source: 'description_first_sentence',
-  })
-}
-
-function backfillFactionCue(faction: Faction & Record<string, unknown>, actions: MigrationAction[]) {
-  if (typeof faction.retrieval_cue === 'string' && faction.retrieval_cue.trim().length > 0) return
-  const cue = `Relevant when heat or stance on ${faction.name} shifts`
-  actions.push({
-    kind: 'faction', id: faction.name, label: faction.name, field: 'retrieval_cue',
-    currentValue: null, proposedValue: cue,
-    confidence: 'low', source: 'stance_template',
-  })
-}
+// NPC and Faction retrieval_cue backfill removed — see note on backfillThread
+// for the rationale. Template-generated cues produce noise, not salience.
 
 // ── Main entry ──────────────────────────────────────────────
 
@@ -385,14 +314,14 @@ export function runStage2Migration(state: GameState, options: MigrationOptions):
   const actions: MigrationAction[] = []
   const reviews: MigrationReview[] = []
 
-  // Iterate entities
+  // Iterate entities. NPCs and factions no longer need per-entity migration
+  // (retrieval_cue backfill was removed); they'll get cues from the GM on
+  // future updates where applicable.
   for (const t of state.world.threads ?? []) backfillThread(t as Thread & Record<string, unknown>, state, actions, reviews)
   for (const d of state.world.decisions ?? []) backfillDecision(d as Decision & Record<string, unknown>, state, actions, reviews)
   for (const p of state.world.promises ?? []) backfillPromise(p as Promise & Record<string, unknown>, state, actions, reviews)
   for (const c of state.world.notebook?.clues ?? []) backfillClue(c as Clue & Record<string, unknown>, state, actions, reviews)
   for (const a of state.arcs ?? []) backfillArc(a as StoryArc & Record<string, unknown>, state, actions, reviews)
-  for (const n of state.world.npcs ?? []) backfillNpcCue(n as NPC & Record<string, unknown>, actions)
-  for (const f of state.world.factions ?? []) backfillFactionCue(f as Faction & Record<string, unknown>, actions)
 
   // Stats
   const entityCount =
