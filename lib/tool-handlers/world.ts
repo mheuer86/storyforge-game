@@ -123,6 +123,47 @@ export function applyWorldChanges(
     }
   }
 
+  // ── Related-NPC auto-create ──
+  // After NPC mutations, scan every NPC's relations. If a target name isn't in
+  // world.npcs and isn't the PC, auto-create a minimal offscreen stub. Avoids
+  // NPC_DRIFT warnings for referenced-but-never-introduced characters (dead
+  // victims, offscreen family, etc.) without requiring the GM to pre-create them.
+  {
+    const pcName = updated.character.name.toLowerCase()
+    const presentNames = new Set(world.npcs.map(n => n.name.toLowerCase()))
+    const toCreate = new Map<string, string>()  // name → referencing NPC (for log)
+    for (const npc of world.npcs) {
+      if (!npc.relations) continue
+      for (const rel of npc.relations) {
+        const target = rel.name.toLowerCase()
+        if (target === pcName) continue
+        if (presentNames.has(target)) continue
+        if (!toCreate.has(target)) toCreate.set(target, npc.name)
+      }
+    }
+    if (toCreate.size > 0) {
+      const stubs = [...toCreate.entries()].map(([lowerName, referencedBy]) => {
+        // Recover original casing from any relation record that has this name
+        const originalCase = world.npcs
+          .flatMap(n => n.relations ?? [])
+          .find(r => r.name.toLowerCase() === lowerName)?.name ?? lowerName
+        return {
+          name: originalCase,
+          description: '[referenced in relation, not yet introduced]',
+          lastSeen: '[offscreen]',
+          status: 'gone' as const,
+          _referencedBy: referencedBy,
+        }
+      })
+      for (const stub of stubs) {
+        const { _referencedBy, ...npc } = stub
+        world.npcs = [...world.npcs, npc]
+        presentNames.add(npc.name.toLowerCase())
+        dbg(`ENTITY_WRITE add_npc result=auto_stub name="${npc.name}" reason=relation_target referenced_by=${_referencedBy}`)
+      }
+    }
+  }
+
   // ── Location + time ──
   if (input.set_current_time) {
     world.currentTime = input.set_current_time
@@ -463,18 +504,25 @@ export function applyWorldChanges(
   }
 
   // ── Ledger ──
+  // Dedup is both per-commit (ledgerEntriesThisBatch) and cross-turn (scan
+  // world.ledger). Normalize description before comparison so near-identical
+  // repeated entries (trailing space, case drift) dedupe correctly.
   if (input.add_ledger_entry) {
-    const ledgerKey = `${input.add_ledger_entry.amount}:${input.add_ledger_entry.description}`
+    const normDesc = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+    const entry = input.add_ledger_entry
+    const entryNormDesc = normDesc(entry.description)
+    const ledgerKey = `${entry.amount}:${entryNormDesc}`
     const existingDupe = (world.ledger || []).some(e =>
-      e.amount === input.add_ledger_entry!.amount && e.description === input.add_ledger_entry!.description
+      e.amount === entry.amount && normDesc(e.description) === entryNormDesc
     )
     if (ledgerEntriesThisBatch.includes(ledgerKey) || existingDupe) {
-      dbg('DUPLICATE ledger entry rejected: ' + ledgerKey)
+      dbg(`DUPLICATE ledger entry rejected: amount=${entry.amount} description="${entry.description}"`)
     } else {
       ledgerEntriesThisBatch.push(ledgerKey)
-      world.ledger = [...(world.ledger || []), input.add_ledger_entry]
-      const sign = input.add_ledger_entry.amount > 0 ? '+' : ''
-      statChanges.push({ type: 'neutral', label: `${sign}${input.add_ledger_entry.amount} (${input.add_ledger_entry.description})` })
+      world.ledger = [...(world.ledger || []), entry]
+      const sign = entry.amount > 0 ? '+' : ''
+      statChanges.push({ type: 'neutral', label: `${sign}${entry.amount} (${entry.description})` })
+      dbg(`ENTITY_WRITE add_ledger_entry amount=${entry.amount} description="${entry.description}" day="${entry.day}"`)
     }
   }
 
