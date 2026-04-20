@@ -315,6 +315,8 @@ export function applyNarrativeChanges(
             })),
             ...(ca.outcome_spectrum && { outcomeSpectrum: ca.outcome_spectrum }),
             ...(stakes && { stakesDefinition: stakes }),
+            ...(typeof ca.spans_chapters === 'number' && { spansChapters: ca.spans_chapters }),
+            introducedInChapter: updated.meta.chapterNumber,
           })
           dbg(`ENTITY_WRITE add_arc result=new id=${ca.id} title="${ca.title}" episodes=${ca.episodes.length} spans_chapters=${ca.spans_chapters} stakes="${stakes.slice(0, 80)}"`)
           if (!(typeof ca.retrieval_cue === 'string' && ca.retrieval_cue.trim().length > 0)) {
