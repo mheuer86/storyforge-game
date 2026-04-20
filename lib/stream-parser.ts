@@ -318,6 +318,17 @@ function processDoneEvent(
     s.gameState = rest as GameState
   }
 
+  // Clear one-shot warning flags on meta after a successful commit_turn so
+  // they surface in the next turn's dynamic state exactly once.
+  if (s.lastCommitInput) {
+    const meta = s.gameState.meta as unknown as Record<string, unknown>
+    if (meta._depletedItemUseAttempt) {
+      const { _depletedItemUseAttempt, ...restMeta } = meta
+      void _depletedItemUseAttempt
+      s.gameState = { ...s.gameState, meta: restMeta as unknown as typeof s.gameState.meta }
+    }
+  }
+
   // Add GM message to history
   const gmRole = isMetaQuestion ? 'meta-response' : 'gm'
   let finalState: GameState = {
