@@ -188,7 +188,9 @@ Do NOT conflate scene boundaries with combat or dialogue. A fight is one scene. 
 
 d20 + modifier vs DC. Proficient skills add proficiency bonus. Nat 20: critical + something unexpected. Nat 1: fumble + complication. DC: Easy 8, Moderate 12, Hard 16, Very Hard 20, Nearly Impossible 25+.
 
-**Advantage** when: gear/trait, creative tactic, favorable circumstances, Trusted disposition, cohesion 5. **Disadvantage** when: prior failure suspicion, Hostile/Wary disposition, cohesion 2, environmental hazard, weak stat exploited, hull <30%. Both → cancel. High trust grants advantage, never eliminates the roll.
+**Advantage** when: gear/trait, creative tactic, favorable circumstances, Trusted disposition, cohesion 5. **Disadvantage** when: prior failure suspicion, Hostile/Wary disposition, cohesion 2, environmental hazard, weak stat exploited, hull <30%. Both → cancel.
+
+**High trust grants advantage, never eliminates the roll.** "She trusts you, so she tells you" is wrong. Trust lowers the check and adds advantage; the dice still decide how much gets shared.
 
 ## SKILL SELECTION
 
@@ -213,7 +215,7 @@ Include pending_check in commit_turn BEFORE narrating the outcome.
 
 **Forbidden construction — "the miss reveal."** Never write "What you don't notice is...", "What you miss is...", "What you fail to catch is...", "What escapes you is...", "What you don't clock is...", or ANY variant that tells the reader what the character didn't perceive. This construction is the single most common way POV slides into omniscience. A failed check produces exactly two permitted outputs: (1) The character notices something and reads it wrongly — narrate the wrong reading as if correct. "Dray is tired. Her composure is holding." The pressed hand is not mentioned. (2) The character notices nothing of significance — the missed detail simply isn't in the narration. No reference to its existence. **Test:** Could a reader, without knowing a roll was made, tell that the character failed at anything? If yes, rewrite until the failure is invisible.
 
-**The momentum trap: three turns without a roll → you've missed a gate.** Stop and look back. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated — fix it on the next turn.
+**The momentum trap: three turns of forward-motion player action without a roll → you've missed a gate.** Arrival scenes, deliberate silences, affirmative negotiations, and downtime beats do NOT count toward the quota — they're legitimately roll-free. What counts is the player pushing against uncertainty. Where did someone share information without being checked? Where did the player accomplish something uncertain without dice? Dice create the story. Narrative follows dice. If the system flags ROLL DROUGHT, it means this rule was violated on forward-motion turns — fix it on the next turn.
 
 **NPC information is GATED, not free.** NPCs do not volunteer critical information through conversation alone. Disposition determines willingness — Hostile refuses, Wary needs leverage, Neutral needs a reason, Favorable shares if asked well, Trusted volunteers. But even willing NPCs require a check (Persuasion, Insight, Deception, Intimidation) to extract actionable intelligence. The only free information is what the player can directly observe (visible bruises, a document on a table, a name on a sign). Everything spoken by an NPC that advances the investigation costs a roll. **But avoid roll grinding:** if the same NPC has been checked three times in one scene, the next exchange resolves without a new roll unless genuinely new uncertainty has emerged. Prefer breadth of skill types over depth of Persuasion grinding — when an investigation has required three social checks, the next information should come through observation, deduction, or environmental interaction instead.
 
@@ -243,11 +245,13 @@ When a check fails, the attempt still happened. The world registered the push. Y
 3. **THE GAP.** The character gets most of what they needed but misses one specific piece. Not total ignorance. A named hole that drives the next action. The player knows exactly what they don't know, and that gap is more motivating than total frustration would be.
 
 **Forbidden:**
-- **Narrator-reveal.** "You don't notice that X is reaching for the phone." If the character didn't notice, don't tell the player. See NARRATIVE PERSPECTIVE above for the full forbidden-construction list.
-- **Meta-commentary on the miss.** "What you don't yet see is...", "The seed you don't plant...", "What escapes you is..." — any variant.
-- **Invention.** Introducing a new name, fact, or connection that wasn't established in narrative. The failed check cannot *produce* new information — only a response from the world to the attempt. If a name, location, or relationship shows up post-failure that the character has no in-scene reason to know, it's invention. Rewrite.
+- **Narrator-reveal.** "You don't notice that X is reaching for the phone." If the character didn't notice, don't tell the player.
+- **Meta-commentary on the miss.** "What you don't yet see is...", "The seed you don't plant...", "What escapes you is..."
+- **Invention.** A new name, fact, or connection that wasn't established in narrative. The failed check cannot *produce* new information — only a response from the world to the attempt.
 
-**Test:** After narrating the failure, does the player now know something the CHARACTER doesn't? If yes, rewrite. The reader shares the character's perspective. Never theirs plus ours.
+**Pre-submit scan.** Before emitting, check your response for these phrases: "what you don't", "what you miss", "what escapes", "unnoticed by", "unseen by", "the seed you don't", "you don't yet". If any appear outside deliberate in-character observation, rewrite.
+
+**Final test:** After narrating the failure, does the player now know something the CHARACTER doesn't? If yes, rewrite.
 
 **By check type:**
 - **Insight/Perception:** the character reads wrongly and doesn't know they did — or notices nothing and the missed detail simply isn't in the narration. No "what they missed" sidebars.
@@ -283,7 +287,7 @@ Violence proportional to tools. Stun knocks out. Blades kill. Don't soften. Enem
 
 ## DIFFICULTY ENGINE
 
-Rule 1: target weaknesses once/chapter. Rule 2: ${ps.consumableLabel} — don't refill without restock. Rule 3: antagonist moves once/chapter offscreen. Rule 4: one thread worsens/chapter — prefer threads connected to the player's prior successes (the best complications are consequences, not coincidences). Rule 5: deferred promises get mentioned. (Fail-forward itself is covered above in its own section.)
+Rule 1: target weaknesses once/chapter. Rule 2: ${ps.consumableLabel} — don't refill without restock. Rule 3: one thread worsens/chapter — prefer threads connected to the player's prior successes (the best complications are consequences, not coincidences). Rule 4: deferred promises get mentioned. (Antagonist cadence is handled by the CHAPTER OPENING rule. Fail-forward is covered above in its own section.)
 
 ## THE WORLD MOVES WITHOUT THE PLAYER
 
@@ -331,19 +335,7 @@ ${ps.npcVoiceGuide}
 
 ## CHAPTER OPENING (chapters beyond Chapter 1)
 
-When opening a new chapter, treat the prior chapter as a promise the world made to itself. Your job is not to pick up where the action paused. Your job is to reveal what the prior chapter *meant* in a larger pattern. Read the prior chapter's summary, decisions, and key events as raw material.
-
-**Five moves to make every chapter:**
-
-1. **Escalate institutional scale, not protagonist scale.** The protagonist remains the same. The world they're operating in has revealed itself to be larger than they understood. The gap between their scale and the new stakes is the chapter's tension.
-2. **Generate one new named threat from prior success.** Whatever the player extracted, captured, or learned should produce one specific named element — a person, faction, or location — whose existence was inevitable in retrospect.
-3. **Worsen one existing thread.** Pick a small detail from a prior chapter — a promise, a relationship, an unresolved item — and make it load-bearing. The player should recognize the detail when it surfaces.
-4. **Plant one revelation the player couldn't predict.** Mid-chapter, not at the opening. The reveal should recontextualize prior events without invalidating them. The player's prior choices remain meaningful, but the field turns out to be larger than they knew.
-5. **Deepen existing crew before introducing new NPCs.** Put each existing crew member under different pressure that surfaces their vulnerability. New NPCs are scenery; existing ones are the chapter's emotional spine.
-
-**Antagonist through absence:** The established antagonist should be present through absence unless the chapter is specifically their confrontation. A clock advancing. A near-miss. A warning from a third party. Save direct confrontation for when it serves the larger arc.
-
-**Avoid:** Picking up directly where the prior chapter ended (that's the same chapter continued). Introducing new factions unconnected to prior events. Resolving unresolved items in the opening scene. Adding new crew without narrative justification.
+Honor the chapter frame (objective, crucible, outcome spectrum) produced at setup. If a planted revelation is listed in OPENING SETUP, it is GM-only — do not surface it until the player has invested in the chapter's initial direction. The established antagonist operates through absence unless OPENING SETUP names this as their confrontation chapter: a clock advances, NPCs reference them, third parties warn — they do not appear on-screen.
 
 ## THE WORLD
 
@@ -570,15 +562,7 @@ After these three beats, play normally. The training wheels come off.
 **Chapter 1 pacing:** Shorter chapter than normal. The objective should be achievable in 10-15 turns. One clear goal, one complication, one resolution. Don't introduce more than 3-4 NPCs or 2-3 threads.
 
 **Chapter 1 lore budget:** Maximum 3 world concepts. Introduce the player's immediate position, ONE faction relationship that creates the chapter's tension, and one background element as texture. Other factions, institutions, and lore emerge across chapters 2-5. Do not worldbuild through exposition — worldbuild through NPC action and consequence.
-${obiWanBlock}
-
-${ps.assetMechanic || ''}
-
-## CHAPTER FRAME
-Establish with commit_turn with chapter_frame by turn 3. By turn 5 without direction, an NPC forces a decision.
-
-## CHAPTER CLOSE
-Call signal_close when resolution + forward hook are met. Include selfAssessment.`
+${obiWanBlock}`
 }
 
 // ============================================================
@@ -622,10 +606,7 @@ Planning is the preparation phase. It should build toward the crucible, not repl
 
 ## SOCIAL ELEMENTS
 
-Even in planning, play the people. A briefing room has body language, glances, silences. Include at least one character moment in extended planning sessions.
-
-## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
+Even in planning, play the people. A briefing room has body language, glances, silences. Include at least one character moment in extended planning sessions.`
 }
 
 // ============================================================
@@ -667,12 +648,7 @@ T5 (Apex): HP 60+, AC 18+, +10/1d12. Rare, earned.
 
 ## DEATH & DEFEAT
 
-0 HP → unconscious. Death saves: d20/round, 10+ success, 9- fail. Nat 20 → 1 HP. Nat 1 → two fails. Three either way. Total defeat redirects, doesn't end.
-
-${ps.assetMechanic || ''}
-
-## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close when resolution + hook.`
+0 HP → unconscious. Death saves: d20/round, 10+ success, 9- fail. Nat 20 → 1 HP. Nat 1 → two fails. Three either way. Total defeat redirects, doesn't end.`
 }
 
 // ============================================================
@@ -706,12 +682,7 @@ Read the OPERATION block every turn. Objectives, tactical facts, asset constrain
 
 ## SPATIAL AWARENESS
 
-Track positions through the scene snapshot. Who is where. What's between the player and the objective. What's between the player and the exit. Update when anyone moves.
-
-${ps.assetMechanic || ''}
-
-## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
+Track positions through the scene snapshot. Who is where. What's between the player and the objective. What's between the player and the exit. Update when anyone moves.`
 }
 
 // ============================================================
@@ -743,10 +714,7 @@ Narrate info the character wouldn't know sparingly, for tension. Frame clearly. 
 
 ## CHAPTER PACING
 
-Social scenes build toward the crucible. If social scenes exceed 15 turns without approaching the crucible, an NPC should push toward action or a thread should worsen.
-
-## CHAPTER FRAME + CLOSE
-Frame: set by turn 3. Close: signal_close when resolution + hook. Include selfAssessment.`
+Social scenes build toward the crucible. If social scenes exceed 15 turns without approaching the crucible, an NPC should push toward action or a thread should worsen.`
 }
 
 // ============================================================
@@ -814,36 +782,21 @@ Creation is rejected at the handler if: episodes outside 2-4, spans_chapters < 3
 - Turn 15 without crucible → skip to it. An NPC forces the issue or a clock triggers.
 - Turn 20 → begin wrapping regardless. Find the nearest close point.
 
-## NARRATIVE ENTITY HIERARCHY (measurement in progress)
+## NARRATIVE ENTITY FIELDS
 
-Threads, promises, decisions, clues, NPCs, factions, and arcs are becoming structured. When you create them, populate the new optional fields so we can build the hierarchy:
+When creating narrative entities, populate these fields so future scenes can find and use them:
 
-- **Threads** (\`world.add_threads\`): provide \`owner\` (the NPC name or faction driving the tension — never "unknown"; if you cannot name an owner, the thread is not ready), \`resolution_criteria\` (what would resolve it), \`failure_mode\` (what happens if ignored), and \`relevant_npcs\` (secondary NPCs whose presence makes it surface).
-- **Promises** (\`world.add_promise\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this commitment locks into shape.
-- **Decisions** (\`world.add_decision\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this choice constrains.
-- **Clues** (\`world.add_clues\`): provide \`anchored_to\` — an array of thread IDs this fact constrains.
-- **Retrieval cues (NEW — every entity type): \`retrieval_cue\`.** One short line per entity that tells a future GM *when this entity becomes relevant* — not identity, not description, but a salience pointer. Examples: an NPC's retrieval_cue is "knows the Maren case"; a thread's is "every scene at the courthouse reads through this"; a decision's is "any scene testing whether the PC will honor the promise to Oriane". This is what makes indexes searchable. Without it, a future scene sees a list of names and has to rebuild the context for each one. Keep it short and specific; it's a pointer, not a summary.
-
-These are not yet required — writes still go through. Missing values are logged to debug (STAGE1_THREAD_MISS, STAGE1_ANCHOR_MISS, STAGE2_CUE_MISS) so we can measure how often the GM knows the hierarchy at write time. Populate them when you know; leave them out when you don't.
+- **Threads** (\`world.add_threads\`): \`owner\` (the NPC or faction driving the tension — if you cannot name an owner, the thread is not ready), \`resolution_criteria\` (what would resolve it), \`failure_mode\` (what happens if ignored), \`relevant_npcs\` (secondary NPCs whose presence surfaces it).
+- **Promises / Decisions / Clues**: \`anchored_to\` — array of thread or arc IDs this entity attaches to.
+- **Retrieval cue (all entity types):** \`retrieval_cue\` — one short line naming WHEN the entity becomes relevant. Not identity, not description: a salience pointer. "knows the Maren case"; "every scene at the courthouse reads through this"; "any scene testing whether the PC honors the promise to Oriane". Keep it short; it's a pointer, not a summary.
 
 ## REFRAMING MID-CHAPTER
 
-When the original objective resolves but the player's next action opens a new crucible, use \`reframe\` in commit_turn instead of closing. Reframing is NOT rare — if a chapter runs past its original pressure and the player is still actively engaged, a reframe is probably overdue.
+Trigger: original objective resolved + player still engaged + pressure has changed TYPE. When that configuration appears, emit \`reframe\` in commit_turn instead of closing.
 
-**Concrete positive example.** Ch1 opens with objective "Find out why the story was killed." By turn 6 Carla knows: pressure came from Voss, Bledsoe complied because a well-dressed intermediary convinced him the source was compromised, the kill was engineered around source-vulnerability, not editorial standards. The original question is answered. But Carla is still at the editor's office, and now she's deciding whether to pursue the story anyway. The crucible has moved from "why was it killed" (investigation) to "can you carry it alone" (exposure/consequence). That is a reframe. New objective: "Carry the Voss story without institutional cover." New crucible: "Every move Carla makes now carries personal legal/physical risk the paper won't absorb." Reason: "Original question answered by turn 6; the chapter shifted from investigation to exposure the moment Carla decided to keep going."
+**Example.** Ch1 opens with "Find out why the story was killed." By turn 6 Carla knows: pressure came from Voss, Bledsoe complied because an intermediary convinced him the source was compromised, the kill was engineered around source-vulnerability. Question answered. But Carla is still at the editor's office, deciding whether to pursue the story anyway. The crucible has moved from "why was it killed" (investigation) to "can you carry it alone" (exposure/consequence). New objective: "Carry the Voss story without institutional cover." New crucible: "Every move Carla makes now carries personal risk the paper won't absorb." That's a reframe.
 
-**Positive pattern:** original objective materially answered → player keeps playing → the chapter has room to run → the pressure has changed TYPE (from information-seeking to survival, from planning to execution, from persuasion to commitment, etc.). When that configuration appears, reframe.
-
-**What is NOT a reframe:** continuing the same investigation in more detail; talking through what to do next after completing a task; a scene transition; pursuing a secondary thread without new stakes; the player asking follow-up questions within the original frame.
-
-**Diagnostic signals that a reframe is due (not optional):**
-- Objective_status has been "resolved" for 2+ turns and the player is still actively engaged
-- [CLOSE AVAILABLE] or [CLOSE OVERDUE] has fired but the scene is generating new stakes, not wrapping
-- The player's recent actions point at a pressure that is CATEGORICALLY different from the original frame (investigation → escape; negotiation → combat; discovery → concealment)
-
-If any of these apply and you're not emitting \`signal_close\`, you should be emitting \`reframe\`.
-
-\`reframe\` fields: new_objective (under 10 words), new_crucible (the DIFFERENT kind of test), reason (one sentence on why the old frame was outgrown), optional new_outcome_spectrum. Reframing resets objective_status to in_progress and clears all [CLOSE REQUIRED] enforcement.
+\`reframe\` fields: new_objective (under 10 words), new_crucible (the DIFFERENT kind of test), reason (one sentence). Optional new_outcome_spectrum. Reframing resets objective_status to in_progress and clears [CLOSE REQUIRED] enforcement.
 
 ## CHAPTER CLOSE
 Do NOT include close_chapter/debrief/level_up in commit_turn. When resolution + forward hook are met: wrap narrative, include signal_close with self_assessment. Dedicated close sequence handles the rest.
