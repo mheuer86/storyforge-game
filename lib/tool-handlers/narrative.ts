@@ -10,12 +10,16 @@ export function applyNarrativeChanges(
 ): GameState {
   // Chapter frame update rules:
   // - Always allowed during close sequence (close_chapter present)
-  // - One mid-chapter refinement allowed if: turn 5+ AND (defining decision OR promise change in same commit)
-  // - All other mid-chapter updates silently rejected to prevent frame drift
+  // - Mid-chapter refinement gated by a turn cooldown: turn 5+ AND at least 5
+  //   turns since the last refinement, AND a defining trigger (new decision or
+  //   promise change) in the same commit. The cooldown replaces the prior
+  //   "one refinement per chapter" boolean, which was too strict — Ch2 had five
+  //   legitimate frame-sharpening evolutions that got silently rejected.
   if (input.chapter_frame) {
     const isCloseSequence = !!input.close_chapter
-    const alreadyRefined = updated.chapterFrame?.refined === true
     const turnCount = updated.history.messages.filter(m => m.role === 'player').length
+    const lastRefinedAt = updated.chapterFrame?.lastRefinedAtTurn
+    const cooldownOk = lastRefinedAt === undefined || (turnCount - lastRefinedAt) >= 5
     const hasDefiningTrigger = !!input.world?.add_decision || !!input.world?.update_promise
 
     if (isCloseSequence) {
@@ -27,17 +31,21 @@ export function applyNarrativeChanges(
           ...(input.chapter_frame.outcome_spectrum && { outcomeSpectrum: input.chapter_frame.outcome_spectrum }),
         },
       }
-    } else if (!alreadyRefined && turnCount >= 5 && hasDefiningTrigger) {
+    } else if (turnCount >= 5 && cooldownOk && hasDefiningTrigger) {
       updated = {
         ...updated,
         chapterFrame: {
           objective: input.chapter_frame.objective,
           crucible: input.chapter_frame.crucible,
           refined: true,
+          lastRefinedAtTurn: turnCount,
           ...(input.chapter_frame.outcome_spectrum && { outcomeSpectrum: input.chapter_frame.outcome_spectrum }),
         },
       }
-      dbg(`Frame refined at turn ${turnCount}: "${input.chapter_frame.objective}"`)
+      dbg(`Frame refined at turn ${turnCount} (cooldown-ok, last=${lastRefinedAt ?? 'never'}): "${input.chapter_frame.objective}"`)
+    } else {
+      const reason = turnCount < 5 ? 'pre-turn-5' : !cooldownOk ? `cooldown (${turnCount - (lastRefinedAt ?? 0)} < 5 since last)` : !hasDefiningTrigger ? 'no defining trigger' : '?'
+      dbg(`Frame refinement rejected at turn ${turnCount}: ${reason}`)
     }
   }
 
@@ -264,19 +272,35 @@ export function applyNarrativeChanges(
       if (rejections.length > 0) {
         dbg(`ARC_CREATE_REJECTED id="${ca.id}" title="${title}" reasons=[${rejections.join('; ')}] payload=${JSON.stringify(ca)}`)
       } else {
-        // Dedup: match by ID, title similarity, or significant keyword overlap
+        // Dedup: match by ID, title similarity, or stakes similarity (catches the
+        // "relabeling" failure mode where two thematically-identical arcs get
+        // different titles and evade the title-overlap check).
+        const normalizeTokens = (s: string) =>
+          new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3))
+        const jaccard = (a: Set<string>, b: Set<string>) => {
+          if (a.size === 0 || b.size === 0) return 0
+          const intersect = [...a].filter(w => b.has(w)).length
+          const union = new Set([...a, ...b]).size
+          return intersect / union
+        }
         const newTitle = title.toLowerCase()
-        const newWords = new Set(newTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
+        const newTitleWords = normalizeTokens(newTitle)
+        const newStakesWords = normalizeTokens(stakes)
+        let matchReason = ''
         const existing = arcs.find(a => {
-          if (a.id === ca.id) return true
+          if (a.id === ca.id) { matchReason = 'id'; return true }
           const existingTitle = a.title.toLowerCase()
-          if (existingTitle === newTitle) return true
-          // Substring match (first 20 chars)
-          if (existingTitle.includes(newTitle.slice(0, 20)) || newTitle.includes(existingTitle.slice(0, 20))) return true
-          // Keyword overlap: if 2+ significant words match, it's likely the same arc
-          const existingWords = new Set(existingTitle.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3))
-          const overlap = [...newWords].filter(w => existingWords.has(w) || [...existingWords].some(ew => ew.startsWith(w) || w.startsWith(ew))).length
-          if (overlap >= 2) return true
+          if (existingTitle === newTitle) { matchReason = 'exact_title'; return true }
+          if (existingTitle.includes(newTitle.slice(0, 20)) || newTitle.includes(existingTitle.slice(0, 20))) { matchReason = 'title_substring'; return true }
+          const existingTitleWords = normalizeTokens(existingTitle)
+          const titleOverlap = [...newTitleWords].filter(w => existingTitleWords.has(w) || [...existingTitleWords].some(ew => ew.startsWith(w) || w.startsWith(ew))).length
+          if (titleOverlap >= 2) { matchReason = 'title_keyword_overlap'; return true }
+          // Stakes similarity: Jaccard on significant tokens. Catches relabeling.
+          if (a.stakesDefinition && stakes) {
+            const existingStakesWords = normalizeTokens(a.stakesDefinition)
+            const stakesSim = jaccard(newStakesWords, existingStakesWords)
+            if (stakesSim >= 0.6) { matchReason = `stakes_jaccard_${stakesSim.toFixed(2)}`; return true }
+          }
           return false
         })
         if (!existing) {
@@ -290,10 +314,11 @@ export function applyNarrativeChanges(
               status: i === 0 ? 'active' as const : 'pending' as const,
             })),
             ...(ca.outcome_spectrum && { outcomeSpectrum: ca.outcome_spectrum }),
+            ...(stakes && { stakesDefinition: stakes }),
           })
-          dbg(`ENTITY_WRITE add_arc result=new id=${ca.id} title="${ca.title}" episodes=${ca.episodes.length} spans_chapters=${ca.spans_chapters} stakes="${(ca.stakes_definition ?? '').slice(0, 80)}"`)
+          dbg(`ENTITY_WRITE add_arc result=new id=${ca.id} title="${ca.title}" episodes=${ca.episodes.length} spans_chapters=${ca.spans_chapters} stakes="${stakes.slice(0, 80)}"`)
         } else {
-          dbg(`ENTITY_WRITE add_arc result=dup_rejected id=${ca.id} matched_existing="${existing.id}"`)
+          dbg(`ENTITY_WRITE add_arc result=dup_rejected id=${ca.id} matched_existing="${existing.id}" reason=${matchReason}`)
         }
       }
     }

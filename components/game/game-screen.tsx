@@ -341,6 +341,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         setBudgetDialogOpen(true)
         isLoadingRef.current = false
         setIsLoading(false)
+        // Fire onError so callers (like runClosePhase) reject cleanly instead of
+        // hanging on an unresolved promise. Without this, hitting the demo cap
+        // during close leaves the overlay stuck in its loading state forever.
+        onError('Demo budget exhausted — top up your Anthropic credits or switch to your own API key.')
         return
       }
 

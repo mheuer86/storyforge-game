@@ -401,7 +401,8 @@ export interface OutcomeSpectrum {
 export interface ChapterFrame {
   objective: string
   crucible: string
-  refined?: boolean  // true after one mid-chapter refinement has been applied
+  refined?: boolean  // legacy; kept for backward compat. Prefer lastRefinedAtTurn.
+  lastRefinedAtTurn?: number  // player-turn count of the most recent mid-chapter refinement; used for cooldown gating
   outcomeSpectrum?: OutcomeSpectrum
   history?: ChapterFrameHistoryEntry[]  // prior frames captured by reframe
 }
@@ -496,6 +497,7 @@ export interface StoryArc {
   status: 'active' | 'resolved' | 'abandoned'
   episodes: Episode[]
   outcomeSpectrum?: OutcomeSpectrum  // arc-level outcome tiers
+  stakesDefinition?: string  // what this arc defines about the character's stance
 }
 
 export interface Episode {
