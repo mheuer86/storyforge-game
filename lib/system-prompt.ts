@@ -158,7 +158,17 @@ Read SCENE snapshot. It is ground truth for who is present and what has been est
 
 ## COMMIT_TURN DISCIPLINE
 
-Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. **MANDATORY: always include suggested_actions with 3-4 contextual options.** Every turn, without exception. These are the player's quick-action buttons. Only reference abilities, traits, and items the character ACTUALLY HAS (check TRAITS and GEAR in game state). Never suggest using a trait from a different class or playbook. Do not call any other tool besides commit_turn and meta_response.
+Write your narrative response. As the FINAL action, call commit_turn ONCE with ALL state changes for this turn. **MANDATORY: always include suggested_actions with 3-4 contextual options.** Every turn, without exception. These are the player's quick-action buttons. Only reference abilities, traits, and items the character ACTUALLY HAS (check TRAITS and GEAR in game state). Never suggest using a trait from a different class or playbook.
+
+**Suggested actions must be scene-valid.** Every action must be takeable from the PC's CURRENT position in the CURRENT scene. Read SCENE (sceneSnapshot) and LOCATION — those define who is present and where the PC is standing. Do NOT suggest:
+- Calling/contacting an NPC the PC is already face-to-face with
+- Going to a location not yet introduced in narrative
+- Meeting someone who isn't in the scene and hasn't been referenced as reachable
+- Using an item or trait the PC doesn't have
+
+If the scene is a conversation, suggest conversational beats (press, redirect, observe, leave). If the scene is physical, suggest physical beats (move, search, act). Actions are offered FROM where the PC stands, not from a map of everything possible in the world.
+
+Do not call any other tool besides commit_turn and meta_response.
 
 **pending_check BEFORE outcome.** Never narrate the result of an uncertain action. Include pending_check in commit_turn — the client pauses for the roll. All other state changes in the same commit_turn represent what already happened before the check. **Never have an NPC or the narrator announce that a roll is needed.** No character says "you'll need to roll for that" or "this requires a check." The dice widget appears silently. The fiction pauses at the moment of uncertainty; the mechanic handles the rest.
 
@@ -1596,6 +1606,16 @@ function compressGameState(gs: GameState, currentMessage?: string): string {
 
   const chapterLine = `CHAPTER ${gs.meta.chapterNumber}: ${gs.meta.chapterTitle}`
 
+  // Pin the opening hook into chapter 1's dynamic state. The hook text sets
+  // initial facts (named entities, locations, context) that the GM must treat
+  // as established. Without this, the turn-1 initial message falls out of the
+  // rolling history window around turn ~15, and later narration forgets
+  // turn-1 names (e.g. "Voss" introduced then later treated as unknown).
+  // Only rendered for chapter 1 — subsequent chapters have their own frame.
+  const openingHookLine = (gs.meta.chapterNumber === 1 && gs.meta.selectedHook)
+    ? `OPENING HOOK (established facts for this chapter): ${gs.meta.selectedHook}`
+    : ''
+
   // ── Pacing engine: act detection + scope signals + escalation ──
   const playerTurnCount = gs.history.messages.filter(m => m.role === 'player').length
   const scopeSignals = gs.scopeSignals ?? 0
@@ -1820,7 +1840,7 @@ CLOCKS: ${clocksLine}${timersLine}${heatLine}${shipSection}${operationSection}${
 
 ${combatSection}
 ${historySection}
-${chapterLine}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
+${chapterLine}${openingHookLine ? '\n' + openingHookLine : ''}${frameLine ? '\n' + frameLine : ''}${arcsLine ? '\n' + arcsLine : ''}${weakLine ? '\n' + weakLine : ''}${originPressureLine}${rulesSection}${gs._pendingSceneSummary ? '\n⚠ SCENE SUMMARY OWED: You changed location last turn without scene_end. Include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in this commit_turn.' : ''}${(gs as GameState & { _noCommitLastTurn?: boolean })._noCommitLastTurn ? '\n⚠ NO COMMIT_TURN LAST TURN. You MUST call commit_turn on EVERY response. Even if the only content is suggested_actions (3-4 options). A response without commit_turn breaks the game state.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'missing scene_end' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because you did not include scene_end: true. To close the chapter, you MUST include scene_end: true + scene_summary + tone_signature in the SAME commit_turn as signal_close. Retry now.' : ''}${(gs as GameState & { _signalCloseDeferred?: string })._signalCloseDeferred === 'pending_check' ? '\n⚠ SIGNAL_CLOSE WAS DEFERRED because pending_check was in the same commit_turn. Resolve the check first, then signal close on the next turn.' : ''}${currentMessage ? (() => {
     const primaryStat = Object.entries(c.stats).reduce((a, b) => a[1] > b[1] ? a : b)[0]
     const rollGate = detectRollGate(currentMessage, sceneNpcs, primaryStat)
     return rollGate ? '\n' + rollGate : ''

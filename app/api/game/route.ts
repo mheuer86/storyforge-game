@@ -401,7 +401,7 @@ export async function POST(req: NextRequest) {
 
         const followUpMessages: Anthropic.MessageParam[] = [
           ...loopResult.messages,
-          { role: 'user', content: 'You did not include suggested_actions in your commit_turn. Call commit_turn now with ONLY suggested_actions (3-4 contextual options for the player based on the current scene). No other fields needed.' },
+          { role: 'user', content: 'You did not include suggested_actions in your commit_turn. Call commit_turn now with ONLY suggested_actions (3-4 options takeable from the PC\'s current position in the current scene — check SCENE and LOCATION in game state; do not suggest calling NPCs the PC is already with, or going to locations not yet introduced). No other fields needed.' },
         ]
         const noop = () => {}  // suppress text streaming — this is a tool-only follow-up
         const followUp = await runToolLoop(systemPrompt, followUpMessages, noop, false, { tools, maxRounds: 1 })
@@ -526,17 +526,22 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          // Guard against pre/post-roll narration duplication. Claude's last
+          // assistant message already contains the pre-roll setup prose; the
+          // continuation must pick up AFTER that moment, not re-emit it.
+          const continuationNote = ' CONTINUATION: your pre-roll narration above ended at the moment of the attempt. Pick up from there — narrate only the outcome of the roll and what follows. Do NOT repeat or paraphrase any prose already emitted in your previous message.'
+
           // For auto-chained damage/healing rolls, the toolUseId was generated client-side
           // and has no matching tool_use in Claude's messages. Send as text instead of tool_result.
           const isAutoChained = toolUseId.startsWith('dmg-auto-')
           const resultContent: Anthropic.ContentBlockParam[] = isAutoChained
             ? [
                 ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-                { type: 'text' as const, text: resultText + alreadyAppliedNote },
+                { type: 'text' as const, text: resultText + alreadyAppliedNote + continuationNote },
               ]
             : [
                 ...((priorResults as Anthropic.ToolResultBlockParam[]) ?? []),
-                { type: 'tool_result' as const, tool_use_id: toolUseId, content: resultText + alreadyAppliedNote },
+                { type: 'tool_result' as const, tool_use_id: toolUseId, content: resultText + alreadyAppliedNote + continuationNote },
               ]
 
           const continuationMessages: Anthropic.MessageParam[] = [
