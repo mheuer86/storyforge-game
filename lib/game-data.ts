@@ -1,6 +1,7 @@
 import type { GameState, CharacterState, WorldState, ClueConnection } from './types'
 import { getGenreConfig, genres as genreList, type Genre, type Species, type CharacterClass } from './genre-config'
 import { findNpcIndexByName } from './npc-utils'
+import { runStage2Migration, formatMigrationReport } from './migrations/stage2'
 
 // Re-export types and data from genre-config so existing imports still work
 export type { Genre, Species, CharacterClass } from './genre-config'
@@ -418,9 +419,21 @@ export function loadGameState(): GameState | null {
       }
     }
     // Stamp schemaVersion on any save that doesn't have one. Defaults to 1;
-    // Stage 2 migration (when it ships) will bump to 2.
+    // Stage 2 migration (when it ships in write mode) will bump to 2.
     if (state.meta && typeof state.meta.schemaVersion !== 'number') {
       state.meta.schemaVersion = 1
+    }
+    // Stage 2 migrator — DRY RUN ONLY. Runs on every load where schemaVersion < 2,
+    // logs proposed backfill actions to console, does NOT modify state or bump
+    // the version. Part C will flip this to write mode once heuristic hit rates
+    // look acceptable across a diagnostic chapter or two.
+    if ((state.meta.schemaVersion ?? 1) < 2) {
+      try {
+        const result = runStage2Migration(state, { dryRun: true })
+        console.log(formatMigrationReport(result))
+      } catch (e) {
+        console.warn('[STAGE2_MIGRATION] dry-run failed:', e instanceof Error ? e.message : e)
+      }
     }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
