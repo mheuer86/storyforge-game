@@ -499,6 +499,8 @@ export interface StoryArc {
   episodes: Episode[]
   outcomeSpectrum?: OutcomeSpectrum  // arc-level outcome tiers
   stakesDefinition?: string  // what this arc defines about the character's stance
+  spansChapters?: number     // declared span at creation (>=3, validator-gated)
+  introducedInChapter?: number  // auto-set on create; avoids the lazy-episode gotcha
 }
 
 export interface Episode {
