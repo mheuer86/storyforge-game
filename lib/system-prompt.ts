@@ -351,28 +351,39 @@ Load can be positive (pride, shared victory) — it's everything that affects ho
 /**
  * Extract just the active class's trait rules from the full genre traitRules block.
  * Genre configs bundle ALL playbooks' rules into one string; loading every
- * playbook on every turn is pure bloat. This slices by class-name match where
- * possible, falling back to the full string when the genre's format doesn't
- * expose class names (e.g., grimdark uses trait-name-only bullets).
+ * playbook on every turn is pure bloat.
+ *
+ * Match strategy: find bullets with parentheses whose content contains any
+ * significant word from the character's class name (length > 3, word-boundary
+ * matched). Handles the noir case where "Investigative Journalist" gets
+ * abbreviated to "(Investigative)" in bullets, and the general case where the
+ * full class name is in parens. Falls back to the unmodified block when no
+ * matches are found (e.g., grimdark's flat trait-only bullets).
  */
 function sliceTraitRulesForClass(traitRules: string | undefined, className: string | undefined): string {
   if (!traitRules) return ''
   if (!className) return traitRules
-  const cls = className.trim()
-  if (!cls) return traitRules
+  // Significant tokens: length > 3, not stopwords.
+  const stopwords = new Set(['playbook', 'playbooks', 'class', 'trait', 'traits', 'rules'])
+  const classWords = className.split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 3 && !stopwords.has(w.toLowerCase()))
+  if (classWords.length === 0) return traitRules
 
-  // Match bullets that include the class name in parentheses:
-  // "- **TraitName (ClassName):** ..."
   const lines = traitRules.split('\n')
-  const matching: string[] = []
   const header = lines[0] // "## TRAIT RULES"
+  const matching: string[] = []
+  const wordRegexes = classWords.map(w => new RegExp(`\\b${w}\\b`, 'i'))
   for (const line of lines) {
-    // Match "(ClassName)" anywhere in the line, case-insensitive
-    const paren = new RegExp(`\\(\\s*${cls}\\s*\\)`, 'i')
-    if (paren.test(line)) matching.push(line)
+    const paren = line.match(/\(([^)]+)\)/)
+    if (!paren) continue
+    const parenText = paren[1]
+    if (wordRegexes.some(rx => rx.test(parenText))) matching.push(line)
   }
   if (matching.length === 0) {
-    // Class-name format not found; return full string unchanged
+    // Neither full nor abbreviated class name found in any bullet —
+    // the genre uses a format we can't parse (e.g., grimdark's flat list).
+    // Return full block so the GM still has guidance, just unscoped.
     return traitRules
   }
   return `${header}\n\n${matching.join('\n')}`
