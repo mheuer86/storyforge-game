@@ -417,6 +417,11 @@ export function loadGameState(): GameState | null {
         console.log(`[SF] migrated: stripped ${before - state.world.decisions.length} malformed decision(s)`)
       }
     }
+    // Stamp schemaVersion on any save that doesn't have one. Defaults to 1;
+    // Stage 2 migration (when it ships) will bump to 2.
+    if (state.meta && typeof state.meta.schemaVersion !== 'number') {
+      state.meta.schemaVersion = 1
+    }
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
     if (cleaned !== state) saveGameState(cleaned)

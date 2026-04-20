@@ -317,6 +317,9 @@ export function applyNarrativeChanges(
             ...(stakes && { stakesDefinition: stakes }),
           })
           dbg(`ENTITY_WRITE add_arc result=new id=${ca.id} title="${ca.title}" episodes=${ca.episodes.length} spans_chapters=${ca.spans_chapters} stakes="${stakes.slice(0, 80)}"`)
+          if (!(typeof ca.retrieval_cue === 'string' && ca.retrieval_cue.trim().length > 0)) {
+            dbg(`STAGE2_CUE_MISS kind=arc id=${ca.id} title="${ca.title}"`)
+          }
         } else {
           dbg(`ENTITY_WRITE add_arc result=dup_rejected id=${ca.id} matched_existing="${existing.id}" reason=${matchReason}`)
         }

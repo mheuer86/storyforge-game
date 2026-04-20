@@ -457,6 +457,7 @@ export interface SceneSummary {
 
 export interface MetaState {
   version: string
+  schemaVersion?: number  // narrative-entity schema version; undefined or 1 = pre-Stage-2, 2+ = post-migration. Defaulted on load.
   createdAt: string
   lastSaved: string
   chapterNumber: number
