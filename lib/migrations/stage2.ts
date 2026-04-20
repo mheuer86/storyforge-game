@@ -405,7 +405,8 @@ export function applyMigrationActions(state: GameState, result: MigrationResult)
 
 export function formatMigrationReport(result: MigrationResult): string {
   const lines: string[] = []
-  lines.push(`[STAGE2_MIGRATION] dry-run report: from=v${result.fromVersion} to=v${result.toVersion}`)
+  const mode = result.toVersion > result.fromVersion ? 'write' : 'dry-run'
+  lines.push(`[STAGE2_MIGRATION] ${mode} report: from=v${result.fromVersion} to=v${result.toVersion}`)
   lines.push(`[STAGE2_MIGRATION] entities=${result.stats.entityCount} actions=${result.actions.length} reviews=${result.reviews.length}`)
   lines.push(`[STAGE2_MIGRATION] by_kind: ${Object.entries(result.stats.actionsByKind).map(([k, v]) => `${k}=${v}`).join(' ')}`)
   lines.push(`[STAGE2_MIGRATION] by_confidence: high=${result.stats.actionsByConfidence.high} medium=${result.stats.actionsByConfidence.medium} low=${result.stats.actionsByConfidence.low}`)
