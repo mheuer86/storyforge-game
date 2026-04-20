@@ -340,7 +340,6 @@ export function runStage2Migration(state: GameState, options: MigrationOptions):
     actionsByConfidence[a.confidence]++
   }
 
-  void options.dryRun  // future: gate the actual write path here
   return {
     fromVersion: currentVersion,
     toVersion: options.dryRun ? currentVersion : targetVersion,
@@ -348,6 +347,58 @@ export function runStage2Migration(state: GameState, options: MigrationOptions):
     reviews,
     stats: { entityCount, actionsByKind, actionsByConfidence },
   }
+}
+
+// ── Apply migration actions to a state clone ────────────────
+//
+// Mutates a deep clone of state, applies each action to the matching entity,
+// bumps schemaVersion to the target. Returns the migrated state.
+// Low- and medium-confidence actions are applied; the dry-run output has
+// already been tuned so only high-signal actions survive (post-Part-B tweaks).
+
+export function applyMigrationActions(state: GameState, result: MigrationResult): GameState {
+  // JSON-clone is safe here: GameState is POJOs (no Dates, no Sets, no cycles)
+  const next = JSON.parse(JSON.stringify(state)) as GameState
+
+  const parseArray = (s: string | null): string[] =>
+    typeof s === 'string' && s.length > 0 ? s.split(',').map(x => x.trim()).filter(Boolean) : []
+
+  for (const a of result.actions) {
+    if (a.proposedValue == null) continue
+    switch (a.kind) {
+      case 'thread': {
+        const t = (next.world.threads ?? []).find(x => x.id === a.id) as (Thread & Record<string, unknown>) | undefined
+        if (!t) break
+        if (a.field === 'owner') t.owner = a.proposedValue
+        else if (a.field === 'resolution_criteria') t.resolution_criteria = a.proposedValue
+        else if (a.field === 'failure_mode') t.failure_mode = a.proposedValue
+        else if (a.field === 'relevant_npcs') t.relevant_npcs = parseArray(a.proposedValue)
+        break
+      }
+      case 'decision': {
+        const d = (next.world.decisions ?? []).find(x => x.id === a.id) as (Decision & Record<string, unknown>) | undefined
+        if (!d) break
+        if (a.field === 'anchored_to') d.anchored_to = parseArray(a.proposedValue)
+        break
+      }
+      case 'promise': {
+        const p = (next.world.promises ?? []).find(x => x.id === a.id) as (Promise & Record<string, unknown>) | undefined
+        if (!p) break
+        if (a.field === 'anchored_to') p.anchored_to = parseArray(a.proposedValue)
+        break
+      }
+      case 'clue': {
+        const c = (next.world.notebook?.clues ?? []).find(x => x.id === a.id) as (Clue & Record<string, unknown>) | undefined
+        if (!c) break
+        if (a.field === 'anchored_to') c.anchored_to = parseArray(a.proposedValue)
+        break
+      }
+      // arc/npc/faction have no applyable fields post-tweaks
+    }
+  }
+
+  next.meta.schemaVersion = result.toVersion
+  return next
 }
 
 // ── Console-friendly formatter for dry-run output ───────────

@@ -796,6 +796,8 @@ The spectrum must be specific to this chapter's situation. HIDDEN from the playe
 
 **Examples of arcs:** "Remember the dead and protect the exploited" (campaign thesis, no single resolution). "Initiation into the Ashen Court" (relationship arc, evolves through episodes).
 
+**Examples illustrate shape, not template.** Never reuse example phrasing verbatim in a real arc. Generate titles and stakes from THIS campaign's character, genre, and opening hook — not from the examples above. If you find yourself writing "Remember the dead and protect the exploited" for a cyberpunk ripperdoc or a fantasy knight, stop and author something specific to the actual protagonist and their world.
+
 **Examples of NOT arcs despite feeling important:** "Find Oriane" (thread — one rescue resolves it). "Protect Dallian" (thread — has a deadline and a specific resolution). "The Grey Book" (inventory item with thematic weight, carried by promises and witness marks).
 
 When you do create an arc via arc_updates.create_arc: provide 2-4 episode milestones, spans_chapters >= 3, a stakes_definition (what this defines about the character's stance in the world — must not duplicate the title), and leave resolving_action as null. The chapter frame objective = the FIRST episode's milestone, not the arc goal. Each chapter is one episode. When the episode's milestone is met, signal_close.

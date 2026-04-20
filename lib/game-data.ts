@@ -1,7 +1,7 @@
 import type { GameState, CharacterState, WorldState, ClueConnection } from './types'
 import { getGenreConfig, genres as genreList, type Genre, type Species, type CharacterClass } from './genre-config'
 import { findNpcIndexByName } from './npc-utils'
-import { runStage2Migration, formatMigrationReport } from './migrations/stage2'
+import { runStage2Migration, formatMigrationReport, applyMigrationActions } from './migrations/stage2'
 
 // Re-export types and data from genre-config so existing imports still work
 export type { Genre, Species, CharacterClass } from './genre-config'
@@ -295,12 +295,47 @@ function deduplicateNpcs(state: GameState): GameState {
   return { ...state, world: { ...state.world, npcs: merged } }
 }
 
+/**
+ * Stamps schemaVersion on a loaded state and runs Stage 2 migration (write mode)
+ * when needed. Idempotent: once schemaVersion is 2+, returns the state unchanged.
+ * Used by loadGameState (page-load) AND handleLoad in the UI (save-slot-switch)
+ * so the migrator fires regardless of how state enters the app.
+ */
+export function ensureSchemaVersionAndMigrate(input: GameState): GameState {
+  let state = input
+  if (state.meta && typeof state.meta.schemaVersion !== 'number') {
+    state.meta.schemaVersion = 1
+  }
+  if ((state.meta.schemaVersion ?? 1) < 2) {
+    try {
+      const result = runStage2Migration(state, { dryRun: false })
+      console.log(formatMigrationReport(result))
+      if (result.actions.length > 0 || result.toVersion !== result.fromVersion) {
+        try {
+          localStorage.setItem('storyforge_premigration_v1_v2', JSON.stringify({
+            savedAt: new Date().toISOString(),
+            state,
+          }))
+        } catch { /* localStorage full — proceed without snapshot */ }
+        state = applyMigrationActions(state, result)
+        console.log(`[STAGE2_MIGRATION] applied ${result.actions.length} action(s), schemaVersion=${state.meta.schemaVersion}`)
+      } else {
+        state.meta.schemaVersion = 2
+        console.log(`[STAGE2_MIGRATION] no actions; schemaVersion bumped to 2`)
+      }
+    } catch (e) {
+      console.warn('[STAGE2_MIGRATION] failed:', e instanceof Error ? e.message : e)
+    }
+  }
+  return state
+}
+
 export function loadGameState(): GameState | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const state = JSON.parse(raw) as GameState
+    let state = JSON.parse(raw) as GameState
     // Migrate saves that predate skillPoints
     if (!state.character.skillPoints) {
       state.character.skillPoints = { available: 0, log: [] }
@@ -418,23 +453,7 @@ export function loadGameState(): GameState | null {
         console.log(`[SF] migrated: stripped ${before - state.world.decisions.length} malformed decision(s)`)
       }
     }
-    // Stamp schemaVersion on any save that doesn't have one. Defaults to 1;
-    // Stage 2 migration (when it ships in write mode) will bump to 2.
-    if (state.meta && typeof state.meta.schemaVersion !== 'number') {
-      state.meta.schemaVersion = 1
-    }
-    // Stage 2 migrator — DRY RUN ONLY. Runs on every load where schemaVersion < 2,
-    // logs proposed backfill actions to console, does NOT modify state or bump
-    // the version. Part C will flip this to write mode once heuristic hit rates
-    // look acceptable across a diagnostic chapter or two.
-    if ((state.meta.schemaVersion ?? 1) < 2) {
-      try {
-        const result = runStage2Migration(state, { dryRun: true })
-        console.log(formatMigrationReport(result))
-      } catch (e) {
-        console.warn('[STAGE2_MIGRATION] dry-run failed:', e instanceof Error ? e.message : e)
-      }
-    }
+    state = ensureSchemaVersionAndMigrate(state)
     const cleaned = deduplicateNpcs(state)
     // Persist the cleanup immediately if anything changed
     if (cleaned !== state) saveGameState(cleaned)
