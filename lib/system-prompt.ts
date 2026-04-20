@@ -814,16 +814,17 @@ Creation is rejected at the handler if: episodes outside 2-4, spans_chapters < 3
 - Turn 15 without crucible → skip to it. An NPC forces the issue or a clock triggers.
 - Turn 20 → begin wrapping regardless. Find the nearest close point.
 
-## NARRATIVE ENTITY HIERARCHY (Stage 1 — measurement in progress)
+## NARRATIVE ENTITY HIERARCHY (measurement in progress)
 
-Threads, promises, decisions, and clues are becoming structured. When you create them, populate the new optional fields so we can build the hierarchy:
+Threads, promises, decisions, clues, NPCs, factions, and arcs are becoming structured. When you create them, populate the new optional fields so we can build the hierarchy:
 
 - **Threads** (\`world.add_threads\`): provide \`owner\` (the NPC name or faction driving the tension — never "unknown"; if you cannot name an owner, the thread is not ready), \`resolution_criteria\` (what would resolve it), \`failure_mode\` (what happens if ignored), and \`relevant_npcs\` (secondary NPCs whose presence makes it surface).
 - **Promises** (\`world.add_promise\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this commitment locks into shape.
 - **Decisions** (\`world.add_decision\`): provide \`anchored_to\` — an array of thread IDs (or arc IDs) this choice constrains.
 - **Clues** (\`world.add_clues\`): provide \`anchored_to\` — an array of thread IDs this fact constrains.
+- **Retrieval cues (NEW — every entity type): \`retrieval_cue\`.** One short line per entity that tells a future GM *when this entity becomes relevant* — not identity, not description, but a salience pointer. Examples: an NPC's retrieval_cue is "knows the Maren case"; a thread's is "every scene at the courthouse reads through this"; a decision's is "any scene testing whether the PC will honor the promise to Oriane". This is what makes indexes searchable. Without it, a future scene sees a list of names and has to rebuild the context for each one. Keep it short and specific; it's a pointer, not a summary.
 
-These are not yet required — writes still go through. Missing values are logged to debug (STAGE1_THREAD_MISS, STAGE1_ANCHOR_MISS) so we can measure how often the GM knows the hierarchy at write time. Populate them when you know; leave them out when you don't.
+These are not yet required — writes still go through. Missing values are logged to debug (STAGE1_THREAD_MISS, STAGE1_ANCHOR_MISS, STAGE2_CUE_MISS) so we can measure how often the GM knows the hierarchy at write time. Populate them when you know; leave them out when you don't.
 
 ## REFRAMING MID-CHAPTER
 

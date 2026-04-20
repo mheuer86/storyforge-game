@@ -693,11 +693,13 @@ export async function POST(req: NextRequest) {
 
 ## CONTEXTUAL EXTRACTIONS (require conversation history)
 
-**Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating. When adding a new thread, populate Stage 1 fields when they can be inferred from the narrative: owner (the NPC name or faction driving it — not "unknown"), resolution_criteria (what would resolve it), failure_mode (what happens if ignored), relevant_npcs (secondary NPCs whose presence surfaces it). If you cannot infer a field, omit it; missing values are logged for measurement.
+**Threads** — Did an existing thread advance? Check active threads in state and compare. Did a NEW storyline emerge from this turn's events? Add it. Threads that were mentioned but unchanged do NOT need updating. When adding a new thread, populate Stage 1 fields when they can be inferred from the narrative: owner (the NPC name or faction driving it — not "unknown"), resolution_criteria (what would resolve it), failure_mode (what happens if ignored), relevant_npcs (secondary NPCs whose presence surfaces it), and retrieval_cue (when this thread becomes worth pulling back into a scene — e.g., "every scene at the courthouse reads through this"). If you cannot infer a field, omit it; missing values are logged for measurement.
 
-**Promises** — Did the PC commit to something, or fulfill/break a prior commitment? Check active promises in state. When adding a new promise, populate anchored_to with the thread ID(s) or arc ID(s) this commitment locks into shape. Missing anchors are logged.
+**Promises** — Did the PC commit to something, or fulfill/break a prior commitment? Check active promises in state. When adding a new promise, populate anchored_to with the thread ID(s) or arc ID(s) this commitment locks into shape, and retrieval_cue (when the promise should surface). Missing values are logged.
 
-**Decisions** — Did the PC make a choice that closes off alternatives? (alliances, accusations, commitments, moral choices) These are player-driven, not GM-driven. When adding a new decision, populate anchored_to with the thread ID(s) or arc ID(s) this choice constrains. Missing anchors are logged.
+**Decisions** — Did the PC make a choice that closes off alternatives? (alliances, accusations, commitments, moral choices) These are player-driven, not GM-driven. When adding a new decision, populate anchored_to with the thread ID(s) or arc ID(s) this choice constrains, and retrieval_cue (what future scene should recall this). Missing values are logged.
+
+**Retrieval cues on new entities (NPCs, clues, factions, arcs).** When writing a new entity, also provide retrieval_cue — one short line naming when this entity becomes relevant in a future scene. Not a description or title, a salience pointer ("knows the Maren case", "holds access to the Synod archive"). Missing values are logged as STAGE2_CUE_MISS.
 
 **Clocks** — Should a tension clock tick? Check active clocks — if the narrative describes progress or setback toward a clock's trigger, advance it.
 

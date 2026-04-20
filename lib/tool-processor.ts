@@ -56,17 +56,17 @@ export interface CommitTurnInput {
     roll_breakdown?: RollBreakdown
   }
   world?: {
-    add_npcs?: { name: string; description: string; last_seen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; relations?: { name: string; type: string }[]; key_facts?: string[] }[]
+    add_npcs?: { name: string; description: string; last_seen: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; relations?: { name: string; type: string }[]; key_facts?: string[]; retrieval_cue?: string }[]
     update_npcs?: { name: string; description?: string; last_seen?: string; relationship?: string; role?: 'crew' | 'contact' | 'npc'; subtype?: 'person' | 'vessel' | 'installation'; vulnerability?: string; disposition?: DispositionTier; affiliation?: string; status?: 'active' | 'dead' | 'defeated' | 'gone'; voice_note?: string; combat_tier?: 1 | 2 | 3 | 4 | 5; combat_notes?: string; temp_load_add?: { description: string; severity: 'mild' | 'moderate' | 'severe'; acquired: string }[]; temp_load_remove?: string; add_signature_line?: string; add_relation?: { name: string; type: string }; remove_relation?: string; add_key_fact?: string }[]
     set_location?: { name: string; description: string }
     set_current_time?: string
     set_scene_snapshot?: string
-    add_threads?: { id: string; title: string; status: string; deteriorating: boolean; owner?: string; resolution_criteria?: string; failure_mode?: string; relevant_npcs?: string[] }[]
+    add_threads?: { id: string; title: string; status: string; deteriorating: boolean; owner?: string; resolution_criteria?: string; failure_mode?: string; relevant_npcs?: string[]; retrieval_cue?: string }[]
     update_threads?: { id: string; title?: string; status: string; deteriorating?: boolean }[]
-    add_faction?: { name: string; stance: string }
-    add_promise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; anchored_to?: string[] }
+    add_faction?: { name: string; stance: string; retrieval_cue?: string }
+    add_promise?: { id: string; to: string; what: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; anchored_to?: string[]; retrieval_cue?: string }
     update_promise?: { id?: string; to?: string; status: 'open' | 'strained' | 'fulfilled' | 'broken'; what?: string }
-    add_decision?: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; witnessed?: boolean; anchored_to?: string[] }
+    add_decision?: { id: string; summary: string; context: string; category: 'moral' | 'tactical' | 'strategic' | 'relational'; witnessed?: boolean; anchored_to?: string[]; retrieval_cue?: string }
     update_decision?: { id: string; status: 'active' | 'superseded' | 'abandoned'; reason?: string }
     set_operation?: { name: string; phase: string; objectives: ({ text: string; status?: string } | string)[]; tactical_facts?: string[]; asset_constraints?: string[]; abort_conditions?: string[]; signals?: string[]; assessments?: { claim: string; skill: string; result: number; confidence: string; rolled: boolean }[] } | null
     set_exploration?: { facility_name: string; status: string; hostile: boolean; explored: { name: string; notes: string }[]; current: { name: string; description: string }; unexplored: { name: string; hints: string }[]; resources: { name: string; current: string }[]; alert_level?: string } | null
@@ -79,7 +79,7 @@ export interface CommitTurnInput {
     antagonist?: { action: 'establish' | 'move' | 'defeat'; name?: string; description?: string; agenda?: string; move_description?: string; status?: 'defeated' | 'dead' | 'fled' }
     ship?: { hull_condition_delta?: number; upgrade_system?: { id: string; new_level: number; description: string }; add_combat_option?: string; upgrade_log_entry?: string }
     clocks?: { action: 'establish' | 'advance' | 'trigger' | 'resolve'; id: string; name?: string; max_segments?: 4 | 6; trigger_effect?: string; by?: number; reason?: string; consequence?: string; how?: string }[]
-    add_clues?: { clue_id?: string; title?: string; content: string; source: string; tags: string[]; is_red_herring?: boolean; thread_title?: string; status?: 'active' | 'solved' | 'archived'; anchored_to?: string[] }[]
+    add_clues?: { clue_id?: string; title?: string; content: string; source: string; tags: string[]; is_red_herring?: boolean; thread_title?: string; status?: 'active' | 'solved' | 'archived'; anchored_to?: string[]; retrieval_cue?: string }[]
     connect_clues?: { connection_id?: string; source_ids?: string[]; title: string; revelation?: string; status?: 'active' | 'solved' | 'archived' | 'disproven' }[]
   }
   combat?: {
@@ -102,7 +102,7 @@ export interface CommitTurnInput {
   objective_status?: 'in_progress' | 'resolved' | 'failed'
   pivotal_scenes?: { title: string; text: string }[]
   arc_updates?: {
-    create_arc?: { id: string; title: string; episodes: string[]; spans_chapters?: number; stakes_definition?: string; resolving_action?: null; outcome_spectrum?: { clean: string; costly: string; failure: string; catastrophic: string } }
+    create_arc?: { id: string; title: string; episodes: string[]; spans_chapters?: number; stakes_definition?: string; resolving_action?: null; outcome_spectrum?: { clean: string; costly: string; failure: string; catastrophic: string }; retrieval_cue?: string }
     advance_episode?: { arc_id: string; summary: string }
     resolve_arc?: { arc_id: string }
     abandon_arc?: { arc_id: string; reason: string }
@@ -219,11 +219,12 @@ export function applyToolResults(
       // Post-turn: detect NPC relationship inconsistencies and stale locations
       detectNpcDrift(updated, input)
 
-      // Stage 1 summary: one line per commit_turn showing entity write counts and
-      // Stage 1 validation misses. Makes rejection rates computable with a grep
-      // over the 4-chapter diagnostic debug log.
+      // Stage 1 + Stage 2 summary: one line per commit_turn showing entity write
+      // counts, Stage 1 hierarchy misses, and Stage 2 retrieval_cue misses.
+      // Makes rejection rates computable with a grep over the diagnostic log.
       {
         const w = input.world
+        const cueEmpty = (s: unknown) => !(typeof s === 'string' && s.trim().length > 0)
         const threadCount = w?.add_threads?.length ?? 0
         const threadMiss = (w?.add_threads ?? []).filter(t => {
           const owner = typeof t.owner === 'string' ? t.owner.trim().toLowerCase() : ''
@@ -232,15 +233,29 @@ export function applyToolResults(
           const fmBad = !(typeof t.failure_mode === 'string' && t.failure_mode.trim().length > 0)
           return ownerBad || rcBad || fmBad
         }).length
+        const threadCueMiss = (w?.add_threads ?? []).filter(t => cueEmpty(t.retrieval_cue)).length
         const promiseCount = w?.add_promise ? 1 : 0
         const promiseMiss = (w?.add_promise && !(Array.isArray(w.add_promise.anchored_to) && w.add_promise.anchored_to.length > 0)) ? 1 : 0
+        const promiseCueMiss = (w?.add_promise && cueEmpty(w.add_promise.retrieval_cue)) ? 1 : 0
         const decisionCount = w?.add_decision ? 1 : 0
         const decisionMiss = (w?.add_decision && !(Array.isArray(w.add_decision.anchored_to) && w.add_decision.anchored_to.length > 0)) ? 1 : 0
+        const decisionCueMiss = (w?.add_decision && cueEmpty(w.add_decision.retrieval_cue)) ? 1 : 0
         const clueCount = w?.add_clues?.length ?? 0
         const clueMiss = (w?.add_clues ?? []).filter(c => !c.clue_id && !(Array.isArray(c.anchored_to) && c.anchored_to.length > 0)).length
+        const clueCueMiss = (w?.add_clues ?? []).filter(c => !c.clue_id && cueEmpty(c.retrieval_cue)).length
+        const npcCount = w?.add_npcs?.length ?? 0
+        const npcCueMiss = (w?.add_npcs ?? []).filter(n => cueEmpty(n.retrieval_cue)).length
+        const factionCount = w?.add_faction ? 1 : 0
+        const factionCueMiss = (w?.add_faction && cueEmpty(w.add_faction.retrieval_cue)) ? 1 : 0
         const arcCount = input.arc_updates?.create_arc ? 1 : 0
+        const arcCueMiss = (input.arc_updates?.create_arc && cueEmpty(input.arc_updates.create_arc.retrieval_cue)) ? 1 : 0
+        const totalCues = threadCount + promiseCount + decisionCount + clueCount + npcCount + factionCount + arcCount
+        const cueMissTotal = threadCueMiss + promiseCueMiss + decisionCueMiss + clueCueMiss + npcCueMiss + factionCueMiss + arcCueMiss
         if (threadCount + promiseCount + decisionCount + clueCount + arcCount > 0) {
           dbg(`STAGE1_SUMMARY threads=${threadCount}(miss=${threadMiss}) promises=${promiseCount}(miss=${promiseMiss}) decisions=${decisionCount}(miss=${decisionMiss}) clues=${clueCount}(miss=${clueMiss}) arcs=${arcCount}`)
+        }
+        if (totalCues > 0) {
+          dbg(`STAGE2_SUMMARY entities=${totalCues} cue_miss=${cueMissTotal} (threads=${threadCueMiss}/${threadCount}, promises=${promiseCueMiss}/${promiseCount}, decisions=${decisionCueMiss}/${decisionCount}, clues=${clueCueMiss}/${clueCount}, npcs=${npcCueMiss}/${npcCount}, factions=${factionCueMiss}/${factionCount}, arcs=${arcCueMiss}/${arcCount})`)
         }
       }
     }

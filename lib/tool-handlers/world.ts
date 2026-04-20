@@ -41,6 +41,10 @@ export function applyWorldChanges(
       } else {
         world.npcs = [...world.npcs, npc]
         statChanges.push({ type: 'new', label: `Met: ${npc.name}` })
+        // Stage 2 soft-validation: retrieval_cue on new NPCs
+        if (!(typeof n.retrieval_cue === 'string' && n.retrieval_cue.trim().length > 0)) {
+          dbg(`STAGE2_CUE_MISS kind=npc name="${npc.name}" role=${npc.role ?? 'unspecified'}`)
+        }
       }
       if (npc.affiliation && !world.factions.some((f) => f.name === npc.affiliation)) {
         // Derive initial faction stance from the NPC's disposition
@@ -196,6 +200,10 @@ export function applyWorldChanges(
       if (miss.length > 0) {
         dbg(`STAGE1_THREAD_MISS id=${thread.id} title="${thread.title}" missing=[${miss.join('; ')}] payload=${JSON.stringify(thread)}`)
       }
+      // Stage 2 soft-validation: retrieval_cue
+      if (!(typeof thread.retrieval_cue === 'string' && thread.retrieval_cue.trim().length > 0)) {
+        dbg(`STAGE2_CUE_MISS kind=thread id=${thread.id} title="${thread.title}"`)
+      }
       const existingThread = world.threads.find((t) => t.title === thread.title)
       if (existingThread) {
         world.threads = world.threads.map((t) =>
@@ -220,23 +228,30 @@ export function applyWorldChanges(
 
   // ── Factions ──
   if (input.add_faction) {
-    const exists = world.factions.find((f) => f.name === input.add_faction!.name)
+    const af = input.add_faction
+    const exists = world.factions.find((f) => f.name === af.name)
     if (exists) {
       world.factions = world.factions.map((f) =>
-        f.name === input.add_faction!.name ? { ...f, stance: input.add_faction!.stance } : f
+        f.name === af.name ? { ...f, stance: af.stance } : f
       )
     } else {
-      world.factions = [...world.factions, input.add_faction]
+      world.factions = [...world.factions, { name: af.name, stance: af.stance }]
+      if (!(typeof af.retrieval_cue === 'string' && af.retrieval_cue.trim().length > 0)) {
+        dbg(`STAGE2_CUE_MISS kind=faction name="${af.name}"`)
+      }
     }
   }
 
   // ── Promises ──
   if (input.add_promise) {
-    // Stage 1 soft-validation
+    // Stage 1 + 2 soft-validation
     const ap = input.add_promise
     const anchorCount = Array.isArray(ap.anchored_to) ? ap.anchored_to.length : 0
     if (anchorCount === 0) {
       dbg(`STAGE1_ANCHOR_MISS kind=promise id=${ap.id} to="${ap.to}" what="${String(ap.what).slice(0, 80)}"`)
+    }
+    if (!(typeof ap.retrieval_cue === 'string' && ap.retrieval_cue.trim().length > 0)) {
+      dbg(`STAGE2_CUE_MISS kind=promise id=${ap.id} to="${ap.to}"`)
     }
     const existingPromise = world.promises.find((p) => p.id === input.add_promise!.id || (p.to === input.add_promise!.to && p.what === input.add_promise!.what))
     if (existingPromise) {
@@ -284,6 +299,10 @@ export function applyWorldChanges(
       const anchorCount = Array.isArray(ad.anchored_to) ? ad.anchored_to.length : 0
       if (anchorCount === 0) {
         dbg(`STAGE1_ANCHOR_MISS kind=decision id=${ad.id} category=${ad.category} summary="${String(ad.summary).slice(0, 80)}"`)
+      }
+      // Stage 2 soft-validation: retrieval_cue
+      if (!(typeof ad.retrieval_cue === 'string' && ad.retrieval_cue.trim().length > 0)) {
+        dbg(`STAGE2_CUE_MISS kind=decision id=${ad.id} category=${ad.category}`)
       }
     }
   }
@@ -671,6 +690,9 @@ export function applyWorldChanges(
       const anchorCount = Array.isArray(clueInput.anchored_to) ? clueInput.anchored_to.length : 0
       if (anchorCount === 0 && !clueInput.clue_id) {
         dbg(`STAGE1_ANCHOR_MISS kind=clue title="${clueInput.title ?? ''}" source="${clueInput.source}" (acceptable for floating clues)`)
+      }
+      if (!clueInput.clue_id && !(typeof clueInput.retrieval_cue === 'string' && clueInput.retrieval_cue.trim().length > 0)) {
+        dbg(`STAGE2_CUE_MISS kind=clue title="${clueInput.title ?? ''}" source="${clueInput.source}"`)
       }
       const notebook = world.notebook ?? { activeThreadTitle: '', clues: [], connections: [] }
 
