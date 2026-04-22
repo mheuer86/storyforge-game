@@ -23,12 +23,30 @@ import { getGenreConfig, type Genre } from './genre-config'
  * prefix. On turns where the situation module is stable, the full prefix
  * (core + situation) caches together.
  */
+/**
+ * Returns the four prompt components that feed different positions in the API request:
+ *   - core        → 1st system block (cached)
+ *   - situation   → 2nd system block (cached)
+ *   - stateContext→ message-role injection (NOT a system block anymore);
+ *                   goes into messages[] right before the player turn so it
+ *                   doesn't poison the BP4 cache prefix
+ *   - sysInstructions → optional 3rd system block (meta/consistency authority).
+ *                       Present only when needed; empty string on normal turns
+ *                       so the common path has two system blocks.
+ *
+ * Why stateContext moved out of system: DYNAMIC (compressed game state) used
+ * to live as system[2]. Because system comes before messages in the cache
+ * order and DYNAMIC changes every turn, the BP4 message cache marker never
+ * hit — every turn rewrote DYNAMIC + the full message history as cache_write.
+ * With stateContext in messages, the stable system prefix caches cleanly and
+ * BP4 only writes the incremental GM message per turn.
+ */
 export function buildSystemPrompt(
   gameState: GameState,
   isMetaQuestion: boolean,
   flaggedMessage?: string,
   currentMessage?: string
-): [string, string, string] {
+): { core: string; situation: string; stateContext: string; sysInstructions: string } {
   const compressedState = compressGameState(gameState, isMetaQuestion ? undefined : currentMessage)
   const genre = (gameState.meta.genre || 'space-opera') as Genre
   const config = getGenreConfig(genre)
@@ -40,25 +58,24 @@ export function buildSystemPrompt(
     : ''
 
   const metaInstruction = isMetaQuestion
-    ? `\n\nMETA QUESTION MODE: The player is asking an out-of-character question.\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.${devModeBlock}`
+    ? `META QUESTION MODE: The player is asking an out-of-character question.\n\nDefault meta behavior: Answer directly and factually from the game state. Do NOT advance the story, trigger any rolls, or call any tool except meta_response. Be brief and direct. After answering, call meta_response with your answer.${devModeBlock}`
     : ''
 
   const consistencyInstruction = flaggedMessage
-    ? `\n\nCONSISTENCY CHECK: The player has flagged the following GM response as potentially incorrect:\n\n"${flaggedMessage}"\n\nCompare this response carefully against the current game state above. Check for: wrong HP or stat values, items in inventory that don't exist, NPCs described incorrectly, locations that contradict the state, lore that contradicts established facts. If you find an error, state it clearly and give the correct version. If the response was accurate, confirm it briefly. Do NOT advance the story. Call meta_response with your finding.`
+    ? `CONSISTENCY CHECK: The player has flagged the following GM response as potentially incorrect:\n\n"${flaggedMessage}"\n\nCompare this response carefully against the current game state (injected as a user-role message). Check for: wrong HP or stat values, items in inventory that don't exist, NPCs described incorrectly, locations that contradict the state, lore that contradicts established facts. If you find an error, state it clearly and give the correct version. If the response was accurate, confirm it briefly. Do NOT advance the story. Call meta_response with your finding.`
     : ''
 
-  // --- Layer 1: Universal core (cacheable across turns, chapters, campaigns) ---
   const core = buildCoreLayer(genre, config, ps, gameState.character.class)
-
-  // --- Layer 2: Situation module (changes when context flips) ---
   const situation = selectSituationModule(context, genre, gameState, config, ps)
 
-  // --- Layer 3: Dynamic state (changes every turn) ---
-  const dynamicPrompt = `## CURRENT GAME STATE
+  // Game state rides in messages, not system, so cache BP4 can hit.
+  const stateContext = `## CURRENT GAME STATE\n\n${compressedState}`
 
-${compressedState}${metaInstruction}${consistencyInstruction}`
+  // Conditional 3rd system block for meta/consistency authority. Empty on
+  // normal turns. When populated it's short (~300 tokens) and call-type-stable.
+  const sysInstructions = [metaInstruction, consistencyInstruction].filter(Boolean).join('\n\n')
 
-  return [core, situation, dynamicPrompt]
+  return { core, situation, stateContext, sysInstructions }
 }
 
 // ============================================================
@@ -1844,7 +1861,8 @@ const OPERATION_TOKEN_BOOST = 1000  // Extra budget during active ops
 export function buildMessagesForClaude(
   gameState: GameState,
   currentMessage: string,
-  isMetaQuestion: boolean
+  isMetaQuestion: boolean,
+  stateContext?: string,
 ): Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> {
   const allMessages = gameState.history.messages
   const messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> }> = []
@@ -1926,8 +1944,10 @@ export function buildMessagesForClaude(
   }
 
   // Cache breakpoint: mark the last "old" message before the new player input.
-  // The prefix (system + tools + old history) stays identical between turns,
+  // The prefix (tools + system + old history) stays identical between turns,
   // so Anthropic's prefix cache hits on everything before this breakpoint.
+  // IMPORTANT: state context is injected AFTER this marker so it doesn't
+  // poison the cached prefix (state changes every turn).
   if (messages.length >= 2) {
     const lastOld = messages[messages.length - 1]
     const text = typeof lastOld.content === 'string' ? lastOld.content : lastOld.content[0]?.text ?? ''
@@ -1937,8 +1957,12 @@ export function buildMessagesForClaude(
     }
   }
 
-  // Dynamic state is now in a second system block (system-level authority,
-  // can't be overridden by user input). Messages are just the player's action.
+  // Inject compressed game state as a user-role message right before the
+  // player's turn. System blocks stay stable and cache; the per-turn volatile
+  // state rides in messages where it doesn't invalidate the BP4 prefix.
+  if (stateContext) {
+    messages.push({ role: 'user', content: stateContext })
+  }
   const prefix = isMetaQuestion ? '[META] ' : ''
   const sceneReminder = gameState._pendingSceneSummary
     ? '\n[SYSTEM: You changed location last turn without scene_end. You MUST include scene_end: true, scene_summary (2-4 sentences covering the PREVIOUS scene), and tone_signature in your commit_turn this turn.]'
