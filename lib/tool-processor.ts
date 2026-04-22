@@ -218,46 +218,8 @@ export function applyToolResults(
 
       // Post-turn: detect NPC relationship inconsistencies and stale locations
       detectNpcDrift(updated, input)
-
-      // Stage 1 + Stage 2 summary: one line per commit_turn showing entity write
-      // counts, Stage 1 hierarchy misses, and Stage 2 retrieval_cue misses.
-      // Makes rejection rates computable with a grep over the diagnostic log.
-      {
-        const w = input.world
-        const cueEmpty = (s: unknown) => !(typeof s === 'string' && s.trim().length > 0)
-        const threadCount = w?.add_threads?.length ?? 0
-        const threadMiss = (w?.add_threads ?? []).filter(t => {
-          const owner = typeof t.owner === 'string' ? t.owner.trim().toLowerCase() : ''
-          const ownerBad = !owner || owner === 'unknown'
-          const rcBad = !(typeof t.resolution_criteria === 'string' && t.resolution_criteria.trim().length > 0)
-          const fmBad = !(typeof t.failure_mode === 'string' && t.failure_mode.trim().length > 0)
-          return ownerBad || rcBad || fmBad
-        }).length
-        const threadCueMiss = (w?.add_threads ?? []).filter(t => cueEmpty(t.retrieval_cue)).length
-        const promiseCount = w?.add_promise ? 1 : 0
-        const promiseMiss = (w?.add_promise && !(Array.isArray(w.add_promise.anchored_to) && w.add_promise.anchored_to.length > 0)) ? 1 : 0
-        const promiseCueMiss = (w?.add_promise && cueEmpty(w.add_promise.retrieval_cue)) ? 1 : 0
-        const decisionCount = w?.add_decision ? 1 : 0
-        const decisionMiss = (w?.add_decision && !(Array.isArray(w.add_decision.anchored_to) && w.add_decision.anchored_to.length > 0)) ? 1 : 0
-        const decisionCueMiss = (w?.add_decision && cueEmpty(w.add_decision.retrieval_cue)) ? 1 : 0
-        const clueCount = w?.add_clues?.length ?? 0
-        const clueMiss = (w?.add_clues ?? []).filter(c => !c.clue_id && !(Array.isArray(c.anchored_to) && c.anchored_to.length > 0)).length
-        const clueCueMiss = (w?.add_clues ?? []).filter(c => !c.clue_id && cueEmpty(c.retrieval_cue)).length
-        const npcCount = w?.add_npcs?.length ?? 0
-        const npcCueMiss = (w?.add_npcs ?? []).filter(n => cueEmpty(n.retrieval_cue)).length
-        const factionCount = w?.add_faction ? 1 : 0
-        const factionCueMiss = (w?.add_faction && cueEmpty(w.add_faction.retrieval_cue)) ? 1 : 0
-        const arcCount = input.arc_updates?.create_arc ? 1 : 0
-        const arcCueMiss = (input.arc_updates?.create_arc && cueEmpty(input.arc_updates.create_arc.retrieval_cue)) ? 1 : 0
-        const totalCues = threadCount + promiseCount + decisionCount + clueCount + npcCount + factionCount + arcCount
-        const cueMissTotal = threadCueMiss + promiseCueMiss + decisionCueMiss + clueCueMiss + npcCueMiss + factionCueMiss + arcCueMiss
-        if (threadCount + promiseCount + decisionCount + clueCount + arcCount > 0) {
-          dbg(`STAGE1_SUMMARY threads=${threadCount}(miss=${threadMiss}) promises=${promiseCount}(miss=${promiseMiss}) decisions=${decisionCount}(miss=${decisionMiss}) clues=${clueCount}(miss=${clueMiss}) arcs=${arcCount}`)
-        }
-        if (totalCues > 0) {
-          dbg(`STAGE2_SUMMARY entities=${totalCues} cue_miss=${cueMissTotal} (threads=${threadCueMiss}/${threadCount}, promises=${promiseCueMiss}/${promiseCount}, decisions=${decisionCueMiss}/${decisionCount}, clues=${clueCueMiss}/${clueCount}, npcs=${npcCueMiss}/${npcCount}, factions=${factionCueMiss}/${factionCount}, arcs=${arcCueMiss}/${arcCount})`)
-        }
-      }
+      // STAGE1_SUMMARY / STAGE2_SUMMARY were replaced by per-write WRITE lines
+      // emitted server-side in the route via emitWriteLines().
     }
 
     // ── _roll_record: internal, injected by the API route ──

@@ -5,3 +5,8 @@ node_modules/
 .env.*
 !.env.example
 .vercel
+
+# Local scratch and tooling — never commit
+_temp - dont commit/
+.claude/
+tsconfig.tsbuildinfo

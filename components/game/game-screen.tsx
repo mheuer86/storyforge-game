@@ -211,6 +211,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                 ? `${event.label}: ${event.content}`
                 : `=== BEGIN ${event.label} (~${event.tokenEstimate} tokens) ===\n${event.content}\n=== END ${event.label} ===`
               debugLogRef.current.push(`[${new Date().toISOString()}] ${body}`)
+            } else if (event.type === 'token_usage') {
+              const u = event.usage as { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number }
+              setTokenLog(prev => [...prev, {
+                input: u.inputTokens, output: u.outputTokens,
+                cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
+                timestamp: new Date().toISOString(),
+              }])
+              debugLogRef.current.push(`[${new Date().toISOString()}] AUDIT_TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
             } else if (event.type === 'truncation_warning') {
               debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ AUDIT_TRUNCATION_WARNING model=${event.model} round=${event.round} output_tokens=${event.outputTokens} tool_use_blocks=${event.toolUseBlocks} has_tools=${event.hasTools}`)
             }
@@ -281,6 +289,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               const commit = (event.results as Array<{ tool: string; input: unknown }>)
                 .find(r => r.tool === 'commit_turn')
               if (commit) extractionCommit = commit.input as Record<string, unknown>
+            } else if (event.type === 'token_usage') {
+              const u = event.usage as { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number }
+              setTokenLog(prev => [...prev, {
+                input: u.inputTokens, output: u.outputTokens,
+                cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
+                timestamp: new Date().toISOString(),
+              }])
+              debugLogRef.current.push(`[${new Date().toISOString()}] EXTRACTION_TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
             }
           } catch { /* skip malformed */ }
         }
@@ -582,6 +598,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
                     }
                     stateWithPlayerMessage = applyToolResults(event.results, stateWithPlayerMessage, setupChanges, track)
                     for (const m of drainDbg()) debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_${m}`)
+                  } else if (event.type === 'token_usage') {
+                    const u = event.usage as { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number }
+                    setTokenLog(prev => [...prev, {
+                      input: u.inputTokens, output: u.outputTokens,
+                      cacheWrite: u.cacheWriteTokens, cacheRead: u.cacheReadTokens,
+                      timestamp: new Date().toISOString(),
+                    }])
+                    debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
                   }
                 } catch { /* skip */ }
               }
@@ -1829,6 +1853,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onNewGame={onNewGame}
         tokenLog={tokenLog}
         debugLog={debugLogRef.current}
+        onExportSessionStats={() => {
+          import('@/lib/instrumentation/counters').then(({ buildSessionStatsLines }) => {
+            for (const block of buildSessionStatsLines(gameState)) {
+              debugLogRef.current.push(`[${new Date().toISOString()}] ${block}`)
+            }
+          })
+        }}
         character={{
           name: gameState.character.name,
           species: { name: gameState.character.species },
