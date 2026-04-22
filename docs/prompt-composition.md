@@ -8,24 +8,43 @@ Source: `lib/system-prompt.ts`
 
 ## Three-Layer Composition
 
-Every turn assembles three layers:
+Every turn assembles three layers. **Layer 3 rides in messages, not in the system array** — see "Why Layer 3 is in messages" below.
 
-| Layer | Size | Content | Caching |
-|-------|------|---------|---------|
-| 1. Core | ~1800 tokens | GM identity, universal rules, genre-specific setting/vocabulary/tone | Static, cached with `ephemeral` |
-| 2. Situation Module | ~400-600 tokens | One of five context modules, plus optional investigation overlay | Static, cached with core |
-| 3. Dynamic State | Variable | Compressed game state, injected per turn | Per-turn, not cached |
+| Layer | Size | Content | Position | Caching |
+|-------|------|---------|----------|---------|
+| 1. Core | ~1800 tokens | GM identity, universal rules, genre-specific setting/vocabulary/tone | `system[0]` | Cached with `ephemeral` |
+| 2. Situation Module | ~400-600 tokens | One of five context modules, plus optional investigation overlay | `system[1]` | Cached with `ephemeral` |
+| 3. Dynamic State | Variable | Compressed game state, injected per turn | User message, appended after BP4 marker | Per-turn, not cached |
 
-Total static: ~2200-2500 tokens per turn. Down from ~5500 in the old monolithic prompt.
+Total cached system: ~2200-2500 tokens per turn. Down from ~5500 in the old monolithic prompt.
 
 ## System Prompt Structure
 
-`buildSystemPrompt` returns `[staticPrompt, dynamicPrompt]` -- two separate system blocks:
+`buildSystemPrompt` returns `{ core, situation, stateContext, sysInstructions }`:
 
-- **Static block** (Layer 1 + Layer 2): Concatenated core + situation module. Sent as a system message with `cache_control: { type: 'ephemeral' }`. Identical across turns in the same context, so prefix caching hits consistently.
-- **Dynamic block** (Layer 3): `## CURRENT GAME STATE` header + compressed state. Changes every turn. Also includes meta-question instructions or consistency-check instructions when applicable.
+- `core` → `system[0]` with `cache_control: { type: 'ephemeral' }`
+- `situation` → `system[1]` with `cache_control: { type: 'ephemeral' }`
+- `stateContext` → passed to `buildMessagesForClaude`, injected as a user-role message AFTER the BP4 cache marker but BEFORE the current player turn
+- `sysInstructions` → optional `system[2]`, only present on meta / consistency-check calls (not cached; small and call-type-stable)
 
-Message history sits between the system blocks and the current player input. Because the static system block and old history messages don't change, the entire prefix stays cacheable.
+## Why Layer 3 is in messages
+
+Anthropic's cache ordering is `tools → system → messages`. The last-old-message cache marker (`system-prompt.ts:1954`) caches the prefix `tools + system + messages[0..-2]`.
+
+Earlier versions placed `compressedState` as `system[2]` (DYNAMIC). Because `system[2]` sat before the message marker in the cache order, any per-turn change to state **invalidated the BP4 prefix**. Every turn rewrote `DYNAMIC + full message history` as cache_write. Instrumented: a 4-chapter Epic Sci-Fi run spent $6.11 on cache_write (55% of session cost), with 124 of 196 calls writing 5-10k tokens each.
+
+Moving `stateContext` out of the system array — injecting it as a user-role message right after the BP4 marker — keeps the cached prefix stable turn-over-turn. BP4 now extends by one incremental GM message per turn (~1-2k write) instead of rewriting the whole prefix. Projected savings: ~$3.25/session on cache_write.
+
+The injected state content has no authority difference in practice — Claude treats `[GAME STATE]` content as context regardless of role position.
+
+## Cache breakpoints (4 total, aligned with Anthropic's max)
+
+- **BP1** — last tool in `cachedTools` (`route.ts:162`). Caches `TOOLS`. Stable per call-type (different arrays for game / audit / meta / setup).
+- **BP2** — end of Layer 1 Core (`route.ts:362`). Caches `TOOLS + CORE`. Stable session-wide.
+- **BP3** — end of Layer 2 Situation (`route.ts:363`). Caches `TOOLS + CORE + SITUATION`. Stable within context.
+- **BP4** — last old message before current player turn (`system-prompt.ts:1954`). Caches `TOOLS + CORE + SITUATION + sysInstructions (if any) + msgs[0..-2]`. Extends by one message per turn.
+
+Message history sits between the system blocks and the current player input. `stateContext` sits after BP4 so it doesn't poison the cached prefix.
 
 ## Layer 1: Core (`buildCoreLayer`)
 
