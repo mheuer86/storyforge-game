@@ -101,6 +101,7 @@ interface BurgerMenuProps {
   initialTab?: string
   tokenLog?: Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>
   debugLog?: string[]
+  onExportSessionStats?: () => void
 }
 
 function timeAgo(iso: string): string {
@@ -130,6 +131,7 @@ export function BurgerMenu({
   initialTab,
   tokenLog,
   debugLog,
+  onExportSessionStats,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
   const [activeMenuTab, setActiveMenuTab] = useState(initialTab || 'character')
@@ -294,6 +296,14 @@ export function BurgerMenu({
                           className="mt-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors ml-4"
                         >
                           Export Debug Log
+                        </button>
+                      )}
+                      {onExportSessionStats && (
+                        <button
+                          onClick={onExportSessionStats}
+                          className="mt-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors ml-4"
+                        >
+                          Append Session Stats
                         </button>
                       )}
                     </div>

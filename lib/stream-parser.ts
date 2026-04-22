@@ -1,6 +1,8 @@
-import type { GameState, StreamEvent, ToolCallResult, RollBreakdown } from './types'
+import type { GameState, StreamEvent, ToolCallResult, RollBreakdown, RejectionRecord } from './types'
 import { drainDbg, type StatChange } from './tool-processor'
 import { runRulesEngine } from './rules-engine'
+import { ensureInstrumentation, pushRejection } from './instrumentation'
+import { applyInstrumentEvent } from './instrumentation/counters'
 
 // ─── Debug context dedup ─────────────────────────────────────────────
 // The static system block is ~2200 tokens and changes only when the
@@ -171,6 +173,19 @@ export function processStreamEvent(
 
   if (event.type === 'error') {
     callbacks.onError(event.message)
+    return s
+  }
+
+  if (event.type === 'instrument') {
+    callbacks.onDebug(event.line)
+    ensureInstrumentation(s.gameState)
+    // Counter accumulation: WRITE / FIREWALL_OBSERVATION / ENTITY_CREATION /
+    // TURN_TIMING payloads bump global and per-genre counters on the session
+    // state. Rejection payloads additionally land in the rejection buffer.
+    applyInstrumentEvent(s.gameState, event)
+    if (event.channel === 'REJECTION_RECORD' && event.payload) {
+      pushRejection(s.gameState, event.payload as RejectionRecord)
+    }
     return s
   }
 

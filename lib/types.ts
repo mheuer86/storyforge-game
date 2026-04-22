@@ -490,6 +490,97 @@ export interface GameState {
   _pendingSceneSummary?: boolean    // true when set_location fired without scene_end — reminds Claude next turn
   _objectiveResolvedAtTurn?: number  // turn number when objective_status flipped to resolved/failed — drives close timing
   arcs: StoryArc[]                 // multi-chapter narrative arcs with episode milestones
+  _instrumentation?: Instrumentation   // Batch 1 diagnostic instrumentation (additive, non-behavioral)
+}
+
+// ============================================================
+// Instrumentation (Batch 1 — diagnostic, non-behavioral)
+// ============================================================
+
+export type InstrumentActor = 'gm' | 'extractor' | 'audit' | 'setup' | 'close_phase' | 'client' | 'user_action'
+
+export interface RejectionRecord {
+  id: string
+  timestamp: string
+  turn: number
+  chapter: number
+  genre: string
+  actor: InstrumentActor
+  write_type: string
+  entity: string | null
+  attempted_payload: unknown
+  rule_violated: string
+  severity: 'block' | 'warn'
+  rejected_field: string | null
+  suggestion: string
+  fallback_used: string | null
+}
+
+export interface FirewallResult {
+  ruleId: string
+  severity: 'block' | 'warn'
+  rejectedField: string | null
+  suggestion: string
+  payloadExcerpt: unknown
+}
+
+// Counts broken out by write status per type and actor.
+export interface WriteOutcome { success: number; partial: number; malformed: number }
+
+export interface Instrumentation {
+  sessionId: string
+  sessionStartedAt: string
+  turnCounter: number
+  counters: {
+    writes: WriteOutcome
+    writesByType: Record<string, WriteOutcome>
+    writesByActor: Partial<Record<InstrumentActor, WriteOutcome>>
+    firewall: { total: number; block: number; warn: number; byRule: Record<string, number> }
+    extractor: { runs: number; empty: number; supplements: number; rescues: number; conflicts: number }
+    turns: {
+      total: number
+      commitDropped: number
+      withCheck: number
+      combatActive: number
+      noRollStreakMax: number
+      currentNoRollStreak: number
+    }
+    latency: {
+      ttftSamples: number[]
+      generationSamples: number[]
+      extractorSamples: number[]
+      totalSamples: number[]
+      dynamicBlockTokenSamples: number[]
+    }
+    entityCreated: Record<string, number>
+    entityUpdated: Record<string, number>
+    fieldPopulatedOnCreate: Record<string, Record<string, number>>
+    fieldEmptyOnCreate: Record<string, Record<string, number>>
+    fieldUpdates: Record<string, number>
+    witnessMarks: { created: number; spent: number }
+    tempLoad: { incidents: number; triggered: number }
+    assetActivity: { present: boolean; updates: number; narrativeMoments: number }
+  }
+  countersByGenre: Record<string, Instrumentation['counters']>
+  rejectionBuffer: RejectionRecord[]
+  lastChapterEmittedAt: number | null
+  // Cross-chapter continuity tracking — baseline for V2 kill criterion.
+  continuity: ContinuityTracking
+}
+
+// Between-chapter tension persistence: which threads a chapter touched,
+// which entities first appeared in which chapter, and how often later
+// chapters reference earlier ones. Computed client-side as WRITE events
+// stream in; emitted as CONTINUITY_STATS on chapter close.
+export interface ContinuityTracking {
+  currentChapter: number
+  threadsTouchedByChapter: Record<number, string[]>  // chapter N -> [threadIds touched in N]
+  arcsActiveByChapter: Record<number, string[]>       // chapter N -> [arcIds active at close]
+  arcAdvancesByChapter: Record<number, Record<string, number>> // chapter N -> { arcId -> advance count }
+  entityFirstChapter: Record<string, number>          // entityId -> chapter first seen
+  currentChapterTouchedThreads: string[]              // reset each chapter
+  currentChapterCallbacks: number                     // references to prior-chapter entities
+  currentChapterArcAdvances: Record<string, number>   // arcId -> advances this chapter
 }
 
 export interface StoryArc {
@@ -557,6 +648,7 @@ export type StreamEvent =
       hasTools: boolean
       model: string
     }
+  | { type: 'instrument'; channel: string; line: string; payload?: unknown }
 
 export interface TokenUsage {
   inputTokens: number

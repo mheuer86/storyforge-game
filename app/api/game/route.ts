@@ -6,6 +6,10 @@ import { gameTools, auditTools, metaTools, setupTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
+import { TurnTimer, ChapterTimer, contextFromState, ensureInstrumentation, emitLine } from '@/lib/instrumentation'
+import { emitWriteLines } from '@/lib/instrumentation/write-attribution'
+import { emitChapterStats } from '@/lib/instrumentation/counters'
+import type { InstrumentActor } from '@/lib/types'
 
 let client: Anthropic = new Anthropic()
 const MODEL = process.env.STORYFORGE_MODEL || 'claude-sonnet-4-6'
@@ -143,7 +147,11 @@ async function runToolLoop(
   initialMessages: Anthropic.MessageParam[],
   send: SendFn,
   interceptRolls: boolean,
-  options?: { model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number; thinkingBudget?: number },
+  options?: {
+    model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number; thinkingBudget?: number
+    onFirstToken?: () => void
+    onRoundUsage?: (usage: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }) => void
+  },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
   let messages = initialMessages
@@ -174,13 +182,17 @@ async function runToolLoop(
       if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
         // Strip model artifacts that can leak through streaming
         const text = event.delta.text.replace(/<\/s>/g, '')
-        if (text) send({ type: 'text', content: text })
+        if (text) {
+          options?.onFirstToken?.()
+          send({ type: 'text', content: text })
+        }
       }
     }
 
     const completed = await stream.finalMessage()
 
     const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+    options?.onRoundUsage?.(usage)
     send({ type: 'token_usage', usage: {
       inputTokens: usage.input_tokens,
       outputTokens: usage.output_tokens,
@@ -223,11 +235,15 @@ async function runToolLoop(
         for await (const event of retryStream) {
           if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
             const text = event.delta.text.replace(/<\/s>/g, '')
-            if (text) send({ type: 'text', content: text })
+            if (text) {
+              options?.onFirstToken?.()
+              send({ type: 'text', content: text })
+            }
           }
         }
         const retryCompleted = await retryStream.finalMessage()
         const retryUsage = retryCompleted.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+        options?.onRoundUsage?.(retryUsage)
         send({ type: 'token_usage', usage: {
           inputTokens: retryUsage.input_tokens,
           outputTokens: retryUsage.output_tokens,
@@ -339,12 +355,12 @@ function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isCons
   // situation module is unchanged turn-to-turn (common case), the full
   // [core + situation] prefix hits. When context flips, [core] still hits and
   // only situation writes fresh. Dynamic block always writes fresh.
-  // 1h TTL (costs 20% more per write vs 5m, but eliminates within-session
-  // expiration during reading pauses). Net win for the typical play pattern
-  // where turns are 1-5 minutes apart.
+  // 5m default TTL. Data from 3 sessions (~60 turns) shows <1 in-session
+  // breach — play pace naturally stays within window. Chapter transitions
+  // cause misses but those often invalidate content anyway.
   return [
-    { type: 'text', text: core, cache_control: { type: 'ephemeral', ttl: '1h' } },
-    { type: 'text', text: situation, cache_control: { type: 'ephemeral', ttl: '1h' } },
+    { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: situation, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: dynamicState },
   ]
 }
@@ -376,6 +392,19 @@ export async function POST(req: NextRequest) {
   const { message, isMetaQuestion, isInitial, rollResolution, rollFirstResult, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
+  // Ensure instrumentation scaffold exists before we emit anything
+  ensureInstrumentation(gameState)
+  const instrCtx = contextFromState(gameState)
+  // Normal player turns get a TurnTimer; meta, close, setup, summarize, extract, audit skip it.
+  const isNormalTurn = !isMetaQuestion && !isChapterClose && !isChapter1Setup && !isSummarize && !isShadowExtraction && !isAudit && !isConsistencyCheck
+  const turnTimer: TurnTimer | null = isNormalTurn ? new TurnTimer(instrCtx) : null
+  // One request = one actor for WRITE attribution
+  const requestActor: InstrumentActor =
+    isShadowExtraction ? 'extractor' :
+    isChapterClose ? 'close_phase' :
+    isChapter1Setup ? 'setup' :
+    isAudit ? 'audit' : 'gm'
+
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
@@ -385,7 +414,15 @@ export async function POST(req: NextRequest) {
       }
 
       function finish(toolResults: ToolCallResult[]) {
+        if (turnTimer) turnTimer.mark('validationEnd')
+        // Emit WRITE attribution lines before sending tools to the client.
+        // One line per logical sub-write, tagged with actor. Observational only.
+        if (toolResults.length > 0) emitWriteLines(send, instrCtx, requestActor, toolResults, gameState)
         if (toolResults.length > 0) send({ type: 'tools', results: toolResults })
+        if (turnTimer) {
+          turnTimer.mark('writeEnd')
+          turnTimer.emitTurnTiming(send)
+        }
         send({ type: 'done' })
         controller.close()
       }
@@ -432,12 +469,17 @@ export async function POST(req: NextRequest) {
         const blockLabels = ['SYSTEM_CORE', 'SYSTEM_SITUATION', 'SYSTEM_DYNAMIC']
         systemPrompt.forEach((block, i) => {
           const label = blockLabels[i] ?? (block.cache_control ? 'SYSTEM_STATIC' : 'SYSTEM_DYNAMIC')
+          const tokenEstimate = Math.ceil(block.text.length / 4)
           send({
             type: 'debug_context',
             label,
             content: block.text,
-            tokenEstimate: Math.ceil(block.text.length / 4),
+            tokenEstimate,
           })
+          // Retain the dynamic block's size for compress-failure heuristics
+          if (label === 'SYSTEM_DYNAMIC' && turnTimer) {
+            turnTimer.setDynamicBlockTokens(tokenEstimate)
+          }
         })
 
         if (rollResolution) {
@@ -744,7 +786,23 @@ export async function POST(req: NextRequest) {
 
 **Test before emitting any fact:** Can you quote the phrase from the narrative that states or clearly implies this fact? If no, do not emit it.` },
           ]
-          const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, { model: MODEL, tools: auditTools, maxRounds: 1, maxTokens: 8192 })
+          const extractStart = performance.now()
+          let extractFirstToken = 0
+          let extractCacheRead = 0
+          let extractCacheWrite = 0
+          const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, {
+            model: MODEL, tools: auditTools, maxRounds: 1, maxTokens: 8192,
+            onFirstToken: () => { if (!extractFirstToken) extractFirstToken = performance.now() },
+            onRoundUsage: (u) => {
+              extractCacheRead = u.cache_read_input_tokens ?? 0
+              extractCacheWrite = u.cache_creation_input_tokens ?? 0
+            },
+          })
+          const extractEnd = performance.now()
+          const ttft = extractFirstToken ? Math.round(extractFirstToken - extractStart) : -1
+          const cacheClass = extractCacheRead > 100 ? 'hit' : (extractCacheWrite > 500 ? 'miss' : 'write')
+          emitLine(send, 'SHADOW_EXTRACTOR_TIMING', instrCtx,
+            `ttft=${ttft}ms total=${Math.round(extractEnd - extractStart)}ms cache=${cacheClass} tool_results=${loopResult.toolResults.length}`)
           finish(loopResult.toolResults)
           return
         }
@@ -802,8 +860,19 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: `Execute close phase ${phase} now.` },
           ]
 
-
+          const closeTimer = new ChapterTimer(instrCtx, 'CHAPTER_CLOSE_TIMING')
           const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2 })
+          closeTimer.mark('callEnd')
+          closeTimer.mark('summaryEnd')
+          closeTimer.emit(send)
+          emitLine(send, 'CLOSE_PHASE', instrCtx, `phase=${phase}`)
+          // Emit CHAPTER_STATS at the tail of the final close phase so the
+          // block summarizes all player turns accumulated this chapter.
+          // Counter contributions from the close phase itself are processed
+          // client-side after this emission and roll into the next chapter.
+          if (phase === 3) {
+            emitChapterStats(send, gameState, gameState.meta.chapterNumber)
+          }
           finish(loopResult.toolResults)
           return
         }
@@ -819,7 +888,10 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: 'Execute chapter setup now.' },
           ]
 
+          const setupTimer = new ChapterTimer(instrCtx, 'CHAPTER_SETUP_TIMING')
           const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1, maxTokens: 4096 })
+          setupTimer.mark('callEnd')
+          setupTimer.emit(send)
           finish(loopResult.toolResults)
           return
         }
@@ -839,7 +911,13 @@ export async function POST(req: NextRequest) {
 
         // Normal turns: 2 rounds max. Narrative + commit_turn should be 1 round.
         // 2 gives headroom if Claude doesn't include everything in one call.
-        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, thinkingBudget: THINKING_BUDGET })
+        if (turnTimer) turnTimer.mark('apiCallStart')
+        const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, {
+          tools: contextTools,
+          thinkingBudget: THINKING_BUDGET,
+          onFirstToken: turnTimer ? () => turnTimer.markFirstToken() : undefined,
+          onRoundUsage: turnTimer ? (u) => { turnTimer.markGenerationEnd(); turnTimer.setCacheFromUsage(u) } : undefined,
+        })
 
         if (loopResult.hitRoll) {
           send({ type: 'done' })
@@ -876,7 +954,13 @@ export async function POST(req: NextRequest) {
                 })()
 
             const retryTools = isMetaQuestion ? metaTools : gameTools
-            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, { tools: retryTools, thinkingBudget: THINKING_BUDGET })
+            if (turnTimer) turnTimer.mark('apiCallStart')
+            const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, {
+              tools: retryTools,
+              thinkingBudget: THINKING_BUDGET,
+              onFirstToken: turnTimer ? () => turnTimer.markFirstToken() : undefined,
+              onRoundUsage: turnTimer ? (u) => { turnTimer.markGenerationEnd(); turnTimer.setCacheFromUsage(u) } : undefined,
+            })
 
             if (loopResult.hitRoll) {
               send({ type: 'done' })
