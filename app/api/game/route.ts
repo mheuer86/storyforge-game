@@ -347,22 +347,33 @@ async function runToolLoop(
   return { toolResults, messages, hitRoll: false }
 }
 
-function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string, currentMessage?: string): Anthropic.TextBlockParam[] {
-  const [core, situation, dynamicState] = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
-  // Two cache breakpoints: one after core (always stable), one after situation
-  // (stable within a context). Anthropic caches the prefix through each
-  // breakpoint, so the longest matching prefix hits on each call. When the
-  // situation module is unchanged turn-to-turn (common case), the full
-  // [core + situation] prefix hits. When context flips, [core] still hits and
-  // only situation writes fresh. Dynamic block always writes fresh.
-  // 5m default TTL. Data from 3 sessions (~60 turns) shows <1 in-session
-  // breach — play pace naturally stays within window. Chapter transitions
-  // cause misses but those often invalidate content anyway.
-  return [
+/**
+ * Returns [systemBlocks, stateContext] where stateContext is meant to be
+ * passed to buildMessagesForClaude so the per-turn volatile game state rides
+ * in messages (uncached, fresh input) rather than in system (which would
+ * invalidate the BP4 message cache prefix every turn).
+ *
+ * Cache layout (in Anthropic's tools → system → messages order):
+ *   BP1: tools (stable per call-type)
+ *   BP2: tools + CORE
+ *   BP3: tools + CORE + SITUATION
+ *   BP4: tools + CORE + SITUATION + [optional instructions] + messages[0..-2]
+ * The stateContext is appended to messages AFTER the BP4 marker, so the
+ * prefix stays stable and BP4 hits turn-over-turn with only the incremental
+ * GM message as cache-write.
+ */
+function buildSystemBlocks(gameState: GameState, isMetaQuestion: boolean, isConsistencyCheck?: boolean, flaggedMessage?: string, currentMessage?: string): { blocks: Anthropic.TextBlockParam[]; stateContext: string } {
+  const { core, situation, stateContext, sysInstructions } = buildSystemPrompt(gameState, isMetaQuestion || !!isConsistencyCheck, isConsistencyCheck ? flaggedMessage : undefined, currentMessage)
+  const blocks: Anthropic.TextBlockParam[] = [
     { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: situation, cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: dynamicState },
   ]
+  // Conditional 3rd system block for meta/consistency authority.
+  // Omitted on normal turns so the common path is exactly two cached blocks.
+  if (sysInstructions) {
+    blocks.push({ type: 'text', text: sysInstructions })
+  }
+  return { blocks, stateContext }
 }
 
 export async function POST(req: NextRequest) {
@@ -460,13 +471,12 @@ export async function POST(req: NextRequest) {
       const contextTools = isMetaQuestion ? metaTools : gameTools
 
       try {
-        const systemPrompt = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
+        const { blocks: systemPrompt, stateContext } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
 
-        // Emit the static + situation + dynamic system blocks for the debug log
-        // export. Three blocks total: core (cached), situation (static content
-        // that varies with context), dynamic (per-turn state). Labels let the
-        // debug log distinguish them cleanly.
-        const blockLabels = ['SYSTEM_CORE', 'SYSTEM_SITUATION', 'SYSTEM_DYNAMIC']
+        // Emit system blocks + the state-context message for the debug log.
+        // Normal turn: SYSTEM_CORE, SYSTEM_SITUATION blocks + STATE_CONTEXT
+        // message. Meta / consistency turns add a SYSTEM_INSTRUCTIONS block.
+        const blockLabels = ['SYSTEM_CORE', 'SYSTEM_SITUATION', 'SYSTEM_INSTRUCTIONS']
         systemPrompt.forEach((block, i) => {
           const label = blockLabels[i] ?? (block.cache_control ? 'SYSTEM_STATIC' : 'SYSTEM_DYNAMIC')
           const tokenEstimate = Math.ceil(block.text.length / 4)
@@ -476,11 +486,20 @@ export async function POST(req: NextRequest) {
             content: block.text,
             tokenEstimate,
           })
-          // Retain the dynamic block's size for compress-failure heuristics
-          if (label === 'SYSTEM_DYNAMIC' && turnTimer) {
-            turnTimer.setDynamicBlockTokens(tokenEstimate)
-          }
         })
+        // State context is a user-role message, not a system block. Emit it
+        // to the debug log separately so the exported log still carries the
+        // full prompt content.
+        const stateTokenEstimate = Math.ceil(stateContext.length / 4)
+        send({
+          type: 'debug_context',
+          label: 'STATE_CONTEXT',
+          content: stateContext,
+          tokenEstimate: stateTokenEstimate,
+        })
+        // Retain state-context size for compress-failure heuristics (replaces
+        // the former SYSTEM_DYNAMIC tracking).
+        if (turnTimer) turnTimer.setDynamicBlockTokens(stateTokenEstimate)
 
         if (rollResolution) {
           // ── Phase 2: continue from pending conversation after client roll ──
@@ -627,7 +646,7 @@ export async function POST(req: NextRequest) {
           const reminder = (result === 'success' || result === 'critical') ? ROLL_REMINDER_SUCCESS : ROLL_REMINDER_FAILURE
 
           // Build conversation with roll result embedded in the player's turn
-          const conversationMessages = buildMessagesForClaude(gameState, message, false)
+          const conversationMessages = buildMessagesForClaude(gameState, message, false, stateContext)
           // Replace the last user message with one that includes the roll result
           const lastMsgIdx = conversationMessages.length - 1
           const playerMsg = typeof conversationMessages[lastMsgIdx]?.content === 'string'
@@ -708,10 +727,10 @@ export async function POST(req: NextRequest) {
         // This gives the extractor full context for scene boundaries, disposition arcs, etc.
         if (isShadowExtraction && narrativeText) {
           // Reuse the GM's system prompt — will hit prompt cache from the recent GM call
-          const extractSystem = buildSystemBlocks(gameState, false)
+          const { blocks: extractSystem, stateContext: extractStateContext } = buildSystemBlocks(gameState, false)
 
           // Rebuild conversation history (same as GM saw), then append GM's response + extraction instruction
-          const historyMessages = buildMessagesForClaude(gameState, message, false)
+          const historyMessages = buildMessagesForClaude(gameState, message, false, extractStateContext)
           const extractMessages: Anthropic.MessageParam[] = [
             ...historyMessages,
             { role: 'assistant', content: narrativeText },
@@ -907,7 +926,7 @@ export async function POST(req: NextRequest) {
             send({ type: 'chapter_title', title: initialResult.chapterTitle })
           }
         }
-        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion)
+        const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion, stateContext)
 
         // Normal turns: 2 rounds max. Narrative + commit_turn should be 1 round.
         // 2 gives headroom if Claude doesn't include everything in one call.
@@ -942,7 +961,7 @@ export async function POST(req: NextRequest) {
           await new Promise((resolve) => setTimeout(resolve, delayMs))
 
           try {
-            const retrySystem = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
+            const { blocks: retrySystem, stateContext: retryStateContext } = buildSystemBlocks(gameState, isMetaQuestion, isConsistencyCheck, flaggedMessage, message)
             const retryMessages = rollResolution
               ? [
                   ...(rollResolution.pendingMessages as Anthropic.MessageParam[]),
@@ -950,7 +969,7 @@ export async function POST(req: NextRequest) {
                 ]
               : (() => {
                   const retryMsg = isInitial ? buildInitialMessage(gameState) : message
-                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion)
+                  return buildMessagesForClaude(gameState, typeof retryMsg === 'string' ? retryMsg : retryMsg.message, isMetaQuestion, retryStateContext)
                 })()
 
             const retryTools = isMetaQuestion ? metaTools : gameTools
