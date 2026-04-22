@@ -26,7 +26,7 @@ const requestSchema = z.object({
     world: z.object({ currentLocation: z.object({ name: z.string() }).passthrough() }).passthrough(),
     combat: z.object({ active: z.boolean() }).passthrough(),
     history: z.object({ messages: z.array(z.any()) }).passthrough(),
-  }),
+  }).passthrough(),
   isMetaQuestion: z.boolean(),
   isInitial: z.boolean(),
   isConsistencyCheck: z.boolean().optional(),
