@@ -28,6 +28,20 @@ export function getChronicle(slug: string): Chronicle | null {
   return { ...data, content: content.trim() } as Chronicle
 }
 
+// Curated strongest-first order, hand-picked. New chronicles not in this list
+// fall to the end, alphabetical by slug among themselves — add here to position.
+const CURATED_ORDER: string[] = [
+  'sythe-chapter-1',          // The Tithe Was Short
+  'silver-chapter-1',         // The Fourteen-Year-Old
+  'whisper-chapter-1',        // Second Name
+  'captain-rix-chapter-1',    // The Athex-7 Extraction (Annex 7)
+  'captain-rix-chapter-2',    // The Narrowing Dark
+  'ghost-sera-chapter-1',     // Implanted
+  'seeker-verum-chapter-1',   // Heresy or Truth
+  'seeker-verum-chapter-2',   // The Cost of Proof
+  'hank-garnett-chapter-1',   // The Margaux Hotel
+]
+
 export function getAllChronicles(): Chronicle[] {
   const files = fs.readdirSync(chroniclesDirectory).filter(f => f.endsWith('.md'))
   return files.map(file => {
@@ -35,7 +49,11 @@ export function getAllChronicles(): Chronicle[] {
     const { data, content } = matter(raw)
     return { ...data, content: content.trim() } as Chronicle
   }).sort((a, b) => {
-    const genreOrder = ['noire', 'cyberpunk', 'epic-scifi', 'fantasy', 'grimdark', 'space-opera']
-    return genreOrder.indexOf(a.genre) - genreOrder.indexOf(b.genre)
+    const aIdx = CURATED_ORDER.indexOf(a.slug)
+    const bIdx = CURATED_ORDER.indexOf(b.slug)
+    if (aIdx === -1 && bIdx === -1) return a.slug.localeCompare(b.slug)
+    if (aIdx === -1) return 1
+    if (bIdx === -1) return -1
+    return aIdx - bIdx
   })
 }
