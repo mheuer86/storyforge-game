@@ -5,7 +5,7 @@ chapter: 1
 character: Silver
 class: Street Surgeon
 intro: "One of 22 Cyberpunk starters. Silver drew a girl with Militech eddies and a collar she couldn't name. Yours will be different. The dice shape everything."
-image:
+image: /chronicles/silver-chapter-1.png
 slug: silver-chapter-1
 ---
 
