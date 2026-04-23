@@ -97,7 +97,9 @@
 }
 
 [data-genre="epic-scifi"] {
-  --narrative-font-size: 1rem; /* 16px — Cormorant Garamond is thin/light, needs more size */
+  --font-narrative: 'Newsreader', Georgia, serif;
+  --font-heading: 'Cinzel', Georgia, serif;
+  --narrative-font-size: 1rem; /* 16px — serif reads smaller than mono at same size */
 }
 
 /* Dark theme is the default for this app */
