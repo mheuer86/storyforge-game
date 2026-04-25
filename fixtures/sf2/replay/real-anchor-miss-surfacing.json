@@ -1,0 +1,522 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "real-anchor-miss-surfacing",
+  "source": {
+    "sessionFile": "sf2-replay-camp_1777117826288-2026-04-25T12-11-11.json",
+    "turnIndex": 1,
+    "exportedAt": "2026-04-25T12:11:11.448Z",
+    "campaignId": "camp_1777117826288"
+  },
+  "input": {
+    "turnIndex": 1,
+    "stateBefore": {
+      "meta": {
+        "campaignId": "camp_1777117826288",
+        "createdAt": "2026-04-25T11:50:26.288Z",
+        "updatedAt": "2026-04-25T11:50:59.903Z",
+        "schemaVersion": "3.0.0",
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service",
+        "currentChapter": 1,
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": ""
+      },
+      "player": {
+        "name": "Ren",
+        "species": "Human",
+        "origin": {
+          "id": "imperial-service",
+          "name": "Imperial Service"
+        },
+        "class": {
+          "id": "warden",
+          "name": "Warden"
+        },
+        "level": 1,
+        "hp": {
+          "current": 14,
+          "max": 14
+        },
+        "ac": 14,
+        "credits": 200,
+        "stats": {
+          "STR": 17,
+          "DEX": 12,
+          "CON": 15,
+          "INT": 11,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "proficiencies": [
+          "Athletics",
+          "Intimidation",
+          "Perception",
+          "Heavy Weapons"
+        ],
+        "inventory": [
+          {
+            "name": "Imperial writ of authority",
+            "qty": 1,
+            "tags": [
+              "credential"
+            ]
+          },
+          {
+            "name": "Warden sidearm",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Heavy pattern blade",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Compliance cord",
+            "qty": 2,
+            "tags": [
+              "restraint"
+            ]
+          }
+        ],
+        "traits": [
+          {
+            "name": "Martial Authority",
+            "uses": {
+              "current": 2,
+              "max": 2
+            }
+          }
+        ],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      },
+      "campaign": {
+        "arcs": {},
+        "threads": {},
+        "decisions": {},
+        "promises": {},
+        "clues": {},
+        "npcs": {},
+        "factions": {},
+        "locations": {},
+        "floatingClueIds": [],
+        "pivotalSceneIds": [],
+        "lexicon": []
+      },
+      "chapter": {
+        "number": 1,
+        "title": "The Shortfall",
+        "setup": {
+          "chapter": 1,
+          "title": "The Shortfall",
+          "frame": {
+            "title": "The Shortfall",
+            "premise": "A frontier settlement has failed to meet its annual Resonant tithe to the Synod. Two are dead, one has fled — and the Synod will not accept the loss. The settlement elder has days to produce three replacements or the Synod will take children from the households that remain. The Warden has been dispatched to oversee the collection and ensure compliance with mandate.",
+            "activePressure": "The Synod's tithe audit frame vs. the settlement's material inability to meet it without direct seizure of non-resonant children.",
+            "centralTension": "The Warden exists inside the system's logic: they are here to enforce allocation as duty, but the mechanism of enforcement dissolves the distinction between administrative procedure and child conscription.",
+            "chapterScope": "The settlement, its immediate surroundings, and the bureaucratic apparatus that has demanded this tithe.",
+            "objective": "Uncover what happened to the missing three Resonants; determine whether the tithe can be met, whether the shortfall can be reframed, or whether the Synod's seizure will proceed.",
+            "crucible": "The moment when the Synod demands the numbers, and the settlement's only remaining option is to give up children.",
+            "outcomeSpectrum": {
+              "clean": "The missing or dead Resonants are located or documented in ways that satisfy Synod classification; the tithe is met without new conscription.",
+              "costly": "The tithe is met by conscripting non-Resonant children, designating them for assessment and training. The settlement survives; new children enter the Synod's pipeline.",
+              "failure": "The Synod conscripts multiple children without completing the normal assessment; the settlement's structure fractures; the Warden's authority to mediate is overridden.",
+              "catastrophic": "A child dies during forced attunement attempt; a House intervenes in Synod operations; the settlement descends into open resistance."
+            }
+          },
+          "antagonistField": {
+            "sourceSystem": "",
+            "corePressure": "",
+            "defaultFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "currentPrimaryFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "escalationLogic": ""
+          },
+          "startingNpcIds": [],
+          "activeThreadIds": [],
+          "loadBearingThreadIds": [],
+          "carriedThreadIds": [],
+          "editorializedLore": [],
+          "openingSceneSpec": {
+            "location": "",
+            "atmosphericCondition": "",
+            "initialState": "",
+            "firstPlayerFacing": "",
+            "immediateChoice": "",
+            "noStartingCombat": false,
+            "noExpositionDump": false
+          },
+          "pressureLadder": [],
+          "surfaceThreads": [],
+          "surfaceNpcIds": []
+        },
+        "scaffolding": {
+          "chapter": 1,
+          "npcHiddenPressures": {},
+          "antagonistFaces": [],
+          "possibleRevelations": [],
+          "moralFaultLines": [],
+          "escalationOptions": []
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "",
+            "openingPressure": "The Synod's tithe audit frame vs. the settlement's material inability to meet it without direct seizure of non-resonant children.",
+            "chapterObjective": "Uncover what happened to the missing three Resonants; determine whether the tithe can be met, whether the shortfall can be reframed, or whether the Synod's seizure will proceed.",
+            "chapterCrucible": "The moment when the Synod demands the numbers, and the settlement's only remaining option is to give up children.",
+            "visibleNpcIds": [],
+            "visibleThreadIds": [],
+            "loreForOpening": [],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world.",
+              "Keep the current pressure face live without implying it is permanent."
+            ]
+          }
+        },
+        "sceneSummaries": [],
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "",
+          "description": "",
+          "atmosphericConditions": [
+            ""
+          ]
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "",
+            "description": "",
+            "atmosphericConditions": [
+              ""
+            ]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "",
+          "established": [
+            ""
+          ]
+        },
+        "currentTimeLabel": "",
+        "sceneBundleCache": {
+          "sceneId": "scene_1_1",
+          "bundleText": "## Scene opening — chapter 1: The Shortfall · scene_1_1\n\n### Scene\n- Location:  — \n- Atmosphere: \n\n### Chapter\n- Objective: Uncover what happened to the missing three Resonants; determine whether the tithe can be met, whether the shortfall can be reframed, or whether the Synod's seizure will proceed.\n- Crucible: The moment when the Synod demands the numbers, and the settlement's only remaining option is to give up children.\n- Pressure face (at scene open):  () — ",
+          "builtAtTurn": 0,
+          "firstTurnIndex": 0
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "# The Shortfall Begins\n\nThe Warden's office smells like paper dust and the metallic tang of old climate control. The walls are austere—regulation pale green, unmarked except for a portrait of the current Throne Commissioner in the corner, eyes level. A transit authority schedule is pinned beside it: tomorrow's outbound manifest for the allocation carrier. The desk between you and Auditor Vael is scarred with years of signature marks.\n\nVael sits across from you with a ledger open to the final accounting. He is the Synod's eyes in this district—thin, precise, dressed in the grey half-coat that marks administrative authority. His finger rests on a line of figures. \"Three,\" he says without looking up. \"The tithe calls for seventeen. We have fourteen.\"\n\nHe slides the ledger toward you. The names are printed in formal registry format: *Kael Voss, noted attunement 4.2, discharge pending transfer*. *Mira Soresh, noted attunement 3.8, status unknown as of audit date*. *Tam Orvath, noted attunement 2.1, last observed site-gamma, thirty-four days prior*.\n\n\"The shortfall is documented,\" Vael continues. \"The district acts as one. The tithe cannot be filed under transit authority without complet... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Vael",
+                  "Kael Voss",
+                  "Mira Soresh",
+                  "Tam Orvath"
+                ],
+                "threadsTouched": [
+                  "missing_resonants",
+                  "tithe_shortfall"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Three named Resonants are missing from the tithe: Kael Voss (attunement 4.2, discharge pending), Mira Soresh (attunement 3.8, status unknown), Tam Orvath (attunement 2.1, last seen 34 days ago)",
+                  "The tithe requires 17 Resonants; the settlement has 14 on record",
+                  "The carrier departs in 16 hours",
+                  "If Ren does not file an amendment accounting for the three missing, the Synod will execute a supplementary selection — seizing untested children from the settlement"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Ask Vael directly what happens to Resonants marked 'discharge pending' — whether Kael's paperwork was already filed, and whether that changes the count.",
+                "Demand to see the full documentation on Mira Soresh — status unknown is not the same as missing, and you need specifics before admitting shortfall.",
+                "Tell Vael you need to inspect the settlement records yourself before signing any amendment — you won't file false accounting, and you won't let the Synod seize untested children on incomplete data."
+              ]
+            },
+            "timestamp": "2026-04-25T11:50:45.151Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unpaid_promise",
+              "tensionDeltasByThreadId": {
+                "Account for the Missing Three Resonants": 8,
+                "Prevent Supplementary Selection": 9
+              }
+            }
+          }
+        ],
+        "rollLog": [],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "# The Shortfall Begins\n\nThe Warden's office smells like paper dust and the metallic tang of old climate control. The walls are austere—regulation pale green, unmarked except for a portrait of the current Throne Commissioner in the corner, eyes level. A transit authority schedule is pinned beside it: tomorrow's outbound manifest for the allocation carrier. The desk between you and Auditor Vael is scarred with years of signature marks.\n\nVael sits across from you with a ledger open to the final accounting. He is the Synod's eyes in this district—thin, precise, dressed in the grey half-coat that marks administrative authority. His finger rests on a line of figures. \"Three,\" he says without looking up. \"The tithe calls for seventeen. We have fourteen.\"\n\nHe slides the ledger toward you. The names are printed in formal registry format: *Kael Voss, noted attunement 4.2, discharge pending transfer*. *Mira Soresh, noted attunement 3.8, status unknown as of audit date*. *Tam Orvath, noted attunement 2.1, last observed site-gamma, thirty-four days prior*.\n\n\"The shortfall is documented,\" Vael continues. \"The district acts as one. The tithe cannot be filed under transit authority without complet... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Vael",
+                  "Kael Voss",
+                  "Mira Soresh",
+                  "Tam Orvath"
+                ],
+                "threadsTouched": [
+                  "missing_resonants",
+                  "tithe_shortfall"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Three named Resonants are missing from the tithe: Kael Voss (attunement 4.2, discharge pending), Mira Soresh (attunement 3.8, status unknown), Tam Orvath (attunement 2.1, last seen 34 days ago)",
+                  "The tithe requires 17 Resonants; the settlement has 14 on record",
+                  "The carrier departs in 16 hours",
+                  "If Ren does not file an amendment accounting for the three missing, the Synod will execute a supplementary selection — seizing untested children from the settlement"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Ask Vael directly what happens to Resonants marked 'discharge pending' — whether Kael's paperwork was already filed, and whether that changes the count.",
+                "Demand to see the full documentation on Mira Soresh — status unknown is not the same as missing, and you need specifics before admitting shortfall.",
+                "Tell Vael you need to inspect the settlement records yourself before signing any amendment — you won't file false accounting, and you won't let the Synod seize untested children on incomplete data."
+              ]
+            },
+            "timestamp": "2026-04-25T11:50:45.151Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unpaid_promise",
+              "tensionDeltasByThreadId": {
+                "Account for the Missing Three Resonants": 8,
+                "Prevent Supplementary Selection": 9
+              }
+            }
+          }
+        ]
+      },
+      "derived": {}
+    },
+    "playerInput": "Tell Vael you need to inspect the settlement records yourself before signing any amendment — you won't file false accounting, and you won't let the Synod seize untested children on incomplete data.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Vael's expression doesn't shift, but his finger lifts from the ledger. That's the tell—a man accustomed to compliance suddenly meeting resistance.\n\n\"You need to inspect the records,\" you say. It's not a question. \"Before I file anything. Before the Synod moves on supplementary selection. The three names in that ledger—I need to know where they actually are, not where the registry says they should be. If Kael's discharge was pending, I need the paperwork. If Mira's status is unknown, I need the last verified observation, not an absence. If Tam hasn't reported in thirty-four days, that's either a transfer error or something else entirely. I won't sign false accounting. And I won't let you take untested children because the data is incomplete.\"\n\nVael sits back. His hands rest flat on either side of the ledger.\n\n\"The registry is the data,\" he says quietly. \"The amendment formalizes what is already true. You can inspect the records all you wish, Warden. The inspection changes nothing about the tithe. Seventeen were allocated. Fourteen are present. Three are not. That accounting will be filed in sixteen hours, either with your settlement's amendment or with the Synod's supplementary selection. The only variable is which children enter the pipeline.\"\n\nHe leans forward again. \"So let me ask you clearly: do you have locations for the three, or do I file the selection?\"\n\nThe silence that follows is procedural. He's not hostile—not yet. But he's made it clear that he sees your resistance as a delay tactic, not as a legitimate audit.",
+      "annotation": {
+        "hinted_entities": {
+          "npcs_mentioned": [
+            "Vael"
+          ],
+          "clues_dropped": [
+            "Three Resonants are missing from the tithe: Kael Voss (attunement 4.2, discharge pending), Mira Soresh (attunement 3.8, status unknown), Tam Orvath (attunement 2.1, last seen site-gamma 34 days ago)",
+            "The allocation carrier leaves in 16 hours; the tithe must be filed complete or the Synod will execute supplementary selection (conscription of untested children)",
+            "Vael treats the amendment as already-decided; he sees the Warden's request for inspection as delay, not legitimacy"
+          ],
+          "decisions_implied": [
+            "The Warden refuses to sign false accounting",
+            "The Warden will not accept seizure of untested children without complete data"
+          ],
+          "promises_implied": [
+            "The Warden will inspect settlement records herself before filing any amendment"
+          ],
+          "threads_touched": [
+            "The Shortfall — missing three Resonants (Kael, Mira, Tam)",
+            "Synod tithe audit — supplementary selection imminent"
+          ]
+        },
+        "authorial_moves": {
+          "pivot_signaled": false
+        },
+        "mechanical_effects": [],
+        "suggested_actions": [
+          "Ask Vael directly where the three Resonants' last verified observations are stored—and push back on his claim that the registry is complete data.",
+          "Stand, tell Vael you're going to the settlement records office yourself, and ask if he's coming or if he trusts your audit.",
+          "Name one of the three by their status and press Vael on what 'pending discharge' or 'unknown' actually means in procedural terms—make him state the gaps aloud."
+        ]
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "turnIndex": 2,
+        "creates": [
+          {
+            "kind": "npc",
+            "payload": {
+              "name": "Vael",
+              "affiliation": "Synod",
+              "role": "audit overseer / tithe administrator",
+              "voice_note": "procedurally correct, not emotionally warm; he speaks the Synod's language of amendment and filing with perfect fluency",
+              "voice_register": "formal, clipped, righteously procedural. Every statement carries the weight of institutional authority. When he says 'the registry is the data,' he is not arguing—he is stating fact as the system defines it.",
+              "retrieval_cue": "the Synod official overseeing the tithe audit; sees the Warden's request for inspection as delay, not legitimacy",
+              "key_facts": [
+                "Vael is positioned in settlement authority as the audit overseer",
+                "He treats the registry amendment as a bureaucratic formality, not a genuine question",
+                "He sees resistance to the amendment as obstruction, not as legitimate audit work",
+                "He has absolute clarity on the deadline: the carrier leaves in 16 hours",
+                "He is empowered to file 'supplementary selection' (Synod conscription of untested children) if the settlement cannot produce the three missing Resonants"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "Vael sits back. His hands rest flat on either side of the ledger... 'The registry is the data,' he says quietly."
+          },
+          {
+            "kind": "thread",
+            "payload": {
+              "title": "The Shortfall: Find the Three Resonants",
+              "owner": {
+                "kind": "npc",
+                "name_or_id": "player_character"
+              },
+              "tension": 8,
+              "resolution_criteria": "Locate and document the status of Kael Voss, Mira Soresh, and Tam Orvath (whether alive, transferred, classified, deceased); provide evidence sufficient to account for all three in the tithe record before the carrier departs in 16 hours.",
+              "failure_mode": "If the three cannot be accounted for by procedural documentation, the Synod executes supplementary selection and conscripts untested children from the settlement.",
+              "retrieval_cue": "the missing three Resonants whose absence opens the door to Synod conscription"
+            },
+            "confidence": "high",
+            "sourceQuote": "Seventeen were allocated. Fourteen are present. Three are not. That accounting will be filed in sixteen hours, either with your settlement's amendment or with the Synod's supplementary selection."
+          },
+          {
+            "kind": "decision",
+            "payload": {
+              "summary": "The Warden refuses to sign false accounting and will not accept seizure of untested children without complete data on the three missing Resonants.",
+              "anchored_to": [
+                "The Shortfall: Find the Three Resonants"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "I won't sign false accounting. And I won't let you take untested children because the data is incomplete."
+          },
+          {
+            "kind": "promise",
+            "payload": {
+              "obligation": "Inspect the settlement's full records on Kael Voss, Mira Soresh, and Tam Orvath before filing any amendment to the tithe accounting.",
+              "owner": {
+                "kind": "npc",
+                "name_or_id": "player_character"
+              },
+              "anchored_to": [
+                "The Shortfall: Find the Three Resonants"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "I need to know where they actually are, not where the registry says they should be. If Kael's discharge was pending, I need the paperwork."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Three Resonants missing from the settlement's tithe allocation: Kael Voss (attunement 4.2, discharge status pending), Mira Soresh (attunement 3.8, status unknown), Tam Orvath (attunement 2.1, last verified observation at site-gamma 34 days ago). Their absence creates a tithe shortfall of three units.",
+              "anchored_to": [
+                "The Shortfall: Find the Three Resonants"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "Seventeen were allocated. Fourteen are present. Three are not... If Kael's discharge was pending... If Mira's status is unknown... If Tam hasn't reported in thirty-four days..."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "The Synod's amendment process treats the registry as complete ground truth; Vael will file supplementary selection (conscription of untested children) if the three missing Resonants are not accounted for within 16 hours, regardless of whether the inspection uncovers legitimate transfers, reclassifications, or deceased records.",
+              "anchored_to": [
+                "The Shortfall: Find the Three Resonants"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "That accounting will be filed in sixteen hours, either with your settlement's amendment or with the Synod's supplementary selection. The only variable is which children enter the pipeline."
+          }
+        ],
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "Vael",
+            "changes": {
+              "disposition": "wary",
+              "temp_load": "Vael's finger lifts from the ledger—a tell of a man accustomed to compliance suddenly meeting resistance. He sits back, hands flat on the ledger, and delivers the deadline with bureaucratic precision. Not hostile, but he has made clear that he reads the Warden's resistance as delay, not legitimate audit. He is empowered and patient, but the clock is hard."
+            },
+            "confidence": "high",
+            "sourceQuote": "Vael's expression doesn't shift, but his finger lifts from the ledger. That's the tell—a man accustomed to compliance suddenly meeting resistance."
+          }
+        ],
+        "transitions": [],
+        "attachments": [],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "The Shortfall: Find the Three Resonants": 0
+          }
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "presentNpcIdsIncludes": [],
+    "presentNpcIdsExcludes": [],
+    "scenePacketCastIncludes": [],
+    "scenePacketCastExcludes": [],
+    "npcNamesAbsent": [],
+    "npcIdsIncludes": [],
+    "currentSceneId": null,
+    "currentTimeLabel": null,
+    "currentLocationId": null,
+    "sceneBundleCacheCleared": null,
+    "invariantEventsInclude": [],
+    "archivistAcceptedRefs": [
+      "creates[0]",
+      "creates[4]",
+      "creates[5]"
+    ],
+    "archivistRejectedRefs": [
+      "creates[1]",
+      "creates[2]",
+      "creates[3]"
+    ],
+    "driftIncludes": [
+      {
+        "kind": "anchor_reference_missing",
+        "detailIncludes": "player_character unresolved"
+      },
+      {
+        "kind": "anchor_reference_missing",
+        "detailIncludes": "The Shortfall: Find the Three Resonants unresolved"
+      }
+    ]
+  },
+  "compaction": {
+    "kind": "sf2-replay-compact/v1",
+    "history": "keeps turn rows but truncates prior prose and removes raw narrator annotations",
+    "sceneBundle": "preserves cache identity metadata, truncates bundleText"
+  }
+}

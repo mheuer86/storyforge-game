@@ -1,0 +1,94 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "generic-girl-rejected",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Captured bug shape: Archivist promotes a generic child descriptor into a canonical NPC."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_hessa": {
+            "id": "npc_hessa",
+            "name": "Hessa",
+            "affiliation": "Registry families",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["A known child already present in the intake story."],
+              "voice": {
+                "note": "Small, direct answers.",
+                "register": "child"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Hessa, the already-known child in the intake pressure.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_hessa"]
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_hessa"],
+          "surfaceNpcIds": ["npc_hessa"]
+        }
+      }
+    },
+    "playerInput": "I ask the girl what she saw.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The girl looks down at her hands before answering.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_hessa"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "confidence": "high",
+            "payload": {
+              "id": "npc_girl",
+              "name": "girl",
+              "affiliation": "Unknown",
+              "role": "npc",
+              "disposition": "wary",
+              "key_facts": ["A girl answered the seeker."],
+              "voice_note": "Small and frightened.",
+              "voice_register": "child",
+              "retrieval_cue": "generic girl from the intake scene"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "presentNpcIdsIncludes": ["npc_hessa"],
+    "scenePacketCastIncludes": ["npc_hessa"],
+    "npcNamesAbsent": ["girl"],
+    "archivistRejectedRefs": ["creates[0]"]
+  }
+}

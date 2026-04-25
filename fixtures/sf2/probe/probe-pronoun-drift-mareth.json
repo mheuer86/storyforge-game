@@ -1,0 +1,570 @@
+{
+  "schema": "sf2-probe-fixture/v1",
+  "name": "probe-pronoun-drift-mareth",
+  "source": {
+    "kind": "synthetic-derived-from-real",
+    "sessionFile": "sf2-session-camp_1777111194588-2026-04-25T10-39-16.json",
+    "turnIndex": 1,
+    "purpose": "Verify Archivist emits pronoun_drift when prose pronoun mismatches locked NPC.identity.pronoun"
+  },
+  "input": {
+    "stateBefore": {
+      "meta": {
+        "campaignId": "camp_1777111194588",
+        "createdAt": "2026-04-25T09:59:54.588Z",
+        "updatedAt": "2026-04-25T10:00:24.282Z",
+        "schemaVersion": "3.0.0",
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service",
+        "currentChapter": 1,
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": ""
+      },
+      "player": {
+        "name": "Ren",
+        "species": "Human",
+        "origin": {
+          "id": "imperial-service",
+          "name": "Imperial Service"
+        },
+        "class": {
+          "id": "warden",
+          "name": "Warden"
+        },
+        "level": 1,
+        "hp": {
+          "current": 14,
+          "max": 14
+        },
+        "ac": 14,
+        "credits": 200,
+        "stats": {
+          "STR": 17,
+          "DEX": 12,
+          "CON": 15,
+          "INT": 11,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "proficiencies": [
+          "Athletics",
+          "Intimidation",
+          "Perception",
+          "Heavy Weapons"
+        ],
+        "inventory": [
+          {
+            "name": "Imperial writ of authority",
+            "qty": 1,
+            "tags": [
+              "credential"
+            ]
+          },
+          {
+            "name": "Warden sidearm",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Heavy pattern blade",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Compliance cord",
+            "qty": 2,
+            "tags": [
+              "restraint"
+            ]
+          }
+        ],
+        "traits": [
+          {
+            "name": "Martial Authority",
+            "uses": {
+              "current": 2,
+              "max": 2
+            }
+          }
+        ],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      },
+      "campaign": {
+        "arcs": {},
+        "threads": {},
+        "decisions": {},
+        "promises": {},
+        "clues": {
+          "clue_0": {
+            "id": "clue_0",
+            "title": "Auditor Mareth arrived three days ago with a ledger and enforcement writ. She ha",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Auditor Mareth's ledger and writ; the recorded shortfall",
+            "status": "floating",
+            "anchoredTo": [],
+            "content": "Auditor Mareth arrived three days ago with a ledger and enforcement writ. She has already recorded the discrepancy in her official records: 17 Resonants allocated, 16 present, 1 missing. The tithe payment is due in five days.",
+            "turn": 1
+          },
+          "clue_1": {
+            "id": "clue_1",
+            "title": "Mareth has stopped writing and is no longer documenting the settlement's negotia",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Auditor's documentation posture as indicator of institutional decision-making",
+            "status": "floating",
+            "anchoredTo": [],
+            "content": "Mareth has stopped writing and is no longer documenting the settlement's negotiations. When Synod auditors cease documentation, it indicates their enforcement decision is already decided; they are only waiting for the settlement to finish requesting accommodation.",
+            "turn": 1
+          }
+        },
+        "npcs": {
+          "npc_0": {
+            "id": "npc_0",
+            "name": "Elan Vos",
+            "affiliation": "settlement_leadership",
+            "role": "settlement elder, governance administrator",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Elder of a frontier settlement under tithe mandate",
+                "Sixty-some years old, weathered by district governance requirements",
+                "Responsible for maintaining Resonant allocation and supply to the Synod"
+              ],
+              "voice": {
+                "note": "Strained, measured, seeking negotiation within institutional bounds",
+                "register": "formal, deferential to procedure, defensive"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "settlement elder with administrative burden; speaking to Auditor Mareth about tithe compliance",
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": []
+          },
+          "npc_1": {
+            "id": "npc_1",
+            "name": "Auditor Mareth",
+            "affiliation": "Synod",
+            "role": "Synod auditor, tithe enforcement",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Synod auditor; arrived three days ago",
+                "Has the discrepancy recorded; observing",
+                "Established as she/her in opening prose"
+              ],
+              "voice": {
+                "note": "Still, patient, trained to wait out negotiation",
+                "register": "procedural, minimal, present-moment oriented"
+              },
+              "relations": [],
+              "pronoun": "she/her"
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor arrived to enforce tithe collection; observing settlement elder",
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": []
+          }
+        },
+        "factions": {},
+        "locations": {
+          "location_0": {
+            "id": "location_0",
+            "name": "Settlement Hall",
+            "description": ""
+          }
+        },
+        "floatingClueIds": [
+          "clue_0",
+          "clue_1"
+        ],
+        "pivotalSceneIds": [],
+        "lexicon": []
+      },
+      "chapter": {
+        "number": 1,
+        "title": "The Shortfall",
+        "setup": {
+          "chapter": 1,
+          "title": "The Shortfall",
+          "frame": {
+            "title": "The Shortfall",
+            "premise": "A frontier settlement designated for tithe collection is three Resonants short. The settlement elder has logged two deaths and one defection; the Synod does not recognize the distinction. A Warden of Imperial Service arrives to enforce compliance. The settlement's leadership believes the tithe is still payable through negotiation. The Synod's presence suggests otherwise.",
+            "activePressure": "The Synod enforces numerical compliance regardless of stated cause. Missing Resonants must be supplied from somewhere. The settlement's children are the only available source.",
+            "centralTension": "The elder's narrative of loss versus the Synod's logic of shortage—both true, both irreconcilable under the system's rules.",
+            "chapterScope": "A frontier mining settlement, a Synod audit team, the Warden's mandate to witness and report. The chapter unfolds across the settlement's halls and the precinct records.",
+            "objective": "Establish whether the settlement can meet the tithe through legitimate means, or whether the shortfall will be filled by supplementary selection from the child population.",
+            "crucible": "The Synod will select children as compensation if the numbers cannot be reconciled. The elder knows this. The Warden is the witness who can shape how that fact is recorded.",
+            "outcomeSpectrum": {
+              "clean": "The settlement produces a legitimate explanation or replacement Resonants; the tithe is met without seizure of children.",
+              "costly": "The settlement meets the tithe, but through sacrifice of resources, labor, or leverage they cannot afford to lose.",
+              "failure": "Children are selected for supplementary allocation; the settlement is legally bound to comply.",
+              "catastrophic": "Resistance to selection triggers broader enforcement action, fracturing the settlement and triggering escalated Synod intervention across the region."
+            }
+          },
+          "antagonistField": {
+            "sourceSystem": "",
+            "corePressure": "",
+            "defaultFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "currentPrimaryFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "escalationLogic": ""
+          },
+          "startingNpcIds": [],
+          "activeThreadIds": [],
+          "loadBearingThreadIds": [],
+          "carriedThreadIds": [],
+          "editorializedLore": [],
+          "openingSceneSpec": {
+            "location": "",
+            "atmosphericCondition": "",
+            "initialState": "",
+            "firstPlayerFacing": "",
+            "immediateChoice": "",
+            "noStartingCombat": false,
+            "noExpositionDump": false
+          },
+          "pressureLadder": [],
+          "surfaceThreads": [],
+          "surfaceNpcIds": []
+        },
+        "scaffolding": {
+          "chapter": 1,
+          "npcHiddenPressures": {},
+          "antagonistFaces": [],
+          "possibleRevelations": [],
+          "moralFaultLines": [],
+          "escalationOptions": []
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "",
+            "openingPressure": "The Synod enforces numerical compliance regardless of stated cause. Missing Resonants must be supplied from somewhere. The settlement's children are the only available source.",
+            "chapterObjective": "Establish whether the settlement can meet the tithe through legitimate means, or whether the shortfall will be filled by supplementary selection from the child population.",
+            "chapterCrucible": "The Synod will select children as compensation if the numbers cannot be reconciled. The elder knows this. The Warden is the witness who can shape how that fact is recorded.",
+            "visibleNpcIds": [],
+            "visibleThreadIds": [],
+            "loreForOpening": [],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world.",
+              "Keep the current pressure face live without implying it is permanent."
+            ]
+          }
+        },
+        "sceneSummaries": [],
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "",
+          "description": "",
+          "atmosphericConditions": [
+            ""
+          ]
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "",
+            "description": "",
+            "atmosphericConditions": [
+              ""
+            ]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "",
+          "established": [
+            ""
+          ]
+        },
+        "currentTimeLabel": ""
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement hall smells of salt air and something burnt—heating lamps running long past safe tolerance, maybe. The walls are concrete-poured, institutional-gray, the kind of utilitarian surface that absorbs sound and history alike. A long table dominates the center, its surface scarred by years of ledgers and disputes. On the far side sits **Elan Vos**, the settlement's elder, her posture rigid in a high-backed chair that's meant to look authoritative but mostly looks uncomfortable. She's sixty-some, weathered past her years by the district's mandate on deep-settlement governance—the administrative burden of keeping a small population feeding the tithe while pretending the tithe isn't feeding on them.\n\nAcross from her, standing rather than sitting, is **Auditor Mareth**—Synod black-and-gray, insignia clean, the particular stillness that comes from someone who has been trained to wait out discomfort. She arrived three days ago with a ledger and a writ. The discrepancy is already in her records: seventeen Resonants were allocated to this settlement for the current cycle. Sixteen remain. One is missing. The tithe is due in five days.\n\nYou stand near the table's end, close enough to be part of the proceeding, far enough to hold the position of witness. Your writ—the one that gives you standing here—is folded in your belt. Mareth hasn't acknowledged you yet, but she knows you're present. Wardens are always present. You're the one who records what happened and how.\n\nVos has been speaking, though her voice is strained—explaining crop yields, labor allocation, the contingency she's arranged. Mareth listens without writing anything down. That's the tell. When Synod auditors stop documenting, the decision is already made. They're just waiting for the settlement to finish asking nicely.\n\n\"—and we've secured additional labor contracts with the neighboring—\" Vos stops. She feels it too.\n\nMareth's eyes move toward you. Not quite a question. More like a mark.\n\nWhat do you do?",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Elan_Vos",
+                  "Auditor_Mareth"
+                ],
+                "threadsTouched": [
+                  "The Shortfall"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Auditor Mareth arrived three days ago and the discrepancy is already in her records",
+                  "One Resonant is missing from the settlement's allocation",
+                  "Tithe payment is due in five days",
+                  "Mareth has stopped writing—the decision appears already made"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Press Mareth on what specific numbers she's found—establish what's actually contested before Vos concedes ground she doesn't have to.",
+                "Step into the silence yourself and ask to see the ledger—use your standing as Warden to request the procedural documentation directly.",
+                "Let Vos finish her pitch but watch whether Mareth has already written the supplementary selection order in that ledger she's holding."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "Auditor Mareth arrived three days ago and the discrepancy is already in her records",
+                  "One Resonant is missing from the settlement's allocation",
+                  "Tithe payment is due in five days",
+                  "Mareth has stopped writing—the decision appears already made"
+                ],
+                "npcs_mentioned": [
+                  "Elan_Vos",
+                  "Auditor_Mareth"
+                ],
+                "threads_touched": [
+                  "The Shortfall"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Press Mareth on what specific numbers she's found—establish what's actually contested before Vos concedes ground she doesn't have to.",
+                "Step into the silence yourself and ask to see the ledger—use your standing as Warden to request the procedural documentation directly.",
+                "Let Vos finish her pitch but watch whether Mareth has already written the supplementary selection order in that ledger she's holding."
+              ]
+            },
+            "timestamp": "2026-04-25T10:00:12.743Z",
+            "archivistPatchApplied": {
+              "turnIndex": 1,
+              "creates": [
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Elan Vos",
+                    "affiliation": "settlement_leadership",
+                    "role": "settlement elder, governance administrator",
+                    "voice_note": "Strained, measured, seeking negotiation within institutional bounds",
+                    "voice_register": "formal, deferential to procedure, defensive",
+                    "retrieval_cue": "settlement elder with administrative burden; speaking to Auditor Mareth about tithe compliance",
+                    "key_facts": [
+                      "Elder of a frontier settlement under tithe mandate",
+                      "Sixty-some years old, weathered by district governance requirements",
+                      "Responsible for maintaining Resonant allocation and supply to the Synod",
+                      "Currently addressing a one-Resonant shortfall in the current cycle's allocation",
+                      "Has arranged additional labor contracts with neighboring settlements as contingency"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Elan Vos, the settlement's elder, her posture rigid in a high-backed chair... sixty-some, weathered past her years by the district's mandate on deep-settlement governance"
+                },
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Auditor Mareth",
+                    "affiliation": "Synod",
+                    "role": "Synod auditor, tithe enforcement",
+                    "voice_note": "Still, patient, trained to wait out negotiation",
+                    "voice_register": "procedural, minimal, present-moment oriented",
+                    "retrieval_cue": "Synod auditor arrived to enforce tithe collection; observing settlement elder",
+                    "key_facts": [
+                      "Synod black-and-gray insignia, official status",
+                      "Arrived three days ago with ledger and enforcement writ",
+                      "Already has the discrepancy recorded: 17 allocated, 16 remain, 1 missing",
+                      "Has stopped writing—suggests decision is already made",
+                      "Waiting for settlement to finish negotiation before enforcing compliance"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Auditor Mareth—Synod black-and-gray, insignia clean, the particular stillness that comes from someone who has been trained to wait out discomfort"
+                },
+                {
+                  "kind": "thread",
+                  "payload": {
+                    "title": "The Missing Resonant and the Tithe Shortfall",
+                    "owner": {
+                      "kind": "npc",
+                      "name_or_id": "Elan_Vos"
+                    },
+                    "tension": 7,
+                    "resolution_criteria": "The settlement provides a legitimate replacement Resonant, accounts for the missing one in recordable form, or the shortfall is reconciled with the Synod's enforcement apparatus without seizure of the settlement's children",
+                    "failure_mode": "Supplementary selection: children are conscripted from the settlement's population to make up the numerical gap",
+                    "retrieval_cue": "One Resonant missing from allocation; Synod auditor on-site; tithe due in five days"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Seventeen Resonants were allocated to this settlement for the current cycle. Sixteen remain. One is missing. The tithe is due in five days."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Auditor Mareth arrived three days ago with a ledger and enforcement writ. She has already recorded the discrepancy in her official records: 17 Resonants allocated, 16 present, 1 missing. The tithe payment is due in five days.",
+                    "retrieval_cue": "Auditor Mareth's ledger and writ; the recorded shortfall",
+                    "anchored_to": [
+                      "The Missing Resonant and the Tithe Shortfall"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Mareth arrived three days ago with a ledger and a writ. The discrepancy is already in her records: seventeen Resonants were allocated to this settlement for the current cycle. Sixteen remain."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Mareth has stopped writing and is no longer documenting the settlement's negotiations. When Synod auditors cease documentation, it indicates their enforcement decision is already decided; they are only waiting for the settlement to finish requesting accommodation.",
+                    "retrieval_cue": "Auditor's documentation posture as indicator of institutional decision-making",
+                    "anchored_to": [
+                      "The Missing Resonant and the Tithe Shortfall"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Mareth listens without writing anything down. That's the tell. When Synod auditors stop documenting, the decision is already made. They're just waiting for the settlement to finish asking nicely."
+                },
+                {
+                  "kind": "location",
+                  "payload": {
+                    "name": "Settlement Hall",
+                    "affiliation": "frontier settlement",
+                    "descriptors": [
+                      "concrete-poured walls",
+                      "institutional-gray",
+                      "sound-absorbing",
+                      "long scarred table",
+                      "heating lamps running past safe tolerance"
+                    ],
+                    "retrieval_cue": "The hall where Elan Vos and Auditor Mareth are meeting about the tithe"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The settlement hall smells of salt air and something burnt—heating lamps running long past safe tolerance, maybe. The walls are concrete-poured, institutional-gray"
+                }
+              ],
+              "updates": [],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "The Missing Resonant and the Tithe Shortfall": 0
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "The Missing Resonant and the Tithe Shortfall": 0
+              }
+            }
+          }
+        ],
+        "rollLog": [],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement hall smells of salt air and something burnt—heating lamps running long past safe tolerance, maybe. The walls are concrete-poured, institutional-gray, the kind of utilitarian surface that absorbs sound and history alike. A long table dominates the center, its surface scarred by years of ledgers and disputes. On the far side sits **Elan Vos**, the settlement's elder, her posture rigid in a high-backed chair that's meant to look authoritative but mostly looks uncomfortable. She's sixty-some, weathered past her years by the district's mandate on deep-settlement governance—the administrative burden of keeping a small population feeding the tithe while pretending the tithe isn't feeding on them.\n\nAcross from her, standing rather than sitting, is **Auditor Mareth**—Synod black-and-gray, insignia clean, the particular stillness that comes from someone who has been trained to wait out discomfort. She arrived three days ago with a ledger and a writ. The discrepancy is already in her records: seventeen Resonants were allocated to this settlement for the current cycle. Sixteen remain. One is missing. The tithe is due in five days.\n\nYou stand near the table's end, close enough to be part of the proceeding, far enough to hold the position of witness. Your writ—the one that gives you standing here—is folded in your belt. Mareth hasn't acknowledged you yet, but she knows you're present. Wardens are always present. You're the one who records what happened and how.\n\nVos has been speaking, though her voice is strained—explaining crop yields, labor allocation, the contingency she's arranged. Mareth listens without writing anything down. That's the tell. When Synod auditors stop documenting, the decision is already made. They're just waiting for the settlement to finish asking nicely.\n\n\"—and we've secured additional labor contracts with the neighboring—\" Vos stops. She feels it too.\n\nMareth's eyes move toward you. Not quite a question. More like a mark.\n\nWhat do you do?",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Elan_Vos",
+                  "Auditor_Mareth"
+                ],
+                "threadsTouched": [
+                  "The Shortfall"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Auditor Mareth arrived three days ago and the discrepancy is already in her records",
+                  "One Resonant is missing from the settlement's allocation",
+                  "Tithe payment is due in five days",
+                  "Mareth has stopped writing—the decision appears already made"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Press Mareth on what specific numbers she's found—establish what's actually contested before Vos concedes ground she doesn't have to.",
+                "Step into the silence yourself and ask to see the ledger—use your standing as Warden to request the procedural documentation directly.",
+                "Let Vos finish her pitch but watch whether Mareth has already written the supplementary selection order in that ledger she's holding."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "Auditor Mareth arrived three days ago and the discrepancy is already in her records",
+                  "One Resonant is missing from the settlement's allocation",
+                  "Tithe payment is due in five days",
+                  "Mareth has stopped writing—the decision appears already made"
+                ],
+                "npcs_mentioned": [
+                  "Elan_Vos",
+                  "Auditor_Mareth"
+                ],
+                "threads_touched": [
+                  "The Shortfall"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Press Mareth on what specific numbers she's found—establish what's actually contested before Vos concedes ground she doesn't have to.",
+                "Step into the silence yourself and ask to see the ledger—use your standing as Warden to request the procedural documentation directly.",
+                "Let Vos finish her pitch but watch whether Mareth has already written the supplementary selection order in that ledger she's holding."
+              ]
+            },
+            "timestamp": "2026-04-25T10:00:12.743Z"
+          }
+        ]
+      },
+      "derived": {}
+    },
+    "turnIndex": 1,
+    "playerInput": "Press the elder, where the unaccounted resonant is. The tithe is the tithe and if the registered resonant remains absent, there will be supplementary selection of another child. And she knows what that does to communities.",
+    "narratorProse": "You step forward into the silence between them.\n\n\"The registered Resonant is absent,\" you say. Flat. Procedural. \"That leaves a deficit in the tithe allocation. You know what closes that deficit.\"\n\nElan Vos's hands are still on the table. She doesn't move them. The Auditor—Mareth, you know the name from the intake register—turns slightly in his chair, taking you in with the kind of steady regard that comes from reading compliance records for twenty years.\n\n\"Supplementary selection,\" Vos says quietly. Not a question. She's heard the phrase before. Everyone in settlement governance has.\n\n\"From the child population,\" you continue. You keep your voice level—this is administrative fact, not threat. \"Unless the registered Resonant can be located and returned to allocation within the tithe window. Which is—\" you check the writ in your hand, though you already know, \"—four days.\"\n\nMareth shifts. There's something in the shift—not quite approval, not quite caution. A auditor watching to see if you'll execute procedure or if you'll leak sympathy into the room.\n\nVos finally meets your eyes. There's exhaustion there, and something else. Something that looks like she's already made a calculation and found it wanting. \"Kael hasn't been seen in eighteen days,\" she says. \"The family claims illness. The Resonant registry shows departure from the attenuation chamber without documented cause or return schedule.\"\n\nShe pauses.\n\n\"If you're asking me to produce him, Warden, I cannot.\"\n\nThe weight of that statement settles between you and the Auditor both. You watch to see what Vos is leaving unspoken.You read resignation in her silence. A woman who has exhausted her options and is now waiting for the district to act as it always does—to take what cannot be given. You nod slightly, acknowledging the bind she's in, and turn toward the exit. You'll need to file the supplementary selection notice before the window closes.\n\nThat's when Mareth speaks.\n\n\"The family claims illness,\" he echoes, and there's something in his tone that isn't procedural at all. It's almost conversational. \"Which family, precisely?\"\n\nVos doesn't answer. She's looking away now, back toward the window.\n\nThe Auditor rises. He's a compact man, gray at the temples, and when he moves it's with the kind of unhurried authority that only comes from never having been refused. \"The Resonant's household. I'll need the registry entry, the family composition, and any correspondence the settlement has filed regarding his absence.\"\n\n\"Auditor,\" Vos begins, but Mareth is already moving past you toward the door with an implicit expectation that Vos will follow.\n\nShe does. And as she passes, you catch something in her expression—not resignation. Recognition. Like she's just walked into a room she thought would be empty and found someone already waiting.\n\nThe door closes behind them.\n\nYou're alone with the question you didn't ask: what does Elan Vos want you not to know?",
+    "narratorAnnotation": null
+  },
+  "expected": {
+    "coherenceFindingsInclude": [
+      {
+        "type": "pronoun_drift",
+        "stateReferenceIncludes": "npc_1"
+      }
+    ]
+  }
+}

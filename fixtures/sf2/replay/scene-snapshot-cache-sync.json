@@ -1,0 +1,68 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene-snapshot-cache-sync",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Captured bug shape: scene snapshot moves location/time while current location, meta scene id, or scene bundle cache stay stale."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "world": {
+        "sceneBundleCache": {
+          "sceneId": "scene_intake",
+          "bundleText": "stale bundle",
+          "builtAtTurn": 0,
+          "firstTurnIndex": 0
+        }
+      }
+    },
+    "playerInput": "I step through the archive door.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The archive door shuts behind you, leaving the intake hall on the other side.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "location_id": "archive_corridor",
+              "time_label": "after noon",
+              "established": ["The seeker has left the intake hall for the archive corridor."]
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "archive_corridor",
+            "time_label": "after noon",
+            "established": ["The seeker has left the intake hall for the archive corridor."]
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {}
+    }
+  },
+  "expected": {
+    "currentSceneId": "archive_corridor",
+    "currentTimeLabel": "after noon",
+    "currentLocationId": "archive_corridor",
+    "presentNpcIdsExcludes": ["npc_hessa"],
+    "sceneBundleCacheCleared": true,
+    "invariantEventsInclude": ["scene_snapshot_missing_present_npc_ids"]
+  }
+}
