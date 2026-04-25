@@ -1,0 +1,78 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "npc identity anchors are captured once and protected",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Template fixture for anchored NPC identity fields such as pronoun and age."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Ask Mareth why she stayed at the registry.",
+    "narrator": {
+      "prose": "Mareth stood beside the intake counter, her registry coat still too large on her twenty-three-year-old frame.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "payload": {
+              "id": "npc_mareth",
+              "name": "Mareth",
+              "affiliation": "District Registry",
+              "role": "contact",
+              "pronoun": "she/her",
+              "age": "23",
+              "voice_note": "Careful, procedural, guarded.",
+              "voice_register": "low official register",
+              "retrieval_cue": "Mareth, a young registry contact at the intake counter.",
+              "key_facts": ["Mareth is twenty-three."]
+            },
+            "confidence": "high",
+            "sourceQuote": "her twenty-three-year-old frame"
+          }
+        ],
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_mareth",
+            "changes": {
+              "pronoun": "he/him",
+              "age": "older adult",
+              "temp_load": 1
+            },
+            "confidence": "high",
+            "sourceQuote": "synthetic contradictory write"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "npcIdsIncludes": ["npc_mareth"],
+    "npcNamesInclude": ["Mareth"],
+    "npcIdentityIncludes": [
+      {
+        "npcId": "npc_mareth",
+        "pronoun": "she/her",
+        "age": "23"
+      }
+    ],
+    "archivistAcceptedRefs": ["creates[0]"],
+    "archivistRejectedRefs": ["updates[0]"],
+    "driftIncludes": [
+      {
+        "kind": "protected_field_write",
+        "detailIncludes": "identity.pronoun"
+      }
+    ]
+  }
+}

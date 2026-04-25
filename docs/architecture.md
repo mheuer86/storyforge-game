@@ -2,6 +2,13 @@
 
 Single-player AI RPG where Claude acts as Game Master. Next.js client app, Anthropic API for narrative generation. No backend database; all state persists in localStorage.
 
+**Recent architectural context (2026-04-21):**
+- Narrative entity hierarchy (Stage 2) shipped: `retrieval_cue`, `anchored_to`, `owner`, `resolution_criteria`, `failure_mode`, `relevant_npcs` on threads/decisions/promises/clues/NPCs/factions. Schema versioning via `meta.schemaVersion`; Stage 2 migrator at `lib/migrations/stage2.ts` runs on save load for v1→v2.
+- Arc entities now persist `spansChapters` and `introducedInChapter` for progression signals.
+- Light GM/extractor responsibility split: narrative-state emission discipline removed from the GM's system prompt and absorbed into the shadow extractor's instruction. GM retains mechanical tools (pending_check, inventory_use, credits_delta, combat). Extractor is de facto source of truth for narrative state.
+- Cache uses 1h ephemeral TTL on core + situation blocks.
+- Stage 5 setup-agent design in zettels; not yet implemented.
+
 ## Data Flow
 
 ```

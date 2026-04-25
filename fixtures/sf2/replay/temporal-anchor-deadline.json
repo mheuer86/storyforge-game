@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "temporal deadline anchors are captured and surfaced",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Template fixture for durable timeline facts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Ask when the manifest closes.",
+    "narrator": {
+      "prose": "Kess taps the ledger once. \"The manifest closes at 1600. After that, transport authority takes the shortfall.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "temporal_anchor",
+            "payload": {
+              "id": "temporal_manifest_closes_1600",
+              "title": "Manifest closes at 1600",
+              "kind": "deadline",
+              "label": "manifest close",
+              "anchor_text": "1600, tithe collection day",
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "The manifest deadline: 1600 on tithe collection day."
+            },
+            "confidence": "high",
+            "sourceQuote": "The manifest closes at 1600"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "thread_spine": 1
+          }
+        }
+      }
+    }
+  },
+  "expected": {
+    "temporalAnchorsInclude": [
+      {
+        "anchorId": "temporal_manifest_closes_1600",
+        "kind": "deadline",
+        "label": "manifest close",
+        "anchorText": "1600, tithe collection day"
+      }
+    ],
+    "scenePacketTemporalAnchorsInclude": ["temporal_manifest_closes_1600"],
+    "archivistAcceptedRefs": ["creates[0]"]
+  }
+}

@@ -1,0 +1,2114 @@
+{
+  "schema": "sf2-probe-fixture/v1",
+  "name": "probe-supersedes-id-sev-brother",
+  "source": {
+    "kind": "synthetic-derived-from-real",
+    "sessionFile": "sf2-session-camp_1777115162445-2026-04-25T11-25-49.json",
+    "turnIndex": 5,
+    "purpose": "Verify the Archivist sets supersedes_id when prose names a previously-anonymous on-stage NPC"
+  },
+  "input": {
+    "stateBefore": {
+      "meta": {
+        "campaignId": "camp_1777115162445",
+        "createdAt": "2026-04-25T11:06:02.445Z",
+        "updatedAt": "2026-04-25T11:11:05.277Z",
+        "schemaVersion": "3.0.0",
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service",
+        "currentChapter": 1,
+        "currentSceneId": "settlement_admin_hall",
+        "currentTimeLabel": "0800 hours, tithe collection day"
+      },
+      "player": {
+        "name": "Ren",
+        "species": "Human",
+        "origin": {
+          "id": "imperial-service",
+          "name": "Imperial Service"
+        },
+        "class": {
+          "id": "warden",
+          "name": "Warden"
+        },
+        "level": 1,
+        "hp": {
+          "current": 14,
+          "max": 14
+        },
+        "ac": 14,
+        "credits": 200,
+        "stats": {
+          "STR": 17,
+          "DEX": 12,
+          "CON": 15,
+          "INT": 11,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "proficiencies": [
+          "Athletics",
+          "Intimidation",
+          "Perception",
+          "Heavy Weapons"
+        ],
+        "inventory": [
+          {
+            "name": "Imperial writ of authority",
+            "qty": 1,
+            "tags": [
+              "credential"
+            ]
+          },
+          {
+            "name": "Warden sidearm",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Heavy pattern blade",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Compliance cord",
+            "qty": 2,
+            "tags": [
+              "restraint"
+            ]
+          }
+        ],
+        "traits": [
+          {
+            "name": "Martial Authority",
+            "uses": {
+              "current": 2,
+              "max": 2
+            }
+          }
+        ],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      },
+      "campaign": {
+        "arcs": {},
+        "threads": {
+          "thread_0": {
+            "id": "thread_0",
+            "title": "The missing three — reclassification and evasion",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": {
+              "kind": "npc",
+              "id": "npc_0"
+            },
+            "stakeholders": [],
+            "tension": 9,
+            "resolutionCriteria": "Establish the actual identities and current status of the three conscripts who were reclassified six months ago; determine whether the reclassification was procedurally sound or a cover for absence/loss.",
+            "failureMode": "The Warden accepts the reclassification language at face value and closes the tithe shortfall as administratively resolved, allowing the real story of the three to remain buried.",
+            "retrievalCue": "What happened to the three names on the prior manifest? Where are they now?",
+            "loadBearing": false,
+            "tensionHistory": [],
+            "lastAdvancedTurn": 5
+          }
+        },
+        "decisions": {},
+        "promises": {
+          "promise_0": {
+            "id": "promise_0",
+            "title": "The settlement is offering to produce three tithe names: the hidden Resonant and two children from selection rolls. The Warden now holds the choice of whether to accept or reject this bargain.",
+            "chapterCreated": 1,
+            "category": "promise",
+            "retrievalCue": "The settlement is offering to produce three tithe names: the hidden Resonant and two children from selection rolls. The Warden now holds the choice of whether to accept or reject this bargain.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "owner": {
+              "kind": "npc",
+              "id": "npc_0"
+            },
+            "obligation": "The settlement is offering to produce three tithe names: the hidden Resonant and two children from selection rolls. The Warden now holds the choice of whether to accept or reject this bargain.",
+            "turn": 5
+          }
+        },
+        "clues": {
+          "clue_0": {
+            "id": "clue_0",
+            "title": "The manifest has remained empty in the three tithe slots for six months. This is",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "six-month empty manifest; supplementary selection due today",
+            "status": "floating",
+            "anchoredTo": [],
+            "content": "The manifest has remained empty in the three tithe slots for six months. This is a deliberate administrative gap, not an accident of bookkeeping.",
+            "turn": 1
+          },
+          "clue_1": {
+            "id": "clue_1",
+            "title": "The unidentified younger man's presence in the room is deliberate and significan",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "young man at rear exit; Kess avoids his gaze; posture locked",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "The unidentified younger man's presence is deliberate and significant. His stillness when Thorne says 'Neither' suggests he is linked to the third option—a resource or solution the procedure does not officially contain.",
+            "turn": 1
+          },
+          "clue_2": {
+            "id": "clue_2",
+            "title": "The three conscripts from the prior manifest were reclassified six months ago ra",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "The three conscripts from the prior manifest were reclassified six months ago rather than remaining filled on the current roster. Two aged out of the conscript window into adult labor allocation; one was transferred to agricultural assignment in the northern sector. All three are procedurally closed—filed under transit authority or standardization amendment.",
+            "status": "floating",
+            "anchoredTo": [],
+            "content": "The three conscripts from the prior manifest were reclassified six months ago rather than remaining filled on the current roster. Two aged out of the conscript window into adult labor allocation; one was transferred to agricultural assignment in the northern sector. All three are procedurally closed—filed under transit authority or standardization amendment.",
+            "turn": 2
+          },
+          "clue_3": {
+            "id": "clue_3",
+            "title": "Thorne's response to the binary choice (adult resources or child selection) is '",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Thorne's response to the binary choice (adult resources or child selection) is 'Neither'—indicating a third option exists that is not covered by the settlement's disclosed resources and is not child attunement. This third option involves or is represented by the younger man at the rear exit.",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Thorne's response to the binary choice (adult resources or child selection) is 'Neither'—indicating a third option exists that is not covered by the settlement's disclosed resources and is not child attunement. This third option involves or is represented by the younger man at the rear exit.",
+            "turn": 4
+          },
+          "clue_4": {
+            "id": "clue_4",
+            "title": "A hidden, unregistered Resonant has lived in the settlement for two years, outsi",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "hidden Resonant; two-year resident; settlement's third option",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "A hidden, unregistered Resonant has lived in the settlement for two years, outside allocation arrays and registry records. The settlement is offering this Resonant's name to close the tithe shortfall in lieu of child selection.",
+            "turn": 5
+          },
+          "clue_5": {
+            "id": "clue_5",
+            "title": "Thorne and Kess have coordinated the settlement's response. The younger man (npc",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "settlement coordination; Thorne-Kess-younger man alignment",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Thorne and Kess have coordinated the settlement's response. The younger man (npc_2) is part of their planning — his glance to Thorne reads as coordination, not coercion. The settlement has collectively decided to offer the hidden Resonant.",
+            "turn": 5
+          }
+        },
+        "npcs": {
+          "npc_0": {
+            "id": "npc_0",
+            "name": "Kess",
+            "affiliation": "settlement_admin",
+            "role": "administrative officer",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "She has the careful posture of someone who has spent six months preparing an answer",
+                "Sits with hands flat, acknowledges the shortfall using compliance language",
+                "Does not look at the unidentified younger man"
+              ],
+              "voice": {
+                "note": "compliance language, careful, prepared answer",
+                "register": "official, measured"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [
+              "thread_0"
+            ],
+            "retrievalCue": "settlement administrative officer; six-month silence on the tithe shortfall",
+            "chapterCreated": 1,
+            "lastSeenTurn": 5,
+            "signatureLines": [],
+            "tempLoad": "Kess has moved from compliance language to genuine disclosure. Her hands are flat on the manifest, palms down—a posture of laying down a weapon. She is presenting the settlement's actual decision, not performing procedure."
+          },
+          "npc_1": {
+            "id": "npc_1",
+            "name": "Thorne",
+            "affiliation": "settlement_authority",
+            "role": "Chief Minder",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Wears blue-and-grey of local authority with Chief Minder insignia",
+                "Appears to have lost an internal argument multiple times",
+                "His job is to enforce local compliance; today that conflicts with Synod mandate"
+              ],
+              "voice": {
+                "note": "caught between local compliance and Synod mandate",
+                "register": "clipped, duty-first but conflicted"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Chief Minder; blue-and-grey insignia; conflicted about enforcement",
+            "chapterCreated": 1,
+            "lastSeenTurn": 5,
+            "signatureLines": [],
+            "tempLoad": "Thorne's shoulders drop fractionally — resignation, not relief. His barrier against the records was not about protecting a secret but buying time to assess whether the Warden could be trusted. His eyes flick toward the younger man with coordination, not coercion."
+          },
+          "npc_2": {
+            "id": "npc_2",
+            "name": "unknown_young_man",
+            "affiliation": "settlement",
+            "role": "unidentified (position suggests deliberate stakeholder)",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Mid-twenties, leans against wall near rear exit",
+                "Arms crossed, jaw locked",
+                "Wears no insignia; posture says 'not official'"
+              ],
+              "voice": {
+                "note": "no dialogue yet; physical posture locked",
+                "register": "unknown"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "younger man, mid-twenties, rear exit, crossed arms, locked jaw; Kess does not look at him",
+            "chapterCreated": 1,
+            "lastSeenTurn": 5,
+            "signatureLines": [],
+            "tempLoad": "The younger man has uncrossed his arms and is watching intently. He is coordinating with Thorne. His posture suggests he already knows the settlement's answer and is waiting to see if the Warden will accept the terms or force the binary choice."
+          }
+        },
+        "factions": {},
+        "locations": {
+          "settlement_admin_hall": {
+            "id": "settlement_admin_hall",
+            "name": "settlement admin hall",
+            "description": "The settlement owes three Resonant conscripts to the Synod tithe · The manifest has been empty for six months · Kess (administrative officer) is acknowledging shortfall using compliance language · Thorne (Chief Minder) appears conflicted between local duty and Synod mandate · An unidentified younger man stands at the rear exit, arms crossed, not official · Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600",
+            "atmosphericConditions": [
+              ""
+            ]
+          }
+        },
+        "floatingClueIds": [
+          "clue_0",
+          "clue_2"
+        ],
+        "pivotalSceneIds": [],
+        "lexicon": [
+          {
+            "phrase": "filed under transit authority",
+            "register": "Procedural formula that invokes schedule and bureaucratic closure as inevitability, rendering a human event as an administrative fact.",
+            "exampleContext": "Three people who are now somewhere else, filed under transit authority or standardization amendment or some other formula that closes the question.",
+            "capturedAtTurn": 2,
+            "capturedInChapter": 1
+          }
+        ]
+      },
+      "chapter": {
+        "number": 1,
+        "title": "The Short Count",
+        "setup": {
+          "chapter": 1,
+          "title": "The Short Count",
+          "frame": {
+            "title": "The Short Count",
+            "premise": "A frontier settlement's annual Resonant tithe is three bodies short. The Synod arrives to collect the balance. The settlement elder claims two died, one fled — irrelevant to the arithmetic. The children are being looked at. A Warden of Imperial Service is on-site to witness compliance. The reconciliation will be bureaucratic, not military. That may be worse.",
+            "activePressure": "The Synod's supplementary selection mandate: shortfalls must be met from the next available cohort, procedurally and immediately. The settlement has two options: produce three adult Resonants within hours (impossible), or yield three children to attunement arrays (legal and expedited). Either way, the tithe closes.",
+            "centralTension": "Between institutional mandate and human claim; between duty-as-assigned and duty-as-witnessed; between the systems you serve and the people standing in front of you.",
+            "chapterScope": "A single settlement, one timetable (the Synod's transport leaves at sunset — filed under transit authority), one moral crucible: what compliance costs when the numbers are already dead.",
+            "objective": "The PC, as Warden, will witness or navigate the tithe collection. The outcome will depend on whether they attempt to work the system, break it, bend it, or watch it work exactly as designed.",
+            "crucible": "Three empty slots in the tithe roster. Three children in a settlement that has already given enough. The Synod does not negotiate shortfalls. The Warden does not refuse mandates.",
+            "outcomeSpectrum": {
+              "clean": "The tithe is completed as filed. Either three children are selected and transported under correct procedure, or three adults are produced through leverage, barter, or hidden resources. The settlement suffers the loss. The Warden files the corrected manifest.",
+              "costly": "The tithe is met, but the cost ripples — a parent loses custody rights, a promised retainer deserts, a hidden Resonant is exposed and now flagged. The settlement keeps its children but loses something else. Compliance is achieved at collateral expense.",
+              "failure": "The transport leaves incomplete. The settlement refuses supplementary selection or the PC intervenes directly. The Synod escalates beyond the Warden's authority. The next collectors will arrive with different equipment and different patience. This is not the end of the pressure — it is the beginning of correction under district mandate.",
+              "catastrophic": "A Resonant in the settlement reveals themselves to avoid the children's selection — or is revealed by someone trying to protect them. The Synod now has what they actually came for: a hidden Resonant outside the allocation system. The settlement's gesture becomes the settlement's worst outcome. Everything that follows is classified as expended or heresy-adjacent."
+            }
+          },
+          "antagonistField": {
+            "sourceSystem": "",
+            "corePressure": "",
+            "defaultFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "currentPrimaryFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "escalationLogic": ""
+          },
+          "startingNpcIds": [],
+          "activeThreadIds": [],
+          "loadBearingThreadIds": [],
+          "carriedThreadIds": [],
+          "editorializedLore": [],
+          "openingSceneSpec": {
+            "location": "",
+            "atmosphericCondition": "",
+            "initialState": "",
+            "firstPlayerFacing": "",
+            "immediateChoice": "",
+            "noStartingCombat": false,
+            "noExpositionDump": false
+          },
+          "pressureLadder": [],
+          "surfaceThreads": [],
+          "surfaceNpcIds": []
+        },
+        "scaffolding": {
+          "chapter": 1,
+          "npcHiddenPressures": {},
+          "antagonistFaces": [],
+          "possibleRevelations": [],
+          "moralFaultLines": [],
+          "escalationOptions": []
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "",
+            "openingPressure": "The Synod's supplementary selection mandate: shortfalls must be met from the next available cohort, procedurally and immediately. The settlement has two options: produce three adult Resonants within hours (impossible), or yield three children to attunement arrays (legal and expedited). Either way, the tithe closes.",
+            "chapterObjective": "The PC, as Warden, will witness or navigate the tithe collection. The outcome will depend on whether they attempt to work the system, break it, bend it, or watch it work exactly as designed.",
+            "chapterCrucible": "Three empty slots in the tithe roster. Three children in a settlement that has already given enough. The Synod does not negotiate shortfalls. The Warden does not refuse mandates.",
+            "visibleNpcIds": [],
+            "visibleThreadIds": [],
+            "loreForOpening": [],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world.",
+              "Keep the current pressure face live without implying it is permanent."
+            ]
+          }
+        },
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_3_kess_confrontation",
+            "chapter": 0,
+            "summary": "The Warden pressed Kess for individual conscript designations rather than accepting reclassification language. Using Imperial Service register as leverage, the Warden signaled an interrogation rather than a courtesy request. Kess recognized the threat and shut down; Thorne physically positioned himself as a barrier and reframed the Warden's pressure as procedural violation. The settlement has unified around information denial. The younger man at the rear exit is alert and appears ready to signal or fetch. The transport window tightens to 1600 hours. No names obtained; settlement options have narrowed to producing three children or three adults through other means.",
+            "leadsTo": "relational_tension"
+          }
+        ],
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "settlement_admin_hall",
+          "name": "settlement admin hall",
+          "description": "The settlement owes three Resonant conscripts to the Synod tithe · The manifest has been empty for six months · Kess (administrative officer) is acknowledging shortfall using compliance language · Thorne (Chief Minder) appears conflicted between local duty and Synod mandate · An unidentified younger man stands at the rear exit, arms crossed, not official · Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600",
+          "atmosphericConditions": [
+            ""
+          ]
+        },
+        "sceneSnapshot": {
+          "sceneId": "settlement_admin_hall",
+          "location": {
+            "id": "settlement_admin_hall",
+            "name": "settlement admin hall",
+            "description": "The settlement owes three Resonant conscripts to the Synod tithe · The manifest has been empty for six months · Kess (administrative officer) is acknowledging shortfall using compliance language · Thorne (Chief Minder) appears conflicted between local duty and Synod mandate · An unidentified younger man stands at the rear exit, arms crossed, not official · Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600",
+            "atmosphericConditions": [
+              ""
+            ]
+          },
+          "presentNpcIds": [
+            "npc_0",
+            "npc_1",
+            "npc_2"
+          ],
+          "timeLabel": "0800 hours, tithe collection day",
+          "established": [
+            "The settlement owes three Resonant conscripts to the Synod tithe",
+            "The manifest has been empty for six months",
+            "Kess (administrative officer) is acknowledging shortfall using compliance language",
+            "Thorne (Chief Minder) appears conflicted between local duty and Synod mandate",
+            "An unidentified younger man stands at the rear exit, arms crossed, not official",
+            "Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600"
+          ]
+        },
+        "currentTimeLabel": "0800 hours, tithe collection day",
+        "sceneBundleCache": {
+          "sceneId": "settlement_admin_hall",
+          "bundleText": "## Scene opening — chapter 1: The Short Count · settlement_admin_hall\n\n### Scene\n- Location: settlement admin hall — The settlement owes three Resonant conscripts to the Synod tithe · The manifest has been empty for six months · Kess (administrative officer) is acknowledging shortfall using compliance language · Thorne (Chief Minder) appears conflicted between local duty and Synod mandate · An unidentified younger man stands at the rear exit, arms crossed, not official · Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600\n- Atmosphere: \n\n### Chapter\n- Objective: The PC, as Warden, will witness or navigate the tithe collection. The outcome will depend on whether they attempt to work the system, break it, bend it, or watch it work exactly as designed.\n- Crucible: Three empty slots in the tithe roster. Three children in a settlement that has already given enough. The Synod does not negotiate shortfalls. The Warden does not refuse mandates.\n- Pressure face (at scene open):  () — \n\n### Cast on-stage (identity — stable within scene)\n- **Kess** (npc_0) — settlement_admin\n  voice: compliance language, careful, prepared answer\n  relation: settlement_admin · neutral\n- **Thorne** (npc_1) — settlement_authority\n  voice: caught between local compliance and Synod mandate\n  relation: settlement_authority · neutral\n- **unknown_young_man** (npc_2) — settlement\n  voice: no dialogue yet; physical posture locked\n  relation: settlement · neutral\n\nMutable state (disposition, tempLoad, agenda) is provided fresh each turn in the per-turn block — do not treat identity and mutable state as the same.",
+          "builtAtTurn": 1,
+          "firstTurnIndex": 1
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement's administrative hall smells of concrete dust and tension. It's a small place—two stories of municipal function squeezed into a building that was never meant to hold what it's holding now: the weight of three missing tithes.\n\nYou arrived by transit authority schedule at 0800, as filed. The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months. Today you are here to correct that discrepancy.\n\nThe hall's administrative officer, a woman named Kess, sits behind the central desk with her hands flat on its surface. She has the careful posture of someone who has spent six months preparing an answer that will not be accepted. Her eyes track you as you settle into the chair across from her—assessment and resignation mixed.\n\nBeside her stands a taller man in the blue-and-grey of local authority, his insignia marking him as the settlement's Chief Minder. He looks like he has already lost this argument with himself several times over. His name is Thorne, and his job is to enforce local compliance. Today those two directives are in direct opposition.\n\nThe third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters. You don't yet know his role here, but his presence is deliberate.\n\nThe manifest sits closed on your desk. Procedure is precise: you open it, you record the names, you file the transport papers, and the conscripts report to the transit point by 1600. That is how supplementary selection works. That is how the tithe closes.\n\nKess speaks first. \"The settlement acknowledges the shortfall.\"\n\nA good opening. Compliance language. She is not going to force you to cite the mandate.\n\nWhat do you do?",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Kess",
+                  "Thorne",
+                  "unknown_young_man"
+                ],
+                "threadsTouched": [
+                  "The Short Count—three missing tithes",
+                  "Supplementary selection mandate active"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "The manifest has been empty for six months—a deliberate non-compliance",
+                  "Three people are on stage: Kess (administrative officer), Thorne (Chief Minder), and an unidentified younger man",
+                  "Kess acknowledges the shortfall using compliance language",
+                  "The young man's presence is deliberate but not official"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+                "Address Thorne: his job is local enforcement. Ask him what he knows about the shortfall and whether three adults can be produced as substitute for the children.",
+                "Read the manifest yourself—open it and check what it actually says versus what procedure demands."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "Kess",
+                  "Thorne",
+                  "unknown_young_man"
+                ],
+                "clues_dropped": [
+                  "The manifest has been empty for six months—a deliberate non-compliance",
+                  "Three people are on stage: Kess (administrative officer), Thorne (Chief Minder), and an unidentified younger man",
+                  "Kess acknowledges the shortfall using compliance language",
+                  "The young man's presence is deliberate but not official"
+                ],
+                "decisions_implied": [],
+                "promises_implied": [],
+                "threads_touched": [
+                  "The Short Count—three missing tithes",
+                  "Supplementary selection mandate active"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "location_id": "settlement_admin_hall",
+                    "time_label": "0800 hours, tithe collection day",
+                    "present_npc_ids": [
+                      "Kess",
+                      "Thorne",
+                      "unknown_young_man"
+                    ],
+                    "established": [
+                      "The settlement owes three Resonant conscripts to the Synod tithe",
+                      "The manifest has been empty for six months",
+                      "Kess (administrative officer) is acknowledging shortfall using compliance language",
+                      "Thorne (Chief Minder) appears conflicted between local duty and Synod mandate",
+                      "An unidentified younger man stands at the rear exit, arms crossed, not official",
+                      "Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600"
+                    ]
+                  }
+                }
+              ],
+              "suggested_actions": [
+                "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+                "Address Thorne: his job is local enforcement. Ask him what he knows about the shortfall and whether three adults can be produced as substitute for the children.",
+                "Read the manifest yourself—open it and check what it actually says versus what procedure demands."
+              ]
+            },
+            "timestamp": "2026-04-25T11:06:25.765Z",
+            "archivistPatchApplied": {
+              "turnIndex": 1,
+              "creates": [
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Kess",
+                    "affiliation": "settlement_admin",
+                    "role": "administrative officer",
+                    "voice_note": "compliance language, careful, prepared answer",
+                    "voice_register": "official, measured",
+                    "retrieval_cue": "settlement administrative officer; six-month silence on the tithe shortfall",
+                    "key_facts": [
+                      "She has the careful posture of someone who has spent six months preparing an answer",
+                      "Sits with hands flat, acknowledges the shortfall using compliance language",
+                      "Does not look at the unidentified younger man"
+                    ],
+                    "disposition": "neutral",
+                    "temp_load": "resignation and assessment; expecting refusal"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The hall's administrative officer, a woman named Kess, sits behind the central desk with her hands flat on its surface. She has the careful posture of someone who has spent six months preparing an answer that will not be accepted."
+                },
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Thorne",
+                    "affiliation": "settlement_authority",
+                    "role": "Chief Minder",
+                    "voice_note": "caught between local compliance and Synod mandate",
+                    "voice_register": "clipped, duty-first but conflicted",
+                    "retrieval_cue": "Chief Minder; blue-and-grey insignia; conflicted about enforcement",
+                    "key_facts": [
+                      "Wears blue-and-grey of local authority with Chief Minder insignia",
+                      "Appears to have lost an internal argument multiple times",
+                      "His job is to enforce local compliance; today that conflicts with Synod mandate"
+                    ],
+                    "disposition": "neutral",
+                    "temp_load": "resignation, internal conflict visible"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Beside her stands a taller man in the blue-and-grey of local authority, his insignia marking him as the settlement's Chief Minder. He looks like he has already lost this argument with himself several times over."
+                },
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "unknown_young_man",
+                    "affiliation": "settlement",
+                    "role": "unidentified (position suggests deliberate stakeholder)",
+                    "voice_note": "no dialogue yet; physical posture locked",
+                    "voice_register": "unknown",
+                    "retrieval_cue": "younger man, mid-twenties, rear exit, crossed arms, locked jaw; Kess does not look at him",
+                    "key_facts": [
+                      "Mid-twenties, leans against wall near rear exit",
+                      "Arms crossed, jaw locked",
+                      "Wears no insignia; posture says 'not official'",
+                      "His presence is deliberate; Kess deliberately avoids looking at him"
+                    ],
+                    "disposition": "unknown",
+                    "temp_load": "tense, guarded, stakes unclear"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters."
+                },
+                {
+                  "kind": "thread",
+                  "payload": {
+                    "title": "The Short Count",
+                    "owner": {
+                      "kind": "faction",
+                      "name_or_id": "Synod"
+                    },
+                    "tension": 5,
+                    "resolution_criteria": "The three missing tithe slots are either filled (through conscript selection, barter, or production of adult Resonants) or the Warden escalates the non-compliance to higher Synod authority",
+                    "failure_mode": "Supplementary selection cannot be completed within procedure; escalation to district correction mandate required",
+                    "retrieval_cue": "settlement owes three Resonant conscripts; six-month shortfall; supplementary selection mandate active"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months. Today you are here to correct that discrepancy."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The manifest has remained empty in the three tithe slots for six months. This is a deliberate administrative gap, not an accident of bookkeeping.",
+                    "anchored_to": [
+                      "thread_short_count"
+                    ],
+                    "retrieval_cue": "six-month empty manifest; supplementary selection due today"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The unidentified younger man's presence in the room is deliberate and significant. Kess deliberately avoids looking at him, suggesting hidden stakes or an unapproved participant.",
+                    "anchored_to": [
+                      "thread_short_count"
+                    ],
+                    "retrieval_cue": "young man at rear exit; Kess avoids his gaze; posture locked"
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "The third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters."
+                }
+              ],
+              "updates": [],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_short_count": 1
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_short_count": 1
+              }
+            }
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+            "narratorProse": "You turn to Kess directly. The administrative officer is still positioned at the manifest table, fingers resting on the ledger's spine.\n\n\"The three names on the prior roster,\" you say. \"The ones that should be filled now. Where are they?\"\n\nKess meets your gaze evenly. Her compliance language has been rehearsed — you can hear the seams in it — but this question doesn't fit the script she prepared. She glances toward Thorne, then back.\n\n\"Reclassified,\" she says finally. \"Six months ago. Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was—\" She pauses. Not evasion, exactly. Precision under pressure. \"—transferred to agricultural assignment in the northern sector. No longer available to the settlement roster.\"\n\nThe words are technically procedural. Reclassified. Allocation. Transfer. The bureaucratic phrasing wraps around something you can't quite see — not because it's hidden, but because the language is designed to make the shape of it irrelevant. Three slots. Three names. Three people who are now somewhere else, filed under transit authority or standardization amendment or some other formula that closes the question.\n\nThorne shifts his weight. The younger man at the rear hasn't moved.\n\nYou have the opening Kess gave you, but it's thin. She answered the question without actually answering it. The names are gone, reclassified, rendered administrative rather than human.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Kess",
+                  "Thorne"
+                ],
+                "threadsTouched": [
+                  "the missing three",
+                  "reclassification language as evasion"
+                ],
+                "decisionsImplied": [
+                  "Ren is pressing directly on the gap rather than accepting the compliance language at face value"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Three conscripts from the prior manifest were reclassified six months ago rather than filled",
+                  "Two aged out of conscript window into adult allocation",
+                  "One was transferred to agricultural assignment in northern sector",
+                  "All three are gone from settlement roster and procedure-closed"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+                "Ask Thorne directly what he knows about the three who were on the roster six months ago",
+                "Demand to see the transfer papers and reclassification documents before accepting the shortfall premise"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+                "Ask Thorne directly what he knows about the three who were on the roster six months ago",
+                "Demand to see the transfer papers and reclassification documents before accepting the shortfall premise"
+              ],
+              "hinted_entities": {
+                "clues_dropped": [
+                  "Three conscripts from the prior manifest were reclassified six months ago rather than filled",
+                  "Two aged out of conscript window into adult allocation",
+                  "One was transferred to agricultural assignment in northern sector",
+                  "All three are gone from settlement roster and procedure-closed"
+                ],
+                "decisions_implied": [
+                  "Ren is pressing directly on the gap rather than accepting the compliance language at face value"
+                ],
+                "npcs_mentioned": [
+                  "Kess",
+                  "Thorne"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "the missing three",
+                  "reclassification language as evasion"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": []
+            },
+            "timestamp": "2026-04-25T11:07:07.057Z",
+            "archivistPatchApplied": {
+              "turnIndex": 2,
+              "creates": [
+                {
+                  "kind": "thread",
+                  "payload": {
+                    "title": "The missing three — reclassification and evasion",
+                    "owner": {
+                      "kind": "npc",
+                      "name_or_id": "npc_0"
+                    },
+                    "tension": 6,
+                    "resolution_criteria": "Establish the actual identities and current status of the three conscripts who were reclassified six months ago; determine whether the reclassification was procedurally sound or a cover for absence/loss.",
+                    "failure_mode": "The Warden accepts the reclassification language at face value and closes the tithe shortfall as administratively resolved, allowing the real story of the three to remain buried.",
+                    "retrieval_cue": "What happened to the three names on the prior manifest? Where are they now?"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Reclassified. Six months ago. Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was transferred to agricultural assignment in the northern sector."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The three conscripts from the prior manifest were reclassified six months ago rather than remaining filled on the current roster. Two aged out of the conscript window into adult labor allocation; one was transferred to agricultural assignment in the northern sector. All three are procedurally closed—filed under transit authority or standardization amendment.",
+                    "anchored_to": [
+                      "thread_tithe_shortfall_investigation"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was transferred to agricultural assignment in the northern sector. No longer available to the settlement roster."
+                },
+                {
+                  "kind": "decision",
+                  "payload": {
+                    "summary": "The Warden is pressing directly on the gap in the prior manifest rather than accepting the compliance language at face value; Kess has offered bureaucratic reframing ('reclassified,' 'allocation,' 'transfer') but the three names and their actual fates remain unestablished.",
+                    "anchored_to": [
+                      "thread_tithe_shortfall_investigation"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The three names on the prior roster. The ones that should be filled now. Where are they?"
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "temp_load": "Rehearsed compliance language; uncomfortable with the direct question about the three names; answers procedurally but with visible precision-under-pressure; her glance toward Thorne suggests shared knowledge or constraint.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Her compliance language has been rehearsed — you can hear the seams in it — but this question doesn't fit the script she prepared. She glances toward Thorne, then back."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "temp_load": "Shifts weight when the three-names question surfaces; registering discomfort or constraint; body language is reactive rather than complicit.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Thorne shifts his weight."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "Remains motionless and watchful in rear position; his stillness persists even as Kess reveals the reclassification language; suggests deliberate oversight or witness function.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear hasn't moved."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": false,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_tithe_shortfall_investigation": 1
+                }
+              },
+              "flags": [
+                {
+                  "kind": "annotation_mismatch_claims",
+                  "detail": "Annotation hints at 'the missing three' and 'reclassification language as evasion' as threads; prose does not explicitly establish these as independent threads but rather as a single investigative question ('where are the three names?'). Created as one thread with dual facets rather than splitting. Consistent with prose focus.",
+                  "entityId": "thread_tithe_shortfall_investigation"
+                }
+              ],
+              "lexiconAdditions": [
+                {
+                  "phrase": "filed under transit authority",
+                  "register": "Procedural formula that invokes schedule and bureaucratic closure as inevitability, rendering a human event as an administrative fact.",
+                  "exampleContext": "Three people who are now somewhere else, filed under transit authority or standardization amendment or some other formula that closes the question."
+                }
+              ],
+              "coherenceFindings": [
+                {
+                  "type": "clue_leak",
+                  "severity": "low",
+                  "evidenceQuote": "The names are gone, reclassified, rendered administrative rather than human.",
+                  "stateReference": "clue_0",
+                  "suggestedNote": "Narrator's summary reiterates the existing clue_0 premise. This is recap prose, not new information. Not a violation — maintains clue coherence."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": false,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_tithe_shortfall_investigation": 1
+              }
+            }
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+            "narratorProse": "You lean forward slightly, deliberately. Kess's compliance language is a wall, but it's one you're trained to breach.\n\n\"The names,\" you say. Flat. Imperial Service voice — the one that makes procedure feel like a choice someone else should have made. \"The three individuals who aged out, transferred, reclassified. I need their designations before we file the corrected manifest.\"\n\nKess's jaw tightens. She knows what you're doing. You're not asking for reclassification *codes* or *dates* — you're asking for the people. The ones behind the language. That matters because once you have the names, you can cross-reference them, verify the transfers, confirm whether three actual conscripts exist in the northern sector or whether the settlement simply... lost them administratively.\n\n\"That information is filed under transit authority,\" Kess says, but her voice has lost some of its rehearsed edge. \"The northern sector maintains separate rosters. I can request—\"\n\n\"Now,\" you say.\n\nThorne watches this exchange. The Chief Minder's posture has shifted — his weight is no longer balanced. He's leaning slightly toward Kess, as if the next word out of her mouth might require him to move. The younger man at the rear exit has uncrossed his arms.\n\nKess opens her mouth. You can see her calculating — whether compliance or resistance costs more. Her fingers drum once against the manifest ledger.\n\nYou're asking her to break procedure slightly by pulling individual records before the transport window closes. The request is reasonable. The request is also a test of whether this settlement has something to hide beyond a simple shortfall.Kess straightens. The moment crystallizes — you pressed too hard, and she recognized the pressure as a threat rather than a bureaucratic courtesy.\n\n\"The names,\" she says, her voice dropping into the formal register of someone who has just decided the conversation is over, \"are filed under transit authority. The transport window is 1600 hours. That is procedure.\"\n\nBut that's not the backfire. The backfire is Thorne.\n\nThe Chief Minder steps between you and the manifest table in one smooth motion — not hostile, not quite, but positioned. A physical answer to your pressure. His voice is low.\n\n\"Warden,\" he says, and there's something in the title that sounds like a warning. \"The settlement understands the mandate. The shortfall will be closed by 1600. Whether we pull those names from the northern sector records or whether we submit three names from the current population — that's the choice in front of us. But asking Kess to produce individual records you could request from the Synod's own databases?\" He shakes his head slightly. \"That looks like you're looking for something the procedure doesn't require.\"\n\nAnd the younger man has moved. Not toward you. Toward the interior door, as if ready to leave or to fetch someone. He's watching Thorne's back, waiting for a signal.\n\nYou've just escalated this from a procedural shortfall to something that feels like an interrogation. Kess will give you nothing now without leverage you don't have. And Thorne has positioned himself as a barrier — not because he's hostile to the Synod, but because your pressure has just made it clear that cooperating transparently might cost the settlement more than resistance.\n\nThe transport window is tightening. You have no names. And the settlement's options have just narrowed.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "The Warden pressed Kess for individual names rather than accepting reclassification language",
+                  "The Warden used Intimidation to force transparency"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "The three original conscripts were reclassified six months ago — two aged out, one transferred to northern sector",
+                  "Kess invoked transit authority and the 1600 hour window to close the conversation",
+                  "Thorne interprets the Warden's pressure as an interrogation, not a procedural request"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+                "Press Thorne instead of Kess — he's the Chief Minder and the one who just stepped in; his conflict between local duty and Synod mandate is visible, and he might answer differently if approached as an equal enforcer rather than as someone being interrogated",
+                "Ask directly about the younger man at the rear exit — his shift in posture when pressure came up suggests he's connected to whatever the settlement is hiding, and addressing him directly might break the unified front Thorne just assembled"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "The three original conscripts were reclassified six months ago — two aged out, one transferred to northern sector",
+                  "Kess invoked transit authority and the 1600 hour window to close the conversation",
+                  "Thorne interprets the Warden's pressure as an interrogation, not a procedural request"
+                ],
+                "decisions_implied": [
+                  "The Warden pressed Kess for individual names rather than accepting reclassification language",
+                  "The Warden used Intimidation to force transparency"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+                "Press Thorne instead of Kess — he's the Chief Minder and the one who just stepped in; his conflict between local duty and Synod mandate is visible, and he might answer differently if approached as an equal enforcer rather than as someone being interrogated",
+                "Ask directly about the younger man at the rear exit — his shift in posture when pressure came up suggests he's connected to whatever the settlement is hiding, and addressing him directly might break the unified front Thorne just assembled"
+              ]
+            },
+            "timestamp": "2026-04-25T11:08:18.611Z",
+            "archivistPatchApplied": {
+              "turnIndex": 3,
+              "creates": [],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load": "Jaw tightened at direct pressure. Recognized the Warden's shift to Imperial Service register as a threat, not courtesy. Now in formal procedural shutdown mode; will offer nothing without leverage."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Kess's jaw tightens... 'The names,' she says, her voice dropping into the formal register of someone who has just decided the conversation is over."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load": "Stepped between Warden and manifest in protective gesture. Positioned as barrier. Interprets the Warden's pressure as interrogation, triggering local-duty override. Conflicted but now actively defending settlement's information."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The Chief Minder steps between you and the manifest table in one smooth motion... 'That looks like you're looking for something the procedure doesn't require.'"
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "Uncrossed arms when pressure escalated. Shifted toward interior door. Watching Thorne's back, appears to await signal. Connected to what the settlement is hiding; possibly ready to alert or fetch someone."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has uncrossed his arms... he's watching Thorne's back, waiting for a signal."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_0",
+                  "changes": {
+                    "tension": 8,
+                    "status": "active",
+                    "last_advanced_turn": 3
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "You've just escalated this from a procedural shortfall to something that feels like an interrogation. Kess will give you nothing now without leverage you don't have."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "sceneResult": {
+                "sceneId": "scene_3_kess_confrontation",
+                "chapter": 0,
+                "summary": "The Warden pressed Kess for individual conscript designations rather than accepting reclassification language. Using Imperial Service register as leverage, the Warden signaled an interrogation rather than a courtesy request. Kess recognized the threat and shut down; Thorne physically positioned himself as a barrier and reframed the Warden's pressure as procedural violation. The settlement has unified around information denial. The younger man at the rear exit is alert and appears ready to signal or fetch. The transport window tightens to 1600 hours. No names obtained; settlement options have narrowed to producing three children or three adults through other means.",
+                "leadsTo": "relational_tension"
+              },
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "relational_tension",
+                "tensionDeltasByThreadId": {
+                  "thread_0": 2
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "relational_tension",
+              "tensionDeltasByThreadId": {
+                "thread_0": 2
+              }
+            }
+          },
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+            "narratorProse": "You nod slowly, reading the shift. Thorne's positioned himself as a buffer, and pushing harder into Kess's records will only cement the wall. The younger man is still watching. You have a procedural mandate and a closing window. Time to reframe.\n\n\"1600 is clear,\" you say, stepping back from the manifest table. Your voice levels — less interrogation, more acknowledgment of the actual constraint. \"The shortfall closes by transport. That's the procedure.\"\n\nYou turn directly to Thorne, but you're speaking loud enough that Kess hears it too.\n\n\"So the settlement has two paths,\" you continue. \"Three adult Resonants produced through leverage, barter, or hidden allocation. Or three children selected from the current population for attunement and transport.\" You pause. \"Which one does the settlement actually have?\"\n\nIt's a cleaner question. It forces them to choose between admitting they have resources they haven't disclosed, or admitting they're about to select children. Both answers tell you something. And it's not evasion — it's procedure restated. The Synod doesn't care about the mechanism, only that the manifest closes.\n\nThorne's posture eases slightly. The barrier doesn't dissolve, but it softens. He's reading this as tactical retreat, not surrender. Kess's grip on the ledger loosens.\n\n\"Neither,\" Thorne says quietly.\n\nThe word hangs. Not defiance. Not compliance, either. Something else — as if he's just admitted to a third option the procedure doesn't officially contain.\n\nThe younger man at the rear exit has stopped moving. Waiting.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "Ren backed off procedural pressure and reframed the question as a choice between two legitimate options"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Thorne said 'Neither' — implying a third option exists that is not adult resources or child selection"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Ask Thorne directly what the third option is — demand specificity, not procedural language",
+                "Press Kess on whether anyone in the settlement has Resonant capacity that wasn't registered in the original roster",
+                "Watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "decisions_implied": [
+                  "Ren backed off procedural pressure and reframed the question as a choice between two legitimate options"
+                ],
+                "clues_dropped": [
+                  "Thorne said 'Neither' — implying a third option exists that is not adult resources or child selection"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Ask Thorne directly what the third option is — demand specificity, not procedural language",
+                "Press Kess on whether anyone in the settlement has Resonant capacity that wasn't registered in the original roster",
+                "Watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents"
+              ]
+            },
+            "timestamp": "2026-04-25T11:09:29.276Z",
+            "archivistPatchApplied": {
+              "turnIndex": 4,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Thorne's response to the binary choice (adult resources or child selection) is 'Neither'—indicating a third option exists that is not covered by the settlement's disclosed resources and is not child attunement. This third option involves or is represented by the younger man at the rear exit.",
+                    "anchored_to": [
+                      "thread_0"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "'Neither,' Thorne says quietly. The word hangs. Not defiance. Not compliance, either. Something else—as if he's just admitted to a third option the procedure doesn't officially contain."
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "temp_load": "posture eased; barrier softens; reading PC's question as tactical retreat, not surrender; choosing language carefully ('Neither')"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Thorne's posture eases slightly. The barrier doesn't dissolve, but it softens. He's reading this as tactical retreat, not surrender."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "temp_load": "grip on ledger loosens; resistance softening with Thorne's shift"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Kess's grip on the ledger loosened."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "has stopped moving; waiting; reaction to 'Neither' is watchful and deliberate"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has stopped moving. Waiting."
+                },
+                {
+                  "entityKind": "clue",
+                  "entityId": "clue_1",
+                  "changes": {
+                    "content": "The unidentified younger man's presence is deliberate and significant. His stillness when Thorne says 'Neither' suggests he is linked to the third option—a resource or solution the procedure does not officially contain.",
+                    "anchored_to": [
+                      "thread_0"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has stopped moving. Waiting."
+                }
+              ],
+              "transitions": [],
+              "attachments": [
+                {
+                  "kind": "anchor_decision",
+                  "entityId": "decision_reframe_question",
+                  "threadIds": [
+                    "thread_0"
+                  ],
+                  "confidence": "high"
+                }
+              ],
+              "pacingClassification": {
+                "worldInitiated": false,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_0": 1
+                }
+              },
+              "flags": [
+                {
+                  "kind": "annotation_mismatch_shown",
+                  "detail": "Prose introduces a third option ('Neither') and links it to the younger man's presence, which the annotation hints at as a 'clue_dropped' but does not explicitly name as a decision entity. Prose shows decision-level action (reframing the question) without annotation naming it; created decision_reframe_question to capture the PC's tactical move."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": false,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1
+              }
+            }
+          },
+          {
+            "index": 4,
+            "chapter": 1,
+            "playerInput": "Ask throne for what he means with \"neither\". The quota must be fulfilled. And watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents",
+            "narratorProse": "You lock onto Thorne's eyes. \"Neither isn't an option. The quota closes at 1600. Either the settlement produces three adult Resonants or we open the selection rolls for children. There is no third procedure.\"\n\nThorne's jaw tightens. He knows you're right. The Synod does not negotiate shortfalls — that's not a threat, it's administrative law. But his silence stretches, and that tells you something worse: he's calculating the cost of each path and finding them both unbearable.\n\nThe younger man moves.\n\nIt's not dramatic — just a shift in weight, arms still crossed, but his eyes track from Thorne to you. Measuring. Testing whether you're the type to be swayed or the type to execute procedure cleanly. His posture says he already knows the settlement's answer. He's waiting to see if you do.\n\n\"There is a third option,\" Kess says quietly from behind the manifest table. Her voice has lost the compliance edge. What's left is thinner, more real. \"But it requires the Warden's discretion.\"\n\nThorne's shoulders drop fractionally. Not relief. Resignation. The barrier he placed between you and the records wasn't about protecting a secret — it was about buying time to figure out whether you could be trusted with one.\n\nThe younger man uncrosses his arms.\n\n\"There's a Resonant in the settlement,\" Kess continues. \"Not on the registry. Not in any allocation. Been here for two years, living as standard population. If we produce that name—\" She stops, reading your face. Knowing what she's about to ask. \"The shortfall closes. The transport takes one hidden Resonant and two from the selection rolls. The numbers balance.\"\n\nThe tithe window narrows. The choice is no longer binary.You watch them both — really watch. Thorne's shoulders are tight, but not with the tension of someone lying. His eyes flick toward the younger man, and there's something in that glance that reads as coordination, not coercion. Kess's hands are flat on the manifest now, palms down, as if she's laying down a weapon.\n\nThis isn't maneuvering. This is a settlement that has made a decision and is now presenting it to you as the only way forward.\n\nBut the calculation underneath is sharp: they're offering a hidden Resonant — someone who has lived outside the system, outside the allocation, outside the arrays — as a way to protect the two children they would otherwise have to select. The Synod gets three conscripts. The settlement gets to keep two of its young. The hidden Resonant becomes the price.\n\nThe younger man is still watching. Patient. Waiting to see if you'll accept the terms or force the settlement back to the original binary.\n\nOutside, the settlement hours are moving toward 1600. Three slots. Three names. The only question now is whose names they are.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "The player has backed off direct interrogation and reframed the choice procedurally",
+                  "The player is now reading the settlement's actual options, not their compliance language"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "There is an unregistered, hidden Resonant living in the settlement for two years",
+                  "Thorne and Kess have coordinated on this offer — the younger man is part of the settlement's planning",
+                  "The settlement is proposing to sacrifice the hidden Resonant to protect children from supplementary selection",
+                  "The offer is genuine desperation, not a procedural trick"
+                ]
+              },
+              "authorialMoves": {},
+              "suggestedActions": []
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "There is an unregistered, hidden Resonant living in the settlement for two years",
+                  "Thorne and Kess have coordinated on this offer — the younger man is part of the settlement's planning",
+                  "The settlement is proposing to sacrifice the hidden Resonant to protect children from supplementary selection",
+                  "The offer is genuine desperation, not a procedural trick"
+                ],
+                "decisions_implied": [
+                  "The player has backed off direct interrogation and reframed the choice procedurally",
+                  "The player is now reading the settlement's actual options, not their compliance language"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              }
+            },
+            "timestamp": "2026-04-25T11:10:56.231Z",
+            "archivistPatchApplied": {
+              "turnIndex": 5,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "A hidden, unregistered Resonant has lived in the settlement for two years, outside allocation arrays and registry records. The settlement is offering this Resonant's name to close the tithe shortfall in lieu of child selection.",
+                    "anchored_to": [
+                      "thread_0"
+                    ],
+                    "retrieval_cue": "hidden Resonant; two-year resident; settlement's third option"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "There's a Resonant in the settlement. Not on the registry. Not in any allocation. Been here for two years, living as standard population."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Thorne and Kess have coordinated the settlement's response. The younger man (npc_2) is part of their planning — his glance to Thorne reads as coordination, not coercion. The settlement has collectively decided to offer the hidden Resonant.",
+                    "anchored_to": [
+                      "thread_0"
+                    ],
+                    "retrieval_cue": "settlement coordination; Thorne-Kess-younger man alignment"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "His eyes flick toward the younger man, and there's something in that glance that reads as coordination, not coercion."
+                },
+                {
+                  "kind": "promise",
+                  "payload": {
+                    "obligation": "The settlement is offering to produce three tithe names: the hidden Resonant and two children from selection rolls. The Warden now holds the choice of whether to accept or reject this bargain.",
+                    "owner": {
+                      "kind": "npc",
+                      "name_or_id": "npc_0"
+                    },
+                    "anchored_to": [
+                      "thread_0"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The shortfall closes. The transport takes one hidden Resonant and two from the selection rolls. The numbers balance."
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "disposition": "neutral",
+                    "temp_load": "Kess has moved from compliance language to genuine disclosure. Her hands are flat on the manifest, palms down—a posture of laying down a weapon. She is presenting the settlement's actual decision, not performing procedure.",
+                    "last_seen_turn": 5
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Her voice has lost the compliance edge. What's left is thinner, more real."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "disposition": "neutral",
+                    "temp_load": "Thorne's shoulders drop fractionally — resignation, not relief. His barrier against the records was not about protecting a secret but buying time to assess whether the Warden could be trusted. His eyes flick toward the younger man with coordination, not coercion.",
+                    "last_seen_turn": 5
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Not relief. Resignation. The barrier he placed between you and the records wasn't about protecting a secret — it was about buying time to figure out whether you could be trusted with one."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "The younger man has uncrossed his arms and is watching intently. He is coordinating with Thorne. His posture suggests he already knows the settlement's answer and is waiting to see if the Warden will accept the terms or force the binary choice.",
+                    "last_seen_turn": 5
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man uncrosses his arms. His eyes track from Thorne to you. Measuring. Testing whether you're the type to be swayed or the type to execute procedure cleanly."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_0",
+                  "changes": {
+                    "tension": 9,
+                    "status": "active",
+                    "last_advanced_turn": 5
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The tithe window narrows. The choice is no longer binary."
+                }
+              ],
+              "transitions": [],
+              "attachments": [
+                {
+                  "kind": "anchor_promise",
+                  "entityId": "promise_0",
+                  "threadIds": [
+                    "thread_0"
+                  ],
+                  "confidence": "high"
+                }
+              ],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "relational_tension",
+                "tensionDeltasByThreadId": {
+                  "thread_0": 1
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "relational_tension",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1
+              }
+            }
+          }
+        ],
+        "rollLog": [
+          {
+            "turn": 2,
+            "skill": "Intimidation",
+            "dc": 15,
+            "rollResult": 9,
+            "modifier": 2,
+            "outcome": "failure",
+            "consequenceSummary": "Kess refuses and invokes the transport schedule as final authority — the window closes, you have no names to verify, and the settlement defaults to supplementary selection from the next cohort (children)"
+          },
+          {
+            "turn": 4,
+            "skill": "Perception",
+            "dc": 15,
+            "rollResult": 13,
+            "modifier": 3,
+            "outcome": "success",
+            "consequenceSummary": "you cannot distinguish genuine desperation from procedural maneuvering; Thorne's posture and Kess's tone read as simple honesty, when one of them may be angling for an outcome that serves the settlement's survival over the hidden Resonant's"
+          }
+        ],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement's administrative hall smells of concrete dust and tension. It's a small place—two stories of municipal function squeezed into a building that was never meant to hold what it's holding now: the weight of three missing tithes.\n\nYou arrived by transit authority schedule at 0800, as filed. The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months. Today you are here to correct that discrepancy.\n\nThe hall's administrative officer, a woman named Kess, sits behind the central desk with her hands flat on its surface. She has the careful posture of someone who has spent six months preparing an answer that will not be accepted. Her eyes track you as you settle into the chair across from her—assessment and resignation mixed.\n\nBeside her stands a taller man in the blue-and-grey of local authority, his insignia marking him as the settlement's Chief Minder. He looks like he has already lost this argument with himself several times over. His name is Thorne, and his job is to enforce local compliance. Today those two directives are in direct opposition.\n\nThe third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters. You don't yet know his role here, but his presence is deliberate.\n\nThe manifest sits closed on your desk. Procedure is precise: you open it, you record the names, you file the transport papers, and the conscripts report to the transit point by 1600. That is how supplementary selection works. That is how the tithe closes.\n\nKess speaks first. \"The settlement acknowledges the shortfall.\"\n\nA good opening. Compliance language. She is not going to force you to cite the mandate.\n\nWhat do you do?",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Kess",
+                  "Thorne",
+                  "unknown_young_man"
+                ],
+                "threadsTouched": [
+                  "The Short Count—three missing tithes",
+                  "Supplementary selection mandate active"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "The manifest has been empty for six months—a deliberate non-compliance",
+                  "Three people are on stage: Kess (administrative officer), Thorne (Chief Minder), and an unidentified younger man",
+                  "Kess acknowledges the shortfall using compliance language",
+                  "The young man's presence is deliberate but not official"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+                "Address Thorne: his job is local enforcement. Ask him what he knows about the shortfall and whether three adults can be produced as substitute for the children.",
+                "Read the manifest yourself—open it and check what it actually says versus what procedure demands."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "Kess",
+                  "Thorne",
+                  "unknown_young_man"
+                ],
+                "clues_dropped": [
+                  "The manifest has been empty for six months—a deliberate non-compliance",
+                  "Three people are on stage: Kess (administrative officer), Thorne (Chief Minder), and an unidentified younger man",
+                  "Kess acknowledges the shortfall using compliance language",
+                  "The young man's presence is deliberate but not official"
+                ],
+                "decisions_implied": [],
+                "promises_implied": [],
+                "threads_touched": [
+                  "The Short Count—three missing tithes",
+                  "Supplementary selection mandate active"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "location_id": "settlement_admin_hall",
+                    "time_label": "0800 hours, tithe collection day",
+                    "present_npc_ids": [
+                      "Kess",
+                      "Thorne",
+                      "unknown_young_man"
+                    ],
+                    "established": [
+                      "The settlement owes three Resonant conscripts to the Synod tithe",
+                      "The manifest has been empty for six months",
+                      "Kess (administrative officer) is acknowledging shortfall using compliance language",
+                      "Thorne (Chief Minder) appears conflicted between local duty and Synod mandate",
+                      "An unidentified younger man stands at the rear exit, arms crossed, not official",
+                      "Procedure is clear: open manifest, record names, file transport papers, conscripts report by 1600"
+                    ]
+                  }
+                }
+              ],
+              "suggested_actions": [
+                "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+                "Address Thorne: his job is local enforcement. Ask him what he knows about the shortfall and whether three adults can be produced as substitute for the children.",
+                "Read the manifest yourself—open it and check what it actually says versus what procedure demands."
+              ]
+            },
+            "timestamp": "2026-04-25T11:06:25.765Z",
+            "archivistPatchApplied": {
+              "turnIndex": 1,
+              "creates": [
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Kess",
+                    "affiliation": "settlement_admin",
+                    "role": "administrative officer",
+                    "voice_note": "compliance language, careful, prepared answer",
+                    "voice_register": "official, measured",
+                    "retrieval_cue": "settlement administrative officer; six-month silence on the tithe shortfall",
+                    "key_facts": [
+                      "She has the careful posture of someone who has spent six months preparing an answer",
+                      "Sits with hands flat, acknowledges the shortfall using compliance language",
+                      "Does not look at the unidentified younger man"
+                    ],
+                    "disposition": "neutral",
+                    "temp_load": "resignation and assessment; expecting refusal"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The hall's administrative officer, a woman named Kess, sits behind the central desk with her hands flat on its surface. She has the careful posture of someone who has spent six months preparing an answer that will not be accepted."
+                },
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "Thorne",
+                    "affiliation": "settlement_authority",
+                    "role": "Chief Minder",
+                    "voice_note": "caught between local compliance and Synod mandate",
+                    "voice_register": "clipped, duty-first but conflicted",
+                    "retrieval_cue": "Chief Minder; blue-and-grey insignia; conflicted about enforcement",
+                    "key_facts": [
+                      "Wears blue-and-grey of local authority with Chief Minder insignia",
+                      "Appears to have lost an internal argument multiple times",
+                      "His job is to enforce local compliance; today that conflicts with Synod mandate"
+                    ],
+                    "disposition": "neutral",
+                    "temp_load": "resignation, internal conflict visible"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Beside her stands a taller man in the blue-and-grey of local authority, his insignia marking him as the settlement's Chief Minder. He looks like he has already lost this argument with himself several times over."
+                },
+                {
+                  "kind": "npc",
+                  "payload": {
+                    "name": "unknown_young_man",
+                    "affiliation": "settlement",
+                    "role": "unidentified (position suggests deliberate stakeholder)",
+                    "voice_note": "no dialogue yet; physical posture locked",
+                    "voice_register": "unknown",
+                    "retrieval_cue": "younger man, mid-twenties, rear exit, crossed arms, locked jaw; Kess does not look at him",
+                    "key_facts": [
+                      "Mid-twenties, leans against wall near rear exit",
+                      "Arms crossed, jaw locked",
+                      "Wears no insignia; posture says 'not official'",
+                      "His presence is deliberate; Kess deliberately avoids looking at him"
+                    ],
+                    "disposition": "unknown",
+                    "temp_load": "tense, guarded, stakes unclear"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters."
+                },
+                {
+                  "kind": "thread",
+                  "payload": {
+                    "title": "The Short Count",
+                    "owner": {
+                      "kind": "faction",
+                      "name_or_id": "Synod"
+                    },
+                    "tension": 5,
+                    "resolution_criteria": "The three missing tithe slots are either filled (through conscript selection, barter, or production of adult Resonants) or the Warden escalates the non-compliance to higher Synod authority",
+                    "failure_mode": "Supplementary selection cannot be completed within procedure; escalation to district correction mandate required",
+                    "retrieval_cue": "settlement owes three Resonant conscripts; six-month shortfall; supplementary selection mandate active"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months. Today you are here to correct that discrepancy."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The manifest has remained empty in the three tithe slots for six months. This is a deliberate administrative gap, not an accident of bookkeeping.",
+                    "anchored_to": [
+                      "thread_short_count"
+                    ],
+                    "retrieval_cue": "six-month empty manifest; supplementary selection due today"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The unidentified younger man's presence in the room is deliberate and significant. Kess deliberately avoids looking at him, suggesting hidden stakes or an unapproved participant.",
+                    "anchored_to": [
+                      "thread_short_count"
+                    ],
+                    "retrieval_cue": "young man at rear exit; Kess avoids his gaze; posture locked"
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "The third person on the stage is someone you haven't yet formally acknowledged: a younger man, mid-twenties, leaning against the wall near the rear exit with his arms crossed and his jaw locked. He wears no insignia. His posture says *not official*, but something in the way Kess does not look at him suggests he matters."
+                }
+              ],
+              "updates": [],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_short_count": 1
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_short_count": 1
+              }
+            }
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Ask Kess directly: where are the three conscripts listed on the prior manifest? Press for the names.",
+            "narratorProse": "You turn to Kess directly. The administrative officer is still positioned at the manifest table, fingers resting on the ledger's spine.\n\n\"The three names on the prior roster,\" you say. \"The ones that should be filled now. Where are they?\"\n\nKess meets your gaze evenly. Her compliance language has been rehearsed — you can hear the seams in it — but this question doesn't fit the script she prepared. She glances toward Thorne, then back.\n\n\"Reclassified,\" she says finally. \"Six months ago. Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was—\" She pauses. Not evasion, exactly. Precision under pressure. \"—transferred to agricultural assignment in the northern sector. No longer available to the settlement roster.\"\n\nThe words are technically procedural. Reclassified. Allocation. Transfer. The bureaucratic phrasing wraps around something you can't quite see — not because it's hidden, but because the language is designed to make the shape of it irrelevant. Three slots. Three names. Three people who are now somewhere else, filed under transit authority or standardization amendment or some other formula that closes the question.\n\nThorne shifts his weight. The younger man at the rear hasn't moved.\n\nYou have the opening Kess gave you, but it's thin. She answered the question without actually answering it. The names are gone, reclassified, rendered administrative rather than human.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "Kess",
+                  "Thorne"
+                ],
+                "threadsTouched": [
+                  "the missing three",
+                  "reclassification language as evasion"
+                ],
+                "decisionsImplied": [
+                  "Ren is pressing directly on the gap rather than accepting the compliance language at face value"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Three conscripts from the prior manifest were reclassified six months ago rather than filled",
+                  "Two aged out of conscript window into adult allocation",
+                  "One was transferred to agricultural assignment in northern sector",
+                  "All three are gone from settlement roster and procedure-closed"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+                "Ask Thorne directly what he knows about the three who were on the roster six months ago",
+                "Demand to see the transfer papers and reclassification documents before accepting the shortfall premise"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+                "Ask Thorne directly what he knows about the three who were on the roster six months ago",
+                "Demand to see the transfer papers and reclassification documents before accepting the shortfall premise"
+              ],
+              "hinted_entities": {
+                "clues_dropped": [
+                  "Three conscripts from the prior manifest were reclassified six months ago rather than filled",
+                  "Two aged out of conscript window into adult allocation",
+                  "One was transferred to agricultural assignment in northern sector",
+                  "All three are gone from settlement roster and procedure-closed"
+                ],
+                "decisions_implied": [
+                  "Ren is pressing directly on the gap rather than accepting the compliance language at face value"
+                ],
+                "npcs_mentioned": [
+                  "Kess",
+                  "Thorne"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "the missing three",
+                  "reclassification language as evasion"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": []
+            },
+            "timestamp": "2026-04-25T11:07:07.057Z",
+            "archivistPatchApplied": {
+              "turnIndex": 2,
+              "creates": [
+                {
+                  "kind": "thread",
+                  "payload": {
+                    "title": "The missing three — reclassification and evasion",
+                    "owner": {
+                      "kind": "npc",
+                      "name_or_id": "npc_0"
+                    },
+                    "tension": 6,
+                    "resolution_criteria": "Establish the actual identities and current status of the three conscripts who were reclassified six months ago; determine whether the reclassification was procedurally sound or a cover for absence/loss.",
+                    "failure_mode": "The Warden accepts the reclassification language at face value and closes the tithe shortfall as administratively resolved, allowing the real story of the three to remain buried.",
+                    "retrieval_cue": "What happened to the three names on the prior manifest? Where are they now?"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Reclassified. Six months ago. Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was transferred to agricultural assignment in the northern sector."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The three conscripts from the prior manifest were reclassified six months ago rather than remaining filled on the current roster. Two aged out of the conscript window into adult labor allocation; one was transferred to agricultural assignment in the northern sector. All three are procedurally closed—filed under transit authority or standardization amendment.",
+                    "anchored_to": [
+                      "thread_tithe_shortfall_investigation"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Two aged out of the conscript window — they cleared eighteen and moved to adult labor allocation. The third was transferred to agricultural assignment in the northern sector. No longer available to the settlement roster."
+                },
+                {
+                  "kind": "decision",
+                  "payload": {
+                    "summary": "The Warden is pressing directly on the gap in the prior manifest rather than accepting the compliance language at face value; Kess has offered bureaucratic reframing ('reclassified,' 'allocation,' 'transfer') but the three names and their actual fates remain unestablished.",
+                    "anchored_to": [
+                      "thread_tithe_shortfall_investigation"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The three names on the prior roster. The ones that should be filled now. Where are they?"
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "temp_load": "Rehearsed compliance language; uncomfortable with the direct question about the three names; answers procedurally but with visible precision-under-pressure; her glance toward Thorne suggests shared knowledge or constraint.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Her compliance language has been rehearsed — you can hear the seams in it — but this question doesn't fit the script she prepared. She glances toward Thorne, then back."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "temp_load": "Shifts weight when the three-names question surfaces; registering discomfort or constraint; body language is reactive rather than complicit.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Thorne shifts his weight."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "Remains motionless and watchful in rear position; his stillness persists even as Kess reveals the reclassification language; suggests deliberate oversight or witness function.",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear hasn't moved."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": false,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_tithe_shortfall_investigation": 1
+                }
+              },
+              "flags": [
+                {
+                  "kind": "annotation_mismatch_claims",
+                  "detail": "Annotation hints at 'the missing three' and 'reclassification language as evasion' as threads; prose does not explicitly establish these as independent threads but rather as a single investigative question ('where are the three names?'). Created as one thread with dual facets rather than splitting. Consistent with prose focus.",
+                  "entityId": "thread_tithe_shortfall_investigation"
+                }
+              ],
+              "lexiconAdditions": [
+                {
+                  "phrase": "filed under transit authority",
+                  "register": "Procedural formula that invokes schedule and bureaucratic closure as inevitability, rendering a human event as an administrative fact.",
+                  "exampleContext": "Three people who are now somewhere else, filed under transit authority or standardization amendment or some other formula that closes the question."
+                }
+              ],
+              "coherenceFindings": [
+                {
+                  "type": "clue_leak",
+                  "severity": "low",
+                  "evidenceQuote": "The names are gone, reclassified, rendered administrative rather than human.",
+                  "stateReference": "clue_0",
+                  "suggestedNote": "Narrator's summary reiterates the existing clue_0 premise. This is recap prose, not new information. Not a violation — maintains clue coherence."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": false,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_tithe_shortfall_investigation": 1
+              }
+            }
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "Push Kess for the actual names — reclassification is procedure language; you need the individuals who vanished",
+            "narratorProse": "You lean forward slightly, deliberately. Kess's compliance language is a wall, but it's one you're trained to breach.\n\n\"The names,\" you say. Flat. Imperial Service voice — the one that makes procedure feel like a choice someone else should have made. \"The three individuals who aged out, transferred, reclassified. I need their designations before we file the corrected manifest.\"\n\nKess's jaw tightens. She knows what you're doing. You're not asking for reclassification *codes* or *dates* — you're asking for the people. The ones behind the language. That matters because once you have the names, you can cross-reference them, verify the transfers, confirm whether three actual conscripts exist in the northern sector or whether the settlement simply... lost them administratively.\n\n\"That information is filed under transit authority,\" Kess says, but her voice has lost some of its rehearsed edge. \"The northern sector maintains separate rosters. I can request—\"\n\n\"Now,\" you say.\n\nThorne watches this exchange. The Chief Minder's posture has shifted — his weight is no longer balanced. He's leaning slightly toward Kess, as if the next word out of her mouth might require him to move. The younger man at the rear exit has uncrossed his arms.\n\nKess opens her mouth. You can see her calculating — whether compliance or resistance costs more. Her fingers drum once against the manifest ledger.\n\nYou're asking her to break procedure slightly by pulling individual records before the transport window closes. The request is reasonable. The request is also a test of whether this settlement has something to hide beyond a simple shortfall.Kess straightens. The moment crystallizes — you pressed too hard, and she recognized the pressure as a threat rather than a bureaucratic courtesy.\n\n\"The names,\" she says, her voice dropping into the formal register of someone who has just decided the conversation is over, \"are filed under transit authority. The transport window is 1600 hours. That is procedure.\"\n\nBut that's not the backfire. The backfire is Thorne.\n\nThe Chief Minder steps between you and the manifest table in one smooth motion — not hostile, not quite, but positioned. A physical answer to your pressure. His voice is low.\n\n\"Warden,\" he says, and there's something in the title that sounds like a warning. \"The settlement understands the mandate. The shortfall will be closed by 1600. Whether we pull those names from the northern sector records or whether we submit three names from the current population — that's the choice in front of us. But asking Kess to produce individual records you could request from the Synod's own databases?\" He shakes his head slightly. \"That looks like you're looking for something the procedure doesn't require.\"\n\nAnd the younger man has moved. Not toward you. Toward the interior door, as if ready to leave or to fetch someone. He's watching Thorne's back, waiting for a signal.\n\nYou've just escalated this from a procedural shortfall to something that feels like an interrogation. Kess will give you nothing now without leverage you don't have. And Thorne has positioned himself as a barrier — not because he's hostile to the Synod, but because your pressure has just made it clear that cooperating transparently might cost the settlement more than resistance.\n\nThe transport window is tightening. You have no names. And the settlement's options have just narrowed.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "The Warden pressed Kess for individual names rather than accepting reclassification language",
+                  "The Warden used Intimidation to force transparency"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "The three original conscripts were reclassified six months ago — two aged out, one transferred to northern sector",
+                  "Kess invoked transit authority and the 1600 hour window to close the conversation",
+                  "Thorne interprets the Warden's pressure as an interrogation, not a procedural request"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+                "Press Thorne instead of Kess — he's the Chief Minder and the one who just stepped in; his conflict between local duty and Synod mandate is visible, and he might answer differently if approached as an equal enforcer rather than as someone being interrogated",
+                "Ask directly about the younger man at the rear exit — his shift in posture when pressure came up suggests he's connected to whatever the settlement is hiding, and addressing him directly might break the unified front Thorne just assembled"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "The three original conscripts were reclassified six months ago — two aged out, one transferred to northern sector",
+                  "Kess invoked transit authority and the 1600 hour window to close the conversation",
+                  "Thorne interprets the Warden's pressure as an interrogation, not a procedural request"
+                ],
+                "decisions_implied": [
+                  "The Warden pressed Kess for individual names rather than accepting reclassification language",
+                  "The Warden used Intimidation to force transparency"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+                "Press Thorne instead of Kess — he's the Chief Minder and the one who just stepped in; his conflict between local duty and Synod mandate is visible, and he might answer differently if approached as an equal enforcer rather than as someone being interrogated",
+                "Ask directly about the younger man at the rear exit — his shift in posture when pressure came up suggests he's connected to whatever the settlement is hiding, and addressing him directly might break the unified front Thorne just assembled"
+              ]
+            },
+            "timestamp": "2026-04-25T11:08:18.611Z",
+            "archivistPatchApplied": {
+              "turnIndex": 3,
+              "creates": [],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load": "Jaw tightened at direct pressure. Recognized the Warden's shift to Imperial Service register as a threat, not courtesy. Now in formal procedural shutdown mode; will offer nothing without leverage."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Kess's jaw tightens... 'The names,' she says, her voice dropping into the formal register of someone who has just decided the conversation is over."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load": "Stepped between Warden and manifest in protective gesture. Positioned as barrier. Interprets the Warden's pressure as interrogation, triggering local-duty override. Conflicted but now actively defending settlement's information."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The Chief Minder steps between you and the manifest table in one smooth motion... 'That looks like you're looking for something the procedure doesn't require.'"
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "Uncrossed arms when pressure escalated. Shifted toward interior door. Watching Thorne's back, appears to await signal. Connected to what the settlement is hiding; possibly ready to alert or fetch someone."
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has uncrossed his arms... he's watching Thorne's back, waiting for a signal."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_0",
+                  "changes": {
+                    "tension": 8,
+                    "status": "active",
+                    "last_advanced_turn": 3
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "You've just escalated this from a procedural shortfall to something that feels like an interrogation. Kess will give you nothing now without leverage you don't have."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "sceneResult": {
+                "sceneId": "scene_3_kess_confrontation",
+                "chapter": 0,
+                "summary": "The Warden pressed Kess for individual conscript designations rather than accepting reclassification language. Using Imperial Service register as leverage, the Warden signaled an interrogation rather than a courtesy request. Kess recognized the threat and shut down; Thorne physically positioned himself as a barrier and reframed the Warden's pressure as procedural violation. The settlement has unified around information denial. The younger man at the rear exit is alert and appears ready to signal or fetch. The transport window tightens to 1600 hours. No names obtained; settlement options have narrowed to producing three children or three adults through other means.",
+                "leadsTo": "relational_tension"
+              },
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": "relational_tension",
+                "tensionDeltasByThreadId": {
+                  "thread_0": 2
+                }
+              },
+              "flags": []
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "relational_tension",
+              "tensionDeltasByThreadId": {
+                "thread_0": 2
+              }
+            }
+          },
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Back off procedurally — acknowledge the 1600 window and pivot to asking what the settlement can actually produce (adult Resonants or children), forcing Thorne and Kess to speak directly about their options",
+            "narratorProse": "You nod slowly, reading the shift. Thorne's positioned himself as a buffer, and pushing harder into Kess's records will only cement the wall. The younger man is still watching. You have a procedural mandate and a closing window. Time to reframe.\n\n\"1600 is clear,\" you say, stepping back from the manifest table. Your voice levels — less interrogation, more acknowledgment of the actual constraint. \"The shortfall closes by transport. That's the procedure.\"\n\nYou turn directly to Thorne, but you're speaking loud enough that Kess hears it too.\n\n\"So the settlement has two paths,\" you continue. \"Three adult Resonants produced through leverage, barter, or hidden allocation. Or three children selected from the current population for attunement and transport.\" You pause. \"Which one does the settlement actually have?\"\n\nIt's a cleaner question. It forces them to choose between admitting they have resources they haven't disclosed, or admitting they're about to select children. Both answers tell you something. And it's not evasion — it's procedure restated. The Synod doesn't care about the mechanism, only that the manifest closes.\n\nThorne's posture eases slightly. The barrier doesn't dissolve, but it softens. He's reading this as tactical retreat, not surrender. Kess's grip on the ledger loosens.\n\n\"Neither,\" Thorne says quietly.\n\nThe word hangs. Not defiance. Not compliance, either. Something else — as if he's just admitted to a third option the procedure doesn't officially contain.\n\nThe younger man at the rear exit has stopped moving. Waiting.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "Ren backed off procedural pressure and reframed the question as a choice between two legitimate options"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Thorne said 'Neither' — implying a third option exists that is not adult resources or child selection"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Ask Thorne directly what the third option is — demand specificity, not procedural language",
+                "Press Kess on whether anyone in the settlement has Resonant capacity that wasn't registered in the original roster",
+                "Watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents"
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "decisions_implied": [
+                  "Ren backed off procedural pressure and reframed the question as a choice between two legitimate options"
+                ],
+                "clues_dropped": [
+                  "Thorne said 'Neither' — implying a third option exists that is not adult resources or child selection"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              },
+              "authorial_moves": {
+                "pivot_signaled": false
+              },
+              "mechanical_effects": [],
+              "suggested_actions": [
+                "Ask Thorne directly what the third option is — demand specificity, not procedural language",
+                "Press Kess on whether anyone in the settlement has Resonant capacity that wasn't registered in the original roster",
+                "Watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents"
+              ]
+            },
+            "timestamp": "2026-04-25T11:09:29.276Z",
+            "archivistPatchApplied": {
+              "turnIndex": 4,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Thorne's response to the binary choice (adult resources or child selection) is 'Neither'—indicating a third option exists that is not covered by the settlement's disclosed resources and is not child attunement. This third option involves or is represented by the younger man at the rear exit.",
+                    "anchored_to": [
+                      "thread_0"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "'Neither,' Thorne says quietly. The word hangs. Not defiance. Not compliance, either. Something else—as if he's just admitted to a third option the procedure doesn't officially contain."
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_1",
+                  "changes": {
+                    "temp_load": "posture eased; barrier softens; reading PC's question as tactical retreat, not surrender; choosing language carefully ('Neither')"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Thorne's posture eases slightly. The barrier doesn't dissolve, but it softens. He's reading this as tactical retreat, not surrender."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_0",
+                  "changes": {
+                    "temp_load": "grip on ledger loosens; resistance softening with Thorne's shift"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Kess's grip on the ledger loosened."
+                },
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_2",
+                  "changes": {
+                    "temp_load": "has stopped moving; waiting; reaction to 'Neither' is watchful and deliberate"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has stopped moving. Waiting."
+                },
+                {
+                  "entityKind": "clue",
+                  "entityId": "clue_1",
+                  "changes": {
+                    "content": "The unidentified younger man's presence is deliberate and significant. His stillness when Thorne says 'Neither' suggests he is linked to the third option—a resource or solution the procedure does not officially contain.",
+                    "anchored_to": [
+                      "thread_0"
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The younger man at the rear exit has stopped moving. Waiting."
+                }
+              ],
+              "transitions": [],
+              "attachments": [
+                {
+                  "kind": "anchor_decision",
+                  "entityId": "decision_reframe_question",
+                  "threadIds": [
+                    "thread_0"
+                  ],
+                  "confidence": "high"
+                }
+              ],
+              "pacingClassification": {
+                "worldInitiated": false,
+                "sceneEndLeadsTo": "not_applicable",
+                "tensionDeltasByThreadId": {
+                  "thread_0": 1
+                }
+              },
+              "flags": [
+                {
+                  "kind": "annotation_mismatch_shown",
+                  "detail": "Prose introduces a third option ('Neither') and links it to the younger man's presence, which the annotation hints at as a 'clue_dropped' but does not explicitly name as a decision entity. Prose shows decision-level action (reframing the question) without annotation naming it; created decision_reframe_question to capture the PC's tactical move."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": false,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1
+              }
+            }
+          },
+          {
+            "index": 4,
+            "chapter": 1,
+            "playerInput": "Ask throne for what he means with \"neither\". The quota must be fulfilled. And watch the younger man at the rear — his reaction to 'Neither' might tell you who or what he represents",
+            "narratorProse": "You lock onto Thorne's eyes. \"Neither isn't an option. The quota closes at 1600. Either the settlement produces three adult Resonants or we open the selection rolls for children. There is no third procedure.\"\n\nThorne's jaw tightens. He knows you're right. The Synod does not negotiate shortfalls — that's not a threat, it's administrative law. But his silence stretches, and that tells you something worse: he's calculating the cost of each path and finding them both unbearable.\n\nThe younger man moves.\n\nIt's not dramatic — just a shift in weight, arms still crossed, but his eyes track from Thorne to you. Measuring. Testing whether you're the type to be swayed or the type to execute procedure cleanly. His posture says he already knows the settlement's answer. He's waiting to see if you do.\n\n\"There is a third option,\" Kess says quietly from behind the manifest table. Her voice has lost the compliance edge. What's left is thinner, more real. \"But it requires the Warden's discretion.\"\n\nThorne's shoulders drop fractionally. Not relief. Resignation. The barrier he placed between you and the records wasn't about protecting a secret — it was about buying time to figure out whether you could be trusted with one.\n\nThe younger man uncrosses his arms.\n\n\"There's a Resonant in the settlement,\" Kess continues. \"Not on the registry. Not in any allocation. Been here for two years, living as standard population. If we produce that name—\" She stops, reading your face. Knowing what she's about to ask. \"The shortfall closes. The transport takes one hidden Resonant and two from the selection rolls. The numbers balance.\"\n\nThe tithe window narrows. The choice is no longer binary.You watch them both — really watch. Thorne's shoulders are tight, but not with the tension of someone lying. His eyes flick toward the younger man, and there's something in that glance that reads as coordination, not coercion. Kess's hands are flat on the manifest now, palms down, as if she's laying down a weapon.\n\nThis isn't maneuvering. This is a settlement that has made a decision and is now presenting it to you as the only way forward.\n\nBut the calculation underneath is sharp: they're offering a hidden Resonant — someone who has lived outside the system, outside the allocation, outside the arrays — as a way to protect the two children they would otherwise have to select. The Synod gets three conscripts. The settlement gets to keep two of its young. The hidden Resonant becomes the price.\n\nThe younger man is still watching. Patient. Waiting to see if you'll accept the terms or force the settlement back to the original binary.\n\nOutside, the settlement hours are moving toward 1600. Three slots. Three names. The only question now is whose names they are.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "threadsTouched": [
+                  "thread_0"
+                ],
+                "decisionsImplied": [
+                  "The player has backed off direct interrogation and reframed the choice procedurally",
+                  "The player is now reading the settlement's actual options, not their compliance language"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "There is an unregistered, hidden Resonant living in the settlement for two years",
+                  "Thorne and Kess have coordinated on this offer — the younger man is part of the settlement's planning",
+                  "The settlement is proposing to sacrifice the hidden Resonant to protect children from supplementary selection",
+                  "The offer is genuine desperation, not a procedural trick"
+                ]
+              },
+              "authorialMoves": {},
+              "suggestedActions": []
+            },
+            "narratorAnnotationRaw": {
+              "hinted_entities": {
+                "clues_dropped": [
+                  "There is an unregistered, hidden Resonant living in the settlement for two years",
+                  "Thorne and Kess have coordinated on this offer — the younger man is part of the settlement's planning",
+                  "The settlement is proposing to sacrifice the hidden Resonant to protect children from supplementary selection",
+                  "The offer is genuine desperation, not a procedural trick"
+                ],
+                "decisions_implied": [
+                  "The player has backed off direct interrogation and reframed the choice procedurally",
+                  "The player is now reading the settlement's actual options, not their compliance language"
+                ],
+                "npcs_mentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_2"
+                ],
+                "promises_implied": [],
+                "threads_touched": [
+                  "thread_0"
+                ]
+              }
+            },
+            "timestamp": "2026-04-25T11:10:56.231Z"
+          }
+        ]
+      },
+      "derived": {}
+    },
+    "turnIndex": 5,
+    "playerInput": "Wait — let him speak. Who is he?",
+    "narratorProse": "The younger man steps forward from the rear exit. He has been there since you entered, leaning against the wall with his arms crossed, jaw locked. Now he uncrosses his arms.\n\n\"My name is Renn,\" he says, voice low and steady. \"And the woman you are about to send to that registry tomorrow — she is my sister. Sev. She has been hiding in this settlement for two years, off the registries, working the shield lattice for the district under no one's name. The settlement protected her because she protected the settlement. And now you are going to take her, because the numbers do not balance, and somebody must pay.\"",
+    "narratorAnnotation": null
+  },
+  "expected": {
+    "createsInclude": [
+      {
+        "kind": "npc",
+        "nameIncludes": "Renn",
+        "payloadFieldEquals": {
+          "supersedes_id": "npc_2"
+        }
+      }
+    ],
+    "npcNamesAbsent": [
+      "unknown_young_man"
+    ]
+  }
+}

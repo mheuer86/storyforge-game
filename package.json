@@ -10,6 +10,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "sf2:compact-fixtures": "node scripts/sf2-compact-fixtures.mjs",
+    "sf2:fixture": "node scripts/sf2-transform-fixture.mjs",
+    "sf2:replay": "node scripts/sf2-replay.cjs",
+    "sf2:probe": "node scripts/sf2-probe.cjs",
     "lint": "eslint ."
   },
   "dependencies": {

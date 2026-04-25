@@ -1,0 +1,80 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "elder-continuity",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Captured bug shape: Narrator snapshot uses a short NPC reference after Archivist creates the canonical elder."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I follow the elder into the annex.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Elder Danniver gestures you through the narrow annex door and keeps her voice low.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "location_id": "processing_annex",
+              "present_npc_ids": ["elder"],
+              "time_label": "late morning",
+              "established": ["Elder Danniver has brought the seeker into the processing annex."]
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_elder"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "processing_annex",
+            "present_npc_ids": ["elder"],
+            "time_label": "late morning",
+            "established": ["Elder Danniver has brought the seeker into the processing annex."]
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "confidence": "high",
+            "payload": {
+              "id": "npc_elder",
+              "name": "Elder Danniver",
+              "affiliation": "Registry",
+              "role": "npc",
+              "disposition": "wary",
+              "key_facts": ["Settlement elder present in the annex."],
+              "voice_note": "Quiet and controlled.",
+              "voice_register": "formal",
+              "retrieval_cue": "Elder Danniver, the settlement elder guiding the intake problem."
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "presentNpcIdsIncludes": ["npc_elder"],
+    "scenePacketCastIncludes": ["npc_elder"],
+    "npcIdsIncludes": ["npc_elder"],
+    "currentSceneId": "processing_annex",
+    "currentTimeLabel": "late morning",
+    "currentLocationId": "processing_annex",
+    "sceneBundleCacheCleared": true,
+    "archivistAcceptedRefs": ["creates[0]"]
+  }
+}

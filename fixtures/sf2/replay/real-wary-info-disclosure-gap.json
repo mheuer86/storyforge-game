@@ -1,0 +1,1351 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "real-wary-info-disclosure-gap",
+  "source": {
+    "sessionFile": "sf2-replay-camp_1777111194588-2026-04-25T10-39-18.json",
+    "turnIndex": 6,
+    "exportedAt": "2026-04-25T10:39:18.169Z",
+    "campaignId": "camp_1777111194588"
+  },
+  "input": {
+    "stateBefore": {
+      "meta": {
+        "campaignId": "camp_1777111194588",
+        "createdAt": "2026-04-25T09:59:54.588Z",
+        "updatedAt": "2026-04-25T10:17:24.756Z",
+        "schemaVersion": "3.0.0",
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service",
+        "currentChapter": 1,
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": ""
+      },
+      "player": {
+        "name": "Ren",
+        "species": "Human",
+        "origin": {
+          "id": "imperial-service",
+          "name": "Imperial Service"
+        },
+        "class": {
+          "id": "warden",
+          "name": "Warden"
+        },
+        "level": 1,
+        "hp": {
+          "current": 14,
+          "max": 14
+        },
+        "ac": 14,
+        "credits": 200,
+        "stats": {
+          "STR": 17,
+          "DEX": 12,
+          "CON": 15,
+          "INT": 11,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "proficiencies": [
+          "Athletics",
+          "Intimidation",
+          "Perception",
+          "Heavy Weapons"
+        ],
+        "inventory": [
+          {
+            "name": "Imperial writ of authority",
+            "qty": 1,
+            "tags": [
+              "credential"
+            ]
+          },
+          {
+            "name": "Warden sidearm",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Heavy pattern blade",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Compliance cord",
+            "qty": 2,
+            "tags": [
+              "restraint"
+            ]
+          }
+        ],
+        "traits": [
+          {
+            "name": "Martial Authority",
+            "uses": {
+              "current": 2,
+              "max": 2
+            }
+          }
+        ],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      },
+      "campaign": {
+        "arcs": {},
+        "threads": {
+          "thread_0": {
+            "id": "thread_0",
+            "title": "Locate the missing Resonant Kael",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": {
+              "kind": "npc",
+              "id": "npc_0"
+            },
+            "stakeholders": [],
+            "tension": 7,
+            "resolutionCriteria": "Kael is found and brought into compliance, or Kael's status is definitively established (death, defection, or other terminal condition) and documented.",
+            "failureMode": "Kael remains absent beyond the four-day tithe window, triggering supplementary selection from the child population.",
+            "retrievalCue": "Kael, missing Resonant, eighteen days absent, family claims illness",
+            "loadBearing": false,
+            "tensionHistory": []
+          },
+          "thread_1": {
+            "id": "thread_1",
+            "title": "Supplement the tithe through selection of children",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": {
+              "kind": "npc",
+              "id": "npc_1"
+            },
+            "stakeholders": [],
+            "tension": 8,
+            "resolutionCriteria": "A supplementary selection notice is filed within the four-day window, or the shortfall is met through legitimate means before the window closes.",
+            "failureMode": "Children are seized without settlement consent and without settlement having exhausted legitimate options.",
+            "retrievalCue": "supplementary selection, child population, four-day window, tithe deficit",
+            "loadBearing": false,
+            "tensionHistory": []
+          },
+          "thread_2": {
+            "id": "thread_2",
+            "title": "What is Mareth's real objective in the settlement",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": {
+              "kind": "npc",
+              "id": "npc_1"
+            },
+            "stakeholders": [],
+            "tension": 9,
+            "resolutionCriteria": "Mareth's true mandate or leverage goal is identified and documented, or his objective is definitively blocked/revealed to counterparties.",
+            "failureMode": "Mareth achieves his undisclosed objective without the PC understanding what he took from the settlement, enabling future exploitation.",
+            "retrievalCue": "Mareth's hunting leverage, not a routine tithe audit; what does he actually want?",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        },
+        "decisions": {
+          "decision_0": {
+            "id": "decision_0",
+            "title": "Ren chose to investigate Kael's status through medical records before the family could file their official documentation to Auditor Mareth, securing knowledge that the official record does not yet contain.",
+            "chapterCreated": 1,
+            "category": "decision",
+            "retrievalCue": "Ren chose to investigate Kael's status through medical records before the family could file their official documentation to Auditor Mareth, securing knowledge that the official record does not yet contain.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_0",
+              "thread_1"
+            ],
+            "summary": "Ren chose to investigate Kael's status through medical records before the family could file their official documentation to Auditor Mareth, securing knowledge that the official record does not yet contain.",
+            "madeByPC": true,
+            "turn": 4
+          },
+          "decision_1": {
+            "id": "decision_1",
+            "title": "Ren read Thess's deflection ('What would you like to know?') as a trap and pressed past it with recognition of what Thess was protecting ('off the record'), forcing Thess to reveal the truth.",
+            "chapterCreated": 1,
+            "category": "decision",
+            "retrievalCue": "Ren read Thess's deflection ('What would you like to know?') as a trap and pressed past it with recognition of what Thess was protecting ('off the record'), forcing Thess to reveal the truth.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "summary": "Ren read Thess's deflection ('What would you like to know?') as a trap and pressed past it with recognition of what Thess was protecting ('off the record'), forcing Thess to reveal the truth.",
+            "madeByPC": true,
+            "turn": 4
+          },
+          "decision_2": {
+            "id": "decision_2",
+            "title": "Ren accessed classified administrative correspondence between Elan Vos and the Imperial garrison, discovering that Vos's flagged query about Soreth's family directly triggered Mareth's dispatch. Ren now holds intelligence about what actually prompted the audit, classified above their authorization level, and has not yet reported it.",
+            "chapterCreated": 1,
+            "category": "decision",
+            "retrievalCue": "Ren accessed classified administrative correspondence between Elan Vos and the Imperial garrison, discovering that Vos's flagged query about Soreth's family directly triggered Mareth's dispatch. Ren now holds intelligence about what actually prompted the audit, classified above their authorization level, and has not yet reported it.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_2",
+              "thread_1"
+            ],
+            "summary": "Ren accessed classified administrative correspondence between Elan Vos and the Imperial garrison, discovering that Vos's flagged query about Soreth's family directly triggered Mareth's dispatch. Ren now holds intelligence about what actually prompted the audit, classified above their authorization level, and has not yet reported it.",
+            "madeByPC": true,
+            "turn": 6
+          }
+        },
+        "promises": {
+          "promise_0": {
+            "id": "promise_0",
+            "title": "The family has secured a four-day window before the tithe deadline. What Ren does with the knowledge she now possesses—report it, conceal it, or act on it—will determine whether the settlement can manage the shortfall without triggering supplementary selection.",
+            "chapterCreated": 1,
+            "category": "promise",
+            "retrievalCue": "The family has secured a four-day window before the tithe deadline. What Ren does with the knowledge she now possesses—report it, conceal it, or act on it—will determine whether the settlement can manage the shortfall without triggering supplementary selection.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_0",
+              "thread_1"
+            ],
+            "owner": {
+              "kind": "npc",
+              "id": "npc_2"
+            },
+            "obligation": "The family has secured a four-day window before the tithe deadline. What Ren does with the knowledge she now possesses—report it, conceal it, or act on it—will determine whether the settlement can manage the shortfall without triggering supplementary selection.",
+            "turn": 4
+          }
+        },
+        "clues": {
+          "clue_0": {
+            "id": "clue_0",
+            "title": "Auditor Mareth arrived three days ago with a ledger and enforcement writ. She ha",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Auditor Mareth's ledger and writ; the recorded shortfall",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0",
+              "thread_1",
+              "thread_2"
+            ],
+            "content": "Auditor Mareth arrived three days ago with a ledger and enforcement writ. She has already recorded the discrepancy in her official records: 17 Resonants allocated, 16 present, 1 missing. The tithe payment is due in five days.",
+            "turn": 1
+          },
+          "clue_1": {
+            "id": "clue_1",
+            "title": "Mareth has stopped writing and is no longer documenting the settlement's negotia",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Auditor's documentation posture as indicator of institutional decision-making",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_1",
+              "thread_2"
+            ],
+            "content": "Auditor Mareth stopped writing and ceased documentation of settlement negotiations after learning of Kael's existence and family. This cessation is not accidental—when Synod auditors go silent on paper, they are executing a parallel investigation. Mareth is hunting leverage over settlement elder Elan Vos, not recording a routine tithe audit.",
+            "turn": 1
+          },
+          "clue_2": {
+            "id": "clue_2",
+            "title": "Kael, the missing Resonant, has been absent for eighteen days. He departed the a",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Kael, the missing Resonant, has been absent for eighteen days. He departed the attenuation chamber without documented cause or return schedule. The settlement family claims illness, but the Resonant registry does not confirm this. Elan Vos states she cannot locate or produce him.",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Kael, the missing Resonant, has been absent for eighteen days. He departed the attenuation chamber without documented cause or return schedule. The settlement family claims illness, but the Resonant registry does not confirm this. Elan Vos states she cannot locate or produce him.",
+            "turn": 2
+          },
+          "clue_3": {
+            "id": "clue_3",
+            "title": "Auditor Mareth shifted from passive observation of settlement compliance to acti",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Auditor Mareth shifted from passive observation of settlement compliance to active investigation when he learned of Kael's family. He is now requesting the family household registry entry, family composition, and all settlement correspondence regarding the absence. Elan Vos's expression changed when Mareth took the lead—she appeared to recognize something, as if encountering an expected threat.",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_1",
+              "thread_2"
+            ],
+            "content": "Auditor Mareth's pivot from passive observation to active interrogation when Kael's name was mentioned was not routine audit procedure. It was the signal that he had found his opening. Mareth believes settlement elder Elan Vos deliberately concealed Kael's attenuation failure from the Synod to protect something—and he is using the tithe crisis as leverage to extract cooperation on an undisclosed objective.",
+            "turn": 2
+          },
+          "clue_4": {
+            "id": "clue_4",
+            "title": "Soreth claims Kael's medical exemption is filed under district mandate with the ",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Kael's claimed medical exemption and family response protocol",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Soreth claims Kael's medical exemption is filed under district mandate with the medical administrator. She will deliver the documentation to the administrative building tomorrow morning before noon shift. The family's deliberate withdrawal of the father when the Warden arrived suggests they have prepared this response.",
+            "turn": 3
+          },
+          "clue_5": {
+            "id": "clue_5",
+            "title": "Kael's father withdrew deliberately to a sealed room when the Warden presented a",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Kael's father's deliberate withdrawal; family preparation for enforcement contact",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Kael's father withdrew deliberately to a sealed room when the Warden presented at the door. Soreth did not call after him or explain his absence. The movement suggests deliberate household protocol rather than organic fear response.",
+            "turn": 3
+          },
+          "clue_6": {
+            "id": "clue_6",
+            "title": "Kael stopped responding to attenuation three weeks ago with no physiological cau",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Kael's attenuation failure and the reason for his exemption",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0",
+              "thread_1"
+            ],
+            "content": "Kael stopped responding to attenuation three weeks ago with no physiological cause. When Synod attempts to sync him with Drift lanes, there is resistance and feedback that damages equipment. Thess filed the exemption because a non-responsive Resonant is useless to the Synod and dangerous to keep trying to attune.",
+            "turn": 4
+          },
+          "clue_7": {
+            "id": "clue_7",
+            "title": "The Synod's administrative structure does not recognize a non-functional Resonan",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Synod administrative logic for handling Resonants who cannot perform",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_1"
+            ],
+            "content": "The Synod's administrative structure does not recognize a non-functional Resonant as a legitimate category. The only recognized outcomes are 'expended' (used up/dead) or 'located and corrected' (found and brought into compliance). There is no third option.",
+            "turn": 4
+          },
+          "clue_8": {
+            "id": "clue_8",
+            "title": "Settlement elder Elan Vos is aware of Kael's true condition (attenuation failure",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Vos's awareness of Kael's condition and the family's coordinated action",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_0"
+            ],
+            "content": "Settlement elder Elan Vos is aware of Kael's true condition (attenuation failure) and chose not to disclose it to Auditor Mareth. The family has consulted with Thess and secured a four-day window through the medical exemption filing.",
+            "turn": 4
+          },
+          "clue_9": {
+            "id": "clue_9",
+            "title": "Elan Vos filed a classified query to Imperial garrison administrative records re",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Why Mareth came to this settlement; Vos's deliberate escalation",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_2",
+              "thread_0"
+            ],
+            "content": "Elan Vos filed a classified query to Imperial garrison administrative records requesting 'verification of household registration compliance' on Soreth's family—Kael's family—three days before Auditor Mareth's arrival. The timestamp was 0600, before administrative offices opened. The Synod responded with encrypted, eyes-only correspondence two days before Mareth was dispatched.",
+            "turn": 6
+          },
+          "clue_10": {
+            "id": "clue_10",
+            "title": "Kael's father, Cenn, has a cross-filed entry in his military discharge record da",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Cenn's sealed discharge and its relevance to why Kael stopped attuning",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_2",
+              "thread_0"
+            ],
+            "content": "Kael's father, Cenn, has a cross-filed entry in his military discharge record dated seven years ago with sealed/classified papers. His discharge timing and Kael's attenuation failure three weeks ago intersect—Vos would have recognized the connection and filed her query because something about Kael's condition triggered recognition of what his family 'actually is.'",
+            "turn": 6
+          }
+        },
+        "npcs": {
+          "npc_0": {
+            "id": "npc_0",
+            "name": "Elan Vos",
+            "affiliation": "settlement_leadership",
+            "role": "settlement elder, governance administrator",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": [
+                "Elder of a frontier settlement under tithe mandate",
+                "Sixty-some years old, weathered by district governance requirements",
+                "Responsible for maintaining Resonant allocation and supply to the Synod"
+              ],
+              "voice": {
+                "note": "Strained, measured, seeking negotiation within institutional bounds",
+                "register": "formal, deferential to procedure, defensive"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [
+              "thread_0"
+            ],
+            "retrievalCue": "settlement elder with administrative burden; speaking to Auditor Mareth about tithe compliance",
+            "chapterCreated": 1,
+            "lastSeenTurn": 4,
+            "signatureLines": [],
+            "tempLoad": "Elan Vos filed the classified query that triggered Mareth's arrival; she knows what she set in motion and why Kael's condition became audit-relevant"
+          },
+          "npc_1": {
+            "id": "npc_1",
+            "name": "Auditor Mareth",
+            "affiliation": "Synod",
+            "role": "Synod auditor, tithe enforcement",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Synod black-and-gray insignia, official status",
+                "Arrived three days ago with ledger and enforcement writ",
+                "Already has the discrepancy recorded: 17 allocated, 16 remain, 1 missing"
+              ],
+              "voice": {
+                "note": "Still, patient, trained to wait out negotiation",
+                "register": "procedural, minimal, present-moment oriented"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [
+              "thread_1",
+              "thread_2"
+            ],
+            "retrievalCue": "Synod auditor arrived to enforce tithe collection; observing settlement elder",
+            "chapterCreated": 1,
+            "lastSeenTurn": 5,
+            "signatureLines": [],
+            "tempLoad": "Mareth's arrival was not routine audit procedure; she was dispatched with classified intelligence about Kael's family in response to Vos's query. She is hunting leverage over the settlement leadership.",
+            "agenda": {
+              "current_move": "Auditing the tithe shortfall while searching for the leverage Vos's query implies exists"
+            }
+          },
+          "npc_2": {
+            "id": "npc_2",
+            "name": "Soreth",
+            "affiliation": "settlement_civilian",
+            "role": "Kael's mother",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Mother of Kael, registered Resonant absent eighteen days",
+                "Claims medical exemption filed under district mandate",
+                "Household composition: two parents, no retainers, no secondary income"
+              ],
+              "voice": {
+                "note": "formal under pressure, measured but defensive",
+                "register": "clipped administrative language when threatened; protective when her child is involved"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Kael's mother, east block apartment, resists immediate Warden verification",
+            "chapterCreated": 1,
+            "lastSeenTurn": 3,
+            "signatureLines": [],
+            "tempLoad": "Soreth presented as resistant and protective. She consulted with Thess and the family has a plan to secure Kael's status for four days."
+          },
+          "npc_3": {
+            "id": "npc_3",
+            "name": "Kael's father",
+            "affiliation": "settlement_civilian",
+            "role": "Kael's father, household member",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Father of Kael, registered Resonant absent eighteen days",
+                "Present in apartment when Warden arrives but deliberately withdraws to sealed room",
+                "Will reportedly deliver medical exemption documentation to administrative building tomorrow morning"
+              ],
+              "voice": {
+                "note": "not directly observed; present but withdraws deliberately",
+                "register": "(unknown — has not spoken)"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Kael's father, east block apartment, present but withdraws when Warden arrives",
+            "chapterCreated": 1,
+            "lastSeenTurn": 3,
+            "signatureLines": []
+          },
+          "npc_4": {
+            "id": "npc_4",
+            "name": "Thess",
+            "affiliation": "settlement_civilian",
+            "role": "medical administrator",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Medical administrator at settlement central clinic",
+                "Filed Kael's medical exemption under district mandate three weeks ago",
+                "Knows Kael cannot attune to the Drift and has stopped responding to attenuation"
+              ],
+              "voice": {
+                "note": "Low and professional; violates protocol while maintaining administrative composure",
+                "register": "clipped, careful, resigned — speaks from inside the system's logic"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "medical administrator who filed Kael's exemption and knows his true status",
+            "chapterCreated": 1,
+            "lastSeenTurn": 4,
+            "signatureLines": []
+          },
+          "npc_5": {
+            "id": "npc_5",
+            "name": "Cenn",
+            "affiliation": "settlement_civilian",
+            "role": "Kael's father, discharged soldier with sealed military service record",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [
+                "Discharged from Imperial military seven years ago",
+                "Discharge papers classified/sealed",
+                "Married into Soreth's household"
+              ],
+              "voice": {
+                "note": "not yet established in direct dialogue; physically withdrawn when Warden presented",
+                "register": "reserved, evasive"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Kael's father, discharged seven years ago, knows the timing",
+            "chapterCreated": 1,
+            "lastSeenTurn": 6,
+            "signatureLines": []
+          }
+        },
+        "factions": {},
+        "locations": {
+          "location_0": {
+            "id": "location_0",
+            "name": "Settlement Hall",
+            "description": ""
+          }
+        },
+        "floatingClueIds": [],
+        "pivotalSceneIds": [],
+        "lexicon": [
+          {
+            "phrase": "filed under district mandate",
+            "register": "administrative deflection formula invoking systemic procedure as shield against individual enforcement",
+            "exampleContext": "Kael is registered with the medical administrator. You'll find the exemption documentation filed under district mandate.",
+            "capturedAtTurn": 3,
+            "capturedInChapter": 1
+          },
+          {
+            "phrase": "expended",
+            "register": "Synod administrative language for a Resonant who has been used up or is no longer functional",
+            "exampleContext": "The Synod doesn't accept *stopped working* as a category. They accept *expended* or *located and corrected*.",
+            "capturedAtTurn": 4,
+            "capturedInChapter": 1
+          }
+        ]
+      },
+      "chapter": {
+        "number": 1,
+        "title": "The Shortfall",
+        "setup": {
+          "chapter": 1,
+          "title": "The Shortfall",
+          "frame": {
+            "title": "The Shortfall",
+            "premise": "A frontier settlement designated for tithe collection is three Resonants short. The settlement elder has logged two deaths and one defection; the Synod does not recognize the distinction. A Warden of Imperial Service arrives to enforce compliance. The settlement's leadership believes the tithe is still payable through negotiation. The Synod's presence suggests otherwise.",
+            "activePressure": "The Synod enforces numerical compliance regardless of stated cause. Missing Resonants must be supplied from somewhere. The settlement's children are the only available source.",
+            "centralTension": "The elder's narrative of loss versus the Synod's logic of shortage—both true, both irreconcilable under the system's rules.",
+            "chapterScope": "A frontier mining settlement, a Synod audit team, the Warden's mandate to witness and report. The chapter unfolds across the settlement's halls and the precinct records.",
+            "objective": "Establish whether the settlement can meet the tithe through legitimate means, or whether the shortfall will be filled by supplementary selection from the child population.",
+            "crucible": "The Synod will select children as compensation if the numbers cannot be reconciled. The elder knows this. The Warden is the witness who can shape how that fact is recorded.",
+            "outcomeSpectrum": {
+              "clean": "The settlement produces a legitimate explanation or replacement Resonants; the tithe is met without seizure of children.",
+              "costly": "The settlement meets the tithe, but through sacrifice of resources, labor, or leverage they cannot afford to lose.",
+              "failure": "Children are selected for supplementary allocation; the settlement is legally bound to comply.",
+              "catastrophic": "Resistance to selection triggers broader enforcement action, fracturing the settlement and triggering escalated Synod intervention across the region."
+            }
+          },
+          "antagonistField": {
+            "sourceSystem": "",
+            "corePressure": "",
+            "defaultFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "currentPrimaryFace": {
+              "id": "face_default",
+              "name": "",
+              "role": "",
+              "pressureStyle": ""
+            },
+            "escalationLogic": ""
+          },
+          "startingNpcIds": [],
+          "activeThreadIds": [],
+          "loadBearingThreadIds": [],
+          "carriedThreadIds": [],
+          "editorializedLore": [],
+          "openingSceneSpec": {
+            "location": "",
+            "atmosphericCondition": "",
+            "initialState": "",
+            "firstPlayerFacing": "",
+            "immediateChoice": "",
+            "noStartingCombat": false,
+            "noExpositionDump": false
+          },
+          "pressureLadder": [],
+          "surfaceThreads": [],
+          "surfaceNpcIds": []
+        },
+        "scaffolding": {
+          "chapter": 1,
+          "npcHiddenPressures": {},
+          "antagonistFaces": [],
+          "possibleRevelations": [],
+          "moralFaultLines": [],
+          "escalationOptions": []
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "",
+            "openingPressure": "The Synod enforces numerical compliance regardless of stated cause. Missing Resonants must be supplied from somewhere. The settlement's children are the only available source.",
+            "chapterObjective": "Establish whether the settlement can meet the tithe through legitimate means, or whether the shortfall will be filled by supplementary selection from the child population.",
+            "chapterCrucible": "The Synod will select children as compensation if the numbers cannot be reconciled. The elder knows this. The Warden is the witness who can shape how that fact is recorded.",
+            "visibleNpcIds": [],
+            "visibleThreadIds": [],
+            "loreForOpening": [],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world.",
+              "Keep the current pressure face live without implying it is permanent."
+            ]
+          }
+        },
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_3_soreth_apartment",
+            "chapter": 0,
+            "summary": "The Warden arrives at Kael's family apartment seeking immediate verification of the missing Resonant. Soreth meets the Warden at the threshold, her father deliberately withdrawing to a sealed room. Under pressure, Soreth invokes an exemption filed under district mandate and refuses in-home verification, offering instead to deliver documentation to the administrative building tomorrow morning. The Warden, recognizing that pressing harder will either destroy the family's fragile compliance posture or provide grounds for escalation, accepts the redirect.",
+            "leadsTo": "unpaid_promise"
+          },
+          {
+            "sceneId": "s4_thess_clinic",
+            "chapter": 0,
+            "summary": "Ren tracks down Thess, the medical administrator, and presses past deflection to learn the truth: Kael is not physically ill but has lost the ability to attune to the Drift. His resistance to attenuation damages equipment and the Synod recognizes no administrative category for a non-functional Resonant short of death or forced compliance. Thess has filed a medical exemption to buy the family time, and Ren now possesses knowledge the official record does not contain. The family has secured exactly four days.",
+            "leadsTo": "unpaid_promise"
+          },
+          {
+            "sceneId": "administrative_building_investigation",
+            "chapter": 0,
+            "summary": "The PC covertly observes Auditor Mareth in conversation with his team, revealing that his mandate extends far beyond routine tithe audit. Mareth is hunting leverage over settlement elder Elan Vos by exploiting Kael's disappearance and her apparent deliberate concealment of his attenuation failure. The PC realizes this is not about recovering Kael for the tithe—it's about finding a tool to force Vos's compliance with Mareth's undisclosed objective.",
+            "leadsTo": "unanswered_question"
+          }
+        ],
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "",
+          "description": "",
+          "atmosphericConditions": [
+            ""
+          ]
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "",
+            "description": "",
+            "atmosphericConditions": [
+              ""
+            ]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "",
+          "established": [
+            ""
+          ]
+        },
+        "currentTimeLabel": "",
+        "sceneBundleCache": {
+          "sceneId": "scene_1_1",
+          "bundleText": "## Scene opening — chapter 1: The Shortfall · scene_1_1\n\n### Scene\n- Location:  — \n- Atmosphere: \n\n### Chapter\n- Objective: Establish whether the settlement can meet the tithe through legitimate means, or whether the shortfall will be filled by supplementary selection from the child population.\n- Crucible: The Synod will select children as compensation if the numbers cannot be reconciled. The elder knows this. The Warden is the witness who can shape how that fact is recorded.\n- Pressure face (at... [fixture-truncated]",
+          "builtAtTurn": 1,
+          "firstTurnIndex": 1
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement hall smells of salt air and something burnt—heating lamps running long past safe tolerance, maybe. The walls are concrete-poured, institutional-gray, the kind of utilitarian surface that absorbs sound and history alike. A long table dominates th... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:00:12.743Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "The Missing Resonant and the Tithe Shortfall": 0
+              }
+            }
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Press the elder, where the unaccounted resonant is. The tithe is the tithe and if the registered resonant remains absent, there will be supplementary selection of another child. An... [fixture-truncated]",
+            "narratorProse": "You step forward into the silence between them.\n\n\"The registered Resonant is absent,\" you say. Flat. Procedural. \"That leaves a deficit in the tithe allocation. You know what closes that deficit.\"\n\nElan Vos's hands are still on the table. She doesn't move them... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:06:26.824Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_missing_resonant_kael": 2,
+                "thread_supplementary_selection_threat": 1,
+                "thread_settlement_tithe_compliance": 0
+              }
+            }
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "You have a name, and four days to produce the resonant. Otherwise there will be supplementary selection. Not that you care, really, but its making your life more difficult to deal... [fixture-truncated]",
+            "narratorProse": "You leave the administrative building and head toward the residential sector. The settlement is small enough that \"the family claiming illness\" narrows to three households with registered Resonant children. You cross-reference the intake data on your wrist-mou... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:11:15.299Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "relational_tension",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 1
+              }
+            }
+          },
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Track down the medical administrator tonight and ask directly about Kael's status before the family can deliver their version of the documentation",
+            "narratorProse": "You turn from the closing door and head back down the stairs, mind already working through the settlement's administrative structure. The medical administrator—Thess, you recall from the intake briefing—maintains office hours in the central clinic until late cycle. If you move now, you can catch her before the family files whatever documentation they've prepared.\n\nThe clinic is three blocks over. You make it in under ten minutes, moving through the settlement's evening shift-change. The corridors are crowded enough to cover your passage, sparse enough that you stand out in uniform.\n\nThess's office is on the second level, marked by a frosted panel with her title stamped in austere lettering. Through it you can see her silhouette bent over a terminal, still working. You press the entry chime.\n\n\"Come,\" she calls without looking up.\n\nYou step inside. The office is small, clinical—storage racks of medical records, a desk buried under intake forms and dispensation paperwork. Thess herself is older, gray-haired, with the careful posture of someone who's spent decades signing off on exemptions that don't quite fit the categories they're filed under. She glances up as you enter, and her exp... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_thess",
+                  "Soreth"
+                ],
+                "threadsTouched": [
+                  "missing_kael",
+                  "settlement_shortfall",
+                  "synod_selection_pressure"
+                ],
+                "decisionsImplied": [
+                  "Ren chose to investigate Kael's status outside official channels before the family could file their version of documentation",
+                  "Ren read Thess's deflection and pressed for the truth rather than accepting procedural silence"
+                ],
+                "promisesImplied": [
+                  "Kael's family has purchased a four-day window by securing the medical exemption",
+                  "Ren now possesses knowledge that neither the official record nor the Synod holds"
+                ],
+                "cluesDropped": [
+                  "Kael stopped responding to attenuation three weeks ago — no physiological cause, but resistance/feedback when attempting Drift sync",
+                  "Medical administrator Thess filed the exemption knowing Kael cannot be attuned, and the family brought her a solution",
+                  "Synod administrative structure only recognizes expended or located-and-corrected as outcomes for non-functional Resonants",
+                  "Settlement elder Vos is aware of Kael's condition and chose not to disclose it to the Auditor"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Return to the administrative building and examine Auditor Mareth's behavior more closely — he shifted from passive observation to active investigation the moment you pressed Vos about Kael. That's not standard tithe audit procedure.",
+                "Track down Elan Vos privately and ask her directly what she knows about Kael's condition and why she didn't disclose it to the Synod auditor.",
+                "Find Kael's father at his workplace or residence tonight and confront him about where the boy is — the family clearly has a plan, and you have four days to decide whether to report it or let it run."
+              ]
+            },
+            "timestamp": "2026-04-25T10:13:55.652Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unpaid_promise",
+              "tensionDeltasByThreadId": {
+                "thread_0": -1,
+                "thread_1": -1
+              }
+            }
+          },
+          {
+            "index": 4,
+            "chapter": 1,
+            "playerInput": "Return to the administrative building and examine Auditor Mareth's behavior more closely — he shifted from passive observation to active investigation the moment you pressed Vos about Kael. That's not standard tithe audit procedure.",
+            "narratorProse": "You leave the clinic and move back through the settlement's evening corridors toward the administrative building. The intake data you pulled earlier sits pinned in your working memory: Auditor Mareth arrived four days ago, standard tithe audit. But his shift the moment you named Kael—the pivot from passive observation to direct interrogation—that wasn't audit procedure. That was hunting.\n\nThe administrative building's entrance is staffed, but the back corridors where the Auditor's team sets up their temporary offices are quieter. You've got authorization to move through them; Wardens have standing access to compliance records during audit cycles. You move without announcing yourself.\n\nMareth's workspace is through a side corridor on the second level. You can hear voices before you reach it—two people, low and clipped. You slow your approach and stop short of the threshold, staying in the acoustic shadow of the doorframe.\n\n\"—registration gap isn't the real problem,\" Mareth is saying. His tone is different now. Not the careful auditor. Something sharper underneath. \"Three weeks of attenuation failure on a settlement-tier Resonant and the elder doesn't file a correction amendment? Doe... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_1",
+                  "npc_0"
+                ],
+                "threadsTouched": [
+                  "Kael_missing_resonant",
+                  "settlement_tithe_shortfall"
+                ],
+                "decisionsImplied": [
+                  "Ren decided to investigate Mareth's true motivations rather than accept the tithe audit at face value",
+                  "Ren chose to gather intelligence covertly before confronting the Auditor directly"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Mareth is not executing standard tithe audit procedure—he's actively hunting leverage over settlement elder Elan Vos",
+                  "Mareth believes Vos knows exactly where Kael is and is deliberately concealing his location from the Synod",
+                  "Mareth's real objective appears to be manufacturing a compliance crisis to force Vos into cooperation on some other matter"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Confront Mareth directly about his real objective—ask him why a routine tithe audit pivoted into active leverage-building the moment Kael's name came up",
+                "Return to Elan Vos before the family delivers their documentation tomorrow and ask her what Mareth actually wants from the settlement",
+                "Investigate the four days before Mareth arrived—what happened in the settlement that triggered this audit specifically, or brought him here under some other mandate",
+                "Contact the Undrift network through your established channels and ask if they have intelligence on Kael's whereabouts or status"
+              ]
+            },
+            "timestamp": "2026-04-25T10:15:33.821Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 2
+              }
+            }
+          },
+          {
+            "index": 5,
+            "chapter": 1,
+            "playerInput": "Investigate the four days before Mareth arrived—what happened in the settlement that triggered this audit specifically, or brought him here under some other mandate",
+            "narratorProse": "You need the record of what triggered Mareth's arrival. Not the official intake justification—those are standardized templates that could fit any settlement shortfall. You need the actual correspondence.\n\nThe administrative building's records archive is a basement level accessible through the main duty desk. You have Warden authorization. You don't announce yourself; you simply move downward with the kind of purposeful stride that discourages questions, and the duty officer—young, half-attentive—waves you through without looking up from her terminal.\n\nThe archive is climate-controlled, rows of data storage racks and paper files for older records. You pull up the settlement's incoming correspondence log on the public terminal and start working backward from Mareth's arrival date four days ago.\n\nThree days prior: standard tithe reconciliation request from the Synod regional office. Nothing unusual.\n\nFive days prior: an administrative memo from Elan Vos to the local Imperial garrison—a request for \"verification of household registration compliance\" on a specific family. The timestamp is 0600, before administrative offices opened. Before anyone else would see it.\n\nYour cursor stops the... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_1",
+                  "npc_0",
+                  "Soreth",
+                  "Cenn",
+                  "Thess"
+                ],
+                "threadsTouched": [
+                  "Kael's attenuation failure and family protection",
+                  "Elan Vos's deliberate omission and classified query",
+                  "Auditor Mareth's hidden agenda and leverage hunting"
+                ],
+                "decisionsImplied": [
+                  "Ren chose to investigate Mareth's actual purpose rather than simply enforce the tithe",
+                  "Ren is now holding classified intelligence about what triggered this audit and has not yet reported it to higher authority"
+                ],
+                "promisesImplied": [
+                  "Ren has four days to resolve the tithe shortfall before supplementary selection is triggered",
+                  "Ren knows that Kael's attenuation failure is the root cause and that Mareth is hunting this knowledge as leverage"
+                ],
+                "cluesDropped": [
+                  "Elan Vos filed a classified query about Kael's family to the Synod regional office before Mareth's arrival",
+                  "The Synod responded with encrypted correspondence two days before the Auditor was dispatched",
+                  "Kael's father, Cenn, is a discharged soldier with sealed discharge papers dated seven years ago",
+                  "Kael stopped responding to attenuation three weeks ago with no physiological cause—the same timeframe Vos would have noticed and acted on",
+                  "Mareth's purpose is not routine tithe audit—he's hunting leverage over Elan Vos based on her failure to disclose Kael's condition"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Confront Elan Vos directly about the classified query she filed and what she was actually trying to accomplish",
+                "Track down Kael's father, Cenn—his sealed discharge papers and timing suggest he knows exactly why his son stopped attuning",
+                "Return to Mareth and tell him what you've found, or withhold it and force him to work without knowing you know what he's hunting for",
+                "Locate Kael himself before Mareth does—if the settlement's protecting him, you need to understand what they're protecting"
+              ]
+            },
+            "timestamp": "2026-04-25T10:17:09.275Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 1,
+                "thread_2": 2
+              }
+            }
+          }
+        ],
+        "rollLog": [],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement hall smells of salt air and something burnt—heating lamps running long past safe tolerance, maybe. The walls are concrete-poured, institutional-gray, the kind of utilitarian surface that absorbs sound and history alike. A long table dominates th... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:00:12.743Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "not_applicable",
+              "tensionDeltasByThreadId": {
+                "The Missing Resonant and the Tithe Shortfall": 0
+              }
+            }
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Press the elder, where the unaccounted resonant is. The tithe is the tithe and if the registered resonant remains absent, there will be supplementary selection of another child. An... [fixture-truncated]",
+            "narratorProse": "You step forward into the silence between them.\n\n\"The registered Resonant is absent,\" you say. Flat. Procedural. \"That leaves a deficit in the tithe allocation. You know what closes that deficit.\"\n\nElan Vos's hands are still on the table. She doesn't move them... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:06:26.824Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_missing_resonant_kael": 2,
+                "thread_supplementary_selection_threat": 1,
+                "thread_settlement_tithe_compliance": 0
+              }
+            }
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "You have a name, and four days to produce the resonant. Otherwise there will be supplementary selection. Not that you care, really, but its making your life more difficult to deal... [fixture-truncated]",
+            "narratorProse": "You leave the administrative building and head toward the residential sector. The settlement is small enough that \"the family claiming illness\" narrows to three households with registered Resonant children. You cross-reference the intake data on your wrist-mou... [fixture-truncated]",
+            "timestamp": "2026-04-25T10:11:15.299Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "relational_tension",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 1
+              }
+            }
+          },
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Track down the medical administrator tonight and ask directly about Kael's status before the family can deliver their version of the documentation",
+            "narratorProse": "You turn from the closing door and head back down the stairs, mind already working through the settlement's administrative structure. The medical administrator—Thess, you recall from the intake briefing—maintains office hours in the central clinic until late cycle. If you move now, you can catch her before the family files whatever documentation they've prepared.\n\nThe clinic is three blocks over. You make it in under ten minutes, moving through the settlement's evening shift-change. The corridors are crowded enough to cover your passage, sparse enough that you stand out in uniform.\n\nThess's office is on the second level, marked by a frosted panel with her title stamped in austere lettering. Through it you can see her silhouette bent over a terminal, still working. You press the entry chime.\n\n\"Come,\" she calls without looking up.\n\nYou step inside. The office is small, clinical—storage racks of medical records, a desk buried under intake forms and dispensation paperwork. Thess herself is older, gray-haired, with the careful posture of someone who's spent decades signing off on exemptions that don't quite fit the categories they're filed under. She glances up as you enter, and her exp... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_0",
+                  "npc_1",
+                  "npc_thess",
+                  "Soreth"
+                ],
+                "threadsTouched": [
+                  "missing_kael",
+                  "settlement_shortfall",
+                  "synod_selection_pressure"
+                ],
+                "decisionsImplied": [
+                  "Ren chose to investigate Kael's status outside official channels before the family could file their version of documentation",
+                  "Ren read Thess's deflection and pressed for the truth rather than accepting procedural silence"
+                ],
+                "promisesImplied": [
+                  "Kael's family has purchased a four-day window by securing the medical exemption",
+                  "Ren now possesses knowledge that neither the official record nor the Synod holds"
+                ],
+                "cluesDropped": [
+                  "Kael stopped responding to attenuation three weeks ago — no physiological cause, but resistance/feedback when attempting Drift sync",
+                  "Medical administrator Thess filed the exemption knowing Kael cannot be attuned, and the family brought her a solution",
+                  "Synod administrative structure only recognizes expended or located-and-corrected as outcomes for non-functional Resonants",
+                  "Settlement elder Vos is aware of Kael's condition and chose not to disclose it to the Auditor"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Return to the administrative building and examine Auditor Mareth's behavior more closely — he shifted from passive observation to active investigation the moment you pressed Vos about Kael. That's not standard tithe audit procedure.",
+                "Track down Elan Vos privately and ask her directly what she knows about Kael's condition and why she didn't disclose it to the Synod auditor.",
+                "Find Kael's father at his workplace or residence tonight and confront him about where the boy is — the family clearly has a plan, and you have four days to decide whether to report it or let it run."
+              ]
+            },
+            "timestamp": "2026-04-25T10:13:55.652Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unpaid_promise",
+              "tensionDeltasByThreadId": {
+                "thread_0": -1,
+                "thread_1": -1
+              }
+            }
+          },
+          {
+            "index": 4,
+            "chapter": 1,
+            "playerInput": "Return to the administrative building and examine Auditor Mareth's behavior more closely — he shifted from passive observation to active investigation the moment you pressed Vos about Kael. That's not standard tithe audit procedure.",
+            "narratorProse": "You leave the clinic and move back through the settlement's evening corridors toward the administrative building. The intake data you pulled earlier sits pinned in your working memory: Auditor Mareth arrived four days ago, standard tithe audit. But his shift the moment you named Kael—the pivot from passive observation to direct interrogation—that wasn't audit procedure. That was hunting.\n\nThe administrative building's entrance is staffed, but the back corridors where the Auditor's team sets up their temporary offices are quieter. You've got authorization to move through them; Wardens have standing access to compliance records during audit cycles. You move without announcing yourself.\n\nMareth's workspace is through a side corridor on the second level. You can hear voices before you reach it—two people, low and clipped. You slow your approach and stop short of the threshold, staying in the acoustic shadow of the doorframe.\n\n\"—registration gap isn't the real problem,\" Mareth is saying. His tone is different now. Not the careful auditor. Something sharper underneath. \"Three weeks of attenuation failure on a settlement-tier Resonant and the elder doesn't file a correction amendment? Doe... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_1",
+                  "npc_0"
+                ],
+                "threadsTouched": [
+                  "Kael_missing_resonant",
+                  "settlement_tithe_shortfall"
+                ],
+                "decisionsImplied": [
+                  "Ren decided to investigate Mareth's true motivations rather than accept the tithe audit at face value",
+                  "Ren chose to gather intelligence covertly before confronting the Auditor directly"
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Mareth is not executing standard tithe audit procedure—he's actively hunting leverage over settlement elder Elan Vos",
+                  "Mareth believes Vos knows exactly where Kael is and is deliberately concealing his location from the Synod",
+                  "Mareth's real objective appears to be manufacturing a compliance crisis to force Vos into cooperation on some other matter"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false,
+                "planted_revelation_deployed": null,
+                "witness_mark_surfaced": null
+              },
+              "suggestedActions": [
+                "Confront Mareth directly about his real objective—ask him why a routine tithe audit pivoted into active leverage-building the moment Kael's name came up",
+                "Return to Elan Vos before the family delivers their documentation tomorrow and ask her what Mareth actually wants from the settlement",
+                "Investigate the four days before Mareth arrived—what happened in the settlement that triggered this audit specifically, or brought him here under some other mandate",
+                "Contact the Undrift network through your established channels and ask if they have intelligence on Kael's whereabouts or status"
+              ]
+            },
+            "timestamp": "2026-04-25T10:15:33.821Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 2
+              }
+            }
+          },
+          {
+            "index": 5,
+            "chapter": 1,
+            "playerInput": "Investigate the four days before Mareth arrived—what happened in the settlement that triggered this audit specifically, or brought him here under some other mandate",
+            "narratorProse": "You need the record of what triggered Mareth's arrival. Not the official intake justification—those are standardized templates that could fit any settlement shortfall. You need the actual correspondence.\n\nThe administrative building's records archive is a basement level accessible through the main duty desk. You have Warden authorization. You don't announce yourself; you simply move downward with the kind of purposeful stride that discourages questions, and the duty officer—young, half-attentive—waves you through without looking up from her terminal.\n\nThe archive is climate-controlled, rows of data storage racks and paper files for older records. You pull up the settlement's incoming correspondence log on the public terminal and start working backward from Mareth's arrival date four days ago.\n\nThree days prior: standard tithe reconciliation request from the Synod regional office. Nothing unusual.\n\nFive days prior: an administrative memo from Elan Vos to the local Imperial garrison—a request for \"verification of household registration compliance\" on a specific family. The timestamp is 0600, before administrative offices opened. Before anyone else would see it.\n\nYour cursor stops the... [fixture-truncated]",
+            "narratorAnnotation": {
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_1",
+                  "npc_0",
+                  "Soreth",
+                  "Cenn",
+                  "Thess"
+                ],
+                "threadsTouched": [
+                  "Kael's attenuation failure and family protection",
+                  "Elan Vos's deliberate omission and classified query",
+                  "Auditor Mareth's hidden agenda and leverage hunting"
+                ],
+                "decisionsImplied": [
+                  "Ren chose to investigate Mareth's actual purpose rather than simply enforce the tithe",
+                  "Ren is now holding classified intelligence about what triggered this audit and has not yet reported it to higher authority"
+                ],
+                "promisesImplied": [
+                  "Ren has four days to resolve the tithe shortfall before supplementary selection is triggered",
+                  "Ren knows that Kael's attenuation failure is the root cause and that Mareth is hunting this knowledge as leverage"
+                ],
+                "cluesDropped": [
+                  "Elan Vos filed a classified query about Kael's family to the Synod regional office before Mareth's arrival",
+                  "The Synod responded with encrypted correspondence two days before the Auditor was dispatched",
+                  "Kael's father, Cenn, is a discharged soldier with sealed discharge papers dated seven years ago",
+                  "Kael stopped responding to attenuation three weeks ago with no physiological cause—the same timeframe Vos would have noticed and acted on",
+                  "Mareth's purpose is not routine tithe audit—he's hunting leverage over Elan Vos based on her failure to disclose Kael's condition"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Confront Elan Vos directly about the classified query she filed and what she was actually trying to accomplish",
+                "Track down Kael's father, Cenn—his sealed discharge papers and timing suggest he knows exactly why his son stopped attuning",
+                "Return to Mareth and tell him what you've found, or withhold it and force him to work without knowing you know what he's hunting for",
+                "Locate Kael himself before Mareth does—if the settlement's protecting him, you need to understand what they're protecting"
+              ]
+            },
+            "timestamp": "2026-04-25T10:17:09.275Z",
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": "unanswered_question",
+              "tensionDeltasByThreadId": {
+                "thread_0": 1,
+                "thread_1": 1,
+                "thread_2": 2
+              }
+            }
+          }
+        ]
+      },
+      "derived": {}
+    },
+    "playerInput": "Go and confront her about the classified query. What did it contain? What did whe try to prevent? What does ske know? You need to know what you are dealing with here.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "You leave the archive and move back up through the administrative building. Vos should still be in her office—it's not yet late cycle, and there's nowhere else she'd go while Mareth is hunting through her settlement's compliance records.\n\nHer office door is sealed. Through the frosted panel you can see her silhouette motionless at her desk. You press the entry chime without waiting for clearance, and step inside.\n\nVos doesn't look up. She's staring at something on her terminal—not reading it, just staring. When she finally acknowledges your presence, it's with the kind of exhaustion that comes from having already made every wrong choice and now just waiting to see which one costs the most.\n\n\"The query you filed to the Imperial garrison,\" you say. Direct. No preamble. \"Five days ago. Before Mareth arrived. What was in it?\"\n\nVos closes her eyes. For a long moment, she doesn't move. Then she reaches over and locks her terminal with a gesture. The screen goes dark.\n\n\"I was trying to prevent this,\" she says quietly.\n\n\"By doing what? By flagging Kael's family to people higher than the Synod?\"\n\n\"By getting ahead of it.\" Vos finally meets your gaze, and there's something fragile in her expression—not weakness. Precision. The look of someone choosing exactly what to break. \"Cenn was Imperial intelligence. Seventeen years ago. His discharge wasn't standard separation—it was severance. They don't want him accessible to formal inquiry, and they certainly don't want his family in Synod hands where questions might be asked about what he did before they cut him loose.\"\n\nShe leans forward slightly.\n\n\"When Kael stopped responding to attenuation three weeks ago, I realized what was happening. A Resonant with a genetic trace to someone with that kind of operational history—the Synod would see a security concern. They'd escalate. They'd take him for interrogation and correction, and they'd bury the family under classification restrictions while they did it. I filed that query to give the Imperial administration a heads-up. I was hoping someone with actual authority would intervene before the Synod's audit cycle reached us.\"\n\n\"Instead, you triggered Mareth,\" you say.\n\n\"I triggered *someone's* attention,\" Vos corrects. \"I don't know if Mareth knows what he's actually looking for. But someone in the regional office flagged my request and sent him here specifically. And now—\" she gestures at nothing, at everything, \"—now I'm caught between a Synod auditor hunting for leverage, a family that can't produce their son without getting him killed by whoever's protecting his father, and a Warden who just walked in knowing enough to ask the right questions.\"\n\nShe watches you. Waiting.\n\n\"What I need to know,\" you say, \"is whether Kael is actually in the settlement. Whether the family is hiding him, or whether—\"\n\n\"They're hiding *him*,\" Vos interrupts. \"The father. Cenn. Kael's attenuation failure is real. The medical exemption is real. But the reason the family won't produce the boy is because if they do, the Synod runs his genetics against the database and identifies his father's pattern. And if that happens, the people who cut Cenn loose seventeen years ago will know the severance didn't take. They'll come for the whole family.\"\n\nShe stands abruptly, moving to the window that overlooks the settlement's residential sector.\n\n\"So they're going to run. Within the next two days, before the documentation deadline passes and Mareth escalates. Cenn has contacts. Routes. The family will disappear, and I'll file the supplementary selection order for a different child to close the tithe gap. And this settlement will lose one Resonant to flight and another to seizure, and nobody will ever know why.\"\n\nYou realize, in that moment, what Vos's real calculation is. She's already accepted the cost. She's just hoping it doesn't spread further.\n\n\"If Mareth finds out—\" you begin.\n\n\"Then he has what he came for,\" Vos says flatly. \"Leverage. A way to hold the settlement hostage every time the Synod needs compliance with something worse than the tithe.\"\n\nShe turns to face you.\n\n\"So the question isn't what I know, Warden. It's what you're going to do with what *you* know.\"",
+      "annotation": {
+        "hinted_entities": {
+          "clues_dropped": [
+            "Cenn, Kael's father, was Imperial intelligence operatives with severance discharge 17 years ago",
+            "Kael's attenuation failure is physiological reality, not cover story",
+            "Elan Vos filed classified query to Imperial garrison to prevent Synod escalation",
+            "Imperial administration responded to Vos's query; Mareth's arrival was result of that escalation",
+            "Family plans to flee the settlement within 2 days to escape both Synod and Imperial interests",
+            "If Kael produces himself, Synod genetic database will identify his father's classified pattern",
+            "Vos has already decided to file supplementary selection on another child to close tithe gap"
+          ],
+          "decisions_implied": [
+            "Ren chose direct confrontation with Vos rather than playing along with audit procedures",
+            "Ren is now in possession of information that contradicts both official record and Auditor's investigation"
+          ],
+          "npcs_mentioned": [
+            "npc_0",
+            "npc_1",
+            "Cenn",
+            "Soreth"
+          ],
+          "promises_implied": [
+            "Ren must decide whether to report Vos's classified query to Mareth or conceal it",
+            "Ren must decide whether the family's flight is acceptable cost or reportable breach"
+          ],
+          "threads_touched": [
+            "kael_missing_resonant",
+            "family_flight",
+            "mareth_investigation",
+            "vos_illegal_escalation"
+          ]
+        },
+        "authorial_moves": {
+          "pivot_signaled": false,
+          "planted_revelation_deployed": null,
+          "witness_mark_surfaced": null
+        },
+        "mechanical_effects": [],
+        "suggested_actions": [
+          "Demand specifics: where is Cenn now, and what exactly did the classified response from Imperial administration say? Push Vos to give you something actionable rather than confession.",
+          "Leave immediately and confront Mareth directly with what you've learned—force the Auditor to show his hand before he can use Vos's query as leverage against the settlement.",
+          "Find Soreth and Kael before the family disappears—get their side of the story and determine whether flight is actually their plan or whether Vos is making assumptions that could get them killed."
+        ]
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "turnIndex": 7,
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Cenn, Kael's father, was Imperial intelligence operative with severance discharge seventeen years ago. His discharge was not standard separation but institutional severance—classified protection that keeps him inaccessible to formal inquiry and explicitly off-limits to Synod hands.",
+              "anchored_to": [
+                "thread_0",
+                "thread_2"
+              ],
+              "retrieval_cue": "Cenn's military discharge and classified protection"
+            },
+            "confidence": "high",
+            "sourceQuote": "Cenn was Imperial intelligence. Seventeen years ago. His discharge wasn't standard separation—it was severance. They don't want him accessible to formal inquiry."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Elan Vos filed her classified query to Imperial garrison to prevent Synod escalation of Kael's case. She anticipated that a Resonant with genetic trace to an operationally-cleared severance would trigger security protocols and interrogation. Her query was a heads-up to Imperial administration, hoping someone with actual authority would intervene before Synod audit reached the settlement.",
+              "anchored_to": [
+                "thread_1",
+                "thread_2"
+              ],
+              "retrieval_cue": "Vos's classified query as pre-emptive escalation"
+            },
+            "confidence": "high",
+            "sourceQuote": "I filed that query to give the Imperial administration a heads-up. I was hoping someone with actual authority would intervene before the Synod's audit cycle reached us."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Kael's family plans flight within two days, before the documentation deadline passes. Cenn has contacts and routes prepared. The family will disappear to escape both Synod escalation and the Imperial interests protecting Cenn's severance.",
+              "anchored_to": [
+                "thread_0",
+                "thread_1"
+              ],
+              "retrieval_cue": "family flight timeline and Cenn's operational exit network"
+            },
+            "confidence": "high",
+            "sourceQuote": "So they're going to run. Within the next two days, before the documentation deadline passes and Mareth escalates. Cenn has contacts. Routes."
+          },
+          {
+            "kind": "decision",
+            "payload": {
+              "summary": "Ren confronted Vos directly about the classified query, breaking through procedural deference and forcing a full disclosure of the settlement's real crisis. Ren is now in possession of classified information about Imperial severance protocols, family flight plans, and Vos's intention to file supplementary selection on another child.",
+              "anchored_to": [
+                "thread_2",
+                "thread_1",
+                "thread_0"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "The query you filed to the Imperial garrison... What was in it?"
+          },
+          {
+            "kind": "promise",
+            "payload": {
+              "obligation": "Ren must decide whether to report Vos's classified query and the family's flight plans to Auditor Mareth, or conceal them. This choice will determine whether the settlement suffers supplementary selection as an unforced consequence or as cover for Vos's administrative breach.",
+              "owner": {
+                "kind": "npc",
+                "name_or_id": "npc_0"
+              },
+              "anchored_to": [
+                "thread_1",
+                "thread_2"
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "So the question isn't what I know, Warden. It's what you're going to do with what you know."
+          }
+        ],
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_0",
+            "changes": {
+              "disposition": "wary",
+              "temp_load": "Vos has moved beyond denial into cold acceptance of cascading consequences. She has filed her classified query knowing it would trigger escalation, is aware the family will flee, has already decided to file supplementary selection on another child to close the tithe gap, and is now treating the Warden as a variable that will either enable or expose her compromise. Her exhaustion is precise—the look of someone who has already made all her wrong choices and is waiting to see which costs the most.",
+              "last_seen_turn": 7
+            },
+            "confidence": "high",
+            "sourceQuote": "Vos closes her eyes... the kind of exhaustion that comes from having already made every wrong choice and now just waiting to see which one costs the most."
+          },
+          {
+            "entityKind": "thread",
+            "entityId": "thread_0",
+            "changes": {
+              "tension": 8,
+              "status": "active",
+              "last_advanced_turn": 7
+            },
+            "confidence": "high",
+            "sourceQuote": "When Kael stopped responding to attenuation three weeks ago, I realized what was happening... a Resonant with a genetic trace to someone with that kind of operational history—the Synod would see a security concern."
+          },
+          {
+            "entityKind": "thread",
+            "entityId": "thread_1",
+            "changes": {
+              "tension": 10,
+              "status": "active",
+              "last_advanced_turn": 7
+            },
+            "confidence": "high",
+            "sourceQuote": "And now I'm caught between a Synod auditor hunting for leverage, a family that can't produce their son... and a Warden who just walked in knowing enough to ask the right questions."
+          },
+          {
+            "entityKind": "thread",
+            "entityId": "thread_2",
+            "changes": {
+              "tension": 10,
+              "status": "active",
+              "last_advanced_turn": 7
+            },
+            "confidence": "high",
+            "sourceQuote": "I don't know if Mareth knows what he's actually looking for. But someone in the regional office flagged my request and sent him here specifically."
+          }
+        ],
+        "transitions": [],
+        "attachments": [],
+        "sceneResult": {
+          "sceneId": "vos_office_confrontation",
+          "chapter": 0,
+          "summary": "Ren confronts Elan Vos about her classified query to the Imperial garrison. Vos reveals the full architecture of the crisis: Cenn is a severance operative from Imperial intelligence; Kael's attenuation failure is real but his family cannot produce him without triggering genetic identification that would expose Cenn's location; Vos filed the query to try to get Imperial intervention before Synod escalation; Mareth arrived as a result of someone in the regional office flagging Vos's request; the family plans to flee within two days; Vos intends to file supplementary selection on another child to close the tithe gap. The scene ends with Vos placing the decision squarely on the Warden: report the breach, or conceal it.",
+          "leadsTo": "unpaid_promise"
+        },
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "unpaid_promise",
+          "tensionDeltasByThreadId": {
+            "thread_0": 1,
+            "thread_1": 2,
+            "thread_2": 3
+          }
+        },
+        "flags": [
+          {
+            "kind": "anchor_reference_missing",
+            "detail": "clue_10 references 'Cenn' as a distinct entity, but Cenn is introduced on-stage this turn without prior registry entry. Recommend creating npc_cenn for continuity."
+          }
+        ]
+      }
+    },
+    "turnIndex": 6
+  },
+  "expected": {
+    "presentNpcIdsIncludes": [],
+    "presentNpcIdsExcludes": [],
+    "scenePacketCastIncludes": [],
+    "scenePacketCastExcludes": [],
+    "npcNamesAbsent": [],
+    "npcIdsIncludes": [],
+    "currentSceneId": null,
+    "currentTimeLabel": null,
+    "currentLocationId": null,
+    "sceneBundleCacheCleared": null,
+    "invariantEventsInclude": [],
+    "archivistAcceptedRefs": [
+      "creates[0]",
+      "creates[1]",
+      "creates[2]",
+      "creates[3]",
+      "creates[4]",
+      "updates[0]",
+      "updates[1]",
+      "updates[2]",
+      "updates[3]"
+    ],
+    "archivistRejectedRefs": [],
+    "sensitiveDisclosureGaps": [
+      {
+        "npcId": "npc_0",
+        "terms": [
+          "query",
+          "Imperial administration",
+          "family will disappear"
+        ]
+      }
+    ]
+  },
+  "compaction": {
+    "kind": "sf2-replay-compact/v1",
+    "history": "keeps turn rows but truncates prior prose and removes raw narrator annotations",
+    "sceneBundle": "preserves cache identity metadata, truncates bundleText"
+  }
+}
