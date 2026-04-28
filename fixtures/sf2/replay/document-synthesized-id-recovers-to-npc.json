@@ -1,0 +1,71 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document subject with synthesized canonical-shape id recovers to existing NPC via role fuzzy-match",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777278952206",
+    "capturedAt": "2026-04-27T08:51:41.000Z",
+    "purpose": "Playthrough 8 produced a dual-entity bug: Mara existed as npc_4 (Mara Vostin) but the Archivist anchored a document subject to the synthesized id 'npc_fled_resonant', which never existed in the registry. The phantom anchor failed to resolve and got drift-flagged. The downstream effect was the Narrator's prose treating Mara-as-fled and Mara-as-hidden as separate people (turn 3: 'two dead, one hidden, one fled' — counted Mara twice). The resolver fallback added in apply-patch.ts now fuzzy-matches synthesized canonical-shape ids against existing NPCs' role+retrievalCue. Unambiguous matches resolve; ties or no-match return null."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_4": {
+            "id": "npc_4",
+            "name": "Mara Vostin",
+            "affiliation": "Settlement (hidden Resonant in Undrift contact)",
+            "role": "Resonant; fled settlement; made contact with Undrift networks",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Fled three months ago", "Listed expended in Synod registry"],
+              "voice": { "note": "absent from scene", "register": "settlement" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "The fled Resonant the settlement is hiding via Undrift contact.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "playerInput": "Press for the registry record.",
+    "narrator": { "prose": "Corvin pulls up the registry entry on the terminal.", "annotation": null },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "document",
+            "ref": "creates[0]",
+            "confidence_tier": "high",
+            "payload": {
+              "type": "record",
+              "kind_label": "departure registry",
+              "title": "Mara Vostin departure registry entry",
+              "authorizes": "Records Mara Vostin as classified expended three months prior",
+              "original_summary": "Mara Vostin classified expended; Departure Method: Registry Transfer; Authorization: Synod Dispatch Authority",
+              "subject_entity_ids": ["npc_fled_resonant"],
+              "anchored_to": []
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "documentsInclude": [
+      {
+        "documentId": "doc_0",
+        "type": "record",
+        "subjectEntityIds": ["npc_4"]
+      }
+    ],
+    "driftIncludes": [
+      { "kind": "contradiction", "detailIncludes": "synthesized_id_recovered" }
+    ]
+  }
+}

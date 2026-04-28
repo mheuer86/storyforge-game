@@ -28,7 +28,7 @@ const MAX_FULL_THREADS = 5 // hard cap on thread-kind entities in full
 
 interface Candidate {
   id: Sf2EntityId
-  kind: 'npc' | 'faction' | 'thread' | 'decision' | 'promise' | 'clue'
+  kind: 'npc' | 'faction' | 'thread' | 'decision' | 'promise' | 'clue' | 'beat'
   score: number
   reasons: string[]
 }
@@ -264,6 +264,34 @@ export function buildWorkingSet(
     }
   }
 
+  // Emotional beats ride on the graph rather than competing with full entity
+  // slots. Surface the top three by graph relevance, salience, and recency.
+  const beatScores = new Map<Sf2EntityId, Candidate>()
+  for (const beat of Object.values(campaign.beats ?? {})) {
+    let score = Math.round(beat.salience * 10)
+    const reasons = [`salience ${beat.salience.toFixed(2)}`]
+    const participantHit = beat.participants.some(
+      (id) => sceneNpcIds.has(id) || candidates.has(id)
+    )
+    const anchorHit = beat.anchoredTo.some((id) => candidates.has(id))
+    if (participantHit) {
+      score += WEIGHTS.ANCHORED_TO_SCENE
+      reasons.push(`+${WEIGHTS.ANCHORED_TO_SCENE} participant in scope`)
+    }
+    if (anchorHit) {
+      score += WEIGHTS.ANCHORED_TO_SCENE
+      reasons.push(`+${WEIGHTS.ANCHORED_TO_SCENE} anchor in scope`)
+    }
+    const age = Math.max(0, turnIndex - beat.turn)
+    const recency = Math.max(0, 5 - Math.floor(age / 3))
+    if (recency > 0) {
+      score += recency
+      reasons.push(`+${recency} recent`)
+    }
+    if (!participantHit && !anchorHit && recency === 0) continue
+    beatScores.set(beat.id, { id: beat.id, kind: 'beat', score, reasons })
+  }
+
   // Decay: off-scene / dormant / resolved
   for (const cand of candidates.values()) {
     if (cand.kind === 'thread') {
@@ -335,11 +363,19 @@ export function buildWorkingSet(
   for (const cand of candidates.values()) {
     reasonsByEntityId[cand.id] = cand.reasons
   }
+  const emotionalBeatIds = [...beatScores.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((b) => {
+      reasonsByEntityId[b.id] = b.reasons
+      return b.id
+    })
 
   return {
     fullEntityIds: fullIds,
     stubEntityIds: stubIds,
     excludedEntityIds: excludedIds,
+    emotionalBeatIds,
     reasonsByEntityId,
     computedAtTurn: turnIndex,
   }

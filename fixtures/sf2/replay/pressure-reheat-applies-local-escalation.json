@@ -1,0 +1,120 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure reheat applies local escalation",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Pressure Engines Phase 5. Player engagement, major NPC agenda movement, and hard ladder fires reheat chapter-local thread pressure without changing the opening floor."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "owner": { "kind": "npc", "id": "npc_osh" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8
+          }
+        },
+        "npcs": {
+          "npc_osh": {
+            "id": "npc_osh",
+            "category": "npc",
+            "name": "Osh",
+            "status": "alive",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "affiliation": "Registry",
+            "disposition": "wary",
+            "tempLoad": [],
+            "agenda": {
+              "pursuing": "Keep the writ narrow.",
+              "methods": ["procedural delay"],
+              "currentMove": "Waiting for the Warden to speak."
+            },
+            "ownedThreadIds": ["thread_spine"],
+            "stakeholderThreadIds": [],
+            "retrievalCue": "Osh carries the procedural pressure.",
+            "activePressure": "Trying to keep the writ from widening.",
+            "voice": "Precise and tired."
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_osh"],
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "The writ becomes enforceable.",
+              "triggerCondition": "The Warden names the shortfall in front of Osh.",
+              "narrativeEffect": "The record tightens around the room.",
+              "severity": "hard",
+              "threadIds": ["thread_spine"],
+              "fired": false
+            }
+          ],
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 3,
+              "localEscalation": 0,
+              "maxThisChapter": 3,
+              "cooledAtOpen": true
+            }
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_osh"]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Name the shortfall and watch Osh.",
+    "narrator": { "prose": "You name the shortfall. Osh starts moving the writ into enforceable form.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_osh",
+            "changes": {
+              "agenda": {
+                "current_move": "Move the writ into enforceable form."
+              },
+              "agenda_severity": "major"
+            },
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "thread_spine": 1
+          }
+        },
+        "ladderFires": ["pressure_1"]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["updates[0]"],
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_spine",
+        "openingFloor": 3,
+        "localEscalation": 7,
+        "maxThisChapter": 10,
+        "effectivePressure": 10
+      }
+    ]
+  }
+}

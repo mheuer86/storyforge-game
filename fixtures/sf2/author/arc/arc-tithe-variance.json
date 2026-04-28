@@ -1,0 +1,49 @@
+{
+  "schema": "sf2-author-arc-fixture/v1",
+  "name": "arc-tithe-variance",
+  "runs": 5,
+  "input": {
+    "statePreset": "initial",
+    "arcVariantSeeds": [
+      {
+        "id": "tithe-revolt",
+        "scenarioBias": "revolt",
+        "creativeAngle": "The shortage has become a public legitimacy crisis before the PC arrives.",
+        "avoidModes": ["investigation", "chamber_play"]
+      },
+      {
+        "id": "tithe-protection",
+        "scenarioBias": "protection",
+        "creativeAngle": "The PC's authority makes them responsible for preventing replacement selection without openly defying the Synod.",
+        "avoidModes": ["investigation", "chamber_play"]
+      },
+      {
+        "id": "tithe-pursuit",
+        "scenarioBias": "pursuit",
+        "creativeAngle": "The missing tithe has already moved; the playable arc follows custody, flight, and jurisdiction.",
+        "avoidModes": ["chamber_play"]
+      },
+      {
+        "id": "tithe-underground",
+        "scenarioBias": "underground_network",
+        "creativeAngle": "The shortage exposes a hidden route that moves Resonants and children beyond official allocation.",
+        "avoidModes": ["procedural_contest", "chamber_play"]
+      },
+      {
+        "id": "tithe-superior-fallout",
+        "scenarioBias": "superior_fallout",
+        "creativeAngle": "The Warden's superiors have already made the cruel choice; the arc tests whether the PC contains, enforces, or exposes the fallout.",
+        "avoidModes": ["investigation"]
+      }
+    ]
+  },
+  "expected": {
+    "minDistinctScenarioModes": 3,
+    "minPressureEngines": 3,
+    "minStanceAxes": 3,
+    "chapterFunctionCount": 5,
+    "textAbsent": [
+      "always opens in the settlement hall"
+    ]
+  }
+}

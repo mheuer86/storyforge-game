@@ -1,0 +1,49 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close ignores deferred spine",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from playtest fixture F9. A spine thread moved to deferred at chapter open is not terminal resolution and must not trigger chapter-close readiness by itself."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 1,
+    "playerInput": "Carry the question forward.",
+    "narrator": {
+      "prose": "The registry pauses the question; it does not answer it.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "deferred",
+            "reason": "The matter is explicitly paused for later play.",
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      { "threadId": "thread_spine", "status": "deferred" }
+    ],
+    "activeThreadIdsEquals": ["thread_spine"],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false
+    },
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

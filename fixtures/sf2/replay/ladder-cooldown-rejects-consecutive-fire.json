@@ -1,0 +1,54 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "ladder-cooldown-rejects-consecutive-fire",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777214825210",
+    "capturedAt": "2026-04-26T15:18:31.000Z",
+    "purpose": "Pressure ladder fired on turns 3 and 4 in playthrough 6 — consecutive turns. Even though cumulative pacing was on target (3 fires across 10 turns), the back-to-back firing collapsed the experiential tension graph. Fix: applyArchivistPatch now rejects ladder fires on the turn immediately after a prior fire, surfacing a drift event so the rejection is visible. This fixture verifies a fire proposed at turn N is rejected when another step fired at turn N-1."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "First escalation already crossed.",
+              "triggerCondition": "Already fired in the prior turn.",
+              "narrativeEffect": "The world tightened once.",
+              "fired": true,
+              "firedAtTurn": 0
+            },
+            {
+              "id": "pressure_2",
+              "pressure": "Second escalation candidate.",
+              "triggerCondition": "Could fire if the prose crosses it.",
+              "narrativeEffect": "The world would tighten again.",
+              "fired": false
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "_comment_turnIndex": "fixture.input.turnIndex is the turn whose prose this patch archives. The runner sets patch.turnIndex = turnIndex + 1, so patch.turnIndex becomes 1. Cooldown checks firedAtTurn === patch.turnIndex - 1 === 0, matching pressure_1.firedAtTurn below.",
+    "playerInput": "Continue the line of inquiry.",
+    "narrator": {
+      "prose": "The Archivist proposes pressure_2 fires this turn — the trigger reads satisfied. The cooldown should intercept it because pressure_1 fired last turn.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "ladderFires": ["pressure_2"]
+      }
+    }
+  },
+  "expected": {
+    "driftIncludes": [
+      { "kind": "contradiction", "detailIncludes": "cooldown" },
+      { "kind": "contradiction", "detailIncludes": "pressure_2" }
+    ]
+  }
+}

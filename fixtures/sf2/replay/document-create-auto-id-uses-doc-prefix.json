@@ -1,0 +1,72 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document create without explicit id uses doc prefix",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression for auto-created document ids using document_0 instead of canonical doc_0."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "factions": {
+          "faction_registry": {
+            "id": "faction_registry",
+            "name": "Registry",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": ["thread_spine"],
+            "retrievalCue": "Local administrative pressure."
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Read the intake receipt.",
+    "narrator": {
+      "prose": "The intake receipt records the Registry as the issuing body and notes that the shortfall remains open.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "document",
+            "payload": {
+              "type": "record",
+              "kind_label": "intake receipt",
+              "title": "Registry intake receipt",
+              "authorizes": "attests that the shortfall remains open",
+              "original_summary": "Registry intake receipt records the shortfall as open.",
+              "subject_entity_ids": ["faction_registry"],
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Registry receipt showing the shortfall remains open."
+            },
+            "confidence": "high",
+            "sourceQuote": "intake receipt records the Registry as the issuing body"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "documentsInclude": [
+      {
+        "documentId": "doc_0",
+        "type": "record",
+        "kindLabel": "intake receipt",
+        "status": "active",
+        "subjectEntityIds": ["faction_registry"],
+        "originalSummaryEquals": "Registry intake receipt records the shortfall as open."
+      }
+    ]
+  }
+}

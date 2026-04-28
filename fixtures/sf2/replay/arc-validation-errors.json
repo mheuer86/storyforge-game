@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc-validation-errors: validateArcPlan flags missing fields and undersized lists",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check on validateArcPlan in lib/sf2/arc-author/transform.ts. Asserts the four hard structural rules: (a) required string fields must be non-empty, (b) pressure_engines ≥ 3, (c) player_stance_axes ≥ 3, (d) chapter_function_map === 5. Uses a deliberately under-built ArcPlan to exercise each error path."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused — pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "arcValidation": {
+      "arcPlan": {
+        "id": "arc_undersized",
+        "status": "active",
+        "title": "Undersized Arc",
+        "sourceHook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its quarterly Resonant tithe.",
+          "objective": "Resolve the shortfall before the Synod escalates.",
+          "crucible": "Force the PC to choose between Synod compliance and settlement survival.",
+          "firstEpisode": "Warden arrives at the disputed roster."
+        },
+        "scenarioShape": {
+          "mode": "revolt",
+          "premise": "The shortage has become a public legitimacy crisis.",
+          "whyThisRun": "Public-facing arrival.",
+          "whatThisIsNot": "",
+          "selectionRationale": "",
+          "rejectedDefaultShape": ""
+        },
+        "arcQuestion": "",
+        "coreCrucible": "Force the PC to choose between Synod compliance and settlement survival.",
+        "invariantFacts": [],
+        "variableTruthsForThisRun": [],
+        "durableForces": [],
+        "durableNpcSeeds": [],
+        "pressureEngines": [
+          { "id": "engine_a", "name": "Synod tithe clock", "advancesWhen": "Time passes", "slowsWhen": "Roster filed", "visibleSymptoms": "Auditor cites days" },
+          { "id": "engine_b", "name": "Public refusal", "advancesWhen": "Public concessions", "slowsWhen": "Private negotiation", "visibleSymptoms": "Crowd at council" }
+        ],
+        "playerStanceAxes": [
+          { "id": "axis_a", "axis": "Authority posture", "poleA": "Enforce", "poleB": "Mediate", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" },
+          { "id": "axis_b", "axis": "Conduct visibility", "poleA": "Public", "poleB": "Private", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" }
+        ],
+        "chapterFunctionMap": [
+          { "chapter": 1, "function": "Establish", "pressureQuestion": "?", "possibleEndStates": [] },
+          { "chapter": 2, "function": "Reckon", "pressureQuestion": "?", "possibleEndStates": [] },
+          { "chapter": 3, "function": "Surface", "pressureQuestion": "?", "possibleEndStates": [] }
+        ],
+        "possibleEndgames": []
+      },
+      "expect": {
+        "errorIncludesAll": [
+          "scenario_shape.what_this_is_not is empty",
+          "scenario_shape.selection_rationale is empty",
+          "scenario_shape.rejected_default_shape is empty",
+          "arc_question is empty",
+          "pressure_engines needs at least 3",
+          "player_stance_axes needs at least 3",
+          "chapter_function_map needs exactly 5 chapters"
+        ],
+        "errorIncludesNone": [
+          "id is empty",
+          "title is empty",
+          "scenario_shape.premise is empty"
+        ]
+      }
+    }
+  }
+}

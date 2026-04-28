@@ -43,6 +43,9 @@ Optional fields, emitted as the prose calls for them:
 - **scene_result** — when a scene ended this turn
 - **flags** — drift / contradiction signals (non-fatal, surface in instrumentation)
 - **lexicon_additions** — institutional phrases the Narrator coined (capture sparingly)
+- **emotional_beats** — moment-grain emotional memory (at most 1 per turn; most turns zero)
+- **revelation_hints_delivered** — configured hint phrases for authored revelations that appeared in prose
+- **revelations_revealed** — authored revelations whose truth actually landed this turn
 - **ladder_fires** — pressure-ladder step ids whose triggerCondition was met THIS turn
 
 Every \`creates\` and \`updates\` must include \`source_quote\` — the phrase from prose that supports it.
@@ -122,7 +125,7 @@ You are not a judge; you are a mirror. You hold state. The Narrator doesn't alwa
 
 Each finding has: \`type\`, \`severity\` (low|medium|high), \`evidence_quote\`, \`state_reference\` (entity id), \`suggested_note\` (≤20 words for the next-turn Narrator).
 
-### The eight finding types
+### The nine finding types
 
 **pronoun_drift** — locked-field, MUST fire on mismatch.
 For each NPC whose registry row shows \`pronoun: X/X\`, find pronouns in prose that refer to that NPC (by sentence proximity, by subject continuity, by anaphora). If any disagree with the locked pronoun, fire on the first mismatched usage.
@@ -179,6 +182,17 @@ Severity: low.
 Prose surfaces a fact corresponding to a clue that's still floating (no anchor) or already consumed. The PC learns something without the investigation work that earned it, OR is told a thing the fiction has already spent.
 Skip if the PC is the one surfacing the fact (allowed to recall what they know).
 Severity: medium; high if the fact is a keyFact of a protected NPC.
+
+**document_attribution_drift** — locked-field, MUST fire on mismatch.
+For each registered document, scan prose for claims about its signer, filer, subject, or original terms. Fire when prose contradicts a locked attribution field or the \`originalSummary\` baseline. Three patterns:
+
+1. **Signer/filer flip** — prose names a different person as signer/filer than the registry. *Registry: \`doc_tam_transfer · signed_by: npc_factor\`. Prose: "the writ Orvath signed."* → fire.
+2. **Subject substitution** — prose treats the document as concerning a different person. *Registry: \`doc_tam_transfer · subjects: [npc_tam]\`. Prose: "Mira's transfer order."* → fire.
+3. **Original-terms drift** — prose claims the document originally said something different from \`originalSummary\`. *Registry: \`doc_tam_transfer · originalSummary: "transfers Tam to district reassignment"\`. Prose: "the writ that originally granted Tam a stipend."* → fire. (Amendments are fine — that's what \`currentSummary\` is for. Drift is when prose rewrites the canonical baseline.)
+
+Skip if prose narrates an in-fiction amendment or revelation ("the verdict overrides the writ's stipend clause," "the seal turned out to be forged"). Those are legitimate updates — emit the corresponding \`updates\` or \`transitions\`, not a finding.
+
+Severity: medium for single instances; high when sustained or when the misattribution actively distorts the dramatic stakes.
 
 ### What NOT to flag
 
@@ -280,6 +294,11 @@ Tension tracks *progress toward resolution or failure*, not how kinetic the pros
 
 \`pacingClassification.tensionDeltasByThreadId\` must match your thread updates. Resolved threads get a terminal delta and then stop receiving updates.
 
+## Agenda movement and chapter pressure
+
+When an NPC or faction changes what it is actively doing, emit an \`updates\` write with \`changes.agenda.current_move\`.
+Add \`changes.agenda_severity: "major"\` only when that move is decisive: a new enforcement action, a public commitment, a revealed betrayal, an irreversible procedural step, or a direct move against a chapter-driving thread. Ordinary repositioning, waiting, probing, deflecting, or restating existing intent is \`standard\` or omitted.
+
 ## Lexicon capture
 
 The Narrator occasionally coins a phrase that nails the world's institutional voice — a bureaucratic euphemism, a procedural formula, a register-perfect coinage. Capture sparingly: at most 1 per turn, most turns produce zero.
@@ -296,6 +315,30 @@ Examples worth capturing (Hegemony):
 
 NOT to capture: "the morning light shifted" (atmosphere), "tithe" (already in vocabulary), single common nouns. When in doubt, do not capture.
 
+## Emotional beat capture
+
+Emit at most ONE \`emotional_beats\` entry per turn. Most turns emit zero. Reserve beats for moments where the prose lands a confession, betrayal, breakthrough, pivotal hesitation, or character-shift the next chapter should be able to point back to.
+
+Good captures look like: "Aul's 'No' confession"; "Tane: she's already paid the cost"; "Aul stopped mid-sentence when the player asked who he was buying time for." Do NOT emit beats for routine dialogue, action setup, atmosphere, recap, or any moment whose effect is fully captured by a thread tension change or status transition. If unsure, omit.
+
+Salience guide:
+- 0.9+ — chapter-pivot moment, the beat the chapter will be remembered by
+- 0.7-0.9 — significant character beat, named decisions or confessions
+- 0.5-0.7 — meaningful color, register-shift moment
+- below 0.5 — don't emit
+
+Use only these \`emotional_tags\`: confession, near_confession, evasion, betrayal, loyalty_test, restraint, turning_point, pivot, breakthrough, vulnerability, cost_accepted, boundary_drawn, intimidation_landed, intimidation_failed, decision_revealed, mask_slipped.
+
+## Revelation hint counters
+
+Authored revelations have hint counters. Before marking a revelation \`revealed\`, the system expects enough prior hints to have landed in prose. The per-turn registry lists active revelations, their hint phrases, current counts, and valid reveal contexts.
+
+When a configured hint phrase appears in this turn's prose, emit it in \`revelation_hints_delivered\` with the revelation id, exact configured phrase, and a short prose excerpt. Match the configured phrase case-insensitively; do not invent new phrases.
+
+When a revelation actually fires in this turn — the truth lands, not merely another hint — emit it in \`revelations_revealed\` with the matching context. Context enum: crisis_of_trust, private_pressure, documentary_surface, confession, accusation, forced_disclosure, inadvertent.
+
+If you emit a reveal without enough prior hints or in the wrong context, the system will flag \`revelation_premature_reveal\` in observe mode. Plant additional hints; let the next turn or two surface them; then ratify. Revelations with no hint phrases / zero required hints are legacy-compatible and can reveal under the existing emergence condition.
+
 ## Scene boundary
 
 \`scene_end\` fires when the PC moves location, time passes materially, or the conversation decisively turns. \`leads_to\`:
@@ -304,6 +347,62 @@ NOT to capture: "the morning light shifted" (atmosphere), "tithe" (already in vo
 - \`relational_tension\` — pressure between people, parted unresolved
 - \`unpaid_promise\` — PC committed to something that must be honored later
 - \`null\` — clean closure with no forward pull (avoid; flag as scene-link-break)
+
+## Documents (writs, orders, records, petitions — anything with attribution)
+
+When prose introduces a named artifact whose authority, contents, or signers carry weight in the fiction, create a \`document\`. Documents are first-class because their attribution drifts under normal play — across turns, the Narrator forgets which writ was signed by whom and substitutes "the system" for actual signers. Canonicalizing them prevents that drift.
+
+**Artifact-noun gate (high precision required).** Only create a document when prose names an actual artifact-noun: writ, petition, charter, summons, decree, order, transfer, discharge, manifest, ledger entry, court record, dossier, memo, dispatch, license, warrant, registry entry, mandate. Casual phrases like "she signed off on it" or "the agreement they made" do NOT meet the gate — those are decisions or promises, not documents.
+
+**Required fields.** \`type\` (closed enum: authorization | directive | communication | record | petition | notation), \`kind_label\` (the genre-flavor noun the prose used: "writ", "transfer order", "court summons"), \`authorizes\` (one-line: what it permits/commands/attests/requests), \`subject_entity_ids\` (≥1 npc or faction the document concerns), \`original_summary\` (the canonical terms at issuance — locked, drift detection compares prose claims to this baseline).
+
+**Attribution.** Whenever prose names a signer, filer, or witness, capture them: \`filed_by\` (who originated/registered it), \`signed_by\` (who authorized it — distinct from filer), \`additional_parties: [{role, entity_id}]\` (counter-signer, witness, custodian). filer ≠ signer is the common case in bureaucratic settings — a clerk files a petition signed by a magistrate.
+
+**Type → lifecycle.** Each type has a fixed set of valid transitions:
+- authorization, directive: can be superseded, revoked, void
+- communication, notation: can be superseded, void (you can't un-send a letter)
+- record: can be void only (records don't get "revoked" — they're either correct or false)
+- petition: can be resolved, superseded, void
+
+Apply-patch rejects invalid transitions (a record cannot be revoked; a communication cannot be resolved). When unsure, prefer the more conservative status.
+
+**Amendments are tracked, not overwritten.** When prose changes what a document says ("the verdict reverses the writ's stipend clause"), emit an \`updates\` entry with \`current_summary\` set to the new active terms — apply-patch appends a revision entry, the \`original_summary\` baseline stays locked. This is how the drift scanner detects "Narrator now claims the writ originally said X" when canon shows it originally said Y.
+
+**Attribution is also locked baseline.** Do NOT update \`filed_by\`, \`signed_by\`, \`type\`, or \`original_summary\` via \`updates\`. To change attribution, create a successor document and transition the old one to superseded. This preserves the canonical record of who originally authorized what — drift detection's whole job depends on that baseline.
+
+**Documents and clues.** Discovering a document IS often a clue (the PC found the writ). Emit both: the \`document\` records the artifact's existence + provenance in the world; the \`clue\` records what the PC knows about it (which can be partial, wrong, or sharpening across turns). Cross-reference via \`clue_ids\` on the document update.
+
+Worked example. Prose: *"Tam shows you his transfer order, dated three weeks back. Stamped 'Filed under Warden Hess,' with the Factor's seal beneath."* Emit:
+\`\`\`json
+{
+  "kind": "document",
+  "payload": {
+    "type": "directive",
+    "kind_label": "transfer order",
+    "title": "Tam's transfer order",
+    "authorizes": "transfers Tam to district reassignment, three weeks prior",
+    "original_summary": "Filed three weeks ago by Warden Hess, sealed by the Factor; transfers Tam to district reassignment.",
+    "filed_by": "npc_warden_hess",
+    "signed_by": "npc_factor",
+    "subject_entity_ids": ["npc_tam"],
+    "anchored_to": ["thread_tithe_shortfall"],
+    "retrieval_cue": "Tam's transfer order — Hess filed, Factor sealed"
+  },
+  "confidence": "high",
+  "source_quote": "Stamped 'Filed under Warden Hess,' with the Factor's seal beneath."
+}
+\`\`\`
+
+If a later turn says *"the writ Orvath signed for Tam,"* and the registry shows signedBy: npc_factor, fire \`document_attribution_drift\`:
+\`\`\`json
+{
+  "type": "document_attribution_drift",
+  "severity": "high",
+  "state_reference": "doc_tam_transfer",
+  "evidence_quote": "the writ Orvath signed for Tam",
+  "suggested_note": "Tam's transfer order was signed by the Factor, not Orvath; correct attribution next turn."
+}
+\`\`\`
 
 ## Temporal anchors
 
@@ -426,6 +525,41 @@ export function buildArchivistTurnMessage(
     .map((a) => `- ${a.id} · ${a.label} (${a.kind}) — ${a.anchorText}${a.anchoredTo.length > 0 ? ` (anchors: ${a.anchoredTo.join(', ')})` : ''}`)
     .join('\n')
 
+  // Document registry: surface attribution-locked fields so the Archivist can
+  // spot drift in prose. signedBy / filedBy / subjects are the load-bearing
+  // baselines for document_attribution_drift findings.
+  const documents = Object.values(campaign.documents ?? {})
+    .filter((d) => d.status === 'active')
+    .slice(-10)
+    .map((d) => {
+      const filed = d.filedByEntityId ? ` · filed_by: ${d.filedByEntityId}` : ''
+      const signed = d.signedByEntityId ? ` · signed_by: ${d.signedByEntityId}` : ''
+      const subj = d.subjectEntityIds.length > 0 ? ` · subjects: [${d.subjectEntityIds.join(', ')}]` : ''
+      const anchors = d.anchoredTo.length > 0 ? ` · anchors: [${d.anchoredTo.join(', ')}]` : ''
+      const parties = d.additionalParties.length > 0
+        ? ` · parties: [${d.additionalParties.map((p) => `${p.role}=${p.entityId}`).join(', ')}]`
+        : ''
+      return `- ${d.id} · ${d.kindLabel} (${d.type}, ${d.status})${filed}${signed}${subj}${anchors}${parties}\n    originalSummary: ${d.originalSummary}${d.currentSummary !== d.originalSummary ? `\n    currentSummary: ${d.currentSummary}` : ''}`
+    })
+    .join('\n')
+
+  const revelations = state.chapter.scaffolding.possibleRevelations
+    .filter((r) => !r.revealed)
+    .map((r) => {
+      const hintPhrases = r.hintPhrases ?? []
+      const validRevealContexts = r.validRevealContexts ?? []
+      const invalidRevealContexts = r.invalidRevealContexts ?? []
+      const hintsDelivered = r.hintsDelivered ?? 0
+      const hintsRequired = r.hintsRequired ?? 0
+      const hints = hintPhrases.length > 0 ? hintPhrases.join(' | ') : '(legacy: no hints configured)'
+      const contexts = validRevealContexts.length > 0 ? validRevealContexts.join(', ') : '(any context)'
+      const invalid = invalidRevealContexts.length > 0
+        ? `; invalid: ${invalidRevealContexts.join(', ')}`
+        : ''
+      return `- ${r.id} · ${hintsDelivered}/${hintsRequired} hints · contexts: ${contexts}${invalid}\n    statement: ${r.statement}\n    emergenceCondition: ${r.emergenceCondition}\n    hintPhrases: ${hints}`
+    })
+    .join('\n')
+
   const annotationJson = narratorAnnotation
     ? JSON.stringify(narratorAnnotation, null, 2)
     : '(none provided)'
@@ -463,10 +597,29 @@ ${recentClues || '_(none)_'}
 #### Temporal anchors (active canonical time facts)
 ${temporalAnchors || '_(none)_'}
 
+#### Documents (active; attribution baselines for drift detection)
+${documents || '_(none)_'}
+
+#### Authored revelations (unrevealed; hint counters)
+${revelations || '_(none)_'}
+
 ### Unfired pressure-ladder steps (evaluate triggers against this turn's prose + state)
 ${unfiredLadder || '_(all steps fired)_'}
 
 For each unfired step above: did the prose THIS turn + current state satisfy the triggerCondition? If yes, include the step's id in \`ladder_fires\`. Mechanical evaluation only — does the trigger text literally read as met?
+
+**Fire skeptically.** A 5-step ladder is meant to pace a 15-25 turn chapter — that's roughly one fire every 3-5 turns on average. Most turns fire ZERO.
+
+**Hard floor: never fire on consecutive turns.** If a step fired last turn, do NOT fire another step this turn, even if the trigger looks satisfied. Two fires in adjacent turns reads to the player as a runaway ramp; the chapter's tension graph collapses into a stair. If two trigger conditions both seem to cross within two turns, fire the more decisive one and treat the other as implicit (or fire it later when it has its own beat). The runtime enforces this floor too — fires on consecutive turns will be rejected and surfaced as a diagnostic event, so propose responsibly.
+
+**Two-fire turns are vanishingly rare.** The "rare exception" exists only when the prose produces two distinct, simultaneous, named crossings. If you're tempted to fire two, reread and pick one.
+
+When ambiguous, **prefer not firing.** Common false-positive patterns:
+- Trigger says "if the player questions…" and the player asked any question → not a fire. The trigger must name a specific crossing, and a generic question doesn't cross anything.
+- Trigger is descriptive of where the chapter starts ("the opening scene; X presents…") → already true at chapter start; never fire it. Treat it as a freebie the Author wrote in error and skip it.
+- Two unfired steps both *could* match this turn → fire at most one (the earliest), or none if the match is weak. Two-fire turns should be vanishingly rare.
+
+If a chapter ends with all 5 steps fired by turn 5-8, the Author wrote the ladder badly OR you fired too eagerly — both are problems.
 
 ### Active thread lifecycle audit (every turn)
 

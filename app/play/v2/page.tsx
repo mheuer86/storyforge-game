@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiHeaders } from '@/lib/api-key'
-import { createInitialSf2State, isChapterAuthored } from '@/lib/sf2/game-data'
+import { createInitialSf2State, isArcAuthored, isChapterAuthored } from '@/lib/sf2/game-data'
 import { applyAuthoredToCampaign } from '@/lib/sf2/author/hydrate'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
@@ -19,8 +19,10 @@ import {
   makeInvariantEvent,
   offstageRosterSignature,
 } from '@/lib/sf2/replay/mechanics'
+import { computeChapterCloseReadiness } from '@/lib/sf2/chapter-close'
+import { prepareChapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
 import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
-import type { AuthorChapterSetupV2, Sf2State } from '@/lib/sf2/types'
+import type { AuthorChapterSetupV2, Sf2Arc, Sf2ArcPlan, Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
 
@@ -48,6 +50,9 @@ interface DebugEntry {
     | 'sf2.coherence.finding'
     | 'sf2.coherence.clean_turn'
     | 'sf2.invariant'
+    | 'display_sentinel'
+    | 'narrator_meta_observed'
+    | 'narrator_output_recovered'
   at: number
   data: unknown
 }
@@ -266,6 +271,8 @@ export default function PlayV2Page() {
     annotation: Record<string, unknown> | null
     bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
     rollRecords: Sf2State['history']['rollLog']
+    sentinelEvents: DebugEntry[]
+    workingSet: Sf2WorkingSet | null
   }> {
     setIsStreaming(true)
     setProse('')
@@ -277,7 +284,12 @@ export default function PlayV2Page() {
     let annotation: Record<string, unknown> | null = null
     let rollResolution: object | null = null
     let bundleBuilt: Sf2State['world']['sceneBundleCache'] | null = null
+    let turnWorkingSet: Sf2WorkingSet | null = null
     const rollRecords: Sf2State['history']['rollLog'] = []
+    // Display sentinel findings for THIS turn — captured during the stream so
+    // they land in the per-turn frame's invariantEvents (and via that into the
+    // session-log / replay-fixture downloads). Reset on every narrator call.
+    const turnSentinelEvents: DebugEntry[] = []
 
     // Loop: each iteration runs one narrator stream. A request_roll mid-stream
     // pauses; we await the player's roll, then loop again with rollResolution
@@ -312,7 +324,7 @@ export default function PlayV2Page() {
           { kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } },
         ])
         setIsStreaming(false)
-        return { prose: proseAccum, annotation, bundleBuilt, rollRecords }
+        return { prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
       }
 
       const reader = res.body.getReader()
@@ -375,6 +387,7 @@ export default function PlayV2Page() {
               break
             }
             case 'working_set':
+              turnWorkingSet = (event.workingSet as Sf2WorkingSet | undefined) ?? null
               setDebug((d) => [...d, { kind: 'working_set', at: Date.now(), data: event.summary }])
               break
             case 'scene_bundle_built': {
@@ -382,7 +395,6 @@ export default function PlayV2Page() {
                 sceneId: String(event.sceneId ?? ''),
                 bundleText: String(event.bundleText ?? ''),
                 builtAtTurn: Number(event.builtAtTurn ?? 0),
-                firstTurnIndex: Number(event.firstTurnIndex ?? 0),
               }
               bundleBuilt = built
               setDebug((d) => [...d, {
@@ -391,7 +403,6 @@ export default function PlayV2Page() {
                 data: {
                   sceneId: built.sceneId,
                   builtAtTurn: built.builtAtTurn,
-                  firstTurnIndex: built.firstTurnIndex,
                   bundleBytes: built.bundleText.length,
                 },
               }])
@@ -400,9 +411,45 @@ export default function PlayV2Page() {
             case 'pacing_advisory':
               setDebug((d) => [...d, { kind: 'pacing_advisory', at: Date.now(), data: event }])
               break
+            case 'narrator_meta_observed':
+              setDebug((d) => [...d, {
+                kind: 'narrator_meta_observed',
+                at: Date.now(),
+                data: {
+                  pattern: String(event.pattern ?? ''),
+                  snippet: String(event.snippet ?? ''),
+                  turnIndex: Number(event.turnIndex ?? 0),
+                },
+              }])
+              break
+            case 'narrator_output_recovered':
+              setDebug((d) => [...d, {
+                kind: 'narrator_output_recovered',
+                at: Date.now(),
+                data: {
+                  recoveryNotes: Array.isArray(event.recoveryNotes) ? event.recoveryNotes.map(String) : [],
+                  turnIndex: Number(event.turnIndex ?? 0),
+                },
+              }])
+              break
             case 'truncation_warning':
               setDebug((d) => [...d, { kind: 'truncation', at: Date.now(), data: event }])
               break
+            case 'display_sentinel': {
+              const findings = (event.findings as Array<Record<string, unknown>>) ?? []
+              const mode = String(event.mode ?? 'observe')
+              // Always emit the entry — even findings.length === 0 is useful
+              // signal: "scanner ran, clean turn". This makes the false-
+              // positive baseline observable in the session log.
+              const entry: DebugEntry = {
+                kind: 'display_sentinel',
+                at: Date.now(),
+                data: { mode, findings, findingCount: findings.length },
+              }
+              turnSentinelEvents.push(entry)
+              setDebug((d) => [...d, entry])
+              break
+            }
             case 'error':
               setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: event.message }])
               break
@@ -474,7 +521,7 @@ export default function PlayV2Page() {
     }
 
     setIsStreaming(false)
-    return { prose: proseAccum, annotation, bundleBuilt, rollRecords }
+    return { prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
   }
 
   async function runArchivist(
@@ -644,6 +691,69 @@ export default function PlayV2Page() {
     }
   }
 
+  async function generateArcIfNeeded(currentState: Sf2State): Promise<Sf2State | null> {
+    if (isArcAuthored(currentState)) return currentState
+    const existingArcPlan = currentState.campaign.arcPlan
+    if (existingArcPlan && existingArcPlan.status !== 'active') {
+      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+        source: 'arc-author',
+        message: 'arc plan is no longer active; automatic next-arc generation is future work',
+        arcStatus: existingArcPlan.status,
+      } }])
+      return null
+    }
+    setIsArchiving(true)
+    setIsGeneratingChapter(true)
+    setGenerationStartTime(Date.now())
+    try {
+      const res = await fetch('/api/sf2/arc-author', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ state: currentState }),
+      })
+      if (!res.ok) {
+        let body: unknown = null
+        try { body = await res.json() } catch {
+          try { body = await res.text() } catch {}
+        }
+        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: { status: res.status, source: 'arc-author', body } }])
+        return null
+      }
+      const data = (await res.json()) as {
+        arcPlan: Sf2ArcPlan
+        arcEntity: Sf2Arc
+        selectedArcVariantSeed?: Sf2ArcPlan['sourceHook'] & Record<string, unknown>
+        usage: TokenUsage
+      }
+      const next: Sf2State = structuredClone(currentState)
+      next.campaign.arcPlan = data.arcPlan
+      next.campaign.arcs[data.arcEntity.id] = data.arcEntity
+      next.meta.updatedAt = new Date().toISOString()
+      setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
+        arc: data.arcPlan.title,
+        scenario: data.arcPlan.scenarioShape.mode,
+        variantSeed: data.selectedArcVariantSeed,
+        selectionRationale: data.arcPlan.scenarioShape.selectionRationale,
+        rejectedDefaultShape: data.arcPlan.scenarioShape.rejectedDefaultShape,
+        chapterFunctions: data.arcPlan.chapterFunctionMap.map((c) => `${c.chapter}: ${c.function}`),
+        engines: data.arcPlan.pressureEngines.map((e) => e.id),
+        stanceAxes: data.arcPlan.playerStanceAxes.map((a) => a.id),
+      } }])
+      setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } }])
+      setState(next)
+      persist(next)
+      return next
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'arc_author_error'
+      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: message }])
+      return null
+    } finally {
+      setIsArchiving(false)
+      setIsGeneratingChapter(false)
+      setGenerationStartTime(null)
+    }
+  }
+
   async function generateChapter1IfNeeded(currentState: Sf2State): Promise<Sf2State | null> {
     const authored = isChapterAuthored(currentState)
     // eslint-disable-next-line no-console
@@ -668,12 +778,25 @@ export default function PlayV2Page() {
       ])
       return currentState
     }
+    const arced = await generateArcIfNeeded(currentState)
+    if (!arced) return null
+    currentState = arced
     setIsArchiving(true)
     setIsGeneratingChapter(true)
     setGenerationStartTime(Date.now())
     try {
       // eslint-disable-next-line no-console
       console.log('[sf2/client] generating chapter 1, fetching author endpoint...')
+      const arcPlan = currentState.campaign.arcPlan
+      if (arcPlan && arcPlan.status !== 'active') {
+        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+          source: 'author',
+          message: 'arc plan is no longer active; automatic next-arc generation is future work',
+          arcStatus: arcPlan.status,
+        } }])
+        return null
+      }
+
       const res = await fetch('/api/sf2/author', {
         method: 'POST',
         headers: apiHeaders(),
@@ -709,11 +832,19 @@ export default function PlayV2Page() {
         npcCount: data.runtimeState.startingNpcIds.length,
         threadCount: data.runtimeState.activeThreadIds.length,
         ladderSteps: data.runtimeState.pressureLadder.length,
+        chapterFunction: data.runtimeState.arcLink?.chapterFunction,
+        pacing: data.runtimeState.pacingContract?.targetTurns,
       } }])
       setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
 
       // Apply Ch1 setup to state.
       const next: Sf2State = structuredClone(currentState)
+      // Snapshot the prior chapter's active threads BEFORE overwriting
+      // next.chapter — pressure-runtime uses this to split 'active' (was-on-
+      // stage-last-chapter) from 'background' (carried but quiet). Reading it
+      // from the new setup later would always match itself and collapse to
+      // 'active'.
+      const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
       next.meta.currentChapter = data.chapter
       next.chapter = {
         number: data.chapter,
@@ -733,6 +864,7 @@ export default function PlayV2Page() {
         data.chapter as Sf2State['chapter']['number'],
         data.runtimeState.loadBearingThreadIds
       )
+      next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
       // Scene snapshot: opening-location name from the opening scene spec.
       next.world.currentLocation = {
         id: 'loc_opening',
@@ -746,6 +878,7 @@ export default function PlayV2Page() {
         presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
         timeLabel: '',
         established: [data.runtimeState.openingSceneSpec.initialState],
+        firstTurnIndex: next.history.turns.length,
       }
       next.meta.currentSceneId = `scene_${data.chapter}_1`
       next.meta.updatedAt = new Date().toISOString()
@@ -789,7 +922,14 @@ export default function PlayV2Page() {
     const preNarratorOffstageRoster = offstageRosterSignature(effectiveState)
 
     // Narrator
-    const { prose: narratorProse, annotation, bundleBuilt, rollRecords } = await runNarrator(effectiveState, playerInput, isInitial)
+    const {
+      prose: narratorProse,
+      annotation,
+      bundleBuilt,
+      rollRecords,
+      sentinelEvents: turnSentinelEvents,
+      workingSet,
+    } = await runNarrator(effectiveState, playerInput, isInitial)
 
     // Order note: Archivist runs BEFORE mechanical effects.
     //
@@ -828,6 +968,9 @@ export default function PlayV2Page() {
       if (bundleBuilt) {
         next.world.sceneBundleCache = bundleBuilt
       }
+      if (workingSet) {
+        next.derived.workingSet = workingSet
+      }
 
       next.meta.updatedAt = new Date().toISOString()
       return next
@@ -860,6 +1003,13 @@ export default function PlayV2Page() {
       }
     }
     stateAfterMechs.meta.updatedAt = new Date().toISOString()
+    // Fold any display_sentinel events from this turn into the frame's
+    // invariantEvents so they survive into replay-fixture downloads and the
+    // session log's per-turn slice. Already pushed to the global debug array
+    // above; this is the per-turn capture path.
+    if (turnSentinelEvents.length > 0) {
+      invariantEvents.push(...turnSentinelEvents)
+    }
     if (invariantEvents.length > 0) {
       setDebug((d) => [...d, ...invariantEvents])
     }
@@ -926,6 +1076,16 @@ export default function PlayV2Page() {
         // Proceed without priorChapterMeaning — Author will fall back to state-derived hook.
       }
 
+      const arcPlan = state.campaign.arcPlan
+      if (arcPlan && arcPlan.status !== 'active') {
+        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+          source: 'author',
+          message: 'arc plan is no longer active; automatic next-arc generation is future work',
+          arcStatus: arcPlan.status,
+        } }])
+        return
+      }
+
       const res = await fetch('/api/sf2/author', {
         method: 'POST',
         headers: apiHeaders(),
@@ -962,6 +1122,8 @@ export default function PlayV2Page() {
         threadCount: data.runtimeState.activeThreadIds.length,
         ladderSteps: data.runtimeState.pressureLadder.length,
         threadTransitions: data.threadTransitions ?? [],
+        chapterFunction: data.runtimeState.arcLink?.chapterFunction,
+        pacing: data.runtimeState.pacingContract?.targetTurns,
       } }])
       setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
 
@@ -971,6 +1133,10 @@ export default function PlayV2Page() {
       setState((prev) => {
         if (!prev) return prev
         const next: Sf2State = structuredClone(prev)
+        // Snapshot prior chapter's actives before overwriting next.chapter —
+        // see prepareChapterPressureRuntime: this drives the active vs
+        // background role split.
+        const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
         next.meta.currentChapter = data.chapter
         next.meta.currentSceneId = `scene_${data.chapter}_1`
         // Apply Author-emitted thread transitions to carried campaign threads.
@@ -1000,6 +1166,7 @@ export default function PlayV2Page() {
           data.chapter as Sf2State['chapter']['number'],
           data.runtimeState.loadBearingThreadIds
         )
+        next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
         // Reset scene view at chapter transition. Derive a fresh timeLabel
         // from the Author's atmosphericCondition so the new chapter opens at
         // its authored moment instead of inheriting the prior chapter's close
@@ -1024,6 +1191,7 @@ export default function PlayV2Page() {
           presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
           timeLabel: derivedTimeLabel,
           established: [`Chapter ${data.chapter} opens.`, data.runtimeState.openingSceneSpec.initialState],
+          firstTurnIndex: next.history.turns.length,
         }
         // Scene changed — clear the prior chapter's scene bundle cache. The
         // Narrator route will rebuild on the first turn of the new chapter.
@@ -1101,13 +1269,6 @@ export default function PlayV2Page() {
 
   const busy = isStreaming || isArchiving
 
-  // Chapter-scoped turn count — derived from history, not the cumulative turnIndex.
-  // turnIndex is the campaign-wide cursor (used for stable indexing into
-  // history.turns). For UX heuristics and display we need per-chapter count.
-  const chapterTurnCount = state.history.turns.filter(
-    (t) => t.chapter === state.meta.currentChapter
-  ).length
-
   // Close-ready heuristic. Anchored on chapter-scoped *narrative arc progression*,
   // not on turn count + tension (which let chapters close without their
   // authored climactic beat happening).
@@ -1115,27 +1276,26 @@ export default function PlayV2Page() {
   // The chapter is ready to close when any of:
   //   (a) Narrator explicitly signaled pivot (chapter-scoped resolution per
   //       its prompt), OR
-  //   (b) The LAST pressure-ladder step fired — the authored climax just
-  //       happened, OR
-  //   (c) The spine thread transitioned out of 'active' — resolved/abandoned/
-  //       deferred, i.e. the chapter's central tension moved to its landing, OR
-  //   (d) Safety fallback: ≥25 turns AND spine tension ≥8 AND ≥half ladder
+  //   (b) The spine thread reached a terminal status — resolved/abandoned.
+  //       Deferred is a pause/reopen state, not a landing, OR
+  //   (c) Safety fallback: ≥25 turns AND spine tension ≥8 AND ≥half ladder
   //       fired — chapter has stalled well past target length. Close anyway
   //       so the campaign doesn't hang on an unresolved spine.
-  const spineThread = state.chapter.setup.spineThreadId
-    ? state.campaign.threads[state.chapter.setup.spineThreadId]
-    : null
-  const ladderSteps = state.chapter.setup.pressureLadder
-  const ladderFiredCount = ladderSteps.filter((s) => s.fired).length
-  const ladderFullyFired = ladderSteps.length > 0 && ladderFiredCount === ladderSteps.length
-  const halfLadderFired = ladderSteps.length > 0 && ladderFiredCount >= Math.ceil(ladderSteps.length / 2)
-  const lastLadderFired = ladderSteps.length > 0 && ladderSteps[ladderSteps.length - 1].fired
-  const spineResolved = spineThread !== null && spineThread.status !== 'active'
-  const stalledFallback =
-    chapterTurnCount >= 25 && halfLadderFired && (spineThread?.tension ?? 0) >= 8
-
-  const closeReady =
-    pivotSignaled || ladderFullyFired || lastLadderFired || spineResolved || stalledFallback
+  //
+  // A fired pressure ladder is not enough by itself. Playthrough 11 showed a
+  // clean chapter setup reaching the last pressure beat while the actual
+  // chapter question remained unresolved ("Will the Warden file?"). In that
+  // case the next turn should land the decision, not close the chapter.
+  const {
+    closeReady,
+    chapterTurnCount,
+    spineResolved,
+    stalledFallback,
+    ladderFiredCount,
+    ladderStepCount,
+    spineStatus,
+    spineTension,
+  } = computeChapterCloseReadiness(state, pivotSignaled)
 
   function downloadSessionLog() {
     if (!state) return
@@ -1269,11 +1429,9 @@ export default function PlayV2Page() {
               <div className="font-bold text-amber-300">Chapter ready to close</div>
               <div className="text-xs text-amber-200/70">
                 {pivotSignaled && 'Narrator signaled a pivot. '}
-                {!pivotSignaled && ladderFullyFired && 'All pressure-ladder steps have fired. '}
-                {!pivotSignaled && !ladderFullyFired && lastLadderFired && 'Final ladder step (chapter climax) fired. '}
-                {!pivotSignaled && !ladderFullyFired && !lastLadderFired && spineResolved && `Spine thread transitioned to ${spineThread?.status}. `}
-                {!pivotSignaled && !ladderFullyFired && !lastLadderFired && !spineResolved && stalledFallback &&
-                  `Stalled fallback: ${chapterTurnCount} turns · ladder ${ladderFiredCount}/${ladderSteps.length} fired · spine tension ${spineThread?.tension}/10.`}
+                {!pivotSignaled && spineResolved && `Spine thread transitioned to ${spineStatus}. `}
+                {!pivotSignaled && !spineResolved && stalledFallback &&
+                  `Stalled fallback: ${chapterTurnCount} turns · ladder ${ladderFiredCount}/${ladderStepCount} fired · spine tension ${spineTension}/10.`}
               </div>
             </div>
             <button

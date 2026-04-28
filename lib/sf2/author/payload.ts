@@ -6,7 +6,35 @@
 // directly (pre-authored in game-data.ts). For Ch2+, we derive from state.
 
 import { SYNOD_SEEKER_AUTHOR_INPUT_SEED } from '../game-data'
+import { getGenreConfig } from '../../genres/index'
 import type { AuthorInputSeed, Sf2ChapterMeaning, Sf2State } from '../types'
+
+// Pull the PC's capability surface from state + genre config. Surfaced to the
+// Author so chapter design can engage the PC's natural moves; soft enforcement
+// via prompt rule, programmatic backstop comes later via option C from
+// [[2604270855 Storyforge V2 Playbook Fit]].
+function derivePcCapabilities(state: Sf2State): AuthorInputSeed['pcCapabilities'] {
+  // genreId on state.meta is `string`; getGenreConfig expects the typed Genre.
+  // Cast at the boundary — invalid genres just produce no playbook lookup.
+  const genre = getGenreConfig(state.meta.genreId as Parameters<typeof getGenreConfig>[0])
+  const playbookList = genre?.playbooks?.[state.meta.originId] ?? []
+  const playbook = playbookList.find((p) => p.id === state.meta.playbookId)
+
+  return {
+    proficiencies: state.player.proficiencies,
+    traits: state.player.traits.map((t) => ({
+      name: t.name,
+      description: typeof (t as Record<string, unknown>).description === 'string'
+        ? ((t as Record<string, unknown>).description as string)
+        : undefined,
+    })),
+    signatureInventory: state.player.inventory
+      .filter((item) => item.tags?.includes('weapon') || item.tags?.includes('credential') || item.tags?.includes('signature'))
+      .slice(0, 5)
+      .map((item) => ({ name: item.name })),
+    playbookProfile: playbook?.playbookProfile,
+  }
+}
 
 export function compileAuthorInputSeed(
   state: Sf2State | null,
@@ -14,6 +42,11 @@ export function compileAuthorInputSeed(
 ): AuthorInputSeed {
   // Ch1 or fresh campaign: use the pre-authored Synod Seeker seed.
   if (!state || state.history.turns.length === 0) {
+    if (state) {
+      // State exists (player has selected playbook/origin) but no turns yet —
+      // we can still surface PC capabilities so Ch1 Author sees them.
+      return { ...SYNOD_SEEKER_AUTHOR_INPUT_SEED, pcCapabilities: derivePcCapabilities(state) }
+    }
     return SYNOD_SEEKER_AUTHOR_INPUT_SEED
   }
 
@@ -38,11 +71,14 @@ export function compileAuthorInputSeed(
     .join('; ')
 
   const nextChapterNumber = state.meta.currentChapter + 1
+  const closingLocation = state.world.sceneSnapshot.location.name
+  const lastSceneSummary = state.chapter.sceneSummaries.at(-1)?.summary
+  const closingGeometry = ` Closing geometry: ${closingLocation}${lastSceneSummary ? ` — ${lastSceneSummary}` : ''}.`
 
   // Premise: carry-forward-focused, with explicit "new chapter" framing.
   const premise = priorChapterMeaning
-    ? `Chapter ${nextChapterNumber}. Prior chapter closed with: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}. Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
-    : `Chapter ${nextChapterNumber}. Prior chapter ended with active pressure on: ${highPressureThreads || '(no high-tension threads — derive from state)'}. Open this chapter inside the consequences of where the player landed — this is NOT a reopening of the prior chapter's situation, it is the next beat of the campaign.`
+    ? `Chapter ${nextChapterNumber}. Prior chapter closed with: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.${closingGeometry} Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
+    : `Chapter ${nextChapterNumber}. Prior chapter ended with active pressure on: ${highPressureThreads || '(no high-tension threads — derive from state)'}.${closingGeometry} Open this chapter inside the consequences of where the player landed — this is NOT a reopening of the prior chapter's situation, it is the next beat of the campaign.`
 
   // Objective/crucible: derive from the highest-tension spine thread if one
   // exists. If there's no spine candidate, fall back to the base hook's
@@ -63,6 +99,7 @@ export function compileAuthorInputSeed(
 
   return {
     ...base,
+    pcCapabilities: derivePcCapabilities(state),
     hook: {
       // Deliberately NOT passing a pre-authored title/arcName. The Author must
       // synthesize a fresh title from the premise + carried threads. Giving it

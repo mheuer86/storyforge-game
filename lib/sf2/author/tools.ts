@@ -1,293 +1,518 @@
-// Author tool schema — chapter setup only. One tool, one call per chapter boundary.
+// Author tool schemas. The active Chapter Author path is a single Sonnet tool
+// call (`author_chapter_setup`). The old spine/surface split was a Haiku
+// reliability workaround; schema pieces are kept local so the single tool can
+// reuse the same validated shape.
+//
 // The Author cannot emit mechanical effects, narrative-state writes, or prose.
 // Firewall actor rule enforces the split.
 
 import type Anthropic from '@anthropic-ai/sdk'
 
-export const AUTHOR_TOOL_NAME = 'author_setup' as const
+export const AUTHOR_SPINE_TOOL_NAME = 'author_chapter_spine' as const
+export const AUTHOR_SURFACE_TOOL_NAME = 'author_pressure_surface' as const
+export const AUTHOR_TOOL_NAME = 'author_chapter_setup' as const
 
-export const authorSetupTool: Anthropic.Tool = {
-  name: AUTHOR_TOOL_NAME,
-  description:
-    'Emit the structured chapter setup as a single JSON tool call. Follow the output length caps from the role block. Call ONCE per Author run.',
-  input_schema: {
+const openingSceneSpecSchema = {
+  type: 'object' as const,
+  properties: {
+    location: { type: 'string' as const },
+    atmospheric_condition: { type: 'string' as const },
+    initial_state: { type: 'string' as const },
+    first_player_facing: { type: 'string' as const },
+    immediate_choice: { type: 'string' as const },
+    no_starting_combat: { type: 'boolean' as const },
+    no_exposition_dump: { type: 'boolean' as const },
+    visible_npc_ids: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'starting_npcs on-stage in opening. Target 1-2. (See rule 18.)',
+    },
+    withheld_premise_facts: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'Premise facts true in state but not stated in opening prose. (See rule 19.)',
+    },
+  },
+  required: [
+    'location',
+    'atmospheric_condition',
+    'initial_state',
+    'first_player_facing',
+    'immediate_choice',
+    'no_starting_combat',
+    'no_exposition_dump',
+    'visible_npc_ids',
+    'withheld_premise_facts',
+  ],
+}
+
+const chapterFrameSchema = {
+  type: 'object' as const,
+  properties: {
+    title: { type: 'string' as const },
+    premise: { type: 'string' as const },
+    active_pressure: { type: 'string' as const },
+    central_tension: { type: 'string' as const },
+    chapter_scope: { type: 'string' as const },
+    objective: { type: 'string' as const },
+    crucible: { type: 'string' as const },
+    outcome_spectrum: {
+      type: 'object' as const,
+      properties: {
+        clean: { type: 'string' as const },
+        costly: { type: 'string' as const },
+        failure: { type: 'string' as const },
+        catastrophic: { type: 'string' as const },
+      },
+      required: ['clean', 'costly', 'failure', 'catastrophic'],
+    },
+  },
+  required: [
+    'title',
+    'premise',
+    'active_pressure',
+    'central_tension',
+    'chapter_scope',
+    'objective',
+    'crucible',
+    'outcome_spectrum',
+  ],
+}
+
+const antagonistFieldSchema = {
+  type: 'object' as const,
+  properties: {
+    source_system: { type: 'string' as const },
+    core_pressure: { type: 'string' as const },
+    default_face: {
+      type: 'object' as const,
+      properties: {
+        name: { type: 'string' as const },
+        role: { type: 'string' as const },
+        pressure_style: { type: 'string' as const },
+      },
+      required: ['name', 'role', 'pressure_style'],
+    },
+    possible_faces: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          id: { type: 'string' as const },
+          name: { type: 'string' as const },
+          role: { type: 'string' as const },
+          becomes_primary_when: { type: 'string' as const },
+          pressure_style: { type: 'string' as const },
+        },
+        required: ['id', 'name', 'role', 'becomes_primary_when', 'pressure_style'],
+      },
+    },
+    escalation_logic: { type: 'string' as const },
+  },
+  required: ['source_system', 'core_pressure', 'default_face', 'possible_faces', 'escalation_logic'],
+}
+
+const startingNpcsSchema = {
+  type: 'array' as const,
+  description: '3-5 NPCs.',
+  items: {
     type: 'object' as const,
     properties: {
-      chapter_frame: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          premise: { type: 'string' },
-          active_pressure: { type: 'string' },
-          central_tension: { type: 'string' },
-          chapter_scope: { type: 'string' },
-          objective: { type: 'string' },
-          crucible: { type: 'string' },
-          outcome_spectrum: {
-            type: 'object',
-            properties: {
-              clean: { type: 'string' },
-              costly: { type: 'string' },
-              failure: { type: 'string' },
-              catastrophic: { type: 'string' },
-            },
-            required: ['clean', 'costly', 'failure', 'catastrophic'],
-          },
-        },
-        required: [
-          'title',
-          'premise',
-          'active_pressure',
-          'central_tension',
-          'chapter_scope',
-          'objective',
-          'crucible',
-          'outcome_spectrum',
-        ],
-      },
-      antagonist_field: {
-        type: 'object',
-        properties: {
-          source_system: { type: 'string' },
-          core_pressure: { type: 'string' },
-          default_face: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              role: { type: 'string' },
-              pressure_style: { type: 'string' },
-            },
-            required: ['name', 'role', 'pressure_style'],
-          },
-          possible_faces: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                name: { type: 'string' },
-                role: { type: 'string' },
-                becomes_primary_when: { type: 'string' },
-                pressure_style: { type: 'string' },
-              },
-              required: ['id', 'name', 'role', 'becomes_primary_when', 'pressure_style'],
-            },
-          },
-          escalation_logic: { type: 'string' },
-        },
-        required: ['source_system', 'core_pressure', 'default_face', 'possible_faces', 'escalation_logic'],
-      },
-      starting_npcs: {
-        type: 'array',
-        description: '3-5 NPCs.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'npc_<snake_case_name>' },
-            name: { type: 'string' },
-            affiliation: { type: 'string' },
-            role: { type: 'string' },
-            voice_register: { type: 'string' },
-            dramatic_function: { type: 'string' },
-            hidden_pressure: { type: 'string' },
-            retrieval_cue: { type: 'string' },
-            initial_disposition: {
-              type: 'string',
-              enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'],
-              description:
-                "How this NPC feels about the PC at scene open, grounded in the power dynamic and pressure system. The PC's origin/class and the chapter's hook shape this — a Warden collecting the tithe walking into a village is not met with 'neutral'; the elder is wary, the parents are hostile, the collaborator is favorable. Default to 'neutral' ONLY when there is no prior power dynamic worth encoding.",
-            },
-            disposition_reason: {
-              type: 'string',
-              description:
-                'One short line explaining why this starting disposition, grounded in the PC/NPC relationship given the hook. Used by the Narrator to voice the NPC accordingly.',
-            },
-          },
-          required: [
-            'id',
-            'name',
-            'affiliation',
-            'role',
-            'voice_register',
-            'dramatic_function',
-            'hidden_pressure',
-            'retrieval_cue',
-            'initial_disposition',
-            'disposition_reason',
-          ],
-        },
-      },
-      active_threads: {
-        type: 'array',
-        description: '3-5 threads.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'thread_<snake_case_subject>' },
-            title: { type: 'string' },
-            question: { type: 'string' },
-            owner_hint: { type: 'string', description: 'NPC name or faction id' },
-            tension: { type: 'number', description: '0-10' },
-            resolution_criteria: { type: 'string' },
-            failure_mode: { type: 'string' },
-            retrieval_cue: { type: 'string' },
-          },
-          required: [
-            'id',
-            'title',
-            'question',
-            'owner_hint',
-            'tension',
-            'resolution_criteria',
-            'failure_mode',
-            'retrieval_cue',
-          ],
-        },
-      },
-      pressure_ladder: {
-        type: 'array',
-        description: '3-5 ordered pressure-tightening steps.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            pressure: { type: 'string' },
-            trigger_condition: { type: 'string' },
-            narrative_effect: { type: 'string' },
-          },
-          required: ['id', 'pressure', 'trigger_condition', 'narrative_effect'],
-        },
-      },
-      possible_revelations: {
-        type: 'array',
-        description: '2-4 latent truths.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            statement: { type: 'string' },
-            held_by: { type: 'string' },
-            emergence_condition: { type: 'string' },
-            recontextualizes: { type: 'string' },
-          },
-          required: ['id', 'statement', 'held_by', 'emergence_condition', 'recontextualizes'],
-        },
-      },
-      moral_fault_lines: {
-        type: 'array',
-        description: '2-4 chapter tensions.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            tension: { type: 'string' },
-            side_a: { type: 'string' },
-            side_b: { type: 'string' },
-            why_it_hurts: { type: 'string' },
-          },
-          required: ['id', 'tension', 'side_a', 'side_b', 'why_it_hurts'],
-        },
-      },
-      escalation_options: {
-        type: 'array',
-        description: '3-5 ways the world can tighten.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            type: { type: 'string', enum: ['bureaucratic', 'social', 'institutional', 'physical'] },
-            condition: { type: 'string' },
-            consequence: { type: 'string' },
-          },
-          required: ['id', 'type', 'condition', 'consequence'],
-        },
-      },
-      editorialized_lore: {
-        type: 'array',
-        description: '2-3 lore items relevant to THIS chapter.',
-        items: {
-          type: 'object',
-          properties: {
-            item: { type: 'string' },
-            relevance_now: { type: 'string' },
-            delivery_method: { type: 'string' },
-          },
-          required: ['item', 'relevance_now', 'delivery_method'],
-        },
-      },
-      thread_transitions: {
-        type: 'array',
+      id: { type: 'string' as const, description: 'npc_<snake_case_name>' },
+      name: { type: 'string' as const },
+      affiliation: { type: 'string' as const },
+      role: { type: 'string' as const },
+      voice_register: { type: 'string' as const },
+      dramatic_function: { type: 'string' as const },
+      hidden_pressure: { type: 'string' as const },
+      retrieval_cue: { type: 'string' as const },
+      initial_disposition: {
+        type: 'string' as const,
+        enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'],
         description:
-          'OPTIONAL. Transitions to apply to EXISTING campaign threads (from the Active carry-forward list) at chapter open. Use this to close threads whose resolutionCriteria was met in the prior chapter\'s prose but was not transitioned during play. Each entry names an existing thread id (not a new one) and the status to transition to. If the resolution opens a successor question, ALSO emit the successor as a new entry in active_threads with a new thread_<id>. Leave this array empty if no carried threads need closure.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'existing thread id from the carry-forward list' },
-            to_status: {
-              type: 'string',
-              enum: [
-                'resolved_clean',
-                'resolved_costly',
-                'resolved_failure',
-                'resolved_catastrophic',
-                'abandoned',
-                'deferred',
-              ],
-            },
-            reason: { type: 'string', description: 'one-line reason grounded in prior-chapter prose' },
-          },
-          required: ['id', 'to_status', 'reason'],
-        },
+          "How this NPC feels about the PC at scene open. Default to 'neutral' ONLY when there is no prior power dynamic worth encoding. (See rule 8.)",
       },
-      opening_scene_spec: {
-        type: 'object',
-        properties: {
-          location: { type: 'string' },
-          atmospheric_condition: { type: 'string' },
-          initial_state: { type: 'string' },
-          first_player_facing: { type: 'string' },
-          immediate_choice: { type: 'string' },
-          no_starting_combat: { type: 'boolean' },
-          no_exposition_dump: { type: 'boolean' },
-          visible_npc_ids: {
-            type: 'array',
-            items: { type: 'string' },
-            description:
-              'Which starting_npcs are ON-STAGE in the opening prose. **Target: 1-2 NPCs.** The other startingNPCs exist in the chapter but are off-stage at opening — they arrive, get referenced secondhand, or are encountered later. Dumping all 3-5 startingNPCs on-stage at opening forces a convened-room tableau (table, hearing, audit) regardless of hook — avoid that.',
-          },
-          withheld_premise_facts: {
-            type: 'array',
-            items: { type: 'string' },
-            description:
-              'Canonical premise facts that are TRUE in state but NOT stated in the opening prose. Held back so the player discovers them through play, not announced up front. Empty list is fine when the opening legitimately puts all premise facts in motion.',
-          },
-        },
-        required: [
-          'location',
-          'atmospheric_condition',
-          'initial_state',
-          'first_player_facing',
-          'immediate_choice',
-          'no_starting_combat',
-          'no_exposition_dump',
-          'visible_npc_ids',
-          'withheld_premise_facts',
-        ],
+      disposition_reason: {
+        type: 'string' as const,
+        description: 'One short line explaining why this disposition.',
       },
     },
     required: [
+      'id',
+      'name',
+      'affiliation',
+      'role',
+      'voice_register',
+      'dramatic_function',
+      'hidden_pressure',
+      'retrieval_cue',
+      'initial_disposition',
+      'disposition_reason',
+    ],
+  },
+}
+
+const activeThreadsSchema = {
+  type: 'array' as const,
+  description: '3-5 threads.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const, description: 'thread_<snake_case_subject>' },
+      title: { type: 'string' as const },
+      question: { type: 'string' as const },
+      owner_hint: { type: 'string' as const, description: 'NPC name or faction id' },
+      tension: { type: 'number' as const, description: '0-10' },
+      initial_tension: { type: 'number' as const, description: 'Optional opening chapter pressure for new threads only. 0-8. Omit unless overriding the role default.' },
+      resolution_criteria: { type: 'string' as const },
+      failure_mode: { type: 'string' as const },
+      retrieval_cue: { type: 'string' as const },
+    },
+    required: [
+      'id',
+      'title',
+      'question',
+      'owner_hint',
+      'tension',
+      'resolution_criteria',
+      'failure_mode',
+      'retrieval_cue',
+    ],
+  },
+}
+
+const threadTransitionsSchema = {
+  type: 'array' as const,
+  description:
+    'OPTIONAL. Transitions for EXISTING campaign threads (carry-forward list) at chapter open. Empty array if no carried threads need closure.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const, description: 'existing thread id from the carry-forward list' },
+      to_status: {
+        type: 'string' as const,
+        enum: [
+          'resolved_clean',
+          'resolved_costly',
+          'resolved_failure',
+          'resolved_catastrophic',
+          'abandoned',
+          'deferred',
+        ],
+      },
+      reason: { type: 'string' as const, description: 'one-line reason grounded in prior-chapter prose' },
+    },
+    required: ['id', 'to_status', 'reason'],
+  },
+}
+
+const arcLinkSchema = {
+  type: 'object' as const,
+  properties: {
+    arc_id: { type: 'string' as const },
+    chapter_function: { type: 'string' as const },
+    player_stance_read: { type: 'string' as const },
+    pressure_engine_ids: { type: 'array' as const, items: { type: 'string' as const } },
+  },
+  required: ['arc_id', 'chapter_function', 'player_stance_read', 'pressure_engine_ids'],
+}
+
+const pacingContractSchema = {
+  type: 'object' as const,
+  properties: {
+    target_turns: {
+      type: 'object' as const,
+      properties: {
+        min: { type: 'number' as const },
+        max: { type: 'number' as const },
+      },
+      required: ['min', 'max'],
+    },
+    chapter_question: { type: 'string' as const },
+    acceptable_resolutions: { type: 'array' as const, items: { type: 'string' as const } },
+    early_pressure: { type: 'string' as const },
+    middle_pressure: { type: 'string' as const },
+    late_pressure: { type: 'string' as const },
+    close_when_any: { type: 'array' as const, items: { type: 'string' as const } },
+    avoid_extending_for: { type: 'array' as const, items: { type: 'string' as const } },
+  },
+  required: [
+    'target_turns',
+    'chapter_question',
+    'acceptable_resolutions',
+    'early_pressure',
+    'middle_pressure',
+    'late_pressure',
+    'close_when_any',
+    'avoid_extending_for',
+  ],
+}
+
+const continuationMovesSchema = {
+  type: 'object' as const,
+  properties: {
+    prior_chapter_meaning: { type: 'string' as const },
+    larger_pattern_revealed: { type: 'string' as const },
+    institutional_scale_escalation: {
+      type: 'object' as const,
+      properties: {
+        from: { type: 'string' as const },
+        to: { type: 'string' as const },
+      },
+      required: ['from', 'to'],
+    },
+    new_named_threat_from_prior_success: {
+      type: 'object' as const,
+      properties: {
+        name: { type: 'string' as const },
+        emerged_from: { type: 'string' as const },
+        why_inevitable: { type: 'string' as const },
+      },
+      required: ['name', 'emerged_from', 'why_inevitable'],
+    },
+    worsened_existing_thread: {
+      type: 'object' as const,
+      properties: {
+        thread_id: { type: 'string' as const },
+        prior_small_detail: { type: 'string' as const },
+        why_load_bearing_now: { type: 'string' as const },
+      },
+      required: ['thread_id', 'prior_small_detail', 'why_load_bearing_now'],
+    },
+    planted_midchapter_revelation: {
+      type: 'object' as const,
+      properties: {
+        hidden_statement: { type: 'string' as const },
+        recontextualizes: { type: 'string' as const },
+      },
+      required: ['hidden_statement', 'recontextualizes'],
+    },
+    relationship_deepening_target: {
+      type: 'object' as const,
+      properties: {
+        entity_id: { type: 'string' as const },
+        pressure: { type: 'string' as const },
+      },
+      required: ['entity_id', 'pressure'],
+    },
+  },
+  required: [
+    'prior_chapter_meaning',
+    'larger_pattern_revealed',
+    'institutional_scale_escalation',
+    'new_named_threat_from_prior_success',
+    'worsened_existing_thread',
+    'planted_midchapter_revelation',
+  ],
+}
+
+const pressureLadderSchema = {
+  type: 'array' as const,
+  description: '3-5 ordered pressure-tightening steps.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const },
+      pressure: { type: 'string' as const },
+      trigger_condition: { type: 'string' as const },
+      narrative_effect: { type: 'string' as const },
+      severity: { type: 'string' as const, enum: ['standard', 'hard'] },
+    },
+    required: ['id', 'pressure', 'trigger_condition', 'narrative_effect'],
+  },
+}
+
+const possibleRevelationsSchema = {
+  type: 'array' as const,
+  description: '2-4 latent truths.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const },
+      statement: { type: 'string' as const },
+      held_by: { type: 'string' as const },
+      emergence_condition: { type: 'string' as const },
+      recontextualizes: { type: 'string' as const },
+      hint_phrases: {
+        type: 'array' as const,
+        description: 'Specific phrases or substrings the Narrator can plant before this reveal fires.',
+        items: { type: 'string' as const },
+      },
+      hints_required: {
+        type: 'number' as const,
+        description: 'Minimum hint count before reveal is earned. Default 2; use 3 for major arc reveals.',
+      },
+      valid_reveal_contexts: {
+        type: 'array' as const,
+        description: 'Contexts where this reveal may legally land.',
+        items: {
+          type: 'string' as const,
+          enum: [
+            'crisis_of_trust',
+            'private_pressure',
+            'documentary_surface',
+            'confession',
+            'accusation',
+            'forced_disclosure',
+            'inadvertent',
+          ],
+        },
+      },
+      invalid_reveal_contexts: {
+        type: 'array' as const,
+        description: 'Contexts where this reveal should not land, even if hints are satisfied.',
+        items: {
+          type: 'string' as const,
+          enum: [
+            'crisis_of_trust',
+            'private_pressure',
+            'documentary_surface',
+            'confession',
+            'accusation',
+            'forced_disclosure',
+            'inadvertent',
+          ],
+        },
+      },
+    },
+    required: ['id', 'statement', 'held_by', 'emergence_condition', 'recontextualizes'],
+  },
+}
+
+const moralFaultLinesSchema = {
+  type: 'array' as const,
+  description: '2-4 chapter tensions.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const },
+      tension: { type: 'string' as const },
+      side_a: { type: 'string' as const },
+      side_b: { type: 'string' as const },
+      why_it_hurts: { type: 'string' as const },
+    },
+    required: ['id', 'tension', 'side_a', 'side_b', 'why_it_hurts'],
+  },
+}
+
+const escalationOptionsSchema = {
+  type: 'array' as const,
+  description: '3-5 ways the world can tighten.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const },
+      type: { type: 'string' as const, enum: ['bureaucratic', 'social', 'institutional', 'physical'] },
+      condition: { type: 'string' as const },
+      consequence: { type: 'string' as const },
+    },
+    required: ['id', 'type', 'condition', 'consequence'],
+  },
+}
+
+const editorializedLoreSchema = {
+  type: 'array' as const,
+  description: '2-3 lore items relevant to THIS chapter.',
+  items: {
+    type: 'object' as const,
+    properties: {
+      item: { type: 'string' as const },
+      relevance_now: { type: 'string' as const },
+      delivery_method: { type: 'string' as const },
+    },
+    required: ['item', 'relevance_now', 'delivery_method'],
+  },
+}
+
+export const authorChapterSpineTool: Anthropic.Tool = {
+  name: AUTHOR_SPINE_TOOL_NAME,
+  description:
+    'Emit chapter spine: frame, cast, threads, opening. Call ONCE per spine pass. Pressure surface (ladder, revelations, fault lines, escalation, lore) goes in a separate later call.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      // chapter_frame is intentionally first. Tool-call generation degrades on
+      // tail fields of long schemas; the frame's outcome_spectrum is the
+      // densest nested object and the most crash-prone if truncated.
+      chapter_frame: chapterFrameSchema,
+      opening_scene_spec: openingSceneSpecSchema,
+      antagonist_field: antagonistFieldSchema,
+      starting_npcs: startingNpcsSchema,
+      active_threads: activeThreadsSchema,
+      thread_transitions: threadTransitionsSchema,
+    },
+    required: [
       'chapter_frame',
+      'opening_scene_spec',
       'antagonist_field',
       'starting_npcs',
       'active_threads',
+    ],
+  },
+}
+
+export const authorPressureSurfaceTool: Anthropic.Tool = {
+  name: AUTHOR_SURFACE_TOOL_NAME,
+  description:
+    'Emit chapter escalation surface: pressure ladder, revelations, fault lines, escalation options, lore. Derived from the spine you authored in the prior tool call. Call ONCE per surface pass.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      pressure_ladder: pressureLadderSchema,
+      possible_revelations: possibleRevelationsSchema,
+      moral_fault_lines: moralFaultLinesSchema,
+      escalation_options: escalationOptionsSchema,
+      editorialized_lore: editorializedLoreSchema,
+    },
+    required: [
       'pressure_ladder',
       'possible_revelations',
       'moral_fault_lines',
       'escalation_options',
       'editorialized_lore',
-      'opening_scene_spec',
     ],
   },
 }
 
-export const AUTHOR_TOOLS: Anthropic.Tool[] = [authorSetupTool]
+export const authorChapterSetupTool: Anthropic.Tool = {
+  name: AUTHOR_TOOL_NAME,
+  description:
+    'Emit the full chapter setup in one call: frame, opening, cast, threads, arc link, pacing contract, pressure surface, and optional continuation moves.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      chapter_frame: chapterFrameSchema,
+      opening_scene_spec: openingSceneSpecSchema,
+      antagonist_field: antagonistFieldSchema,
+      starting_npcs: startingNpcsSchema,
+      active_threads: activeThreadsSchema,
+      thread_transitions: threadTransitionsSchema,
+      arc_link: arcLinkSchema,
+      pacing_contract: pacingContractSchema,
+      continuation_moves: continuationMovesSchema,
+      pressure_ladder: pressureLadderSchema,
+      possible_revelations: possibleRevelationsSchema,
+      moral_fault_lines: moralFaultLinesSchema,
+      escalation_options: escalationOptionsSchema,
+      editorialized_lore: editorializedLoreSchema,
+    },
+    required: [
+      'chapter_frame',
+      'opening_scene_spec',
+      'antagonist_field',
+      'starting_npcs',
+      'active_threads',
+      'arc_link',
+      'pacing_contract',
+      'pressure_ladder',
+      'possible_revelations',
+      'moral_fault_lines',
+      'escalation_options',
+      'editorialized_lore',
+    ],
+  },
+}
+
+export const AUTHOR_SPINE_TOOLS: Anthropic.Tool[] = [authorChapterSpineTool]
+export const AUTHOR_SURFACE_TOOLS: Anthropic.Tool[] = [authorPressureSurfaceTool]
+export const AUTHOR_TOOLS: Anthropic.Tool[] = [authorChapterSetupTool]

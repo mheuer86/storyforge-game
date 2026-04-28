@@ -1,0 +1,114 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document update appends revision; original_summary stays locked",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Verify that amending a document via updates preserves the canonical baseline (originalSummary) while currentSummary advances. Drift detection compares prose claims to originalSummary; any leakage there breaks the contract."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_factor": {
+            "id": "npc_factor",
+            "name": "the Factor",
+            "affiliation": "Synod",
+            "role": "magistrate",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Synod magistrate"],
+              "voice": { "note": "measured", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod magistrate.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_tam": {
+            "id": "npc_tam",
+            "name": "Tam",
+            "affiliation": "settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Subject of the transfer order"],
+              "voice": { "note": "tired", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Subject of the order.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        },
+        "documents": {
+          "doc_tam_transfer": {
+            "id": "doc_tam_transfer",
+            "title": "Tam's transfer order",
+            "chapterCreated": 1,
+            "retrievalCue": "Tam's transfer order; Factor sealed.",
+            "category": "document",
+            "type": "directive",
+            "kindLabel": "transfer order",
+            "status": "active",
+            "signedByEntityId": "npc_factor",
+            "additionalParties": [],
+            "subjectEntityIds": ["npc_tam"],
+            "authorizes": "transfers Tam to district reassignment",
+            "originalSummary": "Filed by Warden Hess, sealed by the Factor; transfers Tam to district reassignment with no stipend clause.",
+            "currentSummary": "Filed by Warden Hess, sealed by the Factor; transfers Tam to district reassignment with no stipend clause.",
+            "revisions": [],
+            "anchoredTo": ["thread_spine"],
+            "clueIds": [],
+            "turn": 0
+          }
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "Read the verdict aloud.",
+    "narrator": {
+      "prose": "The verdict overrides the transfer's terms. \"Stipend reinstated, retroactive to filing.\" The Factor signs the addendum where the original seal was.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "document",
+            "entityId": "doc_tam_transfer",
+            "changes": {
+              "current_summary": "Transfer with stipend reinstated retroactive to filing, per addendum signed by the Factor.",
+              "amendment_reason": "verdict adds retroactive stipend clause",
+              "changed_by": "npc_factor",
+              "at_turn": 5
+            },
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["updates[0]"],
+    "documentsInclude": [
+      {
+        "documentId": "doc_tam_transfer",
+        "status": "active",
+        "originalSummaryEquals": "Filed by Warden Hess, sealed by the Factor; transfers Tam to district reassignment with no stipend clause.",
+        "currentSummaryIncludes": "stipend reinstated retroactive to filing",
+        "revisionsCount": 1
+      }
+    ]
+  }
+}

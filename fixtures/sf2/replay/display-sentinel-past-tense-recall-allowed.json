@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: past-tense reported speech does NOT fire — Pol said earlier...",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Negative control. Reported speech ('Pol said') and possessive recall ('Pol's words came back') are legitimate uses of an absent NPC's name. Past-tense verbs are deliberately excluded from the dialogue-verb list; the possessive guard prevents 's matches from triggering verb checks downstream. This fixture pins both."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Elder Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod auditor"],
+              "voice": { "note": "official", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_pol"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Press the elder.",
+    "narrator": {
+      "prose": "Moth shrugs. \"Pol said earlier the writ would close at sundown.\" Pol's words come back to you now: the writ doesn't pause for parallel assessments.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsAbsent": true
+    }
+  }
+}

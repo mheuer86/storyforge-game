@@ -68,6 +68,14 @@ export interface CharacterClass {
   trait: Trait
   openingKnowledge?: string  // ~80-100 words, character interiority for chapter 1 world-seeding
   hookTags?: string[]        // additional tags for hook matching (e.g. ['knight'] on a Crusader playbook)
+  // Playbook profile for the Author. Surfaced in the chapter-setup seed so
+  // the Author can shape pressure ladders that engage the PC's natural
+  // capabilities. 3-5 natural moves per playbook; 2-3 natural domains. See
+  // [[2604270855 Storyforge V2 Playbook Fit]] for the design rationale.
+  playbookProfile?: {
+    naturalMoves: string[]    // what the PC does well (verbs/short phrases)
+    naturalDomains: string[]  // what kinds of chapter pressures fit
+  }
 }
 
 export interface GenreTheme {

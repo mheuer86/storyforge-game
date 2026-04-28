@@ -1,0 +1,42 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure cooling uses engine floor and cap",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Pressure Engines Phase 2. Opening floor follows max(thread tension minus cooling, engine.value - 2), clamped to the chapter open cap."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 10,
+            "peakTension": 10
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Open pressure.",
+    "narrator": { "prose": "The pressure cools into a playable runway.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "pressure": {
+      "coolThreads": [
+        { "threadId": "thread_spine", "role": "spine", "engineFloor": 0, "openingFloor": 8, "cooledAtOpen": true },
+        { "threadId": "thread_spine", "role": "background", "engineFloor": 7, "openingFloor": 7, "cooledAtOpen": true },
+        { "threadId": "thread_spine", "role": "deferred", "engineFloor": 0, "openingFloor": 7, "cooledAtOpen": true }
+      ]
+    }
+  }
+}

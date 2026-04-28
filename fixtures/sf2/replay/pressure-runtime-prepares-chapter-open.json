@@ -1,0 +1,99 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure runtime prepares chapter open",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Pressure Engines Phase 3. Runtime chapter preparation instantiates arc engines, seeds selected engine anchors from active threads, derives engine values, and initializes chapter-local thread pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_tithe",
+          "status": "active",
+          "title": "The Tithe",
+          "sourceHook": {
+            "title": "The Tithe",
+            "premise": "A tithe shortfall strains the settlement.",
+            "crucible": "The record must land somewhere."
+          },
+          "scenarioShape": {
+            "mode": "revolt",
+            "premise": "A tithe shortfall turns procedural.",
+            "whyThisRun": "The Warden is inside the record.",
+            "whatThisIsNot": "Not a hearing-room loop.",
+            "selectionRationale": "Procedure creates pressure.",
+            "rejectedDefaultShape": "A simple compliance audit."
+          },
+          "arcQuestion": "What does the Warden make legible?",
+          "coreCrucible": "Compliance can protect or consume.",
+          "invariantFacts": [],
+          "variableTruthsForThisRun": [],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "pressureEngines": [
+            {
+              "id": "engine_writ",
+              "name": "Writ Weight",
+              "aggregation": "max",
+              "advancesWhen": "The writ absorbs new claims.",
+              "slowsWhen": "The record is narrowed.",
+              "visibleSymptoms": "Every argument becomes filing material."
+            }
+          ],
+          "playerStanceAxes": [],
+          "chapterFunctionMap": [],
+          "possibleEndgames": []
+        },
+        "threads": {
+          "thread_spine": {
+            "chapterCreated": 2,
+            "tension": 9,
+            "peakTension": 9
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "chapter": 2,
+          "activeThreadIds": ["thread_spine"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_spine"],
+          "arcLink": {
+            "arcId": "arc_tithe",
+            "chapterFunction": "Make the writ's weight visible.",
+            "playerStanceRead": "The Warden is still using procedure.",
+            "pressureEngineIds": ["engine_writ"]
+          },
+          "threadPressure": {}
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Prepare pressure.",
+    "narrator": { "prose": "The next chapter has pressure.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "preparedPressureRuntime": {
+      "engineAnchorsInclude": [
+        { "engineId": "engine_writ", "threadIds": ["thread_spine"] }
+      ],
+      "engineValues": [
+        { "engineId": "engine_writ", "value": 9 }
+      ],
+      "threadPressureIncludes": [
+        { "threadId": "thread_spine", "role": "new", "openingFloor": 6 }
+      ]
+    }
+  }
+}

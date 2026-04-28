@@ -13,6 +13,7 @@ import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compo
 import { applyArchivistPatch, summarizePatchOutcome } from '@/lib/sf2/validation/apply-patch'
 import { formatDeferredWrites } from '@/lib/sf2/validation/format-deferred'
 import { evaluateCurrentPrimaryFace } from '@/lib/sf2/runtime/antagonist-face'
+import { recordTurnTelemetry } from '@/lib/sf2/instrumentation/working-set-telemetry'
 // updatePressureLadder removed: pattern-based trigger matching didn't match
 // any Author-generated natural-language triggers. Ladder firing is now
 // Archivist-driven via extract_turn's ladder_fires field, applied in
@@ -27,7 +28,12 @@ import type {
   Sf2ArchivistUpdate,
   Sf2CoherenceFinding,
   Sf2CoherenceFindingType,
+  Sf2EmotionalBeatAddition,
+  Sf2EmotionalBeatTag,
   Sf2PatchConfidence,
+  Sf2RevealContext,
+  Sf2RevelationHintDelivered,
+  Sf2RevelationRevealed,
   Sf2SceneSummary,
   Sf2State,
 } from '@/lib/sf2/types'
@@ -102,7 +108,10 @@ export async function POST(req: NextRequest) {
         // `any` = must call some tool. Archivist has only one tool, so this is
         // functionally equivalent to { type: 'tool', name: extract_turn } but
         // doesn't bypass prompt caching on Haiku 4.5 the way forced-tool does.
-        tool_choice: { type: 'any' },
+        // disable_parallel_tool_use ensures the model emits exactly one tool
+        // call per turn — without it, Haiku reproducibly emits multiple
+        // parallel partial attempts (see Author debugging cycle).
+        tool_choice: { type: 'any', disable_parallel_tool_use: true },
         messages,
       })
 
@@ -195,6 +204,20 @@ export async function POST(req: NextRequest) {
     // anchor threads have transitioned out of 'active'.
     const pruneResult = pruneGraph(nextState)
     const prunedState = pruneResult.nextState
+
+    if (state.derived?.workingSet) {
+      const telemetry = recordTurnTelemetry(
+        state,
+        state.derived.workingSet,
+        narratorProse,
+        patch,
+        applyResult.outcomes
+      )
+      prunedState.derived.workingSetTelemetry = [
+        ...(prunedState.derived.workingSetTelemetry ?? []),
+        telemetry,
+      ].slice(-50)
+    }
 
     // Stash low-confidence writes as recovery notes for the NEXT Narrator
     // turn. The Narrator will see them as "LAST TURN: re-establish if still
@@ -336,6 +359,27 @@ function normalizeArchivistPatch(raw: Record<string, unknown>, turnIndex: number
     exampleContext: String(l.example_context ?? ''),
   }))
 
+  const emotionalBeatsRaw = Array.isArray(raw.emotional_beats)
+    ? (raw.emotional_beats as Array<Record<string, unknown>>)
+    : []
+  const emotionalBeats = emotionalBeatsRaw
+    .map(normalizeEmotionalBeatAddition)
+    .filter((b): b is Sf2EmotionalBeatAddition => b !== null)
+
+  const revelationHintsDeliveredRaw = Array.isArray(raw.revelation_hints_delivered)
+    ? (raw.revelation_hints_delivered as Array<Record<string, unknown>>)
+    : []
+  const revelationHintsDelivered = revelationHintsDeliveredRaw
+    .map(normalizeRevelationHintDelivered)
+    .filter((h): h is Sf2RevelationHintDelivered => h !== null)
+
+  const revelationsRevealedRaw = Array.isArray(raw.revelations_revealed)
+    ? (raw.revelations_revealed as Array<Record<string, unknown>>)
+    : []
+  const revelationsRevealed = revelationsRevealedRaw
+    .map(normalizeRevelationRevealed)
+    .filter((r): r is Sf2RevelationRevealed => r !== null)
+
   const ladderFires = Array.isArray(raw.ladder_fires)
     ? (raw.ladder_fires as string[]).map(String).filter((s) => s.length > 0)
     : []
@@ -357,8 +401,91 @@ function normalizeArchivistPatch(raw: Record<string, unknown>, turnIndex: number
     pacingClassification: pacing,
     flags,
     lexiconAdditions: lexiconAdditions.length > 0 ? lexiconAdditions : undefined,
+    emotionalBeats: emotionalBeats.length > 0 ? emotionalBeats : undefined,
+    revelationHintsDelivered: revelationHintsDelivered.length > 0 ? revelationHintsDelivered : undefined,
+    revelationsRevealed: revelationsRevealed.length > 0 ? revelationsRevealed : undefined,
     ladderFires: ladderFires.length > 0 ? ladderFires : undefined,
     coherenceFindings: coherenceFindings.length > 0 ? coherenceFindings : undefined,
+  }
+}
+
+const EMOTIONAL_BEAT_TAGS: Sf2EmotionalBeatTag[] = [
+  'confession',
+  'near_confession',
+  'evasion',
+  'betrayal',
+  'loyalty_test',
+  'restraint',
+  'turning_point',
+  'pivot',
+  'breakthrough',
+  'vulnerability',
+  'cost_accepted',
+  'boundary_drawn',
+  'intimidation_landed',
+  'intimidation_failed',
+  'decision_revealed',
+  'mask_slipped',
+]
+
+const REVEAL_CONTEXTS: Sf2RevealContext[] = [
+  'crisis_of_trust',
+  'private_pressure',
+  'documentary_surface',
+  'confession',
+  'accusation',
+  'forced_disclosure',
+  'inadvertent',
+]
+
+function normalizeRevealContext(v: unknown): Sf2RevealContext | null {
+  return typeof v === 'string' && REVEAL_CONTEXTS.includes(v as Sf2RevealContext)
+    ? (v as Sf2RevealContext)
+    : null
+}
+
+function normalizeRevelationHintDelivered(r: Record<string, unknown>): Sf2RevelationHintDelivered | null {
+  const revelationId = String(r.revelation_id ?? '').trim()
+  const phraseMatched = String(r.phrase_matched ?? '').trim()
+  if (!revelationId || !phraseMatched) return null
+  return {
+    revelationId,
+    phraseMatched,
+    proseExcerpt: String(r.prose_excerpt ?? '').slice(0, 400),
+  }
+}
+
+function normalizeRevelationRevealed(r: Record<string, unknown>): Sf2RevelationRevealed | null {
+  const revelationId = String(r.revelation_id ?? '').trim()
+  const context = normalizeRevealContext(r.context)
+  if (!revelationId || !context) return null
+  return {
+    revelationId,
+    context,
+    evidenceQuote: String(r.evidence_quote ?? '').slice(0, 400),
+  }
+}
+
+function normalizeEmotionalBeatAddition(r: Record<string, unknown>): Sf2EmotionalBeatAddition | null {
+  const text = String(r.text ?? '').trim()
+  if (!text) return null
+  const tags = Array.isArray(r.emotional_tags)
+    ? (r.emotional_tags as unknown[])
+        .filter((t): t is Sf2EmotionalBeatTag =>
+          typeof t === 'string' && EMOTIONAL_BEAT_TAGS.includes(t as Sf2EmotionalBeatTag)
+        )
+    : []
+  if (tags.length === 0) return null
+  const salienceRaw = Number(r.salience ?? 0)
+  const salience = Number.isFinite(salienceRaw)
+    ? Math.max(0, Math.min(1, salienceRaw))
+    : 0
+  return {
+    text,
+    participants: Array.isArray(r.participants) ? (r.participants as unknown[]).map(String).filter(Boolean) : [],
+    anchoredTo: Array.isArray(r.anchored_to) ? (r.anchored_to as unknown[]).map(String).filter(Boolean) : [],
+    emotionalTags: [...new Set(tags)],
+    salience,
   }
 }
 
@@ -372,6 +499,7 @@ const COHERENCE_FINDING_TYPES: Sf2CoherenceFindingType[] = [
   'pronoun_drift',
   'age_drift',
   'anchor_miss',
+  'revelation_premature_reveal',
 ]
 
 function normalizeCoherenceFinding(r: Record<string, unknown>): Sf2CoherenceFinding | null {

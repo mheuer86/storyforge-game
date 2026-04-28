@@ -97,6 +97,7 @@ export function applyAuthoredToCampaign(
       existing.failureMode = t.failureMode || existing.failureMode
       existing.retrievalCue = t.retrievalCue || existing.retrievalCue
       if (typeof t.tension === 'number') existing.tension = clampTension(t.tension)
+      existing.peakTension = Math.max(existing.peakTension ?? existing.tension, existing.tension)
       existing.loadBearing = loadBearing.has(t.id)
       // Re-resolve owner only if current owner is the placeholder
       // faction_unknown — don't stomp a meaningfully resolved one.
@@ -122,11 +123,22 @@ export function applyAuthoredToCampaign(
       owner: owner ?? { kind: 'faction', id: 'faction_unknown' },
       stakeholders,
       tension: clampTension(typeof t.tension === 'number' ? t.tension : 5),
+      peakTension: clampTension(typeof t.tension === 'number' ? t.tension : 5),
       resolutionCriteria: t.resolutionCriteria,
       failureMode: t.failureMode,
       loadBearing: loadBearing.has(t.id),
       tensionHistory: [],
     }
+  }
+
+  const activeArcId = authored.arcLink?.arcId
+  const activeArc = activeArcId ? state.campaign.arcs[activeArcId] : undefined
+  if (activeArc) {
+    const existing = new Set(activeArc.threadIds)
+    for (const threadId of authored.activeThreads.map((t) => t.id)) {
+      if (state.campaign.threads[threadId]) existing.add(threadId)
+    }
+    activeArc.threadIds = [...existing]
   }
 }
 

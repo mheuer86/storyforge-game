@@ -1,0 +1,79 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "agenda update stamps freshness",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from playtest fixture F8. NPC agenda.current_move must normalize into runtime state and carry lastUpdatedTurn so stale agenda can be detected when an NPC returns on-stage."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "careful", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": {
+              "pursuing": "Keep the corridor account contained.",
+              "methods": ["delay"],
+              "currentMove": "Managing the corridor scene.",
+              "lastUpdatedTurn": 2
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk with procedural access.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 9,
+    "playerInput": "Ask Aul what changed.",
+    "narrator": {
+      "prose": "Aul stops treating this as a corridor problem and starts naming the filing risk.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_aul",
+            "changes": {
+              "agenda": {
+                "current_move": "Naming the filing risk and deciding whether to put help in writing."
+              },
+              "last_seen_turn": 9
+            },
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "npcAgendasInclude": [
+      {
+        "npcId": "npc_aul",
+        "currentMove": "Naming the filing risk and deciding whether to put help in writing.",
+        "lastUpdatedTurn": 10
+      }
+    ],
+    "archivistAcceptedRefs": ["updates[0]"]
+  }
+}

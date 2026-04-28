@@ -1,0 +1,26 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: 'pacing advisory' system term in prose fires debug_leak",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777287137008",
+    "capturedAt": "2026-04-27T11:35:35.000Z",
+    "purpose": "Playthrough 10 turn 14 leaked the system term 'pacing advisory' into player-facing prose: 'The pacing advisory fires in the back of your mind…'. Same class as scene_packet/archivist/etc. — system vocabulary that should never reach the player. Added to FORBIDDEN_PHRASES."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused)",
+    "narrator": {
+      "prose": "The yard stretches before you. The pacing advisory fires in the back of your mind — you have maybe an hour before Calder closes that window."
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 1,
+      "findingsInclude": [
+        { "findingType": "debug_leak", "surfaceEquals": "pacing advisory" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure engine derives status-aware values",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Pressure Engines Phase 2. Engine value derives from anchored thread contribution, including peakTension for resolved/abandoned statuses."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 8,
+            "peakTension": 8,
+            "status": "active"
+          },
+          "thread_deferred": {
+            "id": "thread_deferred",
+            "title": "Deferred pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "deferred",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 9,
+            "resolutionCriteria": "The deferred pressure is answered.",
+            "failureMode": "The deferred pressure returns later.",
+            "retrievalCue": "Deferred pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          },
+          "thread_costly": {
+            "id": "thread_costly",
+            "title": "Costly resolved pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "resolved_costly",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 0,
+            "peakTension": 9,
+            "resolutionCriteria": "The cost is known.",
+            "failureMode": "The cost spreads.",
+            "retrievalCue": "Costly resolved pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          },
+          "thread_abandoned": {
+            "id": "thread_abandoned",
+            "title": "Abandoned pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "abandoned",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 10,
+            "resolutionCriteria": "The abandoned pressure is taken up.",
+            "failureMode": "The abandoned pressure festers.",
+            "retrievalCue": "Abandoned pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        },
+        "engines": {
+          "engine_max": {
+            "id": "engine_max",
+            "name": "Max Engine",
+            "status": "active",
+            "summary": "Reads the hottest anchored thread.",
+            "aggregation": "max",
+            "anchorThreadIds": ["thread_spine", "thread_deferred", "thread_costly", "thread_abandoned"],
+            "value": 0,
+            "advancesWhen": "Threads rise.",
+            "slowsWhen": "Threads resolve.",
+            "visibleSymptoms": "Pressure spikes."
+          },
+          "engine_average": {
+            "id": "engine_average",
+            "name": "Average Engine",
+            "status": "active",
+            "summary": "Reads the average anchored thread.",
+            "aggregation": "average",
+            "anchorThreadIds": ["thread_spine", "thread_deferred", "thread_costly", "thread_abandoned"],
+            "value": 0,
+            "advancesWhen": "Threads rise.",
+            "slowsWhen": "Threads resolve.",
+            "visibleSymptoms": "Pressure spreads."
+          },
+          "engine_weighted": {
+            "id": "engine_weighted",
+            "name": "Weighted Engine",
+            "status": "active",
+            "summary": "Reads primary plus supporting anchors.",
+            "aggregation": "weighted",
+            "anchorThreadIds": ["thread_spine", "thread_deferred", "thread_costly", "thread_abandoned"],
+            "value": 0,
+            "advancesWhen": "Threads rise.",
+            "slowsWhen": "Threads resolve.",
+            "visibleSymptoms": "Pressure concentrates."
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Inspect pressure.",
+    "narrator": { "prose": "The pressure can be measured.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "pressure": {
+      "threadContributions": [
+        { "threadId": "thread_spine", "value": 8 },
+        { "threadId": "thread_deferred", "value": 4 },
+        { "threadId": "thread_costly", "value": 4 },
+        { "threadId": "thread_abandoned", "value": 3 }
+      ],
+      "engineValues": [
+        { "engineId": "engine_max", "value": 8 },
+        { "engineId": "engine_average", "value": 5 },
+        { "engineId": "engine_weighted", "value": 6 }
+      ]
+    }
+  }
+}

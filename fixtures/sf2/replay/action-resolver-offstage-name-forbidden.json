@@ -1,0 +1,75 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "action resolver: explicit off-stage name resolves but remains forbidden substitution",
+  "source": { "kind": "synthetic", "purpose": "Named off-stage targets are recognized, but direct interaction still requires a scene transition." },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "Registry",
+            "role": "clerk",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "pronoun": "she/her",
+              "voice": { "note": "careful", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Registry clerk.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Auditor Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Off-stage auditor"],
+              "pronoun": "she/her",
+              "voice": { "note": "cold", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Off-stage auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": { "setup": { "startingNpcIds": ["npc_kess", "npc_pol"] } },
+      "world": { "sceneSnapshot": { "presentNpcIds": ["npc_kess"] } }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask Pol why the writ is already sealed.",
+    "narrator": { "prose": "Kess looks toward the closed archive door.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "resolvedAction": {
+      "actionType": "question_npc",
+      "targetEntityIdsEquals": ["npc_pol"],
+      "forbiddenTargetSubstitutionsIncludes": ["npc_pol"],
+      "resolvedReferenceIncludes": [
+        { "surface": "Pol", "resolvedToEntityId": "npc_pol", "confidence": "medium" }
+      ]
+    }
+  }
+}

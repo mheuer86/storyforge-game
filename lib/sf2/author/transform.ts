@@ -70,8 +70,17 @@ export function transformAuthorSetup(
       pressure: step.pressure,
       triggerCondition: step.triggerCondition,
       narrativeEffect: step.narrativeEffect,
+      severity: step.severity ?? 'standard',
       fired: false,
     })),
+    threadPressure: {},
+    threadInitialTensions: Object.fromEntries(
+      authored.activeThreads
+        .filter((t) => typeof t.initialTension === 'number')
+        .map((t) => [t.id, t.initialTension as number])
+    ),
+    arcLink: authored.arcLink,
+    pacingContract: authored.pacingContract,
     surfaceThreads: [],
     surfaceNpcIds: [],
   }
@@ -100,6 +109,12 @@ export function transformAuthorSetup(
       emergenceCondition: r.emergenceCondition,
       recontextualizes: r.recontextualizes,
       revealed: false,
+      hintPhrases: r.hintPhrases ?? [],
+      hintsRequired: r.hintsRequired ?? (r.hintPhrases && r.hintPhrases.length > 0 ? 2 : 0),
+      hintsDelivered: 0,
+      hintEvidence: [],
+      validRevealContexts: r.validRevealContexts ?? [],
+      invalidRevealContexts: r.invalidRevealContexts,
     })),
     moralFaultLines: authored.moralFaultLines,
     escalationOptions: authored.escalationOptions.map((e) => ({
@@ -109,6 +124,7 @@ export function transformAuthorSetup(
       consequence: e.consequence,
       used: false,
     })),
+    continuationMoves: authored.continuationMoves,
   }
 
   // Opening visibility: prefer the Author's explicit visibleNpcIds (new field)

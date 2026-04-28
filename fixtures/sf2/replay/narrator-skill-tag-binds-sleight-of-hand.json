@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator skill tag binding accepts Sleight of Hand",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression: multi-word skill tags normalize to letters only, so [Sleight of Hand] must still inject the mandatory roll-binding block."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "Opening prose for an established scene.",
+            "timestamp": "2026-04-26T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Slip the chit into your sleeve before he turns back. [Sleight of Hand]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildMessagesForNarrator output, not narrator response)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Slip the chit into your sleeve before he turns back. [Sleight of Hand]",
+      "userMessageContainsAll": [
+        "Skill-tag binding (mandatory)",
+        "Sleight of Hand",
+        "request_roll"
+      ]
+    }
+  }
+}

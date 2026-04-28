@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: absent NPC performing direct action fires absent_direct_actor",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "PRD Test 4 worked example. Mareth is absent. Prose has 'Mareth steps through the door.' The scanner must catch this as absent_direct_actor — companion to absent_speaker, same alias substrate, action-verb list instead of dialogue verbs. Closes Phase C of the PRD."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Elder Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_mareth": {
+            "id": "npc_mareth",
+            "name": "Mareth",
+            "affiliation": "Synod",
+            "role": "field officer",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod field officer"],
+              "voice": { "note": "clipped", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod field officer.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_mareth"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Continue speaking with the elder.",
+    "narrator": {
+      "prose": "Moth meets your eyes across the counter. Before he can answer, Mareth steps through the door.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 1,
+      "findingsInclude": [
+        {
+          "findingType": "absent_direct_actor",
+          "severity": "hard",
+          "surfaceEquals": "Mareth steps"
+        }
+      ]
+    }
+  }
+}

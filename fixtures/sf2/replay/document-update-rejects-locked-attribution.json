@@ -1,0 +1,93 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document update rejects locked attribution fields",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression for silent acceptance of filed_by/signed_by/type/original_summary rewrites."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "factions": {
+          "faction_registry": {
+            "id": "faction_registry",
+            "name": "Registry",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": ["thread_spine"],
+            "retrievalCue": "Local administrative pressure."
+          }
+        },
+        "documents": {
+          "doc_intake_log": {
+            "id": "doc_intake_log",
+            "title": "Intake hall ledger entry",
+            "chapterCreated": 1,
+            "retrievalCue": "Ledger record of who passed through the hall.",
+            "category": "document",
+            "type": "record",
+            "kindLabel": "ledger entry",
+            "status": "active",
+            "filedByEntityId": "faction_registry",
+            "additionalParties": [],
+            "subjectEntityIds": ["faction_registry"],
+            "authorizes": "attests passage through intake",
+            "originalSummary": "Three subjects logged as cleared.",
+            "currentSummary": "Three subjects logged as cleared.",
+            "revisions": [],
+            "anchoredTo": ["thread_spine"],
+            "clueIds": [],
+            "turn": 0
+          }
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Rewrite the ledger attribution.",
+    "narrator": {
+      "prose": "The clerk refuses. \"The ledger's original filing authority does not change because you dislike it.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "document",
+            "entityId": "doc_intake_log",
+            "changes": {
+              "filed_by": "thread_spine",
+              "original_summary": "Changed baseline terms"
+            },
+            "confidence": "high",
+            "sourceQuote": "synthetic illegal rewrite"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["updates[0]"],
+    "driftIncludes": [
+      {
+        "kind": "protected_field_write",
+        "detailIncludes": "filed_by"
+      }
+    ],
+    "documentsInclude": [
+      {
+        "documentId": "doc_intake_log",
+        "filedByEntityId": "faction_registry",
+        "originalSummaryEquals": "Three subjects logged as cleared.",
+        "revisionsCount": 0
+      }
+    ]
+  }
+}

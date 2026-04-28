@@ -1,0 +1,28 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display-sentinel-narrator-reveal-fires",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777214825210",
+    "capturedAt": "2026-04-26T15:18:31.000Z",
+    "purpose": "Verify the display sentinel detects narrator-reveal omniscient sidebar phrases. Bug shape from playthrough 6 turn 1: on a failed Investigation roll, the Narrator emitted 'What you miss in the distraction is the ledger entry from two cycles ago…' — exactly the pattern the prompt's pre-submit scan forbids. Prompt rule wasn't load-bearing; programmatic detection added in lib/sf2/sentinel/display.ts:scanForNarratorReveal."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Review the summary ledger.",
+    "narrator": {
+      "prose": "The matrices would show whether the three workers were ever real. Corvin's voice is calm, procedural. He explains the discrepancy as a systems update from a software amendment two cycles back. And he's right—it's the kind of procedural detail that, once named and filed, closes the question.\n\nWhat you miss in the distraction is the ledger entry from two cycles ago. The one Corvin positioned slightly lower on the screen than it needed to be. The one he didn't highlight when you opened the file.\n\nCorvin steps back. \"If you need clarification on the amendment, I can file a request with the Synod.\""
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsInclude": [
+        {
+          "findingType": "narrator_reveal",
+          "surfaceEquals": "what you miss"
+        }
+      ]
+    }
+  }
+}

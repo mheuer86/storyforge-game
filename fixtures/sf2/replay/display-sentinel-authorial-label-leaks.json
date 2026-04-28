@@ -1,0 +1,37 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: authorial failure labels and disposition words are debug leaks",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Playthrough 13 leaked narrator scaffolding into prose: '**THE ESCALATION.**' and 'She is still favorable.' These labels are system-facing authorial vocabulary, not diegetic prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Press the clerk.",
+    "narrator": {
+      "prose": "**THE ESCALATION.** She is still favorable, but the thread that was opening has gone taut.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 3,
+      "findingsInclude": [
+        { "findingType": "debug_leak", "surfaceEquals": "**the escalation.**" },
+        { "findingType": "debug_leak", "surfaceEquals": "still favorable" },
+        { "findingType": "debug_leak", "surfaceEquals": "the thread that was" }
+      ]
+    }
+  }
+}

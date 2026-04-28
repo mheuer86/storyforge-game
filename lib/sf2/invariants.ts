@@ -6,6 +6,7 @@ import type {
   Sf2Campaign,
   Sf2Clue,
   Sf2Decision,
+  Sf2Document,
   Sf2Faction,
   Sf2Npc,
   Sf2Promise,
@@ -107,6 +108,51 @@ export function checkTemporalAnchor(anchor: Sf2TemporalAnchor, campaign: Sf2Camp
       !campaign.factions[id]
     ) {
       return { ok: false, field: 'anchoredTo', reason: `anchor target ${id} not in registry` }
+    }
+  }
+  return { ok: true }
+}
+
+export function checkDocument(doc: Sf2Document, campaign: Sf2Campaign): InvariantResult {
+  if (!doc.kindLabel?.trim()) {
+    return { ok: false, field: 'kindLabel', reason: 'document must have a kindLabel (e.g. "writ", "transfer order")' }
+  }
+  if (!doc.authorizes?.trim()) {
+    return { ok: false, field: 'authorizes', reason: 'document must say what it permits/commands/attests/requests' }
+  }
+  if (!doc.originalSummary?.trim()) {
+    return { ok: false, field: 'originalSummary', reason: 'document must capture its original terms' }
+  }
+  if (!doc.subjectEntityIds || doc.subjectEntityIds.length === 0) {
+    return { ok: false, field: 'subjectEntityIds', reason: 'document must concern at least one subject (npc/faction)' }
+  }
+  // Validate referenced entities exist in registry. Documents anchor to threads
+  // (may be empty/floating); subjects must resolve to npcs or factions.
+  for (const sid of doc.subjectEntityIds) {
+    if (!campaign.npcs[sid] && !campaign.factions[sid]) {
+      return { ok: false, field: 'subjectEntityIds', reason: `subject ${sid} not in npc/faction registry` }
+    }
+  }
+  for (const tid of doc.anchoredTo ?? []) {
+    if (!campaign.threads[tid]) {
+      return { ok: false, field: 'anchoredTo', reason: `thread ${tid} not in registry` }
+    }
+  }
+  if (doc.filedByEntityId) {
+    const id = doc.filedByEntityId
+    if (!campaign.npcs[id] && !campaign.factions[id]) {
+      return { ok: false, field: 'filedByEntityId', reason: `${id} not in npc/faction registry` }
+    }
+  }
+  if (doc.signedByEntityId) {
+    const id = doc.signedByEntityId
+    if (!campaign.npcs[id] && !campaign.factions[id]) {
+      return { ok: false, field: 'signedByEntityId', reason: `${id} not in npc/faction registry` }
+    }
+  }
+  for (const party of doc.additionalParties ?? []) {
+    if (!campaign.npcs[party.entityId] && !campaign.factions[party.entityId]) {
+      return { ok: false, field: 'additionalParties', reason: `party ${party.entityId} not in npc/faction registry` }
     }
   }
   return { ok: true }

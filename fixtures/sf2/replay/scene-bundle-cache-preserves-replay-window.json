@@ -1,0 +1,56 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene-bundle-cache-preserves-replay-window",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777196899336",
+    "capturedAt": "2026-04-26T10:13:42.000Z",
+    "notes": "Bug shape: on turn 1 (second turn of chapter), the bundle cache had been cleared by the Archivist after turn 0 (off-stage roster changed when 'Kess Toral' was promoted from prose to entity). The cache-miss path reset firstTurnIndex to history.turns.length === 1, dropping turn 0 from buildMessagesForNarrator's replay window. The Narrator received CONTINUATION mode + empty bundle Location/Atmosphere lines + zero prior assistant messages, hallucinated 'Prior scene: —', and emitted a meta-question instead of prose. Fix: firstTurnIndex now lives on world.sceneSnapshot, decoupled from cache lifecycle. A roster-only invalidation rebuilds bundle text but preserves the in-scene replay window."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "firstTurnIndex": 0
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The settlement elder's quarters smell of rendered fat and old stone—a single room carved into the hillside. Kess Toral, the settlement elder, stands at the far side of the table.",
+            "timestamp": "2026-04-26T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Ask Toral directly: which three adults are missing, and what happened to them.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — this fixture asserts on buildMessagesForNarrator output for the upcoming turn 1, not on a narrator response)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Ask Toral directly: which three adults are missing, and what happened to them.",
+      "assistantMessageCountAtLeast": 1,
+      "includesAssistantProseMatching": [
+        "Kess Toral, the settlement elder"
+      ],
+      "sceneSnapshotFirstTurnIndexEquals": 0
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author seed includes prior chapter closing geometry",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage for chapter-author opening continuity. The Author seed must carry the prior closing location/scene image so Ch+1 cannot open away from the inherited cliffhanger without accounting for it."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "epic-scifi",
+        "originId": "imperial-service",
+        "playbookId": "warden",
+        "currentChapter": 2,
+        "currentSceneId": "scene_silent_door"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_rue_door",
+          "name": "Rue's silent door",
+          "description": "The corridor ends at Rue's closed door."
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_silent_door",
+          "location": {
+            "id": "loc_rue_door",
+            "name": "Rue's silent door",
+            "description": "The corridor ends at Rue's closed door."
+          },
+          "presentNpcIds": [],
+          "timeLabel": "after the second bolt",
+          "established": ["Rue shut the door without answering.", "The secondary bolt landed."],
+          "firstTurnIndex": 0
+        }
+      },
+      "chapter": {
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_silent_door",
+            "chapter": 2,
+            "summary": "The chapter closed at Rue's silent door after the secondary bolt landed.",
+            "leadsTo": "relational_tension"
+          }
+        ]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 2,
+            "playerInput": "Knock again.",
+            "narratorProse": "Rue's door stays closed. The secondary bolt lands, quieter than the first.",
+            "timestamp": "2026-04-28T00:00:00.000Z"
+          }
+        ],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 2,
+            "playerInput": "Knock again.",
+            "narratorProse": "Rue's door stays closed. The secondary bolt lands, quieter than the first.",
+            "timestamp": "2026-04-28T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    "turnIndex": 1,
+    "playerInput": "Open the next chapter.",
+    "narrator": {
+      "prose": "The chapter has closed.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "priorChapterMeaning": {
+        "situation": "Rue refused the Warden at the threshold.",
+        "tension": "The relationship hardened around what was owed.",
+        "ticking": "The record keeps moving without Rue's answer.",
+        "question": "What does Rue's refusal cost next?",
+        "closer": "The secondary bolt landed.",
+        "closingResolution": "unresolved"
+      },
+      "hookPremiseIncludes": [
+        "Closing geometry: Rue's silent door",
+        "The chapter closed at Rue's silent door after the secondary bolt landed."
+      ],
+      "hookFirstEpisodeIncludes": ["What does Rue's refusal cost next?"]
+    }
+  }
+}

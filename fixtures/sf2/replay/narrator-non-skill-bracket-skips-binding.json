@@ -1,0 +1,41 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator-non-skill-bracket-skips-binding",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Negative companion to narrator-skill-tag-binds-roll: bracketed text in playerInput that does NOT name a rollable skill must not trigger the binding directive. Catches a class of false positives where the Author/UI emits brackets for non-skill annotations like '[No roll — a pure choice]' or '[Establish private ground with your retainer]'."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "Opening prose for an established scene.",
+            "timestamp": "2026-04-26T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Walk away from the table without signing. [No roll — a pure choice]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildMessagesForNarrator output, not narrator response)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Walk away from the table without signing. [No roll — a pure choice]",
+      "userMessageContainsNone": [
+        "Skill-tag binding (mandatory)"
+      ]
+    }
+  }
+}

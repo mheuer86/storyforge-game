@@ -1,0 +1,95 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "action resolver: pronoun falls back to last visible speaker when current cast is ambiguous",
+  "source": { "kind": "synthetic", "purpose": "PRD Fix 2 deterministic rule 2: last speaker after ambiguous interlocutors." },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "Registry",
+            "role": "clerk",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "pronoun": "she/her",
+              "voice": { "note": "careful", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Registry clerk.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": []
+          },
+          "npc_mira": {
+            "id": "npc_mira",
+            "name": "Mira",
+            "affiliation": "Settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Settlement witness"],
+              "pronoun": "she/her",
+              "voice": { "note": "direct", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Witness by the rear door.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": { "sceneSnapshot": { "presentNpcIds": ["npc_kess", "npc_mira"] } },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Who handled the records?",
+            "narratorProse": "Kess looks away. Mira says, \"The ledger passed through the rear office.\"",
+            "timestamp": "replay"
+          }
+        ],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Who handled the records?",
+            "narratorProse": "Kess looks away. Mira says, \"The ledger passed through the rear office.\"",
+            "timestamp": "replay"
+          }
+        ]
+      }
+    },
+    "turnIndex": 1,
+    "playerInput": "Ask her why.",
+    "narrator": { "prose": "Mira keeps her eyes on the floor.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "resolvedAction": {
+      "actionType": "question_npc",
+      "targetEntityIdsEquals": ["npc_mira"],
+      "forbiddenTargetSubstitutionsIncludes": ["npc_kess"],
+      "resolvedReferenceIncludes": [
+        { "surface": "her", "resolvedToEntityId": "npc_mira", "confidence": "medium" }
+      ]
+    }
+  }
+}

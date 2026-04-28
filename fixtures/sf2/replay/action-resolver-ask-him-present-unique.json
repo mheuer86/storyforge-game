@@ -1,0 +1,75 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "action resolver: Ask him resolves to unique present male NPC",
+  "source": { "kind": "synthetic", "purpose": "PRD Fix 2 deterministic present-cast pronoun match." },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "Registry",
+            "role": "clerk",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "pronoun": "she/her",
+              "voice": { "note": "careful", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Registry clerk.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_thorne": {
+            "id": "npc_thorne",
+            "name": "Thorne",
+            "affiliation": "Settlement",
+            "role": "minder",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Chief Minder"],
+              "pronoun": "he/him",
+              "voice": { "note": "plain", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Chief Minder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": { "sceneSnapshot": { "presentNpcIds": ["npc_kess", "npc_thorne"] } }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask him why Kess stopped writing.",
+    "narrator": { "prose": "Thorne looks toward the manifest.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "resolvedAction": {
+      "actionType": "question_npc",
+      "targetEntityIdsEquals": ["npc_thorne"],
+      "forbiddenTargetSubstitutionsIncludes": ["npc_kess"],
+      "resolvedReferenceIncludes": [
+        { "surface": "him", "resolvedToEntityId": "npc_thorne", "confidence": "high" }
+      ]
+    }
+  }
+}

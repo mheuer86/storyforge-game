@@ -1,0 +1,125 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure initializes chapter runway",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Pressure Engines Phase 2. Chapter pressure initialization assigns roles, cooling floors, local escalation zero, and effective pressure from the new runway."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "chapter": 1,
+          "activeThreadIds": ["thread_spine", "thread_load"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_load"],
+          "threadPressure": {}
+        }
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 10,
+            "peakTension": 10,
+            "chapterCreated": 1
+          },
+          "thread_load": {
+            "id": "thread_load",
+            "title": "Load bearing pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8,
+            "resolutionCriteria": "The load bearing pressure is answered.",
+            "failureMode": "The load bearing pressure worsens.",
+            "retrievalCue": "Load bearing pressure.",
+            "loadBearing": true,
+            "tensionHistory": []
+          },
+          "thread_background": {
+            "id": "thread_background",
+            "title": "Background pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "The background pressure is answered.",
+            "failureMode": "The background pressure worsens.",
+            "retrievalCue": "Background pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          },
+          "thread_new": {
+            "id": "thread_new",
+            "title": "New pressure",
+            "chapterCreated": 2,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5,
+            "resolutionCriteria": "The new pressure is answered.",
+            "failureMode": "The new pressure worsens.",
+            "retrievalCue": "New pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        },
+        "engines": {
+          "engine_background": {
+            "id": "engine_background",
+            "name": "Background Engine",
+            "status": "active",
+            "summary": "Keeps background pressure warm.",
+            "aggregation": "max",
+            "anchorThreadIds": ["thread_background"],
+            "value": 9,
+            "advancesWhen": "Background pressure rises.",
+            "slowsWhen": "Background pressure cools.",
+            "visibleSymptoms": "Background pressure remains visible."
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Initialize pressure.",
+    "narrator": { "prose": "The chapter opens with local pressure.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "pressure": {
+      "initializeChapterSetupPatch": {
+        "chapter": 2,
+        "activeThreadIds": ["thread_spine", "thread_load", "thread_background", "thread_new"],
+        "spineThreadId": "thread_spine",
+        "loadBearingThreadIds": ["thread_load"]
+      },
+      "initializedThreadPressure": [
+        { "threadId": "thread_spine", "role": "spine", "openingFloor": 8, "localEscalation": 0, "maxThisChapter": 8, "cooledAtOpen": true },
+        { "threadId": "thread_load", "role": "load_bearing", "openingFloor": 7, "localEscalation": 0, "maxThisChapter": 7, "cooledAtOpen": true },
+        { "threadId": "thread_background", "role": "background", "openingFloor": 5, "localEscalation": 0, "maxThisChapter": 5, "cooledAtOpen": true },
+        { "threadId": "thread_new", "role": "new", "openingFloor": 4, "localEscalation": 0, "maxThisChapter": 4, "cooledAtOpen": false }
+      ],
+      "effectiveThreadPressure": [
+        { "threadId": "thread_spine", "value": 8 },
+        { "threadId": "thread_new", "value": 4 }
+      ]
+    }
+  }
+}

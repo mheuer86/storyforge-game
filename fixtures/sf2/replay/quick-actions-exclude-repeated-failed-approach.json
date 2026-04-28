@@ -1,0 +1,49 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions exclude repeated failed approach",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from playtest fixture F12. After a failed Intimidation roll, the next quick actions should not keep offering multiple versions of the same failed pressure lane."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "Keep pushing.",
+    "narrator": {
+      "prose": "The clerk stops answering that version of the demand.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "failedSkill": "Intimidation",
+      "inputActions": [
+        "Intimidate the clerk harder. [Intimidation]",
+        "Threaten to write him up. [Intimidation]",
+        "Lean on the writ until he breaks. [Intimidation]",
+        "Read the room before you commit. [Insight]"
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Intimidate the clerk harder. [Intimidation]",
+        "Read the room before you commit. [Insight]"
+      ],
+      "outputActionsExclude": [
+        "Threaten to write him up. [Intimidation]",
+        "Lean on the writ until he breaks. [Intimidation]"
+      ],
+      "categoryCountAtLeast": 3,
+      "notesInclude": ["replaced repeated Intimidation quick action"]
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene kernel narrows interlocutors when snapshot supplies current_interlocutor_ids",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Verify that explicit current_interlocutor_ids on a snapshot write narrows the kernel's interlocutor set, and the rest of presentEntityIds shifts to nearbyEntityIds. This is the Phase A persistence path; Phase E's SceneKernelPatch reducer is the real write surface, but the snapshot shortcut must also round-trip correctly."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Elder Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_davan": {
+            "id": "npc_davan",
+            "name": "Sworn Davan",
+            "affiliation": "settlement",
+            "role": "sworn",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Sworn local"],
+              "voice": { "note": "direct", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Sworn local.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth", "npc_davan"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Tell her.",
+    "narrator": {
+      "prose": "You turn to Moth. Davan steps back, ceding the air.",
+      "annotation": null,
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "loc_intake_hall",
+            "present_npc_ids": ["npc_moth", "npc_davan"],
+            "current_interlocutor_ids": ["npc_moth"],
+            "time_label": "morning",
+            "established": ["Davan steps back, ceding the air."]
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneKernel": {
+      "presentEntityIdsEquals": ["npc_moth", "npc_davan"],
+      "currentInterlocutorIdsEquals": ["npc_moth"],
+      "nearbyEntityIdsEquals": ["npc_davan"],
+      "speakingAllowedEntityIdsIncludes": ["pc", "npc_moth", "npc_davan"]
+    }
+  }
+}

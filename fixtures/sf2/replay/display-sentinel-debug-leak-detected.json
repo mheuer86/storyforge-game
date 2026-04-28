@@ -1,0 +1,40 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: debug leak ('coherence flag') hard-fires with block_and_repair recommendation",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "PRD Fix 6 worked example. Narrator visibly reasons about its own diagnostic state — 'The coherence flag is right' — which would let the model leak system-level vocabulary into player-facing prose. Sentinel must catch it as severity=hard with recommendedAction=block_and_repair."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Wait for the girl.",
+    "narrator": {
+      "prose": "The coherence flag is right — the girl needs an entrance before she speaks. She steps in from behind the equipment skid.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 1,
+      "findingsInclude": [
+        {
+          "findingType": "debug_leak",
+          "severity": "hard",
+          "surfaceEquals": "coherence flag",
+          "recommendedAction": "allow_but_quarantine_writes"
+        }
+      ]
+    }
+  }
+}

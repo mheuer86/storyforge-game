@@ -207,7 +207,7 @@ function normalizePatch(raw: Record<string, unknown>, turnIndex: number): Sf2Arc
   // accept it. Match snake_case to camelCase per the route's normalizeArchivistPatch.
   const creates = Array.isArray(raw.creates)
     ? (raw.creates as Array<Record<string, unknown>>).map((r) => ({
-        kind: r.kind as 'npc' | 'faction' | 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'location' | 'temporal_anchor',
+        kind: r.kind as 'npc' | 'faction' | 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'location' | 'temporal_anchor' | 'document',
         payload: (r.payload as Record<string, unknown>) ?? {},
         confidence: normalizeConfidence(r.confidence),
         sourceQuote: r.source_quote as string | undefined,
@@ -215,7 +215,7 @@ function normalizePatch(raw: Record<string, unknown>, turnIndex: number): Sf2Arc
     : []
   const updates = Array.isArray(raw.updates)
     ? (raw.updates as Array<Record<string, unknown>>).map((r) => ({
-        entityKind: r.entity_kind as 'npc' | 'faction' | 'thread' | 'arc' | 'clue',
+        entityKind: r.entity_kind as 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document',
         entityId: String(r.entity_id ?? ''),
         changes: (r.changes as Record<string, unknown>) ?? {},
         confidence: normalizeConfidence(r.confidence),
@@ -224,7 +224,7 @@ function normalizePatch(raw: Record<string, unknown>, turnIndex: number): Sf2Arc
     : []
   const transitions = Array.isArray(raw.transitions)
     ? (raw.transitions as Array<Record<string, unknown>>).map((r) => ({
-        entityKind: r.entity_kind as 'thread' | 'decision' | 'promise' | 'clue' | 'arc',
+        entityKind: r.entity_kind as 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'document',
         entityId: String(r.entity_id ?? ''),
         toStatus: String(r.to_status ?? ''),
         reason: String(r.reason ?? ''),

@@ -8,6 +8,7 @@ import type {
   Sf2TemporalAnchorPacket,
   Sf2WorkingSet,
 } from '../types'
+import { resolvePlayerAction } from '../action-resolver/resolve'
 import { computePacingAdvisory, renderPacingAdvisories } from '../pacing/signals'
 import { buildChapterPacket } from './packets/chapter'
 import { buildMechanicsPacket } from './packets/mechanics'
@@ -23,6 +24,7 @@ export function buildScenePacket(
   turnIndex: number
 ): { packet: Sf2NarratorScenePacket; workingSet: Sf2WorkingSet; advisoryText: string } {
   const workingSet = buildWorkingSet(state, playerInput, turnIndex)
+  const resolvedAction = resolvePlayerAction(state, playerInput)
 
   const sceneLocation: Sf2SceneLocationPacket = {
     id: state.world.currentLocation.id,
@@ -43,12 +45,14 @@ export function buildScenePacket(
     player: buildPlayerPacket(state),
     cast: buildPresentCastPackets(state, workingSet),
     tensions: buildThreadPackets(state, workingSet),
+    emotionalBeats: buildEmotionalBeatPackets(state, workingSet),
+    revelationProgress: buildRevelationProgressPackets(state),
     temporalAnchors: buildTemporalAnchorPackets(state),
     chapter: buildChapterPacket(state),
     mechanics: buildMechanicsPacket(state),
     recentContext: buildRecentContextPacket(state),
     pacing: computePacingAdvisory(state),
-    playerInput: { text: playerInput, inferredIntent: '' },
+    playerInput: { text: playerInput, inferredIntent: '', resolvedAction },
   }
 
   const advisoryText = renderPacingAdvisories(packet.pacing, state)
@@ -94,6 +98,20 @@ export function renderSceneBundle(
     lines.push(
       `- Pressure step: "${packet.chapter.currentPressureStep.pressure}" (${packet.chapter.currentPressureStep.narrativeEffect})`
     )
+  }
+  if (packet.chapter.arc) {
+    lines.push(`- Arc: ${packet.chapter.arc.title} — scenario shape for GM use: ${packet.chapter.arc.scenario} (do not use this label as diegetic wording)`)
+    lines.push(`- Arc question: ${packet.chapter.arc.question}`)
+    if (packet.chapter.arc.chapterFunction) {
+      lines.push(`- Chapter function: ${packet.chapter.arc.chapterFunction}`)
+    }
+    if (packet.chapter.arc.activePressureEngines.length > 0) {
+      lines.push(`- Active pressure engines: ${packet.chapter.arc.activePressureEngines.join(' | ')}`)
+    }
+  }
+  if (packet.chapter.pacingContract) {
+    const p = packet.chapter.pacingContract
+    lines.push(`- Pacing target: resolve "${p.chapterQuestion}" in ${p.targetTurns.min}-${p.targetTurns.max} turns`)
   }
 
   if (packet.cast.length > 0) {
@@ -221,6 +239,12 @@ export function renderPerTurnDelta(
     lines.push(`- Timeline anchors: ${packet.temporalAnchors.map((a) => `${a.label}: ${a.anchorText}`).join(' | ')}`)
   }
 
+  const revealHints = renderActiveRevelationHintProgress(packet, opts.isInitial)
+  if (revealHints.length > 0) {
+    lines.push(`\n### Revelation hint progress (GM-only)`)
+    lines.push(...revealHints)
+  }
+
   if (packet.cast.length > 0) {
     lines.push(`\n### Cast — current read (mutable)`)
     for (const c of packet.cast) {
@@ -236,7 +260,18 @@ export function renderPerTurnDelta(
         t.stakeholderDispositions.length > 0
           ? ` · stakeholders: ${t.stakeholderDispositions.map((s) => `${s.name}:${s.disposition}`).join(', ')}`
           : ''
-      lines.push(`- ${t.title} (${t.threadId}): ${t.status} · tension ${t.tension}/10${stakeholders}`)
+      const runtime =
+        t.openingFloor !== undefined
+          ? ` · chapter pressure ${t.tension}/10 (opening ${t.openingFloor}/10${t.localEscalation ? ` +${t.localEscalation} local` : ''}; canonical ${t.canonicalTension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}${t.pressureRole ? `; role ${t.pressureRole}` : ''})`
+          : ` · tension ${t.tension}/10`
+      lines.push(`- ${t.title} (${t.threadId}): ${t.status}${runtime}${stakeholders}`)
+    }
+  }
+
+  if (packet.emotionalBeats.length > 0) {
+    lines.push(`\n### Recent beats (retrievable emotional memory)`)
+    for (const b of packet.emotionalBeats) {
+      lines.push(`- ${b.text} (${b.beatId}; tags: ${b.emotionalTags.join(', ')}; Ch${b.chapterCreated} T${b.turn})`)
     }
   }
 
@@ -280,12 +315,48 @@ export function renderPerTurnDelta(
       lines.push(`\n### Player input`)
       lines.push(opts.playerInput)
     }
+    if (packet.playerInput.resolvedAction) {
+      lines.push(`\n### Resolved player action (deterministic)`)
+      lines.push(renderResolvedAction(packet.playerInput.resolvedAction))
+    }
     lines.push(
       `\n**Continuation turn.** The scene was already established in your prior prose (visible above as the last assistant message). DO NOT re-describe the room, atmosphere, or spatial layout — the player has them. NPC positions, postures, and arrangements in your prior prose are canonical: you may move an NPC this turn, but you must narrate the movement, not silently re-place them. Open this turn with reaction, dialogue, action, or a sensory beat — not with a scene-setter. Write in PC POV. Call narrate_turn at the end.`
     )
   }
 
   return lines.join('\n')
+}
+
+function renderActiveRevelationHintProgress(packet: Sf2NarratorScenePacket, isInitial: boolean): string[] {
+  if (isInitial) return []
+  return packet.revelationProgress.map((r) => {
+    const remaining = Math.max(0, r.hintsRequired - r.hintsDelivered)
+    const contexts = r.validRevealContexts.length > 0 ? r.validRevealContexts.join(', ') : 'any context'
+    const invalid = r.invalidRevealContexts && r.invalidRevealContexts.length > 0
+      ? `; avoid ${r.invalidRevealContexts.join(', ')}`
+      : ''
+    const phraseHint = remaining > 0 && r.hintPhrases.length > 0
+      ? `; eligible after ${remaining} more hint${remaining === 1 ? '' : 's'} such as "${r.hintPhrases.slice(0, 2).join('" or "')}"`
+      : ''
+    return `- ${r.revelationId}: ${r.hintsDelivered}/${r.hintsRequired} hints delivered; reveal context: ${contexts}${invalid}${phraseHint}`
+  })
+}
+
+function renderResolvedAction(action: NonNullable<Sf2NarratorScenePacket['playerInput']['resolvedAction']>): string {
+  const targets = action.targetEntityIds.length > 0 ? action.targetEntityIds.join(', ') : '(unresolved)'
+  const refs = action.resolvedReferences.length > 0
+    ? action.resolvedReferences.map((r) => `${r.surface} -> ${r.resolvedToEntityId} (${r.confidence}; ${r.basis})`).join(' | ')
+    : '(none)'
+  const forbidden = action.forbiddenTargetSubstitutions.length > 0
+    ? action.forbiddenTargetSubstitutions.join(', ')
+    : '(none)'
+  return [
+    `- actionType: ${action.actionType}`,
+    `- targetEntityIds: ${targets}`,
+    `- resolvedReferences: ${refs}`,
+    `- forbiddenTargetSubstitutions: ${forbidden}`,
+    `Use targetEntityIds for ambiguous pronouns or role references. Do not redirect this action to any forbiddenTargetSubstitutions unless the prose first narrates a legal transition that changes the scene.`,
+  ].join('\n')
 }
 
 function buildTemporalAnchorPackets(state: Sf2State): Sf2TemporalAnchorPacket[] {
@@ -299,6 +370,43 @@ function buildTemporalAnchorPackets(state: Sf2State): Sf2TemporalAnchorPacket[] 
       anchorText: a.anchorText,
       status: a.status,
       anchoredTo: a.anchoredTo,
+    }))
+}
+
+function buildEmotionalBeatPackets(
+  state: Sf2State,
+  workingSet: Sf2WorkingSet
+): Sf2NarratorScenePacket['emotionalBeats'] {
+  return workingSet.emotionalBeatIds
+    .map((id) => state.campaign.beats?.[id])
+    .filter((b): b is NonNullable<typeof b> => Boolean(b))
+    .map((b) => ({
+      beatId: b.id,
+      text: b.text,
+      participants: b.participants,
+      anchoredTo: b.anchoredTo,
+      emotionalTags: b.emotionalTags,
+      salience: b.salience,
+      turn: b.turn,
+      chapterCreated: b.chapterCreated,
+    }))
+}
+
+function buildRevelationProgressPackets(
+  state: Sf2State
+): Sf2NarratorScenePacket['revelationProgress'] {
+  return state.chapter.scaffolding.possibleRevelations
+    .filter((r) => !r.revealed)
+    .filter((r) => (r.hintsRequired ?? 0) > 0 || (r.hintPhrases ?? []).length > 0)
+    .slice(0, 4)
+    .map((r) => ({
+      revelationId: r.id,
+      statement: r.statement,
+      hintsDelivered: r.hintsDelivered ?? 0,
+      hintsRequired: r.hintsRequired ?? 0,
+      hintPhrases: r.hintPhrases ?? [],
+      validRevealContexts: r.validRevealContexts ?? [],
+      invalidRevealContexts: r.invalidRevealContexts,
     }))
 }
 
@@ -355,7 +463,11 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
   if (packet.tensions.length > 0) {
     lines.push(`\n### Tensions in scope`)
     for (const t of packet.tensions) {
-      lines.push(`- **${t.title}** (${t.threadId}) · ${t.status} · tension ${t.tension}/10`)
+      const runtime =
+        t.openingFloor !== undefined
+          ? `chapter pressure ${t.tension}/10 (opening ${t.openingFloor}/10; canonical ${t.canonicalTension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}${t.pressureRole ? `; role ${t.pressureRole}` : ''})`
+          : `tension ${t.tension}/10`
+      lines.push(`- **${t.title}** (${t.threadId}) · ${t.status} · ${runtime}`)
       lines.push(`  why: ${t.localWhyItMatters}`)
       lines.push(`  owner: ${t.ownerSummary}`)
       if (t.stakeholderDispositions.length > 0) {
@@ -376,6 +488,13 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     }
   }
 
+  if (packet.emotionalBeats.length > 0) {
+    lines.push(`\n### Recent beats`)
+    for (const b of packet.emotionalBeats) {
+      lines.push(`- ${b.text} (${b.beatId}; tags: ${b.emotionalTags.join(', ')}; Ch${b.chapterCreated} T${b.turn})`)
+    }
+  }
+
   lines.push(`\n### Chapter`)
   lines.push(`- Objective: ${packet.chapter.objective}`)
   lines.push(`- Crucible: ${packet.chapter.crucible}`)
@@ -386,6 +505,17 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     lines.push(
       `- Pressure step: "${packet.chapter.currentPressureStep.pressure}" (${packet.chapter.currentPressureStep.narrativeEffect})`
     )
+  }
+  if (packet.chapter.arc) {
+    lines.push(`- Arc: ${packet.chapter.arc.title} — scenario shape for GM use: ${packet.chapter.arc.scenario} (do not use this label as diegetic wording)`)
+    lines.push(`- Arc question: ${packet.chapter.arc.question}`)
+    if (packet.chapter.arc.chapterFunction) {
+      lines.push(`- Chapter function: ${packet.chapter.arc.chapterFunction}`)
+    }
+  }
+  if (packet.chapter.pacingContract) {
+    const p = packet.chapter.pacingContract
+    lines.push(`- Pacing target: resolve "${p.chapterQuestion}" in ${p.targetTurns.min}-${p.targetTurns.max} turns`)
   }
 
   if (packet.mechanics.activeModules.length > 0) {

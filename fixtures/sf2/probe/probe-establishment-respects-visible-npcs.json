@@ -1,0 +1,162 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "probe-establishment-respects-visible-npcs",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777212125472",
+    "capturedAt": "2026-04-26T14:16:09.000Z",
+    "purpose": "Live Narrator probe: on the establishment turn, the Narrator must place ONLY the visible_npc_ids on stage, not the full chapter cast. Bug in playthrough 5: with starting cast = [Corvin, Kess, Thorne, Mika, Rendar] and visible_npc_ids = [Corvin, Kess], the Narrator pulled all 5 into the opening room. Fix is a prompt rule in SF2_NARRATOR_ROLE establishment block; this probe verifies it actually changes model behavior. Note: the rule permits referencing off-stage NPCs as 'elsewhere' (e.g. 'Mika is in the next building'), so this probe could occasionally false-positive on legitimate elsewhere-references. Treat single failures as flaky; consistent failures mean the rule isn't load-bearing enough."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "probe_establishment_respects_visible_npcs",
+        "currentSceneId": "scene_1_1"
+      },
+      "campaign": {
+        "npcs": {
+          "npc_corvin": {
+            "id": "npc_corvin",
+            "name": "Corvin",
+            "affiliation": "The Synod",
+            "role": "Synod Audit Officer",
+            "voiceRegister": "procedural, careful, each sentence structured like a writ",
+            "dramaticFunction": "primary face of institutional pressure",
+            "hiddenPressure": "personally wants the supplementary selection processed cleanly",
+            "retrievalCue": "the audit officer running the procedural framing",
+            "disposition": "neutral",
+            "dispositionReason": "Treats the Warden as a procedural counterpart.",
+            "status": "alive",
+            "tensionHistory": [],
+            "lastSeenTurn": null
+          },
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "Frontier settlement leadership",
+            "role": "Settlement elder",
+            "voiceRegister": "weary, deliberate, each word measured",
+            "dramaticFunction": "the local voice the audit pushes against",
+            "hiddenPressure": "knows more about the missing Resonant than the record shows",
+            "retrievalCue": "the settlement elder bearing the audit's weight",
+            "disposition": "wary",
+            "dispositionReason": "The Warden represents the same system that is taking from the settlement.",
+            "status": "alive",
+            "tensionHistory": [],
+            "lastSeenTurn": null
+          },
+          "npc_thorne": {
+            "id": "npc_thorne",
+            "name": "Thorne",
+            "affiliation": "Imperial Service (Warden's retainer)",
+            "role": "Personal retainer",
+            "voiceRegister": "quiet, attentive, observational",
+            "dramaticFunction": "the Warden's institutional shadow and second eye",
+            "hiddenPressure": "has seen prior Wardens removed for similar audits",
+            "retrievalCue": "the retainer who reads rooms before the Warden does",
+            "disposition": "favorable",
+            "dispositionReason": "Sworn to the Warden's House.",
+            "status": "alive",
+            "tensionHistory": [],
+            "lastSeenTurn": null
+          },
+          "npc_mika": {
+            "id": "npc_mika",
+            "name": "Mika",
+            "affiliation": "Frontier settlement leadership",
+            "role": "Settlement medic",
+            "voiceRegister": "factual, clinical, brief",
+            "dramaticFunction": "evidence-bearer for the settlement's medical history",
+            "hiddenPressure": "knows the missing Resonant's medical records were edited",
+            "retrievalCue": "the medic who can speak to the cohort's actual health",
+            "disposition": "wary",
+            "dispositionReason": "Distrusts the audit's framing.",
+            "status": "alive",
+            "tensionHistory": [],
+            "lastSeenTurn": null
+          },
+          "npc_rendar": {
+            "id": "npc_rendar",
+            "name": "Rendar",
+            "affiliation": "Frontier settlement (family of missing Resonant)",
+            "role": "Parent of the missing Resonant",
+            "voiceRegister": "shock-deadened, monosyllabic",
+            "dramaticFunction": "the chapter's emotional fault line",
+            "hiddenPressure": "covered for the missing daughter's flight",
+            "retrievalCue": "the parent the audit can break with one direct question",
+            "disposition": "wary",
+            "dispositionReason": "The audit threatens what they protected.",
+            "status": "alive",
+            "tensionHistory": [],
+            "lastSeenTurn": null
+          }
+        }
+      },
+      "chapter": {
+        "number": 1,
+        "title": "Shortfall",
+        "setup": {
+          "chapter": 1,
+          "title": "Shortfall",
+          "startingNpcIds": ["npc_corvin", "npc_kess", "npc_thorne", "npc_mika", "npc_rendar"],
+          "surfaceNpcIds": ["npc_corvin", "npc_kess"],
+          "openingSceneSpec": {
+            "location": "Ashgrove administrative hall",
+            "atmosphericCondition": "cold, institutional, recycled air with a view of the rust-colored mining levels through an observation window",
+            "initialState": "The audit table is set. The ledger is on the table. Corvin has just laid out the shortfall facts. The Warden has just been asked to approve supplementary selection.",
+            "firstPlayerFacing": "Corvin awaits the Warden's response on whether to move to formal approval or review records.",
+            "immediateChoice": "approve compliance, request records, or read the room before either",
+            "noStartingCombat": true,
+            "noExpositionDump": true,
+            "visibleNpcIds": ["npc_corvin", "npc_kess"]
+          }
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "Establish the audit pressure and the shape of the shortfall.",
+            "openingPressure": "The Synod has filed a tithe shortfall and demands supplementary selection within the week.",
+            "chapterObjective": "Verify the count and decide what to recommend.",
+            "chapterCrucible": "Synod will take children if the settlement can't produce three adults.",
+            "visibleNpcIds": ["npc_corvin", "npc_kess"],
+            "visibleThreadIds": ["thread_spine"],
+            "loreForOpening": [],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world."
+            ]
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_admin_hall",
+          "name": "Ashgrove administrative hall",
+          "description": "A cold, institutional hall with an observation window onto the mining levels.",
+          "atmosphericConditions": ["recycled air, dust"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_admin_hall",
+            "name": "Ashgrove administrative hall",
+            "description": "A cold, institutional hall with an observation window onto the mining levels."
+          },
+          "presentNpcIds": ["npc_corvin", "npc_kess"],
+          "timeLabel": "mid-morning",
+          "established": ["The audit is set. Corvin has presented the shortfall."],
+          "firstTurnIndex": 0
+        }
+      }
+    },
+    "playerInput": "",
+    "isInitial": true
+  },
+  "expected": {
+    "narratorProbe": {
+      "textIncludes": ["Corvin", "Kess"],
+      "textAbsent": ["Thorne", "Mika", "Rendar"],
+      "toolSuggestedActionsAbsent": ["Thorne", "Mika", "Rendar"]
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "canonical_id_violation fires (observe mode) when narrator emits display-style ids",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "PRD Fix 4: free-text IDs in scene state must surface as instrumentation. Phase A is observe-only — the existing resolveNpcReference + placeholder path still runs (existing behavior preserved), but a canonical_id_violation invariant event records the drift signal so we can see how often it actually fires before flipping to block mode in Phase E."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_mirren": {
+            "id": "npc_mirren",
+            "name": "Mirren",
+            "affiliation": "settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["On stage"],
+              "voice": { "note": "quiet", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Local witness.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "sceneId": "loc_intake_hall",
+          "presentNpcIds": ["npc_mirren"],
+          "established": ["Mirren stands at the counter."]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Look around.",
+    "narrator": {
+      "prose": "A figure in a grey coat steps in from the doorway. Mirren shifts slightly.",
+      "annotation": null,
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "loc_intake_hall",
+            "present_npc_ids": ["npc_mirren", "grey-coat"],
+            "time_label": "morning",
+            "established": ["Mirren stands at the counter.", "Grey-coat in the doorway."]
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "invariantEventsInclude": ["canonical_id_violation"],
+    "invariantEventDetailIncludes": [
+      { "type": "canonical_id_violation", "detailIncludes": "grey-coat" }
+    ]
+  }
+}

@@ -9,6 +9,7 @@ import {
   checkArc,
   checkClue,
   checkDecision,
+  checkDocument,
   checkFaction,
   checkNpcIdentity,
   checkPromise,
@@ -16,6 +17,12 @@ import {
   checkThread,
   type InvariantResult,
 } from '../invariants'
+import { updateRuntimeEngineValues } from '../pressure/runtime'
+import {
+  applyPlayerEngagementReheat,
+  reheatLadderFire,
+  reheatNpcAgendaAction,
+} from '../pressure/reheat'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -24,8 +31,13 @@ import type {
   Sf2ArchivistPatch,
   Sf2ArchivistTransition,
   Sf2ArchivistUpdate,
+  Sf2EmotionalBeat,
   Sf2Clue,
   Sf2Decision,
+  Sf2Document,
+  Sf2DocumentParty,
+  Sf2DocumentStatus,
+  Sf2DocumentType,
   Sf2EntityId,
   Sf2Faction,
   Sf2Npc,
@@ -35,6 +47,24 @@ import type {
   Sf2TemporalAnchor,
   Sf2Thread,
 } from '../types'
+import { DOCUMENT_VALID_TRANSITIONS } from '../types'
+
+const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
+  'resolved_clean',
+  'resolved_costly',
+  'resolved_failure',
+  'resolved_catastrophic',
+])
+
+function normalizePhrase(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function configuredHintMatches(configured: string, emitted: string): boolean {
+  const a = normalizePhrase(configured)
+  const b = normalizePhrase(emitted)
+  return a.length > 0 && (a === b || a.includes(b) || b.includes(a))
+}
 
 export interface SubWriteOutcome {
   accepted: boolean
@@ -166,6 +196,60 @@ function normalizeAgeAnchor(raw: unknown): string | undefined {
   return value.length > 0 ? value.slice(0, 80) : undefined
 }
 
+function normalizeAgenda<T extends { pursuing: string; methods: string[]; currentMove: string; blockedBy?: string; lastUpdatedTurn?: number }>(
+  raw: unknown,
+  prior: T | undefined,
+  turnIndex: number
+): T | undefined {
+  if (!raw || typeof raw !== 'object') return prior
+  const payload = raw as Record<string, unknown>
+  const currentMoveRaw = payload.currentMove ?? payload.current_move
+  const pursuingRaw = payload.pursuing
+  const methodsRaw = payload.methods
+  const blockedByRaw = payload.blockedBy ?? payload.blocked_by
+  const next: T = {
+    pursuing: typeof pursuingRaw === 'string' ? pursuingRaw : prior?.pursuing ?? '',
+    methods: Array.isArray(methodsRaw) ? methodsRaw.map(String) : prior?.methods ?? [],
+    currentMove: typeof currentMoveRaw === 'string' ? currentMoveRaw : prior?.currentMove ?? '',
+    blockedBy: typeof blockedByRaw === 'string' ? blockedByRaw : prior?.blockedBy,
+    lastUpdatedTurn: turnIndex,
+  } as T
+  return next
+}
+
+// Narrow on purpose: an agenda is only treated as "moved" when the
+// archivist rewrites the visible currentMove text. Edits to `pursuing` or
+// `methods` without a currentMove rewrite are calibration of the same move,
+// not a new push, and don't reheat. If this proves too narrow in playtest,
+// expand to compare full agenda payload.
+function agendaChanged(
+  raw: unknown,
+  prior: { currentMove: string } | undefined
+): boolean {
+  if (!raw || typeof raw !== 'object') return false
+  const payload = raw as Record<string, unknown>
+  const currentMoveRaw = payload.currentMove ?? payload.current_move
+  return typeof currentMoveRaw === 'string' && currentMoveRaw.trim() !== (prior?.currentMove ?? '')
+}
+
+function agendaSeverity(changes: Record<string, unknown>): 'standard' | 'major' {
+  const raw = changes.agenda_severity ?? changes.agendaSeverity
+  return raw === 'major' ? 'major' : 'standard'
+}
+
+function pressureThreadIdsForOwner(
+  state: Sf2State,
+  kind: 'npc' | 'faction',
+  id: Sf2EntityId
+): Sf2EntityId[] {
+  return state.chapter.setup.activeThreadIds.filter((threadId) => {
+    const thread = state.campaign.threads[threadId]
+    if (!thread) return false
+    if (thread.owner.kind === kind && thread.owner.id === id) return true
+    return thread.stakeholders.some((s) => s.kind === kind && s.id === id)
+  })
+}
+
 function npcPronounFromPayload(p: Record<string, unknown>): Sf2PronounAnchor | undefined {
   return normalizePronounAnchor(p.pronoun ?? p.pronouns)
 }
@@ -192,6 +276,88 @@ function normalizeTemporalAnchorStatus(raw: unknown): Sf2TemporalAnchor['status'
     return raw
   }
   return 'active'
+}
+
+function normalizeDocumentType(raw: unknown): Sf2DocumentType {
+  if (
+    raw === 'authorization' ||
+    raw === 'directive' ||
+    raw === 'communication' ||
+    raw === 'record' ||
+    raw === 'petition' ||
+    raw === 'notation'
+  ) {
+    return raw
+  }
+  // Coerce common kindLabel-style inputs to the closest type. The Archivist
+  // is told to set `type` explicitly; this is a defensive fallback.
+  if (typeof raw === 'string') {
+    const k = raw.toLowerCase()
+    if (['writ', 'charter', 'license', 'warrant', 'authorization'].some((m) => k.includes(m)))
+      return 'authorization'
+    if (['order', 'decree', 'summons', 'mandate', 'directive', 'command'].some((m) => k.includes(m)))
+      return 'directive'
+    if (['letter', 'memo', 'dispatch', 'report', 'message'].some((m) => k.includes(m)))
+      return 'communication'
+    if (['receipt', 'ledger', 'registry', 'log', 'record'].some((m) => k.includes(m)))
+      return 'record'
+    if (['petition', 'appeal', 'plea', 'motion', 'request'].some((m) => k.includes(m)))
+      return 'petition'
+    if (['marginalia', 'addendum', 'annotation', 'note'].some((m) => k.includes(m)))
+      return 'notation'
+  }
+  return 'record' // safest default — no power to authorize/command, just attests
+}
+
+function isValidDocumentTransition(type: Sf2DocumentType, to: string): to is Sf2DocumentStatus {
+  const valid = DOCUMENT_VALID_TRANSITIONS[type]
+  return (valid as string[]).includes(to)
+}
+
+// Resolve any npc or faction by id-or-name. Used for document attribution
+// fields where the Archivist can name either kind of party.
+function resolveAgentId(state: Sf2State, idOrName: string): Sf2EntityId | null {
+  if (!idOrName) return null
+  if (state.campaign.npcs[idOrName]) return idOrName
+  if (state.campaign.factions[idOrName]) return idOrName
+  const direct = resolveNpcId(state, idOrName) ?? resolveFactionId(state, idOrName)
+  if (direct) return direct
+  // Last fallback: synthesized-id recovery. The Archivist sometimes emits
+  // role-descriptive canonical-shaped IDs ("npc_fled_resonant") instead of
+  // resolving to an existing entity ("npc_4" — Mara Vostin, who IS the fled
+  // Resonant). Fuzzy-match against existing NPC role/retrievalCue and accept
+  // unambiguous matches. Closes the playthrough-8 dual-entity bug where the
+  // Narrator's prose treated Mara-as-fled and Mara-as-hidden as separate
+  // people because the Archivist had emitted them as different IDs.
+  return resolveBySynthesizedId(state, idOrName)
+}
+
+// Strip the "npc_"/"faction_" prefix, tokenize by "_", and look for an
+// existing NPC whose role + retrievalCue contains ≥2 of those tokens. Returns
+// null if 0 NPCs match or ≥2 NPCs tie — only unambiguous matches accepted.
+function resolveBySynthesizedId(state: Sf2State, idOrName: string): Sf2EntityId | null {
+  const m = idOrName.match(/^(?:npc|faction)_(.+)$/i)
+  if (!m) return null
+  const tokens = m[1]
+    .toLowerCase()
+    .split('_')
+    .filter((t) => t.length >= 3) // drop noise tokens like "of", "to"
+  if (tokens.length < 2) return null
+
+  let best: { npc: Sf2EntityId; score: number } | null = null
+  let bestTied = false
+  for (const npc of Object.values(state.campaign.npcs)) {
+    const haystack = `${npc.role} ${npc.retrievalCue} ${npc.affiliation}`.toLowerCase()
+    const score = tokens.reduce((acc, t) => (haystack.includes(t) ? acc + 1 : acc), 0)
+    if (score < 2) continue
+    if (!best || score > best.score) {
+      best = { npc: npc.id, score }
+      bestTied = false
+    } else if (score === best.score) {
+      bestTied = true
+    }
+  }
+  return best && !bestTied ? best.npc : null
 }
 
 export interface DeferredWrite {
@@ -381,6 +547,8 @@ type EntityPrefix =
   | 'arc'
   | 'location'
   | 'temporal_anchor'
+  | 'doc'
+  | 'beat'
 
 function getEntityRegistry(
   state: Sf2State,
@@ -405,6 +573,10 @@ function getEntityRegistry(
       return state.campaign.locations as Record<string, { id: string }>
     case 'temporal_anchor':
       return state.campaign.temporalAnchors as Record<string, { id: string }>
+    case 'doc':
+      return (state.campaign.documents ?? {}) as Record<string, { id: string }>
+    case 'beat':
+      return (state.campaign.beats ?? {}) as Record<string, { id: string }>
   }
 }
 
@@ -638,6 +810,7 @@ function applyCreate(
           owner: { kind: ownerHint.kind, id: ownerId },
           stakeholders: [],
           tension: Number(p.tension ?? 5),
+          peakTension: Number(p.tension ?? 5),
           resolutionCriteria: String(p.resolution_criteria ?? ''),
           failureMode: String(p.failure_mode ?? ''),
           retrievalCue: String(p.retrieval_cue ?? ''),
@@ -919,6 +1092,132 @@ function applyCreate(
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
+      case 'document': {
+        if (!draft.campaign.documents) draft.campaign.documents = {}
+        const p = write.payload as Record<string, unknown>
+        const id = (p.id as string | undefined) ?? nextEntityId('doc', draft)
+        const type = normalizeDocumentType(p.type ?? p.kind_label ?? p.kindLabel)
+
+        // Subjects: required, resolve npc-or-faction.
+        const subjectRefs = Array.isArray(p.subject_entity_ids)
+          ? (p.subject_entity_ids as string[])
+          : Array.isArray(p.subjects)
+            ? (p.subjects as string[])
+            : []
+        const subjectEntityIds: string[] = []
+        for (const r of subjectRefs) {
+          const sid = resolveAgentId(draft, r)
+          if (!sid) {
+            drift.push({ kind: 'anchor_reference_missing', detail: `document subject ${r} unresolved` })
+          } else {
+            subjectEntityIds.push(sid)
+            // Synthesized-id recovery diagnostic: if the proposed reference
+            // didn't match any NPC/faction by id or name but DID resolve via
+            // role/retrievalCue fuzzy-match, surface it so we can monitor how
+            // often the Archivist emits role-descriptive IDs.
+            if (
+              r !== sid &&
+              !draft.campaign.npcs[r] &&
+              !draft.campaign.factions[r] &&
+              resolveNpcId(draft, r) === null &&
+              resolveFactionId(draft, r) === null
+            ) {
+              drift.push({
+                kind: 'contradiction',
+                detail: `synthesized_id_recovered: document subject "${r}" → "${sid}" via role-descriptor fuzzy match`,
+                entityId: sid,
+              })
+            }
+          }
+        }
+
+        // Anchors: optional. Floating documents allowed.
+        const anchoredRefs = Array.isArray(p.anchored_to) ? (p.anchored_to as string[]) : []
+        const anchoredTo: string[] = []
+        for (const r of anchoredRefs) {
+          const tid = resolveThreadId(draft, r)
+          if (!tid) {
+            drift.push({ kind: 'anchor_reference_missing', detail: `document anchor ${r} unresolved` })
+          } else {
+            anchoredTo.push(tid)
+          }
+        }
+
+        // Attribution: filed-by / signed-by / additional parties. All optional but resolved when present.
+        const filedByRaw = (p.filed_by ?? p.filedBy) as string | undefined
+        const signedByRaw = (p.signed_by ?? p.signedBy) as string | undefined
+        const filedByEntityId = filedByRaw ? resolveAgentId(draft, filedByRaw) ?? undefined : undefined
+        const signedByEntityId = signedByRaw ? resolveAgentId(draft, signedByRaw) ?? undefined : undefined
+        if (filedByRaw && !filedByEntityId) {
+          drift.push({ kind: 'anchor_reference_missing', detail: `document filed_by ${filedByRaw} unresolved` })
+        }
+        if (signedByRaw && !signedByEntityId) {
+          drift.push({ kind: 'anchor_reference_missing', detail: `document signed_by ${signedByRaw} unresolved` })
+        }
+
+        const partiesRaw = Array.isArray(p.additional_parties) ? p.additional_parties : []
+        const additionalParties: Sf2DocumentParty[] = []
+        for (const raw of partiesRaw as Array<Record<string, unknown>>) {
+          const role = String(raw.role ?? '').trim()
+          const idOrName = String(raw.entity_id ?? raw.entityId ?? raw.name_or_id ?? '').trim()
+          if (!role || !idOrName) continue
+          const resolved = resolveAgentId(draft, idOrName)
+          if (!resolved) {
+            drift.push({ kind: 'anchor_reference_missing', detail: `document party ${idOrName} (${role}) unresolved` })
+            continue
+          }
+          additionalParties.push({ role, entityId: resolved })
+        }
+
+        const originalSummary = String(p.original_summary ?? p.summary ?? p.authorizes ?? '').trim()
+        const authorizes = String(p.authorizes ?? p.summary ?? '').trim()
+        const kindLabel = String(p.kind_label ?? p.kindLabel ?? '').trim()
+        const title = String(p.title ?? authorizes ?? `${kindLabel || 'document'}`).slice(0, 120)
+
+        const accessLevelRaw = String(p.access_level ?? p.accessLevel ?? '').toLowerCase()
+        const accessLevel: Sf2Document['accessLevel'] =
+          accessLevelRaw === 'sealed' || accessLevelRaw === 'classified' || accessLevelRaw === 'public'
+            ? accessLevelRaw
+            : undefined
+
+        const doc: Sf2Document = {
+          id,
+          title,
+          chapterCreated: chapter,
+          retrievalCue: String(p.retrieval_cue ?? authorizes ?? title),
+          category: 'document',
+          type,
+          kindLabel: kindLabel || type,
+          status: 'active',
+          filedByEntityId,
+          signedByEntityId,
+          signedAtTurn: signedByEntityId ? turnIndex : undefined,
+          additionalParties,
+          subjectEntityIds,
+          authorizes,
+          originalSummary: originalSummary || authorizes,
+          currentSummary: originalSummary || authorizes,
+          revisions: [],
+          anchoredTo,
+          accessLevel,
+          clueIds: [],
+          turn: turnIndex,
+        }
+
+        const inv = checkDocument(doc, draft.campaign)
+        if (!inv.ok) {
+          outcomes.push({
+            accepted: false,
+            reason: `document.${inv.field}: ${inv.reason}`,
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        draft.campaign.documents[id] = doc
+        outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
     }
   } catch (err) {
     outcomes.push({
@@ -935,7 +1234,8 @@ function applyUpdate(
   write: Sf2ArchivistUpdate,
   ref: string,
   outcomes: SubWriteOutcome[],
-  drift: Sf2ArchivistFlag[]
+  drift: Sf2ArchivistFlag[],
+  turnIndex: number
 ): void {
   if (write.confidence === 'low') {
     outcomes.push(deferOrReject(write.confidence, 'low-confidence update deferred', ref))
@@ -975,7 +1275,7 @@ function applyUpdate(
         },
         disposition: dispUpdate.tier,
         tempLoad: (write.changes.temp_load as number | undefined) ?? prior.tempLoad,
-        agenda: (write.changes.agenda as Sf2Npc['agenda']) ?? prior.agenda,
+        agenda: normalizeAgenda(write.changes.agenda, prior.agenda, turnIndex),
         lastSeenTurn: (write.changes.last_seen_turn as number | undefined) ?? prior.lastSeenTurn,
       }
       const inv = checkNpcIdentity(next, prior)
@@ -994,6 +1294,13 @@ function applyUpdate(
         return
       }
       draft.campaign.npcs[id] = next
+      if (agendaChanged(write.changes.agenda, prior.agenda)) {
+        reheatNpcAgendaAction(
+          draft.chapter.setup,
+          pressureThreadIdsForOwner(draft, 'npc', id),
+          agendaSeverity(write.changes)
+        )
+      }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
@@ -1014,7 +1321,14 @@ function applyUpdate(
         stance: coerceDisposition(write.changes.stance, prior.stance).tier,
         heat: coerceHeat(write.changes.heat, prior.heat).level,
         heatReasons: (write.changes.heat_reasons as string[] | undefined) ?? prior.heatReasons,
-        agenda: (write.changes.agenda as Sf2Faction['agenda']) ?? prior.agenda,
+        agenda: normalizeAgenda(write.changes.agenda, prior.agenda, turnIndex),
+      }
+      if (agendaChanged(write.changes.agenda, prior.agenda)) {
+        reheatNpcAgendaAction(
+          draft.chapter.setup,
+          pressureThreadIdsForOwner(draft, 'faction', id),
+          agendaSeverity(write.changes)
+        )
       }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
@@ -1045,6 +1359,7 @@ function applyUpdate(
       draft.campaign.threads[id] = {
         ...prior,
         tension: nextTension,
+        peakTension: Math.max(prior.peakTension ?? prior.tension, nextTension),
         status: (write.changes.status as Sf2Thread['status']) ?? prior.status,
         lastAdvancedTurn:
           (write.changes.last_advanced_turn as number | undefined) ?? prior.lastAdvancedTurn,
@@ -1109,6 +1424,100 @@ function applyUpdate(
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
+    case 'document': {
+      if (!draft.campaign.documents) draft.campaign.documents = {}
+      const doc = draft.campaign.documents[write.entityId]
+      if (!doc) {
+        outcomes.push({
+          accepted: false,
+          reason: 'document.id: not in registry',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      // Amendment: changes to currentSummary / authorizes are tracked as a revision
+      // entry. originalSummary is locked — never overwritten by an update.
+      const c = write.changes as Record<string, unknown>
+      const lockedFields = [
+        'filed_by',
+        'filedBy',
+        'signed_by',
+        'signedBy',
+        'type',
+        'original_summary',
+        'originalSummary',
+      ]
+      const attemptedLockedFields = lockedFields.filter((field) => field in c)
+      if (attemptedLockedFields.length > 0) {
+        outcomes.push({
+          accepted: false,
+          reason: `document.protectedFields: ${attemptedLockedFields.join(', ')} are locked after creation`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        drift.push({
+          kind: 'protected_field_write',
+          detail: `attempted to mutate protected document fields: ${attemptedLockedFields.join(', ')}`,
+          entityId: doc.id,
+        })
+        return
+      }
+      const amendmentSummary = (c.current_summary ?? c.currentSummary ?? c.amended_summary) as
+        | string
+        | undefined
+      const amendmentReason = String(c.amendment_reason ?? c.reason ?? '').trim()
+      const changedByRaw = (c.changed_by ?? c.changedBy) as string | undefined
+      const changedById = changedByRaw ? resolveAgentId(draft, changedByRaw) ?? undefined : undefined
+      if (amendmentSummary !== undefined && amendmentSummary.trim().length > 0) {
+        doc.revisions.push({
+          atTurn: (c.at_turn as number | undefined) ?? -1,
+          summary: amendmentSummary,
+          reason: amendmentReason || 'amended',
+          changedBy: changedById,
+        })
+        doc.currentSummary = amendmentSummary
+      }
+      // Append-only union for anchors. Never silently remove.
+      const anchorsAdd = c.anchored_to as string[] | undefined
+      if (Array.isArray(anchorsAdd) && anchorsAdd.length > 0) {
+        const resolved = anchorsAdd
+          .map((r) => resolveThreadId(draft, r))
+          .filter((x): x is string => Boolean(x))
+        if (resolved.length > 0) {
+          doc.anchoredTo = Array.from(new Set([...doc.anchoredTo, ...resolved]))
+        }
+      }
+      // Cross-ref new clues that record what the PC has discovered about this doc.
+      const clueIdsAdd = c.clue_ids as string[] | undefined
+      if (Array.isArray(clueIdsAdd) && clueIdsAdd.length > 0) {
+        const resolved = clueIdsAdd.filter((cid) => Boolean(draft.campaign.clues[cid]))
+        if (resolved.length > 0) {
+          doc.clueIds = Array.from(new Set([...doc.clueIds, ...resolved]))
+        }
+      }
+      // Additional parties can be added post-creation (counter-signers later, etc.).
+      // Do NOT mutate filedByEntityId or signedByEntityId via update — those are the
+      // attribution baseline for drift detection. To change attribution, supersede
+      // the document with a new one and transition the old to 'superseded'.
+      const partiesAdd = c.additional_parties as Array<Record<string, unknown>> | undefined
+      if (Array.isArray(partiesAdd) && partiesAdd.length > 0) {
+        for (const raw of partiesAdd) {
+          const role = String(raw.role ?? '').trim()
+          const idOrName = String(raw.entity_id ?? raw.entityId ?? '').trim()
+          if (!role || !idOrName) continue
+          const resolved = resolveAgentId(draft, idOrName)
+          if (!resolved) continue
+          if (
+            !doc.additionalParties.some((p) => p.entityId === resolved && p.role === role)
+          ) {
+            doc.additionalParties.push({ role, entityId: resolved })
+          }
+        }
+      }
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
   }
 }
 
@@ -1129,7 +1538,13 @@ function applyTransition(
         outcomes.push({ accepted: false, reason: 'thread not found', writeRef: ref, confidenceTier: write.confidence })
         return
       }
-      draft.campaign.threads[id].status = write.toStatus as Sf2Thread['status']
+      const toStatus = write.toStatus as Sf2Thread['status']
+      draft.campaign.threads[id].status = toStatus
+      if (RESOLVED_THREAD_STATUSES.has(toStatus)) {
+        draft.campaign.threads[id].tension = 0
+        draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== id)
+        delete draft.chapter.setup.threadPressure?.[id]
+      }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
@@ -1170,6 +1585,39 @@ function applyTransition(
         return
       }
       arc.status = write.toStatus as Sf2Arc['status']
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
+    case 'document': {
+      const doc = draft.campaign.documents?.[write.entityId]
+      if (!doc) {
+        outcomes.push({ accepted: false, reason: 'document not found', writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
+      // Per-type lifecycle: only valid transitions allowed. Closed type ↔ closed
+      // status set means the Archivist can't slip a record into 'revoked' or a
+      // communication into 'resolved'.
+      if (!isValidDocumentTransition(doc.type, write.toStatus)) {
+        outcomes.push({
+          accepted: false,
+          reason: `document.toStatus: ${doc.type} cannot transition to "${write.toStatus}" (valid: ${DOCUMENT_VALID_TRANSITIONS[doc.type].join('|')})`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      // Never re-open a closed document. Once superseded/revoked/void/resolved,
+      // a successor document is the right move, not a status flip back to active.
+      if (doc.status !== 'active') {
+        outcomes.push({
+          accepted: false,
+          reason: `document.status: cannot transition from terminal status "${doc.status}"`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      doc.status = write.toStatus as Sf2DocumentStatus
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
@@ -1251,11 +1699,24 @@ export function applyArchivistPatch(
   const deferred: DeferredWrite[] = []
   const drift: Sf2ArchivistFlag[] = [...patch.flags]
 
+  // Player-engagement reheat (D7 idempotent floor). Use the action-resolver
+  // to find threads the player input *referenced*, regardless of whether the
+  // archivist judged that mechanical tension changed. Reading from
+  // tensionDeltasByThreadId would miss the "engaged but unchanged" case —
+  // exactly the cohort the runway floor exists to capture.
+  if (!patch.pacingClassification.worldInitiated) {
+    const priorTurn = draft.history.turns.find((t) => t.index === patch.turnIndex - 1)
+      ?? draft.history.turns.at(-1)
+    if (priorTurn?.playerInput) {
+      applyPlayerEngagementReheat(draft, priorTurn.playerInput)
+    }
+  }
+
   patch.creates.forEach((w, i) =>
     applyCreate(draft, w, `creates[${i}]`, outcomes, deferred, drift, patch.turnIndex, chapter)
   )
   patch.updates.forEach((w, i) =>
-    applyUpdate(draft, w, `updates[${i}]`, outcomes, drift)
+    applyUpdate(draft, w, `updates[${i}]`, outcomes, drift, patch.turnIndex)
   )
   patch.transitions.forEach((w, i) =>
     applyTransition(draft, w, `transitions[${i}]`, outcomes)
@@ -1268,38 +1729,153 @@ export function applyArchivistPatch(
     draft.chapter.sceneSummaries.push(patch.sceneResult)
   }
 
+  if (patch.revelationHintsDelivered && patch.revelationHintsDelivered.length > 0) {
+    for (const hint of patch.revelationHintsDelivered) {
+      const revelation = draft.chapter.scaffolding.possibleRevelations.find(
+        (r) => r.id === hint.revelationId
+      )
+      if (!revelation) {
+        drift.push({
+          kind: 'anchor_reference_missing',
+          detail: `revelation hint target ${hint.revelationId} unresolved`,
+          entityId: hint.revelationId,
+        })
+        continue
+      }
+      const hintPhrases = revelation.hintPhrases ?? []
+      const matchedPhrase = hintPhrases.find((p) =>
+        configuredHintMatches(p, hint.phraseMatched)
+      )
+      if (!matchedPhrase) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `revelation hint phrase "${hint.phraseMatched}" is not configured for ${hint.revelationId}`,
+          entityId: hint.revelationId,
+        })
+        continue
+      }
+      revelation.hintEvidence ??= []
+      revelation.hintsDelivered ??= 0
+      revelation.hintsRequired ??= 0
+      revelation.hintEvidence.push({
+        phraseMatched: matchedPhrase,
+        turn: patch.turnIndex,
+        proseExcerpt: hint.proseExcerpt,
+      })
+      if (revelation.hintsDelivered < revelation.hintsRequired) {
+        revelation.hintsDelivered += 1
+      }
+    }
+  }
+
+  if (patch.revelationsRevealed && patch.revelationsRevealed.length > 0) {
+    for (const reveal of patch.revelationsRevealed) {
+      const revelation = draft.chapter.scaffolding.possibleRevelations.find(
+        (r) => r.id === reveal.revelationId
+      )
+      if (!revelation) {
+        drift.push({
+          kind: 'anchor_reference_missing',
+          detail: `revelation reveal target ${reveal.revelationId} unresolved`,
+          entityId: reveal.revelationId,
+        })
+        continue
+      }
+      const hintPhrases = revelation.hintPhrases ?? []
+      const hintsDelivered = revelation.hintsDelivered ?? 0
+      const hintsRequired = revelation.hintsRequired ?? 0
+      const hintGateActive = hintPhrases.length > 0 || hintsRequired > 0
+      const enoughHints = !hintGateActive || hintsDelivered >= hintsRequired
+      const validContexts = revelation.validRevealContexts ?? []
+      const invalidContexts = revelation.invalidRevealContexts ?? []
+      const validContext = validContexts.length === 0 || validContexts.includes(reveal.context)
+      const invalidContext = invalidContexts.includes(reveal.context)
+      if (!enoughHints) {
+        drift.push({
+          kind: 'revelation_premature_reveal',
+          detail: `observe: ${reveal.revelationId} revealed with ${hintsDelivered}/${hintsRequired} hints`,
+          entityId: reveal.revelationId,
+        })
+      }
+      if (!validContext || invalidContext) {
+        drift.push({
+          kind: 'revelation_premature_reveal',
+          detail: `observe: ${reveal.revelationId} revealed in context "${reveal.context}" (valid: ${validContexts.join(', ') || 'any'}; invalid: ${invalidContexts.join(', ') || 'none'})`,
+          entityId: reveal.revelationId,
+        })
+      }
+      revelation.revealed = true
+      revelation.revealedAtTurn = patch.turnIndex
+    }
+  }
+
   // Archivist-driven ladder firing. The Archivist evaluated each unfired
   // step's triggerCondition against this turn's prose + state and returned
   // the ids of steps whose conditions read as satisfied. Flip fired=true
   // with firedAtTurn stamped for instrumentation.
   //
-  // Hard cap: max 2 fires per turn. Beyond that, accept only the earliest-
-  // indexed unfired steps and drift-flag the rest. Prevents cascade bugs
-  // where the Archivist reads surface context as satisfying multiple triggers
-  // at once.
+  // Two enforcement floors:
+  //   1. Max 2 fires per turn. Prevents cascade bugs where the Archivist
+  //      reads surface context as satisfying multiple triggers at once.
+  //   2. Cooldown: no fires on the turn immediately after a prior fire.
+  //      Prevents the experiential ramp problem where consecutive-turn fires
+  //      collapse the chapter's tension graph into a stair (playthrough 6
+  //      fired on turns 3 + 4, which felt excessive even though cumulative
+  //      pacing was on target). Only enforced when a prior step exists with
+  //      firedAtTurn === patch.turnIndex - 1.
   const MAX_LADDER_FIRES_PER_TURN = 2
   if (patch.ladderFires && patch.ladderFires.length > 0) {
+    const firedLastTurn = draft.chapter.setup.pressureLadder.some(
+      (s) => s.fired && s.firedAtTurn === patch.turnIndex - 1
+    )
     const proposed = patch.ladderFires.filter((id) =>
       draft.chapter.setup.pressureLadder.some((s) => s.id === id && !s.fired)
     )
-    const accepted = proposed.slice(0, MAX_LADDER_FIRES_PER_TURN)
-    const dropped = proposed.slice(MAX_LADDER_FIRES_PER_TURN)
-    const acceptedSet = new Set(accepted)
-    for (const step of draft.chapter.setup.pressureLadder) {
-      if (step.fired) continue
-      if (acceptedSet.has(step.id)) {
-        step.fired = true
-        step.firedAtTurn = patch.turnIndex
+    if (firedLastTurn) {
+      for (const dropId of proposed) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `ladder fire cooldown: ${dropId} deferred (a step fired on the prior turn — consecutive-turn fires are rejected)`,
+          entityId: dropId,
+        })
+      }
+    } else {
+      const accepted = proposed.slice(0, MAX_LADDER_FIRES_PER_TURN)
+      const dropped = proposed.slice(MAX_LADDER_FIRES_PER_TURN)
+      const acceptedSet = new Set(accepted)
+      for (const step of draft.chapter.setup.pressureLadder) {
+        if (step.fired) continue
+        if (acceptedSet.has(step.id)) {
+          step.fired = true
+          step.firedAtTurn = patch.turnIndex
+          // Reheat the threads the step is anchored to. Falls back to the
+          // chapter spine when the step has no explicit anchors — keeps
+          // chapters authored before threadIds existed working without
+          // broadcasting the fire across the whole pressure surface.
+          const explicitThreadIds = (step.threadIds ?? []).filter(
+            (id) => Boolean(draft.chapter.setup.threadPressure?.[id])
+          )
+          const ladderTargets = explicitThreadIds.length > 0
+            ? explicitThreadIds
+            : draft.chapter.setup.spineThreadId
+              ? [draft.chapter.setup.spineThreadId]
+              : []
+          if (ladderTargets.length > 0) {
+            reheatLadderFire(draft.chapter.setup, ladderTargets, step.severity)
+          }
+        }
+      }
+      for (const dropId of dropped) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `ladder fire cap: ${dropId} deferred (>${MAX_LADDER_FIRES_PER_TURN} proposed fires this turn)`,
+          entityId: dropId,
+        })
       }
     }
-    for (const dropId of dropped) {
-      drift.push({
-        kind: 'contradiction',
-        detail: `ladder fire cap: ${dropId} deferred (>${MAX_LADDER_FIRES_PER_TURN} proposed fires this turn)`,
-        entityId: dropId,
-      })
-    }
   }
+
+  updateRuntimeEngineValues(draft)
 
   // Lexicon additions: dedupe by case-insensitive phrase, cap campaign lexicon
   // at 30 entries (drop oldest when over).
@@ -1319,6 +1895,51 @@ export function applyArchivistPatch(
     }
     if (draft.campaign.lexicon.length > 30) {
       draft.campaign.lexicon = draft.campaign.lexicon.slice(-30)
+    }
+  }
+
+  // Emotional beats: sparse moment-grain memory. Enforce the one-per-turn cap
+  // here so over-eager Archivist output cannot flood retrieval.
+  if (patch.emotionalBeats && patch.emotionalBeats.length > 0) {
+    if (!draft.campaign.beats) draft.campaign.beats = {}
+    const accepted = patch.emotionalBeats.slice(0, 1)
+    const dropped = patch.emotionalBeats.slice(1)
+    for (const drop of dropped) {
+      drift.push({
+        kind: 'contradiction',
+        detail: `emotional beat cap: dropped extra beat "${drop.text.slice(0, 80)}"`,
+      })
+    }
+    for (const add of accepted) {
+      if (!add.text || add.salience < 0.5 || add.emotionalTags.length === 0) continue
+      const id = nextEntityId('beat', draft)
+      const participants = [...new Set(add.participants)].filter(
+        (pid) => pid === 'pc' || Boolean(draft.campaign.npcs[pid] || draft.campaign.factions[pid])
+      )
+      const anchoredTo = [...new Set(add.anchoredTo)].filter((aid) =>
+        Boolean(
+          draft.campaign.threads[aid] ||
+            draft.campaign.decisions[aid] ||
+            draft.campaign.promises[aid] ||
+            draft.campaign.clues[aid] ||
+            draft.campaign.documents?.[aid] ||
+            draft.campaign.arcs[aid]
+        )
+      )
+      const beat: Sf2EmotionalBeat = {
+        id,
+        title: add.text.slice(0, 80),
+        chapterCreated: chapter,
+        category: 'emotional_beat',
+        retrievalCue: add.text,
+        text: add.text,
+        participants,
+        anchoredTo,
+        emotionalTags: add.emotionalTags,
+        salience: add.salience,
+        turn: patch.turnIndex,
+      }
+      draft.campaign.beats[id] = beat
     }
   }
 

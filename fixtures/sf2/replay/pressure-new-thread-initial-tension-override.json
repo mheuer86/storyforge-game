@@ -1,0 +1,64 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure new thread initial tension override",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Pressure Engines D2. Author-provided initialTension on a new thread overrides the role default opening floor, bounded by the chapter open cap."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_new": {
+            "id": "thread_new",
+            "title": "New pressure",
+            "chapterCreated": 2,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5,
+            "resolutionCriteria": "The new pressure is answered.",
+            "failureMode": "The new pressure worsens.",
+            "retrievalCue": "New pressure.",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Initialize pressure.",
+    "narrator": { "prose": "The chapter opens with an overridden new-thread floor.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "pressure": {
+      "initializeChapterSetupPatch": {
+        "chapter": 2,
+        "activeThreadIds": ["thread_new"],
+        "spineThreadId": "thread_new",
+        "loadBearingThreadIds": [],
+        "threadInitialTensions": {
+          "thread_new": 7
+        }
+      },
+      "initializedThreadPressure": [
+        { "threadId": "thread_new", "role": "new", "openingFloor": 7, "localEscalation": 0, "maxThisChapter": 7, "cooledAtOpen": false }
+      ],
+      "effectiveThreadPressure": [
+        { "threadId": "thread_new", "value": 7 }
+      ]
+    }
+  }
+}
