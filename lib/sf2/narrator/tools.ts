@@ -16,7 +16,7 @@ export const requestRollTool: Anthropic.Tool = {
     type: 'object' as const,
     properties: {
       skill: { type: 'string', description: 'Skill or ability name (e.g. "Insight", "Investigation", "Persuasion", "Stealth").' },
-      dc: { type: 'number', description: 'Difficulty class 5-25. 12 easy, 15 standard, 18 hard, 20 very hard.' },
+      dc: { type: 'number', description: 'Difficulty class 5-25. For level-1 play, 12 easy, 15 meaningful standard, 18 hard/clutch, 20 very hard. Do not stack DC 18s against the same pressure surface.' },
       why: { type: 'string', description: 'One-sentence reason this check is required.' },
       consequence_on_fail: { type: 'string', description: 'What fails forward on a miss — the specific world-response pattern the PC lives through on failure.' },
     },

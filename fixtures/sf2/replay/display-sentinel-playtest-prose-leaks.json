@@ -1,0 +1,37 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: playtest prose leak fixtures catch roll values, stage labels, and disposition predicates",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from the Verath Station playtest inventory F1-F3. Roll totals, ladder labels, and raw disposition bands are state/mechanics artifacts, not player-facing prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Press the point.",
+    "narrator": {
+      "prose": "Twenty-two. Clean. **THE ESCALATION.** Solv remains wary, but the office does not move.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 3,
+      "findingsInclude": [
+        { "findingType": "roll_value_leak", "surfaceEquals": "Twenty-two." },
+        { "findingType": "stage_label_leak", "surfaceEquals": "**THE ESCALATION.**" },
+        { "findingType": "disposition_label_leak", "surfaceEquals": "remains wary" }
+      ]
+    }
+  }
+}

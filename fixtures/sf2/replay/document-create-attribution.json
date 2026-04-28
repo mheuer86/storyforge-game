@@ -1,0 +1,120 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document create captures distinct filer/signer/subject attribution",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Anchor the canonical attribution baseline (filer != signer; subject locked) that document_attribution_drift compares against."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_warden_hess": {
+            "id": "npc_warden_hess",
+            "name": "Warden Hess",
+            "affiliation": "transit authority",
+            "role": "warden",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Filed Tam's transfer order"],
+              "voice": { "note": "clipped, procedural", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Filed Tam's transfer.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_factor": {
+            "id": "npc_factor",
+            "name": "the Factor",
+            "affiliation": "Synod",
+            "role": "magistrate",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Synod magistrate"],
+              "voice": { "note": "measured, sealed phrasing", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod magistrate; sealed Tam's transfer.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_tam": {
+            "id": "npc_tam",
+            "name": "Tam",
+            "affiliation": "settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Subject of the transfer order"],
+              "voice": { "note": "tired", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Subject of the transfer order.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask Tam to show you his transfer order.",
+    "narrator": {
+      "prose": "Tam unfolds the order on the counter. The header reads 'Filed under Warden Hess,' and the Factor's seal is pressed beneath, dated three weeks back.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "document",
+            "payload": {
+              "id": "doc_tam_transfer",
+              "type": "directive",
+              "kind_label": "transfer order",
+              "title": "Tam's transfer order",
+              "authorizes": "transfers Tam to district reassignment, three weeks prior",
+              "original_summary": "Filed three weeks ago by Warden Hess, sealed by the Factor; transfers Tam to district reassignment.",
+              "filed_by": "npc_warden_hess",
+              "signed_by": "npc_factor",
+              "subject_entity_ids": ["npc_tam"],
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Tam's transfer order — Hess filed, Factor sealed"
+            },
+            "confidence": "high",
+            "sourceQuote": "Filed under Warden Hess, with the Factor's seal beneath"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "documentsInclude": [
+      {
+        "documentId": "doc_tam_transfer",
+        "type": "directive",
+        "kindLabel": "transfer order",
+        "status": "active",
+        "filedByEntityId": "npc_warden_hess",
+        "signedByEntityId": "npc_factor",
+        "subjectEntityIds": ["npc_tam"],
+        "originalSummaryEquals": "Filed three weeks ago by Warden Hess, sealed by the Factor; transfers Tam to district reassignment.",
+        "revisionsCount": 0
+      }
+    ]
+  }
+}

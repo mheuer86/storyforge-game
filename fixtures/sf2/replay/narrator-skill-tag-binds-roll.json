@@ -1,0 +1,46 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator-skill-tag-binds-roll",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777212125472",
+    "capturedAt": "2026-04-26T14:16:09.000Z",
+    "notes": "Bug shape: in playthrough 5 the player picked a quick action tagged [Persuasion or Intimidation] on turn 4, but the Narrator did not surface a request_roll — it narrated the social pressure to resolution without rolling. Earlier turns had rolled correctly. Root cause: the Narrator's roll-frequency heuristic ('one check every 2-3 turns') silently overrode explicit player intent. Fix: programmatic detection of [Skill] tags in playerInput injects a binding directive into the per-turn delta. This fixture asserts the directive is present when a tag is detected, and that non-rollable bracket text ('[No roll — a pure choice]') does NOT trigger it."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "Opening prose for an established scene with prior rolls already surfaced.",
+            "timestamp": "2026-04-26T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Turn to Kess and demand the truth about the missing Resonant. [Persuasion or Intimidation]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildMessagesForNarrator output, not narrator response)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Turn to Kess and demand the truth about the missing Resonant. [Persuasion or Intimidation]",
+      "userMessageContainsAll": [
+        "Skill-tag binding (mandatory)",
+        "Persuasion",
+        "Intimidation",
+        "request_roll"
+      ]
+    }
+  }
+}

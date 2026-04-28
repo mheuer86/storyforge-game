@@ -12,9 +12,11 @@ import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compo
 import { computePacingAdvisory } from '@/lib/sf2/pacing/signals'
 import {
   buildScenePacket,
-  renderPerTurnDelta,
-  renderSceneBundle,
 } from '@/lib/sf2/retrieval/scene-packet'
+import { buildSceneKernel } from '@/lib/sf2/scene-kernel/build'
+import { scanDisplayOutput } from '@/lib/sf2/sentinel/display'
+import { buildMessagesForNarrator } from '@/lib/sf2/narrator/messages'
+import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
 import type { Sf2State } from '@/lib/sf2/types'
 
 const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-haiku-4-5-20251001'
@@ -50,48 +52,14 @@ function rollResultMessage(resolution: {
   }
   if (result === 'success') {
     return (
-      base + 'Success. Narrate the outcome. The PC accomplishes what they attempted, cleanly or with small friction as the scene suggests.'
+      base +
+      'Success. Narrate the outcome. The PC accomplishes the stated intent and their position visibly improves. You may attach small friction, exposure, or a future cost, but do not turn success into a miss, wrong belief, closed door, or pure delay.'
     )
   }
   return (
     base +
-    `Failure — the stated goal is not achieved in the way the player intended; the scene advances through consequence. Pick one pattern: (1) THE BACKFIRE — the attempt produced the opposite of its aim (tried to calm, provoked; tried to read, revealed self); (2) THE ESCALATION — the world saw the attempt and levels up (wary → hostile, passive → active, heat rises); (3) THE HARD BLOCK + COST — the path closes AND a specific thing gets worse. Both halves required: intended goal not achieved AND the scene moves forward through new pressure. Failure is redirection with cost, not a dead end. Do NOT write this as partial success or "success with cost" — that is a different outcome tier. FORBIDDEN: narrator-reveal ("you don't notice…"), meta-commentary on the miss, invention of new facts. Commit to the false reality from inside the PC's POV.`
+    `Failure — the stated goal is not achieved in the way the player intended; the scene advances through consequence. Pick one pattern: backfire, escalation, or hard block with cost, but do not write those labels in prose. Both halves required: intended goal not achieved AND the scene moves forward through new pressure. Failure is redirection with cost, not a dead end. If this is the second failure against the same door/NPC/document/barrier, do not ask the player to keep retrying the same obstacle; change the situation, reveal the next pressure-bearing route, or have the world move. Do NOT write this as partial success or "success with cost" — that is a different outcome tier. FORBIDDEN: narrator-reveal ("you don't notice…"), meta-commentary on the miss, invention of new facts, hidden-camera narration about unseen actors. Commit to the false reality from inside the PC's POV.`
   )
-}
-
-function buildRoleAliasBlock(state: Sf2State, playerInput: string): string {
-  const input = playerInput.toLowerCase()
-  if (!input.trim()) return ''
-
-  const roleTerms = [
-    'elder',
-    'retainer',
-    'assessor',
-    'compliance',
-    'factor',
-    'contact',
-    'warden',
-    'parent',
-    'sibling',
-    'survivor',
-    'clerk',
-    'aide',
-  ]
-  const requested = roleTerms.filter((term) => input.includes(term))
-  if (requested.length === 0) return ''
-
-  const present = new Set(state.world.sceneSnapshot.presentNpcIds)
-  const candidates = Object.values(state.campaign.npcs)
-    .filter((npc) => !present.has(npc.id))
-    .filter((npc) => npc.status === 'alive' || npc.status === 'unknown')
-    .filter((npc) => {
-      const haystack = `${npc.name} ${npc.role} ${npc.affiliation} ${npc.retrievalCue}`.toLowerCase()
-      return requested.some((term) => haystack.includes(term))
-    })
-    .slice(0, 6)
-
-  if (candidates.length === 0) return ''
-  return `\n\n---\n\n### Private role lookup (never mention)\nThe player input names a role that matches authored/off-stage NPCs. If the scene needs that role, use the existing id/name below instead of inventing a parallel character.\n${candidates.map((n) => `- ${n.id}: ${n.name} — ${n.affiliation} · ${n.role} — ${n.retrievalCue}`).join('\n')}`
 }
 
 export const runtime = 'nodejs'
@@ -127,165 +95,162 @@ type Sf2NarratorStreamEvent =
       consequenceOnFail: string
       priorMessages: unknown[]
     }
-  | { type: 'working_set'; summary: { full: string[]; stub: string[]; excluded: number; reasons: Record<string, string[]> } }
+  | {
+      type: 'working_set'
+      summary: { full: string[]; stub: string[]; excluded: number; reasons: Record<string, string[]> }
+      workingSet: ReturnType<typeof buildScenePacket>['workingSet']
+    }
   | { type: 'pacing_advisory'; tripped: boolean; reactivityRatio: number; reactivityTripped: boolean; sceneLinkTripped: boolean; stagnantThreadIds: string[]; arcDormantIds: string[] }
-  | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number; firstTurnIndex: number }
+  | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number }
   | { type: 'token_usage'; usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
   | { type: 'truncation_warning'; outputTokens: number }
+  | {
+      // Display sentinel — observe mode. Emitted after the Narrator finishes
+      // producing prose. Findings are advisory only in this slice; the
+      // streaming buffer / cancel / repair path is a separate slice. Client
+      // logs these for telemetry; future enforcement will read the same
+      // stream of findings.
+      type: 'display_sentinel'
+      mode: 'observe' | 'enforce'
+      findings: Array<{
+        type: string
+        severity: string
+        surface?: string
+        entityId?: string
+        evidence: string
+        matchStart: number
+        recommendedAction: string
+      }>
+    }
+  | {
+      // Observation-only signal that the Narrator emitted non-narrative output
+      // (meta-question, system-reference, or out-of-character clarification
+      // request). No retry, no block — telemetry for tuning the eventual
+      // recovery path. See scene-bundle-cache-preserves-replay-window fixture
+      // for the failure shape this signal was added to surface.
+      type: 'narrator_meta_observed'
+      pattern: string
+      snippet: string
+      turnIndex: number
+    }
+  | {
+      // Salvage signal: narrate_turn input was malformed or missing required
+      // fields, and the route recovered values from alt-keys, prior turn, or
+      // defaults. recoveryNotes lists what was fixed. Cheaper than retry; see
+      // playthrough 7 turns 6+8 for the failure shapes (missing
+      // suggested_actions; hinted_entities-as-XML-wrapper).
+      type: 'narrator_output_recovered'
+      recoveryNotes: string[]
+      turnIndex: number
+    }
   | { type: 'error'; message: string }
   | { type: 'done' }
 
-// Build messages array as a scene-bounded conversation.
-//
-// Layout:
-//   [0] user    scene bundle (pre-fetch) · cache_control=ephemeral  ← BP3
-//   [1..N]     alternating {user: playerInput, assistant: prose}
-//               for each turn in this scene's history. The last assistant
-//               message carries cache_control=ephemeral                ← BP4
-//   [N+1] user  current-turn delta (mutable state + recovery notes +
-//               player input + write directive)
-//
-// Scene bundle is built once per scene (detected by sceneBundleCache.sceneId
-// matching currentSceneId) and re-used across the scene's turns. When it
-// rebuilds, we surface it via a scene_bundle_built SSE event so the client
-// can persist it.
-function buildMessagesForNarrator(
+// Observation-only meta-question detector. Fires when the Narrator's prose
+// opens with a GM-meta voice or references system-internal vocabulary. Both
+// signals are forbidden by the system prompt for in-fiction prose, so a hit
+// here means the Narrator broke character — usually because upstream context
+// (cache, scene snapshot, delta) was malformed.
+const META_OPENERS = /^\s*(I need|I cannot|I can't|I don't have|I'll need|Could you clarify|Wait,? before|Let me clarify|Before I continue)/i
+const SYSTEM_VOCAB = /\b(CONTINUATION mode|ESTABLISHMENT mode|the delta shows|prior prose|scene packet|per-turn delta)\b/
+function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: string } | null {
+  if (META_OPENERS.test(prose)) return { pattern: 'meta_opener', snippet: prose.slice(0, 200) }
+  if (SYSTEM_VOCAB.test(prose)) {
+    const match = prose.match(SYSTEM_VOCAB)
+    return { pattern: `system_vocab:${match?.[0] ?? 'unknown'}`, snippet: prose.slice(0, 200) }
+  }
+  return null
+}
+
+// Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
+// shapes observed in playthrough 7:
+//   - turn 6: hinted_entities arrived as a literal string containing
+//     `<parameter name="...">` XML wrapper (Anthropic tool-use parsing leak),
+//     and suggested_actions came back undefined entirely
+//   - turn 8: suggested_actions simply missing while the rest of the input
+//     was well-shaped
+// Both produced empty action arrays after route normalization, so the UI
+// rendered "no actions." Recovery is much cheaper than retry: try alt-key
+// variants first, then carry-forward from the prior turn's annotation.
+// Returns the (possibly-spliced) input plus recovery notes for telemetry.
+function recoverNarrateTurnInput(
+  raw: Record<string, unknown>,
   state: Sf2State,
-  playerInput: string,
-  isInitial: boolean,
-  turnIndex: number
-): {
-  messages: Anthropic.MessageParam[]
-  workingSet: ReturnType<typeof buildScenePacket>['workingSet']
-  advisoryText: string
-  bundleRebuilt: {
-    sceneId: string
-    bundleText: string
-    builtAtTurn: number
-    firstTurnIndex: number
-  } | null
-} {
-  const { packet, workingSet, advisoryText } = buildScenePacket(state, playerInput, turnIndex)
+  failedSkill?: string
+): { input: Record<string, unknown>; recoveryNotes: string[] } {
+  const recoveryNotes: string[] = []
+  const next = { ...raw }
 
-  const currentSceneId = state.world.sceneSnapshot.sceneId
-  const cached = state.world.sceneBundleCache
-  const cacheValid = cached && cached.sceneId === currentSceneId
+  // Recover suggested_actions if missing/empty/wrong-shape.
+  const sa = next.suggested_actions ?? next.suggestedActions
+  const isValidArray = Array.isArray(sa) && sa.length > 0 && sa.every((s) => typeof s === 'string' && s.trim().length > 0)
 
-  let bundleText: string
-  let firstTurnIndex: number
-  let bundleRebuilt: {
-    sceneId: string
-    bundleText: string
-    builtAtTurn: number
-    firstTurnIndex: number
-  } | null = null
-
-  if (cacheValid) {
-    bundleText = cached.bundleText
-    firstTurnIndex = cached.firstTurnIndex
-  } else {
-    bundleText = renderSceneBundle(packet, state)
-    firstTurnIndex = state.history.turns.length
-    bundleRebuilt = {
-      sceneId: currentSceneId,
-      bundleText,
-      builtAtTurn: turnIndex,
-      firstTurnIndex,
+  if (!isValidArray) {
+    // 1. Alt-key already covered above (suggestedActions camelCase). If we got
+    //    here, neither shape held substantive content.
+    // 2. Carry-forward from the prior turn's annotation. The prior turn's
+    //    suggestions still describe action affordances against the same scene
+    //    (off-stage NPCs may have shifted, but most actions are about the
+    //    on-stage cast and the chapter's persistent threads).
+    const priorTurn = state.history.turns.at(-1)
+    const priorActions = priorTurn?.narratorAnnotation?.suggestedActions
+    if (Array.isArray(priorActions) && priorActions.length >= 3) {
+      next.suggested_actions = priorActions.slice(0, 4)
+      recoveryNotes.push(
+        `suggested_actions missing/empty; carried forward ${(next.suggested_actions as string[]).length} actions from prior turn`
+      )
+    } else {
+      // 3. No prior turn (chapter open) or prior had no actions either. Synth
+      //    minimal defaults from the scene snapshot. Player can still type
+      //    free-text; just no quick-action buttons.
+      const presentNpcId = state.world.sceneSnapshot.presentNpcIds[0]
+      const npc = presentNpcId ? state.campaign.npcs[presentNpcId] : undefined
+      const npcName = npc?.name
+      const defaults = npcName
+        ? [
+            `Address ${npcName} directly.`,
+            'Examine the scene before responding.',
+            'Wait for the moment to develop.',
+          ]
+        : [
+            'Examine the scene before responding.',
+            'Speak first.',
+            'Wait for the moment to develop.',
+          ]
+      next.suggested_actions = defaults
+      recoveryNotes.push(
+        'suggested_actions missing/empty; no prior turn to carry forward — synthesized minimal defaults'
+      )
     }
+  } else if (next.suggested_actions === undefined && next.suggestedActions !== undefined) {
+    // Pure alt-key recovery: model used camelCase, copy under canonical key.
+    next.suggested_actions = next.suggestedActions
+    recoveryNotes.push('suggested_actions was under camelCase suggestedActions; normalized to canonical key')
   }
 
-  // Replay in-scene turn pairs from history. turnIndex is monotonic across
-  // chapters (P1#2 fix), so filter by >= firstTurnIndex.
-  const sceneTurns = state.history.turns.filter((t) => t.index >= firstTurnIndex)
-  const turnPairs: Anthropic.MessageParam[] = []
-  for (const t of sceneTurns) {
-    if (t.playerInput) {
-      turnPairs.push({ role: 'user' as const, content: t.playerInput })
-    }
-    if (t.narratorProse) {
-      turnPairs.push({ role: 'assistant' as const, content: t.narratorProse })
-    }
+  // Recover hinted_entities when it arrived as a string (XML-wrapper leak).
+  // The downstream Archivist normalizes hinted_entities loosely; if it's
+  // a string we lose the structured fields entirely. Replace with an empty
+  // object — Archivist handles missing hints fine, this is just a containment
+  // measure to avoid the malformed string poisoning state.
+  if (typeof next.hinted_entities === 'string' || typeof next.hintedEntities === 'string') {
+    const orig = String(next.hinted_entities ?? next.hintedEntities ?? '').slice(0, 80)
+    next.hinted_entities = {}
+    recoveryNotes.push(
+      `hinted_entities arrived as string (likely tool-use XML-wrapper leak), replaced with empty object. Original: ${orig}…`
+    )
   }
 
-  // Recovery notes from prior turn's Archivist — single-use.
-  const recoveryNotes = state.campaign.pendingRecoveryNotes ?? []
-  const recoveryBlock = recoveryNotes.length
-    ? `\n\n---\n\n### Private re-establishment notes (never mention)\nThese notes are system-private continuity context. Do NOT quote, paraphrase, acknowledge, or narrate them. Do not say you are correcting or re-establishing anything. If a note names a fact that still matters, weave that fact concretely into this turn's prose so it grounds on the graph — but do so silently, as if writing the scene fresh.\n${recoveryNotes.map((n) => `- ${n}`).join('\n')}`
-    : ''
-
-  // Coherence notes from prior turn's Archivist — single-use.
-  // Each entry is pre-formatted as: [severity] type (state_reference): suggested note
-  const coherenceNotes = state.campaign.pendingCoherenceNotes ?? []
-  const coherenceBlock = coherenceNotes.length
-    ? `\n\n---\n\n### Private continuity notes (never mention)\nThese notes are system-private continuity context. Do NOT quote, paraphrase, acknowledge, or narrate them. Do not say you are correcting anything. Continue the scene naturally from the last visible prose, using the notes only to avoid repeating the mismatch.\n${coherenceNotes.map((n) => `- ${n}`).join('\n')}`
-    : ''
-  const roleAliasBlock = buildRoleAliasBlock(state, playerInput)
-
-  const openingSeed = state.chapter.artifacts.opening
-  const perTurnDeltaText = renderPerTurnDelta(packet, {
-    advisoryText,
-    isInitial,
-    playerInput,
-    withheldPremiseFacts: isInitial ? openingSeed?.withheldPremiseFacts : undefined,
-  }) + roleAliasBlock + recoveryBlock + coherenceBlock
-
-  // Cache marker strategy:
-  //   Anthropic allows at most 4 cache_control markers per request. We already
-  //   spend 3 on BP1 (last tool) + BP2 (system CORE/BIBLE/ROLE) + BP3
-  //   (system SITUATION). That leaves exactly ONE message-level marker.
-  //
-  //   If the scene has prior assistant turns, place it on the last assistant
-  //   message — that single marker's cache prefix already covers the bundle
-  //   AND all prior-in-scene turn pairs. It advances each turn and amortizes.
-  //
-  //   If the scene has no assistant turns yet (first turn of the scene), place
-  //   it on the bundle — at least the bundle's tokens get cached before the
-  //   delta body is added.
-  const hasPriorAssistant = turnPairs.some((m) => m.role === 'assistant')
-
-  const bundleMessage: Anthropic.MessageParam = hasPriorAssistant
-    ? { role: 'user', content: bundleText }
-    : {
-        role: 'user',
-        content: [
-          {
-            type: 'text' as const,
-            text: bundleText,
-            cache_control: { type: 'ephemeral' as const },
-          },
-        ],
-      }
-
-  const messages: Anthropic.MessageParam[] = [
-    bundleMessage,
-    ...turnPairs,
-    { role: 'user', content: perTurnDeltaText },
-  ]
-
-  // When there are prior assistant turns, mark the latest one — its cached
-  // prefix covers everything before it, including the bundle.
-  if (hasPriorAssistant) {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') {
-        const m = messages[i]
-        if (typeof m.content === 'string') {
-          messages[i] = {
-            role: 'assistant',
-            content: [
-              {
-                type: 'text' as const,
-                text: m.content,
-                cache_control: { type: 'ephemeral' as const },
-              },
-            ],
-          }
-        }
-        break
-      }
-    }
+  const repairedActions = repairSuggestedActions(
+    Array.isArray(next.suggested_actions) ? (next.suggested_actions as string[]) : [],
+    { state, failedSkill }
+  )
+  if (repairedActions.notes.length > 0) {
+    next.suggested_actions = repairedActions.actions
+    recoveryNotes.push(...repairedActions.notes)
   }
 
-  return { messages, workingSet, advisoryText, bundleRebuilt }
+  return { input: next, recoveryNotes }
 }
 
 export async function POST(req: NextRequest) {
@@ -297,11 +262,11 @@ export async function POST(req: NextRequest) {
   let cachedTools: Anthropic.Tool[]
   let workingSet: ReturnType<typeof buildScenePacket>['workingSet']
   let pacingForEvent: ReturnType<typeof computePacingAdvisory> | null = null
+  let failedRollSkill: string | undefined
   let bundleRebuilt: {
     sceneId: string
     bundleText: string
     builtAtTurn: number
-    firstTurnIndex: number
   } | null = null
 
   try {
@@ -318,6 +283,10 @@ export async function POST(req: NextRequest) {
     playerInput = parsed.data.playerInput
     isInitial = parsed.data.isInitial
     const rollResolution = parsed.data.rollResolution
+    failedRollSkill =
+      rollResolution && (rollResolution.result === 'failure' || rollResolution.result === 'fumble')
+        ? rollResolution.skill
+        : undefined
 
     // Compose cached system blocks (BP2 + BP3). Assert no dynamic leaks.
     const situation = buildNarratorSituation(state)
@@ -353,6 +322,7 @@ export async function POST(req: NextRequest) {
         fullEntityIds: [],
         stubEntityIds: [],
         excludedEntityIds: [],
+        emotionalBeatIds: [],
         reasonsByEntityId: {},
         computedAtTurn: turnIndex,
       }
@@ -401,6 +371,7 @@ export async function POST(req: NextRequest) {
             excluded: workingSet.excludedEntityIds.length,
             reasons: workingSet.reasonsByEntityId,
           },
+          workingSet,
         })
       }
 
@@ -413,7 +384,6 @@ export async function POST(req: NextRequest) {
           sceneId: bundleRebuilt.sceneId,
           bundleText: bundleRebuilt.bundleText,
           builtAtTurn: bundleRebuilt.builtAtTurn,
-          firstTurnIndex: bundleRebuilt.firstTurnIndex,
         })
       }
 
@@ -441,6 +411,13 @@ export async function POST(req: NextRequest) {
           max_tokens: 4096,
           system,
           tools: cachedTools,
+          // The Narrator owns two tools — request_roll (mid-turn pause) and
+          // narrate_turn (final commit) — and the flow assumes mutual
+          // exclusion: one or the other per turn. Without this flag, parallel
+          // emission would let the model fire both, and our find()-based
+          // dispatch silently drops the narrate_turn (request_roll wins
+          // ordering). disable_parallel_tool_use makes the contract explicit.
+          tool_choice: { type: 'auto', disable_parallel_tool_use: true },
           messages,
         })
 
@@ -481,6 +458,71 @@ export async function POST(req: NextRequest) {
             b.type === 'tool_use' && b.name === NARRATOR_TOOL_NAME
         )
 
+        // Display sentinel — observe mode. Scan the assembled prose for
+        // debug-vocabulary leaks and absent-NPC speech. Findings flow to the
+        // client as a `display_sentinel` event for telemetry; nothing is
+        // blocked yet (the streaming buffer / cancel / repair pipeline is a
+        // separate slice). Skip when this turn is interrupted by a roll
+        // request — the prose is partial and the kernel doesn't reflect the
+        // post-roll state.
+        if (!rollUse) {
+          const proseText = completed.content
+            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+            .map((b) => b.text)
+            .join('')
+          if (proseText.trim().length > 0) {
+            const metaHit = detectNarratorMetaQuestion(proseText)
+            if (metaHit) {
+              console.warn('[sf2/narrator] meta_question_observed', {
+                pattern: metaHit.pattern,
+                turnIndex: state.history.turns.length,
+                snippet: metaHit.snippet,
+              })
+              send({
+                type: 'narrator_meta_observed',
+                pattern: metaHit.pattern,
+                snippet: metaHit.snippet,
+                turnIndex: state.history.turns.length,
+              })
+            }
+            try {
+              const kernel = buildSceneKernel(state)
+              const findings = scanDisplayOutput(proseText, {
+                action: 'allow_but_quarantine_writes',
+                campaign: state.campaign,
+                absentSpeakers: {
+                  absentEntityIds: kernel.absentEntityIds,
+                  aliasMap: kernel.aliasMap,
+                },
+              })
+              if (findings.length > 0) {
+                console.warn('[sf2/narrator] display_sentinel findings', {
+                  count: findings.length,
+                  types: findings.map((f) => f.type),
+                  surfaces: findings.map((f) => f.surface).filter(Boolean),
+                  turnIndex: state.history.turns.length,
+                })
+              }
+              send({
+                type: 'display_sentinel',
+                mode: 'observe',
+                findings: findings.map((f) => ({
+                  type: f.type,
+                  severity: f.severity,
+                  surface: f.surface,
+                  entityId: f.entityId,
+                  evidence: f.evidence,
+                  matchStart: f.matchStart,
+                  recommendedAction: f.recommendedAction,
+                })),
+              })
+            } catch (err) {
+              // Sentinel must never break the response — log and continue.
+              console.error('[sf2/narrator] display_sentinel failed', err)
+            }
+          }
+        }
+
         if (rollUse) {
           // Mid-stream interrupt: emit roll_prompt with everything the client
           // needs to resume. priorMessages holds the full conversation up to
@@ -505,7 +547,23 @@ export async function POST(req: NextRequest) {
             priorMessages,
           })
         } else if (narrateUse) {
-          send({ type: 'narrate_turn', input: narrateUse.input as Record<string, unknown> })
+          const recovered = recoverNarrateTurnInput(
+            narrateUse.input as Record<string, unknown>,
+            state,
+            failedRollSkill
+          )
+          if (recovered.recoveryNotes.length > 0) {
+            console.warn('[sf2/narrator] narrate_turn input recovered', {
+              recoveryNotes: recovered.recoveryNotes,
+              turnIndex: state.history.turns.length,
+            })
+            send({
+              type: 'narrator_output_recovered',
+              recoveryNotes: recovered.recoveryNotes,
+              turnIndex: state.history.turns.length,
+            })
+          }
+          send({ type: 'narrate_turn', input: recovered.input })
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'unknown_error'

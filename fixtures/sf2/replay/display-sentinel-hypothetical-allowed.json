@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: hypothetical mood ('what would Pol say if...') does NOT fire",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Negative control. The PC speculating about an absent NPC's hypothetical reaction must not trigger absent_speaker. Hypothetical cues (would/could/might/if/whether) within the lookbehind window suppress the match. Conservative precision: speculation is normal narrative, not a continuity violation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod auditor"],
+              "voice": { "note": "official", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_pol"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Wonder aloud.",
+    "narrator": {
+      "prose": "You think it through: what would Pol say if she walked in right now? She might press for the seal first. Whether Pol replies at all depends on the writ.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsAbsent": true
+    }
+  }
+}

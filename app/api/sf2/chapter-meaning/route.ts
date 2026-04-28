@@ -78,7 +78,9 @@ export async function POST(req: NextRequest) {
         max_tokens: 2048,
         system,
         tools: cachedTools,
-        tool_choice: { type: 'any' },
+        // disable_parallel_tool_use forces a single tool call. Single-tool
+        // flow; matches Archivist/Author for consistent intent.
+        tool_choice: { type: 'any', disable_parallel_tool_use: true },
         messages,
       })
 

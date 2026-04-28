@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: apostrophe before absent speaker does not suppress finding",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression: contractions before an absent alias (Kess doesn't move; Pol says...) must not be counted as open quotes and suppress absent_speaker."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess Toral",
+            "affiliation": "settlement",
+            "role": "retainer",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement retainer"],
+              "voice": { "note": "guarded", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement retainer.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Auditor Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod auditor"],
+              "voice": { "note": "official", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_kess", "npc_pol"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_kess"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Wait.",
+    "narrator": {
+      "prose": "Kess doesn't move from the counter. Pol says, \"The writ is already in order.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 1,
+      "findingsInclude": [
+        {
+          "findingType": "absent_speaker",
+          "severity": "hard",
+          "surfaceEquals": "Pol says"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author-disposition-derivation: rule-8 derivation catches playthrough-7 violations and accepts substantive overrides",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777269260458",
+    "capturedAt": "2026-04-27T06:19:45.000Z",
+    "purpose": "Author rule 8 violations from playthrough 7: Corvin (Synod auditor) authored as 'favorable' toward Imperial Warden, Kerys (settlement elder) authored as 'trusted' toward Imperial Warden. Validates that lib/sf2/author/disposition-defaults.ts catches these cases programmatically. Also verifies acceptance of correct dispositions (Vesh as trusted retainer, Seth as wary civilian) and the substantive-override escape hatch."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused — fixture asserts only on disposition derivation)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "dispositionDerivation": {
+      "ctx": { "genreId": "epic-scifi", "pcOriginId": "imperial-service", "pcPlaybookId": "warden" },
+      "cases": [
+        {
+          "name": "playthrough7-corvin-favorable",
+          "role": "Synod auditor",
+          "affiliation": "The Synod",
+          "initialDisposition": "favorable",
+          "expect": "flagged",
+          "flagIncludes": "cross-institutional rivalry"
+        },
+        {
+          "name": "playthrough7-kerys-trusted",
+          "role": "Settlement elder",
+          "affiliation": "Frontier settlement leadership",
+          "initialDisposition": "trusted",
+          "expect": "flagged",
+          "flagIncludes": "settlement leadership facing an institutional enforcer PC"
+        },
+        {
+          "name": "playthrough7-vesh-trusted-correct",
+          "role": "Personal retainer and administrative aide",
+          "affiliation": "Imperial Service (sworn to the PC's authority)",
+          "initialDisposition": "trusted",
+          "expect": "accepted"
+        },
+        {
+          "name": "playthrough7-seth-wary-correct",
+          "role": "Miner and relative of one of the dead Resonants",
+          "affiliation": "Frontier settlement labor",
+          "initialDisposition": "wary",
+          "expect": "accepted"
+        },
+        {
+          "name": "override-substantive-reason-accepted",
+          "role": "Settlement elder",
+          "affiliation": "Frontier settlement leadership",
+          "initialDisposition": "trusted",
+          "dispositionReason": "she fought alongside the Warden's father in the prior compliance war",
+          "expect": "accepted"
+        },
+        {
+          "name": "override-trivial-reason-rejected",
+          "role": "Settlement elder",
+          "affiliation": "Frontier settlement leadership",
+          "initialDisposition": "trusted",
+          "dispositionReason": "she likes him",
+          "expect": "flagged"
+        },
+        {
+          "name": "playthrough8-ash-undrift-neutral-flagged",
+          "role": "Intermediary between the settlement and Undrift networks",
+          "affiliation": "The Undrift",
+          "initialDisposition": "neutral",
+          "expect": "flagged",
+          "flagIncludes": "Undrift NPC facing institutional system PC"
+        },
+        {
+          "name": "undrift-hostile-correct",
+          "role": "Undrift cell handler",
+          "affiliation": "The Undrift",
+          "initialDisposition": "hostile",
+          "expect": "accepted"
+        },
+        {
+          "name": "undrift-wary-correct",
+          "role": "Undrift contact",
+          "affiliation": "The Undrift Network",
+          "initialDisposition": "wary",
+          "expect": "accepted"
+        }
+      ]
+    }
+  }
+}

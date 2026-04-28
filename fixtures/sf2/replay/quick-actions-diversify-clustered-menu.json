@@ -1,0 +1,40 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions diversify clustered menu",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from playtest fixture F11's deterministic half. When all quick actions cluster on one tactical axis, repair should provide at least three categories."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 2,
+    "playerInput": "What now?",
+    "narrator": {
+      "prose": "The room gives you a moment to choose the next angle.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "inputActions": [
+        "Press the clerk for the missing line.",
+        "Demand the supervisor's name.",
+        "Push the office to answer now.",
+        "Ask why the record changed."
+      ],
+      "outputCount": 4,
+      "categoryCountAtLeast": 3,
+      "notesInclude": ["diversified clustered quick actions"]
+    }
+  }
+}

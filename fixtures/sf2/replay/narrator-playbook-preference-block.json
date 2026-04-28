@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator: per-turn delta contains playbook preference block",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verifies that buildMessagesForNarrator injects the playbook preference soft directive into the per-turn delta when the PC has proficiencies. Closes Stage 4 of the playbook-fit work — Narrator-side P2 backstop. Companion to the Author-side P1 fix (pcCapabilities in seed + Author rule 22)."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "proficiencies": ["Athletics", "Intimidation", "Perception", "Heavy Weapons"]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "Opening turn established the scene.",
+            "timestamp": "2026-04-27T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Press the elder for the truth.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Press the elder for the truth.",
+      "userMessageContainsAll": [
+        "Playbook preference (soft)",
+        "Athletics",
+        "Intimidation",
+        "PC's strengths"
+      ]
+    }
+  }
+}

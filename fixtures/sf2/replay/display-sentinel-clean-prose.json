@@ -1,0 +1,32 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: clean Narrator prose produces zero findings",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Negative control. Ordinary Hegemony prose discusses bureaucracy, scenes, states, archives — overlapping vocabulary with the forbidden lexicon — and must NOT false-fire. Anchors the precision contract: only the explicit diagnostic phrases trigger, ambient setting language doesn't."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Press the elder for the truth.",
+    "narrator": {
+      "prose": "Moth's gaze settles on the ledger between you. \"The state of the settlement isn't what the writ describes.\" She turns a page. \"The archive at the registry has older entries than the Auditor admits.\" The lamp gutters. Davan is watching the door.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsAbsent": true
+    }
+  }
+}

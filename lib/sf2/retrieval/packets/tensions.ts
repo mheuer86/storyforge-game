@@ -5,6 +5,7 @@ import type {
   Sf2ThreadPacket,
   Sf2WorkingSet,
 } from '../../types'
+import { getEffectiveThreadPressure } from '../../pressure/derive'
 
 export function buildThreadPackets(
   state: Sf2State,
@@ -17,6 +18,10 @@ export function buildThreadPackets(
 
   return threadIds.map((id) => {
     const t = campaign.threads[id]
+    const chapterPressure = state.chapter.setup.threadPressure?.[id]
+    const effectivePressure = chapterPressure
+      ? getEffectiveThreadPressure(id, state.chapter.setup)
+      : t.tension
     const ownerSummary = buildOwnerSummary(state, t.owner)
     const stakeholderDispositions = t.stakeholders
       .map((s) => buildStakeholderDisposition(state, s))
@@ -26,7 +31,12 @@ export function buildThreadPackets(
       threadId: t.id,
       title: t.title,
       status: t.status,
-      tension: t.tension,
+      tension: effectivePressure,
+      canonicalTension: t.tension,
+      peakTension: t.peakTension,
+      pressureRole: chapterPressure?.role,
+      openingFloor: chapterPressure?.openingFloor,
+      localEscalation: chapterPressure?.localEscalation,
       localWhyItMatters: t.retrievalCue,
       ownerSummary,
       stakeholderDispositions,

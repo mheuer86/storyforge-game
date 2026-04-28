@@ -1,0 +1,63 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: state-field prose leaks catch retrieval cues and legacy title contamination",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from the Verath Station playtest inventory F4-F5. Exact retrievalCue text and incorrect Warden titles must not surface as Narrator prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_vrast": {
+            "id": "npc_vrast",
+            "name": "Vrast",
+            "title": "Officer",
+            "affiliation": "Throne",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Throne officer"],
+              "voice": { "note": "formal", "register": "institutional" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "the officer who keeps the Synod line distinct from Throne authority",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask Vrast for the distinction.",
+    "narrator": {
+      "prose": "Warden Vrast lowers the file. He is the officer who keeps the Synod line distinct from Throne authority.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 2,
+      "findingsInclude": [
+        { "findingType": "npc_title_contamination", "surfaceEquals": "Warden Vrast" },
+        {
+          "findingType": "retrieval_cue_leak",
+          "surfaceEquals": "the officer who keeps the Synod line distinct from Throne authority"
+        }
+      ]
+    }
+  }
+}

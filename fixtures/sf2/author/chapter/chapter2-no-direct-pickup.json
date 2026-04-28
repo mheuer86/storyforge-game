@@ -1,0 +1,66 @@
+{
+  "schema": "sf2-author-chapter-fixture/v1",
+  "name": "chapter2-no-direct-pickup",
+  "input": {
+    "targetChapter": 2,
+    "priorChapterMeaning": {
+      "chapter": 1,
+      "situation": "The Warden ended Chapter 1 in the settlement hall with the filing delayed but not defeated.",
+      "tension": "Delay became a public act that neither settlement nor Synod can unsee.",
+      "ticking": "The next institutional response is already moving beyond the room.",
+      "question": "What does the delay mean once the world outside the hall answers it?",
+      "closer": "The door closed on the hall, but not on the record.",
+      "closingResolution": "unresolved",
+      "synthesizedAtTurn": 18
+    },
+    "statePatch": {
+      "meta": { "currentChapter": 1 },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "", "narratorProse": "The Warden stood in the settlement hall as the filing clock paused.", "timestamp": "fixture" }
+        ]
+      },
+      "world": {
+        "currentLocation": { "id": "caerath_spur_settlement_hall", "name": "settlement hall", "description": "the prior chapter's closing room" }
+      },
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_tithe_public_crisis",
+          "status": "active",
+          "title": "The Open Window",
+          "sourceHook": { "title": "The Tithe", "premise": "A frontier settlement is short three Resonants.", "crucible": "The Synod will take children if the numbers are not met." },
+          "scenarioShape": { "mode": "public_crisis", "premise": "The shortfall turns into visible civic fracture.", "whyThisRun": "The pressure belongs to the settlement's public order.", "whatThisIsNot": "This is not the same hall scene continued." },
+          "arcQuestion": "Can Imperial authority prevent civic fracture without becoming the fracture's instrument?",
+          "coreCrucible": "Every delay teaches the settlement that resistance has shape.",
+          "invariantFacts": ["The tithe is short."],
+          "variableTruthsForThisRun": ["The settlement is closer to revolt than its leaders admit."],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "pressureEngines": [
+            { "id": "engine_crowd", "name": "Public unrest", "advancesWhen": "children are named or rumors spread", "slowsWhen": "credible protection appears", "visibleSymptoms": "work crews gather and stop obeying routines" },
+            { "id": "engine_synod", "name": "Synod compliance", "advancesWhen": "procedure is delayed", "slowsWhen": "records remain clean", "visibleSymptoms": "formal notices multiply" },
+            { "id": "engine_throne", "name": "Throne oversight", "advancesWhen": "the Warden spends authority publicly", "slowsWhen": "the chapter remains locally contained", "visibleSymptoms": "orders arrive from above" }
+          ],
+          "playerStanceAxes": [
+            { "id": "axis_order_mercy", "axis": "order vs mercy", "poleA": "order", "poleB": "mercy", "signalsA": ["restores procedure"], "signalsB": ["protects people"], "ifAHardens": "crowd treats Warden as threat", "ifBHardens": "Synod treats Warden as liability" },
+            { "id": "axis_public_private", "axis": "public action vs private containment", "poleA": "public", "poleB": "private", "signalsA": ["speaks openly"], "signalsB": ["cuts deals"], "ifAHardens": "scale rises", "ifBHardens": "secrets multiply" },
+            { "id": "axis_truth_peace", "axis": "truth vs peace", "poleA": "truth", "poleB": "peace", "signalsA": ["exposes records"], "signalsB": ["buries causes"], "ifAHardens": "institutions answer", "ifBHardens": "pressure returns later" }
+          ],
+          "chapterFunctionMap": [
+            { "chapter": 1, "function": "first public fracture", "pressureQuestion": "Who owns the shortfall?", "possibleEndStates": ["delay"] },
+            { "chapter": 2, "function": "the world outside the room answers", "pressureQuestion": "What does public delay trigger?", "possibleEndStates": ["riot", "containment"] },
+            { "chapter": 3, "function": "reversal", "pressureQuestion": "Who benefits from unrest?", "possibleEndStates": ["reveal"] },
+            { "chapter": 4, "function": "commitment", "pressureQuestion": "Which order is protected?", "possibleEndStates": ["interposition"] },
+            { "chapter": 5, "function": "reckoning", "pressureQuestion": "What order remains?", "possibleEndStates": ["settlement survives"] }
+          ],
+          "possibleEndgames": ["order restored", "revolt legitimized"]
+        }
+      }
+    }
+  },
+  "expected": {
+    "continuationMovesRequired": true,
+    "pacingTarget": { "min": 18, "max": 25 },
+    "textAbsent": ["same hall scene continued", "resume exactly where"]
+  }
+}

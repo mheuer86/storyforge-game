@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc-transform-tithe-revolt: transformArcSetup canonicalizes raw tool input into a Sf2ArcPlan",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check on lib/sf2/arc-author/transform.ts. Verifies snake_case → camelCase mapping, scenarioShape mode passthrough, durableForces / durableNpcSeeds / pressureEngines / playerStanceAxes parsing, and that chapterFunctionMap holds exactly 5 chapters. Uses a Tithe-revolt-shaped raw tool input."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused — pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "arcTransform": {
+      "seedHookTitle": "The Tithe",
+      "seedHookPremise": "A frontier settlement is short on its quarterly Resonant tithe to the Synod.",
+      "seedHookCrucible": "Force the PC to choose between Synod compliance and settlement survival.",
+      "rawToolInput": {
+        "id": "arc_tithe_revolt",
+        "title": "The Tithe (Revolt)",
+        "source_hook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its quarterly Resonant tithe to the Synod.",
+          "objective": "Resolve the shortfall before the Synod escalates.",
+          "crucible": "Force the PC to choose between Synod compliance and settlement survival.",
+          "first_episode": "Warden arrives to find the settlement in open dispute over the tithe roster."
+        },
+        "scenario_shape": {
+          "mode": "revolt",
+          "premise": "The shortage has become a public legitimacy crisis before the PC arrives.",
+          "why_this_run": "The settlement has already organized; arrival lands inside contested authority.",
+          "what_this_is_not": "Not a quiet investigation; not a chamber-play hearing.",
+          "selection_rationale": "Revolt was chosen over investigation because the shortage is already public; chosen over pursuit because the missing tithe has not yet moved.",
+          "rejected_default_shape": "Default-collapse to a hearing-room audit was rejected; the dispute is in the streets, not behind a desk."
+        },
+        "arc_question": "Will the PC's authority survive a public legitimacy crisis without breaking either the Synod or the settlement?",
+        "core_crucible": "Force the PC to choose between Synod compliance and settlement survival.",
+        "invariant_facts": [
+          "The settlement is short by three Resonants.",
+          "The Synod has dispatched the Warden as enforcer."
+        ],
+        "variable_truths_for_this_run": [
+          "The shortage is publicly known, not concealed.",
+          "A faction in the settlement is openly refusing replacement selection."
+        ],
+        "durable_forces": [
+          { "id": "force_synod", "name": "The Synod", "agenda": "Maintain quarterly tithe", "leverage": "Imperial backing", "fear": "Loss of legitimacy", "pressure_style": "Procedural escalation" },
+          { "id": "force_settlement", "name": "Settlement Council", "agenda": "Protect remaining Resonants", "leverage": "Local labor", "fear": "Mass selection", "pressure_style": "Public refusal" },
+          { "id": "force_undrift", "name": "The Undrift", "agenda": "Move Resonants out of system", "leverage": "Hidden routes", "fear": "Exposure", "pressure_style": "Quiet sabotage" }
+        ],
+        "durable_npc_seeds": [
+          { "id": "seed_council_speaker", "role": "Settlement council speaker", "affiliation": "Frontier settlement leadership", "dramatic_function": "Voice of public refusal", "private_pressure": "Knows replacement roster will name her cousin", "reuse_guidance": "Surfaces in chapters 1, 2, 4" },
+          { "id": "seed_synod_auditor", "role": "Synod auditor", "affiliation": "The Synod", "dramatic_function": "Procedural enforcer flanking the PC", "private_pressure": "Career staked on quarterly outcome", "reuse_guidance": "Surfaces in chapters 1, 3, 5" }
+        ],
+        "pressure_engines": [
+          { "id": "engine_synod_clock", "name": "Synod tithe clock", "advances_when": "Time passes without filed roster", "slows_when": "PC produces partial roster or formal extension", "visible_symptoms": "Auditor cites days remaining" },
+          { "id": "engine_public_refusal", "name": "Public refusal momentum", "advances_when": "Settlement-side concessions are public", "slows_when": "PC negotiates privately", "visible_symptoms": "Crowd at council steps" },
+          { "id": "engine_undrift_window", "name": "Undrift extraction window", "advances_when": "Roster pressure rises", "slows_when": "Roads close", "visible_symptoms": "Empty rooms at dawn" }
+        ],
+        "player_stance_axes": [
+          { "id": "axis_authority", "axis": "Authority posture", "pole_a": "Enforce", "pole_b": "Mediate", "signals_a": ["cites code", "names penalties"], "signals_b": ["asks settlement to name terms"], "if_a_hardens": "Settlement organizes against the Warden", "if_b_hardens": "Synod auditor files dissent" },
+          { "id": "axis_visibility", "axis": "Conduct visibility", "pole_a": "Public", "pole_b": "Private", "signals_a": ["speaks at council steps"], "signals_b": ["meets in back rooms"], "if_a_hardens": "Public legitimacy becomes binding", "if_b_hardens": "Suspicions of corruption surface" },
+          { "id": "axis_loyalty", "axis": "Institutional loyalty", "pole_a": "Synod first", "pole_b": "Settlement first", "signals_a": ["files everything upward"], "signals_b": ["delays filings"], "if_a_hardens": "Promotion path opens", "if_b_hardens": "Auditor flags insubordination" }
+        ],
+        "chapter_function_map": [
+          { "chapter": 1, "function": "Establish the public refusal and the Warden's footing", "pressure_question": "Can the PC enter the dispute without picking a side prematurely?", "possible_end_states": ["PC has a thread to pull", "PC is publicly committed to one pole"] },
+          { "chapter": 2, "function": "First reckoning with consequences", "pressure_question": "What does enforcement cost?", "possible_end_states": ["A faction has hardened", "The Undrift channel surfaces"] },
+          { "chapter": 3, "function": "Hidden network surfaces", "pressure_question": "Does the PC tolerate the hidden route?", "possible_end_states": ["Channel is exposed", "Channel is protected"] },
+          { "chapter": 4, "function": "Authority test", "pressure_question": "Whose authority binds the outcome?", "possible_end_states": ["Synod auditor escalates", "Settlement defers to PC"] },
+          { "chapter": 5, "function": "Endgame and aftermath", "pressure_question": "What stands when the dust settles?", "possible_end_states": ["Compliance preserved", "Compliance broken"] }
+        ],
+        "possible_endgames": [
+          "Synod compliance preserved at the cost of settlement legitimacy",
+          "Settlement preserved at the cost of Synod standing",
+          "PC absorbed both costs into a private bargain"
+        ]
+      },
+      "expect": {
+        "idEquals": "arc_tithe_revolt",
+        "titleEquals": "The Tithe (Revolt)",
+        "scenarioModeEquals": "revolt",
+        "pressureEnginesCountAtLeast": 3,
+        "playerStanceAxesCountAtLeast": 3,
+        "chapterFunctionMapCountEquals": 5,
+        "durableNpcSeedsCountAtLeast": 2,
+        "scenarioRejectedDefaultIncludes": "hearing-room"
+      }
+    }
+  }
+}

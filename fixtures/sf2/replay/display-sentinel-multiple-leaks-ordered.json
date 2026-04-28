@@ -1,0 +1,37 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: multiple distinct forbidden phrases each fire, ordered by position",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "When prose contains multiple leak types, every match fires. Findings are ordered by match position so a future streaming buffer can cancel at the earliest violation. This fixture exercises the multi-match path: scene packet, archivist (single token), and state shows in one prose blob."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Pause for a moment.",
+    "narrator": {
+      "prose": "The Archivist would say the scene packet shows everything the player needs. Then the state shows the room is wrong.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 3,
+      "findingsInclude": [
+        { "findingType": "debug_leak", "surfaceEquals": "archivist" },
+        { "findingType": "debug_leak", "surfaceEquals": "scene packet" },
+        { "findingType": "debug_leak", "surfaceEquals": "state shows" }
+      ]
+    }
+  }
+}

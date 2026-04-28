@@ -1,0 +1,104 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "action resolver: Tell her resolves to current female interlocutor",
+  "source": { "kind": "synthetic", "purpose": "PRD Fix 2 deterministic rule 1: currentInterlocutorIds first." },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "Registry",
+            "role": "clerk",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "pronoun": "she/her",
+              "voice": { "note": "careful", "register": "official" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Registry clerk at the manifest table.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_thorne": {
+            "id": "npc_thorne",
+            "name": "Thorne",
+            "affiliation": "Settlement",
+            "role": "minder",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Chief Minder"],
+              "pronoun": "he/him",
+              "voice": { "note": "plain", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Chief Minder beside Kess.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Auditor Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Off-stage auditor"],
+              "pronoun": "she/her",
+              "voice": { "note": "cold", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Off-stage auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": { "setup": { "startingNpcIds": ["npc_kess", "npc_thorne", "npc_pol"] } },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_kess", "npc_thorne"],
+          "currentInterlocutorIds": ["npc_kess"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Tell her the manifest closes at 1600.",
+    "narrator": { "prose": "Kess waits.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "narratorProbe": {
+      "textIncludes": ["Kess"],
+      "textAbsent": ["Pol"],
+      "toolSuggestedActionsAbsent": ["Pol"]
+    },
+    "resolvedAction": {
+      "actionType": "address_npc",
+      "targetEntityIdsEquals": ["npc_kess"],
+      "forbiddenTargetSubstitutionsIncludes": ["npc_thorne", "npc_pol"],
+      "resolvedReferenceIncludes": [
+        { "surface": "her", "resolvedToEntityId": "npc_kess", "confidence": "high" }
+      ]
+    }
+  }
+}

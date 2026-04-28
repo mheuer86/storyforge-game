@@ -1,0 +1,111 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene kernel partitions cast into present/interlocutor/nearby/absent",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Anchor the SceneKernel cast-partition contract (PRD Fix 1). Default behavior: when no interlocutor narrowing, all present NPCs are interlocutors and nearby is empty. Absent NPCs (chapter starting cast not on stage) populate the absent array. Speaking-allowed always includes pc + present cast."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Elder Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse, observant", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_davan": {
+            "id": "npc_davan",
+            "name": "Sworn Davan",
+            "affiliation": "settlement",
+            "role": "sworn",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Sworn local"],
+              "voice": { "note": "direct", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Sworn local.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Auditor Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod auditor"],
+              "voice": { "note": "official", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_davan", "npc_pol"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth", "npc_davan"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Address the elder.",
+    "narrator": {
+      "prose": "Moth meets your gaze. Davan stands a half-step back, hand on the counter.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneKernel": {
+      "presentEntityIdsEquals": ["npc_moth", "npc_davan"],
+      "currentInterlocutorIdsEquals": ["npc_moth", "npc_davan"],
+      "nearbyEntityIdsEquals": [],
+      "absentEntityIdsIncludes": ["npc_pol"],
+      "absentEntityIdsExcludes": ["npc_moth", "npc_davan"],
+      "speakingAllowedEntityIdsIncludes": ["pc", "npc_moth", "npc_davan"],
+      "forbiddenWithoutTransitionMinCount": 3,
+      "aliasMapIncludes": [
+        { "entityId": "npc_moth", "aliasIncludes": "Elder Moth" },
+        { "entityId": "npc_pol", "aliasIncludes": "Auditor Pol" }
+      ]
+    }
+  }
+}

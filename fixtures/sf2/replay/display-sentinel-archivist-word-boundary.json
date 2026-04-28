@@ -1,0 +1,35 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: 'archivist' is word-bounded — does not match inside larger words",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Precision check. The single-token forbidden term 'archivist' uses word boundaries; prose containing 'archive' or 'archivists' (plural inflection inside a longer surface) should NOT fire. This fixture pins the precision contract before any future genre adds richer Archivist-as-NPC vocabulary."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Walk into the archive.",
+    "narrator": {
+      "prose": "The archive is older than the registry building. Dust along the shelves. The keeper's title was 'archivist of records' — but you remember, archives have weight here.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCount": 1,
+      "findingsInclude": [
+        { "findingType": "debug_leak", "surfaceEquals": "archivist" }
+      ]
+    }
+  }
+}

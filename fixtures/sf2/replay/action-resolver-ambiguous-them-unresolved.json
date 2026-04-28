@@ -1,0 +1,71 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "action resolver: ambiguous them stays unresolved",
+  "source": { "kind": "synthetic", "purpose": "Do not guess when a pronoun matches multiple present NPCs." },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_renner": {
+            "id": "npc_renner",
+            "name": "Renner",
+            "affiliation": "Settlement",
+            "role": "worker",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["On stage"],
+              "pronoun": "they/them",
+              "voice": { "note": "quiet", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Worker near the door.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_sova": {
+            "id": "npc_sova",
+            "name": "Sova",
+            "affiliation": "Settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["On stage"],
+              "pronoun": "they/them",
+              "voice": { "note": "measured", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Witness by the counter.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": { "sceneSnapshot": { "presentNpcIds": ["npc_renner", "npc_sova"] } }
+    },
+    "turnIndex": 0,
+    "playerInput": "Press them for the names.",
+    "narrator": { "prose": "Both witnesses wait.", "annotation": null, "mechanicalEffects": [] },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "resolvedAction": {
+      "actionType": "pressure_npc",
+      "targetEntityIdsEquals": []
+    }
+  }
+}

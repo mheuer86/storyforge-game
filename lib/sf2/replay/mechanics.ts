@@ -1,4 +1,8 @@
 import type { Sf2State } from '../types'
+import {
+  formatViolations,
+  validateSnapshotIds,
+} from '../scene-kernel/canonical-ids'
 
 export interface Sf2ReplayInvariantEvent {
   kind: 'sf2.invariant'
@@ -125,6 +129,31 @@ export function applyMechanicalEffectLocally(
           ? m.present_npc_ids
           : undefined
 
+      // Phase A canonical ID enforcement (observe mode). Surface display-style
+      // free-text IDs as instrumentation; do not reject — the existing resolve
+      // + placeholder path canonicalizes them downstream. Block mode arrives
+      // with Phase E's reducer once the rest of the substrate (display
+      // sentinel, patch reducer) is in place.
+      const rawInterlocutorIds = Array.isArray(snap.current_interlocutor_ids)
+        ? snap.current_interlocutor_ids
+        : undefined
+      const idCheck = validateSnapshotIds(
+        {
+          presentNpcIds: rawPresentNpcIds,
+          currentInterlocutorIds: rawInterlocutorIds,
+        },
+        state.campaign
+      )
+      if (!idCheck.ok) {
+        invariantEvents?.push(makeInvariantEvent('canonical_id_violation', {
+          mode: 'observe',
+          violations: idCheck.violations,
+          detail: formatViolations(idCheck.violations),
+          priorSceneId,
+          nextSceneId,
+        }))
+      }
+
       if (sceneChanged && rawPresentNpcIds === undefined) {
         invariantEvents?.push(makeInvariantEvent('scene_snapshot_missing_present_npc_ids', {
           priorSceneId,
@@ -172,14 +201,33 @@ export function applyMechanicalEffectLocally(
       }
 
       const timeLabel = String(snap.time_label ?? state.world.sceneSnapshot.timeLabel)
+      // Phase A: carry currentInterlocutorIds when explicitly provided.
+      // Default behavior (omitted) keeps the SceneKernel falling back to "all
+      // present NPCs are interlocutors." Phase E's SceneKernelPatch reducer
+      // is the canonical write path for narrowing this; this code accepts it
+      // here only for completeness so the field round-trips through snapshot
+      // writes when the Narrator (rarely) sets it.
+      const resolvedInterlocutors =
+        rawInterlocutorIds !== undefined
+          ? (rawInterlocutorIds as string[])
+              .map((raw) => resolveNpcReference(state, raw))
+              .filter((id): id is string => Boolean(id) && resolvedPresent.includes(id as string))
+          : undefined
       state.world.sceneSnapshot = {
         sceneId: nextSceneId,
         location: nextLocation,
         presentNpcIds: resolvedPresent,
+        currentInterlocutorIds: resolvedInterlocutors,
         timeLabel,
         established: Array.isArray(snap.established)
           ? (snap.established as string[])
           : state.world.sceneSnapshot.established,
+        // firstTurnIndex resets only when the scene actually changes. A
+        // same-scene snapshot update (cast/time refinement) preserves the
+        // replay-window cutoff so in-scene turn pairs stay addressable.
+        firstTurnIndex: sceneChanged
+          ? state.history.turns.length
+          : state.world.sceneSnapshot.firstTurnIndex,
       }
       state.world.currentLocation = nextLocation
       state.world.currentTimeLabel = timeLabel
@@ -216,6 +264,7 @@ export function applyMechanicalEffectLocally(
       location: loc,
       presentNpcIds: [],
       established: loc.description ? [loc.description] : [],
+      firstTurnIndex: state.history.turns.length,
     }
     state.meta.currentSceneId = loc.id
     state.world.sceneBundleCache = undefined

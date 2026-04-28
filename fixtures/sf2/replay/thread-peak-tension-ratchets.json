@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread peak tension ratchets",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Pressure Engines Phase 1. Thread peakTension must track the highest canonical tension reached so future engine contribution can read resolved/abandoned thread history."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "peakTension": 6,
+            "tension": 6
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "Let the pressure rise.",
+    "narrator": {
+      "prose": "The pressure moves from procedural to immediate.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "tension": 9
+            },
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "thread_spine": 3
+          }
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      { "threadId": "thread_spine", "tension": 9, "peakTension": 9 }
+    ],
+    "archivistAcceptedRefs": ["updates[0]"]
+  }
+}

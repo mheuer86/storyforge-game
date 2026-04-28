@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-author-chapter-fixture/v1",
+  "name": "chapter1-tithe-not-tableau",
+  "input": {
+    "statePatch": {
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_tithe_underground",
+          "status": "active",
+          "title": "The Hidden Route",
+          "sourceHook": {
+            "title": "The Tithe",
+            "premise": "A frontier settlement is three Resonants short of its annual tithe to the Synod.",
+            "crucible": "The Synod will take children if the numbers are not met."
+          },
+          "scenarioShape": {
+            "mode": "underground_network",
+            "premise": "The shortfall exposes an evacuation route moving Resonants out before official assessment.",
+            "whyThisRun": "The hook's numbers become symptoms of a survival network, not just an audit problem.",
+            "whatThisIsNot": "This is not a paper-trail hearing in a room with every authority already present."
+          },
+          "arcQuestion": "Will the Warden expose, capture, protect, or co-opt the hidden route?",
+          "coreCrucible": "Protecting children may require falsifying the very order the Warden serves.",
+          "invariantFacts": ["The settlement is short three Resonants.", "The Synod can trigger supplementary selection."],
+          "variableTruthsForThisRun": ["The missing three are connected to an evacuation route."],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "pressureEngines": [
+            { "id": "engine_selection", "name": "Supplementary selection", "advancesWhen": "the Synod records a usable candidate", "slowsWhen": "procedural standing blocks filing", "visibleSymptoms": "assessment windows and transit deadlines tighten" },
+            { "id": "engine_route", "name": "Hidden route", "advancesWhen": "handlers move people under pressure", "slowsWhen": "the Warden earns enough trust to coordinate", "visibleSymptoms": "children and adults vanish into prepared gaps" },
+            { "id": "engine_imperial_report", "name": "Imperial report", "advancesWhen": "the Warden uses authority off-record", "slowsWhen": "actions remain procedurally defensible", "visibleSymptoms": "superiors ask for clean language" }
+          ],
+          "playerStanceAxes": [
+            { "id": "axis_protect_enforce", "axis": "settlement protection vs tithe enforcement", "poleA": "protect the settlement", "poleB": "enforce the tithe", "signalsA": ["delays filing"], "signalsB": ["names candidates"], "ifAHardens": "the route treats the Warden as possible shield", "ifBHardens": "the route treats the Warden as hunter" },
+            { "id": "axis_procedure_direct", "axis": "procedure vs direct intervention", "poleA": "procedure", "poleB": "direct intervention", "signalsA": ["cites writs"], "signalsB": ["moves bodies"], "ifAHardens": "records become battlefield", "ifBHardens": "personal liability rises" },
+            { "id": "axis_truth_concealment", "axis": "truth exposure vs protective concealment", "poleA": "truth", "poleB": "concealment", "signalsA": ["forces testimony"], "signalsB": ["withholds names"], "ifAHardens": "public record sharpens", "ifBHardens": "private trust deepens" }
+          ],
+          "chapterFunctionMap": [
+            { "chapter": 1, "function": "first collision with the shortfall", "pressureQuestion": "What does the Warden think the shortfall is?", "possibleEndStates": ["selection delayed", "route glimpsed", "candidate named"] },
+            { "chapter": 2, "function": "consequence of first stance", "pressureQuestion": "Who now treats the Warden as shield or hunter?", "possibleEndStates": ["route contact", "Synod acceleration"] },
+            { "chapter": 3, "function": "reversal", "pressureQuestion": "What does protection cost?", "possibleEndStates": ["betrayal", "formal contest"] },
+            { "chapter": 4, "function": "commitment", "pressureQuestion": "Which authority does the Warden spend?", "possibleEndStates": ["route saved", "route exposed"] },
+            { "chapter": 5, "function": "reckoning", "pressureQuestion": "What survives the record?", "possibleEndStates": ["settlement spared", "children taken"] }
+          ],
+          "possibleEndgames": ["route survives", "route burns", "route becomes Imperial asset"]
+        }
+      }
+    }
+  },
+  "expected": {
+    "visibleNpcCountMax": 2,
+    "pacingTarget": { "min": 18, "max": 25 },
+    "textAbsent": ["convened hearing"]
+  }
+}

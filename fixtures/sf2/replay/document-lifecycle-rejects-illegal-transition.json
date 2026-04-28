@@ -1,0 +1,81 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document lifecycle rejects illegal transition (record cannot be revoked)",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Lock the per-type lifecycle contract: type=record can transition to void only — never revoked, superseded, or resolved. Without this gate, the Archivist can slide a record into a status that doesn't apply, leaking through the closed-type taxonomy."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "factions": {
+          "faction_registry": {
+            "id": "faction_registry",
+            "name": "Registry",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": ["thread_spine"],
+            "retrievalCue": "Local administrative pressure."
+          }
+        },
+        "documents": {
+          "doc_intake_log": {
+            "id": "doc_intake_log",
+            "title": "Intake hall ledger entry — week 14",
+            "chapterCreated": 1,
+            "retrievalCue": "Ledger record of who passed through the hall.",
+            "category": "document",
+            "type": "record",
+            "kindLabel": "ledger entry",
+            "status": "active",
+            "additionalParties": [],
+            "subjectEntityIds": ["faction_registry"],
+            "authorizes": "attests passage of three subjects through intake on day 14",
+            "originalSummary": "Three subjects logged: Maret, Kael, Dav — all stamped 'cleared'.",
+            "currentSummary": "Three subjects logged: Maret, Kael, Dav — all stamped 'cleared'.",
+            "revisions": [],
+            "anchoredTo": ["thread_spine"],
+            "clueIds": [],
+            "turn": 0
+          }
+        }
+      }
+    },
+    "turnIndex": 3,
+    "playerInput": "You insist the entries be revoked.",
+    "narrator": {
+      "prose": "The clerk shakes his head. \"You can't revoke a ledger. Records are corrected, not cancelled.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "document",
+            "entityId": "doc_intake_log",
+            "toStatus": "revoked",
+            "reason": "(illegal — record type cannot be revoked)",
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["transitions[0]"],
+    "documentsInclude": [
+      {
+        "documentId": "doc_intake_log",
+        "status": "active"
+      }
+    ]
+  }
+}

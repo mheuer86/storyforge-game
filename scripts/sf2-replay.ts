@@ -1,12 +1,30 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { applyMechanicalEffectLocally } from '../lib/sf2/replay/mechanics'
+import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
+import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
 import { buildScenePacket } from '../lib/sf2/retrieval/scene-packet'
+import { recordTurnTelemetry } from '../lib/sf2/instrumentation/working-set-telemetry'
+import { buildMessagesForNarrator } from '../lib/sf2/narrator/messages'
+import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
+import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
+import { computeChapterCloseReadiness } from '../lib/sf2/chapter-close'
+import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
+import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
+import {
+  coolThreadForChapterOpen,
+  deriveEngineValue,
+  getEffectiveThreadPressure,
+  initializeChapterPressure,
+  threadContribution,
+} from '../lib/sf2/pressure/derive'
+import { prepareChapterPressureRuntime } from '../lib/sf2/pressure/runtime'
 import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
   type Sf2NarratorAnnotation,
   type Sf2State,
+  type ThreadRole,
 } from '../lib/sf2/types'
 import { applyArchivistPatch, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
 
@@ -39,8 +57,165 @@ interface ReplayFixture {
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
     npcIdentityIncludes?: Array<{ npcId: string; pronoun?: string; age?: string }>
+    npcAgendasInclude?: Array<{ npcId: string; currentMove?: string; lastUpdatedTurn?: number }>
     temporalAnchorsInclude?: Array<{ anchorId: string; kind?: string; label?: string; anchorText?: string }>
     scenePacketTemporalAnchorsInclude?: string[]
+    documentsInclude?: Array<{
+      documentId: string
+      type?: string
+      kindLabel?: string
+      status?: string
+      signedByEntityId?: string
+      filedByEntityId?: string
+      subjectEntityIds?: string[]
+      originalSummaryEquals?: string
+      currentSummaryIncludes?: string
+      revisionsCount?: number
+    }>
+    activeThreadIdsEquals?: string[]
+    activeThreadIdsExcludes?: string[]
+    threadsInclude?: Array<{ threadId: string; status?: string; tension?: number; peakTension?: number }>
+    chapterCloseReadiness?: {
+      pivotSignaled?: boolean
+      closeReady: boolean
+      spineResolved?: boolean
+      stalledFallback?: boolean
+    }
+    quickActionRepair?: {
+      failedSkill?: string
+      inputActions: string[]
+      outputActionsInclude?: string[]
+      outputActionsExclude?: string[]
+      outputCount?: number
+      categoryCountAtLeast?: number
+      notesInclude?: string[]
+    }
+    authorInputSeed?: {
+      priorChapterMeaning?: Record<string, unknown> | null
+      hookPremiseIncludes?: string[]
+      hookFirstEpisodeIncludes?: string[]
+    }
+    pressure?: {
+      initializeChapterSetupPatch?: Record<string, unknown>
+      priorActiveThreadIds?: string[]
+      engineValues?: Array<{ engineId: string; value: number }>
+      threadContributions?: Array<{ threadId: string; value: number }>
+      coolThreads?: Array<{ threadId: string; role: string; engineFloor: number; openingFloor: number; cooledAtOpen?: boolean }>
+      initializedThreadPressure?: Array<{
+        threadId: string
+        role?: string
+        openingFloor?: number
+        localEscalation?: number
+        maxThisChapter?: number
+        cooledAtOpen?: boolean
+      }>
+      effectiveThreadPressure?: Array<{ threadId: string; value: number }>
+    }
+    preparedPressureRuntime?: {
+      priorActiveThreadIds?: string[]
+      engineAnchorsInclude?: Array<{ engineId: string; threadIds: string[] }>
+      engineValues?: Array<{ engineId: string; value: number }>
+      threadPressureIncludes?: Array<{ threadId: string; openingFloor?: number; role?: string }>
+    }
+    threadPressureIncludes?: Array<{
+      threadId: string
+      openingFloor?: number
+      localEscalation?: number
+      maxThisChapter?: number
+      effectivePressure?: number
+      absent?: boolean
+    }>
+    sceneKernel?: {
+      sceneId?: string
+      presentEntityIdsEquals?: string[]
+      currentInterlocutorIdsEquals?: string[]
+      nearbyEntityIdsEquals?: string[]
+      absentEntityIdsIncludes?: string[]
+      absentEntityIdsExcludes?: string[]
+      speakingAllowedEntityIdsIncludes?: string[]
+      activeProcedureIdsIncludes?: string[]
+      activeCountdownIdsIncludes?: string[]
+      forbiddenWithoutTransitionMinCount?: number
+      aliasMapIncludes?: Array<{ entityId: string; aliasIncludes: string }>
+      version?: number
+    }
+    resolvedAction?: {
+      actionType?: string
+      targetEntityIdsEquals?: string[]
+      forbiddenTargetSubstitutionsIncludes?: string[]
+      resolvedReferenceIncludes?: Array<{ surface?: string; resolvedToEntityId?: string; confidence?: string }>
+    }
+    invariantEventDetailIncludes?: Array<{ type: string; detailIncludes: string }>
+    arcTransform?: {
+      // Pure-function check on transformArcSetup(rawTool, seed) → ArcPlan.
+      // The fixture supplies the raw tool input + a minimal seed; expectations
+      // assert on the canonicalized ArcPlan shape. No model calls.
+      seedHookTitle: string
+      seedHookPremise: string
+      seedHookCrucible: string
+      rawToolInput: Record<string, unknown>
+      expect: {
+        idEquals?: string
+        titleEquals?: string
+        scenarioModeEquals?: string
+        pressureEnginesCountAtLeast?: number
+        playerStanceAxesCountAtLeast?: number
+        chapterFunctionMapCountEquals?: number
+        durableNpcSeedsCountAtLeast?: number
+        scenarioRejectedDefaultIncludes?: string
+      }
+    }
+    arcValidation?: {
+      // Pure-function check on validateArcPlan(arcPlan) → string[] errors.
+      // Use a minimal ArcPlan and assert which errors fire / don't fire.
+      arcPlan: Record<string, unknown>  // partial shape; cast to Sf2ArcPlan inside
+      expect: {
+        errorIncludesAll?: string[]
+        errorIncludesNone?: string[]
+      }
+    }
+    dispositionDerivation?: {
+      // Standalone pure-function check on the disposition derivation logic.
+      // Exercises lib/sf2/author/disposition-defaults.ts without going through
+      // the route. Each case names a PC context and an authored NPC plus the
+      // expected outcome (flagged or accepted).
+      ctx: { genreId: string; pcOriginId: string; pcPlaybookId: string }
+      cases: Array<{
+        name: string  // for error reporting
+        role: string
+        affiliation: string
+        initialDisposition: string
+        dispositionReason?: string
+        expect: 'flagged' | 'accepted'
+        flagIncludes?: string  // optional substring match against the error message
+      }>
+    }
+    narratorMessages?: {
+      // Run buildMessagesForNarrator(stateBefore, ...) and assert the assembled
+      // message array. Targets regressions where the message build drops or
+      // omits required content (cache-invalidation dropping replay window,
+      // skill-tag binding not getting injected, etc.).
+      stateBefore?: 'fixture-stateBefore' | 'fixture-stateAfter'
+      isInitial?: boolean
+      playerInput?: string
+      includesAssistantProseMatching?: string[]
+      assistantMessageCountAtLeast?: number
+      assistantMessageCountEquals?: number
+      sceneSnapshotFirstTurnIndexEquals?: number
+      userMessageContainsAll?: string[]
+      userMessageContainsNone?: string[]
+    }
+    displaySentinel?: {
+      findingsCount?: number
+      findingsCountAtLeast?: number
+      findingsAbsent?: boolean
+      findingsInclude?: Array<{
+        findingType?: string
+        severity?: string
+        surfaceEquals?: string
+        recommendedAction?: string
+      }>
+    }
     currentSceneId?: string | null
     currentTimeLabel?: string | null
     currentLocationId?: string | null
@@ -57,14 +232,16 @@ interface ReplayResult {
   fixture: ReplayFixture
   path: string
   failures: string[]
+  workingSetTelemetry?: NonNullable<Sf2State['derived']['workingSetTelemetry']>[number]
 }
 
 type JsonRecord = Record<string, unknown>
 
 function main(): void {
-  const target = process.argv[2]
+  const dumpWorkingSetTelemetry = process.argv.includes('--working-set-telemetry')
+  const target = process.argv.slice(2).find((arg) => !arg.startsWith('--'))
   if (!target) {
-    console.error('Usage: npm run sf2:replay -- <fixture-file-or-directory>')
+    console.error('Usage: npm run sf2:replay -- <fixture-file-or-directory> [--working-set-telemetry]')
     process.exit(2)
   }
 
@@ -75,6 +252,14 @@ function main(): void {
   }
 
   const results = paths.map(runFixturePath)
+  if (dumpWorkingSetTelemetry) {
+    printWorkingSetTelemetry()
+    for (const result of results) {
+      if (result.workingSetTelemetry) {
+        printWorkingSetTelemetryRow(result.fixture.name, result.workingSetTelemetry)
+      }
+    }
+  }
   for (const result of results) {
     const label = `${result.fixture.name} (${result.path})`
     if (result.failures.length === 0) {
@@ -88,6 +273,28 @@ function main(): void {
   const failed = results.filter((r) => r.failures.length > 0).length
   console.log(`\n${results.length - failed}/${results.length} replay fixtures passed`)
   process.exit(failed === 0 ? 0 : 1)
+}
+
+function printWorkingSetTelemetry(): void {
+  console.log('\nWorking-set telemetry')
+  console.log('fixture | turn | full/stub/excl | tokens full/stub | exclRef | fullUnused | stubMut')
+}
+
+function printWorkingSetTelemetryRow(
+  fixtureName: string,
+  row: NonNullable<Sf2State['derived']['workingSetTelemetry']>[number]
+): void {
+  console.log(
+    [
+      fixtureName,
+      `T${row.turn}`,
+      `${row.fullCount}/${row.stubCount}/${row.excludedCount}`,
+      `${row.fullTokensApprox}/${row.stubTokensApprox}`,
+      row.excludedButReferenced.join(',') || '-',
+      row.fullButUnreferenced.join(',') || '-',
+      row.stubButMutated.join(',') || '-',
+    ].join(' | ')
+  )
 }
 
 function collectFixturePaths(target: string): string[] {
@@ -113,8 +320,14 @@ function runFixturePath(path: string): ReplayResult {
   const annotation = fixture.input.narrator.annotation ?? null
   const mechanicalEffects = fixture.input.narrator.mechanicalEffects ?? extractMechanicalEffects(annotation)
   const patch = normalizePatch(fixture.input.archivist?.patch ?? null, turnIndex + 1)
+  const preTurnWorkingSet = buildScenePacket(
+    stateBefore,
+    fixture.input.isInitial ? '' : fixture.input.playerInput,
+    turnIndex
+  ).workingSet
 
   const stateWithTurnLogged: Sf2State = structuredClone(stateBefore)
+  stateWithTurnLogged.derived.workingSet = preTurnWorkingSet
   stateWithTurnLogged.history.turns.push({
     index: turnIndex,
     chapter: stateWithTurnLogged.meta.currentChapter,
@@ -133,13 +346,57 @@ function runFixturePath(path: string): ReplayResult {
     patch,
     stateWithTurnLogged.meta.currentChapter
   )
+  const workingSetTelemetry = recordTurnTelemetry(
+    stateWithTurnLogged,
+    preTurnWorkingSet,
+    fixture.input.narrator.prose,
+    patch,
+    patchResult.outcomes
+  )
 
   const stateAfter: Sf2State = structuredClone(patchResult.nextState)
+  stateAfter.derived.workingSetTelemetry = [
+    ...(stateAfter.derived.workingSetTelemetry ?? []),
+    workingSetTelemetry,
+  ].slice(-50)
   const invariantEvents: Array<{ kind: string; at: number; data: unknown }> = []
   for (const effect of mechanicalEffects) {
     applyMechanicalEffectLocally(stateAfter, effect, invariantEvents)
   }
   stateAfter.meta.updatedAt = 'replay'
+
+  // Phase C display sentinel — observe mode. Scan the Narrator prose for
+  // forbidden debug/control vocabulary AND absent-NPC speech; surface
+  // findings as invariant events so fixtures can assert detection without
+  // coupling to the (yet-to-land) streaming integration. Live wiring at the
+  // API route will call the same scanDisplayOutput function with
+  // action='block_and_repair'. The absent_speaker scan is opt-in via the
+  // `absentSpeakers` option — built from the kernel projected over the
+  // pre-prose state so fixtures can exercise prose-vs-kernel mismatches.
+  const sentinelKernel = buildSceneKernel(stateBefore)
+  const displayFindings = scanDisplayOutput(fixture.input.narrator.prose, {
+    action: 'allow_but_quarantine_writes', // observe-mode: don't block, just record
+    campaign: stateBefore.campaign,
+    absentSpeakers: {
+      absentEntityIds: sentinelKernel.absentEntityIds,
+      aliasMap: sentinelKernel.aliasMap,
+    },
+  })
+  for (const finding of displayFindings) {
+    invariantEvents.push({
+      kind: 'sf2.invariant',
+      at: Date.now(),
+      data: {
+        type: 'display_sentinel_finding',
+        findingType: finding.type,
+        severity: finding.severity,
+        surface: finding.surface,
+        matchStart: finding.matchStart,
+        recommendedAction: finding.recommendedAction,
+        detail: formatFinding(finding),
+      },
+    })
+  }
 
   let scenePacketCastIds: string[] = []
   try {
@@ -149,9 +406,190 @@ function runFixturePath(path: string): ReplayResult {
     failures.push(`scene packet build failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 
-  assertExpected(fixture, stateAfter, patchResult, invariantEvents, scenePacketCastIds, failures)
+  assertExpected(fixture, stateBefore, stateAfter, patchResult, invariantEvents, scenePacketCastIds, failures)
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
-  return { fixture, path, failures }
+  assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
+  assertDispositionDerivation(fixture, failures)
+  assertArcTransform(fixture, failures)
+  assertArcValidation(fixture, failures)
+  return { fixture, path, failures, workingSetTelemetry }
+}
+
+function assertArcTransform(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.arcTransform
+  if (!expected) return
+
+  const seed = {
+    genreId: 'epic-scifi',
+    genreName: 'Hegemony',
+    playbookId: 'warden',
+    playbookName: 'Warden',
+    originId: 'imperial-service',
+    originName: 'Imperial Service',
+    hook: {
+      title: expected.seedHookTitle,
+      premise: expected.seedHookPremise,
+      crucible: expected.seedHookCrucible,
+    },
+    worldRules: { settingSummary: '', institutionalForces: [], socialPressures: [], bannedRegisters: [], vocabulary: [] },
+    toneRules: { toneMix: '', narrativePrinciples: [] },
+    npcRules: { likelyAffiliations: [], factionVoiceRules: [], affiliationRequirement: '' },
+    onboardingRules: { playerKnowledgeAssumption: '', avoidEarly: [] },
+  } as unknown as Parameters<typeof transformArcSetup>[1]
+
+  const plan = transformArcSetup(expected.rawToolInput, seed)
+  const e = expected.expect
+  if (e.idEquals !== undefined && plan.id !== e.idEquals) failures.push(`arcTransform.id: expected "${e.idEquals}", got "${plan.id}"`)
+  if (e.titleEquals !== undefined && plan.title !== e.titleEquals) failures.push(`arcTransform.title: expected "${e.titleEquals}", got "${plan.title}"`)
+  if (e.scenarioModeEquals !== undefined && plan.scenarioShape.mode !== e.scenarioModeEquals) {
+    failures.push(`arcTransform.scenarioShape.mode: expected "${e.scenarioModeEquals}", got "${plan.scenarioShape.mode}"`)
+  }
+  if (typeof e.pressureEnginesCountAtLeast === 'number' && plan.pressureEngines.length < e.pressureEnginesCountAtLeast) {
+    failures.push(`arcTransform.pressureEngines: expected ≥${e.pressureEnginesCountAtLeast}, got ${plan.pressureEngines.length}`)
+  }
+  if (typeof e.playerStanceAxesCountAtLeast === 'number' && plan.playerStanceAxes.length < e.playerStanceAxesCountAtLeast) {
+    failures.push(`arcTransform.playerStanceAxes: expected ≥${e.playerStanceAxesCountAtLeast}, got ${plan.playerStanceAxes.length}`)
+  }
+  if (typeof e.chapterFunctionMapCountEquals === 'number' && plan.chapterFunctionMap.length !== e.chapterFunctionMapCountEquals) {
+    failures.push(`arcTransform.chapterFunctionMap: expected ${e.chapterFunctionMapCountEquals}, got ${plan.chapterFunctionMap.length}`)
+  }
+  if (typeof e.durableNpcSeedsCountAtLeast === 'number' && plan.durableNpcSeeds.length < e.durableNpcSeedsCountAtLeast) {
+    failures.push(`arcTransform.durableNpcSeeds: expected ≥${e.durableNpcSeedsCountAtLeast}, got ${plan.durableNpcSeeds.length}`)
+  }
+  if (e.scenarioRejectedDefaultIncludes && !plan.scenarioShape.rejectedDefaultShape.toLowerCase().includes(e.scenarioRejectedDefaultIncludes.toLowerCase())) {
+    failures.push(`arcTransform.rejectedDefaultShape: expected to include "${e.scenarioRejectedDefaultIncludes}", got "${plan.scenarioShape.rejectedDefaultShape}"`)
+  }
+}
+
+function assertArcValidation(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.arcValidation
+  if (!expected) return
+
+  const errors = validateArcPlan(expected.arcPlan as unknown as Parameters<typeof validateArcPlan>[0])
+  for (const fragment of expected.expect.errorIncludesAll ?? []) {
+    if (!errors.some((e) => e.includes(fragment))) {
+      failures.push(`arcValidation: expected error containing "${fragment}", got [${errors.join('; ') || 'none'}]`)
+    }
+  }
+  for (const fragment of expected.expect.errorIncludesNone ?? []) {
+    if (errors.some((e) => e.includes(fragment))) {
+      failures.push(`arcValidation: did not expect error containing "${fragment}", got [${errors.join('; ')}]`)
+    }
+  }
+}
+
+function assertDispositionDerivation(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.dispositionDerivation
+  if (!expected) return
+
+  for (const c of expected.cases) {
+    const err = validateNpcDisposition(
+      expected.ctx,
+      {
+        role: c.role,
+        affiliation: c.affiliation,
+        initialDisposition: c.initialDisposition,
+        dispositionReason: c.dispositionReason,
+      },
+      c.name
+    )
+    if (c.expect === 'flagged') {
+      if (!err) {
+        failures.push(`disposition: case "${c.name}" expected flagged, got accepted`)
+      } else if (c.flagIncludes && !err.includes(c.flagIncludes)) {
+        failures.push(`disposition: case "${c.name}" flag did not include "${c.flagIncludes}" — got "${err}"`)
+      }
+    } else if (c.expect === 'accepted') {
+      if (err) {
+        failures.push(`disposition: case "${c.name}" expected accepted, got flagged — "${err}"`)
+      }
+    }
+  }
+}
+
+function assertNarratorMessages(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  stateAfter: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.narratorMessages
+  if (!expected) return
+
+  const sourceState = expected.stateBefore === 'fixture-stateAfter' ? stateAfter : stateBefore
+  const playerInput = expected.playerInput ?? fixture.input.playerInput
+  const isInitial = expected.isInitial ?? false
+  const turnIndex = sourceState.history.turns.length
+
+  let messages: Array<{ role: string; content: unknown }>
+  try {
+    const result = buildMessagesForNarrator(sourceState, playerInput, isInitial, turnIndex)
+    messages = result.messages as Array<{ role: string; content: unknown }>
+  } catch (error) {
+    failures.push(`buildMessagesForNarrator threw: ${error instanceof Error ? error.message : String(error)}`)
+    return
+  }
+
+  const assistantMessages = messages.filter((m) => m.role === 'assistant')
+  const assistantTexts = assistantMessages.map((m) => {
+    if (typeof m.content === 'string') return m.content
+    if (Array.isArray(m.content)) {
+      return m.content
+        .map((p) => (p && typeof p === 'object' && 'text' in p ? String((p as { text: unknown }).text) : ''))
+        .join('')
+    }
+    return ''
+  })
+
+  if (typeof expected.assistantMessageCountEquals === 'number') {
+    if (assistantMessages.length !== expected.assistantMessageCountEquals) {
+      failures.push(
+        `narrator messages: expected ${expected.assistantMessageCountEquals} assistant messages, got ${assistantMessages.length}`
+      )
+    }
+  }
+  if (typeof expected.assistantMessageCountAtLeast === 'number') {
+    if (assistantMessages.length < expected.assistantMessageCountAtLeast) {
+      failures.push(
+        `narrator messages: expected at least ${expected.assistantMessageCountAtLeast} assistant messages, got ${assistantMessages.length}`
+      )
+    }
+  }
+  for (const fragment of expected.includesAssistantProseMatching ?? []) {
+    if (!assistantTexts.some((t) => t.includes(fragment))) {
+      failures.push(`narrator messages: no assistant message contains "${fragment.slice(0, 60)}"`)
+    }
+  }
+  if (typeof expected.sceneSnapshotFirstTurnIndexEquals === 'number') {
+    const actual = sourceState.world.sceneSnapshot.firstTurnIndex
+    if (actual !== expected.sceneSnapshotFirstTurnIndexEquals) {
+      failures.push(
+        `sceneSnapshot.firstTurnIndex: expected ${expected.sceneSnapshotFirstTurnIndexEquals}, got ${actual}`
+      )
+    }
+  }
+
+  const userTexts = messages
+    .filter((m) => m.role === 'user')
+    .map((m) => {
+      if (typeof m.content === 'string') return m.content
+      if (Array.isArray(m.content)) {
+        return m.content
+          .map((p) => (p && typeof p === 'object' && 'text' in p ? String((p as { text: unknown }).text) : ''))
+          .join('')
+      }
+      return ''
+    })
+  for (const fragment of expected.userMessageContainsAll ?? []) {
+    if (!userTexts.some((t) => t.includes(fragment))) {
+      failures.push(`narrator user messages: missing required fragment "${fragment.slice(0, 60)}"`)
+    }
+  }
+  for (const fragment of expected.userMessageContainsNone ?? []) {
+    if (userTexts.some((t) => t.includes(fragment))) {
+      failures.push(`narrator user messages: unexpectedly contains "${fragment.slice(0, 60)}"`)
+    }
+  }
 }
 
 function buildStateBefore(fixture: ReplayFixture): Sf2State {
@@ -217,6 +655,7 @@ function arrayOfStrings(value: unknown): string[] {
 
 function assertExpected(
   fixture: ReplayFixture,
+  stateBefore: Sf2State,
   state: Sf2State,
   patchResult: ApplyPatchResult,
   invariantEvents: Array<{ kind: string; at: number; data: unknown }>,
@@ -235,6 +674,32 @@ function assertExpected(
   }
   for (const id of expected.scenePacketCastExcludes ?? []) {
     if (scenePacketCastIds.includes(id)) failures.push(`scene packet cast unexpectedly includes ${id}`)
+  }
+  for (const pressureExpected of expected.threadPressureIncludes ?? []) {
+    const entry = state.chapter.setup.threadPressure?.[pressureExpected.threadId]
+    if (pressureExpected.absent) {
+      if (entry) failures.push(`threadPressure ${pressureExpected.threadId} unexpectedly present`)
+      continue
+    }
+    if (!entry) {
+      failures.push(`threadPressure ${pressureExpected.threadId} missing`)
+      continue
+    }
+    if (pressureExpected.openingFloor !== undefined && entry.openingFloor !== pressureExpected.openingFloor) {
+      failures.push(`threadPressure ${pressureExpected.threadId} openingFloor expected ${pressureExpected.openingFloor}, got ${entry.openingFloor}`)
+    }
+    if (pressureExpected.localEscalation !== undefined && entry.localEscalation !== pressureExpected.localEscalation) {
+      failures.push(`threadPressure ${pressureExpected.threadId} localEscalation expected ${pressureExpected.localEscalation}, got ${entry.localEscalation}`)
+    }
+    if (pressureExpected.maxThisChapter !== undefined && entry.maxThisChapter !== pressureExpected.maxThisChapter) {
+      failures.push(`threadPressure ${pressureExpected.threadId} maxThisChapter expected ${pressureExpected.maxThisChapter}, got ${entry.maxThisChapter}`)
+    }
+    if (pressureExpected.effectivePressure !== undefined) {
+      const effective = entry.openingFloor + entry.localEscalation
+      if (effective !== pressureExpected.effectivePressure) {
+        failures.push(`threadPressure ${pressureExpected.threadId} effective expected ${pressureExpected.effectivePressure}, got ${effective}`)
+      }
+    }
   }
   for (const id of expected.npcIdsIncludes ?? []) {
     if (!state.campaign.npcs[id]) failures.push(`npc registry missing ${id}`)
@@ -266,6 +731,26 @@ function assertExpected(
       failures.push(`npc ${identity.npcId} age expected ${identity.age}, got ${npc.identity.age ?? 'unset'}`)
     }
   }
+  for (const agendaExpected of expected.npcAgendasInclude ?? []) {
+    const npc = state.campaign.npcs[agendaExpected.npcId]
+    if (!npc) {
+      failures.push(`npc agenda target ${agendaExpected.npcId} missing`)
+      continue
+    }
+    if (agendaExpected.currentMove !== undefined && npc.agenda?.currentMove !== agendaExpected.currentMove) {
+      failures.push(
+        `npc ${agendaExpected.npcId} agenda.currentMove expected "${agendaExpected.currentMove}", got "${npc.agenda?.currentMove ?? 'unset'}"`
+      )
+    }
+    if (
+      agendaExpected.lastUpdatedTurn !== undefined &&
+      npc.agenda?.lastUpdatedTurn !== agendaExpected.lastUpdatedTurn
+    ) {
+      failures.push(
+        `npc ${agendaExpected.npcId} agenda.lastUpdatedTurn expected ${agendaExpected.lastUpdatedTurn}, got ${npc.agenda?.lastUpdatedTurn ?? 'unset'}`
+      )
+    }
+  }
   for (const anchorExpected of expected.temporalAnchorsInclude ?? []) {
     const anchor = state.campaign.temporalAnchors?.[anchorExpected.anchorId]
     if (!anchor) {
@@ -288,6 +773,289 @@ function assertExpected(
     const scenePacket = buildScenePacket(state, fixture.input.playerInput, state.history.turns.length)
     if (!scenePacket.packet.temporalAnchors.some((a) => a.anchorId === id)) {
       failures.push(`scene packet temporal anchors missing ${id}`)
+    }
+  }
+  for (const docExpected of expected.documentsInclude ?? []) {
+    const doc = state.campaign.documents?.[docExpected.documentId]
+    if (!doc) {
+      failures.push(`document ${docExpected.documentId} missing`)
+      continue
+    }
+    if (docExpected.type !== undefined && doc.type !== docExpected.type) {
+      failures.push(`document ${docExpected.documentId} type expected ${docExpected.type}, got ${doc.type}`)
+    }
+    if (docExpected.kindLabel !== undefined && doc.kindLabel !== docExpected.kindLabel) {
+      failures.push(`document ${docExpected.documentId} kindLabel expected ${docExpected.kindLabel}, got ${doc.kindLabel}`)
+    }
+    if (docExpected.status !== undefined && doc.status !== docExpected.status) {
+      failures.push(`document ${docExpected.documentId} status expected ${docExpected.status}, got ${doc.status}`)
+    }
+    if (docExpected.signedByEntityId !== undefined && doc.signedByEntityId !== docExpected.signedByEntityId) {
+      failures.push(
+        `document ${docExpected.documentId} signedBy expected ${docExpected.signedByEntityId}, got ${doc.signedByEntityId ?? 'unset'}`
+      )
+    }
+    if (docExpected.filedByEntityId !== undefined && doc.filedByEntityId !== docExpected.filedByEntityId) {
+      failures.push(
+        `document ${docExpected.documentId} filedBy expected ${docExpected.filedByEntityId}, got ${doc.filedByEntityId ?? 'unset'}`
+      )
+    }
+    if (docExpected.subjectEntityIds !== undefined) {
+      const expectedSet = new Set(docExpected.subjectEntityIds)
+      const actualSet = new Set(doc.subjectEntityIds)
+      if (
+        expectedSet.size !== actualSet.size ||
+        [...expectedSet].some((id) => !actualSet.has(id))
+      ) {
+        failures.push(
+          `document ${docExpected.documentId} subjects expected [${[...expectedSet].join(',')}], got [${doc.subjectEntityIds.join(',')}]`
+        )
+      }
+    }
+    if (docExpected.originalSummaryEquals !== undefined && doc.originalSummary !== docExpected.originalSummaryEquals) {
+      failures.push(
+        `document ${docExpected.documentId} originalSummary expected "${docExpected.originalSummaryEquals}", got "${doc.originalSummary}"`
+      )
+    }
+    if (docExpected.currentSummaryIncludes !== undefined && !doc.currentSummary.includes(docExpected.currentSummaryIncludes)) {
+      failures.push(
+        `document ${docExpected.documentId} currentSummary expected to include "${docExpected.currentSummaryIncludes}", got "${doc.currentSummary}"`
+      )
+    }
+    if (docExpected.revisionsCount !== undefined && doc.revisions.length !== docExpected.revisionsCount) {
+      failures.push(
+        `document ${docExpected.documentId} revisions expected ${docExpected.revisionsCount}, got ${doc.revisions.length}`
+      )
+    }
+  }
+  if (expected.activeThreadIdsEquals !== undefined) {
+    const want = [...expected.activeThreadIdsEquals].sort().join(',')
+    const got = [...state.chapter.setup.activeThreadIds].sort().join(',')
+    if (want !== got) failures.push(`activeThreadIds expected [${want}], got [${got}]`)
+  }
+  for (const id of expected.activeThreadIdsExcludes ?? []) {
+    if (state.chapter.setup.activeThreadIds.includes(id)) {
+      failures.push(`activeThreadIds unexpectedly includes ${id}`)
+    }
+  }
+  for (const threadExpected of expected.threadsInclude ?? []) {
+    const thread = state.campaign.threads[threadExpected.threadId]
+    if (!thread) {
+      failures.push(`thread ${threadExpected.threadId} missing`)
+      continue
+    }
+    if (threadExpected.status !== undefined && thread.status !== threadExpected.status) {
+      failures.push(`thread ${threadExpected.threadId} status expected ${threadExpected.status}, got ${thread.status}`)
+    }
+    if (threadExpected.tension !== undefined && thread.tension !== threadExpected.tension) {
+      failures.push(`thread ${threadExpected.threadId} tension expected ${threadExpected.tension}, got ${thread.tension}`)
+    }
+    if (threadExpected.peakTension !== undefined && thread.peakTension !== threadExpected.peakTension) {
+      failures.push(`thread ${threadExpected.threadId} peakTension expected ${threadExpected.peakTension}, got ${thread.peakTension}`)
+    }
+  }
+  if (expected.chapterCloseReadiness) {
+    const readiness = computeChapterCloseReadiness(
+      state,
+      expected.chapterCloseReadiness.pivotSignaled ?? false
+    )
+    if (readiness.closeReady !== expected.chapterCloseReadiness.closeReady) {
+      failures.push(
+        `chapterCloseReadiness.closeReady expected ${expected.chapterCloseReadiness.closeReady}, got ${readiness.closeReady}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.spineResolved !== undefined &&
+      readiness.spineResolved !== expected.chapterCloseReadiness.spineResolved
+    ) {
+      failures.push(
+        `chapterCloseReadiness.spineResolved expected ${expected.chapterCloseReadiness.spineResolved}, got ${readiness.spineResolved}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.stalledFallback !== undefined &&
+      readiness.stalledFallback !== expected.chapterCloseReadiness.stalledFallback
+    ) {
+      failures.push(
+        `chapterCloseReadiness.stalledFallback expected ${expected.chapterCloseReadiness.stalledFallback}, got ${readiness.stalledFallback}`
+      )
+    }
+  }
+  if (expected.quickActionRepair) {
+    const qr = expected.quickActionRepair
+    const repaired = repairSuggestedActions(qr.inputActions, {
+      state: stateBefore,
+      failedSkill: qr.failedSkill,
+    })
+    if (qr.outputCount !== undefined && repaired.actions.length !== qr.outputCount) {
+      failures.push(`quickActionRepair.outputCount expected ${qr.outputCount}, got ${repaired.actions.length}`)
+    }
+    for (const expectedAction of qr.outputActionsInclude ?? []) {
+      if (!repaired.actions.includes(expectedAction)) {
+        failures.push(`quickActionRepair output missing "${expectedAction}"`)
+      }
+    }
+    for (const unexpectedAction of qr.outputActionsExclude ?? []) {
+      if (repaired.actions.includes(unexpectedAction)) {
+        failures.push(`quickActionRepair output unexpectedly includes "${unexpectedAction}"`)
+      }
+    }
+    if (qr.categoryCountAtLeast !== undefined) {
+      const categoryCount = new Set(repaired.actions.map(classifyQuickAction)).size
+      if (categoryCount < qr.categoryCountAtLeast) {
+        failures.push(`quickActionRepair categoryCount expected ≥${qr.categoryCountAtLeast}, got ${categoryCount}`)
+      }
+    }
+    for (const note of qr.notesInclude ?? []) {
+      if (!repaired.notes.some((n) => n.includes(note))) {
+        failures.push(`quickActionRepair notes missing "${note}"`)
+      }
+    }
+  }
+  if (expected.authorInputSeed) {
+    const seed = compileAuthorInputSeed(
+      stateBefore,
+      (expected.authorInputSeed.priorChapterMeaning ?? null) as never
+    )
+    for (const snippet of expected.authorInputSeed.hookPremiseIncludes ?? []) {
+      if (!seed.hook.premise.includes(snippet)) {
+        failures.push(`authorInputSeed.hook.premise missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.hookFirstEpisodeIncludes ?? []) {
+      if (!seed.hook.firstEpisode?.includes(snippet)) {
+        failures.push(`authorInputSeed.hook.firstEpisode missing "${snippet}"`)
+      }
+    }
+  }
+  if (expected.pressure) {
+    const pressure = expected.pressure
+    for (const engineExpected of pressure.engineValues ?? []) {
+      const engine = stateBefore.campaign.engines[engineExpected.engineId]
+      if (!engine) {
+        failures.push(`pressure.engineValues missing engine ${engineExpected.engineId}`)
+        continue
+      }
+      const value = deriveEngineValue(engine, stateBefore.campaign.threads)
+      if (value !== engineExpected.value) {
+        failures.push(`pressure.engineValues ${engineExpected.engineId} expected ${engineExpected.value}, got ${value}`)
+      }
+    }
+    for (const contributionExpected of pressure.threadContributions ?? []) {
+      const thread = stateBefore.campaign.threads[contributionExpected.threadId]
+      if (!thread) {
+        failures.push(`pressure.threadContributions missing thread ${contributionExpected.threadId}`)
+        continue
+      }
+      const value = threadContribution(thread)
+      if (value !== contributionExpected.value) {
+        failures.push(`pressure.threadContributions ${contributionExpected.threadId} expected ${contributionExpected.value}, got ${value}`)
+      }
+    }
+    for (const coolExpected of pressure.coolThreads ?? []) {
+      const thread = stateBefore.campaign.threads[coolExpected.threadId]
+      if (!thread) {
+        failures.push(`pressure.coolThreads missing thread ${coolExpected.threadId}`)
+        continue
+      }
+      const result = coolThreadForChapterOpen(
+        thread,
+        coolExpected.role as Exclude<ThreadRole, 'new'>,
+        coolExpected.engineFloor
+      )
+      if (result.openingFloor !== coolExpected.openingFloor) {
+        failures.push(`pressure.coolThreads ${coolExpected.threadId} openingFloor expected ${coolExpected.openingFloor}, got ${result.openingFloor}`)
+      }
+      if (coolExpected.cooledAtOpen !== undefined && result.cooledAtOpen !== coolExpected.cooledAtOpen) {
+        failures.push(`pressure.coolThreads ${coolExpected.threadId} cooledAtOpen expected ${coolExpected.cooledAtOpen}, got ${result.cooledAtOpen}`)
+      }
+    }
+    if (pressure.initializedThreadPressure || pressure.effectiveThreadPressure) {
+      const chapterSetup = pressure.initializeChapterSetupPatch
+        ? deepMerge(stateBefore.chapter.setup, pressure.initializeChapterSetupPatch) as typeof stateBefore.chapter.setup
+        : stateBefore.chapter.setup
+      // Priors default to the pre-patch chapter's actives — that's the
+      // semantic "active last chapter" set. Fixtures that need a different
+      // prior set (e.g. simulating a Ch3→Ch4 transition) can override.
+      const priorActiveThreadIds = pressure.priorActiveThreadIds ?? stateBefore.chapter.setup.activeThreadIds
+      const initialized = initializeChapterPressure(stateBefore, chapterSetup, priorActiveThreadIds)
+      const setupWithPressure = {
+        ...chapterSetup,
+        threadPressure: initialized,
+      }
+      for (const expectedEntry of pressure.initializedThreadPressure ?? []) {
+        const entry = initialized[expectedEntry.threadId]
+        if (!entry) {
+          failures.push(`pressure.initializedThreadPressure missing ${expectedEntry.threadId}`)
+          continue
+        }
+        if (expectedEntry.role !== undefined && entry.role !== expectedEntry.role) {
+          failures.push(`pressure.initializedThreadPressure ${expectedEntry.threadId} role expected ${expectedEntry.role}, got ${entry.role}`)
+        }
+        if (expectedEntry.openingFloor !== undefined && entry.openingFloor !== expectedEntry.openingFloor) {
+          failures.push(`pressure.initializedThreadPressure ${expectedEntry.threadId} openingFloor expected ${expectedEntry.openingFloor}, got ${entry.openingFloor}`)
+        }
+        if (expectedEntry.localEscalation !== undefined && entry.localEscalation !== expectedEntry.localEscalation) {
+          failures.push(`pressure.initializedThreadPressure ${expectedEntry.threadId} localEscalation expected ${expectedEntry.localEscalation}, got ${entry.localEscalation}`)
+        }
+        if (expectedEntry.maxThisChapter !== undefined && entry.maxThisChapter !== expectedEntry.maxThisChapter) {
+          failures.push(`pressure.initializedThreadPressure ${expectedEntry.threadId} maxThisChapter expected ${expectedEntry.maxThisChapter}, got ${entry.maxThisChapter}`)
+        }
+        if (expectedEntry.cooledAtOpen !== undefined && entry.cooledAtOpen !== expectedEntry.cooledAtOpen) {
+          failures.push(`pressure.initializedThreadPressure ${expectedEntry.threadId} cooledAtOpen expected ${expectedEntry.cooledAtOpen}, got ${entry.cooledAtOpen}`)
+        }
+      }
+      for (const expectedEffective of pressure.effectiveThreadPressure ?? []) {
+        const value = getEffectiveThreadPressure(expectedEffective.threadId, setupWithPressure)
+        if (value !== expectedEffective.value) {
+          failures.push(`pressure.effectiveThreadPressure ${expectedEffective.threadId} expected ${expectedEffective.value}, got ${value}`)
+        }
+      }
+    }
+  }
+  if (expected.preparedPressureRuntime) {
+    const preparedState: Sf2State = structuredClone(stateBefore)
+    const priorActiveThreadIds = expected.preparedPressureRuntime.priorActiveThreadIds
+      ?? preparedState.chapter.setup.activeThreadIds
+    preparedState.chapter.setup = prepareChapterPressureRuntime(
+      preparedState,
+      preparedState.chapter.setup,
+      priorActiveThreadIds
+    )
+    for (const engineExpected of expected.preparedPressureRuntime.engineAnchorsInclude ?? []) {
+      const engine = preparedState.campaign.engines[engineExpected.engineId]
+      if (!engine) {
+        failures.push(`preparedPressureRuntime missing engine ${engineExpected.engineId}`)
+        continue
+      }
+      for (const threadId of engineExpected.threadIds) {
+        if (!engine.anchorThreadIds.includes(threadId)) {
+          failures.push(`preparedPressureRuntime engine ${engineExpected.engineId} missing anchor ${threadId}`)
+        }
+      }
+    }
+    for (const engineExpected of expected.preparedPressureRuntime.engineValues ?? []) {
+      const engine = preparedState.campaign.engines[engineExpected.engineId]
+      if (!engine) {
+        failures.push(`preparedPressureRuntime missing engine ${engineExpected.engineId}`)
+        continue
+      }
+      if (engine.value !== engineExpected.value) {
+        failures.push(`preparedPressureRuntime engine ${engineExpected.engineId} value expected ${engineExpected.value}, got ${engine.value}`)
+      }
+    }
+    for (const threadExpected of expected.preparedPressureRuntime.threadPressureIncludes ?? []) {
+      const entry = preparedState.chapter.setup.threadPressure[threadExpected.threadId]
+      if (!entry) {
+        failures.push(`preparedPressureRuntime missing threadPressure ${threadExpected.threadId}`)
+        continue
+      }
+      if (threadExpected.openingFloor !== undefined && entry.openingFloor !== threadExpected.openingFloor) {
+        failures.push(`preparedPressureRuntime ${threadExpected.threadId} openingFloor expected ${threadExpected.openingFloor}, got ${entry.openingFloor}`)
+      }
+      if (threadExpected.role !== undefined && entry.role !== threadExpected.role) {
+        failures.push(`preparedPressureRuntime ${threadExpected.threadId} role expected ${threadExpected.role}, got ${entry.role}`)
+      }
     }
   }
   if (expected.currentSceneId !== undefined && expected.currentSceneId !== null) {
@@ -319,9 +1087,152 @@ function assertExpected(
       failures.push(`missing invariant event ${type}`)
     }
   }
+  for (const detailExpected of expected.invariantEventDetailIncludes ?? []) {
+    const match = invariantEvents.find((event) => {
+      if (getEventType(event) !== detailExpected.type) return false
+      const data = (event as { data?: { detail?: unknown } }).data
+      const detail = typeof data?.detail === 'string' ? data.detail : ''
+      return detail.toLowerCase().includes(detailExpected.detailIncludes.toLowerCase())
+    })
+    if (!match) {
+      failures.push(
+        `missing invariant event ${detailExpected.type} with detail including "${detailExpected.detailIncludes}"`
+      )
+    }
+  }
+  if (expected.displaySentinel) {
+    const ds = expected.displaySentinel
+    const sentinelEvents = invariantEvents.filter(
+      (e) => getEventType(e) === 'display_sentinel_finding'
+    )
+    if (ds.findingsCount !== undefined && sentinelEvents.length !== ds.findingsCount) {
+      failures.push(
+        `displaySentinel.findingsCount expected ${ds.findingsCount}, got ${sentinelEvents.length}`
+      )
+    }
+    if (ds.findingsCountAtLeast !== undefined && sentinelEvents.length < ds.findingsCountAtLeast) {
+      failures.push(
+        `displaySentinel.findingsCountAtLeast expected ≥${ds.findingsCountAtLeast}, got ${sentinelEvents.length}`
+      )
+    }
+    if (ds.findingsAbsent && sentinelEvents.length > 0) {
+      const surfaces = sentinelEvents
+        .map((e) => (e as { data?: { surface?: string } }).data?.surface)
+        .filter(Boolean)
+        .join(', ')
+      failures.push(`displaySentinel expected zero findings, got ${sentinelEvents.length} (${surfaces})`)
+    }
+    for (const include of ds.findingsInclude ?? []) {
+      const match = sentinelEvents.find((e) => {
+        const data = (e as { data?: Record<string, unknown> }).data ?? {}
+        if (include.findingType !== undefined && data.findingType !== include.findingType) return false
+        if (include.severity !== undefined && data.severity !== include.severity) return false
+        if (include.surfaceEquals !== undefined && data.surface !== include.surfaceEquals) return false
+        if (include.recommendedAction !== undefined && data.recommendedAction !== include.recommendedAction)
+          return false
+        return true
+      })
+      if (!match) {
+        failures.push(
+          `displaySentinel.findingsInclude missing ${JSON.stringify(include)}`
+        )
+      }
+    }
+  }
+  if (expected.sceneKernel) {
+    const sk = buildSceneKernel(state)
+    const k = expected.sceneKernel
+    if (k.sceneId !== undefined && sk.sceneId !== k.sceneId) {
+      failures.push(`sceneKernel.sceneId expected ${k.sceneId}, got ${sk.sceneId}`)
+    }
+    if (k.presentEntityIdsEquals !== undefined) {
+      const want = [...k.presentEntityIdsEquals].sort().join(',')
+      const got = [...sk.presentEntityIds].sort().join(',')
+      if (want !== got) failures.push(`sceneKernel.presentEntityIds expected [${want}], got [${got}]`)
+    }
+    if (k.currentInterlocutorIdsEquals !== undefined) {
+      const want = [...k.currentInterlocutorIdsEquals].sort().join(',')
+      const got = [...sk.currentInterlocutorIds].sort().join(',')
+      if (want !== got) failures.push(`sceneKernel.currentInterlocutorIds expected [${want}], got [${got}]`)
+    }
+    if (k.nearbyEntityIdsEquals !== undefined) {
+      const want = [...k.nearbyEntityIdsEquals].sort().join(',')
+      const got = [...sk.nearbyEntityIds].sort().join(',')
+      if (want !== got) failures.push(`sceneKernel.nearbyEntityIds expected [${want}], got [${got}]`)
+    }
+    for (const id of k.absentEntityIdsIncludes ?? []) {
+      if (!sk.absentEntityIds.includes(id)) failures.push(`sceneKernel.absentEntityIds missing ${id}`)
+    }
+    for (const id of k.absentEntityIdsExcludes ?? []) {
+      if (sk.absentEntityIds.includes(id)) failures.push(`sceneKernel.absentEntityIds should exclude ${id}`)
+    }
+    for (const id of k.speakingAllowedEntityIdsIncludes ?? []) {
+      if (!sk.speakingAllowedEntityIds.includes(id))
+        failures.push(`sceneKernel.speakingAllowedEntityIds missing ${id}`)
+    }
+    for (const id of k.activeProcedureIdsIncludes ?? []) {
+      if (!sk.activeProcedureIds.includes(id))
+        failures.push(`sceneKernel.activeProcedureIds missing ${id}`)
+    }
+    for (const id of k.activeCountdownIdsIncludes ?? []) {
+      if (!sk.time.activeCountdowns.some((c) => c.id === id))
+        failures.push(`sceneKernel.activeCountdowns missing ${id}`)
+    }
+    if (k.forbiddenWithoutTransitionMinCount !== undefined) {
+      if (sk.forbiddenWithoutTransition.length < k.forbiddenWithoutTransitionMinCount) {
+        failures.push(
+          `sceneKernel.forbiddenWithoutTransition expected ≥${k.forbiddenWithoutTransitionMinCount}, got ${sk.forbiddenWithoutTransition.length}`
+        )
+      }
+    }
+    for (const aliasExpected of k.aliasMapIncludes ?? []) {
+      const aliases = sk.aliasMap[aliasExpected.entityId]
+      if (!aliases || !aliases.some((a) => a.includes(aliasExpected.aliasIncludes))) {
+        failures.push(
+          `sceneKernel.aliasMap[${aliasExpected.entityId}] missing alias including "${aliasExpected.aliasIncludes}"`
+        )
+      }
+    }
+    if (k.version !== undefined && sk.version !== k.version) {
+      failures.push(`sceneKernel.version expected ${k.version}, got ${sk.version}`)
+    }
+  }
+  if (expected.resolvedAction) {
+    const scenePacket = buildScenePacket(stateBefore, fixture.input.playerInput, stateBefore.history.turns.length)
+    const action = scenePacket.packet.playerInput.resolvedAction
+    const want = expected.resolvedAction
+    if (!action) {
+      failures.push('resolvedAction missing from scene packet')
+    } else {
+      if (want.actionType !== undefined && action.actionType !== want.actionType) {
+        failures.push(`resolvedAction.actionType expected ${want.actionType}, got ${action.actionType}`)
+      }
+      if (want.targetEntityIdsEquals !== undefined) {
+        const expectedIds = [...want.targetEntityIdsEquals].sort().join(',')
+        const actualIds = [...action.targetEntityIds].sort().join(',')
+        if (expectedIds !== actualIds) {
+          failures.push(`resolvedAction.targetEntityIds expected [${expectedIds}], got [${actualIds}]`)
+        }
+      }
+      for (const id of want.forbiddenTargetSubstitutionsIncludes ?? []) {
+        if (!action.forbiddenTargetSubstitutions.includes(id)) {
+          failures.push(`resolvedAction.forbiddenTargetSubstitutions missing ${id}`)
+        }
+      }
+      for (const refExpected of want.resolvedReferenceIncludes ?? []) {
+        const match = action.resolvedReferences.find((ref) => {
+          if (refExpected.surface !== undefined && ref.surface !== refExpected.surface) return false
+          if (refExpected.resolvedToEntityId !== undefined && ref.resolvedToEntityId !== refExpected.resolvedToEntityId) return false
+          if (refExpected.confidence !== undefined && ref.confidence !== refExpected.confidence) return false
+          return true
+        })
+        if (!match) failures.push(`resolvedAction.resolvedReference missing ${JSON.stringify(refExpected)}`)
+      }
+    }
+  }
   for (const ref of expected.archivistAcceptedRefs ?? []) {
     const outcome = patchResult.outcomes.find((o) => o.writeRef === ref)
-    if (!outcome?.accepted) failures.push(`archivist write ${ref} was not accepted`)
+    if (!outcome?.accepted) failures.push(`archivist write ${ref} was not accepted${outcome?.reason ? `: ${outcome.reason}` : ''}`)
   }
   for (const ref of expected.archivistRejectedRefs ?? []) {
     const outcome = patchResult.outcomes.find((o) => o.writeRef === ref)
@@ -415,6 +1326,7 @@ function createMinimalState(): Sf2State {
           owner: { kind: 'faction', id: 'faction_registry' },
           stakeholders: [],
           tension: 5,
+          peakTension: 5,
           resolutionCriteria: 'The immediate intake problem is resolved.',
           failureMode: 'The intake problem escalates.',
           retrievalCue: 'The public-facing pressure in the current chapter.',
@@ -424,8 +1336,10 @@ function createMinimalState(): Sf2State {
         },
       },
       decisions: {},
+      engines: {},
       promises: {},
       clues: {},
+      beats: {},
       temporalAnchors: {},
       npcs: {},
       factions: {
@@ -442,6 +1356,7 @@ function createMinimalState(): Sf2State {
       locations: {
         [location.id]: location,
       },
+      documents: {},
       floatingClueIds: [],
       pivotalSceneIds: [],
       lexicon: [],
@@ -518,6 +1433,7 @@ function createMinimalState(): Sf2State {
           visibleNpcIds: [],
         },
         pressureLadder: [],
+        threadPressure: {},
         surfaceThreads: [],
         surfaceNpcIds: [],
       },
@@ -552,6 +1468,7 @@ function createMinimalState(): Sf2State {
         presentNpcIds: [],
         timeLabel: 'morning',
         established: ['The replay begins in the intake hall.'],
+        firstTurnIndex: 0,
       },
       currentTimeLabel: 'morning',
     },

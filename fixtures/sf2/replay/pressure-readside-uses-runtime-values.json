@@ -1,0 +1,132 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure read-side uses runtime values",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Pressure Engines Phase 4. Narrator packets should read chapter-effective thread pressure and runtime engine values, while still exposing canonical tension as supporting context."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_tithe",
+          "status": "active",
+          "title": "The Tithe",
+          "sourceHook": {
+            "title": "The Tithe",
+            "premise": "A tithe shortfall strains the settlement.",
+            "crucible": "The record must land somewhere."
+          },
+          "scenarioShape": {
+            "mode": "revolt",
+            "premise": "A tithe shortfall turns procedural.",
+            "whyThisRun": "The Warden is inside the record.",
+            "whatThisIsNot": "Not a hearing-room loop.",
+            "selectionRationale": "Procedure creates pressure.",
+            "rejectedDefaultShape": "A simple compliance audit."
+          },
+          "arcQuestion": "What does the Warden make legible?",
+          "coreCrucible": "Compliance can protect or consume.",
+          "invariantFacts": [],
+          "variableTruthsForThisRun": [],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "pressureEngines": [
+            {
+              "id": "engine_writ",
+              "name": "Writ Weight",
+              "aggregation": "max",
+              "advancesWhen": "The writ absorbs new claims.",
+              "slowsWhen": "The record is narrowed.",
+              "visibleSymptoms": "Every argument becomes filing material."
+            }
+          ],
+          "playerStanceAxes": [],
+          "chapterFunctionMap": [],
+          "possibleEndgames": []
+        },
+        "threads": {
+          "thread_spine": {
+            "title": "The shortfall writ",
+            "tension": 10,
+            "peakTension": 10,
+            "retrievalCue": "The writ still wants a body to name."
+          }
+        },
+        "engines": {
+          "engine_writ": {
+            "id": "engine_writ",
+            "name": "Writ Weight",
+            "status": "active",
+            "value": 9,
+            "aggregation": "max",
+            "anchorThreadIds": ["thread_spine"],
+            "summary": "The writ has become the campaign's live pressure object.",
+            "advancesWhen": "The writ absorbs new claims.",
+            "slowsWhen": "The record is narrowed.",
+            "visibleSymptoms": "Every argument becomes filing material.",
+            "lastUpdatedChapter": 2,
+            "lastUpdatedTurn": 4
+          }
+        }
+      },
+      "chapter": {
+        "number": 2,
+        "title": "The Writ Returns",
+        "setup": {
+          "chapter": 2,
+          "title": "The Writ Returns",
+          "activeThreadIds": ["thread_spine"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_spine"],
+          "arcLink": {
+            "arcId": "arc_tithe",
+            "chapterFunction": "Make the writ's weight visible.",
+            "playerStanceRead": "The Warden is still using procedure.",
+            "pressureEngineIds": ["engine_writ"]
+          },
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "canonicalTension": 10,
+              "openingFloor": 7,
+              "localEscalation": 1,
+              "maxThisChapter": 8,
+              "cooledAtOpen": true
+            }
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 2,
+            "playerInput": "",
+            "narratorProse": "The prior beat established the writ on the counter.",
+            "timestamp": "2026-04-27T10:00:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Look at the writ before answering.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Look at the writ before answering.",
+      "userMessageContainsAll": [
+        "Active pressure engines: Writ Weight 9/10",
+        "anchors: thread_spine",
+        "chapter pressure 8/10",
+        "canonical 10/10",
+        "role spine"
+      ]
+    }
+  }
+}

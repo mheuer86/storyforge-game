@@ -69,6 +69,9 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
         noExpositionDump: true,
       },
       pressureLadder: [],
+      threadPressure: {},
+      arcLink: undefined,
+      pacingContract: undefined,
       surfaceThreads: [],
       surfaceNpcIds: [],
     },
@@ -134,15 +137,19 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       exhaustion: 0,
     },
     campaign: {
+      arcPlan: undefined,
       arcs: {},
       threads: {},
+      engines: {},
       decisions: {},
       promises: {},
       clues: {},
+      beats: {},
       temporalAnchors: {},
       npcs: {},
       factions: {},
       locations: {},
+      documents: {},
       floatingClueIds: [],
       pivotalSceneIds: [],
       lexicon: [],
@@ -165,6 +172,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
         presentNpcIds: [],
         timeLabel: '',
         established: [],
+        firstTurnIndex: 0,
       },
       currentTimeLabel: '',
     },
@@ -177,6 +185,10 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
 // on this being true.
 export function isChapterAuthored(state: Sf2State): boolean {
   return state.chapter.title.length > 0 && state.chapter.setup.frame.title.length > 0
+}
+
+export function isArcAuthored(state: Sf2State): boolean {
+  return Boolean(state.campaign.arcPlan?.id && state.campaign.arcPlan?.status === 'active')
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -198,7 +210,7 @@ export const CAMPAIGN_INITIAL_SEED: AuthorInputSeed = {
   hook: {
     title: 'The Tithe',
     premise:
-      "A frontier settlement is three Resonants short of its annual tithe to the Synod. The settlement elder says two died in a mining accident and one fled. The Synod says the numbers do not matter — the tithe must be met. They are looking at the settlement's children.",
+      'A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.',
     crucible: 'The Synod will take children if the numbers are not met.',
   },
   worldRules: {

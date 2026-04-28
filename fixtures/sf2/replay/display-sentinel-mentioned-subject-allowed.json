@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: absent NPC mentioned (not speaking) does NOT fire — PRD Test 3",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Negative control. Yara mentions the absent Miko in dialogue. The scanner must NOT classify this as absent_speaker — Miko is a mentioned subject, not a direct speaker. Pinning this distinguishes mention from speech and protects the conservative-precision contract."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_yara": {
+            "id": "npc_yara",
+            "name": "Yara",
+            "affiliation": "settlement",
+            "role": "contact",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Local fixer"],
+              "voice": { "note": "blunt", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Local fixer.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_miko": {
+            "id": "npc_miko",
+            "name": "Miko",
+            "affiliation": "settlement",
+            "role": "operator",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Comms specialist"],
+              "voice": { "note": "quiet", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Comms specialist.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_yara", "npc_miko"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_yara"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask Yara about the relay.",
+    "narrator": {
+      "prose": "Yara taps the bench. \"Miko will know if the signal dies. She always does.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsAbsent": true
+    }
+  }
+}

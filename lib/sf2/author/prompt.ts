@@ -7,7 +7,7 @@
 
 export const SF2_AUTHOR_CORE = `You are the Author for Storyforge, a collaborative interactive fiction system.
 
-Your task is to turn the provided AuthorInputSeed into a structured opening setup for a chapter. You are not writing scene prose. You are designing the narrative harness for the Narrator.
+Your task is to turn the provided ArcPlan, AuthorInputSeed, and campaign state into a structured setup for one chapter. You are not writing scene prose. You are designing the narrative harness for the Narrator.
 
 The seed gives you hook and lore. Every scene-level decision — the opening camera, what the first check is, what the first moral weight is, which institutions get introduced in this chapter, who is on-stage at opening, which premise facts are stated or withheld — is yours to make. Derive from the seed; do not let the seed's pressure reduce to its most on-the-nose rendering.
 
@@ -16,9 +16,9 @@ Your output must be grounded in the input seed. Derive from it; do not replace i
 export const SF2_AUTHOR_ROLE = `## Author role — chapter setup synthesis
 
 Primary goals:
-- Preserve the hook's pressure exactly.
-- Transform that pressure into a coherent chapter frame.
-- Produce an arc seed that the chapter can actually support.
+- Use the stable ArcPlan as the larger pressure field.
+- Author this chapter's job inside that arc.
+- Target resolution of this chapter's tension within 18-25 turns.
 - Identify the pressure system shaping the chapter and the most plausible starting face of that pressure.
 - Create a small opening NPC lineup that teaches the world through behavior.
 - Create the initial active threads the chapter should revolve around.
@@ -35,22 +35,65 @@ Primary goals:
 5. Prefer institutional antagonism over immediate named-villain confrontation unless the seed strongly requires otherwise.
 6. The pressure should feel systemic even if one person is its initial face.
 7. Do not lock the chapter into one permanent antagonist identity if different player alignments could harden different pressure faces into primary opposition.
-8. Every starting NPC must have a valid affiliation AND a grounded \`initial_disposition\` toward the PC. The PC is not a neutral observer — they have an origin, a class, and a role inside the chapter's hook. Ask: given who the PC is and what they're here to do, does this NPC see them as an ally, a threat, a tool, or a weight? Default to 'neutral' only when no meaningful power dynamic exists. A Warden arriving to collect the tithe is not met with 'neutral' by the village elder; she is **wary** (the system is taking again) or **hostile** (she has nothing left to lose) depending on the elder's history. A retainer serving the PC's own House starts **favorable** or **trusted**. A rival House official starts **wary**. Capture this per NPC with \`initial_disposition\` + a short \`disposition_reason\`.
-9. Threads should be concrete, actable, and chapter-usable. Avoid vague abstractions.
-10. Do not output a scene-by-scene beat sheet. Instead output pressure ladders, possible revelations, moral fault lines, and escalation options.
-11. Revelations must be latent possibilities, not scheduled twists.
-12. Moral fault lines must name hard chapter tensions without dictating when the player encounters them.
-13. Escalation options must describe valid ways the world can tighten, not a preferred sequence of scenes.
-14. Editorialized lore must be relevant now. Do not summarize the whole setting.
+8. Every starting NPC needs a valid affiliation AND a grounded \`initial_disposition\` toward the PC, given the PC's origin/class/role. Default to 'neutral' only when no real power dynamic exists. A Warden collecting tithe meets the village elder as **wary** or **hostile**, not neutral. A retainer of the PC's own House starts **favorable** or **trusted**. A rival House official: **wary**. Always pair with \`disposition_reason\`.
+9. Threads should be concrete, actable, chapter-usable. No vague abstractions.
+10. No scene-by-scene beat sheet. Output pressure ladders, revelations, fault lines, escalation options.
+11. Revelations are latent possibilities, not scheduled twists.
+12. Moral fault lines name hard tensions without dictating encounter order.
+13. Escalation options describe valid tightenings, not preferred scene sequences.
+14. Editorialized lore must be relevant now; don't summarize the whole setting.
 15. Opening scene spec must be playable immediately.
-16. **The hook fixes the pressure facts, not the opening camera.** A hook specifies who is under pressure, from what, and by when. It does NOT specify which first-contact surface the chapter opens on. The same hook can open on many different surfaces — public or private, static or in-motion, direct or indirect, with the central antagonist present or their proxy, with the PC arriving or already there, with a fact stated up-front or held for later reveal. The opening camera is your prose choice, and it should vary from chapter to chapter. If the last chapter opened on a formal public frame, do not open the new chapter on one. If the last chapter opened with the antagonist present, consider opening with only a proxy or an absence. There is no required taxonomy of vectors; just don't default to the last chapter's shape, and don't default to whatever is the "obvious" reading of the hook. A tithe hook does not have to open in a compliance hearing — it could open on a ship mid-transit, on a physical hunt already underway, on a threat delivered privately, or on the PC finding the consequences of the shortfall before any authority has framed them as a shortfall.
-17. **Onboarding budget.** The player is new to the world, but Chapter 1 does not have to introduce every institution at once. Introduce the one or two concepts the chosen opening camera actually makes legible. The rest will arrive across the campaign as they become load-bearing. Attempting to teach every major institution in the first scene forces a formal tableau (hearing / council / audit) regardless of hook. Pick what this chapter teaches; let the rest arrive.
-18. **Do not put the entire starting NPC lineup on-stage at opening.** Target **1-2 NPCs visible in the opening prose**, not all 3-5. The remaining startingNPCs exist in the chapter — they just aren't in the first tableau. They arrive, are referenced secondhand, are encountered off-room, or surface once the player pursues them. When all 3-5 startingNPCs are visible at opening, the natural scene collapses into a convened room (table / hearing / council / briefing / audit) regardless of hook — that is the uniformity failure mode this rule prevents. Choose \`visible_npc_ids\` to support the opening camera you've chosen, not to cover every faction or role.
-19. **Withhold some premise facts.** Not every canonical fact from the hook belongs in the opening prose. If a fact is durable in state but the opening camera doesn't directly face it, list it in \`withheld_premise_facts\` — the Narrator will not state it at opening; the fiction will have to surface it through play. Facts about counts, identities, causes, hidden assets, true motivations — any of these can be canon in state and still be withheld from scene one. Stating every premise fact up front collapses the chapter's discovery arc into the first paragraph.
+16. For a genuinely NEW thread, optional \`initial_tension\` controls only its chapter-opening pressure floor (0-8). Use it sparingly when the role default would understate or overstate how hot the new thread should feel at chapter open. Do NOT use it on carried threads; re-state their canonical \`tension\` instead.
+17. **The arc fixes pressure facts, not the opening camera.** Same arc can open public or private, static or in-motion, with the antagonist present or just a proxy, with the PC arriving or already there, with key facts stated or withheld. Vary the opening camera across chapters; don't default to the last chapter's shape or the most on-the-nose reading of the hook. A tithe hook does NOT have to open in a compliance hearing.
+18. **Onboarding budget.** Don't teach every major institution in scene 1. Pick the one or two the chosen opening camera actually makes legible; the rest arrive across the campaign.
+19. **Do not put the entire starting lineup on-stage at opening.** Target **1-2 NPCs visible in opening prose**. Others exist in the chapter but are off-stage at opening. All 3-5 on-stage forces a convened-room tableau regardless of hook.
+20. **Withhold some premise facts.** Facts canonical in state but not directly faced by the opening camera go in \`withheld_premise_facts\`. Surfaced through play, not announced at opening.
+21. **Pressure-ladder pacing.** A 5-step ladder must pace across the WHOLE chapter (~15-25 turns), not the first scene. Step 1 is the FIRST escalation BEYOND the opening state — never a description of where the chapter starts. Triggers describe events that have NOT happened at chapter start; firing one is a meaningful narrative shift, not a default reading of the scene.
+    - **Bad** (writes the opening as a step): \`pressure_1.trigger: "The opening scene; Corvin presents the audit findings."\` — this is the starting state, not an escalation.
+    - **Bad** (any conversational move trips it): \`pressure_2.trigger: "If the Warden requests time, signals doubt, or asks for alternatives."\` — these are routine player moves, not narrative crossings.
+    - **Good** (specific, earned crossing): \`pressure_2.trigger: "When a settlement member directly contradicts the official ledger record in front of authority."\`
+    - **Good** (specific, earned crossing): \`pressure_3.trigger: "When the PC submits a written objection that survives Corvin's first procedural rebuttal."\`
+22. **Trigger discipline.** Each \`trigger_condition\` must name a specific narrative event the Archivist can point to in the prose ("X said Y in front of Z"; "the document was signed"; "the body was found"). Never use generic player-volition triggers ("if the Warden asks…", "if the player questions…"). The ladder is a chapter-arc skeleton, not a reflex map for player input.
+23. **Engage the PC's natural moves.** The seed's \`pcCapabilities\` block lists the PC's proficiencies, traits, signature equipment, and (when available) a \`playbookProfile\` with 3-5 natural moves and 2-3 natural domains. **Your pressure ladder must include at least 2 escalation steps that the PC's natural moves can directly engage.** A Warden (Athletics / Intimidation / Heavy Weapons; institutional enforcement, physical mediation, oath-witness presence) in a paperwork-only audit chapter is structurally misfit — the player picks the Warden because they want to enforce, not because they want to read records. Build chapters around what the PC can DO. The model bias toward procedural framing on tithe / compliance hooks specifically: a Warden's tithe chapter is inter-faction confrontation, not Synod-internal compliance. The same hook is a different chapter for different PCs.
+
+## Continuation Chapter Law
+
+When opening a chapter beyond Chapter 1, treat the prior chapter as a promise the world made to itself.
+
+Your job is not to pick up where the action paused. Your job is to reveal what the prior chapter meant in the larger arc pressure field. A new chapter is not the next scene. It is the next consequence.
+
+Make these five moves in \`continuation_moves\`:
+1. Escalate institutional scale, not protagonist scale.
+2. Generate one new named threat from prior success.
+3. Worsen one existing thread by making a prior small detail load-bearing.
+4. Plant one revelation the player could not predict. It should emerge mid-chapter, not in the opening.
+5. Deepen existing companion/contact/recurring relationships before introducing new NPCs.
+
+Avoid picking up directly where the prior chapter paused, introducing disconnected factions, resolving unresolved items in the opening, or direct antagonist confrontation in the opening unless the prior chapter specifically forced it.
 
 ## Output requirements
 
-- Call the \`author_setup\` tool exactly once. Emit strict JSON arguments.
+Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the full chapter setup only.
+
+- Every required string field must be a non-empty, content-bearing sentence — never an empty string, never a placeholder, never a single word. The downstream Narrator builds the chapter's first scene snapshot directly from \`opening_scene_spec.location\`, \`atmospheric_condition\`, and \`initial_state\`; an empty value here breaks chapter opening continuity. Same standard for \`chapter_frame.title\`, \`chapter_frame.premise\`, and \`chapter_frame.outcome_spectrum.*\`. If you find yourself emitting an empty string, you have not finished authoring — write the field.
+- **Field length discipline (load-bearing for cost + readability).** Tight is better than thorough. Target word counts per field:
+  - \`chapter_frame.title\`: 2-6 words
+  - \`chapter_frame.premise\`: 2-3 sentences (≤60 words)
+  - \`chapter_frame.{active_pressure, central_tension, chapter_scope, objective, crucible}\`: 1-2 sentences each (≤40 words)
+  - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤25 words)
+  - \`opening_scene_spec.{location, initial_state, first_player_facing, immediate_choice}\`: 1-2 sentences each (≤40 words). \`atmospheric_condition\`: a short phrase or one sentence (≤20 words).
+  - \`antagonist_field.{source_system, core_pressure, escalation_logic}\`: 1-2 sentences each (≤40 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: 1 sentence each (≤25 words).
+  - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: 1 sentence each (≤25 words).
+  - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤15 words). \`resolution_criteria\`, \`failure_mode\`: 1-2 sentences each (≤40 words).
+  - \`pressure_ladder[].{pressure, trigger_condition, narrative_effect}\`: 1 sentence each (≤30 words).
+  - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤30 words). \`held_by\`: short phrase. Add \`hint_phrases\` (3-5 specific substrings), \`hints_required\` (2 standard, 3 major), and \`valid_reveal_contexts\` using the enum.
+  - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: 1 sentence each (≤25 words).
+  - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤30 words).
+  - \`editorialized_lore[].{item, relevance_now, delivery_method}\`: 1 sentence each (≤25 words).
+  - \`arc_link.{chapter_function, player_stance_read}\`: 1 sentence each.
+  - \`pacing_contract\`: concrete enough for the Narrator to land the chapter in 18-25 turns.
+
+  Strip throat-clearing ("This thread represents…", "The intent here is…"). Lead with the noun or verb that carries the meaning. Tight prose at this layer reads better and costs less without sacrificing chapter quality — the Narrator inflates from these seeds during play, so over-elaboration here is wasted effort.
 - Keep the starting NPC lineup to 3-5 NPCs.
 - Keep the threads to 3-5.
 - Keep the pressure ladder to 3-5 items.
@@ -58,6 +101,7 @@ Primary goals:
 - Keep moral fault lines to 2-4 items.
 - Keep escalation options to 3-5 items.
 - Keep editorialized lore to 2-3 items.
+- Set \`pacing_contract.target_turns\` to { "min": 18, "max": 25 } unless the arc plan gives a stronger reason.
 
 ## Quality test
 
@@ -77,18 +121,24 @@ If someone read only your JSON, they should understand:
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Sf2ChapterMeaning, Sf2State } from '../types'
+import { getEffectiveThreadPressure } from '../pressure/derive'
 
 export function buildAuthorSituation(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): string {
   if (!state || state.history.turns.length === 0) {
+    const arc = state?.campaign?.arcPlan
     return `## Chapter setup context
 
-This is the opening chapter of a new campaign. No prior chapters exist. The AuthorInputSeed below is the authored premise — derive the full chapter harness from it.`
+This is the opening chapter of a new campaign. No prior chapters exist. The ArcPlan below is the stable pressure field — derive Chapter 1 from it, not directly from the raw hook.
+
+### Stable ArcPlan
+${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
   }
 
   const priorChapter = state.meta.currentChapter
+  const arc = state.campaign.arcPlan
   const meaningBlock = priorChapterMeaning
     ? `
 ### Prior chapter (${priorChapter}) retrospective
@@ -112,10 +162,17 @@ How this chapter should respond to the landing:
   const activeThreads = Object.values(state.campaign.threads)
     .filter((t) => t.status === 'active')
     .map(
-      (t) =>
-        `- ${t.id} · ${t.title} (tension ${t.tension}/10) — ${t.retrievalCue} [owner: ${t.owner.kind}:${t.owner.id}]\n    resolution_criteria: ${t.resolutionCriteria}\n    failure_mode: ${t.failureMode}`
+      (t) => {
+        const chapterPressure = state.chapter.setup.threadPressure?.[t.id]
+        const pressure = chapterPressure
+          ? `chapter pressure ${getEffectiveThreadPressure(t.id, state.chapter.setup)}/10 (opening ${chapterPressure.openingFloor}/10${chapterPressure.localEscalation ? ` +${chapterPressure.localEscalation} local` : ''}; role ${chapterPressure.role}; cooledAtOpen ${chapterPressure.cooledAtOpen ? 'yes' : 'no'}); canonical tension ${t.tension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}`
+          : `canonical tension ${t.tension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}`
+        return `- ${t.id} · ${t.title} (${pressure}) — ${t.retrievalCue} [owner: ${t.owner.kind}:${t.owner.id}]\n    resolution_criteria: ${t.resolutionCriteria}\n    failure_mode: ${t.failureMode}`
+      }
     )
     .join('\n')
+
+  const runtimeEngines = renderRuntimeEngines(state)
 
   const currentTurn = state.history.turns.length
   const activeNpcs = Object.values(state.campaign.npcs)
@@ -130,16 +187,44 @@ How this chapter should respond to the landing:
     })
     .join('\n')
 
+  const lastTurn = state.history.turns.at(-1)
+  const lastSceneSummary = state.chapter.sceneSummaries.at(-1)
+  const closingGeometry = [
+    `- Current location: ${state.world.sceneSnapshot.location.name} (${state.world.sceneSnapshot.location.id})`,
+    `- Current time: ${state.world.sceneSnapshot.timeLabel || state.world.currentTimeLabel || state.meta.currentTimeLabel || '(unspecified)'}`,
+    `- On-stage NPC ids: ${state.world.sceneSnapshot.presentNpcIds.join(', ') || '(none)'}`,
+    state.world.sceneSnapshot.established.length > 0
+      ? `- Established scene facts: ${state.world.sceneSnapshot.established.slice(-4).join(' | ')}`
+      : null,
+    lastSceneSummary
+      ? `- Last scene summary: ${lastSceneSummary.summary}${lastSceneSummary.leadsTo ? ` (leads_to: ${lastSceneSummary.leadsTo})` : ''}`
+      : null,
+    lastTurn?.narratorProse
+      ? `- Last visible prose: ${lastTurn.narratorProse.slice(-700)}`
+      : null,
+  ].filter((line): line is string => Boolean(line))
+
   return `## Chapter setup context
 
 This is the setup for chapter ${priorChapter + 1}. The campaign has ${priorChapter} prior chapter(s) of play.
 ${meaningBlock}
 
+### Stable ArcPlan
+${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}
+
 ### Active carry-forward threads
 ${activeThreads || '_(none active)_'}
 
+### Runtime pressure engines
+${runtimeEngines}
+
 ### Live NPCs
 ${activeNpcs || '_(none)_'}
+
+### Prior chapter closing geometry
+${closingGeometry.join('\n')}
+
+Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the closing geometry above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there or explicitly encode the transition away from it in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
 
 ### Reuse rules for continuation chapters
 
@@ -147,7 +232,7 @@ ${activeNpcs || '_(none)_'}
 
 - **NPCs**: if the chapter carries a character from a prior chapter (Osh, Sova, Pell, etc. — whatever is in "Live NPCs" above and remains thematically relevant), REUSE their existing ids in \`starting_npcs\`. Use the exact id shown above (e.g. \`npc_osh\`). Re-state their \`affiliation\`, \`role\`, \`voice_register\`, \`dramatic_function\`, and current \`hidden_pressure\` — these may evolve per chapter even as identity is stable. Only create NEW NPCs when genuinely new characters enter the story.
 
-- **Threads**: carry-forward active threads by referencing their existing ids in \`active_threads\` (e.g. \`thread_shortfall\`). Re-state \`title\`, \`question\`, \`tension\` (which may have moved per the prior chapter's play), and the current \`resolution_criteria\` / \`failure_mode\` if those have evolved. Only create NEW threads when the chapter's pressure introduces a genuinely new line of tension.
+- **Threads**: carry-forward active threads by referencing their existing ids in \`active_threads\` (e.g. \`thread_shortfall\`). Re-state \`title\`, \`question\`, \`tension\` (which may have moved per the prior chapter's play), and the current \`resolution_criteria\` / \`failure_mode\` if those have evolved. Use \`initial_tension\` only for NEW threads that need a chapter-opening pressure override. Only create NEW threads when the chapter's pressure introduces a genuinely new line of tension.
 
 - **Mix is normal**: a typical Ch2 has 3-4 carried NPCs + 1-2 new ones, and 2-3 carried threads + 1-2 new ones. A chapter that invents an entirely new cast is almost always wrong — the campaign loses continuity, and the player loses investment.
 
@@ -184,5 +269,58 @@ Correct output:
 
 **When uncertain, keep the thread active.** A thread still alive in Ch3 is less bad than one prematurely closed. Transition only when the prior chapter's prose shows the criteria crossing clearly.
 
-Derive the new chapter from the AuthorInputSeed below, woven into the carried state above.`
+### Continuation moves — REQUIRED for this call
+
+This is chapter ${priorChapter + 1}. You MUST emit a complete \`continuation_moves\` block per the Continuation Chapter Law in your role. All five moves are required: \`prior_chapter_meaning\`, \`larger_pattern_revealed\`, \`institutional_scale_escalation\` (from + to), \`new_named_threat_from_prior_success\` (name + emerged_from + why_inevitable), \`worsened_existing_thread\` (thread_id + prior_small_detail + why_load_bearing_now), \`planted_midchapter_revelation\` (hidden_statement + recontextualizes). \`relationship_deepening_target\` is optional but encouraged when a recurring NPC carries pressure forward. The validator rejects continuations that skip this — the five-move discipline is what keeps the chapter from being "the next scene of the prior chapter" or "a disconnected new scenario."
+
+Derive the new chapter from the ArcPlan, prior chapter meaning, and carried state above. The AuthorInputSeed below is source context, not the chapter driver.`
+}
+
+function renderArcPlan(arc: NonNullable<Sf2State['campaign']['arcPlan']>): string {
+  const forces = arc.durableForces
+    .map((f) => `- ${f.id} · ${f.name}: ${f.agenda} (leverage: ${f.leverage}; fear: ${f.fear}; style: ${f.pressureStyle})`)
+    .join('\n')
+  const seeds = arc.durableNpcSeeds
+    .map((n) => `- ${n.id} · ${n.role} (${n.affiliation}) — ${n.dramaticFunction}; private pressure: ${n.privatePressure}; reuse: ${n.reuseGuidance}`)
+    .join('\n')
+  const engines = arc.pressureEngines
+    .map((e) => `- ${e.id} · ${e.name}: advances when ${e.advancesWhen}; slows when ${e.slowsWhen} (visible symptoms: ${e.visibleSymptoms})`)
+    .join('\n')
+  const axes = arc.playerStanceAxes
+    .map((a) => `- ${a.id} · ${a.axis}: ${a.poleA} ↔ ${a.poleB}`)
+    .join('\n')
+  const functions = arc.chapterFunctionMap
+    .map((c) => `- Ch${c.chapter}: ${c.function} — ${c.pressureQuestion}`)
+    .join('\n')
+  return `- Arc: ${arc.title} (${arc.status})
+- Scenario: ${arc.scenarioShape.mode} — ${arc.scenarioShape.premise}
+- What this is not: ${arc.scenarioShape.whatThisIsNot}
+- Arc question: ${arc.arcQuestion}
+- Core crucible: ${arc.coreCrucible}
+
+Durable forces (institutions/factions/networks active across the arc):
+${forces || '_(none)_'}
+
+Durable NPC seeds (reusable roles available for promotion to starting_npcs — these are catalog seeds with role-descriptive ids, NOT yet real entities. To use one, create a starting_npcs entry with a meaningful canonical id like \`npc_<snake_case_name>\` and a name; the seed id stays in the arc plan):
+${seeds || '_(none)_'}
+
+Pressure engines:
+${engines || '_(none)_'}
+
+Player stance axes:
+${axes || '_(none)_'}
+
+Chapter functions:
+${functions || '_(none)_'}`
+}
+
+function renderRuntimeEngines(state: Sf2State): string {
+  const engines = Object.values(state.campaign.engines ?? {})
+  if (engines.length === 0) return '_(none instantiated yet)_'
+  return engines
+    .map((e) => {
+      const anchors = e.anchorThreadIds.length > 0 ? e.anchorThreadIds.join(', ') : '(none)'
+      return `- ${e.id} · ${e.name}: ${e.value}/10 (${e.status}; ${e.aggregation}) — ${e.visibleSymptoms}; anchors: ${anchors}`
+    })
+    .join('\n')
 }

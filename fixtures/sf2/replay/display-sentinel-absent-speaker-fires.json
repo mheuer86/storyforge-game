@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: absent NPC with present-tense dialogue tag fires absent_speaker",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "PRD Test 2 worked example. Auditor Pol is absent (not in presentNpcIds, but in chapter starting cast → kernel marks absent). Prose has 'Auditor Pol says \"...\"'. The scanner must catch this — it's the canonical Mareth/Pol bug class the SceneKernel was built to anchor."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Elder Moth",
+            "affiliation": "settlement",
+            "role": "elder",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Settlement elder"],
+              "voice": { "note": "sparse", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Settlement elder.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_pol": {
+            "id": "npc_pol",
+            "name": "Auditor Pol",
+            "affiliation": "Synod",
+            "role": "auditor",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Synod auditor"],
+              "voice": { "note": "official", "register": "synodic" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Synod auditor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_pol"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_moth"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Tell her.",
+    "narrator": {
+      "prose": "Moth meets your eyes across the counter. Auditor Pol says, \"The writ is already in order.\"",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 1,
+      "findingsInclude": [
+        {
+          "findingType": "absent_speaker",
+          "severity": "hard",
+          "surfaceEquals": "Auditor Pol says"
+        }
+      ]
+    }
+  }
+}

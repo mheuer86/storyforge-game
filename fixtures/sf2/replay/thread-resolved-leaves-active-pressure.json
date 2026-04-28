@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread resolved leaves active pressure surface",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Regression coverage from playtest fixture F6. Resolved threads must stop acting as active chapter pressure and should not remain pegged at max tension."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 3,
+    "playerInput": "File the final confirmation.",
+    "narrator": {
+      "prose": "The registry accepts the confirmation. The local question is settled.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_costly",
+            "reason": "The confirmation settled the fixture's central question with cost.",
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      { "threadId": "thread_spine", "status": "resolved_costly", "tension": 0 }
+    ],
+    "activeThreadIdsExcludes": ["thread_spine"],
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

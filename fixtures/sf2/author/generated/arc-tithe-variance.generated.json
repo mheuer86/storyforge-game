@@ -1,0 +1,1831 @@
+{
+  "fixture": "arc-tithe-variance",
+  "results": [
+    {
+      "raw": {
+        "id": "arc_the_tithe_revolt",
+        "title": "The Tithe (Revolt Variant)",
+        "source_hook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenario_shape": {
+          "mode": "revolt",
+          "premise": "The tithe shortage has already become a public legitimacy crisis. Settlement leadership has fractured between compliance and resistance. The Warden arrives as Throne authority to restore order, but the settlement's factions are preparing to act—some to force compliance, some to hide children, some to negotiate exemption, and some to openly refuse the Synod's claim.",
+          "why_this_run": "This run foregrounds the political collapse that follows when institutional pressure becomes unbearable and visible. The Warden is not investigating a hidden problem or negotiating behind closed doors—they are walking into a settlement where everyone knows what is coming, and multiple factions are already mobilizing around incompatible solutions. The PC's authority is the last chance for managed resolution, or the spark that ignites open defiance.",
+          "what_this_is_not": "This is not a mystery about where the Resonants went, or a chamber play to negotiate exemptions with House or Synod elites. The shortage is known. The factions are public. The crisis is structural and visible.",
+          "selection_rationale": "Revolt mode was chosen because the creative angle specifies that the legitimacy crisis is already public, and the arc variant explicitly requests this scenario bias. This mode produces stronger player choice than investigation (the facts are known) or chamber_play (the factions are mobilizing beyond negotiation). Protection mode would script the PC into a defensive posture; revolt mode lets them enforce, mediate, defect, or witness collapse based on stance.",
+          "rejected_default_shape": "The default shape for this hook is investigation—tracking down missing Resonants, uncovering corruption, or discovering why the shortage occurred. That mode would focus on hidden information and gradual revelation. This run rejects that in favor of open factional conflict where the player must act under institutional and moral pressure with incomplete control."
+        },
+        "arc_question": "Can the Warden hold the settlement together under the weight of an impossible mandate, or will they witness—or enable—the fracture of imperial authority on the frontier?",
+        "core_crucible": "The Synod's tithe ship arrives in five weeks. If the numbers are not met, supplementary selection will occur. Every faction knows this. No one can stop it through channels. The Warden's authority can enforce compliance, legitimize resistance, or shatter trying to do both.",
+        "invariant_facts": [
+          "The settlement is short by four Resonants on its annual tithe.",
+          "The Synod does not negotiate tithe amounts; shortfalls trigger supplementary selection from the next cohort.",
+          "The tithe ship arrives in five weeks, filed under transit authority.",
+          "The Warden carries an imperial writ authorizing them to restore order and ensure compliance with Synod mandates.",
+          "Multiple factions within the settlement have already begun preparing conflicting responses to the shortage.",
+          "The Throne sent the Warden specifically because both House authority and Synod authority have failed to resolve the crisis."
+        ],
+        "variable_truths_for_this_run": [
+          "The settlement's House-sworn administrator has lost control and is preparing to flee before the tithe ship arrives.",
+          "A group of parents has formed a hidden network to falsify records and hide children who test near the Resonant threshold.",
+          "The local Synod lector has requested armed support to enforce supplementary selection, escalating the situation from administrative to martial.",
+          "An Undrift contact within the settlement has offered to extract families, but only if the Warden looks the other way.",
+          "The shortage occurred because two young Resonants died in a poorly maintained attunement array; the House supervisor covered it up rather than report the loss.",
+          "One of the settlement's militia sergeants is preparing to seize the tithe records and destroy them, believing it will buy time.",
+          "A minor House envoy is en route, promising exemption in exchange for the settlement's loyalty transfer—an offer that would be considered heresy if formalized."
+        ],
+        "durable_forces": [
+          {
+            "id": "synod_compliance_office",
+            "name": "Synod Compliance Office (Sector Mandate)",
+            "agenda": "Ensure the tithe is met on schedule; frame supplementary selection as moral necessity and institutional care.",
+            "leverage": "Legal authority to conduct supplementary selection; the tithe ship and armed lectors; the weight of doctrine and a thousand years of precedent.",
+            "fear": "That visible resistance will spread to other settlements; that the Throne will blame the Synod for frontier instability.",
+            "pressure_style": "Righteous, procedural, and unyielding. Frames enforcement as duty and refusal as harm to the greater Hegemony. Uses administrative language to make violence sound inevitable."
+          },
+          {
+            "id": "settlement_popular_movement",
+            "name": "The Parents' Movement (Settlement Factions)",
+            "agenda": "Protect their children from supplementary selection by any means necessary—record falsification, hiding, or open refusal.",
+            "leverage": "Local knowledge, popular legitimacy, willingness to act outside the law, ability to shelter and move people covertly.",
+            "fear": "That their children will be taken; that the Warden will enforce compliance; that resistance will bring reprisal not just on them but on the entire settlement.",
+            "pressure_style": "Desperate, organized, and morally certain. They speak in terms of family, survival, and betrayal. They test the Warden's willingness to enforce."
+          },
+          {
+            "id": "house_local_authority",
+            "name": "House Czerynn (Local Administration)",
+            "agenda": "Avoid blame for the shortage and maintain House standing; restore order without losing allocation privileges or incurring Synod sanction.",
+            "leverage": "Formal administrative control, records access, small garrison of sworn retainers, ability to delay or expedite bureaucratic action.",
+            "fear": "That they will be blamed for the deaths that caused the shortage; that the settlement will become ungovernable; that a rival House will exploit the crisis.",
+            "pressure_style": "Strategic, defensive, and slippery. House representatives speak formally and try to redirect responsibility. They offer cooperation but withhold commitment."
+          },
+          {
+            "id": "undrift_extraction_network",
+            "name": "The Undrift (Frontier Network)",
+            "agenda": "Extract families and children before the tithe ship arrives; expand the network of those who have escaped Synod control.",
+            "leverage": "Hidden routes, falsified transit papers, off-record safe houses, and the promise of freedom outside the Hegemony's reach.",
+            "fear": "Exposure and annihilation; that the Warden will prioritize duty over mercy; that extraction attempts will collapse the entire network.",
+            "pressure_style": "Cautious, transactional, and morally urgent. They make no appeals to law or duty, only to what the Warden can live with. Every offer is a test."
+          },
+          {
+            "id": "throne_institutional_expectations",
+            "name": "The Throne (Institutional Expectation)",
+            "agenda": "Restore stability without open revolt; preserve the balance between Synod authority and House legitimacy; avoid visible fracture.",
+            "leverage": "The Warden's mandate and the weight of imperial duty; the implicit threat of escalation if the Warden fails.",
+            "fear": "That the frontier will become ungovernable; that the Synod or a House will force the Throne to choose sides; that the Warden will defect or exceed authority.",
+            "pressure_style": "The Throne is not a voiced presence but an institutional weight the Warden carries. Its pressure is felt in the writ, in the expectations of other factions, and in the cost of failure."
+          }
+        ],
+        "durable_npc_seeds": [
+          {
+            "id": "lector_brandlis",
+            "role": "Synod Lector (Compliance Officer)",
+            "affiliation": "Synod Compliance Office",
+            "dramatic_function": "Voice of institutional righteousness and procedural inevitability; escalates when resisted, frames enforcement as moral duty.",
+            "private_pressure": "Brandlis believes deeply in the necessity of the tithe system, but fears being remembered as the lector who sparked a frontier revolt. He needs the Warden to legitimize enforcement.",
+            "reuse_guidance": "Reappears whenever Synod authority is invoked or challenged. Becomes more rigid or more desperate depending on how the Warden's stance hardens. May request armed enforcement or attempt to conduct selection himself."
+          },
+          {
+            "id": "sworn_administrator_vey",
+            "role": "House-Sworn Administrator (Local Authority)",
+            "affiliation": "House Czerynn",
+            "dramatic_function": "Represents House authority in collapse; desperate to avoid blame, increasingly willing to abandon the settlement to protect herself.",
+            "private_pressure": "Vey covered up the maintenance failure that killed two Resonants. She knows the shortage is her fault, and she will do anything to prevent that from becoming formal record.",
+            "reuse_guidance": "Reappears in bureaucratic and crisis moments. May offer cooperation, bribe, sabotage, or flight depending on the Warden's approach. Her desperation is a contagious pressure."
+          },
+          {
+            "id": "parent_organizer_haake",
+            "role": "Parents' Movement Organizer (Settlement Leader)",
+            "affiliation": "Settlement Popular Movement",
+            "dramatic_function": "Moral anchor for the resistance; tests the Warden's willingness to enforce an unjust mandate; escalates to direct action if ignored.",
+            "private_pressure": "Haake's daughter tested near-threshold last year. If supplementary selection occurs, she will be taken. Haake is willing to die to prevent it.",
+            "reuse_guidance": "Reappears whenever the Parents' Movement acts. Haake's stance toward the Warden shifts based on respect, betrayal, or alliance. She can be an ally, an enemy, or a tragedy."
+          },
+          {
+            "id": "militia_sergeant_korell",
+            "role": "Settlement Militia Sergeant (Armed Neutral)",
+            "affiliation": "Settlement Militia (House-sworn but locally rooted)",
+            "dramatic_function": "Represents the enforcement arm caught between loyalty and conscience; capable of violence but seeking a reason not to use it.",
+            "private_pressure": "Korell has sworn oaths to House Czerynn but lives among the families being threatened. He will follow the Warden's lead if it seems legitimate, but he will not fire on his neighbors without moral cover.",
+            "reuse_guidance": "Reappears in confrontation and enforcement scenes. Korell's loyalty is the hinge—if the Warden gives him a legitimate path, he will hold the line. If the Warden's authority fractures, he will choose sides."
+          },
+          {
+            "id": "undrift_contact_senna",
+            "role": "Undrift Contact (Hidden Network Liaison)",
+            "affiliation": "Undrift Extraction Network",
+            "dramatic_function": "Offers a way out for families; tests the Warden's willingness to look away; becomes visible only when the Warden shows an opening.",
+            "private_pressure": "Senna was a House retainer before defecting. She knows the system intimately and despises it, but she also knows that one careless extraction attempt could burn the entire network.",
+            "reuse_guidance": "Reappears when the Warden creates space for quiet defiance. Senna does not argue morality—she offers capability. She will vanish or act based on trust, not persuasion."
+          },
+          {
+            "id": "house_envoy_talric",
+            "role": "House Envoy (Minor House Opportunist)",
+            "affiliation": "House Dalmar (Rival House)",
+            "dramatic_function": "Introduces a political escape hatch that would solve the immediate crisis but fracture loyalty structures; pressures the Warden to act as kingmaker.",
+            "private_pressure": "Talric sees the crisis as an opportunity to pry the settlement away from House Czerynn. He has no interest in the children—only in the territory and the precedent.",
+            "reuse_guidance": "Appears mid-arc when the crisis is visible to outside powers. Talric is polite, transactional, and patient. He offers a deal that would work—and poison everything after."
+          }
+        ],
+        "pressure_engines": [
+          {
+            "id": "tithe_ship_countdown",
+            "name": "The Tithe Ship Arrival Clock",
+            "advances_when": "Time passes; the Warden fails to produce a resolution; factions delay or sabotage compliance efforts; violence or bureaucratic collapse consumes time.",
+            "slows_when": "The Warden achieves temporary agreements; factions cooperate; House or Synod authority grants short delays; transit schedules are contested or rewritten.",
+            "visible_symptoms": "Public announcements of days remaining; lector's increasing urgency; parents' desperation intensifying; House officials preparing exit strategies; militia positioning around key sites."
+          },
+          {
+            "id": "legitimacy_fracture",
+            "name": "Institutional Legitimacy Erosion",
+            "advances_when": "The Warden enforces without moral clarity; visible injustices occur; factions openly defy authority; the Warden is seen taking sides; promises are broken; violence is used.",
+            "slows_when": "The Warden acts transparently and justly; oaths are witnessed and honored; small protections are delivered; the Warden visibly bears the cost of decisions.",
+            "visible_symptoms": "Settlement cooperation declines; militia becomes unreliable; House authority is ignored; Synod demands escalate; people stop speaking freely to the Warden; Undrift becomes bolder."
+          },
+          {
+            "id": "popular_resistance_escalation",
+            "name": "Parents' Movement Escalation",
+            "advances_when": "The Warden is seen as complicit with the Synod; enforcement actions occur; families are threatened; Haake and others lose hope in negotiation; hidden networks grow bold.",
+            "slows_when": "The Warden protects families; shows visible resistance to Synod pressure; creates space for alternatives; earns trust through action; witnesses oaths of protection.",
+            "visible_symptoms": "Records are falsified or destroyed; children disappear; public assemblies become confrontational; militia faces non-cooperation; sabotage of settlement infrastructure; open defiance."
+          },
+          {
+            "id": "synod_enforcement_escalation",
+            "name": "Synod Enforcement Demand Clock",
+            "advances_when": "Resistance becomes visible; the lector feels undermined; the Warden is seen as insufficiently loyal; supplementary selection is obstructed; Synod fears loss of control.",
+            "slows_when": "The Warden enforces compliance; delivers visible cooperation; isolates resistance; provides the lector with bureaucratic cover; frames enforcement as joint action.",
+            "visible_symptoms": "Lector requests armed support; Synod reinforcements are summoned; lector begins preparing to conduct selection independently; doctrine is invoked more rigidly; heresy accusations surface."
+          },
+          {
+            "id": "house_collapse_or_opportunism",
+            "name": "House Authority Collapse or Rival Exploitation",
+            "advances_when": "Administrator Vey's failure becomes visible; the crisis spreads beyond the settlement; rival Houses notice the instability; the Warden destabilizes House control.",
+            "slows_when": "The Warden stabilizes House legitimacy; protects Vey's position (or replaces her cleanly); prevents rival House interference; delivers a resolution that preserves allocation standing.",
+            "visible_symptoms": "Vey prepares to flee; rival House envoys arrive; allocation privileges are contested; settlement officials hedge their loyalty; records are altered or hidden."
+          }
+        ],
+        "player_stance_axes": [
+          {
+            "id": "enforce_vs_protect",
+            "axis": "Enforce the Mandate vs. Protect the Families",
+            "pole_a": "Enforce the Mandate",
+            "pole_b": "Protect the Families",
+            "signals_a": [
+              "Cooperating openly with Lector Brandlis",
+              "Using intimidation or authority to compel compliance",
+              "Framing the tithe as necessary and just",
+              "Suppressing resistance or hidden networks",
+              "Invoking the Warden's writ and Throne duty"
+            ],
+            "signals_b": [
+              "Visibly resisting or delaying Synod demands",
+              "Helping families hide children or falsify records",
+              "Framing the tithe as unjust or unbearable",
+              "Refusing to enforce supplementary selection",
+              "Allying with Haake or the Parents' Movement"
+            ],
+            "if_a_hardens": "The Synod lector treats the Warden as an ally and expects full enforcement; parents see the Warden as complicit; militia may fracture or obey; Undrift networks vanish; the arc moves toward enforced compliance or violent suppression.",
+            "if_b_hardens": "The Parents' Movement trusts the Warden and mobilizes openly; the Synod lector escalates and may summon reinforcement; House authority collapses; the arc moves toward defection, extraction, or open revolt."
+          },
+          {
+            "id": "transparency_vs_control",
+            "axis": "Transparent Witness vs. Hidden Manipulation",
+            "pole_a": "Transparent Witness",
+            "pole_b": "Hidden Manipulation",
+            "signals_a": [
+              "Speaking openly about the shortage's cause",
+              "Refusing to falsify records or hide information",
+              "Holding public oaths or assemblies",
+              "Forcing factions to state positions openly",
+              "Acting as a visible Throne presence"
+            ],
+            "signals_b": [
+              "Cutting secret deals with factions",
+              "Falsifying or burying records",
+              "Operating through intermediaries",
+              "Keeping factions ignorant of each other's actions",
+              "Using intimidation or authority to silence dissent"
+            ],
+            "if_a_hardens": "Factions respect the Warden's integrity but may act against them openly; legitimacy fractures more slowly; trust becomes a usable resource; the arc centers moral clarity and visible cost.",
+            "if_b_hardens": "Factions suspect the Warden's motives; backroom deals create fragile, unstable coalitions; legitimacy erodes faster; betrayal becomes likely; the arc centers pragmatic survival and factional chess."
+          },
+          {
+            "id": "throne_vs_frontier",
+            "axis": "Throne Loyalty vs. Frontier Solidarity",
+            "pole_a": "Throne Loyalty",
+            "pole_b": "Frontier Solidarity",
+            "signals_a": [
+              "Invoking the imperial writ and Throne authority",
+              "Prioritizing stability and institutional order",
+              "Framing the crisis as a failure of local leadership",
+              "Treating the settlement as subjects to be managed",
+              "Reporting fully and honestly to Throne superiors"
+            ],
+            "signals_b": [
+              "Identifying with the settlement's position",
+              "Framing the crisis as institutional failure",
+              "Treating locals as peers or allies",
+              "Prioritizing local survival over imperial order",
+              "Exceeding or bending the writ's authority"
+            ],
+            "if_a_hardens": "The Warden is seen as an outsider enforcing distant authority; Synod and House elites offer support; popular legitimacy erodes; the arc moves toward enforced order or institutional escalation.",
+            "if_b_hardens": "The Warden is seen as a defector or frontier champion; locals offer trust and cooperation; Synod and House authority become adversaries; the arc moves toward revolt, extraction, or founding legitimacy outside the system."
+          },
+          {
+            "id": "oath_vs_pragmatism",
+            "axis": "Oath-Bound Integrity vs. Pragmatic Compromise",
+            "pole_a": "Oath-Bound Integrity",
+            "pole_b": "Pragmatic Compromise",
+            "signals_a": [
+              "Refusing deals that violate sworn duty",
+              "Holding others to oaths and formal commitments",
+              "Treating the writ as inviolable",
+              "Refusing to falsify or omit in reports",
+              "Acting as a moral anchor even at personal cost"
+            ],
+            "signals_b": [
+              "Cutting deals that bend or break the writ",
+              "Treating oaths as negotiable under pressure",
+              "Prioritizing outcomes over principles",
+              "Falsifying records or reports to buy time or protect people",
+              "Using authority instrumentally rather than honorably"
+            ],
+            "if_a_hardens": "The Warden becomes a moral symbol; factions seek their witness and judgment; oaths become binding and powerful; the arc centers honor, cost, and the limits of duty.",
+            "if_b_hardens": "The Warden becomes a pragmatic operator; factions seek deals and leverage; oaths lose weight; the arc centers survival, betrayal, and the erosion of principle under pressure."
+          }
+        ],
+        "chapter_function_map": [
+          {
+            "chapter": 1,
+            "function": "Introduce the public crisis and map the factional terrain. The Warden arrives and must quickly assess which factions are mobilizing, what they want, and what leverage the Warden's authority actually holds. The settlement is already fracturing; the Warden's first actions signal which pressures they will answer.",
+            "pressure_question": "Can the Warden assert control and map the factions before violence or open defiance begins?",
+            "possible_end_states": [
+              "The Warden establishes authority and opens lines to all major factions.",
+              "The Warden aligns visibly with one faction, accelerating the crisis.",
+              "The Warden's authority is contested immediately, forcing early escalation.",
+              "The Warden discovers a hidden pressure (Undrift, House corruption, or militia fracture) that reframes the crisis."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "Test the Warden's stance under pressure. Factions make demands, offers, or threats. The tithe clock advances. The Warden must act—enforce, protect, negotiate, or maneuver—and those actions will harden their position on at least one stance axis. The cost of inaction becomes visible.",
+            "pressure_question": "What will the Warden sacrifice or risk to buy time, legitimacy, or protection for one faction over another?",
+            "possible_end_states": [
+              "The Warden enforces compliance, earning Synod support but fracturing popular legitimacy.",
+              "The Warden protects families, earning popular trust but escalating Synod enforcement demands.",
+              "The Warden brokers a fragile compromise that satisfies no one but buys time.",
+              "The Warden is forced into visible violence or betrayal, accelerating factional collapse."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Escalate the crisis as pressure engines collide. Multiple factions act simultaneously. The Warden cannot satisfy everyone and must choose which pressures to resist and which to enable. Hidden agendas surface. The tithe clock is near. The cost of the Warden's earlier stances becomes undeniable.",
+            "pressure_question": "Who will the Warden betray, abandon, or stand with when the factions force a choice?",
+            "possible_end_states": [
+              "The Warden sides openly with the Synod and enforces selection, triggering revolt or submission.",
+              "The Warden sides openly with the Parents' Movement and becomes a defector or rebel.",
+              "The Warden brokers a desperate deal with a rival House or Undrift network, solving the crisis but poisoning future legitimacy.",
+              "The Warden fractures under the pressure and loses control as factions act independently."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "Resolve or irreversibly commit to one path. The tithe ship is days away. The Warden's stance has hardened. Factions have mobilized. The crisis reaches its peak: enforcement, extraction, revolt, or collapse. The Warden must act decisively, knowing that their choice will define what this settlement becomes and what their authority means.",
+            "pressure_question": "What will the Warden become in order to end this?",
+            "possible_end_states": [
+              "The Warden enforces the tithe, delivering children to the Synod and preserving imperial order at moral cost.",
+              "The Warden enables extraction or falsification, betraying the Throne but protecting the settlement.",
+              "The Warden witnesses open revolt and must choose whether to suppress it, join it, or stand aside.",
+              "The Warden brokers a pyrrhic compromise that satisfies the letter of the mandate but hollows its spirit.",
+              "The Warden's authority collapses entirely, and the settlement descends into violence or flight."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "Deliver the aftermath and long-term consequences. The tithe ship arrives or is avoided. The Warden must face the institutions and people they served, betrayed, or protected. The arc closes with the weight of what was chosen and what remains—loyalty, legitimacy, survival, or ruin.",
+            "pressure_question": "What remains of the Warden's authority, integrity, and the settlement after the crisis?",
+            "possible_end_states": [
+              "The Warden reports to the Throne, facing judgment or reward for their actions.",
+              "The Warden defects or is branded a traitor, leaving imperial service.",
+              "The settlement endures under new terms—protected, enslaved, or broken.",
+              "The Warden becomes a symbol of resistance or enforcement, with their legend spreading across the frontier.",
+              "The Warden is left alone with the cost of what they did and who they became."
+            ]
+          }
+        ],
+        "possible_endgames": [
+          "The tithe is met through enforcement; the Warden preserves imperial order but is haunted by the children taken.",
+          "The tithe is evaded through extraction; families escape, and the Warden becomes a defector or Undrift ally.",
+          "The settlement revolts openly; the Warden suppresses it, joins it, or witnesses its destruction.",
+          "A rival House claims the settlement; the tithe is met, but loyalty has fractured permanently.",
+          "The Warden brokers a compromise that satisfies the mandate on paper but subverts it in practice.",
+          "The Warden's authority collapses; the settlement fragments, and the frontier becomes ungovernable.",
+          "The Warden dies or is martyred in the crisis, becoming a symbol whose meaning is contested by survivors.",
+          "The tithe ship arrives to find compliance—and silence. The Warden has ensured order, but trust is gone."
+        ]
+      },
+      "arcPlan": {
+        "id": "arc_the_tithe_revolt",
+        "status": "active",
+        "title": "The Tithe (Revolt Variant)",
+        "sourceHook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenarioShape": {
+          "mode": "revolt",
+          "premise": "The tithe shortage has already become a public legitimacy crisis. Settlement leadership has fractured between compliance and resistance. The Warden arrives as Throne authority to restore order, but the settlement's factions are preparing to act—some to force compliance, some to hide children, some to negotiate exemption, and some to openly refuse the Synod's claim.",
+          "whyThisRun": "This run foregrounds the political collapse that follows when institutional pressure becomes unbearable and visible. The Warden is not investigating a hidden problem or negotiating behind closed doors—they are walking into a settlement where everyone knows what is coming, and multiple factions are already mobilizing around incompatible solutions. The PC's authority is the last chance for managed resolution, or the spark that ignites open defiance.",
+          "whatThisIsNot": "This is not a mystery about where the Resonants went, or a chamber play to negotiate exemptions with House or Synod elites. The shortage is known. The factions are public. The crisis is structural and visible.",
+          "selectionRationale": "Revolt mode was chosen because the creative angle specifies that the legitimacy crisis is already public, and the arc variant explicitly requests this scenario bias. This mode produces stronger player choice than investigation (the facts are known) or chamber_play (the factions are mobilizing beyond negotiation). Protection mode would script the PC into a defensive posture; revolt mode lets them enforce, mediate, defect, or witness collapse based on stance.",
+          "rejectedDefaultShape": "The default shape for this hook is investigation—tracking down missing Resonants, uncovering corruption, or discovering why the shortage occurred. That mode would focus on hidden information and gradual revelation. This run rejects that in favor of open factional conflict where the player must act under institutional and moral pressure with incomplete control."
+        },
+        "arcQuestion": "Can the Warden hold the settlement together under the weight of an impossible mandate, or will they witness—or enable—the fracture of imperial authority on the frontier?",
+        "coreCrucible": "The Synod's tithe ship arrives in five weeks. If the numbers are not met, supplementary selection will occur. Every faction knows this. No one can stop it through channels. The Warden's authority can enforce compliance, legitimize resistance, or shatter trying to do both.",
+        "invariantFacts": [
+          "The settlement is short by four Resonants on its annual tithe.",
+          "The Synod does not negotiate tithe amounts; shortfalls trigger supplementary selection from the next cohort.",
+          "The tithe ship arrives in five weeks, filed under transit authority.",
+          "The Warden carries an imperial writ authorizing them to restore order and ensure compliance with Synod mandates.",
+          "Multiple factions within the settlement have already begun preparing conflicting responses to the shortage.",
+          "The Throne sent the Warden specifically because both House authority and Synod authority have failed to resolve the crisis."
+        ],
+        "variableTruthsForThisRun": [
+          "The settlement's House-sworn administrator has lost control and is preparing to flee before the tithe ship arrives.",
+          "A group of parents has formed a hidden network to falsify records and hide children who test near the Resonant threshold.",
+          "The local Synod lector has requested armed support to enforce supplementary selection, escalating the situation from administrative to martial.",
+          "An Undrift contact within the settlement has offered to extract families, but only if the Warden looks the other way.",
+          "The shortage occurred because two young Resonants died in a poorly maintained attunement array; the House supervisor covered it up rather than report the loss.",
+          "One of the settlement's militia sergeants is preparing to seize the tithe records and destroy them, believing it will buy time.",
+          "A minor House envoy is en route, promising exemption in exchange for the settlement's loyalty transfer—an offer that would be considered heresy if formalized."
+        ],
+        "durableForces": [
+          {
+            "id": "synod_compliance_office",
+            "name": "Synod Compliance Office (Sector Mandate)",
+            "agenda": "Ensure the tithe is met on schedule; frame supplementary selection as moral necessity and institutional care.",
+            "leverage": "Legal authority to conduct supplementary selection; the tithe ship and armed lectors; the weight of doctrine and a thousand years of precedent.",
+            "fear": "That visible resistance will spread to other settlements; that the Throne will blame the Synod for frontier instability.",
+            "pressureStyle": "Righteous, procedural, and unyielding. Frames enforcement as duty and refusal as harm to the greater Hegemony. Uses administrative language to make violence sound inevitable."
+          },
+          {
+            "id": "settlement_popular_movement",
+            "name": "The Parents' Movement (Settlement Factions)",
+            "agenda": "Protect their children from supplementary selection by any means necessary—record falsification, hiding, or open refusal.",
+            "leverage": "Local knowledge, popular legitimacy, willingness to act outside the law, ability to shelter and move people covertly.",
+            "fear": "That their children will be taken; that the Warden will enforce compliance; that resistance will bring reprisal not just on them but on the entire settlement.",
+            "pressureStyle": "Desperate, organized, and morally certain. They speak in terms of family, survival, and betrayal. They test the Warden's willingness to enforce."
+          },
+          {
+            "id": "house_local_authority",
+            "name": "House Czerynn (Local Administration)",
+            "agenda": "Avoid blame for the shortage and maintain House standing; restore order without losing allocation privileges or incurring Synod sanction.",
+            "leverage": "Formal administrative control, records access, small garrison of sworn retainers, ability to delay or expedite bureaucratic action.",
+            "fear": "That they will be blamed for the deaths that caused the shortage; that the settlement will become ungovernable; that a rival House will exploit the crisis.",
+            "pressureStyle": "Strategic, defensive, and slippery. House representatives speak formally and try to redirect responsibility. They offer cooperation but withhold commitment."
+          },
+          {
+            "id": "undrift_extraction_network",
+            "name": "The Undrift (Frontier Network)",
+            "agenda": "Extract families and children before the tithe ship arrives; expand the network of those who have escaped Synod control.",
+            "leverage": "Hidden routes, falsified transit papers, off-record safe houses, and the promise of freedom outside the Hegemony's reach.",
+            "fear": "Exposure and annihilation; that the Warden will prioritize duty over mercy; that extraction attempts will collapse the entire network.",
+            "pressureStyle": "Cautious, transactional, and morally urgent. They make no appeals to law or duty, only to what the Warden can live with. Every offer is a test."
+          },
+          {
+            "id": "throne_institutional_expectations",
+            "name": "The Throne (Institutional Expectation)",
+            "agenda": "Restore stability without open revolt; preserve the balance between Synod authority and House legitimacy; avoid visible fracture.",
+            "leverage": "The Warden's mandate and the weight of imperial duty; the implicit threat of escalation if the Warden fails.",
+            "fear": "That the frontier will become ungovernable; that the Synod or a House will force the Throne to choose sides; that the Warden will defect or exceed authority.",
+            "pressureStyle": "The Throne is not a voiced presence but an institutional weight the Warden carries. Its pressure is felt in the writ, in the expectations of other factions, and in the cost of failure."
+          }
+        ],
+        "durableNpcSeeds": [
+          {
+            "id": "lector_brandlis",
+            "role": "Synod Lector (Compliance Officer)",
+            "affiliation": "Synod Compliance Office",
+            "dramaticFunction": "Voice of institutional righteousness and procedural inevitability; escalates when resisted, frames enforcement as moral duty.",
+            "privatePressure": "Brandlis believes deeply in the necessity of the tithe system, but fears being remembered as the lector who sparked a frontier revolt. He needs the Warden to legitimize enforcement.",
+            "reuseGuidance": "Reappears whenever Synod authority is invoked or challenged. Becomes more rigid or more desperate depending on how the Warden's stance hardens. May request armed enforcement or attempt to conduct selection himself."
+          },
+          {
+            "id": "sworn_administrator_vey",
+            "role": "House-Sworn Administrator (Local Authority)",
+            "affiliation": "House Czerynn",
+            "dramaticFunction": "Represents House authority in collapse; desperate to avoid blame, increasingly willing to abandon the settlement to protect herself.",
+            "privatePressure": "Vey covered up the maintenance failure that killed two Resonants. She knows the shortage is her fault, and she will do anything to prevent that from becoming formal record.",
+            "reuseGuidance": "Reappears in bureaucratic and crisis moments. May offer cooperation, bribe, sabotage, or flight depending on the Warden's approach. Her desperation is a contagious pressure."
+          },
+          {
+            "id": "parent_organizer_haake",
+            "role": "Parents' Movement Organizer (Settlement Leader)",
+            "affiliation": "Settlement Popular Movement",
+            "dramaticFunction": "Moral anchor for the resistance; tests the Warden's willingness to enforce an unjust mandate; escalates to direct action if ignored.",
+            "privatePressure": "Haake's daughter tested near-threshold last year. If supplementary selection occurs, she will be taken. Haake is willing to die to prevent it.",
+            "reuseGuidance": "Reappears whenever the Parents' Movement acts. Haake's stance toward the Warden shifts based on respect, betrayal, or alliance. She can be an ally, an enemy, or a tragedy."
+          },
+          {
+            "id": "militia_sergeant_korell",
+            "role": "Settlement Militia Sergeant (Armed Neutral)",
+            "affiliation": "Settlement Militia (House-sworn but locally rooted)",
+            "dramaticFunction": "Represents the enforcement arm caught between loyalty and conscience; capable of violence but seeking a reason not to use it.",
+            "privatePressure": "Korell has sworn oaths to House Czerynn but lives among the families being threatened. He will follow the Warden's lead if it seems legitimate, but he will not fire on his neighbors without moral cover.",
+            "reuseGuidance": "Reappears in confrontation and enforcement scenes. Korell's loyalty is the hinge—if the Warden gives him a legitimate path, he will hold the line. If the Warden's authority fractures, he will choose sides."
+          },
+          {
+            "id": "undrift_contact_senna",
+            "role": "Undrift Contact (Hidden Network Liaison)",
+            "affiliation": "Undrift Extraction Network",
+            "dramaticFunction": "Offers a way out for families; tests the Warden's willingness to look away; becomes visible only when the Warden shows an opening.",
+            "privatePressure": "Senna was a House retainer before defecting. She knows the system intimately and despises it, but she also knows that one careless extraction attempt could burn the entire network.",
+            "reuseGuidance": "Reappears when the Warden creates space for quiet defiance. Senna does not argue morality—she offers capability. She will vanish or act based on trust, not persuasion."
+          },
+          {
+            "id": "house_envoy_talric",
+            "role": "House Envoy (Minor House Opportunist)",
+            "affiliation": "House Dalmar (Rival House)",
+            "dramaticFunction": "Introduces a political escape hatch that would solve the immediate crisis but fracture loyalty structures; pressures the Warden to act as kingmaker.",
+            "privatePressure": "Talric sees the crisis as an opportunity to pry the settlement away from House Czerynn. He has no interest in the children—only in the territory and the precedent.",
+            "reuseGuidance": "Appears mid-arc when the crisis is visible to outside powers. Talric is polite, transactional, and patient. He offers a deal that would work—and poison everything after."
+          }
+        ],
+        "pressureEngines": [
+          {
+            "id": "tithe_ship_countdown",
+            "name": "The Tithe Ship Arrival Clock",
+            "advancesWhen": "Time passes; the Warden fails to produce a resolution; factions delay or sabotage compliance efforts; violence or bureaucratic collapse consumes time.",
+            "slowsWhen": "The Warden achieves temporary agreements; factions cooperate; House or Synod authority grants short delays; transit schedules are contested or rewritten.",
+            "visibleSymptoms": "Public announcements of days remaining; lector's increasing urgency; parents' desperation intensifying; House officials preparing exit strategies; militia positioning around key sites."
+          },
+          {
+            "id": "legitimacy_fracture",
+            "name": "Institutional Legitimacy Erosion",
+            "advancesWhen": "The Warden enforces without moral clarity; visible injustices occur; factions openly defy authority; the Warden is seen taking sides; promises are broken; violence is used.",
+            "slowsWhen": "The Warden acts transparently and justly; oaths are witnessed and honored; small protections are delivered; the Warden visibly bears the cost of decisions.",
+            "visibleSymptoms": "Settlement cooperation declines; militia becomes unreliable; House authority is ignored; Synod demands escalate; people stop speaking freely to the Warden; Undrift becomes bolder."
+          },
+          {
+            "id": "popular_resistance_escalation",
+            "name": "Parents' Movement Escalation",
+            "advancesWhen": "The Warden is seen as complicit with the Synod; enforcement actions occur; families are threatened; Haake and others lose hope in negotiation; hidden networks grow bold.",
+            "slowsWhen": "The Warden protects families; shows visible resistance to Synod pressure; creates space for alternatives; earns trust through action; witnesses oaths of protection.",
+            "visibleSymptoms": "Records are falsified or destroyed; children disappear; public assemblies become confrontational; militia faces non-cooperation; sabotage of settlement infrastructure; open defiance."
+          },
+          {
+            "id": "synod_enforcement_escalation",
+            "name": "Synod Enforcement Demand Clock",
+            "advancesWhen": "Resistance becomes visible; the lector feels undermined; the Warden is seen as insufficiently loyal; supplementary selection is obstructed; Synod fears loss of control.",
+            "slowsWhen": "The Warden enforces compliance; delivers visible cooperation; isolates resistance; provides the lector with bureaucratic cover; frames enforcement as joint action.",
+            "visibleSymptoms": "Lector requests armed support; Synod reinforcements are summoned; lector begins preparing to conduct selection independently; doctrine is invoked more rigidly; heresy accusations surface."
+          },
+          {
+            "id": "house_collapse_or_opportunism",
+            "name": "House Authority Collapse or Rival Exploitation",
+            "advancesWhen": "Administrator Vey's failure becomes visible; the crisis spreads beyond the settlement; rival Houses notice the instability; the Warden destabilizes House control.",
+            "slowsWhen": "The Warden stabilizes House legitimacy; protects Vey's position (or replaces her cleanly); prevents rival House interference; delivers a resolution that preserves allocation standing.",
+            "visibleSymptoms": "Vey prepares to flee; rival House envoys arrive; allocation privileges are contested; settlement officials hedge their loyalty; records are altered or hidden."
+          }
+        ],
+        "playerStanceAxes": [
+          {
+            "id": "enforce_vs_protect",
+            "axis": "Enforce the Mandate vs. Protect the Families",
+            "poleA": "Enforce the Mandate",
+            "poleB": "Protect the Families",
+            "signalsA": [
+              "Cooperating openly with Lector Brandlis",
+              "Using intimidation or authority to compel compliance",
+              "Framing the tithe as necessary and just",
+              "Suppressing resistance or hidden networks",
+              "Invoking the Warden's writ and Throne duty"
+            ],
+            "signalsB": [
+              "Visibly resisting or delaying Synod demands",
+              "Helping families hide children or falsify records",
+              "Framing the tithe as unjust or unbearable",
+              "Refusing to enforce supplementary selection",
+              "Allying with Haake or the Parents' Movement"
+            ],
+            "ifAHardens": "The Synod lector treats the Warden as an ally and expects full enforcement; parents see the Warden as complicit; militia may fracture or obey; Undrift networks vanish; the arc moves toward enforced compliance or violent suppression.",
+            "ifBHardens": "The Parents' Movement trusts the Warden and mobilizes openly; the Synod lector escalates and may summon reinforcement; House authority collapses; the arc moves toward defection, extraction, or open revolt."
+          },
+          {
+            "id": "transparency_vs_control",
+            "axis": "Transparent Witness vs. Hidden Manipulation",
+            "poleA": "Transparent Witness",
+            "poleB": "Hidden Manipulation",
+            "signalsA": [
+              "Speaking openly about the shortage's cause",
+              "Refusing to falsify records or hide information",
+              "Holding public oaths or assemblies",
+              "Forcing factions to state positions openly",
+              "Acting as a visible Throne presence"
+            ],
+            "signalsB": [
+              "Cutting secret deals with factions",
+              "Falsifying or burying records",
+              "Operating through intermediaries",
+              "Keeping factions ignorant of each other's actions",
+              "Using intimidation or authority to silence dissent"
+            ],
+            "ifAHardens": "Factions respect the Warden's integrity but may act against them openly; legitimacy fractures more slowly; trust becomes a usable resource; the arc centers moral clarity and visible cost.",
+            "ifBHardens": "Factions suspect the Warden's motives; backroom deals create fragile, unstable coalitions; legitimacy erodes faster; betrayal becomes likely; the arc centers pragmatic survival and factional chess."
+          },
+          {
+            "id": "throne_vs_frontier",
+            "axis": "Throne Loyalty vs. Frontier Solidarity",
+            "poleA": "Throne Loyalty",
+            "poleB": "Frontier Solidarity",
+            "signalsA": [
+              "Invoking the imperial writ and Throne authority",
+              "Prioritizing stability and institutional order",
+              "Framing the crisis as a failure of local leadership",
+              "Treating the settlement as subjects to be managed",
+              "Reporting fully and honestly to Throne superiors"
+            ],
+            "signalsB": [
+              "Identifying with the settlement's position",
+              "Framing the crisis as institutional failure",
+              "Treating locals as peers or allies",
+              "Prioritizing local survival over imperial order",
+              "Exceeding or bending the writ's authority"
+            ],
+            "ifAHardens": "The Warden is seen as an outsider enforcing distant authority; Synod and House elites offer support; popular legitimacy erodes; the arc moves toward enforced order or institutional escalation.",
+            "ifBHardens": "The Warden is seen as a defector or frontier champion; locals offer trust and cooperation; Synod and House authority become adversaries; the arc moves toward revolt, extraction, or founding legitimacy outside the system."
+          },
+          {
+            "id": "oath_vs_pragmatism",
+            "axis": "Oath-Bound Integrity vs. Pragmatic Compromise",
+            "poleA": "Oath-Bound Integrity",
+            "poleB": "Pragmatic Compromise",
+            "signalsA": [
+              "Refusing deals that violate sworn duty",
+              "Holding others to oaths and formal commitments",
+              "Treating the writ as inviolable",
+              "Refusing to falsify or omit in reports",
+              "Acting as a moral anchor even at personal cost"
+            ],
+            "signalsB": [
+              "Cutting deals that bend or break the writ",
+              "Treating oaths as negotiable under pressure",
+              "Prioritizing outcomes over principles",
+              "Falsifying records or reports to buy time or protect people",
+              "Using authority instrumentally rather than honorably"
+            ],
+            "ifAHardens": "The Warden becomes a moral symbol; factions seek their witness and judgment; oaths become binding and powerful; the arc centers honor, cost, and the limits of duty.",
+            "ifBHardens": "The Warden becomes a pragmatic operator; factions seek deals and leverage; oaths lose weight; the arc centers survival, betrayal, and the erosion of principle under pressure."
+          }
+        ],
+        "chapterFunctionMap": [
+          {
+            "chapter": 1,
+            "function": "Introduce the public crisis and map the factional terrain. The Warden arrives and must quickly assess which factions are mobilizing, what they want, and what leverage the Warden's authority actually holds. The settlement is already fracturing; the Warden's first actions signal which pressures they will answer.",
+            "pressureQuestion": "Can the Warden assert control and map the factions before violence or open defiance begins?",
+            "possibleEndStates": [
+              "The Warden establishes authority and opens lines to all major factions.",
+              "The Warden aligns visibly with one faction, accelerating the crisis.",
+              "The Warden's authority is contested immediately, forcing early escalation.",
+              "The Warden discovers a hidden pressure (Undrift, House corruption, or militia fracture) that reframes the crisis."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "Test the Warden's stance under pressure. Factions make demands, offers, or threats. The tithe clock advances. The Warden must act—enforce, protect, negotiate, or maneuver—and those actions will harden their position on at least one stance axis. The cost of inaction becomes visible.",
+            "pressureQuestion": "What will the Warden sacrifice or risk to buy time, legitimacy, or protection for one faction over another?",
+            "possibleEndStates": [
+              "The Warden enforces compliance, earning Synod support but fracturing popular legitimacy.",
+              "The Warden protects families, earning popular trust but escalating Synod enforcement demands.",
+              "The Warden brokers a fragile compromise that satisfies no one but buys time.",
+              "The Warden is forced into visible violence or betrayal, accelerating factional collapse."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Escalate the crisis as pressure engines collide. Multiple factions act simultaneously. The Warden cannot satisfy everyone and must choose which pressures to resist and which to enable. Hidden agendas surface. The tithe clock is near. The cost of the Warden's earlier stances becomes undeniable.",
+            "pressureQuestion": "Who will the Warden betray, abandon, or stand with when the factions force a choice?",
+            "possibleEndStates": [
+              "The Warden sides openly with the Synod and enforces selection, triggering revolt or submission.",
+              "The Warden sides openly with the Parents' Movement and becomes a defector or rebel.",
+              "The Warden brokers a desperate deal with a rival House or Undrift network, solving the crisis but poisoning future legitimacy.",
+              "The Warden fractures under the pressure and loses control as factions act independently."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "Resolve or irreversibly commit to one path. The tithe ship is days away. The Warden's stance has hardened. Factions have mobilized. The crisis reaches its peak: enforcement, extraction, revolt, or collapse. The Warden must act decisively, knowing that their choice will define what this settlement becomes and what their authority means.",
+            "pressureQuestion": "What will the Warden become in order to end this?",
+            "possibleEndStates": [
+              "The Warden enforces the tithe, delivering children to the Synod and preserving imperial order at moral cost.",
+              "The Warden enables extraction or falsification, betraying the Throne but protecting the settlement.",
+              "The Warden witnesses open revolt and must choose whether to suppress it, join it, or stand aside.",
+              "The Warden brokers a pyrrhic compromise that satisfies the letter of the mandate but hollows its spirit.",
+              "The Warden's authority collapses entirely, and the settlement descends into violence or flight."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "Deliver the aftermath and long-term consequences. The tithe ship arrives or is avoided. The Warden must face the institutions and people they served, betrayed, or protected. The arc closes with the weight of what was chosen and what remains—loyalty, legitimacy, survival, or ruin.",
+            "pressureQuestion": "What remains of the Warden's authority, integrity, and the settlement after the crisis?",
+            "possibleEndStates": [
+              "The Warden reports to the Throne, facing judgment or reward for their actions.",
+              "The Warden defects or is branded a traitor, leaving imperial service.",
+              "The settlement endures under new terms—protected, enslaved, or broken.",
+              "The Warden becomes a symbol of resistance or enforcement, with their legend spreading across the frontier.",
+              "The Warden is left alone with the cost of what they did and who they became."
+            ]
+          }
+        ],
+        "possibleEndgames": [
+          "The tithe is met through enforcement; the Warden preserves imperial order but is haunted by the children taken.",
+          "The tithe is evaded through extraction; families escape, and the Warden becomes a defector or Undrift ally.",
+          "The settlement revolts openly; the Warden suppresses it, joins it, or witnesses its destruction.",
+          "A rival House claims the settlement; the tithe is met, but loyalty has fractured permanently.",
+          "The Warden brokers a compromise that satisfies the mandate on paper but subverts it in practice.",
+          "The Warden's authority collapses; the settlement fragments, and the frontier becomes ungovernable.",
+          "The Warden dies or is martyred in the crisis, becoming a symbol whose meaning is contested by survivors.",
+          "The tithe ship arrives to find compliance—and silence. The Warden has ensured order, but trust is gone."
+        ]
+      },
+      "errors": [],
+      "costUsd": 0.12192375,
+      "summary": "revolt/The Tithe (Revolt Variant)"
+    },
+    {
+      "raw": {
+        "id": "arc_the_tithe",
+        "title": "The Tithe",
+        "source_hook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenario_shape": {
+          "mode": "protection",
+          "premise": "A Warden arrives at a frontier settlement to enforce the tithe deadline, but discovers the shortfall is not negligence—it is desperation. The PC must decide whether to hold the line for the Throne, broker a solution that satisfies the Synod's numbers without destroying the settlement, or defy their mandate to shield the vulnerable.",
+          "why_this_run": "This run transforms the tithe from a bureaucratic inevitability into an active protection problem. The PC's authority makes them the pivot: they can enforce, mediate, delay, or sabotage—but every choice costs something. The settlement needs a shield; the Synod needs compliance; the Throne needs the Warden to hold both without fracturing.",
+          "what_this_is_not": "This is not an investigation to discover who caused the shortfall, nor a chamber negotiation over exemptions. It is a protection scenario where the PC must act as both enforcer and potential barrier, with escalating pressure from multiple directions and no clean exit.",
+          "selection_rationale": "Protection mode was chosen because it centers the Warden's dual role as Throne authority and physical shield, and because it makes the PC's presence operationally necessary rather than administrative. The PC cannot simply audit the problem or negotiate terms from a distance—they must be on the ground, visible, accountable, and exposed to both institutional and human pressure. This mode supports physical mediation, oath-witness moments, and the tension between enforcement and compassion better than investigation (which would focus on uncovering hidden facts) or pursuit (which would require a fleeing antagonist).",
+          "rejected_default_shape": "The default shape for this hook is chamber_play: a hearing or audit where the settlement's leaders plead their case and the PC judges compliance. That mode is explicitly avoided here. It would collapse the arc into procedural argument and remove the physical, visible stakes that make the Warden playbook compelling."
+        },
+        "arc_question": "Can the Warden prevent the Synod from taking replacement children without breaking their oath to the Throne?",
+        "core_crucible": "The Synod's tithe ship is coming. If the numbers are not met, the Synod will select replacement children. The Warden's authority is meant to enforce this outcome, not prevent it.",
+        "invariant_facts": [
+          "The settlement is short on its annual Resonant tithe.",
+          "The Synod does not accept explanations for shortfalls; it enforces compliance through supplementary selection.",
+          "The tithe ship will arrive within days.",
+          "The Warden's writ mandates enforcement of Throne-Synod compacts.",
+          "Replacement selection targets children who have not yet been tested but fall within the age and biometric range.",
+          "The settlement cannot produce Resonants it does not have."
+        ],
+        "variable_truths_for_this_run": [
+          "The shortfall was caused by a House requisition that pulled Resonants for military deployment before the tithe could be fulfilled.",
+          "Settlement leadership knew about the requisition but could not refuse a House writ.",
+          "Some families have already hidden their children in the outer zones, creating the appearance of flight.",
+          "A Synod lector is embedded in the settlement and has been filing compliance reports that frame the shortfall as deliberate non-compliance.",
+          "An Undrift contact has offered to smuggle children out, but the window is closing and the cost is high.",
+          "The local House liaison is not loyal to the settlement—they are trying to avoid blame and will sacrifice the Warden if necessary."
+        ],
+        "durable_forces": [
+          {
+            "id": "synod_compliance_mission",
+            "name": "Synod Compliance Mission",
+            "agenda": "Ensure the tithe is met, by original numbers or supplementary selection, and reinforce the doctrine that shortfalls are never excused.",
+            "leverage": "Legal authority to select replacement children; the tithe ship and its armed escort; embedded lector who files real-time reports; the weight of a thousand years of precedent.",
+            "fear": "That leniency will be seen as doctrinal weakness, encouraging other settlements to claim hardship and eroding the Synod's control over Resonant supply.",
+            "pressure_style": "Procedural inevitability. The Synod does not argue; it schedules, documents, and executes. Resistance is reframed as heresy or administrative non-compliance."
+          },
+          {
+            "id": "house_liability_deflection",
+            "name": "House Liability Deflection",
+            "agenda": "Avoid responsibility for the shortfall caused by their own requisition, preserve the House's reputation, and ensure the settlement—not the House—is blamed.",
+            "leverage": "Prior writ that legally authorized the requisition; political connections at Conclave; ability to reframe events through after-the-fact filing; control over settlement resource allocation.",
+            "fear": "That the Warden or the Synod will trace the shortfall back to House overreach, resulting in sanction, loss of allocation privileges, or public rebuke.",
+            "pressure_style": "Strategic misdirection and selective honesty. House agents will cooperate when it costs them nothing and obstruct when accountability approaches."
+          },
+          {
+            "id": "settlement_survival_network",
+            "name": "Settlement Survival Network",
+            "agenda": "Protect the children, preserve the community, and avoid punishment for a shortfall they did not cause and cannot fix.",
+            "leverage": "Local knowledge, physical terrain, ability to hide or delay; moral authority rooted in visible innocence; willingness to beg, bribe, or defy if no other option remains.",
+            "fear": "That their children will be taken, that their compliance will be punished as harshly as defiance, and that no authority will protect them.",
+            "pressure_style": "Desperate pragmatism. They will plead with the Warden, offer what little they have, and—if pushed—hide children or flee, knowing it will make things worse."
+          },
+          {
+            "id": "undrift_smuggling_offer",
+            "name": "Undrift Smuggling Offer",
+            "agenda": "Extract vulnerable children before supplementary selection, expand the Undrift network, and demonstrate that the Hegemony's reach is not absolute.",
+            "fear": "That the Warden will see them as insurgents rather than rescuers, that the Synod will trace the smuggling route, or that families will refuse to trust them in time.",
+            "leverage": "Hidden routes, forged papers, safe houses outside the Drift lanes; the moral weight of offering the only escape.",
+            "pressure_style": "Cautious approach and time-limited offers. They will not expose themselves unless the Warden signals alignment or inaction. If ignored, they act without permission."
+          }
+        ],
+        "durable_npc_seeds": [
+          {
+            "id": "lector_arvan",
+            "role": "Embedded Synod Lector",
+            "affiliation": "The Synod",
+            "dramatic_function": "Procedural enforcer and doctrinal witness; the voice that reframes mercy as heresy and makes every delay visible to higher authority.",
+            "private_pressure": "Arvan believes deeply in the Synod's mission and fears that any leniency will unravel the system. They see compassion as the first step toward collapse.",
+            "reuse_guidance": "Use Arvan to escalate procedural pressure, file reports that constrain the Warden's options, and frame the PC's choices in doctrinal terms. Arvan is not cruel—they are certain."
+          },
+          {
+            "id": "captain_orell",
+            "role": "Tithe Ship Commander",
+            "affiliation": "The Synod",
+            "dramatic_function": "The arriving deadline made flesh. Orell commands the ship that will take children if the numbers are not met. They are professional, not sadistic.",
+            "private_pressure": "Orell has executed this duty many times and hates it, but sees no alternative within the system. They want the Warden to give them a reason to delay—if it can be justified.",
+            "reuse_guidance": "Introduce Orell in Chapter 2 or 3 as the physical manifestation of the tithe deadline. Use them to show the human face of enforcement and offer the PC a narrow window for negotiation if the PC has built leverage."
+          },
+          {
+            "id": "liaison_kresh",
+            "role": "House Liaison Officer",
+            "affiliation": "House authority",
+            "dramatic_function": "Deflector and obstructionist. Kresh is responsible for managing House interests in the settlement and will sacrifice anyone to avoid House blame.",
+            "private_pressure": "Kresh authorized the requisition that caused the shortfall under pressure from their superiors. If the truth emerges, Kresh's career ends.",
+            "reuse_guidance": "Use Kresh to withhold information, offer false cooperation, and pressure the Warden to blame the settlement or the Synod. Kresh will turn helpful only if the PC demonstrates they can protect Kresh from consequences."
+          },
+          {
+            "id": "magistrate_senne",
+            "role": "Settlement Magistrate",
+            "affiliation": "frontier settlement leadership",
+            "dramatic_function": "The voice of the community's desperation. Senne is not a fighter or a schemer—they are a manager who has run out of tools.",
+            "private_pressure": "Senne has children of their own who are within selection range. Every decision is personal and impossible.",
+            "reuse_guidance": "Use Senne to humanize the settlement's pressure, deliver bad news from the community, and force the PC to see the faces behind the numbers. Senne will beg, bargain, and finally ask the Warden what they would do if it were their child."
+          },
+          {
+            "id": "contact_iyena",
+            "role": "Undrift Smuggler",
+            "affiliation": "The Undrift",
+            "dramatic_function": "The exit offer. Iyena provides the only route out for the children, but taking it means the Warden enables defiance of the Synod.",
+            "private_pressure": "Iyena was once a Resonant who escaped before full conditioning. They see every tithe as a crime and every enforcer as complicit—until proven otherwise.",
+            "reuse_guidance": "Use Iyena to test the Warden's loyalty and offer a morally costly solution. Iyena will not appear unless the PC signals (through inaction, visible doubt, or direct outreach) that they might protect a smuggling window."
+          },
+          {
+            "id": "retainer_voss",
+            "role": "Warden's Retainer",
+            "affiliation": "Imperial Service",
+            "dramatic_function": "Loyal anchor and moral sounding board. Voss has served with the Warden for years and will follow orders, but their silence or questions reveal what the Warden is becoming.",
+            "private_pressure": "Voss joined Imperial Service to serve the Throne's justice, not to take children. They are beginning to doubt whether the two are the same.",
+            "reuse_guidance": "Use Voss to ground the PC's internal conflict in external dialogue, to provide tactical support, and to show loyalty under strain. If the PC defies the Synod, Voss will follow—but the cost will show."
+          }
+        ],
+        "pressure_engines": [
+          {
+            "id": "tithe_deadline",
+            "name": "Tithe Ship Arrival",
+            "advances_when": "Time passes without resolution; the Synod lector files non-compliance reports; families visibly resist or flee; the Warden takes actions the Synod interprets as delay.",
+            "slows_when": "The Warden produces credible evidence of House interference; the PC negotiates a documented alternative with the ship commander; the settlement demonstrates measurable compliance progress.",
+            "visible_symptoms": "The ship's approach is marked by countdown announcements. The lector's reports tighten. Settlement tension escalates: families hide children, retainers enforce curfews, fear becomes visible in every interaction."
+          },
+          {
+            "id": "settlement_cohesion",
+            "name": "Settlement Cohesion",
+            "advances_when": "The Warden visibly protects the community, deflects Synod pressure, or brokers a credible hope; families trust the PC's authority; Magistrate Senne can hold the leadership together.",
+            "slows_when": "The Warden enforces selection, sides with the Synod without explanation, or allows House agents to scapegoat the settlement; families flee or hide children in desperation; the community fractures into compliance and defiance factions.",
+            "visible_symptoms": "Early: families appeal to the Warden, bring offerings, beg for guidance. Mid: silence and avoidance as trust erodes. Late: open flight, hidden children, refusal to cooperate with surveys."
+          },
+          {
+            "id": "house_exposure_risk",
+            "name": "House Exposure Risk",
+            "advances_when": "The Warden investigates the requisition, questions Liaison Kresh, or shares findings with the Synod or settlement leadership; evidence of House causation becomes undeniable.",
+            "slows_when": "The Warden accepts House explanations, does not press for records, or agrees to frame the shortfall as settlement negligence; Kresh successfully reburies documentation.",
+            "visible_symptoms": "Kresh becomes evasive, then cooperative, then hostile as exposure approaches. House retainers arrive to 'assist.' If exposure succeeds, the House escalates politically or offers the Warden a deal to bury the evidence."
+          },
+          {
+            "id": "undrift_extraction_window",
+            "name": "Undrift Extraction Window",
+            "advances_when": "The Warden signals doubt, delays Synod actions, or directly contacts Iyena; families begin to disappear quietly; the settlement's desperation makes smuggling the only perceived option.",
+            "slows_when": "The Warden increases security, enforces curfews, or visibly commits to Synod enforcement; the lector or ship commander tightens surveillance; Iyena judges the risk too high.",
+            "visible_symptoms": "Iyena appears in Chapter 2 or 3 if the window is open. Families vanish. The Synod notices gaps in population counts. If the window closes, Iyena withdraws and the settlement loses its only exit."
+          }
+        ],
+        "player_stance_axes": [
+          {
+            "id": "enforcement_vs_protection",
+            "axis": "Enforcement vs. Protection",
+            "pole_a": "Enforcement: The Warden's duty is to uphold the Throne-Synod compact, even when it costs innocent lives.",
+            "pole_b": "Protection: The Warden's authority exists to shield the vulnerable, even if it means defying doctrine.",
+            "signals_a": [
+              "Cooperating with the Synod lector without question",
+              "Preparing selection protocols",
+              "Refusing to investigate House causation",
+              "Framing delay as weakness or heresy"
+            ],
+            "signals_b": [
+              "Questioning the lector's reports",
+              "Delaying selection procedures",
+              "Shielding families from immediate Synod pressure",
+              "Offering visible protection to the magistrate or community leaders"
+            ],
+            "if_a_hardens": "The Synod treats the Warden as a reliable enforcer and grants procedural leeway for future assignments. The settlement sees the Warden as complicit. Families hide or flee. The Warden's retainer, Voss, obeys but withdraws emotionally. The Undrift offer vanishes.",
+            "if_b_hardens": "The settlement trusts the Warden and cooperates. The Synod lector escalates reporting and frames the Warden as compromised. The House sees an opportunity to deflect blame onto the Warden. Voss remains loyal but the cost is visible. The Undrift contact engages."
+          },
+          {
+            "id": "transparency_vs_bureaucratic_maneuver",
+            "axis": "Transparency vs. Bureaucratic Maneuver",
+            "pole_a": "Transparency: The Warden will surface the truth about the House requisition and force accountability, even if it creates political enemies.",
+            "pole_b": "Bureaucratic Maneuver: The Warden will work within the system's rules, using writs, filing procedures, and selective silence to protect the settlement without direct confrontation.",
+            "signals_a": [
+              "Demanding records from Liaison Kresh",
+              "Sharing evidence of House causation with the Synod or settlement",
+              "Filing a formal report naming the House",
+              "Refusing to accept obfuscation or delay"
+            ],
+            "signals_b": [
+              "Negotiating quietly with the House liaison",
+              "Offering Kresh a way to save face in exchange for cooperation",
+              "Using procedural language to delay without openly defying",
+              "Reframing the shortfall as a scheduling error rather than negligence"
+            ],
+            "if_a_hardens": "The House becomes an active enemy and attempts to discredit the Warden or force reassignment. The Synod gains leverage from the exposed House weakness but does not forgive the Warden for the delay. The settlement sees the Warden as an ally who fights for them. The truth is on record, which may protect or doom the Warden depending on later political outcomes.",
+            "if_b_hardens": "The Warden avoids making powerful enemies but accumulates moral compromises. The House offers quiet cooperation in exchange for silence. The Synod remains satisfied if the numbers are met. The settlement may never know who truly caused the shortfall. The Warden's authority is preserved but their integrity is questioned by Voss or the Undrift contact."
+          },
+          {
+            "id": "throne_loyalty_vs_personal_justice",
+            "axis": "Throne Loyalty vs. Personal Justice",
+            "pole_a": "Throne Loyalty: The Warden serves the Throne's need for balance, not their own moral judgment. The system must hold, even when it is unjust.",
+            "pole_b": "Personal Justice: The Warden will do what is right, even if it fractures their oath or burns their career.",
+            "signals_a": [
+              "Framing every choice in terms of mandate and duty",
+              "Deferring to the Synod's authority when in doubt",
+              "Prioritizing institutional stability over individual lives",
+              "Refusing to act outside their writ, even when it would help"
+            ],
+            "signals_b": [
+              "Prioritizing the settlement's survival over Synod compliance",
+              "Enabling or protecting the Undrift extraction",
+              "Breaking procedural rules to delay selection",
+              "Telling the lector or ship commander 'no' without legal justification"
+            ],
+            "if_a_hardens": "The Warden is marked as a reliable Throne agent and offered more difficult assignments. They preserve their career but lose the settlement's trust. Voss questions whether the Warden still believes in justice. The arc ends with compliance and a bitter taste.",
+            "if_b_hardens": "The Warden saves children but fractures their institutional position. The Synod files a report questioning their loyalty. The House may exploit the Warden's defiance. The settlement remembers the Warden as a protector. Voss remains loyal. The Undrift offers future contact. The arc ends with moral clarity and professional cost."
+          }
+        ],
+        "chapter_function_map": [
+          {
+            "chapter": 1,
+            "function": "Establish the tithe crisis as immediate and unsolvable through simple compliance. Surface the settlement's desperation, the Synod's procedural inevitability, and the Warden's impossible mandate. Introduce competing pressures and force the PC to choose their first stance.",
+            "pressure_question": "Will the Warden enforce the tithe deadline or begin to shield the settlement?",
+            "possible_end_states": [
+              "The Warden commits to enforcement and begins preparing selection protocols.",
+              "The Warden delays and begins investigating the shortfall's cause.",
+              "The Warden refuses to choose and tries to balance all pressures without committing.",
+              "The Warden signals protection and opens a window for Undrift contact."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "Escalate the cost of the PC's Chapter 1 stance. Introduce the tithe ship's arrival timeline, the House liaison's obstruction, and the settlement's fracturing cohesion. Make the Warden's authority both a tool and a burden. Force the PC to choose between transparency and maneuver.",
+            "pressure_question": "Will the Warden expose the House's role, maneuver quietly, or ignore causation entirely?",
+            "possible_end_states": [
+              "The Warden confronts the House liaison and demands records, escalating political risk.",
+              "The Warden negotiates quietly with the House and accepts a bureaucratic compromise.",
+              "The Warden focuses on enforcement and lets the House's role remain buried.",
+              "The Warden shares evidence with the settlement or Synod, breaking the House's control over the narrative."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Deliver the breaking point. The tithe ship arrives or the deadline becomes undeniable. The Undrift offer becomes concrete. The settlement's desperation peaks. The Synod demands action. The PC must choose between oath and conscience, knowing the cost is unavoidable.",
+            "pressure_question": "Will the Warden enforce selection, enable escape, broker a last-minute alternative, or openly defy the Synod?",
+            "possible_end_states": [
+              "The Warden enforces supplementary selection, fulfilling their mandate.",
+              "The Warden enables or protects the Undrift extraction, defying the Synod.",
+              "The Warden brokers a deal with the ship commander using evidence of House causation to delay or reduce selection.",
+              "The Warden refuses to act and forces another authority to make the choice."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "Resolve the immediate tithe crisis and reveal the institutional consequences of the Warden's choices. The settlement, House, Synod, and Throne respond. The arc may close here if the outcome is definitive, or extend into Chapter 5 if the fallout requires another cycle of decision.",
+            "pressure_question": "Can the Warden hold their position after the tithe is resolved, or has their choice fractured their role?",
+            "possible_end_states": [
+              "The tithe is met through selection; the Warden is commended but haunted.",
+              "The tithe is avoided or reduced; the Warden faces Synod scrutiny or House retaliation.",
+              "The Warden has defied the Synod openly and must answer for it.",
+              "The Warden has brokered a fragile compromise that satisfies no one but holds for now.",
+              "The settlement is saved but the Warden's career or oath is broken."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "If the arc did not close in Chapter 4, deliver the final reckoning. The Warden faces a formal review, a choice between reassignment and defection, or a permanent fracture in their relationship with the Throne. Alternatively, if the tithe was resolved cleanly in Chapter 4, this chapter handles the settlement's recovery and the Warden's next mandate.",
+            "pressure_question": "What kind of Warden will the PC become after this crisis?",
+            "possible_end_states": [
+              "The Warden is reassigned, their loyalty intact but their faith shaken.",
+              "The Warden is sanctioned or discharged for defiance, but the children are safe.",
+              "The Warden remains in role, having learned to navigate the system's cruelty.",
+              "The Warden defects to the Undrift or another faction, breaking their oath permanently.",
+              "The Warden brokers a new mandate with the Throne, gaining leverage for future protection work."
+            ]
+          }
+        ],
+        "possible_endgames": [
+          "The Warden enforces the tithe fully, preserving their oath and career but bearing the moral weight of the children taken.",
+          "The Warden enables the Undrift extraction, saving the children but fracturing their position within Imperial Service and becoming a target for Synod investigation.",
+          "The Warden exposes the House's causation and brokers a reduced tithe or delay, creating a political enemy but protecting the settlement partially.",
+          "The Warden brokers a compromise with the ship commander using procedural maneuvers and House evidence, satisfying the Synod's numbers without full supplementary selection.",
+          "The Warden defects openly, refusing to enforce the tithe and joining or protecting the Undrift, becoming a fugitive but morally clear.",
+          "The Warden holds the line and forces the Synod and House to negotiate directly, using their authority as a wedge but risking reassignment or sanction for overreach.",
+          "The Warden's actions splinter the settlement: some families are saved, others taken, and the community fractures into gratitude and resentment.",
+          "The tithe is met, but the Warden has documented the House's role and filed it with the Throne, creating a long-term political lever and a short-term risk of retaliation."
+        ]
+      },
+      "arcPlan": {
+        "id": "arc_the_tithe",
+        "status": "active",
+        "title": "The Tithe",
+        "sourceHook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenarioShape": {
+          "mode": "protection",
+          "premise": "A Warden arrives at a frontier settlement to enforce the tithe deadline, but discovers the shortfall is not negligence—it is desperation. The PC must decide whether to hold the line for the Throne, broker a solution that satisfies the Synod's numbers without destroying the settlement, or defy their mandate to shield the vulnerable.",
+          "whyThisRun": "This run transforms the tithe from a bureaucratic inevitability into an active protection problem. The PC's authority makes them the pivot: they can enforce, mediate, delay, or sabotage—but every choice costs something. The settlement needs a shield; the Synod needs compliance; the Throne needs the Warden to hold both without fracturing.",
+          "whatThisIsNot": "This is not an investigation to discover who caused the shortfall, nor a chamber negotiation over exemptions. It is a protection scenario where the PC must act as both enforcer and potential barrier, with escalating pressure from multiple directions and no clean exit.",
+          "selectionRationale": "Protection mode was chosen because it centers the Warden's dual role as Throne authority and physical shield, and because it makes the PC's presence operationally necessary rather than administrative. The PC cannot simply audit the problem or negotiate terms from a distance—they must be on the ground, visible, accountable, and exposed to both institutional and human pressure. This mode supports physical mediation, oath-witness moments, and the tension between enforcement and compassion better than investigation (which would focus on uncovering hidden facts) or pursuit (which would require a fleeing antagonist).",
+          "rejectedDefaultShape": "The default shape for this hook is chamber_play: a hearing or audit where the settlement's leaders plead their case and the PC judges compliance. That mode is explicitly avoided here. It would collapse the arc into procedural argument and remove the physical, visible stakes that make the Warden playbook compelling."
+        },
+        "arcQuestion": "Can the Warden prevent the Synod from taking replacement children without breaking their oath to the Throne?",
+        "coreCrucible": "The Synod's tithe ship is coming. If the numbers are not met, the Synod will select replacement children. The Warden's authority is meant to enforce this outcome, not prevent it.",
+        "invariantFacts": [
+          "The settlement is short on its annual Resonant tithe.",
+          "The Synod does not accept explanations for shortfalls; it enforces compliance through supplementary selection.",
+          "The tithe ship will arrive within days.",
+          "The Warden's writ mandates enforcement of Throne-Synod compacts.",
+          "Replacement selection targets children who have not yet been tested but fall within the age and biometric range.",
+          "The settlement cannot produce Resonants it does not have."
+        ],
+        "variableTruthsForThisRun": [
+          "The shortfall was caused by a House requisition that pulled Resonants for military deployment before the tithe could be fulfilled.",
+          "Settlement leadership knew about the requisition but could not refuse a House writ.",
+          "Some families have already hidden their children in the outer zones, creating the appearance of flight.",
+          "A Synod lector is embedded in the settlement and has been filing compliance reports that frame the shortfall as deliberate non-compliance.",
+          "An Undrift contact has offered to smuggle children out, but the window is closing and the cost is high.",
+          "The local House liaison is not loyal to the settlement—they are trying to avoid blame and will sacrifice the Warden if necessary."
+        ],
+        "durableForces": [
+          {
+            "id": "synod_compliance_mission",
+            "name": "Synod Compliance Mission",
+            "agenda": "Ensure the tithe is met, by original numbers or supplementary selection, and reinforce the doctrine that shortfalls are never excused.",
+            "leverage": "Legal authority to select replacement children; the tithe ship and its armed escort; embedded lector who files real-time reports; the weight of a thousand years of precedent.",
+            "fear": "That leniency will be seen as doctrinal weakness, encouraging other settlements to claim hardship and eroding the Synod's control over Resonant supply.",
+            "pressureStyle": "Procedural inevitability. The Synod does not argue; it schedules, documents, and executes. Resistance is reframed as heresy or administrative non-compliance."
+          },
+          {
+            "id": "house_liability_deflection",
+            "name": "House Liability Deflection",
+            "agenda": "Avoid responsibility for the shortfall caused by their own requisition, preserve the House's reputation, and ensure the settlement—not the House—is blamed.",
+            "leverage": "Prior writ that legally authorized the requisition; political connections at Conclave; ability to reframe events through after-the-fact filing; control over settlement resource allocation.",
+            "fear": "That the Warden or the Synod will trace the shortfall back to House overreach, resulting in sanction, loss of allocation privileges, or public rebuke.",
+            "pressureStyle": "Strategic misdirection and selective honesty. House agents will cooperate when it costs them nothing and obstruct when accountability approaches."
+          },
+          {
+            "id": "settlement_survival_network",
+            "name": "Settlement Survival Network",
+            "agenda": "Protect the children, preserve the community, and avoid punishment for a shortfall they did not cause and cannot fix.",
+            "leverage": "Local knowledge, physical terrain, ability to hide or delay; moral authority rooted in visible innocence; willingness to beg, bribe, or defy if no other option remains.",
+            "fear": "That their children will be taken, that their compliance will be punished as harshly as defiance, and that no authority will protect them.",
+            "pressureStyle": "Desperate pragmatism. They will plead with the Warden, offer what little they have, and—if pushed—hide children or flee, knowing it will make things worse."
+          },
+          {
+            "id": "undrift_smuggling_offer",
+            "name": "Undrift Smuggling Offer",
+            "agenda": "Extract vulnerable children before supplementary selection, expand the Undrift network, and demonstrate that the Hegemony's reach is not absolute.",
+            "leverage": "Hidden routes, forged papers, safe houses outside the Drift lanes; the moral weight of offering the only escape.",
+            "fear": "That the Warden will see them as insurgents rather than rescuers, that the Synod will trace the smuggling route, or that families will refuse to trust them in time.",
+            "pressureStyle": "Cautious approach and time-limited offers. They will not expose themselves unless the Warden signals alignment or inaction. If ignored, they act without permission."
+          }
+        ],
+        "durableNpcSeeds": [
+          {
+            "id": "lector_arvan",
+            "role": "Embedded Synod Lector",
+            "affiliation": "The Synod",
+            "dramaticFunction": "Procedural enforcer and doctrinal witness; the voice that reframes mercy as heresy and makes every delay visible to higher authority.",
+            "privatePressure": "Arvan believes deeply in the Synod's mission and fears that any leniency will unravel the system. They see compassion as the first step toward collapse.",
+            "reuseGuidance": "Use Arvan to escalate procedural pressure, file reports that constrain the Warden's options, and frame the PC's choices in doctrinal terms. Arvan is not cruel—they are certain."
+          },
+          {
+            "id": "captain_orell",
+            "role": "Tithe Ship Commander",
+            "affiliation": "The Synod",
+            "dramaticFunction": "The arriving deadline made flesh. Orell commands the ship that will take children if the numbers are not met. They are professional, not sadistic.",
+            "privatePressure": "Orell has executed this duty many times and hates it, but sees no alternative within the system. They want the Warden to give them a reason to delay—if it can be justified.",
+            "reuseGuidance": "Introduce Orell in Chapter 2 or 3 as the physical manifestation of the tithe deadline. Use them to show the human face of enforcement and offer the PC a narrow window for negotiation if the PC has built leverage."
+          },
+          {
+            "id": "liaison_kresh",
+            "role": "House Liaison Officer",
+            "affiliation": "House authority",
+            "dramaticFunction": "Deflector and obstructionist. Kresh is responsible for managing House interests in the settlement and will sacrifice anyone to avoid House blame.",
+            "privatePressure": "Kresh authorized the requisition that caused the shortfall under pressure from their superiors. If the truth emerges, Kresh's career ends.",
+            "reuseGuidance": "Use Kresh to withhold information, offer false cooperation, and pressure the Warden to blame the settlement or the Synod. Kresh will turn helpful only if the PC demonstrates they can protect Kresh from consequences."
+          },
+          {
+            "id": "magistrate_senne",
+            "role": "Settlement Magistrate",
+            "affiliation": "frontier settlement leadership",
+            "dramaticFunction": "The voice of the community's desperation. Senne is not a fighter or a schemer—they are a manager who has run out of tools.",
+            "privatePressure": "Senne has children of their own who are within selection range. Every decision is personal and impossible.",
+            "reuseGuidance": "Use Senne to humanize the settlement's pressure, deliver bad news from the community, and force the PC to see the faces behind the numbers. Senne will beg, bargain, and finally ask the Warden what they would do if it were their child."
+          },
+          {
+            "id": "contact_iyena",
+            "role": "Undrift Smuggler",
+            "affiliation": "The Undrift",
+            "dramaticFunction": "The exit offer. Iyena provides the only route out for the children, but taking it means the Warden enables defiance of the Synod.",
+            "privatePressure": "Iyena was once a Resonant who escaped before full conditioning. They see every tithe as a crime and every enforcer as complicit—until proven otherwise.",
+            "reuseGuidance": "Use Iyena to test the Warden's loyalty and offer a morally costly solution. Iyena will not appear unless the PC signals (through inaction, visible doubt, or direct outreach) that they might protect a smuggling window."
+          },
+          {
+            "id": "retainer_voss",
+            "role": "Warden's Retainer",
+            "affiliation": "Imperial Service",
+            "dramaticFunction": "Loyal anchor and moral sounding board. Voss has served with the Warden for years and will follow orders, but their silence or questions reveal what the Warden is becoming.",
+            "privatePressure": "Voss joined Imperial Service to serve the Throne's justice, not to take children. They are beginning to doubt whether the two are the same.",
+            "reuseGuidance": "Use Voss to ground the PC's internal conflict in external dialogue, to provide tactical support, and to show loyalty under strain. If the PC defies the Synod, Voss will follow—but the cost will show."
+          }
+        ],
+        "pressureEngines": [
+          {
+            "id": "tithe_deadline",
+            "name": "Tithe Ship Arrival",
+            "advancesWhen": "Time passes without resolution; the Synod lector files non-compliance reports; families visibly resist or flee; the Warden takes actions the Synod interprets as delay.",
+            "slowsWhen": "The Warden produces credible evidence of House interference; the PC negotiates a documented alternative with the ship commander; the settlement demonstrates measurable compliance progress.",
+            "visibleSymptoms": "The ship's approach is marked by countdown announcements. The lector's reports tighten. Settlement tension escalates: families hide children, retainers enforce curfews, fear becomes visible in every interaction."
+          },
+          {
+            "id": "settlement_cohesion",
+            "name": "Settlement Cohesion",
+            "advancesWhen": "The Warden visibly protects the community, deflects Synod pressure, or brokers a credible hope; families trust the PC's authority; Magistrate Senne can hold the leadership together.",
+            "slowsWhen": "The Warden enforces selection, sides with the Synod without explanation, or allows House agents to scapegoat the settlement; families flee or hide children in desperation; the community fractures into compliance and defiance factions.",
+            "visibleSymptoms": "Early: families appeal to the Warden, bring offerings, beg for guidance. Mid: silence and avoidance as trust erodes. Late: open flight, hidden children, refusal to cooperate with surveys."
+          },
+          {
+            "id": "house_exposure_risk",
+            "name": "House Exposure Risk",
+            "advancesWhen": "The Warden investigates the requisition, questions Liaison Kresh, or shares findings with the Synod or settlement leadership; evidence of House causation becomes undeniable.",
+            "slowsWhen": "The Warden accepts House explanations, does not press for records, or agrees to frame the shortfall as settlement negligence; Kresh successfully reburies documentation.",
+            "visibleSymptoms": "Kresh becomes evasive, then cooperative, then hostile as exposure approaches. House retainers arrive to 'assist.' If exposure succeeds, the House escalates politically or offers the Warden a deal to bury the evidence."
+          },
+          {
+            "id": "undrift_extraction_window",
+            "name": "Undrift Extraction Window",
+            "advancesWhen": "The Warden signals doubt, delays Synod actions, or directly contacts Iyena; families begin to disappear quietly; the settlement's desperation makes smuggling the only perceived option.",
+            "slowsWhen": "The Warden increases security, enforces curfews, or visibly commits to Synod enforcement; the lector or ship commander tightens surveillance; Iyena judges the risk too high.",
+            "visibleSymptoms": "Iyena appears in Chapter 2 or 3 if the window is open. Families vanish. The Synod notices gaps in population counts. If the window closes, Iyena withdraws and the settlement loses its only exit."
+          }
+        ],
+        "playerStanceAxes": [
+          {
+            "id": "enforcement_vs_protection",
+            "axis": "Enforcement vs. Protection",
+            "poleA": "Enforcement: The Warden's duty is to uphold the Throne-Synod compact, even when it costs innocent lives.",
+            "poleB": "Protection: The Warden's authority exists to shield the vulnerable, even if it means defying doctrine.",
+            "signalsA": [
+              "Cooperating with the Synod lector without question",
+              "Preparing selection protocols",
+              "Refusing to investigate House causation",
+              "Framing delay as weakness or heresy"
+            ],
+            "signalsB": [
+              "Questioning the lector's reports",
+              "Delaying selection procedures",
+              "Shielding families from immediate Synod pressure",
+              "Offering visible protection to the magistrate or community leaders"
+            ],
+            "ifAHardens": "The Synod treats the Warden as a reliable enforcer and grants procedural leeway for future assignments. The settlement sees the Warden as complicit. Families hide or flee. The Warden's retainer, Voss, obeys but withdraws emotionally. The Undrift offer vanishes.",
+            "ifBHardens": "The settlement trusts the Warden and cooperates. The Synod lector escalates reporting and frames the Warden as compromised. The House sees an opportunity to deflect blame onto the Warden. Voss remains loyal but the cost is visible. The Undrift contact engages."
+          },
+          {
+            "id": "transparency_vs_bureaucratic_maneuver",
+            "axis": "Transparency vs. Bureaucratic Maneuver",
+            "poleA": "Transparency: The Warden will surface the truth about the House requisition and force accountability, even if it creates political enemies.",
+            "poleB": "Bureaucratic Maneuver: The Warden will work within the system's rules, using writs, filing procedures, and selective silence to protect the settlement without direct confrontation.",
+            "signalsA": [
+              "Demanding records from Liaison Kresh",
+              "Sharing evidence of House causation with the Synod or settlement",
+              "Filing a formal report naming the House",
+              "Refusing to accept obfuscation or delay"
+            ],
+            "signalsB": [
+              "Negotiating quietly with the House liaison",
+              "Offering Kresh a way to save face in exchange for cooperation",
+              "Using procedural language to delay without openly defying",
+              "Reframing the shortfall as a scheduling error rather than negligence"
+            ],
+            "ifAHardens": "The House becomes an active enemy and attempts to discredit the Warden or force reassignment. The Synod gains leverage from the exposed House weakness but does not forgive the Warden for the delay. The settlement sees the Warden as an ally who fights for them. The truth is on record, which may protect or doom the Warden depending on later political outcomes.",
+            "ifBHardens": "The Warden avoids making powerful enemies but accumulates moral compromises. The House offers quiet cooperation in exchange for silence. The Synod remains satisfied if the numbers are met. The settlement may never know who truly caused the shortfall. The Warden's authority is preserved but their integrity is questioned by Voss or the Undrift contact."
+          },
+          {
+            "id": "throne_loyalty_vs_personal_justice",
+            "axis": "Throne Loyalty vs. Personal Justice",
+            "poleA": "Throne Loyalty: The Warden serves the Throne's need for balance, not their own moral judgment. The system must hold, even when it is unjust.",
+            "poleB": "Personal Justice: The Warden will do what is right, even if it fractures their oath or burns their career.",
+            "signalsA": [
+              "Framing every choice in terms of mandate and duty",
+              "Deferring to the Synod's authority when in doubt",
+              "Prioritizing institutional stability over individual lives",
+              "Refusing to act outside their writ, even when it would help"
+            ],
+            "signalsB": [
+              "Prioritizing the settlement's survival over Synod compliance",
+              "Enabling or protecting the Undrift extraction",
+              "Breaking procedural rules to delay selection",
+              "Telling the lector or ship commander 'no' without legal justification"
+            ],
+            "ifAHardens": "The Warden is marked as a reliable Throne agent and offered more difficult assignments. They preserve their career but lose the settlement's trust. Voss questions whether the Warden still believes in justice. The arc ends with compliance and a bitter taste.",
+            "ifBHardens": "The Warden saves children but fractures their institutional position. The Synod files a report questioning their loyalty. The House may exploit the Warden's defiance. The settlement remembers the Warden as a protector. Voss remains loyal. The Undrift offers future contact. The arc ends with moral clarity and professional cost."
+          }
+        ],
+        "chapterFunctionMap": [
+          {
+            "chapter": 1,
+            "function": "Establish the tithe crisis as immediate and unsolvable through simple compliance. Surface the settlement's desperation, the Synod's procedural inevitability, and the Warden's impossible mandate. Introduce competing pressures and force the PC to choose their first stance.",
+            "pressureQuestion": "Will the Warden enforce the tithe deadline or begin to shield the settlement?",
+            "possibleEndStates": [
+              "The Warden commits to enforcement and begins preparing selection protocols.",
+              "The Warden delays and begins investigating the shortfall's cause.",
+              "The Warden refuses to choose and tries to balance all pressures without committing.",
+              "The Warden signals protection and opens a window for Undrift contact."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "Escalate the cost of the PC's Chapter 1 stance. Introduce the tithe ship's arrival timeline, the House liaison's obstruction, and the settlement's fracturing cohesion. Make the Warden's authority both a tool and a burden. Force the PC to choose between transparency and maneuver.",
+            "pressureQuestion": "Will the Warden expose the House's role, maneuver quietly, or ignore causation entirely?",
+            "possibleEndStates": [
+              "The Warden confronts the House liaison and demands records, escalating political risk.",
+              "The Warden negotiates quietly with the House and accepts a bureaucratic compromise.",
+              "The Warden focuses on enforcement and lets the House's role remain buried.",
+              "The Warden shares evidence with the settlement or Synod, breaking the House's control over the narrative."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Deliver the breaking point. The tithe ship arrives or the deadline becomes undeniable. The Undrift offer becomes concrete. The settlement's desperation peaks. The Synod demands action. The PC must choose between oath and conscience, knowing the cost is unavoidable.",
+            "pressureQuestion": "Will the Warden enforce selection, enable escape, broker a last-minute alternative, or openly defy the Synod?",
+            "possibleEndStates": [
+              "The Warden enforces supplementary selection, fulfilling their mandate.",
+              "The Warden enables or protects the Undrift extraction, defying the Synod.",
+              "The Warden brokers a deal with the ship commander using evidence of House causation to delay or reduce selection.",
+              "The Warden refuses to act and forces another authority to make the choice."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "Resolve the immediate tithe crisis and reveal the institutional consequences of the Warden's choices. The settlement, House, Synod, and Throne respond. The arc may close here if the outcome is definitive, or extend into Chapter 5 if the fallout requires another cycle of decision.",
+            "pressureQuestion": "Can the Warden hold their position after the tithe is resolved, or has their choice fractured their role?",
+            "possibleEndStates": [
+              "The tithe is met through selection; the Warden is commended but haunted.",
+              "The tithe is avoided or reduced; the Warden faces Synod scrutiny or House retaliation.",
+              "The Warden has defied the Synod openly and must answer for it.",
+              "The Warden has brokered a fragile compromise that satisfies no one but holds for now.",
+              "The settlement is saved but the Warden's career or oath is broken."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "If the arc did not close in Chapter 4, deliver the final reckoning. The Warden faces a formal review, a choice between reassignment and defection, or a permanent fracture in their relationship with the Throne. Alternatively, if the tithe was resolved cleanly in Chapter 4, this chapter handles the settlement's recovery and the Warden's next mandate.",
+            "pressureQuestion": "What kind of Warden will the PC become after this crisis?",
+            "possibleEndStates": [
+              "The Warden is reassigned, their loyalty intact but their faith shaken.",
+              "The Warden is sanctioned or discharged for defiance, but the children are safe.",
+              "The Warden remains in role, having learned to navigate the system's cruelty.",
+              "The Warden defects to the Undrift or another faction, breaking their oath permanently.",
+              "The Warden brokers a new mandate with the Throne, gaining leverage for future protection work."
+            ]
+          }
+        ],
+        "possibleEndgames": [
+          "The Warden enforces the tithe fully, preserving their oath and career but bearing the moral weight of the children taken.",
+          "The Warden enables the Undrift extraction, saving the children but fracturing their position within Imperial Service and becoming a target for Synod investigation.",
+          "The Warden exposes the House's causation and brokers a reduced tithe or delay, creating a political enemy but protecting the settlement partially.",
+          "The Warden brokers a compromise with the ship commander using procedural maneuvers and House evidence, satisfying the Synod's numbers without full supplementary selection.",
+          "The Warden defects openly, refusing to enforce the tithe and joining or protecting the Undrift, becoming a fugitive but morally clear.",
+          "The Warden holds the line and forces the Synod and House to negotiate directly, using their authority as a wedge but risking reassignment or sanction for overreach.",
+          "The Warden's actions splinter the settlement: some families are saved, others taken, and the community fractures into gratitude and resentment.",
+          "The tithe is met, but the Warden has documented the House's role and filed it with the Throne, creating a long-term political lever and a short-term risk of retaliation."
+        ]
+      },
+      "errors": [],
+      "costUsd": 0.1050609,
+      "summary": "protection/The Tithe"
+    },
+    {
+      "raw": {
+        "id": "arc_the_tithe_pursuit",
+        "title": "The Tithe (Pursuit Variant)",
+        "source_hook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenario_shape": {
+          "mode": "pursuit",
+          "premise": "The missing Resonant tithe—three juveniles—has already been moved off-world by persons unknown. The Warden arrives to enforce mandate compliance, but discovers the settlement's shortage is not bureaucratic error: it is flight. The arc follows custody chains, contested jurisdiction, and the question of who will pay the institutional price when the tithe cannot be recovered in time.",
+          "why_this_run": "This run transforms static shortage into kinetic pursuit. The PC's Imperial writ grants authority to cross jurisdictions, commandeer transit, and compel testimony—but every hour the tithe remains missing increases the likelihood that supplementary selection will proceed regardless. The pursuit structure lets the Warden exercise enforcement power while revealing that multiple factions have already moved: some to hide the children, some to claim credit for recovery, some to ensure the settlement pays regardless.",
+          "what_this_is_not": "Not a settlement-hall negotiation over who should be tithed. Not an audit of records to find administrative errors. Not a static protection scenario where the children are present and must be defended in place. The children are gone before play begins; the question is whether recovering them will prevent or merely delay institutional reprisal.",
+          "selection_rationale": "Pursuit was chosen over investigation (too passive, no jurisdiction crossings) and protection (children already moved, no static defense). The Warden's Imperial writ and martial authority are designed for jurisdictional override and enforcement escalation—pursuit lets the PC deploy those affordances while experiencing the limits of mandate when multiple institutions claim the same fugitives. Chamber_play was explicitly avoided per arc seed guidance.",
+          "rejected_default_shape": "The default shape is chamber_play: a hearing or council session where the settlement pleads for dispensation and the Warden adjudicates who will be selected. Rejected because it confines the PC to procedural speech and eliminates the kinetic, cross-faction chase that makes the Warden's physical and jurisdictional authority playable."
+        },
+        "arc_question": "Can the Warden recover the missing tithe before supplementary selection begins, and if so, who will be held accountable for the flight?",
+        "core_crucible": "The Synod's tithe deadline is invariant. If the three missing Resonants are not delivered, the settlement's remaining children will be subject to supplementary selection. Recovery does not guarantee amnesty—it only shifts the question from 'who will be taken' to 'who will answer for the delay.'",
+        "invariant_facts": [
+          "The settlement of Cor Hollow was assessed for three Resonant juveniles this tithe cycle.",
+          "All three juveniles are missing and were moved off-world within the past ten days.",
+          "The Synod does not accept explanations, only compliance or supplementary selection.",
+          "The Warden's Imperial writ grants jurisdictional override across House and Synod boundaries within the sector.",
+          "Multiple factions are already aware of the flight and have positioned themselves accordingly."
+        ],
+        "variable_truths_for_this_run": [
+          "One of the juveniles is the child of the settlement's lead retainer, who arranged the initial transit under a falsified work-rotation manifest.",
+          "A local House margrave has offered covert sanctuary in exchange for future tithe allocation leverage against the Synod.",
+          "An Undrift contact is involved, but their role is extraction support, not command; the flight was initiated by settlement parents, not Undrift recruitment.",
+          "A Synod enforcement officer has already been dispatched on a parallel track and views the Warden's involvement as Throne overreach.",
+          "The transit authority logs have been amended under district mandate, obscuring the original departure vectors."
+        ],
+        "durable_forces": [
+          {
+            "id": "synod_tithe_office",
+            "name": "Synod Tithe Office (Sector Primus)",
+            "agenda": "Ensure full tithe compliance on schedule; any delay is treated as doctrinal failure requiring correction.",
+            "leverage": "Absolute authority over Resonant classification and supplementary selection protocols; can invoke heresy charges against settlement leadership.",
+            "fear": "That Throne interference will create precedent for tithe appeals, undermining Synod supply doctrine.",
+            "pressure_style": "Righteous procedure: every communication is framed as care for the greater stability, every deadline is a moral threshold."
+          },
+          {
+            "id": "house_caelix_margrave",
+            "name": "House Caelix (Margrave's Office, Drift Reach Sector)",
+            "agenda": "Gain leverage over future Resonant allocation by demonstrating that House protection is more reliable than settlement autonomy.",
+            "leverage": "Controls sanctuary facilities, retainer networks, and private transit lanes; can shelter the fugitives or surrender them depending on what serves House interest.",
+            "fear": "That the Warden will recover the children and return them to Synod custody, wasting the investment and exposing House involvement.",
+            "pressure_style": "Strategic courtesy: every offer is phrased as mutual benefit, every condition as reasonable delay."
+          },
+          {
+            "id": "cor_hollow_leadership",
+            "name": "Cor Hollow Settlement Council",
+            "agenda": "Avoid supplementary selection at all costs; protect the remaining children even if it means sacrificing individuals or accepting institutional punishment.",
+            "leverage": "Knowledge of who facilitated the flight and where the first handoff occurred; can cooperate or obstruct depending on how the Warden frames accountability.",
+            "fear": "That the Warden's pursuit will fail and the Synod will classify the entire settlement as noncompliant, triggering expanded selection or revocation of settlement charter.",
+            "pressure_style": "Desperate pragmatism: every answer is partial, every request is for more time, every silence is a bid for survival."
+          },
+          {
+            "id": "undrift_chain",
+            "name": "Undrift Extraction Network (Callsign: Hollow Chain)",
+            "agenda": "Move the three juveniles through the extraction pipeline to a non-Hegemony system; maintain operational secrecy and avoid compromise of the wider network.",
+            "leverage": "Controls secondary transit routes, safehouses, and identity rewrite protocols; can accelerate or delay handoffs depending on perceived threat.",
+            "fear": "That Imperial or Synod capture of any juvenile will yield intelligence that compromises other cells in the sector.",
+            "pressure_style": "Cautious opacity: contact is indirect, information is compartmentalized, trust is never assumed."
+          }
+        ],
+        "durable_npc_seeds": [
+          {
+            "id": "npc_synod_enforcer",
+            "role": "Synod Enforcement Officer (rival jurisdiction)",
+            "affiliation": "Synod Tithe Office",
+            "dramatic_function": "Parallel pursuer; views the Warden as Throne overreach and competes for custody credit.",
+            "private_pressure": "Behind on quota for recovered noncompliant Resonants; a successful recovery would restore standing within the Tithe Office hierarchy.",
+            "reuse_guidance": "Can appear in any chapter where jurisdiction conflict escalates; may become ally or obstacle depending on player stance toward Synod authority."
+          },
+          {
+            "id": "npc_lead_retainer",
+            "role": "Settlement Lead Retainer (parent of one fugitive)",
+            "affiliation": "Cor Hollow Settlement Council",
+            "dramatic_function": "Moral lever; arranged the initial flight and holds key transit data, but will only cooperate if the Warden can guarantee protection from Synod reprisal.",
+            "private_pressure": "Torn between duty to the settlement and parental refusal to surrender their child to a system that will expend them.",
+            "reuse_guidance": "Central to Chapters 1-3; can confess, mislead, or sacrifice themselves depending on player approach to accountability and protection."
+          },
+          {
+            "id": "npc_house_liaison",
+            "role": "House Caelix Liaison (covert sanctuary coordinator)",
+            "affiliation": "House Caelix",
+            "dramatic_function": "Offer and condition: provides intel or access in exchange for the Warden acknowledging House claim over the fugitives or agreeing to defer custody.",
+            "private_pressure": "Must demonstrate value to the Margrave without overtly defying Imperial authority; failure means demotion within House retainer structure.",
+            "reuse_guidance": "Can recur whenever the trail crosses House-controlled space; stance on House authority determines whether they become facilitator or obstacle."
+          },
+          {
+            "id": "npc_undrift_contact",
+            "role": "Undrift Coordinator (logistics, not ideology)",
+            "affiliation": "Undrift Extraction Network",
+            "dramatic_function": "Pragmatic interlocutor; will negotiate delay, misdirection, or even partial surrender if it protects the wider network.",
+            "private_pressure": "Knows the Warden could break the cell if they push hard enough; every conversation is risk assessment.",
+            "reuse_guidance": "Appears when pursuit reaches Undrift-controlled handoff points; can become recurring contact if the Warden demonstrates they won't collapse the entire chain to recover three children."
+          },
+          {
+            "id": "npc_transport_captain",
+            "role": "Independent Transit Captain (falsified manifest signer)",
+            "affiliation": "Transit Authority (compromised)",
+            "dramatic_function": "Evidence holder; transported the juveniles under false rotation papers and now faces Imperial investigation.",
+            "private_pressure": "Will cooperate to avoid losing transit license, but only if the Warden can shield them from Synod or House retaliation.",
+            "reuse_guidance": "Key witness in Chapters 1-2; can reappear later if the Warden needs cross-jurisdiction transit or off-record movement."
+          },
+          {
+            "id": "npc_settlement_elder",
+            "role": "Cor Hollow Elder (moral authority, no formal power)",
+            "affiliation": "Cor Hollow Settlement Council",
+            "dramatic_function": "Voice of inherited pressure; did not arrange the flight but knows the settlement will not survive supplementary selection intact.",
+            "private_pressure": "Has lived through two prior tithe cycles and watched children become infrastructure; cannot advocate defiance but cannot advocate surrender.",
+            "reuse_guidance": "Can appear at the beginning or end to frame the human cost; useful for player reflection on complicity and witness."
+          }
+        ],
+        "pressure_engines": [
+          {
+            "id": "engine_tithe_deadline",
+            "name": "Synod Tithe Deadline (Supplementary Selection Clock)",
+            "advances_when": "Time passes without recovery; player pursues leads that dead-end or require extended negotiation; jurisdictional conflicts cause delay.",
+            "slows_when": "Player recovers one or more juveniles and secures temporary Synod acknowledgment; player convinces a faction to accelerate handoff or reveal location.",
+            "visible_symptoms": "Synod communiqués increase in frequency and severity; settlement council grows desperate; Synod enforcer begins preparing supplementary selection protocols; children in the settlement are confined 'for safety.'"
+          },
+          {
+            "id": "engine_jurisdictional_fracture",
+            "name": "Multi-Faction Custody Contest",
+            "advances_when": "Player asserts Imperial authority over Synod or House jurisdiction; factions publicly claim credit or custody; violence or detention occurs between rival parties.",
+            "slows_when": "Player brokers temporary cooperation or defers jurisdiction question; player acts in ways that do not threaten faction standing.",
+            "visible_symptoms": "House and Synod issue competing writs; transit routes are blocked or monitored by multiple factions; NPCs demand formal acknowledgment of authority before cooperating."
+          },
+          {
+            "id": "engine_accountability_question",
+            "name": "Settlement vs. Individual Blame",
+            "advances_when": "Player publicly identifies who arranged the flight; Synod or House demands formal charges; settlement leadership begins scapegoating individuals to protect the collective.",
+            "slows_when": "Player avoids naming individuals or frames the flight as collective pressure; player convinces a faction to accept systemic explanation rather than punitive accountability.",
+            "visible_symptoms": "Settlement council fractures into accusers and defenders; individuals vanish or confess under pressure; Synod enforcer demands formal charges as precondition for leniency."
+          },
+          {
+            "id": "engine_extraction_pipeline",
+            "name": "Undrift Network Exposure Risk",
+            "advances_when": "Player captures Undrift contacts or forces intelligence from them; player publicly pursues Undrift links; other factions learn of Undrift involvement and escalate their own pursuit.",
+            "slows_when": "Player negotiates with Undrift without collapsing the network; player pursues House or Synod leads instead; player demonstrates they will not weaponize captured intelligence.",
+            "visible_symptoms": "Undrift handoffs accelerate or reroute; safehouses go dark; Undrift contact offers partial intel to avoid total exposure; secondary cells evacuate the sector."
+          }
+        ],
+        "player_stance_axes": [
+          {
+            "id": "axis_authority_source",
+            "axis": "Throne Mandate vs. Institutional Pragmatism",
+            "pole_a": "Throne Mandate",
+            "pole_b": "Institutional Pragmatism",
+            "signals_a": [
+              "Invokes Imperial writ to override Synod or House authority",
+              "Frames the pursuit as enforcement of Throne balance, not Synod or House interest",
+              "Refuses to defer to Synod enforcer or House liaison",
+              "Publicly asserts that the Throne's witness changes the outcome"
+            ],
+            "signals_b": [
+              "Coordinates with Synod enforcer or House liaison as peers",
+              "Frames recovery as joint institutional success",
+              "Accepts jurisdictional compromise to avoid fracture",
+              "Treats Imperial writ as a tool of last resort, not first principle"
+            ],
+            "if_a_hardens": "House and Synod both resist the Warden's authority; jurisdictional fracture accelerates; the Warden must pursue alone or with only settlement cooperation. Throne may send oversight if the arc reaches Chapter 5.",
+            "if_b_hardens": "Factions treat the Warden as coordinator rather than ultimate authority; the Warden gains intel and access but loses unilateral control over custody and accountability decisions."
+          },
+          {
+            "id": "axis_accountability_frame",
+            "axis": "Individual Blame vs. Systemic Pressure",
+            "pole_a": "Individual Blame",
+            "pole_b": "Systemic Pressure",
+            "signals_a": [
+              "Demands names and charges the lead retainer or other individuals",
+              "Frames the flight as criminal defiance rather than desperation",
+              "Treats settlement leadership as complicit and punishable",
+              "Uses intimidation to force confession"
+            ],
+            "signals_b": [
+              "Publicly acknowledges the settlement was placed in impossible conditions",
+              "Frames the flight as predictable outcome of systemic tithe pressure",
+              "Shields individuals from formal charges where possible",
+              "Questions whether the Synod's deadline serves stability or control"
+            ],
+            "if_a_hardens": "Settlement leadership fractures; individuals flee or are scapegoated; Synod accepts individual charges but still pursues supplementary selection unless the tithe is fully recovered. The Warden becomes enforcer rather than mediator.",
+            "if_b_hardens": "Settlement gains trust but Synod and House view the Warden as soft or heretical; systemic critique may spread to other settlements if the Warden's witness is public. Accountability is deferred or dissolved."
+          },
+          {
+            "id": "axis_recovery_priority",
+            "axis": "Full Compliance vs. Harm Reduction",
+            "pole_a": "Full Compliance",
+            "pole_b": "Harm Reduction",
+            "signals_a": [
+              "Pursues all three juveniles regardless of cost or faction exposure",
+              "Treats recovery as binary: success is three juveniles delivered, failure is anything less",
+              "Refuses to negotiate partial recovery or conditional surrender",
+              "Prioritizes Synod deadline over all other considerations"
+            ],
+            "signals_b": [
+              "Negotiates for partial recovery or delayed supplementary selection",
+              "Treats one or two juveniles recovered as meaningful progress",
+              "Prioritizes preventing supplementary selection over perfect tithe compliance",
+              "Willing to let some juveniles escape if it protects the settlement's remaining children"
+            ],
+            "if_a_hardens": "Pursuit becomes zero-sum; factions resist or accelerate extraction; the Warden may recover all three but at the cost of settlement trust, Undrift exposure, or jurisdictional violence.",
+            "if_b_hardens": "Synod views the Warden as compromised; supplementary selection may proceed even if partial recovery occurs. The Warden must defend the decision to Throne oversight or accept institutional reprimand."
+          },
+          {
+            "id": "axis_undrift_treatment",
+            "axis": "Collapse the Network vs. Pragmatic Containment",
+            "pole_a": "Collapse the Network",
+            "pole_b": "Pragmatic Containment",
+            "signals_a": [
+              "Uses captured intelligence to expose Undrift cells beyond this arc",
+              "Treats Undrift contact as enemy combatant rather than negotiator",
+              "Publicly pursues Undrift links to demonstrate Throne enforcement",
+              "Demands full disclosure of extraction pipeline as condition for any negotiation"
+            ],
+            "signals_b": [
+              "Treats Undrift involvement as tactical problem, not ideological war",
+              "Negotiates for the juveniles without collapsing the wider network",
+              "Compartmentalizes intelligence: pursues this flight, not the entire chain",
+              "Acknowledges that some Undrift cells serve as pressure valves for systemic failure"
+            ],
+            "if_a_hardens": "Undrift accelerates extraction and cuts all contact; other Imperial or Synod forces take interest; the Warden gains institutional credit but loses access to future Undrift intelligence. The arc may extend beyond the three juveniles.",
+            "if_b_hardens": "Undrift may cooperate or delay rather than vanish; Synod and House view the Warden as compromised or complicit. The Warden must privately justify the containment approach."
+          }
+        ],
+        "chapter_function_map": [
+          {
+            "chapter": 1,
+            "function": "Establish the flight, not the shortage. The Warden arrives to enforce tithe compliance and discovers the juveniles are already gone. Initial investigation reveals the transit was deliberate, not accidental, and multiple factions are already positioned. The settlement is desperate; the Synod enforcer is en route; the trail leads off-world.",
+            "pressure_question": "Will the Warden pursue immediately using Imperial writ, or coordinate with the Synod enforcer and risk losing jurisdictional control?",
+            "possible_end_states": [
+              "The Warden departs Cor Hollow with a lead on the first handoff point and asserts Throne authority over the pursuit.",
+              "The Warden agrees to coordinate with the Synod enforcer, establishing a temporary alliance but ceding unilateral control.",
+              "The Warden extracts intelligence from the lead retainer through intimidation or negotiation, gaining a head start but fracturing settlement trust.",
+              "The Warden discovers the transit logs have been amended and must decide whether to pursue the falsified data or the settlement's unofficial account."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "The chase crosses jurisdictions. The Warden follows the trail into House Caelix territory or Undrift-controlled handoff points. The pursuit becomes a custody contest: House liaison offers intel in exchange for deference; Undrift contact offers misdirection or delay. The Synod enforcer is parallel-tracking and may arrive first. Time pressure increases.",
+            "pressure_question": "Will the Warden override House or Undrift authority to close the gap, or negotiate access and risk losing custody to another faction?",
+            "possible_end_states": [
+              "The Warden overrides House jurisdiction and gains access to a sanctuary facility, escalating jurisdictional fracture but closing on the juveniles.",
+              "The Warden negotiates with the House liaison and learns the juveniles' next destination, but agrees to conditional custody terms.",
+              "The Warden makes contact with the Undrift coordinator and negotiates partial intelligence in exchange for not collapsing the network.",
+              "The Synod enforcer intercepts one of the juveniles first, forcing the Warden to decide whether to contest custody or cooperate.",
+              "The Warden loses the trail temporarily due to faction obstruction or misdirection, and must backtrack or shift strategy."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Custody is contested, and the cost of recovery becomes visible. At least one juvenile is located, but multiple factions claim authority. The Warden must choose: enforce Throne mandate and risk violence, broker a compromise that may not hold, or let one faction take custody to preserve the pursuit. The accountability question surfaces: someone must answer for the delay, and factions begin positioning to shift blame.",
+            "pressure_question": "Will the Warden prioritize recovering all three juveniles regardless of factional cost, or accept partial recovery to prevent supplementary selection and wider collapse?",
+            "possible_end_states": [
+              "The Warden secures custody of one or two juveniles through enforcement, but alienates House or Undrift and loses intel on the remainder.",
+              "The Warden brokers a three-way custody agreement that temporarily satisfies Synod, House, and Throne, but defers the accountability question.",
+              "The Warden allows the Synod enforcer to take custody of one juvenile while continuing pursuit of the others, creating a split outcome.",
+              "The Warden lets one juvenile remain in Undrift hands in exchange for intel on the other two, making a calculated concession.",
+              "The Warden fails to secure any juvenile this chapter and the tithe deadline advances; supplementary selection protocols begin preparation in Cor Hollow."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "The endgame: recovery or reckoning. The Warden closes on the final juvenile(s), but the institutional price comes due. If recovery is near-complete, the question becomes who will be charged for the delay. If recovery is incomplete, the question becomes how the Warden will answer for failure—and whether they will allow or resist supplementary selection. The Synod, House, and settlement all demand resolution, and the Warden's stance determines whose logic prevails.",
+            "pressure_question": "Can the Warden deliver compliance, and if so, at what cost to the settlement, the factions, or their own standing?",
+            "possible_end_states": [
+              "RESOLUTION: The Warden recovers all three juveniles and delivers them to the Synod, preventing supplementary selection. Accountability is assigned to the lead retainer or settlement council, and the Warden's enforcement is judged successful.",
+              "RESOLUTION: The Warden recovers two juveniles and negotiates a Synod dispensation to delay or reduce supplementary selection. One juvenile remains with Undrift or House sanctuary. The Warden accepts institutional scrutiny for the compromise.",
+              "RESOLUTION: The Warden recovers one juvenile but the tithe deadline expires. Supplementary selection begins, and the Warden must decide whether to witness, enforce, or obstruct the process.",
+              "CONTINUATION: The Warden recovers all three juveniles but multiple factions refuse to relinquish custody. The arc extends into Chapter 5 as a three-way standoff.",
+              "CONTINUATION: The Warden fails to recover the juveniles in time, but discovers evidence that the Synod or House manipulated the shortage to create leverage. The arc extends into Chapter 5 as the Warden decides whether to pursue institutional accountability.",
+              "FAILURE SPIRAL: The Warden's pursuit collapses due to jurisdictional violence or factional obstruction. Supplementary selection proceeds, and the Warden is recalled to answer for the failure."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "Institutional aftermath and final accountability. If the arc did not resolve in Chapter 4, this chapter handles the three-way custody standoff, the Warden's decision on supplementary selection, or the consequences of systemic exposure. If the arc did resolve, this chapter addresses what the resolution cost: Who was blamed? What precedent was set? What does the Warden carry forward?",
+            "pressure_question": "What does the Warden preserve, and what do they sacrifice to close the pursuit?",
+            "possible_end_states": [
+              "RESOLUTION: The Warden breaks the custody standoff through enforcement or negotiation, delivers the tithe, and accepts the institutional consequences of how they did it.",
+              "RESOLUTION: The Warden allows partial failure and uses their Imperial authority to shield the settlement from the worst of supplementary selection, accepting personal censure.",
+              "RESOLUTION: The Warden exposes the faction (Synod, House, or settlement) that engineered the crisis and shifts accountability upward, creating sector-wide fallout.",
+              "PYRRHIC RESOLUTION: The Warden recovers the juveniles but the settlement is destroyed politically or economically as a result. Compliance is achieved, but the human cost is visible and carried forward.",
+              "OPEN ENDING: The Warden makes a choice that prevents immediate catastrophe but leaves systemic questions unresolved. The tithe is delivered, but the Warden knows the machine will do this again."
+            ]
+          }
+        ],
+        "possible_endgames": [
+          "Full compliance: all three juveniles recovered and delivered to the Synod. Supplementary selection is prevented. The Warden is judged effective, but someone (settlement, retainer, or House contact) pays the accountability price.",
+          "Partial recovery: one or two juveniles recovered, supplementary selection reduced or delayed through negotiation. The Warden accepts institutional scrutiny for the compromise.",
+          "Custody compromise: juveniles recovered but custody is split between Synod, House, and Throne. The precedent creates sector-wide tension over future tithe enforcement.",
+          "Failed pursuit, witnessed selection: the Warden does not recover the tithe in time and must decide whether to witness, enforce, or obstruct supplementary selection. The arc becomes a moral reckoning rather than a procedural success.",
+          "Systemic exposure: the Warden discovers and exposes that the shortage was engineered by a faction (Synod or House) to create leverage. The tithe becomes secondary to the institutional fallout.",
+          "Network collapse: the Warden collapses the Undrift extraction chain and recovers the juveniles, but at the cost of future intelligence and the exposure of dozens of other families in the sector.",
+          "Defection or refusal: the Warden decides they cannot or will not enforce this system and takes an action that places them outside the Throne's mandate. The arc ends with the Warden compromised or rogue."
+        ]
+      },
+      "arcPlan": {
+        "id": "arc_the_tithe_pursuit",
+        "status": "active",
+        "title": "The Tithe (Pursuit Variant)",
+        "sourceHook": {
+          "title": "The Tithe",
+          "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+          "crucible": "The Synod will take children if the numbers are not met."
+        },
+        "scenarioShape": {
+          "mode": "pursuit",
+          "premise": "The missing Resonant tithe—three juveniles—has already been moved off-world by persons unknown. The Warden arrives to enforce mandate compliance, but discovers the settlement's shortage is not bureaucratic error: it is flight. The arc follows custody chains, contested jurisdiction, and the question of who will pay the institutional price when the tithe cannot be recovered in time.",
+          "whyThisRun": "This run transforms static shortage into kinetic pursuit. The PC's Imperial writ grants authority to cross jurisdictions, commandeer transit, and compel testimony—but every hour the tithe remains missing increases the likelihood that supplementary selection will proceed regardless. The pursuit structure lets the Warden exercise enforcement power while revealing that multiple factions have already moved: some to hide the children, some to claim credit for recovery, some to ensure the settlement pays regardless.",
+          "whatThisIsNot": "Not a settlement-hall negotiation over who should be tithed. Not an audit of records to find administrative errors. Not a static protection scenario where the children are present and must be defended in place. The children are gone before play begins; the question is whether recovering them will prevent or merely delay institutional reprisal.",
+          "selectionRationale": "Pursuit was chosen over investigation (too passive, no jurisdiction crossings) and protection (children already moved, no static defense). The Warden's Imperial writ and martial authority are designed for jurisdictional override and enforcement escalation—pursuit lets the PC deploy those affordances while experiencing the limits of mandate when multiple institutions claim the same fugitives. Chamber_play was explicitly avoided per arc seed guidance.",
+          "rejectedDefaultShape": "The default shape is chamber_play: a hearing or council session where the settlement pleads for dispensation and the Warden adjudicates who will be selected. Rejected because it confines the PC to procedural speech and eliminates the kinetic, cross-faction chase that makes the Warden's physical and jurisdictional authority playable."
+        },
+        "arcQuestion": "Can the Warden recover the missing tithe before supplementary selection begins, and if so, who will be held accountable for the flight?",
+        "coreCrucible": "The Synod's tithe deadline is invariant. If the three missing Resonants are not delivered, the settlement's remaining children will be subject to supplementary selection. Recovery does not guarantee amnesty—it only shifts the question from 'who will be taken' to 'who will answer for the delay.'",
+        "invariantFacts": [
+          "The settlement of Cor Hollow was assessed for three Resonant juveniles this tithe cycle.",
+          "All three juveniles are missing and were moved off-world within the past ten days.",
+          "The Synod does not accept explanations, only compliance or supplementary selection.",
+          "The Warden's Imperial writ grants jurisdictional override across House and Synod boundaries within the sector.",
+          "Multiple factions are already aware of the flight and have positioned themselves accordingly."
+        ],
+        "variableTruthsForThisRun": [
+          "One of the juveniles is the child of the settlement's lead retainer, who arranged the initial transit under a falsified work-rotation manifest.",
+          "A local House margrave has offered covert sanctuary in exchange for future tithe allocation leverage against the Synod.",
+          "An Undrift contact is involved, but their role is extraction support, not command; the flight was initiated by settlement parents, not Undrift recruitment.",
+          "A Synod enforcement officer has already been dispatched on a parallel track and views the Warden's involvement as Throne overreach.",
+          "The transit authority logs have been amended under district mandate, obscuring the original departure vectors."
+        ],
+        "durableForces": [
+          {
+            "id": "synod_tithe_office",
+            "name": "Synod Tithe Office (Sector Primus)",
+            "agenda": "Ensure full tithe compliance on schedule; any delay is treated as doctrinal failure requiring correction.",
+            "leverage": "Absolute authority over Resonant classification and supplementary selection protocols; can invoke heresy charges against settlement leadership.",
+            "fear": "That Throne interference will create precedent for tithe appeals, undermining Synod supply doctrine.",
+            "pressureStyle": "Righteous procedure: every communication is framed as care for the greater stability, every deadline is a moral threshold."
+          },
+          {
+            "id": "house_caelix_margrave",
+            "name": "House Caelix (Margrave's Office, Drift Reach Sector)",
+            "agenda": "Gain leverage over future Resonant allocation by demonstrating that House protection is more reliable than settlement autonomy.",
+            "leverage": "Controls sanctuary facilities, retainer networks, and private transit lanes; can shelter the fugitives or surrender them depending on what serves House interest.",
+            "fear": "That the Warden will recover the children and return them to Synod custody, wasting the investment and exposing House involvement.",
+            "pressureStyle": "Strategic courtesy: every offer is phrased as mutual benefit, every condition as reasonable delay."
+          },
+          {
+            "id": "cor_hollow_leadership",
+            "name": "Cor Hollow Settlement Council",
+            "agenda": "Avoid supplementary selection at all costs; protect the remaining children even if it means sacrificing individuals or accepting institutional punishment.",
+            "leverage": "Knowledge of who facilitated the flight and where the first handoff occurred; can cooperate or obstruct depending on how the Warden frames accountability.",
+            "fear": "That the Warden's pursuit will fail and the Synod will classify the entire settlement as noncompliant, triggering expanded selection or revocation of settlement charter.",
+            "pressureStyle": "Desperate pragmatism: every answer is partial, every request is for more time, every silence is a bid for survival."
+          },
+          {
+            "id": "undrift_chain",
+            "name": "Undrift Extraction Network (Callsign: Hollow Chain)",
+            "agenda": "Move the three juveniles through the extraction pipeline to a non-Hegemony system; maintain operational secrecy and avoid compromise of the wider network.",
+            "leverage": "Controls secondary transit routes, safehouses, and identity rewrite protocols; can accelerate or delay handoffs depending on perceived threat.",
+            "fear": "That Imperial or Synod capture of any juvenile will yield intelligence that compromises other cells in the sector.",
+            "pressureStyle": "Cautious opacity: contact is indirect, information is compartmentalized, trust is never assumed."
+          }
+        ],
+        "durableNpcSeeds": [
+          {
+            "id": "npc_synod_enforcer",
+            "role": "Synod Enforcement Officer (rival jurisdiction)",
+            "affiliation": "Synod Tithe Office",
+            "dramaticFunction": "Parallel pursuer; views the Warden as Throne overreach and competes for custody credit.",
+            "privatePressure": "Behind on quota for recovered noncompliant Resonants; a successful recovery would restore standing within the Tithe Office hierarchy.",
+            "reuseGuidance": "Can appear in any chapter where jurisdiction conflict escalates; may become ally or obstacle depending on player stance toward Synod authority."
+          },
+          {
+            "id": "npc_lead_retainer",
+            "role": "Settlement Lead Retainer (parent of one fugitive)",
+            "affiliation": "Cor Hollow Settlement Council",
+            "dramaticFunction": "Moral lever; arranged the initial flight and holds key transit data, but will only cooperate if the Warden can guarantee protection from Synod reprisal.",
+            "privatePressure": "Torn between duty to the settlement and parental refusal to surrender their child to a system that will expend them.",
+            "reuseGuidance": "Central to Chapters 1-3; can confess, mislead, or sacrifice themselves depending on player approach to accountability and protection."
+          },
+          {
+            "id": "npc_house_liaison",
+            "role": "House Caelix Liaison (covert sanctuary coordinator)",
+            "affiliation": "House Caelix",
+            "dramaticFunction": "Offer and condition: provides intel or access in exchange for the Warden acknowledging House claim over the fugitives or agreeing to defer custody.",
+            "privatePressure": "Must demonstrate value to the Margrave without overtly defying Imperial authority; failure means demotion within House retainer structure.",
+            "reuseGuidance": "Can recur whenever the trail crosses House-controlled space; stance on House authority determines whether they become facilitator or obstacle."
+          },
+          {
+            "id": "npc_undrift_contact",
+            "role": "Undrift Coordinator (logistics, not ideology)",
+            "affiliation": "Undrift Extraction Network",
+            "dramaticFunction": "Pragmatic interlocutor; will negotiate delay, misdirection, or even partial surrender if it protects the wider network.",
+            "privatePressure": "Knows the Warden could break the cell if they push hard enough; every conversation is risk assessment.",
+            "reuseGuidance": "Appears when pursuit reaches Undrift-controlled handoff points; can become recurring contact if the Warden demonstrates they won't collapse the entire chain to recover three children."
+          },
+          {
+            "id": "npc_transport_captain",
+            "role": "Independent Transit Captain (falsified manifest signer)",
+            "affiliation": "Transit Authority (compromised)",
+            "dramaticFunction": "Evidence holder; transported the juveniles under false rotation papers and now faces Imperial investigation.",
+            "privatePressure": "Will cooperate to avoid losing transit license, but only if the Warden can shield them from Synod or House retaliation.",
+            "reuseGuidance": "Key witness in Chapters 1-2; can reappear later if the Warden needs cross-jurisdiction transit or off-record movement."
+          },
+          {
+            "id": "npc_settlement_elder",
+            "role": "Cor Hollow Elder (moral authority, no formal power)",
+            "affiliation": "Cor Hollow Settlement Council",
+            "dramaticFunction": "Voice of inherited pressure; did not arrange the flight but knows the settlement will not survive supplementary selection intact.",
+            "privatePressure": "Has lived through two prior tithe cycles and watched children become infrastructure; cannot advocate defiance but cannot advocate surrender.",
+            "reuseGuidance": "Can appear at the beginning or end to frame the human cost; useful for player reflection on complicity and witness."
+          }
+        ],
+        "pressureEngines": [
+          {
+            "id": "engine_tithe_deadline",
+            "name": "Synod Tithe Deadline (Supplementary Selection Clock)",
+            "advancesWhen": "Time passes without recovery; player pursues leads that dead-end or require extended negotiation; jurisdictional conflicts cause delay.",
+            "slowsWhen": "Player recovers one or more juveniles and secures temporary Synod acknowledgment; player convinces a faction to accelerate handoff or reveal location.",
+            "visibleSymptoms": "Synod communiqués increase in frequency and severity; settlement council grows desperate; Synod enforcer begins preparing supplementary selection protocols; children in the settlement are confined 'for safety.'"
+          },
+          {
+            "id": "engine_jurisdictional_fracture",
+            "name": "Multi-Faction Custody Contest",
+            "advancesWhen": "Player asserts Imperial authority over Synod or House jurisdiction; factions publicly claim credit or custody; violence or detention occurs between rival parties.",
+            "slowsWhen": "Player brokers temporary cooperation or defers jurisdiction question; player acts in ways that do not threaten faction standing.",
+            "visibleSymptoms": "House and Synod issue competing writs; transit routes are blocked or monitored by multiple factions; NPCs demand formal acknowledgment of authority before cooperating."
+          },
+          {
+            "id": "engine_accountability_question",
+            "name": "Settlement vs. Individual Blame",
+            "advancesWhen": "Player publicly identifies who arranged the flight; Synod or House demands formal charges; settlement leadership begins scapegoating individuals to protect the collective.",
+            "slowsWhen": "Player avoids naming individuals or frames the flight as collective pressure; player convinces a faction to accept systemic explanation rather than punitive accountability.",
+            "visibleSymptoms": "Settlement council fractures into accusers and defenders; individuals vanish or confess under pressure; Synod enforcer demands formal charges as precondition for leniency."
+          },
+          {
+            "id": "engine_extraction_pipeline",
+            "name": "Undrift Network Exposure Risk",
+            "advancesWhen": "Player captures Undrift contacts or forces intelligence from them; player publicly pursues Undrift links; other factions learn of Undrift involvement and escalate their own pursuit.",
+            "slowsWhen": "Player negotiates with Undrift without collapsing the network; player pursues House or Synod leads instead; player demonstrates they will not weaponize captured intelligence.",
+            "visibleSymptoms": "Undrift handoffs accelerate or reroute; safehouses go dark; Undrift contact offers partial intel to avoid total exposure; secondary cells evacuate the sector."
+          }
+        ],
+        "playerStanceAxes": [
+          {
+            "id": "axis_authority_source",
+            "axis": "Throne Mandate vs. Institutional Pragmatism",
+            "poleA": "Throne Mandate",
+            "poleB": "Institutional Pragmatism",
+            "signalsA": [
+              "Invokes Imperial writ to override Synod or House authority",
+              "Frames the pursuit as enforcement of Throne balance, not Synod or House interest",
+              "Refuses to defer to Synod enforcer or House liaison",
+              "Publicly asserts that the Throne's witness changes the outcome"
+            ],
+            "signalsB": [
+              "Coordinates with Synod enforcer or House liaison as peers",
+              "Frames recovery as joint institutional success",
+              "Accepts jurisdictional compromise to avoid fracture",
+              "Treats Imperial writ as a tool of last resort, not first principle"
+            ],
+            "ifAHardens": "House and Synod both resist the Warden's authority; jurisdictional fracture accelerates; the Warden must pursue alone or with only settlement cooperation. Throne may send oversight if the arc reaches Chapter 5.",
+            "ifBHardens": "Factions treat the Warden as coordinator rather than ultimate authority; the Warden gains intel and access but loses unilateral control over custody and accountability decisions."
+          },
+          {
+            "id": "axis_accountability_frame",
+            "axis": "Individual Blame vs. Systemic Pressure",
+            "poleA": "Individual Blame",
+            "poleB": "Systemic Pressure",
+            "signalsA": [
+              "Demands names and charges the lead retainer or other individuals",
+              "Frames the flight as criminal defiance rather than desperation",
+              "Treats settlement leadership as complicit and punishable",
+              "Uses intimidation to force confession"
+            ],
+            "signalsB": [
+              "Publicly acknowledges the settlement was placed in impossible conditions",
+              "Frames the flight as predictable outcome of systemic tithe pressure",
+              "Shields individuals from formal charges where possible",
+              "Questions whether the Synod's deadline serves stability or control"
+            ],
+            "ifAHardens": "Settlement leadership fractures; individuals flee or are scapegoated; Synod accepts individual charges but still pursues supplementary selection unless the tithe is fully recovered. The Warden becomes enforcer rather than mediator.",
+            "ifBHardens": "Settlement gains trust but Synod and House view the Warden as soft or heretical; systemic critique may spread to other settlements if the Warden's witness is public. Accountability is deferred or dissolved."
+          },
+          {
+            "id": "axis_recovery_priority",
+            "axis": "Full Compliance vs. Harm Reduction",
+            "poleA": "Full Compliance",
+            "poleB": "Harm Reduction",
+            "signalsA": [
+              "Pursues all three juveniles regardless of cost or faction exposure",
+              "Treats recovery as binary: success is three juveniles delivered, failure is anything less",
+              "Refuses to negotiate partial recovery or conditional surrender",
+              "Prioritizes Synod deadline over all other considerations"
+            ],
+            "signalsB": [
+              "Negotiates for partial recovery or delayed supplementary selection",
+              "Treats one or two juveniles recovered as meaningful progress",
+              "Prioritizes preventing supplementary selection over perfect tithe compliance",
+              "Willing to let some juveniles escape if it protects the settlement's remaining children"
+            ],
+            "ifAHardens": "Pursuit becomes zero-sum; factions resist or accelerate extraction; the Warden may recover all three but at the cost of settlement trust, Undrift exposure, or jurisdictional violence.",
+            "ifBHardens": "Synod views the Warden as compromised; supplementary selection may proceed even if partial recovery occurs. The Warden must defend the decision to Throne oversight or accept institutional reprimand."
+          },
+          {
+            "id": "axis_undrift_treatment",
+            "axis": "Collapse the Network vs. Pragmatic Containment",
+            "poleA": "Collapse the Network",
+            "poleB": "Pragmatic Containment",
+            "signalsA": [
+              "Uses captured intelligence to expose Undrift cells beyond this arc",
+              "Treats Undrift contact as enemy combatant rather than negotiator",
+              "Publicly pursues Undrift links to demonstrate Throne enforcement",
+              "Demands full disclosure of extraction pipeline as condition for any negotiation"
+            ],
+            "signalsB": [
+              "Treats Undrift involvement as tactical problem, not ideological war",
+              "Negotiates for the juveniles without collapsing the wider network",
+              "Compartmentalizes intelligence: pursues this flight, not the entire chain",
+              "Acknowledges that some Undrift cells serve as pressure valves for systemic failure"
+            ],
+            "ifAHardens": "Undrift accelerates extraction and cuts all contact; other Imperial or Synod forces take interest; the Warden gains institutional credit but loses access to future Undrift intelligence. The arc may extend beyond the three juveniles.",
+            "ifBHardens": "Undrift may cooperate or delay rather than vanish; Synod and House view the Warden as compromised or complicit. The Warden must privately justify the containment approach."
+          }
+        ],
+        "chapterFunctionMap": [
+          {
+            "chapter": 1,
+            "function": "Establish the flight, not the shortage. The Warden arrives to enforce tithe compliance and discovers the juveniles are already gone. Initial investigation reveals the transit was deliberate, not accidental, and multiple factions are already positioned. The settlement is desperate; the Synod enforcer is en route; the trail leads off-world.",
+            "pressureQuestion": "Will the Warden pursue immediately using Imperial writ, or coordinate with the Synod enforcer and risk losing jurisdictional control?",
+            "possibleEndStates": [
+              "The Warden departs Cor Hollow with a lead on the first handoff point and asserts Throne authority over the pursuit.",
+              "The Warden agrees to coordinate with the Synod enforcer, establishing a temporary alliance but ceding unilateral control.",
+              "The Warden extracts intelligence from the lead retainer through intimidation or negotiation, gaining a head start but fracturing settlement trust.",
+              "The Warden discovers the transit logs have been amended and must decide whether to pursue the falsified data or the settlement's unofficial account."
+            ]
+          },
+          {
+            "chapter": 2,
+            "function": "The chase crosses jurisdictions. The Warden follows the trail into House Caelix territory or Undrift-controlled handoff points. The pursuit becomes a custody contest: House liaison offers intel in exchange for deference; Undrift contact offers misdirection or delay. The Synod enforcer is parallel-tracking and may arrive first. Time pressure increases.",
+            "pressureQuestion": "Will the Warden override House or Undrift authority to close the gap, or negotiate access and risk losing custody to another faction?",
+            "possibleEndStates": [
+              "The Warden overrides House jurisdiction and gains access to a sanctuary facility, escalating jurisdictional fracture but closing on the juveniles.",
+              "The Warden negotiates with the House liaison and learns the juveniles' next destination, but agrees to conditional custody terms.",
+              "The Warden makes contact with the Undrift coordinator and negotiates partial intelligence in exchange for not collapsing the network.",
+              "The Synod enforcer intercepts one of the juveniles first, forcing the Warden to decide whether to contest custody or cooperate.",
+              "The Warden loses the trail temporarily due to faction obstruction or misdirection, and must backtrack or shift strategy."
+            ]
+          },
+          {
+            "chapter": 3,
+            "function": "Custody is contested, and the cost of recovery becomes visible. At least one juvenile is located, but multiple factions claim authority. The Warden must choose: enforce Throne mandate and risk violence, broker a compromise that may not hold, or let one faction take custody to preserve the pursuit. The accountability question surfaces: someone must answer for the delay, and factions begin positioning to shift blame.",
+            "pressureQuestion": "Will the Warden prioritize recovering all three juveniles regardless of factional cost, or accept partial recovery to prevent supplementary selection and wider collapse?",
+            "possibleEndStates": [
+              "The Warden secures custody of one or two juveniles through enforcement, but alienates House or Undrift and loses intel on the remainder.",
+              "The Warden brokers a three-way custody agreement that temporarily satisfies Synod, House, and Throne, but defers the accountability question.",
+              "The Warden allows the Synod enforcer to take custody of one juvenile while continuing pursuit of the others, creating a split outcome.",
+              "The Warden lets one juvenile remain in Undrift hands in exchange for intel on the other two, making a calculated concession.",
+              "The Warden fails to secure any juvenile this chapter and the tithe deadline advances; supplementary selection protocols begin preparation in Cor Hollow."
+            ]
+          },
+          {
+            "chapter": 4,
+            "function": "The endgame: recovery or reckoning. The Warden closes on the final juvenile(s), but the institutional price comes due. If recovery is near-complete, the question becomes who will be charged for the delay. If recovery is incomplete, the question becomes how the Warden will answer for failure—and whether they will allow or resist supplementary selection. The Synod, House, and settlement all demand resolution, and the Warden's stance determines whose logic prevails.",
+            "pressureQuestion": "Can the Warden deliver compliance, and if so, at what cost to the settlement, the factions, or their own standing?",
+            "possibleEndStates": [
+              "RESOLUTION: The Warden recovers all three juveniles and delivers them to the Synod, preventing supplementary selection. Accountability is assigned to the lead retainer or settlement council, and the Warden's enforcement is judged successful.",
+              "RESOLUTION: The Warden recovers two juveniles and negotiates a Synod dispensation to delay or reduce supplementary selection. One juvenile remains with Undrift or House sanctuary. The Warden accepts institutional scrutiny for the compromise.",
+              "RESOLUTION: The Warden recovers one juvenile but the tithe deadline expires. Supplementary selection begins, and the Warden must decide whether to witness, enforce, or obstruct the process.",
+              "CONTINUATION: The Warden recovers all three juveniles but multiple factions refuse to relinquish custody. The arc extends into Chapter 5 as a three-way standoff.",
+              "CONTINUATION: The Warden fails to recover the juveniles in time, but discovers evidence that the Synod or House manipulated the shortage to create leverage. The arc extends into Chapter 5 as the Warden decides whether to pursue institutional accountability.",
+              "FAILURE SPIRAL: The Warden's pursuit collapses due to jurisdictional violence or factional obstruction. Supplementary selection proceeds, and the Warden is recalled to answer for the failure."
+            ]
+          },
+          {
+            "chapter": 5,
+            "function": "Institutional aftermath and final accountability. If the arc did not resolve in Chapter 4, this chapter handles the three-way custody standoff, the Warden's decision on supplementary selection, or the consequences of systemic exposure. If the arc did resolve, this chapter addresses what the resolution cost: Who was blamed? What precedent was set? What does the Warden carry forward?",
+            "pressureQuestion": "What does the Warden preserve, and what do they sacrifice to close the pursuit?",
+            "possibleEndStates": [
+              "RESOLUTION: The Warden breaks the custody standoff through enforcement or negotiation, delivers the tithe, and accepts the institutional consequences of how they did it.",
+              "RESOLUTION: The Warden allows partial failure and uses their Imperial authority to shield the settlement from the worst of supplementary selection, accepting personal censure.",
+              "RESOLUTION: The Warden exposes the faction (Synod, House, or settlement) that engineered the crisis and shifts accountability upward, creating sector-wide fallout.",
+              "PYRRHIC RESOLUTION: The Warden recovers the juveniles but the settlement is destroyed politically or economically as a result. Compliance is achieved, but the human cost is visible and carried forward.",
+              "OPEN ENDING: The Warden makes a choice that prevents immediate catastrophe but leaves systemic questions unresolved. The tithe is delivered, but the Warden knows the machine will do this again."
+            ]
+          }
+        ],
+        "possibleEndgames": [
+          "Full compliance: all three juveniles recovered and delivered to the Synod. Supplementary selection is prevented. The Warden is judged effective, but someone (settlement, retainer, or House contact) pays the accountability price.",
+          "Partial recovery: one or two juveniles recovered, supplementary selection reduced or delayed through negotiation. The Warden accepts institutional scrutiny for the compromise.",
+          "Custody compromise: juveniles recovered but custody is split between Synod, House, and Throne. The precedent creates sector-wide tension over future tithe enforcement.",
+          "Failed pursuit, witnessed selection: the Warden does not recover the tithe in time and must decide whether to witness, enforce, or obstruct supplementary selection. The arc becomes a moral reckoning rather than a procedural success.",
+          "Systemic exposure: the Warden discovers and exposes that the shortage was engineered by a faction (Synod or House) to create leverage. The tithe becomes secondary to the institutional fallout.",
+          "Network collapse: the Warden collapses the Undrift extraction chain and recovers the juveniles, but at the cost of future intelligence and the exposure of dozens of other families in the sector.",
+          "Defection or refusal: the Warden decides they cannot or will not enforce this system and takes an action that places them outside the Throne's mandate. The arc ends with the Warden compromised or rogue."
+        ]
+      },
+      "errors": [],
+      "costUsd": 0.11066714999999999,
+      "summary": "pursuit/The Tithe (Pursuit Variant)"
+    }
+  ]
+}

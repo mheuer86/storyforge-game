@@ -448,6 +448,25 @@ const epicSciFiPlaybooks: Record<string, CharacterClass[]> = {
         usesRemaining: 1,
       },
       openingKnowledge: 'You enforce the balance. Not a house\'s interests, not the Synod\'s doctrine — the Throne\'s stability. You have been deployed to house disputes where both sides smiled at you and hated what you represented. You have stood between a Synod extraction team and a settlement that didn\'t want to comply, and your presence was the only thing that kept the Synod within legal bounds. Everyone assumes you are reporting. They are correct. The weight of duty is that you see the system clearly and serve it anyway, because the alternative is worse.',
+      // First-pass per [[2604270855 Storyforge V2 Playbook Fit]]. Calibrate
+      // from playthrough data. Other Hegemony classes (Seeker, Crusader,
+      // Shepherd, Assessor, Sworn-Blade, Broker, Ghost, Runner, Voice,
+      // Analyst, Handler, Remnant, Sentinel, Witness) need profiles too —
+      // populate when those classes get used in V2 validation.
+      playbookProfile: {
+        naturalMoves: [
+          'institutional enforcement',
+          'physical mediation between factions',
+          'oath-witness presence',
+          'Throne-mandate authority deployment',
+          'intimidation as official deterrent',
+        ],
+        naturalDomains: [
+          'inter-faction confrontation requiring Throne presence',
+          'settlement enforcement under institutional pressure',
+          'oath-binding moments where the Warden\'s witness changes the outcome',
+        ],
+      },
     },
     {
       id: 'handler',

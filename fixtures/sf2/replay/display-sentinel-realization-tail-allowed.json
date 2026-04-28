@@ -1,0 +1,23 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: 'what you don't clock until it's too late' is allowed (PC-POV delayed realization)",
+  "source": {
+    "kind": "real-session-regression",
+    "campaignId": "camp_1777287137008",
+    "capturedAt": "2026-04-27T11:35:35.000Z",
+    "purpose": "Playthrough 10 produced legitimate in-character delayed-realization prose after a failed roll: 'What you don't clock until it's too late is that you stopped in the doorway.' This is PC-POV retrospective insight — the failed roll's cost surfaces from the PC's own perspective, not as omniscient narrator sidebar. Without suppression, the narrator_reveal scanner would fire on 'what you don't' and false-positive on legitimate prose. Added a realization-tail lookahead suppression."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused)",
+    "narrator": {
+      "prose": "What you don't clock until it's too late is that you stopped in the doorway. Two full seconds. Long enough that Calder's head comes up from his terminal."
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountEquals": 0
+    }
+  }
+}
