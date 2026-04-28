@@ -1,0 +1,74 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "working-set telemetry role-noun pass surfaces unaliased reference",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Bias telemetry toward over-flagging divergence. When prose says 'the warden' without using the NPC's alias, the role-noun second pass must still match the warden NPC against present + recently-mentioned candidates so excludedButReferenced isn't silently zero."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_vrast": {
+            "id": "npc_vrast",
+            "name": "Warden Vrast",
+            "affiliation": "Imperial Warden",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Throne authority"],
+              "voice": { "note": "formal", "register": "imperial" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Vrast, Throne warden.",
+            "chapterCreated": 1,
+            "signatureLines": [],
+            "lastSeenTurn": 5
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_vrast"]
+        }
+      },
+      "derived": {
+        "workingSet": {
+          "fullEntityIds": ["npc_vrast"],
+          "stubEntityIds": [],
+          "excludedEntityIds": [],
+          "emotionalBeatIds": [],
+          "reasonsByEntityId": {
+            "npc_vrast": ["+5 present in scene"]
+          },
+          "computedAtTurn": 6
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "Wait.",
+    "narrator": {
+      "prose": "The warden does not move. Silence is its own verdict.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "workingSetTelemetry": {
+      "referencedByRoleIncludes": ["npc_vrast"]
+    }
+  }
+}

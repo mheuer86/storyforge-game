@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation hint evidence stores both phrases",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "hintEvidence must record both the configured phrase (what the author authored) AND what the archivist actually emitted, so replay review can see how forgiving the matcher was and calibrate phrase specificity."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_warden_complicit",
+              "statement": "The Warden has been complicit since the second night.",
+              "heldBy": "narrator",
+              "emergenceCondition": "documentary surface",
+              "recontextualizes": "Warden's authority.",
+              "revealed": false,
+              "hintPhrases": ["complicit since the second night", "second-night entries"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 11,
+    "playerInput": "Cross-reference the second-night entries.",
+    "narrator": {
+      "prose": "The clerk pulls up the second-night entries; the Warden's signature lands on three of them.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationHintsDelivered": [
+          {
+            "revelationId": "rev_warden_complicit",
+            "phraseMatched": "second-night entries",
+            "proseExcerpt": "the second-night entries; the Warden's signature lands"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationsInclude": [
+      {
+        "id": "rev_warden_complicit",
+        "hintsDelivered": 1,
+        "hintEvidenceCount": 1,
+        "hintEvidencePhraseEmittedIncludes": ["second-night entries"]
+      }
+    ]
+  }
+}

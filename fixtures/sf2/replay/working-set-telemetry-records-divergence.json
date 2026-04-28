@@ -1,0 +1,80 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "working-set telemetry records divergence buckets",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Telemetry must surface excludedButReferenced when the prose names an entity the assembler didn't include. Establishes the golden-path measurement for working-set scoring decisions."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_ghost": {
+            "id": "npc_ghost",
+            "name": "Tessa Hollowmark",
+            "affiliation": "Off-stage faction",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Distant operator"],
+              "voice": { "note": "terse", "register": "operational" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Tessa, distant operator.",
+            "chapterCreated": 1,
+            "signatureLines": [],
+            "lastSeenTurn": 4
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_ghost"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": []
+        }
+      },
+      "derived": {
+        "workingSet": {
+          "fullEntityIds": [],
+          "stubEntityIds": [],
+          "excludedEntityIds": ["npc_ghost"],
+          "emotionalBeatIds": [],
+          "reasonsByEntityId": {
+            "npc_ghost": ["off-scene 8 turns"]
+          },
+          "computedAtTurn": 8
+        }
+      }
+    },
+    "turnIndex": 8,
+    "playerInput": "Continue.",
+    "narrator": {
+      "prose": "Tessa Hollowmark sends word: the line will hold for one more cycle, no more.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "workingSetTelemetry": {
+      "excludedButReferencedIncludes": ["npc_ghost"],
+      "referencedByAliasIncludes": ["npc_ghost"]
+    }
+  }
+}

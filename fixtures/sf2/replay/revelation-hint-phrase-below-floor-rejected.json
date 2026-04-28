@@ -1,0 +1,63 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation hint phrase below length floor rejected",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Configured hint phrases shorter than MIN_CONFIGURED_HINT_PHRASE_LENGTH must be rejected with drift. Below the floor, bidirectional substring matching becomes promiscuous (any prose containing the substring counts) and the gate becomes meaningless. Author authoring 'filed' as a phrase should fail loudly, not silently inflate the counter."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_too_short",
+              "statement": "Something something happened.",
+              "heldBy": "narrator",
+              "emergenceCondition": "documentary surface",
+              "recontextualizes": "Premise.",
+              "revealed": false,
+              "hintPhrases": ["filed"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Continue.",
+    "narrator": {
+      "prose": "Routine paperwork is filed and the day continues.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationHintsDelivered": [
+          {
+            "revelationId": "rev_too_short",
+            "phraseMatched": "filed",
+            "proseExcerpt": "paperwork is filed"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "driftIncludes": [
+      { "kind": "contradiction", "detailIncludes": "below 6-char floor" }
+    ],
+    "revelationsInclude": [
+      { "id": "rev_too_short", "hintsDelivered": 0, "hintEvidenceCount": 0 }
+    ]
+  }
+}

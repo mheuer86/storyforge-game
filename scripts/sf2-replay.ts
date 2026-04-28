@@ -125,6 +125,28 @@ interface ReplayFixture {
       effectivePressure?: number
       absent?: boolean
     }>
+    beatsCount?: number
+    beatsInclude?: Array<{
+      textIncludes?: string
+      salienceAtLeast?: number
+      tagsInclude?: string[]
+      participantsInclude?: string[]
+    }>
+    revelationsInclude?: Array<{
+      id: string
+      hintsDelivered?: number
+      hintsRequired?: number
+      revealed?: boolean
+      hintEvidenceCount?: number
+      hintEvidencePhraseEmittedIncludes?: string[]
+    }>
+    workingSetTelemetry?: {
+      excludedButReferencedIncludes?: string[]
+      fullButUnreferencedIncludes?: string[]
+      stubButMutatedIncludes?: string[]
+      referencedByAliasIncludes?: string[]
+      referencedByRoleIncludes?: string[]
+    }
     sceneKernel?: {
       sceneId?: string
       presentEntityIdsEquals?: string[]
@@ -617,6 +639,9 @@ function normalizePatch(patch: Partial<Sf2ArchivistPatch> | null, turnIndex: num
     lexiconAdditions: patch?.lexiconAdditions ?? [],
     ladderFires: patch?.ladderFires ?? [],
     coherenceFindings: patch?.coherenceFindings ?? [],
+    emotionalBeats: patch?.emotionalBeats,
+    revelationHintsDelivered: patch?.revelationHintsDelivered,
+    revelationsRevealed: patch?.revelationsRevealed,
   }
 }
 
@@ -1250,6 +1275,86 @@ function assertExpected(
       failures.push(
         `missing drift ${driftExpected.kind}${driftExpected.detailIncludes ? ` including "${driftExpected.detailIncludes}"` : ''}`
       )
+    }
+  }
+
+  // Beats — count + content checks against the post-patch beat registry.
+  const beats = Object.values(state.campaign.beats ?? {})
+  if (typeof expected.beatsCount === 'number') {
+    if (beats.length !== expected.beatsCount) {
+      failures.push(`beats count expected ${expected.beatsCount}, got ${beats.length}`)
+    }
+  }
+  for (const want of expected.beatsInclude ?? []) {
+    const match = beats.find((b) => {
+      if (want.textIncludes && !b.text.toLowerCase().includes(want.textIncludes.toLowerCase())) return false
+      if (typeof want.salienceAtLeast === 'number' && b.salience < want.salienceAtLeast) return false
+      if (want.tagsInclude && !want.tagsInclude.every((t) => b.emotionalTags.includes(t as never))) return false
+      if (want.participantsInclude && !want.participantsInclude.every((p) => b.participants.includes(p))) return false
+      return true
+    })
+    if (!match) {
+      failures.push(`missing beat matching ${JSON.stringify(want)}`)
+    }
+  }
+
+  // Revelations — counter + evidence + revealed-flag checks.
+  const revelations = state.chapter?.scaffolding?.possibleRevelations ?? []
+  for (const want of expected.revelationsInclude ?? []) {
+    const r = revelations.find((rev) => rev.id === want.id)
+    if (!r) {
+      failures.push(`revelation ${want.id} not found`)
+      continue
+    }
+    if (typeof want.hintsDelivered === 'number' && (r.hintsDelivered ?? 0) !== want.hintsDelivered) {
+      failures.push(`revelation ${want.id} hintsDelivered expected ${want.hintsDelivered}, got ${r.hintsDelivered ?? 0}`)
+    }
+    if (typeof want.hintsRequired === 'number' && (r.hintsRequired ?? 0) !== want.hintsRequired) {
+      failures.push(`revelation ${want.id} hintsRequired expected ${want.hintsRequired}, got ${r.hintsRequired ?? 0}`)
+    }
+    if (typeof want.revealed === 'boolean' && r.revealed !== want.revealed) {
+      failures.push(`revelation ${want.id} revealed expected ${want.revealed}, got ${r.revealed}`)
+    }
+    if (typeof want.hintEvidenceCount === 'number') {
+      const got = (r.hintEvidence ?? []).length
+      if (got !== want.hintEvidenceCount) {
+        failures.push(`revelation ${want.id} hintEvidenceCount expected ${want.hintEvidenceCount}, got ${got}`)
+      }
+    }
+    for (const phrase of want.hintEvidencePhraseEmittedIncludes ?? []) {
+      const found = (r.hintEvidence ?? []).some(
+        (e) => (e.phraseEmitted ?? '').toLowerCase().includes(phrase.toLowerCase())
+      )
+      if (!found) {
+        failures.push(`revelation ${want.id} hintEvidence missing phraseEmitted "${phrase}"`)
+      }
+    }
+  }
+
+  // Working-set telemetry — assert against the most-recent record on stateAfter.
+  if (expected.workingSetTelemetry) {
+    const records = state.derived?.workingSetTelemetry ?? []
+    const latest = records[records.length - 1]
+    if (!latest) {
+      failures.push(`workingSetTelemetry: no record present on stateAfter`)
+    } else {
+      const want = expected.workingSetTelemetry
+      const checkBucket = (
+        label: string,
+        bucket: string[] | undefined,
+        actual: ReadonlyArray<string>
+      ): void => {
+        for (const id of bucket ?? []) {
+          if (!actual.includes(id)) {
+            failures.push(`workingSetTelemetry.${label} missing ${id} (got: ${actual.join(', ') || 'empty'})`)
+          }
+        }
+      }
+      checkBucket('excludedButReferenced', want.excludedButReferencedIncludes, latest.excludedButReferenced)
+      checkBucket('fullButUnreferenced', want.fullButUnreferencedIncludes, latest.fullButUnreferenced)
+      checkBucket('stubButMutated', want.stubButMutatedIncludes, latest.stubButMutated)
+      checkBucket('referencedByAlias', want.referencedByAliasIncludes, latest.referencedByAlias)
+      checkBucket('referencedByRole', want.referencedByRoleIncludes, latest.referencedByRole)
     }
   }
 }

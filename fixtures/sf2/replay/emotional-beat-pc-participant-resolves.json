@@ -1,0 +1,70 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "emotional beat resolves pc participant",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Beat construction must accept the literal 'pc' string in participants alongside campaign entity ids. Validates the Sf2BeatParticipant special-case."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_mara": {
+            "id": "npc_mara",
+            "name": "Mara",
+            "affiliation": "Chapel",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Grave cantor"],
+              "voice": { "note": "quiet", "register": "formal" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Mara, grave cantor.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "Wait with Mara at the bell rope.",
+    "narrator": {
+      "prose": "Mara almost calls the player by her brother's name and stops a syllable short.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "emotionalBeats": [
+          {
+            "text": "Mara almost calls the player by her brother's name.",
+            "participants": ["pc", "npc_mara", "npc_ghost_unresolved"],
+            "anchoredTo": [],
+            "emotionalTags": ["near_confession", "vulnerability"],
+            "salience": 0.85
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "beatsCount": 1,
+    "beatsInclude": [
+      {
+        "textIncludes": "her brother's name",
+        "tagsInclude": ["near_confession", "vulnerability"],
+        "participantsInclude": ["pc", "npc_mara"]
+      }
+    ]
+  }
+}
