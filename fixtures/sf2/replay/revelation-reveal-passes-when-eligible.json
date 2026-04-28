@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation reveal passes when both gates eligible",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Happy path: hint count meets threshold and context is in validRevealContexts. Revelation ratifies cleanly with no premature_reveal drift."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_solv_filed",
+              "statement": "Solv filed parallel verdict before the meeting.",
+              "heldBy": "narrator",
+              "emergenceCondition": "documentary surface",
+              "recontextualizes": "Chapter premise.",
+              "revealed": false,
+              "hintPhrases": ["filed independently", "parallel verdict"],
+              "hintsRequired": 2,
+              "hintsDelivered": 2,
+              "hintEvidence": [
+                {
+                  "phraseMatched": "filed independently",
+                  "phraseEmitted": "filed independently",
+                  "turn": 4,
+                  "proseExcerpt": "filed independently"
+                },
+                {
+                  "phraseMatched": "parallel verdict",
+                  "phraseEmitted": "parallel verdict",
+                  "turn": 6,
+                  "proseExcerpt": "parallel verdict"
+                }
+              ],
+              "validRevealContexts": ["documentary_surface", "confession"]
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 8,
+    "playerInput": "Open the case board.",
+    "narrator": {
+      "prose": "The case board confirms what the morning whispered: Solv's parallel verdict was already on file.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationsRevealed": [
+          {
+            "revelationId": "rev_solv_filed",
+            "context": "documentary_surface",
+            "evidenceQuote": "Solv's parallel verdict was already on file."
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationsInclude": [
+      { "id": "rev_solv_filed", "revealed": true, "hintsDelivered": 2 }
+    ]
+  }
+}

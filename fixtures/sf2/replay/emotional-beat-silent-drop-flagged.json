@@ -1,0 +1,44 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "emotional beat validation failure surfaces drift",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Beats below the salience floor (0.5), with empty text, or with no emotional_tags must be dropped AND flagged. Silent drops hide archivist over-emission; visibility lets us calibrate the salience floor and tag vocabulary after observation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {},
+    "turnIndex": 3,
+    "playerInput": "Hold the door open for them.",
+    "narrator": {
+      "prose": "The door swings into the cold; nothing about the moment particularly lands.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "emotionalBeats": [
+          {
+            "text": "Routine-feeling door moment.",
+            "participants": ["pc"],
+            "anchoredTo": [],
+            "emotionalTags": ["restraint"],
+            "salience": 0.4
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "beatsCount": 0,
+    "driftIncludes": [
+      { "kind": "contradiction", "detailIncludes": "emotional beat dropped" },
+      { "kind": "contradiction", "detailIncludes": "salience 0.4 below 0.5 floor" }
+    ]
+  }
+}

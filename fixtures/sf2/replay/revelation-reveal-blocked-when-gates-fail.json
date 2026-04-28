@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation reveal blocked drift when gates fail",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Observe-mode: when archivist fires a reveal but hint count is below threshold OR context is invalid, the system must drift-flag revelation_premature_reveal. Reveal still ratifies in observe (Phase 1); enforce will block in Phase 2."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_premature",
+              "statement": "The bell-tower deal was sealed three nights ago.",
+              "heldBy": "narrator",
+              "emergenceCondition": "private confrontation",
+              "recontextualizes": "Mara's earlier deflections.",
+              "revealed": false,
+              "hintPhrases": ["bell-tower deal", "three nights ago"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": ["confession", "private_pressure"],
+              "invalidRevealContexts": ["accusation"]
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Confront Mara about the bell tower.",
+    "narrator": {
+      "prose": "Mara's hand falters around the candle bowl. The bell-tower deal was sealed three nights ago, she says before catching herself.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationsRevealed": [
+          {
+            "revelationId": "rev_premature",
+            "context": "accusation",
+            "evidenceQuote": "The bell-tower deal was sealed three nights ago."
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "driftIncludes": [
+      { "kind": "revelation_premature_reveal", "detailIncludes": "0/2 hints" },
+      { "kind": "revelation_premature_reveal", "detailIncludes": "invalid: accusation" }
+    ],
+    "revelationsInclude": [
+      { "id": "rev_premature", "revealed": true }
+    ]
+  }
+}

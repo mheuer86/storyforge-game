@@ -28,23 +28,28 @@ export type Sf2DecisionStatus = 'active' | 'paid' | 'invalidated'
 export type Sf2PromiseStatus = 'active' | 'kept' | 'broken' | 'released'
 export type Sf2ClueStatus = 'floating' | 'attached' | 'consumed'
 export type Sf2ArcStatus = 'active' | 'resolved' | 'abandoned'
-export type Sf2EmotionalBeatTag =
-  | 'confession'
-  | 'near_confession'
-  | 'evasion'
-  | 'betrayal'
-  | 'loyalty_test'
-  | 'restraint'
-  | 'turning_point'
-  | 'pivot'
-  | 'breakthrough'
-  | 'vulnerability'
-  | 'cost_accepted'
-  | 'boundary_drawn'
-  | 'intimidation_landed'
-  | 'intimidation_failed'
-  | 'decision_revealed'
-  | 'mask_slipped'
+// Single source of truth for the beat tag vocabulary. Used by the type
+// alias below AND by the archivist tool schema (lib/sf2/archivist/tools.ts)
+// so they cannot drift apart.
+export const SF2_EMOTIONAL_BEAT_TAGS = [
+  'confession',
+  'near_confession',
+  'evasion',
+  'betrayal',
+  'loyalty_test',
+  'restraint',
+  'turning_point',
+  'pivot',
+  'breakthrough',
+  'vulnerability',
+  'cost_accepted',
+  'boundary_drawn',
+  'intimidation_landed',
+  'intimidation_failed',
+  'decision_revealed',
+  'mask_slipped',
+] as const
+export type Sf2EmotionalBeatTag = (typeof SF2_EMOTIONAL_BEAT_TAGS)[number]
 export type Sf2ArcScenarioMode =
   | 'public_crisis'
   | 'pursuit'
@@ -292,10 +297,14 @@ export interface Sf2Clue extends Sf2NarrativeEntityBase {
   turn: number
 }
 
+// Participant in an emotional beat. Either a campaign entity id or the
+// literal 'pc' string for the player character (who has no entity record).
+export type Sf2BeatParticipant = Sf2EntityId | 'pc'
+
 export interface Sf2EmotionalBeat extends Sf2NarrativeEntityBase {
   category: 'emotional_beat'
   text: string
-  participants: Sf2EntityId[]
+  participants: Sf2BeatParticipant[]
   anchoredTo: Sf2EntityId[]
   emotionalTags: Sf2EmotionalBeatTag[]
   salience: number
@@ -784,7 +793,12 @@ export interface Sf2ChapterSetupScaffolding {
 }
 
 export interface Sf2RevelationHintEvidence {
+  // The CONFIGURED phrase that matched (the author's authored hint).
   phraseMatched: string
+  // What the archivist actually emitted as the surface form. Preserves
+  // visibility into how forgiving the matcher was — needed to calibrate the
+  // matching strategy after observation.
+  phraseEmitted: string
   turn: number
   proseExcerpt: string
 }
@@ -1274,7 +1288,17 @@ export interface Sf2WorkingSetTelemetry {
   excludedCount: number
   fullTokensApprox: number
   stubTokensApprox: number
+  // Union of alias matches + role-noun matches. Use the per-confidence
+  // arrays below to distinguish how each entity was detected.
   referencedInProse: Sf2EntityId[]
+  // Entities matched against `kernel.aliasMap` — a name or alias appeared
+  // in prose. High-confidence reference detection.
+  referencedByAlias: Sf2EntityId[]
+  // Entities matched against role nouns (e.g. "the warden") cross-referenced
+  // against present + recently-mentioned entities of that role. Lower
+  // confidence than alias matches; bias toward over-flagging divergence so
+  // role-only references aren't missed in `excludedButReferenced`.
+  referencedByRole: Sf2EntityId[]
   mutatedByArchivist: Sf2EntityId[]
   excludedButReferenced: Sf2EntityId[]
   fullButUnreferenced: Sf2EntityId[]

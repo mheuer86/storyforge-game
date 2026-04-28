@@ -1,0 +1,81 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "emotional beat 1-per-turn cap drops extras with drift",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Apply-patch must accept at most one emotional beat per turn and drift-flag the rest. Without the cap, an over-eager archivist floods retrieval; without the drift flag, drops are silent."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "careful", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "Keep the writ narrow.", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 12,
+    "playerInput": "Press Aul on the corridor account.",
+    "narrator": {
+      "prose": "Aul's voice catches. He admits, finally, what the corridor was for.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "emotionalBeats": [
+          {
+            "text": "Aul finally admits what the corridor was for.",
+            "participants": ["pc", "npc_aul"],
+            "anchoredTo": [],
+            "emotionalTags": ["confession", "turning_point"],
+            "salience": 0.9
+          },
+          {
+            "text": "Aul looks at the floor.",
+            "participants": ["npc_aul"],
+            "anchoredTo": [],
+            "emotionalTags": ["restraint"],
+            "salience": 0.55
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "beatsCount": 1,
+    "beatsInclude": [
+      {
+        "textIncludes": "what the corridor was for",
+        "salienceAtLeast": 0.9,
+        "tagsInclude": ["confession", "turning_point"],
+        "participantsInclude": ["pc", "npc_aul"]
+      }
+    ],
+    "driftIncludes": [
+      { "kind": "contradiction", "detailIncludes": "emotional beat cap" }
+    ]
+  }
+}

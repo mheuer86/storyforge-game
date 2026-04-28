@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation hint counter dedupes repeated phrase",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Hint counter must not increment when the archivist re-emits a phrase that has already been counted. Without dedupe the gate becomes structurally porous: archivist emits same phrase twice → counter satisfies hintsRequired=2 → reveal fires on a single distinct hint."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_solv_already_filed",
+              "statement": "Solv had already filed parallel verdict before the meeting opened.",
+              "heldBy": "narrator",
+              "emergenceCondition": "documentary surface",
+              "recontextualizes": "Chapter premise.",
+              "revealed": false,
+              "hintPhrases": ["filed independently", "parallel verdict"],
+              "hintsRequired": 2,
+              "hintsDelivered": 1,
+              "hintEvidence": [
+                {
+                  "phraseMatched": "filed independently",
+                  "phraseEmitted": "filed independently",
+                  "turn": 5,
+                  "proseExcerpt": "Solv had filed independently."
+                }
+              ],
+              "validRevealContexts": []
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 7,
+    "playerInput": "Press the clerk on Solv's filing.",
+    "narrator": {
+      "prose": "The clerk allows that Solv had filed independently of the morning consultations.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationHintsDelivered": [
+          {
+            "revelationId": "rev_solv_already_filed",
+            "phraseMatched": "filed independently",
+            "proseExcerpt": "filed independently of the morning consultations"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationsInclude": [
+      {
+        "id": "rev_solv_already_filed",
+        "hintsDelivered": 1,
+        "hintsRequired": 2,
+        "revealed": false,
+        "hintEvidenceCount": 2
+      }
+    ]
+  }
+}

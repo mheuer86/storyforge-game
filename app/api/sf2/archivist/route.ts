@@ -213,10 +213,15 @@ export async function POST(req: NextRequest) {
         patch,
         applyResult.outcomes
       )
+      // Capped at 10 records (~one chapter of recent turns). Telemetry rides
+      // in the canonical state payload sent to the archivist on every turn
+      // and persisted to IndexedDB; a longer buffer adds dead-weight to
+      // every roundtrip without a corresponding consumer. Replay-time review
+      // is the only consumer; production logging would use a side-channel.
       prunedState.derived.workingSetTelemetry = [
         ...(prunedState.derived.workingSetTelemetry ?? []),
         telemetry,
-      ].slice(-50)
+      ].slice(-10)
     }
 
     // Stash low-confidence writes as recovery notes for the NEXT Narrator

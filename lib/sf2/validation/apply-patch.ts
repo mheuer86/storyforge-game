@@ -31,7 +31,9 @@ import type {
   Sf2ArchivistPatch,
   Sf2ArchivistTransition,
   Sf2ArchivistUpdate,
+  Sf2BeatParticipant,
   Sf2EmotionalBeat,
+  Sf2EmotionalBeatTag,
   Sf2Clue,
   Sf2Decision,
   Sf2Document,
@@ -56,6 +58,25 @@ const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
   'resolved_catastrophic',
 ])
 
+// Revelation gate mode. Phase 1 ships in `observe` — gate violations log a
+// drift flag but the reveal still ratifies (`revealed = true`). Phase 2 will
+// flip to `enforce`, blocking ratification when gates fail. Move via this
+// constant so the flip is one line.
+const REVELATION_GATE_MODE: 'observe' | 'enforce' = 'observe'
+
+// Telemetry retention. Capped at 10 records (~one chapter of recent turns)
+// because telemetry rides in the canonical state payload sent on every
+// archivist call — a longer buffer adds dead-weight to every roundtrip.
+// Replay-time review is the consumer; production logging would use a
+// side-channel.
+const TELEMETRY_RETENTION = 10
+
+// Minimum length of a configured hint phrase. Below this, the bidirectional
+// substring match in configuredHintMatches becomes promiscuous (any prose
+// containing the substring counts as a hint). Phrases below the floor are
+// rejected at apply-patch time with a drift flag.
+const MIN_CONFIGURED_HINT_PHRASE_LENGTH = 6
+
 function normalizePhrase(value: string): string {
   return value.trim().toLowerCase()
 }
@@ -63,7 +84,8 @@ function normalizePhrase(value: string): string {
 function configuredHintMatches(configured: string, emitted: string): boolean {
   const a = normalizePhrase(configured)
   const b = normalizePhrase(emitted)
-  return a.length > 0 && (a === b || a.includes(b) || b.includes(a))
+  if (a.length === 0 || a.length < MIN_CONFIGURED_HINT_PHRASE_LENGTH) return false
+  return a === b || a.includes(b) || b.includes(a)
 }
 
 export interface SubWriteOutcome {
@@ -1689,6 +1711,50 @@ function applyAttachment(
   }
 }
 
+function beatValidationFailureReason(
+  add: { text?: string; salience: number; emotionalTags: Sf2EmotionalBeatTag[] }
+): string | null {
+  if (!add.text) return 'empty text'
+  if (add.salience < 0.5) return `salience ${add.salience} below 0.5 floor`
+  if (add.emotionalTags.length === 0) return 'no emotional_tags'
+  return null
+}
+
+function buildBeat(
+  add: { text: string; participants: string[]; anchoredTo: string[]; emotionalTags: Sf2EmotionalBeatTag[]; salience: number },
+  draft: Sf2State,
+  turn: number,
+  chapter: number
+): Sf2EmotionalBeat {
+  const id = nextEntityId('beat', draft)
+  const participants = [...new Set(add.participants)].filter(
+    (pid) => pid === 'pc' || Boolean(draft.campaign.npcs[pid] || draft.campaign.factions[pid])
+  ) as Sf2BeatParticipant[]
+  const anchoredTo = [...new Set(add.anchoredTo)].filter((aid) =>
+    Boolean(
+      draft.campaign.threads[aid] ||
+        draft.campaign.decisions[aid] ||
+        draft.campaign.promises[aid] ||
+        draft.campaign.clues[aid] ||
+        draft.campaign.documents?.[aid] ||
+        draft.campaign.arcs[aid]
+    )
+  )
+  return {
+    id,
+    title: add.text.slice(0, 80),
+    chapterCreated: chapter,
+    category: 'emotional_beat',
+    retrievalCue: add.text,
+    text: add.text,
+    participants,
+    anchoredTo,
+    emotionalTags: add.emotionalTags,
+    salience: add.salience,
+    turn,
+  }
+}
+
 export function applyArchivistPatch(
   state: Sf2State,
   patch: Sf2ArchivistPatch,
@@ -1747,9 +1813,19 @@ export function applyArchivistPatch(
         configuredHintMatches(p, hint.phraseMatched)
       )
       if (!matchedPhrase) {
+        // Two failure modes share this branch: the phrase isn't configured
+        // at all, or the configured phrase is below the minimum-length floor
+        // (and configuredHintMatches rejected it). Both produce drift; the
+        // detail names the configured phrase if any was below floor.
+        const tooShort = hintPhrases.find(
+          (p) => normalizePhrase(p).length < MIN_CONFIGURED_HINT_PHRASE_LENGTH
+        )
+        const reason = tooShort
+          ? `configured phrase "${tooShort}" is below ${MIN_CONFIGURED_HINT_PHRASE_LENGTH}-char floor (rejects bidirectional substring match)`
+          : `not configured for ${hint.revelationId}`
         drift.push({
           kind: 'contradiction',
-          detail: `revelation hint phrase "${hint.phraseMatched}" is not configured for ${hint.revelationId}`,
+          detail: `revelation hint phrase "${hint.phraseMatched}" ${reason}`,
           entityId: hint.revelationId,
         })
         continue
@@ -1757,12 +1833,22 @@ export function applyArchivistPatch(
       revelation.hintEvidence ??= []
       revelation.hintsDelivered ??= 0
       revelation.hintsRequired ??= 0
+      // Dedupe on the configured phrase before incrementing the counter.
+      // Without this, repeated emissions of the same hint inflate the
+      // counter and let the gate fire on a single distinct hint counted
+      // multiple times — the gate becomes structurally porous. Evidence
+      // log still appends every emission for review visibility; only the
+      // counter dedupes.
+      const alreadyCounted = revelation.hintEvidence.some(
+        (h) => h.phraseMatched === matchedPhrase
+      )
       revelation.hintEvidence.push({
         phraseMatched: matchedPhrase,
+        phraseEmitted: hint.phraseMatched,
         turn: patch.turnIndex,
         proseExcerpt: hint.proseExcerpt,
       })
-      if (revelation.hintsDelivered < revelation.hintsRequired) {
+      if (!alreadyCounted && revelation.hintsDelivered < revelation.hintsRequired) {
         revelation.hintsDelivered += 1
       }
     }
@@ -1790,22 +1876,37 @@ export function applyArchivistPatch(
       const invalidContexts = revelation.invalidRevealContexts ?? []
       const validContext = validContexts.length === 0 || validContexts.includes(reveal.context)
       const invalidContext = invalidContexts.includes(reveal.context)
+      const modePrefix = REVELATION_GATE_MODE === 'enforce' ? 'enforce' : 'observe'
       if (!enoughHints) {
         drift.push({
           kind: 'revelation_premature_reveal',
-          detail: `observe: ${reveal.revelationId} revealed with ${hintsDelivered}/${hintsRequired} hints`,
+          detail: `${modePrefix}: ${reveal.revelationId} revealed with ${hintsDelivered}/${hintsRequired} hints`,
           entityId: reveal.revelationId,
         })
       }
       if (!validContext || invalidContext) {
+        // Conditional rendering of the context lists — only include the side
+        // that's relevant. Avoids "valid: any; invalid: none" noise.
+        const detailBits: string[] = []
+        if (!validContext) {
+          detailBits.push(`valid: ${validContexts.join(', ') || 'any'}`)
+        }
+        if (invalidContext) {
+          detailBits.push(`invalid: ${invalidContexts.join(', ')}`)
+        }
         drift.push({
           kind: 'revelation_premature_reveal',
-          detail: `observe: ${reveal.revelationId} revealed in context "${reveal.context}" (valid: ${validContexts.join(', ') || 'any'}; invalid: ${invalidContexts.join(', ') || 'none'})`,
+          detail: `${modePrefix}: ${reveal.revelationId} revealed in context "${reveal.context}" (${detailBits.join('; ')})`,
           entityId: reveal.revelationId,
         })
       }
-      revelation.revealed = true
-      revelation.revealedAtTurn = patch.turnIndex
+      // Phase 1 (observe): always ratify; gates only generate drift.
+      // Phase 2 (enforce): block ratification when either gate fails.
+      const gatesPassed = enoughHints && validContext && !invalidContext
+      if (REVELATION_GATE_MODE === 'observe' || gatesPassed) {
+        revelation.revealed = true
+        revelation.revealedAtTurn = patch.turnIndex
+      }
     }
   }
 
@@ -1899,7 +2000,8 @@ export function applyArchivistPatch(
   }
 
   // Emotional beats: sparse moment-grain memory. Enforce the one-per-turn cap
-  // here so over-eager Archivist output cannot flood retrieval.
+  // here so over-eager Archivist output cannot flood retrieval. Validation
+  // failures drift-log so silent drops don't hide archivist over-emission.
   if (patch.emotionalBeats && patch.emotionalBeats.length > 0) {
     if (!draft.campaign.beats) draft.campaign.beats = {}
     const accepted = patch.emotionalBeats.slice(0, 1)
@@ -1911,35 +2013,16 @@ export function applyArchivistPatch(
       })
     }
     for (const add of accepted) {
-      if (!add.text || add.salience < 0.5 || add.emotionalTags.length === 0) continue
-      const id = nextEntityId('beat', draft)
-      const participants = [...new Set(add.participants)].filter(
-        (pid) => pid === 'pc' || Boolean(draft.campaign.npcs[pid] || draft.campaign.factions[pid])
-      )
-      const anchoredTo = [...new Set(add.anchoredTo)].filter((aid) =>
-        Boolean(
-          draft.campaign.threads[aid] ||
-            draft.campaign.decisions[aid] ||
-            draft.campaign.promises[aid] ||
-            draft.campaign.clues[aid] ||
-            draft.campaign.documents?.[aid] ||
-            draft.campaign.arcs[aid]
-        )
-      )
-      const beat: Sf2EmotionalBeat = {
-        id,
-        title: add.text.slice(0, 80),
-        chapterCreated: chapter,
-        category: 'emotional_beat',
-        retrievalCue: add.text,
-        text: add.text,
-        participants,
-        anchoredTo,
-        emotionalTags: add.emotionalTags,
-        salience: add.salience,
-        turn: patch.turnIndex,
+      const reason = beatValidationFailureReason(add)
+      if (reason) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `emotional beat dropped: ${reason} (text: "${(add.text ?? '').slice(0, 60)}")`,
+        })
+        continue
       }
-      draft.campaign.beats[id] = beat
+      const beat = buildBeat(add, draft, patch.turnIndex, chapter)
+      draft.campaign.beats[beat.id] = beat
     }
   }
 

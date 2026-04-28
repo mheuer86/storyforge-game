@@ -6,6 +6,7 @@
 // the apply-patch layer resolves references, assigns IDs, and populates the graph.
 
 import type Anthropic from '@anthropic-ai/sdk'
+import { SF2_EMOTIONAL_BEAT_TAGS } from '../types'
 
 export const ARCHIVIST_TOOL_NAME = 'extract_turn' as const
 
@@ -225,24 +226,9 @@ export const extractTurnTool: Anthropic.Tool = {
               type: 'array',
               items: {
                 type: 'string',
-                enum: [
-                  'confession',
-                  'near_confession',
-                  'evasion',
-                  'betrayal',
-                  'loyalty_test',
-                  'restraint',
-                  'turning_point',
-                  'pivot',
-                  'breakthrough',
-                  'vulnerability',
-                  'cost_accepted',
-                  'boundary_drawn',
-                  'intimidation_landed',
-                  'intimidation_failed',
-                  'decision_revealed',
-                  'mask_slipped',
-                ],
+                // Vocabulary defined once in lib/sf2/types.ts; both this
+                // schema and the Sf2EmotionalBeatTag type read from it.
+                enum: [...SF2_EMOTIONAL_BEAT_TAGS],
               },
             },
             salience: {
