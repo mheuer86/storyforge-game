@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "trusted npc does not render wary",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Cross-layer regression for Bug 8 (Aul TRUSTED but rendered wary). Without temp_load, recent framing, dormancy, or beats: a TRUSTED NPC's per-turn block must surface only the warm/plain imperative and the trusted contract — never wary/guarded prose-ban entries that would tilt the narrator into rendering caution. The packet's content is the contract; this is the assertion that no parallel rule sneaks in."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "Keep the writ narrow.", "methods": [], "currentMove": "Awaiting the Warden." },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 52,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_aul"]
+        }
+      }
+    },
+    "turnIndex": 53,
+    "playerInput": "Read what he is holding.",
+    "narrator": {
+      "prose": "The room holds.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_aul",
+        "voiceImperativeIncludes": "warm, plain, low procedural distance",
+        "behavioralContractIncludes": ["volunteers context", "names allies"],
+        "prohibitionsInclude": ["not guarded", "not formally distant"],
+        "prohibitionsExclude": ["no volunteered secrets", "no assumed good faith", "no easy-warmth-as-trust"]
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "Aul (npc_aul) — TRUSTED · WARM, PLAIN, LOW PROCEDURAL DISTANCE",
+      "posture: assumes PC is acting in good faith",
+      "will share: operational concerns, personal worry, limited faction doubt"
+    ]
+  }
+}

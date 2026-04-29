@@ -33,11 +33,19 @@ interface TokenUsage {
   cacheReadTokens: number
 }
 
+interface LatencyPayload {
+  totalMs: number
+  apiMs: number
+  ttftMs?: number
+  attempts?: number
+}
+
 interface DebugEntry {
   kind:
     | 'narrate_turn'
     | 'archivist'
     | 'token_usage'
+    | 'latency'
     | 'roll'
     | 'truncation'
     | 'error'
@@ -267,6 +275,7 @@ export default function PlayV2Page() {
     playerInput: string,
     isInitial: boolean
   ): Promise<{
+    completed: boolean
     prose: string
     annotation: Record<string, unknown> | null
     bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
@@ -324,7 +333,7 @@ export default function PlayV2Page() {
           { kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } },
         ])
         setIsStreaming(false)
-        return { prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+        return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
       }
 
       const reader = res.body.getReader()
@@ -339,6 +348,7 @@ export default function PlayV2Page() {
         priorMessages: unknown[]
       } | null = null
       let sawNarrateTurn = false
+      let sawStreamError = false
 
       while (true) {
         const { value, done } = await reader.read()
@@ -384,6 +394,17 @@ export default function PlayV2Page() {
               const usage = event.usage as TokenUsage
               setLastNarratorUsage(usage)
               setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'narrator', ...usage } }])
+              break
+            }
+            case 'latency': {
+              setDebug((d) => [
+                ...d,
+                {
+                  kind: 'latency',
+                  at: Date.now(),
+                  data: { role: event.role ?? 'narrator', ...(event.latency as Record<string, unknown>) },
+                },
+              ])
               break
             }
             case 'working_set':
@@ -451,12 +472,18 @@ export default function PlayV2Page() {
               break
             }
             case 'error':
+              sawStreamError = true
               setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: event.message }])
               break
             case 'done':
               break
           }
         }
+      }
+
+      if (sawStreamError) {
+        setIsStreaming(false)
+        return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
       }
 
       if (sawRollPrompt) {
@@ -517,11 +544,20 @@ export default function PlayV2Page() {
 
       if (sawNarrateTurn) break
       // If neither fired, the stream ended prematurely; bail.
-      break
+      setDebug((d) => [...d, {
+        kind: 'error',
+        at: Date.now(),
+        data: {
+          source: 'narrator',
+          message: 'stream ended before narrate_turn; turn was not committed',
+        },
+      }])
+      setIsStreaming(false)
+      return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
     }
 
     setIsStreaming(false)
-    return { prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+    return { completed: true, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
   }
 
   async function runArchivist(
@@ -582,6 +618,7 @@ export default function PlayV2Page() {
           suggestedNote: string
         }>
         usage: TokenUsage
+        latency?: LatencyPayload
       }
       setLastArchivistUsage(data.usage)
       setDebug((d) => [
@@ -671,6 +708,12 @@ export default function PlayV2Page() {
         ...d,
         { kind: 'token_usage', at: Date.now(), data: { role: 'archivist', ...data.usage } },
       ])
+      if (data.latency) {
+        setDebug((d) => [
+          ...d,
+          { kind: 'latency', at: Date.now(), data: { role: 'archivist', ...data.latency } },
+        ])
+      }
       return {
         nextState: data.nextState,
         replay: {
@@ -724,6 +767,7 @@ export default function PlayV2Page() {
         arcEntity: Sf2Arc
         selectedArcVariantSeed?: Sf2ArcPlan['sourceHook'] & Record<string, unknown>
         usage: TokenUsage
+        latency?: LatencyPayload
       }
       const next: Sf2State = structuredClone(currentState)
       next.campaign.arcPlan = data.arcPlan
@@ -740,6 +784,9 @@ export default function PlayV2Page() {
         stanceAxes: data.arcPlan.playerStanceAxes.map((a) => a.id),
       } }])
       setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } }])
+      if (data.latency) {
+        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'arc-author', ...data.latency } }])
+      }
       setState(next)
       persist(next)
       return next
@@ -825,6 +872,7 @@ export default function PlayV2Page() {
         openingSeed: Sf2State['chapter']['artifacts']['opening']
         authored: AuthorChapterSetupV2
         usage: TokenUsage
+        latency?: LatencyPayload
       }
       setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
         chapter: data.chapter,
@@ -836,6 +884,9 @@ export default function PlayV2Page() {
         pacing: data.runtimeState.pacingContract?.targetTurns,
       } }])
       setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
+      if (data.latency) {
+        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } }])
+      }
 
       // Apply Ch1 setup to state.
       const next: Sf2State = structuredClone(currentState)
@@ -922,6 +973,8 @@ export default function PlayV2Page() {
     const preNarratorOffstageRoster = offstageRosterSignature(effectiveState)
 
     // Narrator
+    const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
+    if (!narratorResult.completed) return
     const {
       prose: narratorProse,
       annotation,
@@ -929,7 +982,7 @@ export default function PlayV2Page() {
       rollRecords,
       sentinelEvents: turnSentinelEvents,
       workingSet,
-    } = await runNarrator(effectiveState, playerInput, isInitial)
+    } = narratorResult
 
     // Order note: Archivist runs BEFORE mechanical effects.
     //
@@ -1043,6 +1096,7 @@ export default function PlayV2Page() {
     const targetChapter = state.meta.currentChapter + 1
     setIsArchiving(true)
     try {
+      let authorBaseState = state
       // Step 1: synthesize chapter_meaning (Haiku retrospective by default).
       // Step 2: pass it to Author as priorChapterMeaning.
       // Step 3: persist meaning on chapter.artifacts.
@@ -1057,18 +1111,21 @@ export default function PlayV2Page() {
         const meaningData = (await meaningRes.json()) as {
           meaning: NonNullable<Sf2State['chapter']['artifacts']['meaning']>
           usage: TokenUsage
+          latency?: LatencyPayload
         }
         priorChapterMeaning = meaningData.meaning
         setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: { chapter_meaning: meaningData.meaning } }])
         setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.usage } }])
+        if (meaningData.latency) {
+          setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.latency } }])
+        }
 
         // Persist meaning on the closing chapter's artifacts.
-        setState((prev) => {
-          if (!prev) return prev
-          const next: Sf2State = structuredClone(prev)
-          next.chapter.artifacts.meaning = meaningData.meaning
-          return next
-        })
+        authorBaseState = structuredClone(authorBaseState)
+        authorBaseState.chapter.artifacts.meaning = meaningData.meaning
+        authorBaseState.meta.updatedAt = new Date().toISOString()
+        setState(authorBaseState)
+        await persist(authorBaseState)
       } else {
         let body: unknown = null
         try { body = await meaningRes.json() } catch {}
@@ -1076,7 +1133,7 @@ export default function PlayV2Page() {
         // Proceed without priorChapterMeaning — Author will fall back to state-derived hook.
       }
 
-      const arcPlan = state.campaign.arcPlan
+      const arcPlan = authorBaseState.campaign.arcPlan
       if (arcPlan && arcPlan.status !== 'active') {
         setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
           source: 'author',
@@ -1090,7 +1147,7 @@ export default function PlayV2Page() {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
-          state,
+          state: authorBaseState,
           priorChapterMeaning,
           targetChapter,
         }),
@@ -1113,6 +1170,7 @@ export default function PlayV2Page() {
         }>
         authored: AuthorChapterSetupV2
         usage: TokenUsage
+        latency?: LatencyPayload
       }
 
       setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
@@ -1126,79 +1184,80 @@ export default function PlayV2Page() {
         pacing: data.runtimeState.pacingContract?.targetTurns,
       } }])
       setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
+      if (data.latency) {
+        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } }])
+      }
 
       // Apply the new chapter: bump chapter counter, swap setup/scaffolding/opening,
       // reset per-chapter view fields. DOES NOT drop the campaign graph (NPCs, threads,
       // clues carry across; the Author may reference existing ids via ownerHint).
-      setState((prev) => {
-        if (!prev) return prev
-        const next: Sf2State = structuredClone(prev)
-        // Snapshot prior chapter's actives before overwriting next.chapter —
-        // see prepareChapterPressureRuntime: this drives the active vs
-        // background role split.
-        const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
-        next.meta.currentChapter = data.chapter
-        next.meta.currentSceneId = `scene_${data.chapter}_1`
-        // Apply Author-emitted thread transitions to carried campaign threads.
-        // Closes threads whose resolutionCriteria was met in the prior chapter
-        // but wasn't transitioned during play.
-        for (const t of data.threadTransitions ?? []) {
-          const thread = next.campaign.threads[t.id]
-          if (!thread) continue
-          thread.status = t.toStatus
-          thread.lastAdvancedTurn = next.history.turns.length
-        }
-        next.chapter = {
-          number: data.chapter,
-          title: data.runtimeState.title,
-          setup: data.runtimeState,
-          scaffolding: data.scaffolding,
-          artifacts: { opening: data.openingSeed },
-          sceneSummaries: [],
-          currentSceneId: `scene_${data.chapter}_1`,
-        }
-        // Hydrate campaign graph with full Author payload: new entities get
-        // rich fields; carried-forward entities get refreshed voice/affiliation/
-        // retrievalCue/resolutionCriteria/failureMode when the Author evolved them.
-        applyAuthoredToCampaign(
-          next,
-          data.authored,
-          data.chapter as Sf2State['chapter']['number'],
-          data.runtimeState.loadBearingThreadIds
-        )
-        next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
-        // Reset scene view at chapter transition. Derive a fresh timeLabel
-        // from the Author's atmosphericCondition so the new chapter opens at
-        // its authored moment instead of inheriting the prior chapter's close
-        // time (which caused a regression: Ch1 closed at dusk, Ch2 opening
-        // atmospheric said "late afternoon" → Narrator produced conflicting
-        // snapshots with time going backwards).
-        const atmos = data.runtimeState.openingSceneSpec.atmosphericCondition ?? ''
-        const derivedTimeLabel = atmos.split(/[.;]/)[0].trim().slice(0, 80)
-        next.world.currentTimeLabel = derivedTimeLabel
-        next.meta.currentTimeLabel = derivedTimeLabel
-        // Location: use the authored opening location description for the new
-        // scene so Narrator doesn't hang on to the prior chapter's location.
-        next.world.currentLocation = {
-          id: `loc_ch${data.chapter}_opening`,
-          name: data.runtimeState.openingSceneSpec.location || next.world.currentLocation.name,
-          description: data.runtimeState.openingSceneSpec.initialState || '',
-          atmosphericConditions: atmos ? [atmos] : undefined,
-        }
-        next.world.sceneSnapshot = {
-          sceneId: `scene_${data.chapter}_1`,
-          location: next.world.currentLocation,
-          presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
-          timeLabel: derivedTimeLabel,
-          established: [`Chapter ${data.chapter} opens.`, data.runtimeState.openingSceneSpec.initialState],
-          firstTurnIndex: next.history.turns.length,
-        }
-        // Scene changed — clear the prior chapter's scene bundle cache. The
-        // Narrator route will rebuild on the first turn of the new chapter.
-        next.world.sceneBundleCache = undefined
-        next.meta.updatedAt = new Date().toISOString()
-        return next
-      })
+      const next: Sf2State = structuredClone(authorBaseState)
+      // Snapshot prior chapter's actives before overwriting next.chapter —
+      // see prepareChapterPressureRuntime: this drives the active vs
+      // background role split.
+      const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
+      next.meta.currentChapter = data.chapter
+      next.meta.currentSceneId = `scene_${data.chapter}_1`
+      // Apply Author-emitted thread transitions to carried campaign threads.
+      // Closes threads whose resolutionCriteria was met in the prior chapter
+      // but wasn't transitioned during play.
+      for (const t of data.threadTransitions ?? []) {
+        const thread = next.campaign.threads[t.id]
+        if (!thread) continue
+        thread.status = t.toStatus
+        thread.lastAdvancedTurn = next.history.turns.length
+      }
+      next.chapter = {
+        number: data.chapter,
+        title: data.runtimeState.title,
+        setup: data.runtimeState,
+        scaffolding: data.scaffolding,
+        artifacts: { opening: data.openingSeed },
+        sceneSummaries: [],
+        currentSceneId: `scene_${data.chapter}_1`,
+      }
+      // Hydrate campaign graph with full Author payload: new entities get
+      // rich fields; carried-forward entities get refreshed voice/affiliation/
+      // retrievalCue/resolutionCriteria/failureMode when the Author evolved them.
+      applyAuthoredToCampaign(
+        next,
+        data.authored,
+        data.chapter as Sf2State['chapter']['number'],
+        data.runtimeState.loadBearingThreadIds
+      )
+      next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
+      // Reset scene view at chapter transition. Derive a fresh timeLabel
+      // from the Author's atmosphericCondition so the new chapter opens at
+      // its authored moment instead of inheriting the prior chapter's close
+      // time (which caused a regression: Ch1 closed at dusk, Ch2 opening
+      // atmospheric said "late afternoon" → Narrator produced conflicting
+      // snapshots with time going backwards).
+      const atmos = data.runtimeState.openingSceneSpec.atmosphericCondition ?? ''
+      const derivedTimeLabel = atmos.split(/[.;]/)[0].trim().slice(0, 80)
+      next.world.currentTimeLabel = derivedTimeLabel
+      next.meta.currentTimeLabel = derivedTimeLabel
+      // Location: use the authored opening location description for the new
+      // scene so Narrator doesn't hang on to the prior chapter's location.
+      next.world.currentLocation = {
+        id: `loc_ch${data.chapter}_opening`,
+        name: data.runtimeState.openingSceneSpec.location || next.world.currentLocation.name,
+        description: data.runtimeState.openingSceneSpec.initialState || '',
+        atmosphericConditions: atmos ? [atmos] : undefined,
+      }
+      next.world.sceneSnapshot = {
+        sceneId: `scene_${data.chapter}_1`,
+        location: next.world.currentLocation,
+        presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
+        timeLabel: derivedTimeLabel,
+        established: [`Chapter ${data.chapter} opens.`, data.runtimeState.openingSceneSpec.initialState],
+        firstTurnIndex: next.history.turns.length,
+      }
+      // Scene changed — clear the prior chapter's scene bundle cache. The
+      // Narrator route will rebuild on the first turn of the new chapter.
+      next.world.sceneBundleCache = undefined
+      next.meta.updatedAt = new Date().toISOString()
+      setState(next)
+      await persist(next)
       // Reset scene view — but KEEP turnIndex monotonic across chapters so
       // history.turns[].index stays unique. "Is this the first turn of the
       // chapter?" is derived from history in sendTurn / render via
@@ -1370,7 +1429,7 @@ export default function PlayV2Page() {
           {isGeneratingChapter && (
             <div className="mt-3 text-sm text-amber-300">
               <span className="animate-pulse">◐ </span>
-              Generating chapter setup (Author, Haiku)… {generationElapsed}s elapsed
+              Generating chapter setup (Author, Sonnet 4.6)… {generationElapsed}s elapsed
               <div className="text-xs text-amber-300/50 mt-1">
                 This is a single large JSON generation; typically 20-60s. No intermediate streaming.
               </div>
@@ -1555,8 +1614,95 @@ export default function PlayV2Page() {
                 {sessionSummary.archivist.deferred} deferred / {sessionSummary.archivist.rejected} rejected)
               </div>
               <div className="text-neutral-400">
-                Cost — Narrator (Haiku): ${sessionSummary.cost.estimatedUsdNarrator.toFixed(3)} · Archivist (Haiku): ${sessionSummary.cost.estimatedUsdArchivist.toFixed(3)} · Author (Haiku): ${sessionSummary.cost.estimatedUsdAuthor.toFixed(3)} · Chapter meaning (Haiku): ${sessionSummary.cost.estimatedUsdChapterMeaning.toFixed(3)}
+                Cost — Narrator (Haiku): ${sessionSummary.cost.estimatedUsdNarrator.toFixed(3)} · Archivist (Haiku): ${sessionSummary.cost.estimatedUsdArchivist.toFixed(3)} · Arc Author (Sonnet): ${sessionSummary.cost.estimatedUsdArcAuthor.toFixed(3)} · Chapter Author (Sonnet): ${sessionSummary.cost.estimatedUsdAuthor.toFixed(3)} · Chapter meaning (Haiku): ${sessionSummary.cost.estimatedUsdChapterMeaning.toFixed(3)}
               </div>
+              {(() => {
+                const w = sessionSummary.waterfall
+                const pct = (n: number) => `${(n * 100).toFixed(0)}%`
+                // Color thresholds reflect the "first three numbers" heuristic
+                // from the cost-improvements doc — generous bands; we just want
+                // to flag obvious anomalies during play, not enforce SLOs.
+                const cacheClass =
+                  w.cacheHitRatio.overall >= 0.6
+                    ? 'text-emerald-400'
+                    : w.cacheHitRatio.overall >= 0.3
+                      ? 'text-amber-400'
+                      : 'text-red-400'
+                const visibleClass =
+                  w.visibleSpendShare >= 0.5
+                    ? 'text-emerald-400'
+                    : w.visibleSpendShare >= 0.3
+                      ? 'text-amber-400'
+                      : 'text-red-400'
+                const archivistClass =
+                  w.archivistCallRate <= 0.7 ? 'text-emerald-400' : 'text-amber-400'
+                return (
+                  <div className="text-neutral-400">
+                    Waterfall —{' '}
+                    <span className={cacheClass} title="cacheRead / (cacheRead + freshIn) across all roles. Aim >60% after warmup.">
+                      cache hit {pct(w.cacheHitRatio.overall)}
+                    </span>{' '}
+                    (N {pct(w.cacheHitRatio.narrator)} · A {pct(w.cacheHitRatio.archivist)}) ·{' '}
+                    <span className={visibleClass} title="Narrator USD / total USD. Below 30% means you're paying mostly for hidden orchestration.">
+                      visible spend {pct(w.visibleSpendShare)}
+                    </span>{' '}
+                    · output share visible {pct(w.visibleOutputShare)} ·{' '}
+                    <span className={archivistClass} title="Archivist invocations per Narrator turn. Skip-gating drives this <1.">
+                      archivist {w.archivistCallRate.toFixed(2)}/turn
+                    </span>{' '}
+                    · author {w.authorCallsPerChapter.toFixed(2)}/chapter
+                    {w.recoveryRate > 0 && (
+                      <>
+                        {' · '}
+                        <span className="text-amber-400" title="narrator_output_recovered / narrator turns">
+                          recovery {pct(w.recoveryRate)}
+                        </span>
+                      </>
+                    )}
+                    {w.metaQuestionRate > 0 && (
+                      <>
+                        {' · '}
+                        <span className="text-red-400" title="narrator broke character — usually upstream context bug">
+                          meta {pct(w.metaQuestionRate)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
+              <div className="text-neutral-500">
+                Avg/turn — Narrator: in {sessionSummary.waterfall.averages.narrator.freshInput} fresh +{' '}
+                {sessionSummary.waterfall.averages.narrator.cacheRead} cached → out{' '}
+                {sessionSummary.waterfall.averages.narrator.output} · Archivist: in{' '}
+                {sessionSummary.waterfall.averages.archivist.freshInput} fresh +{' '}
+                {sessionSummary.waterfall.averages.archivist.cacheRead} cached → out{' '}
+                {sessionSummary.waterfall.averages.archivist.output}
+                {sessionSummary.waterfall.averages.author.freshInput > 0 && (
+                  <>
+                    {' '}
+                    · Author/chapter: in {sessionSummary.waterfall.averages.author.freshInput} fresh +{' '}
+                    {sessionSummary.waterfall.averages.author.cacheRead} cached → out{' '}
+                    {sessionSummary.waterfall.averages.author.output}
+                  </>
+                )}
+              </div>
+              {(() => {
+                const lat = sessionSummary.waterfall.latency
+                const fmt = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`)
+                const parts: string[] = []
+                if (lat.narrator.samples > 0) {
+                  const ttft = lat.narrator.ttftMs > 0 ? ` (ttft ${fmt(lat.narrator.ttftMs)})` : ''
+                  parts.push(`Narrator ${fmt(lat.narrator.apiMs)}${ttft}`)
+                }
+                if (lat.archivist.samples > 0) parts.push(`Archivist ${fmt(lat.archivist.apiMs)}`)
+                if (lat.author.samples > 0) parts.push(`Author ${fmt(lat.author.apiMs)}`)
+                if (lat.arcAuthor.samples > 0) parts.push(`Arc-Author ${fmt(lat.arcAuthor.apiMs)}`)
+                if (lat.chapterMeaning.samples > 0) parts.push(`Meaning ${fmt(lat.chapterMeaning.apiMs)}`)
+                if (parts.length === 0) return null
+                return (
+                  <div className="text-neutral-500">Latency (avg apiMs) — {parts.join(' · ')}</div>
+                )
+              })()}
               <div className="text-neutral-400">
                 Kill criteria — anchor miss ≤5%:{' '}
                 <span className={sessionSummary.killCriteria.anchorMissRatePass ? 'text-emerald-400' : 'text-red-400'}>
@@ -1662,7 +1808,7 @@ export default function PlayV2Page() {
         </details>
 
         <footer className="flex justify-between text-xs text-neutral-600 pt-4 border-t border-neutral-800">
-          <span>Storyforge v2 · Stage 5 · Narrator Haiku · Archivist Haiku · Author Haiku · IDB</span>
+          <span>Storyforge v2 · Stage 5 · Narrator Haiku · Archivist Haiku · Author Sonnet 4.6 · IDB</span>
           <div className="space-x-3">
             <button
               onClick={closeChapterAndOpenNext}

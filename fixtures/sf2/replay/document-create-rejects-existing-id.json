@@ -1,0 +1,103 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "document create rejects existing id instead of overwriting locked baseline",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A document create with an existing id must not bypass the protected document update/amendment path."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_tam": {
+            "id": "npc_tam",
+            "name": "Tam",
+            "affiliation": "settlement",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Subject of the transfer order"],
+              "voice": { "note": "tired", "register": "settler" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Subject of the transfer order.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        },
+        "documents": {
+          "doc_tam_transfer": {
+            "id": "doc_tam_transfer",
+            "title": "Tam's transfer order",
+            "chapterCreated": 1,
+            "retrievalCue": "Tam's transfer order canonical baseline.",
+            "category": "document",
+            "type": "directive",
+            "kindLabel": "transfer order",
+            "status": "active",
+            "subjectEntityIds": ["npc_tam"],
+            "additionalParties": [],
+            "authorizes": "transfers Tam to district reassignment",
+            "originalSummary": "Original locked summary.",
+            "currentSummary": "Original locked summary.",
+            "revisions": [],
+            "anchoredTo": ["thread_spine"],
+            "clueIds": [],
+            "turn": 0
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Read the transfer order again.",
+    "narrator": {
+      "prose": "Tam sets the same transfer order on the counter.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "document",
+            "payload": {
+              "id": "doc_tam_transfer",
+              "type": "directive",
+              "kind_label": "transfer order",
+              "title": "Tam's altered transfer order",
+              "authorizes": "orders Tam into a different custody chain",
+              "original_summary": "Overwritten forged baseline.",
+              "subject_entity_ids": ["npc_tam"],
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Tam's forged transfer order"
+            },
+            "confidence": "high",
+            "sourceQuote": "same transfer order"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["creates[0]"],
+    "driftIncludes": [
+      { "kind": "protected_field_write", "detailIncludes": "attempted to overwrite existing doc_tam_transfer" }
+    ],
+    "documentsInclude": [
+      {
+        "documentId": "doc_tam_transfer",
+        "originalSummaryEquals": "Original locked summary.",
+        "currentSummaryIncludes": "Original locked summary.",
+        "revisionsCount": 0
+      }
+    ]
+  }
+}

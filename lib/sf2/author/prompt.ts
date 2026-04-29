@@ -46,14 +46,22 @@ Primary goals:
 16. For a genuinely NEW thread, optional \`initial_tension\` controls only its chapter-opening pressure floor (0-8). Use it sparingly when the role default would understate or overstate how hot the new thread should feel at chapter open. Do NOT use it on carried threads; re-state their canonical \`tension\` instead.
 17. **The arc fixes pressure facts, not the opening camera.** Same arc can open public or private, static or in-motion, with the antagonist present or just a proxy, with the PC arriving or already there, with key facts stated or withheld. Vary the opening camera across chapters; don't default to the last chapter's shape or the most on-the-nose reading of the hook. A tithe hook does NOT have to open in a compliance hearing.
 18. **Onboarding budget.** Don't teach every major institution in scene 1. Pick the one or two the chosen opening camera actually makes legible; the rest arrive across the campaign.
-19. **Do not put the entire starting lineup on-stage at opening.** Target **1-2 NPCs visible in opening prose**. Others exist in the chapter but are off-stage at opening. All 3-5 on-stage forces a convened-room tableau regardless of hook.
+19. **Do not put the entire starting lineup on-stage at opening.** Target **1-2 NPCs visible in opening prose**. Others exist in the chapter but are off-stage at opening. Putting all 3 authored NPCs on-stage forces a convened-room tableau regardless of hook.
 20. **Withhold some premise facts.** Facts canonical in state but not directly faced by the opening camera go in \`withheld_premise_facts\`. Surfaced through play, not announced at opening.
 21. **Pressure-ladder pacing.** A 5-step ladder must pace across the WHOLE chapter (~15-25 turns), not the first scene. Step 1 is the FIRST escalation BEYOND the opening state — never a description of where the chapter starts. Triggers describe events that have NOT happened at chapter start; firing one is a meaningful narrative shift, not a default reading of the scene.
     - **Bad** (writes the opening as a step): \`pressure_1.trigger: "The opening scene; Corvin presents the audit findings."\` — this is the starting state, not an escalation.
     - **Bad** (any conversational move trips it): \`pressure_2.trigger: "If the Warden requests time, signals doubt, or asks for alternatives."\` — these are routine player moves, not narrative crossings.
     - **Good** (specific, earned crossing): \`pressure_2.trigger: "When a settlement member directly contradicts the official ledger record in front of authority."\`
     - **Good** (specific, earned crossing): \`pressure_3.trigger: "When the PC submits a written objection that survives Corvin's first procedural rebuttal."\`
+    - **Late-chapter coverage.** The hard-severity rung (typically step 3) is the chapter's dramatic crystallising beat — the moment the chapter question becomes inescapable. Its trigger must remain evaluable in the **last third of \`pacing_contract.target_turns\`** — i.e., still fireable when the chapter has run past \`min + (max - min) * 2/3\`. If the trigger depends on a specific scene that the chapter would naturally have moved past by then, it cannot fire when the chapter needs it. Either bind the trigger to entity-level action that survives scene changes (see rule 22), or include a state-derivable late-chapter signal: turn count past a threshold, spine-thread tension at a value, prior ladder steps already fired.
 22. **Trigger discipline.** Each \`trigger_condition\` must name a specific narrative event the Archivist can point to in the prose ("X said Y in front of Z"; "the document was signed"; "the body was found"). Never use generic player-volition triggers ("if the Warden asks…", "if the player questions…"). The ladder is a chapter-arc skeleton, not a reflex map for player input.
+
+    **Triggers must be entity-bound, not scene-bound.** Phrase them as actions one named entity takes against another — *"Fen Sollar attempts to disengage from the Warden"*, *"Orvath formally invokes process"*, *"Coll files a secondary notice"*. **Never name a specific location, room, doorway, scene object, or scene element by name in the trigger.** The Author writes the ladder at chapter open knowing only the opening scene; play naturally moves to scenes the Author cannot foresee. A trigger that says *"X attempts to leave the record room"* dies the moment the chapter's action moves to any other location. A trigger that says *"X attempts to disengage from the Warden"* survives every scene change because the entities and their relationship persist.
+
+    - **Bad** (scene-coupled, dies on scene change): \`trigger: "When the seeker physically blocks Fen Sollar's exit from the record room."\`
+    - **Good** (entity-bound, scene-invariant): \`trigger: "When the seeker physically blocks Fen Sollar's exit from the encounter."\` or \`"When Fen Sollar attempts to disengage and the seeker prevents it."\`
+
+    If you cannot phrase a trigger without naming a location or scene element, the trigger is over-coupled to the opening — rewrite it as an entity-action condition.
 23. **Engage the PC's natural moves.** The seed's \`pcCapabilities\` block lists the PC's proficiencies, traits, signature equipment, and (when available) a \`playbookProfile\` with 3-5 natural moves and 2-3 natural domains. **Your pressure ladder must include at least 2 escalation steps that the PC's natural moves can directly engage.** A Warden (Athletics / Intimidation / Heavy Weapons; institutional enforcement, physical mediation, oath-witness presence) in a paperwork-only audit chapter is structurally misfit — the player picks the Warden because they want to enforce, not because they want to read records. Build chapters around what the PC can DO. The model bias toward procedural framing on tithe / compliance hooks specifically: a Warden's tithe chapter is inter-faction confrontation, not Synod-internal compliance. The same hook is a different chapter for different PCs.
 
 ## Continuation Chapter Law
@@ -76,31 +84,32 @@ Avoid picking up directly where the prior chapter paused, introducing disconnect
 Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the full chapter setup only.
 
 - Every required string field must be a non-empty, content-bearing sentence — never an empty string, never a placeholder, never a single word. The downstream Narrator builds the chapter's first scene snapshot directly from \`opening_scene_spec.location\`, \`atmospheric_condition\`, and \`initial_state\`; an empty value here breaks chapter opening continuity. Same standard for \`chapter_frame.title\`, \`chapter_frame.premise\`, and \`chapter_frame.outcome_spectrum.*\`. If you find yourself emitting an empty string, you have not finished authoring — write the field.
-- **Field length discipline (load-bearing for cost + readability).** Tight is better than thorough. Target word counts per field:
+- **Field length discipline (load-bearing for cost + readability).** Tight is better than thorough. Treat these as hard caps, not vibes:
   - \`chapter_frame.title\`: 2-6 words
-  - \`chapter_frame.premise\`: 2-3 sentences (≤60 words)
-  - \`chapter_frame.{active_pressure, central_tension, chapter_scope, objective, crucible}\`: 1-2 sentences each (≤40 words)
-  - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤25 words)
-  - \`opening_scene_spec.{location, initial_state, first_player_facing, immediate_choice}\`: 1-2 sentences each (≤40 words). \`atmospheric_condition\`: a short phrase or one sentence (≤20 words).
-  - \`antagonist_field.{source_system, core_pressure, escalation_logic}\`: 1-2 sentences each (≤40 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: 1 sentence each (≤25 words).
-  - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: 1 sentence each (≤25 words).
-  - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤15 words). \`resolution_criteria\`, \`failure_mode\`: 1-2 sentences each (≤40 words).
-  - \`pressure_ladder[].{pressure, trigger_condition, narrative_effect}\`: 1 sentence each (≤30 words).
-  - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤30 words). \`held_by\`: short phrase. Add \`hint_phrases\` (3-5 specific substrings), \`hints_required\` (2 standard, 3 major), and \`valid_reveal_contexts\` using the enum.
-  - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: 1 sentence each (≤25 words).
-  - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤30 words).
-  - \`editorialized_lore[].{item, relevance_now, delivery_method}\`: 1 sentence each (≤25 words).
-  - \`arc_link.{chapter_function, player_stance_read}\`: 1 sentence each.
-  - \`pacing_contract\`: concrete enough for the Narrator to land the chapter in 18-25 turns.
+  - \`chapter_frame.premise\`: 1-2 sentences (≤40 words)
+  - \`chapter_frame.{active_pressure, central_tension, chapter_scope, objective, crucible}\`: 1 sentence each (≤25 words)
+  - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤18 words)
+  - \`opening_scene_spec.{location, initial_state, first_player_facing, immediate_choice}\`: 1 sentence each (≤28 words). \`atmospheric_condition\`: short phrase (≤12 words).
+  - \`antagonist_field.{source_system, core_pressure, escalation_logic}\`: 1 sentence each (≤25 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: ≤16 words.
+  - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: compact phrase or sentence (≤16 words).
+  - \`starting_npcs[].voice_note\`: 4-14 words. The PERSONAL flavor (not the formal register). Aim for distinctness — three NPCs of the same affiliation should read as three different people. Avoid generic adjectives like "professional", "competent", "experienced", "measured" — voices that lean on these collapse together. Examples: "precise and tired, never finishes a sentence", "drawls vowels under stress", "warm but never first to speak", "speaks in clipped fragments when watched".
+  - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤12 words). \`resolution_criteria\`, \`failure_mode\`: 1 sentence each (≤24 words).
+  - \`pressure_ladder[].{pressure, trigger_condition, narrative_effect}\`: 1 sentence each (≤22 words).
+  - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤24 words). \`held_by\`: short phrase. Add exactly 3 \`hint_phrases\`, \`hints_required\`, and \`valid_reveal_contexts\`.
+  - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: compact phrase or sentence (≤18 words).
+  - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤18 words).
+  - \`editorialized_lore[].{item, relevance_now, delivery_method}\`: compact phrase or sentence (≤16 words).
+  - \`arc_link.{chapter_function, player_stance_read}\`: 1 sentence each (≤20 words).
+  - \`pacing_contract\`: use phrases, not paragraphs.
 
   Strip throat-clearing ("This thread represents…", "The intent here is…"). Lead with the noun or verb that carries the meaning. Tight prose at this layer reads better and costs less without sacrificing chapter quality — the Narrator inflates from these seeds during play, so over-elaboration here is wasted effort.
-- Keep the starting NPC lineup to 3-5 NPCs.
-- Keep the threads to 3-5.
-- Keep the pressure ladder to 3-5 items.
-- Keep possible revelations to 2-4 items.
-- Keep moral fault lines to 2-4 items.
-- Keep escalation options to 3-5 items.
-- Keep editorialized lore to 2-3 items.
+- Emit exactly 3 starting NPCs.
+- Emit exactly 3 active threads.
+- Emit exactly 3 pressure ladder items.
+- Emit exactly 2 possible revelations.
+- Emit exactly 2 moral fault lines.
+- Emit exactly 3 escalation options.
+- Emit exactly 2 editorialized lore items.
 - Set \`pacing_contract.target_turns\` to { "min": 18, "max": 25 } unless the arc plan gives a stronger reason.
 
 ## Quality test
@@ -235,7 +244,7 @@ Use this as a binding continuity constraint for \`opening_scene_spec\`. A contin
 
 **Carried forward is the default.** The campaign graph is NOT reset between chapters. NPCs, threads, factions persist. Your job is to shape the NEXT chapter's pressure around what's already in play, not to reintroduce an empty world.
 
-- **NPCs**: if the chapter carries a character from a prior chapter (Osh, Sova, Pell, etc. — whatever is in "Live NPCs" above and remains thematically relevant), REUSE their existing ids in \`starting_npcs\`. Use the exact id shown above (e.g. \`npc_osh\`). Re-state their \`affiliation\`, \`role\`, \`voice_register\`, \`dramatic_function\`, and current \`hidden_pressure\` — these may evolve per chapter even as identity is stable. Only create NEW NPCs when genuinely new characters enter the story.
+- **NPCs**: if the chapter carries a character from a prior chapter (Osh, Sova, Pell, etc. — whatever is in "Live NPCs" above and remains thematically relevant), REUSE their existing ids in \`starting_npcs\`. Use the exact id shown above (e.g. \`npc_osh\`). Re-state their \`affiliation\`, \`role\`, \`voice_register\`, \`voice_note\`, \`dramatic_function\`, and current \`hidden_pressure\` — these may evolve per chapter even as identity is stable. Only create NEW NPCs when genuinely new characters enter the story.
 
 - **Threads**: carry-forward active threads by referencing their existing ids in \`active_threads\` (e.g. \`thread_shortfall\`). Re-state \`title\`, \`question\`, \`tension\` (which may have moved per the prior chapter's play), and the current \`resolution_criteria\` / \`failure_mode\` if those have evolved. Use \`initial_tension\` only for NEW threads that need a chapter-opening pressure override. Only create NEW threads when the chapter's pressure introduces a genuinely new line of tension.
 

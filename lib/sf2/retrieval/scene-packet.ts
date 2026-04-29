@@ -249,8 +249,13 @@ export function renderPerTurnDelta(
     lines.push(`\n### Cast — current read (mutable)`)
     for (const c of packet.cast) {
       const pressure = c.activePressure ? ` · pressure: ${c.activePressure}` : ''
-      lines.push(`- ${c.name} (${c.npcId}) — ${c.disposition.toUpperCase()} · ${c.voiceImperative}`)
+      const tag = c.tempLoadTag ? ` [${c.tempLoadTag.replace(/_/g, ' ')}]` : ''
+      lines.push(`- ${c.name} (${c.npcId}) — ${c.disposition.toUpperCase()}${tag} · ${c.voiceImperative}`)
+      lines.push(`  posture: ${c.defaultPosture}`)
       lines.push(`  contract: ${c.behavioralContract}`)
+      if (c.willShare.length > 0) lines.push(`  will share: ${c.willShare.join(', ')}`)
+      if (c.willNot.length > 0) lines.push(`  will not: ${c.willNot.join(', ')}`)
+      if (c.ifPressured) lines.push(`  if pressured: ${c.ifPressured}`)
       if (c.prohibitions.length > 0) {
         lines.push(`  prose ban: ${c.prohibitions.join(' · ')}`)
       }

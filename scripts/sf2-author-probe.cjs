@@ -89,8 +89,8 @@ async function runArcFixture(fixture, runIndex) {
     situation: buildArcAuthorSituation(seed),
   }).blocks
   const response = await client.messages.create({
-    model: process.env.SF2_ARC_AUTHOR_MODEL || process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-5-20250929',
-    max_tokens: Number(process.env.SF2_ARC_AUTHOR_MAX_TOKENS ?? 8192),
+    model: process.env.SF2_ARC_AUTHOR_MODEL || process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-6',
+    max_tokens: Number(process.env.SF2_ARC_AUTHOR_MAX_TOKENS ?? 4096),
     system,
     tools: [tagTool(ARC_AUTHOR_TOOLS[0])],
     tool_choice: { type: 'tool', name: ARC_AUTHOR_TOOL_NAME, disable_parallel_tool_use: true },
@@ -120,8 +120,8 @@ async function runChapterFixture(fixture) {
     situation: buildAuthorSituation(state, priorMeaning),
   }).blocks
   const response = await client.messages.create({
-    model: process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-5-20250929',
-    max_tokens: Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 8192),
+    model: process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-6',
+    max_tokens: Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 6144),
     system,
     tools: [tagTool(AUTHOR_TOOLS[0])],
     tool_choice: { type: 'tool', name: AUTHOR_TOOL_NAME, disable_parallel_tool_use: true },

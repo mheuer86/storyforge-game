@@ -31,6 +31,20 @@ export type Sf2ArcStatus = 'active' | 'resolved' | 'abandoned'
 // Single source of truth for the beat tag vocabulary. Used by the type
 // alias below AND by the archivist tool schema (lib/sf2/archivist/tools.ts)
 // so they cannot drift apart.
+// Single source of truth for the transient NPC state vocabulary. Read by the
+// cast packet's imperative modulator (lib/sf2/retrieval/packets/cast.ts) and
+// written by the archivist via the `temp_load_tag` field. Distinct from
+// `tempLoad` (numeric saturation gauge) and from the beat tags below
+// (`betrayed` here is the lingering state; `betrayal` in the beat list is the
+// action that produced it).
+export const SF2_TEMP_LOAD_TAGS = [
+  'uneasy_under_scrutiny',
+  'vulnerable',
+  'betrayed',
+  'exhausted',
+  'cornered',
+] as const
+export type Sf2TempLoadTag = (typeof SF2_TEMP_LOAD_TAGS)[number]
 export const SF2_EMOTIONAL_BEAT_TAGS = [
   'confession',
   'near_confession',
@@ -422,6 +436,7 @@ export interface Sf2Npc {
   disposition: Sf2DispositionTier
   identity: Sf2NpcIdentity
   tempLoad?: number
+  tempLoadTag?: Sf2TempLoadTag
   agenda?: Sf2NpcAgenda
   ownedThreadIds: Sf2EntityId[]
   retrievalCue: string
@@ -966,6 +981,7 @@ export interface AuthorChapterSetupV2 {
     affiliation: string
     role: string
     voiceRegister: string
+    voiceNote?: string
     dramaticFunction: string
     hiddenPressure: string
     retrievalCue: string
@@ -1164,9 +1180,10 @@ export interface Sf2ArchivistTransition {
 }
 
 export interface Sf2ArchivistAttachment {
-  kind: 'anchor_decision' | 'anchor_promise' | 'anchor_clue'
+  kind: 'anchor_decision' | 'anchor_promise' | 'anchor_clue' | 'anchor_thread_to_arc'
   entityId: Sf2EntityId
   threadIds: Sf2EntityId[]
+  arcId?: Sf2EntityId
   confidence: Sf2PatchConfidence
 }
 
@@ -1341,9 +1358,18 @@ export interface Sf2PresentCastPacket {
   pronoun?: Sf2PronounAnchor
   age?: string
   disposition: Sf2DispositionTier
+  tempLoadTag?: Sf2TempLoadTag
   voice: string
   voiceImperative: string
   behavioralContract: string
+  // Phase 5 — full behavioral contract, derived per turn from tier + agenda +
+  // recent beats + tempLoadTag. Renders alongside `behavioralContract` (kept
+  // as a one-line summary for back-compat). Empty array / empty string means
+  // "render nothing for this slot," not "no rule."
+  defaultPosture: string
+  willShare: string[]
+  willNot: string[]
+  ifPressured: string
   prohibitions: string[]
   currentRead: string
   relationToPlayer: string

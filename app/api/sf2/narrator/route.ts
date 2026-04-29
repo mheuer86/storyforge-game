@@ -17,6 +17,7 @@ import { buildSceneKernel } from '@/lib/sf2/scene-kernel/build'
 import { scanDisplayOutput } from '@/lib/sf2/sentinel/display'
 import { buildMessagesForNarrator } from '@/lib/sf2/narrator/messages'
 import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
+import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2State } from '@/lib/sf2/types'
 
 const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-haiku-4-5-20251001'
@@ -103,6 +104,7 @@ type Sf2NarratorStreamEvent =
   | { type: 'pacing_advisory'; tripped: boolean; reactivityRatio: number; reactivityTripped: boolean; sceneLinkTripped: boolean; stagnantThreadIds: string[]; arcDormantIds: string[] }
   | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number }
   | { type: 'token_usage'; usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
+  | { type: 'latency'; role: 'narrator'; latency: Sf2LatencyPayload }
   | { type: 'truncation_warning'; outputTokens: number }
   | {
       // Display sentinel — observe mode. Emitted after the Narrator finishes
@@ -254,6 +256,7 @@ function recoverNarrateTurnInput(
 }
 
 export async function POST(req: NextRequest) {
+  const requestTimer = startTimer()
   let state: Sf2State
   let playerInput: string
   let isInitial: boolean
@@ -405,6 +408,11 @@ export async function POST(req: NextRequest) {
         })
       }
 
+      const apiTimer = startTimer()
+      let ttftMs: number | undefined
+      // Captured at finalMessage() resolve so the latency payload reports
+      // pure SDK time, not SDK+post-processing.
+      let apiMsForLatency: number | null = null
       try {
         const modelStream = await client.messages.stream({
           model: NARRATOR_MODEL,
@@ -424,11 +432,15 @@ export async function POST(req: NextRequest) {
         for await (const event of modelStream) {
           if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
             const text = event.delta.text.replace(/<\/s>/g, '')
-            if (text) send({ type: 'text', content: text })
+            if (text) {
+              if (ttftMs === undefined) ttftMs = apiTimer.elapsed()
+              send({ type: 'text', content: text })
+            }
           }
         }
 
         const completed = await modelStream.finalMessage()
+        apiMsForLatency = apiTimer.elapsed()
         const usage = completed.usage as {
           input_tokens: number
           output_tokens: number
@@ -575,6 +587,16 @@ export async function POST(req: NextRequest) {
         })
         send({ type: 'error', message })
       } finally {
+        // Emit latency before `done` so the client can correlate the timing
+        // event with the rest of the turn payload. apiMsForLatency falls back
+        // to total elapsed when the API call threw before finalMessage().
+        const totalMs = requestTimer.elapsed()
+        const apiMs = apiMsForLatency ?? apiTimer.elapsed()
+        send({
+          type: 'latency',
+          role: 'narrator',
+          latency: { totalMs, apiMs, ttftMs },
+        })
         send({ type: 'done' })
         controller.close()
       }

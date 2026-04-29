@@ -269,7 +269,7 @@ Statuses:
 - \`abandoned\` — PC walked away, no longer pursuing
 - \`deferred\` — explicitly paused by narrative (NOT "still working on it")
 
-**Successor threads.** When a thread resolves, the question often opens a new one. If THIS turn's prose surfaces the new question explicitly, emit a \`creates\` for the successor in the same call. Don't wait for the Author at chapter close — the spine tension stays stuck on the dead thread otherwise.
+**Successor threads.** When a thread resolves, the question often opens a new one. If THIS turn's prose surfaces the new question explicitly, emit a \`creates\` for the successor in the same call. Include \`successor_to_thread_id\` pointing at the resolved predecessor whenever possible; the code will attach the successor to the same arc so arc pressure does not go stale. If the successor already exists, emit an \`attachments\` item with \`kind: "anchor_thread_to_arc"\`, \`entity_id\` = the thread id/title, and \`arc_id\` = the existing arc id/title. Don't wait for the Author at chapter close — the spine tension stays stuck on the dead thread otherwise.
 
 **Re-anchor clues to successors.** When you create a successor thread, scan recent clues for any whose content is evidence for the successor's resolution_criteria. Emit \`attachments\` (anchor_clue) for each, targeting the new thread's id. Without re-anchoring, the successor launches with no evidence and reads as a floating question.
 
@@ -608,7 +608,7 @@ ${unfiredLadder || '_(all steps fired)_'}
 
 For each unfired step above: did the prose THIS turn + current state satisfy the triggerCondition? If yes, include the step's id in \`ladder_fires\`. Mechanical evaluation only — does the trigger text literally read as met?
 
-**Fire skeptically.** A 5-step ladder is meant to pace a 15-25 turn chapter — that's roughly one fire every 3-5 turns on average. Most turns fire ZERO.
+**Fire skeptically.** A 3-step ladder is meant to pace a 15-25 turn chapter — that's roughly one fire every 5-8 turns on average. Most turns fire ZERO.
 
 **Hard floor: never fire on consecutive turns.** If a step fired last turn, do NOT fire another step this turn, even if the trigger looks satisfied. Two fires in adjacent turns reads to the player as a runaway ramp; the chapter's tension graph collapses into a stair. If two trigger conditions both seem to cross within two turns, fire the more decisive one and treat the other as implicit (or fire it later when it has its own beat). The runtime enforces this floor too — fires on consecutive turns will be rejected and surfaced as a diagnostic event, so propose responsibly.
 

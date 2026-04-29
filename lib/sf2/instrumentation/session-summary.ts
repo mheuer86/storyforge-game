@@ -42,10 +42,12 @@ export interface SessionSummaryMetrics {
   cost: {
     narratorTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
     archivistTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
+    arcAuthorTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
     authorTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
     chapterMeaningTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
     estimatedUsdNarrator: number
     estimatedUsdArchivist: number
+    estimatedUsdArcAuthor: number
     estimatedUsdAuthor: number
     estimatedUsdChapterMeaning: number
     estimatedUsdTotal: number
@@ -57,6 +59,58 @@ export interface SessionSummaryMetrics {
       authorCallsObserved: number
       totalTurnsInState: number
       isPartial: boolean // true when any observed count < totalTurnsInState
+    }
+  }
+  // Cost waterfall ratios — derived from cost+coverage above. These are the
+  // first three numbers to read when diagnosing spend: cache discipline, where
+  // the output tokens go, and how often each role gets invoked.
+  waterfall: {
+    // cacheRead / (cacheRead + freshIn) per role and overall. After warmup
+    // turns this should run >0.6; lower means the cached prefix is being
+    // poisoned by something dynamic.
+    cacheHitRatio: {
+      narrator: number
+      archivist: number
+      arcAuthor: number
+      author: number
+      chapterMeaning: number
+      overall: number
+    }
+    // narratorOut / totalOut. The Narrator is the only role whose output the
+    // player sees. Anything else is hidden orchestration; if this drops below
+    // ~0.5 you're paying mostly for scaffolding.
+    visibleOutputShare: number
+    // estimatedUsdNarrator / estimatedUsdTotal. Same idea but weighted by
+    // model price (Sonnet output is 3× Haiku output, etc.).
+    visibleSpendShare: number
+    // archivist invocations per narrator turn. 1.0 means "Archivist runs
+    // every turn." Skip-gating should drive this below 1.
+    archivistCallRate: number
+    // author calls per completed chapter — chapter-setup amortization signal.
+    authorCallsPerChapter: number
+    // narrator_output_recovered events / narrator turns. The Narrator's
+    // tool-input was malformed enough to need salvaging.
+    recoveryRate: number
+    // narrator_meta_observed events / narrator turns. Narrator broke
+    // character; usually a context-shape bug upstream.
+    metaQuestionRate: number
+    // Per-role average tokens, useful for spotting bloat. avgFreshInput
+    // excludes cacheRead — it's the uncached prefix the model pays full
+    // freight for each call.
+    averages: {
+      narrator: { freshInput: number; cacheRead: number; output: number }
+      archivist: { freshInput: number; cacheRead: number; output: number }
+      author: { freshInput: number; cacheRead: number; output: number }
+    }
+    // Latency averages per role. apiMs is the wall-clock spent inside the
+    // Anthropic SDK call; totalMs is request entry to response send.
+    // ttftMs is streaming-only (Narrator). Zero values mean no observed events.
+    latency: {
+      narrator: { apiMs: number; totalMs: number; ttftMs: number; samples: number }
+      archivist: { apiMs: number; totalMs: number; samples: number }
+      author: { apiMs: number; totalMs: number; samples: number }
+      arcAuthor: { apiMs: number; totalMs: number; samples: number }
+      chapterMeaning: { apiMs: number; totalMs: number; samples: number }
     }
   }
   coherence: {
@@ -78,6 +132,7 @@ export interface SessionSummaryMetrics {
 // Pricing per Anthropic public rates (per million tokens).
 const PRICING = {
   haiku45: { in: 1, out: 5, cacheWrite: 1.25, cacheRead: 0.1 },
+  sonnet46: { in: 3, out: 15, cacheWrite: 3.75, cacheRead: 0.3 },
 }
 
 function tokenCost(
@@ -179,11 +234,15 @@ export function computeSessionSummary(
   // Token aggregates by role
   const narratorTokens = { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }
   const archivistTokens = { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }
+  const arcAuthorTokens = { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }
   const authorTokens = { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }
   const chapterMeaningTokens = { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }
   let narratorTurnsObserved = 0
   let archivistTurnsObserved = 0
   let authorCallsObserved = 0
+  let arcAuthorCallsObserved = 0
+  let authorOnlyCallsObserved = 0
+  let chapterMeaningCallsObserved = 0
   for (const ev of debug) {
     if (ev.kind !== 'token_usage') continue
     const d = ev.data as { role?: string; inputTokens?: number; outputTokens?: number; cacheWriteTokens?: number; cacheReadTokens?: number }
@@ -192,11 +251,13 @@ export function computeSessionSummary(
         ? narratorTokens
         : d.role === 'archivist'
           ? archivistTokens
-          : d.role === 'author'
-            ? authorTokens
-            : d.role === 'chapter-meaning'
-              ? chapterMeaningTokens
-              : null
+          : d.role === 'arc-author'
+            ? arcAuthorTokens
+            : d.role === 'author'
+              ? authorTokens
+              : d.role === 'chapter-meaning'
+                ? chapterMeaningTokens
+                : null
     if (!bucket) continue
     bucket.in += d.inputTokens ?? 0
     bucket.out += d.outputTokens ?? 0
@@ -204,16 +265,136 @@ export function computeSessionSummary(
     bucket.cacheRead += d.cacheReadTokens ?? 0
     if (d.role === 'narrator') narratorTurnsObserved += 1
     else if (d.role === 'archivist') archivistTurnsObserved += 1
-    else if (d.role === 'author') authorCallsObserved += 1
-    else if (d.role === 'chapter-meaning') authorCallsObserved += 1
+    else if (d.role === 'arc-author') {
+      authorCallsObserved += 1
+      arcAuthorCallsObserved += 1
+    } else if (d.role === 'author') {
+      authorCallsObserved += 1
+      authorOnlyCallsObserved += 1
+    } else if (d.role === 'chapter-meaning') {
+      authorCallsObserved += 1
+      chapterMeaningCallsObserved += 1
+    }
+  }
+
+  // Recovery + meta-question events. Both are emitted by the Narrator route
+  // (see app/api/sf2/narrator/route.ts). Aggregate counts only — not weighted
+  // by severity. Per-event detail stays in the raw debug log.
+  let narratorRecoveryEvents = 0
+  let narratorMetaEvents = 0
+  for (const ev of debug) {
+    if (ev.kind === 'narrator_output_recovered') narratorRecoveryEvents += 1
+    else if (ev.kind === 'narrator_meta_observed') narratorMetaEvents += 1
+  }
+
+  // Latency aggregation. Each role accumulates apiMs + totalMs (and ttftMs
+  // for narrator only) and a sample count. Averages are computed at the end.
+  const latencyBuckets = {
+    narrator: { apiMs: 0, totalMs: 0, ttftMs: 0, ttftSamples: 0, samples: 0 },
+    archivist: { apiMs: 0, totalMs: 0, samples: 0 },
+    author: { apiMs: 0, totalMs: 0, samples: 0 },
+    arcAuthor: { apiMs: 0, totalMs: 0, samples: 0 },
+    chapterMeaning: { apiMs: 0, totalMs: 0, samples: 0 },
+  }
+  for (const ev of debug) {
+    if (ev.kind !== 'latency') continue
+    const d = ev.data as { role?: string; apiMs?: number; totalMs?: number; ttftMs?: number }
+    const apiMs = Number(d.apiMs ?? 0)
+    const totalMs = Number(d.totalMs ?? 0)
+    if (d.role === 'narrator') {
+      latencyBuckets.narrator.apiMs += apiMs
+      latencyBuckets.narrator.totalMs += totalMs
+      latencyBuckets.narrator.samples += 1
+      if (typeof d.ttftMs === 'number') {
+        latencyBuckets.narrator.ttftMs += d.ttftMs
+        latencyBuckets.narrator.ttftSamples += 1
+      }
+    } else if (d.role === 'archivist') {
+      latencyBuckets.archivist.apiMs += apiMs
+      latencyBuckets.archivist.totalMs += totalMs
+      latencyBuckets.archivist.samples += 1
+    } else if (d.role === 'author') {
+      latencyBuckets.author.apiMs += apiMs
+      latencyBuckets.author.totalMs += totalMs
+      latencyBuckets.author.samples += 1
+    } else if (d.role === 'arc-author') {
+      latencyBuckets.arcAuthor.apiMs += apiMs
+      latencyBuckets.arcAuthor.totalMs += totalMs
+      latencyBuckets.arcAuthor.samples += 1
+    } else if (d.role === 'chapter-meaning') {
+      latencyBuckets.chapterMeaning.apiMs += apiMs
+      latencyBuckets.chapterMeaning.totalMs += totalMs
+      latencyBuckets.chapterMeaning.samples += 1
+    }
   }
 
   const estimatedUsdNarrator = tokenCost(narratorTokens, PRICING.haiku45)
   const estimatedUsdArchivist = tokenCost(archivistTokens, PRICING.haiku45)
-  const estimatedUsdAuthor = tokenCost(authorTokens, PRICING.haiku45)
+  const estimatedUsdArcAuthor = tokenCost(arcAuthorTokens, PRICING.sonnet46)
+  const estimatedUsdAuthor = tokenCost(authorTokens, PRICING.sonnet46)
   const estimatedUsdChapterMeaning = tokenCost(chapterMeaningTokens, PRICING.haiku45)
   const estimatedUsdTotal =
-    estimatedUsdNarrator + estimatedUsdArchivist + estimatedUsdAuthor + estimatedUsdChapterMeaning
+    estimatedUsdNarrator +
+    estimatedUsdArchivist +
+    estimatedUsdArcAuthor +
+    estimatedUsdAuthor +
+    estimatedUsdChapterMeaning
+
+  // Cost waterfall ratios. cacheHitRatio uses cacheRead / (cacheRead + freshIn)
+  // — `in` from the Anthropic usage object is fresh, uncached input; cacheRead
+  // is paid at 0.1× rate. cacheWrite is excluded because it's a one-time
+  // per-prefix-shape cost; the question we want answered is "are subsequent
+  // calls hitting the prefix?"
+  const ratio = (num: number, denom: number) => (denom > 0 ? num / denom : 0)
+  const cacheHit = (t: { in: number; cacheRead: number }) =>
+    ratio(t.cacheRead, t.in + t.cacheRead)
+  const totalIn =
+    narratorTokens.in +
+    archivistTokens.in +
+    arcAuthorTokens.in +
+    authorTokens.in +
+    chapterMeaningTokens.in
+  const totalCacheRead =
+    narratorTokens.cacheRead +
+    archivistTokens.cacheRead +
+    arcAuthorTokens.cacheRead +
+    authorTokens.cacheRead +
+    chapterMeaningTokens.cacheRead
+  const totalOut =
+    narratorTokens.out +
+    archivistTokens.out +
+    arcAuthorTokens.out +
+    authorTokens.out +
+    chapterMeaningTokens.out
+  const visibleOutputShare = ratio(narratorTokens.out, totalOut)
+  const visibleSpendShare = ratio(estimatedUsdNarrator, estimatedUsdTotal)
+  const archivistCallRate = ratio(archivistTurnsObserved, narratorTurnsObserved)
+  const completedChapters = chapterNumbers.length
+  const totalAuthorChapterCalls = authorOnlyCallsObserved + chapterMeaningCallsObserved
+  const authorCallsPerChapter = ratio(totalAuthorChapterCalls, completedChapters)
+  const recoveryRate = ratio(narratorRecoveryEvents, narratorTurnsObserved)
+  const metaQuestionRate = ratio(narratorMetaEvents, narratorTurnsObserved)
+  const avg = (n: number, count: number) => (count > 0 ? Math.round(n / count) : 0)
+  const averages = {
+    narrator: {
+      freshInput: avg(narratorTokens.in, narratorTurnsObserved),
+      cacheRead: avg(narratorTokens.cacheRead, narratorTurnsObserved),
+      output: avg(narratorTokens.out, narratorTurnsObserved),
+    },
+    archivist: {
+      freshInput: avg(archivistTokens.in, archivistTurnsObserved),
+      cacheRead: avg(archivistTokens.cacheRead, archivistTurnsObserved),
+      output: avg(archivistTokens.out, archivistTurnsObserved),
+    },
+    author: {
+      // "author" here means the per-chapter author call, not arc-author setup.
+      freshInput: avg(authorTokens.in, authorOnlyCallsObserved),
+      cacheRead: avg(authorTokens.cacheRead, authorOnlyCallsObserved),
+      output: avg(authorTokens.out, authorOnlyCallsObserved),
+    },
+  }
+  // Suppress unused-variable warning — kept for symmetry / future surfacing.
+  void arcAuthorCallsObserved
 
   // Per-chapter metrics. Thread continuity: of threads active at close of Ch N,
   // how many remain active at open of Ch N+1. Computed by walking turns.
@@ -320,10 +501,12 @@ export function computeSessionSummary(
     cost: {
       narratorTokens,
       archivistTokens,
+      arcAuthorTokens,
       authorTokens,
       chapterMeaningTokens,
       estimatedUsdNarrator,
       estimatedUsdArchivist,
+      estimatedUsdArcAuthor,
       estimatedUsdAuthor,
       estimatedUsdChapterMeaning,
       estimatedUsdTotal,
@@ -335,6 +518,51 @@ export function computeSessionSummary(
         isPartial:
           narratorTurnsObserved < turns.length ||
           archivistTurnsObserved < turns.length,
+      },
+    },
+    waterfall: {
+      cacheHitRatio: {
+        narrator: cacheHit(narratorTokens),
+        archivist: cacheHit(archivistTokens),
+        arcAuthor: cacheHit(arcAuthorTokens),
+        author: cacheHit(authorTokens),
+        chapterMeaning: cacheHit(chapterMeaningTokens),
+        overall: ratio(totalCacheRead, totalIn + totalCacheRead),
+      },
+      visibleOutputShare,
+      visibleSpendShare,
+      archivistCallRate,
+      authorCallsPerChapter,
+      recoveryRate,
+      metaQuestionRate,
+      averages,
+      latency: {
+        narrator: {
+          apiMs: avg(latencyBuckets.narrator.apiMs, latencyBuckets.narrator.samples),
+          totalMs: avg(latencyBuckets.narrator.totalMs, latencyBuckets.narrator.samples),
+          ttftMs: avg(latencyBuckets.narrator.ttftMs, latencyBuckets.narrator.ttftSamples),
+          samples: latencyBuckets.narrator.samples,
+        },
+        archivist: {
+          apiMs: avg(latencyBuckets.archivist.apiMs, latencyBuckets.archivist.samples),
+          totalMs: avg(latencyBuckets.archivist.totalMs, latencyBuckets.archivist.samples),
+          samples: latencyBuckets.archivist.samples,
+        },
+        author: {
+          apiMs: avg(latencyBuckets.author.apiMs, latencyBuckets.author.samples),
+          totalMs: avg(latencyBuckets.author.totalMs, latencyBuckets.author.samples),
+          samples: latencyBuckets.author.samples,
+        },
+        arcAuthor: {
+          apiMs: avg(latencyBuckets.arcAuthor.apiMs, latencyBuckets.arcAuthor.samples),
+          totalMs: avg(latencyBuckets.arcAuthor.totalMs, latencyBuckets.arcAuthor.samples),
+          samples: latencyBuckets.arcAuthor.samples,
+        },
+        chapterMeaning: {
+          apiMs: avg(latencyBuckets.chapterMeaning.apiMs, latencyBuckets.chapterMeaning.samples),
+          totalMs: avg(latencyBuckets.chapterMeaning.totalMs, latencyBuckets.chapterMeaning.samples),
+          samples: latencyBuckets.chapterMeaning.samples,
+        },
       },
     },
     coherence: {

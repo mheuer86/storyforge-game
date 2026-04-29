@@ -1,0 +1,88 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet newly authored visible npc is not dormant",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "New chapter NPCs hydrated at chapter open should carry the current turn as lastSeenTurn, so the opening cast does not receive stale dormant re-entry instructions."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_new_elder": {
+            "id": "npc_new_elder",
+            "name": "Elder Vessa",
+            "affiliation": "settlement council",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": [],
+              "voice": { "note": "soft procedural caution", "register": "settlement formal" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Newly authored chapter-opening elder.",
+            "chapterCreated": 2,
+            "signatureLines": [],
+            "lastSeenTurn": 12
+          }
+        }
+      },
+      "chapter": {
+        "number": 2,
+        "setup": {
+          "chapter": 2,
+          "startingNpcIds": ["npc_new_elder"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_new_elder"]
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 1, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 2, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 3, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 4, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 5, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 6, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 7, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 8, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 9, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 10, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 11, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" }
+        ]
+      }
+    },
+    "turnIndex": 12,
+    "playerInput": "Begin the new chapter.",
+    "isInitial": true,
+    "narrator": {
+      "prose": "Elder Vessa waits beside the intake table.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_new_elder",
+        "prohibitionsExclude": ["no wiki-paragraph reintroduction"]
+      }
+    ]
+  }
+}

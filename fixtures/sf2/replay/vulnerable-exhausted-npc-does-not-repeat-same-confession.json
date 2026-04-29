@@ -1,0 +1,89 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "vulnerable exhausted npc does not repeat same confession",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Phase 5 cross-layer fixture. A near_confession beat in the last 3 turns moves 'personal worry' from a trusted NPC's willShare list into willNot as 'already shared, won't repeat without escalation'. Tests beat-memory + tier interaction, not single-layer lookup. Layered with tempLoadTag='exhausted' to also exercise the truncated-disclosure modulation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "tempLoadTag": "exhausted",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "Keep the writ narrow.", "methods": [], "currentMove": "Awaiting the Warden." },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        },
+        "beats": {
+          "beat_aul_confession": {
+            "category": "emotional_beat",
+            "id": "beat_aul_confession",
+            "title": "Aul's near-confession",
+            "chapterCreated": 1,
+            "retrievalCue": "Aul nearly named what he fears.",
+            "text": "Aul almost says what he fears about the writ widening, and stops a syllable short.",
+            "participants": ["pc", "npc_aul"],
+            "anchoredTo": [],
+            "emotionalTags": ["near_confession", "vulnerability"],
+            "salience": 0.85,
+            "turn": 4
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_aul"]
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "Sit with him a while longer.",
+    "narrator": {
+      "prose": "The room holds.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_aul",
+        "tempLoadTag": "exhausted",
+        "voiceImperativeIncludes": "warm, plain, low procedural distance",
+        "behavioralContractIncludes": ["volunteers context", "exhausted", "short answers"]
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "Aul (npc_aul) — TRUSTED [exhausted] · WARM, PLAIN, LOW PROCEDURAL DISTANCE",
+      "posture: assumes PC is acting in good faith",
+      "will share: operational concerns, limited faction doubt",
+      "will not: become cagey without a new state event, personal worry — already shared, won't repeat without escalation",
+      "if pressured: truncated reactivity"
+    ]
+  }
+}

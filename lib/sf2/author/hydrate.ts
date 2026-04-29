@@ -12,6 +12,7 @@ import type {
   Sf2State,
   Sf2Thread,
 } from '../types'
+import { validateVoiceNote } from './validate-voice-note'
 
 // Author's free-form role strings (e.g. "district solicitor") don't fit
 // Sf2NpcRole's narrow union ('crew'|'contact'|'npc'). Store them as-is for
@@ -23,6 +24,8 @@ export function applyAuthoredToCampaign(
   chapter: Sf2ChapterNumber,
   loadBearingIds: string[]
 ): void {
+  const authoredAtTurn = state.history.turns.length
+
   // Seed faction records from unique NPC affiliations BEFORE NPC hydration
   // and thread resolution. An affiliation in the Author's NPC list implies a
   // faction in the world — creating placeholder faction records ensures
@@ -49,18 +52,32 @@ export function applyAuthoredToCampaign(
   }
 
   for (const n of authored.startingNPCs) {
+    // Phase 6 — voice_note carries per-NPC distinctness. voice_register stays
+    // the formal speaking style. If voice_note is missing or fails validation,
+    // fall back to voice_register (preserving prior behavior) and warn so
+    // playthrough review can flag thin voices before they collapse together.
+    const noteCheck = validateVoiceNote(n.voiceNote)
+    const resolvedNote = noteCheck.ok && n.voiceNote ? n.voiceNote : n.voiceRegister
+    if (!noteCheck.ok && n.voiceRegister) {
+      console.warn(
+        `[author/hydrate] npc ${n.id} (${n.name}): ${noteCheck.reason}; falling back to voice_register`
+      )
+    }
     const existing = state.campaign.npcs[n.id]
     if (existing) {
       // Carry-forward: per Author prompt, affiliation/role/voice_register/
-      // retrieval_cue may evolve per chapter. Refresh them. Preserve the
-      // Archivist-maintained fields: keyFacts, relations, lastSeenTurn,
-      // disposition, tempLoad, agenda, status, signatureLines.
+      // voice_note/retrieval_cue may evolve per chapter. Refresh them.
+      // Preserve the Archivist-maintained fields: keyFacts, relations,
+      // lastSeenTurn, disposition, tempLoad, tempLoadTag, agenda, status,
+      // signatureLines.
       existing.affiliation = n.affiliation || existing.affiliation
       existing.role = (n.role || existing.role) as Sf2Npc['role']
       existing.retrievalCue = n.retrievalCue || existing.retrievalCue
       if (n.voiceRegister) {
         existing.identity.voice.register = n.voiceRegister
-        if (!existing.identity.voice.note) existing.identity.voice.note = n.voiceRegister
+      }
+      if (resolvedNote) {
+        existing.identity.voice.note = resolvedNote
       }
       continue
     }
@@ -73,13 +90,13 @@ export function applyAuthoredToCampaign(
       disposition: n.initialDisposition ?? 'neutral',
       identity: {
         keyFacts: [],
-        voice: { note: n.voiceRegister, register: n.voiceRegister },
+        voice: { note: resolvedNote, register: n.voiceRegister },
         relations: [],
       },
       ownedThreadIds: [],
       retrievalCue: n.retrievalCue,
       chapterCreated: chapter,
-      lastSeenTurn: 0,
+      lastSeenTurn: authoredAtTurn,
       signatureLines: [],
     }
   }
@@ -136,7 +153,10 @@ export function applyAuthoredToCampaign(
   if (activeArc) {
     const existing = new Set(activeArc.threadIds)
     for (const threadId of authored.activeThreads.map((t) => t.id)) {
-      if (state.campaign.threads[threadId]) existing.add(threadId)
+      if (state.campaign.threads[threadId]) {
+        existing.add(threadId)
+        state.campaign.threads[threadId].anchoredArcId = activeArc.id
+      }
     }
     activeArc.threadIds = [...existing]
   }

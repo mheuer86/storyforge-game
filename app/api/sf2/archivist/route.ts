@@ -19,6 +19,7 @@ import { recordTurnTelemetry } from '@/lib/sf2/instrumentation/working-set-telem
 // Archivist-driven via extract_turn's ladder_fires field, applied in
 // applyArchivistPatch.
 import { pruneGraph } from '@/lib/sf2/runtime/prune-graph'
+import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import type {
   Sf2ArchivistAttachment,
   Sf2ArchivistCreate,
@@ -58,6 +59,7 @@ const requestSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const requestTimer = startTimer()
   try {
     const body = await req.json().catch(() => null)
     const parsed = requestSchema.safeParse(body)
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
 
     // Anthropic call (inner try/catch handles APIError specifically).
     const client = resolveClient(req)
+    const apiTimer = startTimer()
     try {
       const response = await client.messages.create({
         model: ARCHIVIST_MODEL,
@@ -114,6 +117,8 @@ export async function POST(req: NextRequest) {
         tool_choice: { type: 'any', disable_parallel_tool_use: true },
         messages,
       })
+
+    const apiMs = apiTimer.elapsed()
 
     const usage = response.usage as {
       input_tokens: number
@@ -281,6 +286,10 @@ export async function POST(req: NextRequest) {
           outputTokens: usage.output_tokens,
           cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
           cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+        },
+        latency: {
+          totalMs: requestTimer.elapsed(),
+          apiMs,
         },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -505,6 +514,7 @@ const COHERENCE_FINDING_TYPES: Sf2CoherenceFindingType[] = [
   'age_drift',
   'anchor_miss',
   'revelation_premature_reveal',
+  'document_attribution_drift',
 ]
 
 function normalizeCoherenceFinding(r: Record<string, unknown>): Sf2CoherenceFinding | null {
@@ -564,6 +574,7 @@ function normalizeAttachment(r: Record<string, unknown>): Sf2ArchivistAttachment
     kind: r.kind as Sf2ArchivistAttachment['kind'],
     entityId: String(r.entity_id ?? ''),
     threadIds: Array.isArray(r.thread_ids) ? (r.thread_ids as string[]) : [],
+    arcId: r.arc_id ? String(r.arc_id) : undefined,
     confidence: normalizeConfidence(r.confidence),
   }
 }
