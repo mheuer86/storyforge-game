@@ -16,7 +16,7 @@ import {
   type DispositionDerivationContext,
 } from '@/lib/sf2/author/disposition-defaults'
 import { transformAuthorSetup } from '@/lib/sf2/author/transform'
-import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
+import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { CHAPTER_OPEN_CAP } from '@/lib/sf2/pressure/constants'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
@@ -65,6 +65,14 @@ type AnthropicUsage = {
   cache_creation_input_tokens?: number
   cache_read_input_tokens?: number
 }
+
+const TERMINAL_THREAD_STATUSES = new Set<Sf2ThreadStatus>([
+  'resolved_clean',
+  'resolved_costly',
+  'resolved_failure',
+  'resolved_catastrophic',
+  'abandoned',
+])
 
 function tagTool(tool: Anthropic.Tool): Anthropic.Tool {
   return { ...tool, cache_control: { type: 'ephemeral' as const } }
@@ -244,6 +252,7 @@ export async function POST(req: NextRequest) {
     const state = (parsed.data.state ?? null) as Sf2State | null
     const priorMeaning = (parsed.data.priorChapterMeaning ?? null) as Sf2ChapterMeaning | null
     const targetChapter = parsed.data.targetChapter
+    const isContinuation = (state?.history?.turns?.length ?? 0) > 0
 
     if (!state?.campaign?.arcPlan) {
       return new Response(
@@ -261,15 +270,16 @@ export async function POST(req: NextRequest) {
 
     const seed = compileAuthorInputSeed(state, priorMeaning)
     const situation = buildAuthorSituation(state, priorMeaning)
+    const bible = getSf2BibleForGenre(state.meta.genreId)
 
     assertNoDynamicLeak(SF2_AUTHOR_CORE, 'AUTHOR_CORE')
-    assertNoDynamicLeak(SF2_BIBLE_HEGEMONY, 'BIBLE')
+    assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(SF2_AUTHOR_ROLE, 'AUTHOR_ROLE')
     assertNoDynamicLeak(situation, 'AUTHOR_SITUATION')
 
     const { blocks: system } = composeSystemBlocks({
       core: SF2_AUTHOR_CORE,
-      bible: SF2_BIBLE_HEGEMONY,
+      bible,
       role: SF2_AUTHOR_ROLE,
       situation,
     })
@@ -297,6 +307,8 @@ export async function POST(req: NextRequest) {
           genreId: state?.meta.genreId ?? '',
           pcOriginId: state?.meta.originId ?? '',
           pcPlaybookId: state?.meta.playbookId ?? '',
+          isContinuation,
+          state: state ?? undefined,
         }),
         retryNudge: (errors) =>
           `Your previous tool call was incomplete — these required fields were missing or empty:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. Stay inside the field-length budgets; compact complete output is preferred over exhaustive prose. The full chapter setup must come back in this single tool call.`,
@@ -333,8 +345,7 @@ export async function POST(req: NextRequest) {
     }
 
     const authored = normalizeAuthorSetup(result.raw)
-    const isContinuation = (state?.history?.turns?.length ?? 0) > 0
-    const validationErrors = validateAuthorSetup(authored, { isContinuation })
+    const validationErrors = validateAuthorSetup(authored, { isContinuation, state: state ?? undefined })
     if (validationErrors.length > 0) {
       console.error('[sf2/author] merged output failed validation', {
         model: AUTHOR_MODEL,
@@ -413,7 +424,7 @@ function usagePayload(usage: AnthropicUsage) {
 
 function validateChapterRaw(
   raw: Record<string, unknown>,
-  ctx: DispositionDerivationContext
+  ctx: DispositionDerivationContext & { isContinuation?: boolean; state?: Sf2State }
 ): string[] {
   const errors: string[] = []
   const frame = getObject(raw, 'chapter_frame', 'chapterFrame')
@@ -444,15 +455,63 @@ function validateChapterRaw(
   const npcs = getArray(raw, 'starting_npcs', 'startingNPCs')
   if (npcs.length !== 3) errors.push(`starting_npcs must contain exactly 3 NPCs (got ${npcs.length})`)
   const threads = getArray(raw, 'active_threads', 'activeThreads')
-  if (threads.length !== 3) errors.push(`active_threads must contain exactly 3 threads (got ${threads.length})`)
+  const transitionStatuses = new Map(
+    getArray(raw, 'thread_transitions', 'threadTransitions').map((t) => [
+      stringField(t, 'id'),
+      stringField(t, 'to_status', 'toStatus') as Sf2ThreadStatus,
+    ])
+  )
+  const expectedThreadCount = ctx.isContinuation ? 4 : 3
+  if (threads.length !== expectedThreadCount) {
+    errors.push(`active_threads must contain exactly ${expectedThreadCount} threads (got ${threads.length})`)
+  }
+  let continuationDriverCount = 0
   threads.forEach((t, i) => {
     const initial = valueField(t, 'initial_tension', 'initialTension')
-    if (initial === undefined) return
-    const value = Number(initial)
-    if (!Number.isFinite(value) || value < 0 || value > CHAPTER_OPEN_CAP) {
+    const initialValue = Number(initial)
+    if (initial !== undefined && (!Number.isFinite(initialValue) || initialValue < 0 || initialValue > CHAPTER_OPEN_CAP)) {
       errors.push(`active_threads[${i}].initial_tension must be between 0 and ${CHAPTER_OPEN_CAP}`)
     }
+    if (ctx.isContinuation) {
+      const id = stringField(t, 'id')
+      const driverKind = stringField(t, 'driver_kind', 'driverKind')
+      const successorTo = stringField(t, 'successor_to_thread_id', 'successorToThreadId')
+      const tension = Number(valueField(t, 'tension') ?? 0)
+      const existing = ctx.state?.campaign?.threads?.[id]
+      if (existing && TERMINAL_THREAD_STATUSES.has(existing.status)) {
+        errors.push(`active_threads[${i}].id ${id} is already terminal (${existing.status}); transition it and author a successor instead`)
+      }
+      if (!['carry_forward', 'successor', 'new_pressure'].includes(driverKind)) {
+        errors.push(`active_threads[${i}].driver_kind is required for chapter ≥ 2`)
+      }
+      if (driverKind === 'successor' && !successorTo.trim()) {
+        errors.push(`active_threads[${i}].successor_to_thread_id is required for successor threads`)
+      } else if (driverKind === 'successor') {
+        const predecessor = ctx.state?.campaign?.threads?.[successorTo]
+        if (!predecessor) {
+          errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} is not an existing thread`)
+        } else if (successorTo === id) {
+          errors.push(`active_threads[${i}].successor_to_thread_id cannot point to itself`)
+        } else {
+          const transitionStatus = transitionStatuses.get(successorTo)
+          const terminalByState = TERMINAL_THREAD_STATUSES.has(predecessor.status)
+          const terminalByTransition = transitionStatus ? TERMINAL_THREAD_STATUSES.has(transitionStatus) : false
+          if (!terminalByState && !terminalByTransition) {
+            errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} must be terminal already or terminal in thread_transitions`)
+          }
+        }
+      }
+      if (driverKind === 'successor' || driverKind === 'new_pressure') {
+        continuationDriverCount += 1
+        if (!Number.isFinite(tension) || tension < 6) {
+          errors.push(`active_threads[${i}] new/successor driver must be load-bearing tension ≥6`)
+        }
+      }
+    }
   })
+  if (ctx.isContinuation && continuationDriverCount < 1) {
+    errors.push('active_threads must include at least 1 successor or new_pressure driver for chapter ≥ 2')
+  }
 
   const arcLink = getObject(raw, 'arc_link', 'arcLink')
   if (!stringField(arcLink, 'arc_id', 'arcId').trim()) errors.push('arc_link.arc_id is empty')
@@ -591,6 +650,8 @@ function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapterSetupV
       ownerHint: stringField(t, 'owner_hint', 'ownerHint'),
       tension: Number(valueField(t, 'tension') ?? 5),
       initialTension: optionalBoundedTension(valueField(t, 'initial_tension', 'initialTension')),
+      successorToThreadId: stringField(t, 'successor_to_thread_id', 'successorToThreadId') || undefined,
+      driverKind: normalizeDriverKind(valueField(t, 'driver_kind', 'driverKind')),
       resolutionCriteria: stringField(t, 'resolution_criteria', 'resolutionCriteria'),
       failureMode: stringField(t, 'failure_mode', 'failureMode'),
       retrievalCue: stringField(t, 'retrieval_cue', 'retrievalCue'),
@@ -679,7 +740,7 @@ function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapterSetupV
 // Final boundary validation on the normalized single-call AuthorChapterSetupV2.
 function validateAuthorSetup(
   authored: AuthorChapterSetupV2,
-  opts: { isContinuation: boolean } = { isContinuation: false }
+  opts: { isContinuation: boolean; state?: Sf2State } = { isContinuation: false }
 ): string[] {
   const errors: string[] = []
   const requiredOpeningStrings: Array<keyof AuthorChapterSetupV2['openingSceneSpec']> = [
@@ -716,13 +777,51 @@ function validateAuthorSetup(
   if (!antag.defaultFace.name.trim()) errors.push('antagonist_field.default_face.name is empty')
 
   if (authored.startingNPCs.length === 0) errors.push('starting_npcs is empty')
-  if (authored.activeThreads.length === 0) errors.push('active_threads is empty')
+  const expectedThreadCount = opts.isContinuation ? 4 : 3
+  if (authored.activeThreads.length !== expectedThreadCount) {
+    errors.push(`active_threads must contain exactly ${expectedThreadCount} threads (got ${authored.activeThreads.length})`)
+  }
+  let continuationDriverCount = 0
+  const transitionStatuses = new Map(
+    (authored.threadTransitions ?? []).map((t) => [t.id, t.toStatus])
+  )
   authored.activeThreads.forEach((thread, i) => {
-    if (thread.initialTension === undefined) return
-    if (thread.initialTension < 0 || thread.initialTension > CHAPTER_OPEN_CAP) {
+    if (thread.initialTension !== undefined && (thread.initialTension < 0 || thread.initialTension > CHAPTER_OPEN_CAP)) {
       errors.push(`active_threads[${i}].initial_tension must be between 0 and ${CHAPTER_OPEN_CAP}`)
     }
+    if (opts.isContinuation) {
+      const existing = opts.state?.campaign?.threads?.[thread.id]
+      if (existing && TERMINAL_THREAD_STATUSES.has(existing.status)) {
+        errors.push(`active_threads[${i}].id ${thread.id} is already terminal (${existing.status}); transition it and author a successor instead`)
+      }
+      if (!thread.driverKind) errors.push(`active_threads[${i}].driver_kind is required for chapter ≥ 2`)
+      if (thread.driverKind === 'successor' && !thread.successorToThreadId?.trim()) {
+        errors.push(`active_threads[${i}].successor_to_thread_id is required for successor threads`)
+      } else if (thread.driverKind === 'successor') {
+        const successorTo = thread.successorToThreadId ?? ''
+        const predecessor = opts.state?.campaign?.threads?.[successorTo]
+        if (!predecessor) {
+          errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} is not an existing thread`)
+        } else if (successorTo === thread.id) {
+          errors.push(`active_threads[${i}].successor_to_thread_id cannot point to itself`)
+        } else {
+          const transitionStatus = transitionStatuses.get(successorTo)
+          const terminalByState = TERMINAL_THREAD_STATUSES.has(predecessor.status)
+          const terminalByTransition = transitionStatus ? TERMINAL_THREAD_STATUSES.has(transitionStatus) : false
+          if (!terminalByState && !terminalByTransition) {
+            errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} must be terminal already or terminal in thread_transitions`)
+          }
+        }
+      }
+      if (thread.driverKind === 'successor' || thread.driverKind === 'new_pressure') {
+        continuationDriverCount += 1
+        if (thread.tension < 6) errors.push(`active_threads[${i}] new/successor driver must be load-bearing tension ≥6`)
+      }
+    }
   })
+  if (opts.isContinuation && continuationDriverCount < 1) {
+    errors.push('active_threads must include at least 1 successor or new_pressure driver for chapter ≥ 2')
+  }
   if (!authored.arcLink.arcId.trim()) errors.push('arc_link.arc_id is empty')
   if (!authored.arcLink.chapterFunction.trim()) errors.push('arc_link.chapter_function is empty')
   if (!authored.pacingContract.chapterQuestion.trim()) errors.push('pacing_contract.chapter_question is empty')
@@ -774,6 +873,12 @@ function optionalPositiveInt(value: unknown): number | undefined {
   const n = Number(value)
   if (!Number.isFinite(n)) return undefined
   return Math.max(0, Math.round(n))
+}
+
+function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThreads'][number]['driverKind'] {
+  return value === 'carry_forward' || value === 'successor' || value === 'new_pressure'
+    ? value
+    : undefined
 }
 
 const REVEAL_CONTEXTS: Sf2RevealContext[] = [

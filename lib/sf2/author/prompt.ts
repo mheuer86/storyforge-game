@@ -104,7 +104,12 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 
   Strip throat-clearing ("This thread represents…", "The intent here is…"). Lead with the noun or verb that carries the meaning. Tight prose at this layer reads better and costs less without sacrificing chapter quality — the Narrator inflates from these seeds during play, so over-elaboration here is wasted effort.
 - Emit exactly 3 starting NPCs.
-- Emit exactly 3 active threads.
+- Emit exactly 3 active threads for Chapter 1.
+- For Chapter 2 and later, emit exactly 4 active threads. You may carry forward up to 3 old threads, but at least 1 active thread must be a new chapter driver: either \`driver_kind: "new_pressure"\` or \`driver_kind: "successor"\`.
+- For Chapter 2 and later, every \`active_threads[]\` entry must include \`driver_kind\`: \`carry_forward\`, \`successor\`, or \`new_pressure\`. Successor threads must also include \`successor_to_thread_id\`.
+- The new/successor driver must be load-bearing: give it tension ≥6, include it in pressure runtime through the selected pressure engines, and make it eligible to become spine.
+- If a prior objective was already satisfied, transition that old thread in \`thread_transitions\` and create a successor instead of reusing the answered question as this chapter's spine.
+- Prefer the new/successor load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
 - Emit exactly 3 pressure ladder items.
 - Emit exactly 2 possible revelations.
 - Emit exactly 2 moral fault lines.
@@ -247,6 +252,8 @@ Use this as a binding continuity constraint for \`opening_scene_spec\`. A contin
 - **NPCs**: if the chapter carries a character from a prior chapter (Osh, Sova, Pell, etc. — whatever is in "Live NPCs" above and remains thematically relevant), REUSE their existing ids in \`starting_npcs\`. Use the exact id shown above (e.g. \`npc_osh\`). Re-state their \`affiliation\`, \`role\`, \`voice_register\`, \`voice_note\`, \`dramatic_function\`, and current \`hidden_pressure\` — these may evolve per chapter even as identity is stable. Only create NEW NPCs when genuinely new characters enter the story.
 
 - **Threads**: carry-forward active threads by referencing their existing ids in \`active_threads\` (e.g. \`thread_shortfall\`). Re-state \`title\`, \`question\`, \`tension\` (which may have moved per the prior chapter's play), and the current \`resolution_criteria\` / \`failure_mode\` if those have evolved. Use \`initial_tension\` only for NEW threads that need a chapter-opening pressure override. Only create NEW threads when the chapter's pressure introduces a genuinely new line of tension.
+
+- **Continuation thread broadening**: Ch2+ must contain exactly 4 active threads. At most 3 may be \`driver_kind: "carry_forward"\`. At least 1 must be \`driver_kind: "new_pressure"\` or \`driver_kind: "successor"\`; that new/successor thread must be load-bearing (tension ≥6) and tied into the chapter's pressure runtime via the chosen pressure engines. If the prior chapter already satisfied an old thread's resolution criteria, do not reheat it as the spine. Transition it, then author a successor with \`successor_to_thread_id\`.
 
 - **Mix is normal**: a typical Ch2 has 3-4 carried NPCs + 1-2 new ones, and 2-3 carried threads + 1-2 new ones. A chapter that invents an entirely new cast is almost always wrong — the campaign loses continuity, and the player loses investment.
 

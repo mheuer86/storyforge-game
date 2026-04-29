@@ -10,7 +10,7 @@ import {
 import { arcPlanToArcEntity, transformArcSetup, validateArcPlan } from '@/lib/sf2/arc-author/transform'
 import { selectArcVariantSeed } from '@/lib/sf2/arc-author/variants'
 import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
-import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
+import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { assertNoDynamicLeak, composeSystemBlocks } from '@/lib/sf2/prompt/compose'
 import type { AuthorInputSeed, Sf2State } from '@/lib/sf2/types'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
@@ -61,22 +61,23 @@ export async function POST(req: NextRequest) {
     }
 
     const state = (parsed.data.state ?? null) as Sf2State | null
-    const seed = (parsed.data.seed ?? compileAuthorInputSeed(state, null)) as AuthorInputSeed
+    const seed = structuredClone((parsed.data.seed ?? compileAuthorInputSeed(state, null)) as AuthorInputSeed)
     if (parsed.data.arcVariantSeed) {
       seed.arcVariantSeed = parsed.data.arcVariantSeed as AuthorInputSeed['arcVariantSeed']
     } else {
       seed.arcVariantSeed = selectArcVariantSeed(seed)
     }
     const situation = buildArcAuthorSituation(seed)
+    const bible = getSf2BibleForGenre(seed.genreId)
 
     assertNoDynamicLeak(SF2_ARC_AUTHOR_CORE, 'ARC_AUTHOR_CORE')
-    assertNoDynamicLeak(SF2_BIBLE_HEGEMONY, 'BIBLE')
+    assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(SF2_ARC_AUTHOR_ROLE, 'ARC_AUTHOR_ROLE')
     assertNoDynamicLeak(situation, 'ARC_AUTHOR_SITUATION')
 
     const system = composeSystemBlocks({
       core: SF2_ARC_AUTHOR_CORE,
-      bible: SF2_BIBLE_HEGEMONY,
+      bible,
       role: SF2_ARC_AUTHOR_ROLE,
       situation,
     }).blocks

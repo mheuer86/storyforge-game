@@ -1,0 +1,79 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close: early spine resolution promotes active load-bearing thread",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Spine resolves on turn 3, but another active load-bearing continuation driver exists. Runtime must promote it and avoid close-ready before turn 18."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_spine", "thread_successor"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_spine", "thread_successor"]
+        }
+      },
+      "campaign": {
+        "threads": {
+          "thread_successor": {
+            "id": "thread_successor",
+            "title": "The successor pressure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "The successor pressure is answered.",
+            "failureMode": "The successor pressure hardens.",
+            "retrievalCue": "The next live chapter pressure.",
+            "loadBearing": true,
+            "chapterDriverKind": "successor",
+            "successorToThreadId": "thread_spine",
+            "tensionHistory": []
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "A", "narratorProse": "A", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "B", "narratorProse": "B", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Resolve the first matter.",
+    "narrator": {
+      "prose": "The first matter is answered, but the next pressure is already live.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The immediate spine question was answered.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "promotedSpineThreadId": "thread_successor"
+    },
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

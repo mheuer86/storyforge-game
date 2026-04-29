@@ -116,6 +116,8 @@ export function applyAuthoredToCampaign(
       if (typeof t.tension === 'number') existing.tension = clampTension(t.tension)
       existing.peakTension = Math.max(existing.peakTension ?? existing.tension, existing.tension)
       existing.loadBearing = loadBearing.has(t.id)
+      existing.successorToThreadId = t.successorToThreadId
+      existing.chapterDriverKind = t.driverKind
       // Re-resolve owner only if current owner is the placeholder
       // faction_unknown — don't stomp a meaningfully resolved one.
       if (
@@ -144,6 +146,8 @@ export function applyAuthoredToCampaign(
       resolutionCriteria: t.resolutionCriteria,
       failureMode: t.failureMode,
       loadBearing: loadBearing.has(t.id),
+      successorToThreadId: t.successorToThreadId,
+      chapterDriverKind: t.driverKind,
       tensionHistory: [],
     }
   }

@@ -44,6 +44,19 @@ export function transformAuthorSetup(
     role: authored.antagonistField.defaultFace.role,
     pressureStyle: authored.antagonistField.defaultFace.pressureStyle,
   }
+  const loadBearingThreadIds = authored.activeThreads
+    .filter((t) => t.tension >= 6)
+    .map((t) => t.id)
+  const successorThreadIds = authored.activeThreads
+    .filter((t) => t.driverKind === 'successor')
+    .map((t) => t.id)
+  const newPressureThreadIds = authored.activeThreads
+    .filter((t) => t.driverKind === 'new_pressure')
+    .map((t) => t.id)
+  const preferredDriver = authored.activeThreads.find(
+    (t) => (t.driverKind === 'successor' || t.driverKind === 'new_pressure') && t.tension >= 6
+  )
+  const preferredLoadBearing = authored.activeThreads.find((t) => t.tension >= 6)
 
   const runtimeState: Sf2ChapterSetupRuntimeState = {
     chapter,
@@ -58,11 +71,13 @@ export function transformAuthorSetup(
     },
     startingNpcIds: authored.startingNPCs.map((n) => n.id),
     activeThreadIds: authored.activeThreads.map((t) => t.id),
-    spineThreadId: authored.activeThreads[0]?.id,
-    loadBearingThreadIds: authored.activeThreads
-      .filter((t) => t.tension >= 6)
+    spineThreadId: preferredDriver?.id ?? preferredLoadBearing?.id ?? authored.activeThreads[0]?.id,
+    loadBearingThreadIds,
+    carriedThreadIds: authored.activeThreads
+      .filter((t) => t.driverKind === 'carry_forward')
       .map((t) => t.id),
-    carriedThreadIds: [],
+    successorThreadIds,
+    newPressureThreadIds,
     editorializedLore: authored.editorializedLore,
     openingSceneSpec: authored.openingSceneSpec,
     pressureLadder: authored.pressureLadder.map((step) => ({

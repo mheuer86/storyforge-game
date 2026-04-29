@@ -8,7 +8,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiHeaders } from '@/lib/api-key'
-import { createInitialSf2State, isArcAuthored, isChapterAuthored } from '@/lib/sf2/game-data'
+import {
+  DEFAULT_SF2_SEED_ID,
+  SF2_BOOTSTRAP_SEED_OPTIONS,
+  createInitialSf2State,
+  isArcAuthored,
+  isChapterAuthored,
+} from '@/lib/sf2/game-data'
 import { applyAuthoredToCampaign } from '@/lib/sf2/author/hydrate'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
@@ -149,6 +155,7 @@ function modifierForSkill(state: Sf2State, skill: string): number {
 export default function PlayV2Page() {
   const [state, setState] = useState<Sf2State | null>(null)
   const [playerName, setPlayerName] = useState('Ren')
+  const [selectedSeedId, setSelectedSeedId] = useState(DEFAULT_SF2_SEED_ID)
   const [prose, setProse] = useState<string>('')
   const [suggestedActions, setSuggestedActions] = useState<string[]>([])
   const [pendingInput, setPendingInput] = useState<string>('')
@@ -239,6 +246,7 @@ export default function PlayV2Page() {
     const next = createInitialSf2State({
       campaignId: `camp_${Date.now()}`,
       playerName: playerName.trim() || 'Ren',
+      seedId: selectedSeedId,
     })
     setState(next)
     setProse('')
@@ -1063,6 +1071,28 @@ export default function PlayV2Page() {
     if (turnSentinelEvents.length > 0) {
       invariantEvents.push(...turnSentinelEvents)
     }
+    const closeRecovery = computeChapterCloseReadiness(stateAfterMechs, false)
+    if (closeRecovery.promotedSpineThreadId) {
+      const promoted = stateAfterMechs.campaign.threads[closeRecovery.promotedSpineThreadId]
+      stateAfterMechs.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId
+      if (promoted) promoted.spineForChapter = stateAfterMechs.meta.currentChapter
+      invariantEvents.push(makeInvariantEvent('early_spine_resolved_promoted_successor', {
+        promotedSpineThreadId: closeRecovery.promotedSpineThreadId,
+        chapterTurnCount: closeRecovery.chapterTurnCount,
+      }))
+    }
+    if (closeRecovery.successorRequired) {
+      const note =
+        'The chapter spine resolved before turn 18 and no unresolved load-bearing thread could replace it. Continue the chapter by surfacing or creating a successor thread that follows from the resolved spine; do not signal chapter close yet.'
+      stateAfterMechs.campaign.pendingRecoveryNotes = Array.from(new Set([
+        ...(stateAfterMechs.campaign.pendingRecoveryNotes ?? []),
+        note,
+      ]))
+      invariantEvents.push(makeInvariantEvent('early_spine_resolved_successor_required', {
+        chapterTurnCount: closeRecovery.chapterTurnCount,
+        spineThreadId: stateAfterMechs.chapter.setup.spineThreadId,
+      }))
+    }
     if (invariantEvents.length > 0) {
       setDebug((d) => [...d, ...invariantEvents])
     }
@@ -1296,14 +1326,37 @@ export default function PlayV2Page() {
   }
 
   if (!state) {
+    const selectedSeed =
+      SF2_BOOTSTRAP_SEED_OPTIONS.find((seed) => seed.id === selectedSeedId)
+      ?? SF2_BOOTSTRAP_SEED_OPTIONS[0]
+
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 p-8 font-mono">
         <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-2xl">Storyforge v2 · Warden bootstrap</h1>
+          <h1 className="text-2xl">Storyforge v2 · seed bootstrap</h1>
           <p className="text-sm text-neutral-400">
-            Epic Sci-Fi · origin: Imperial Service · class: Warden · hook: The Tithe.
+            {selectedSeed.seed.genreName} · origin: {selectedSeed.seed.originName} · class:{' '}
+            {selectedSeed.seed.playbookName} · hook: {selectedSeed.seed.hook.title}.
             On first "Begin" the Author (Haiku) generates the chapter setup from the seed.
           </p>
+          <div className="space-y-2">
+            <label className="text-sm text-neutral-400" htmlFor="seed">
+              Dev seed
+            </label>
+            <select
+              id="seed"
+              value={selectedSeedId}
+              onChange={(e) => setSelectedSeedId(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-neutral-100"
+            >
+              {SF2_BOOTSTRAP_SEED_OPTIONS.map((seed) => (
+                <option key={seed.id} value={seed.id}>
+                  {seed.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-neutral-500">{selectedSeed.description}</p>
+          </div>
           <div className="space-y-2">
             <label className="text-sm text-neutral-400" htmlFor="name">
               Character name
@@ -1354,6 +1407,8 @@ export default function PlayV2Page() {
     ladderStepCount,
     spineStatus,
     spineTension,
+    successorRequired,
+    promotedSpineThreadId,
   } = computeChapterCloseReadiness(state, pivotSignaled)
 
   function downloadSessionLog() {
@@ -1415,7 +1470,7 @@ export default function PlayV2Page() {
             <div className="text-xl text-amber-200">{state.chapter.title}</div>
           </div>
           <div className="text-sm text-neutral-400">
-            {state.player.name} · Seeker · HP {state.player.hp.current}/{state.player.hp.max} ·{' '}
+            {state.player.name} · {state.player.class.name} · HP {state.player.hp.current}/{state.player.hp.max} ·{' '}
             {state.player.credits}c · turn {chapterTurnCount} (Ch{state.meta.currentChapter})
           </div>
         </header>
@@ -1499,6 +1554,17 @@ export default function PlayV2Page() {
             >
               close Ch{state.meta.currentChapter} ▸ open Ch{state.meta.currentChapter + 1}
             </button>
+          </div>
+        )}
+
+        {!closeReady && !busy && successorRequired && (
+          <div className="p-3 rounded border border-amber-700/40 bg-amber-950/20 text-amber-100 text-xs">
+            Chapter spine resolved early; successor pressure needed before the chapter can close.
+          </div>
+        )}
+        {!closeReady && !busy && promotedSpineThreadId && (
+          <div className="p-3 rounded border border-neutral-700 bg-neutral-900/50 text-neutral-300 text-xs">
+            Spine pressure shifted to {state.campaign.threads[promotedSpineThreadId]?.title ?? promotedSpineThreadId}.
           </div>
         )}
 

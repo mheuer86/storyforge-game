@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { NARRATOR_TOOLS, NARRATOR_TOOL_NAME, REQUEST_ROLL_TOOL_NAME } from '@/lib/sf2/narrator/tools'
 import {
   SF2_CORE,
-  SF2_BIBLE_HEGEMONY,
+  getSf2BibleForGenre,
   SF2_NARRATOR_ROLE,
   buildNarratorSituation,
 } from '@/lib/sf2/narrator/prompt'
@@ -293,14 +293,15 @@ export async function POST(req: NextRequest) {
 
     // Compose cached system blocks (BP2 + BP3). Assert no dynamic leaks.
     const situation = buildNarratorSituation(state)
+    const bible = getSf2BibleForGenre(state.meta.genreId)
     assertNoDynamicLeak(SF2_CORE, 'CORE')
-    assertNoDynamicLeak(SF2_BIBLE_HEGEMONY, 'BIBLE')
+    assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(SF2_NARRATOR_ROLE, 'ROLE')
     assertNoDynamicLeak(situation, 'SITUATION')
 
     const composed = composeSystemBlocks({
       core: SF2_CORE,
-      bible: SF2_BIBLE_HEGEMONY,
+      bible,
       role: SF2_NARRATOR_ROLE,
       situation,
     })

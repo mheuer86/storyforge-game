@@ -7,7 +7,7 @@ import {
   SF2_CHAPTER_MEANING_ROLE,
   buildChapterMeaningSituation,
 } from '@/lib/sf2/chapter-meaning/prompt'
-import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
+import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import type { Sf2ChapterMeaning, Sf2State } from '@/lib/sf2/types'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
 
     const state = parsed.data.state as unknown as Sf2State
     const situation = buildChapterMeaningSituation(state)
+    const bible = getSf2BibleForGenre(state.meta.genreId)
 
     assertNoDynamicLeak(SF2_CHAPTER_MEANING_CORE, 'CHAPTER_MEANING_CORE')
-    assertNoDynamicLeak(SF2_BIBLE_HEGEMONY, 'BIBLE')
+    assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(SF2_CHAPTER_MEANING_ROLE, 'CHAPTER_MEANING_ROLE')
 
     // CORE + BIBLE + ROLE are session-stable across all chapter closes in a
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     // scene summaries) lives in the user message at BP4 (uncached).
     const system: Anthropic.TextBlockParam[] = [
       { type: 'text', text: SF2_CHAPTER_MEANING_CORE },
-      { type: 'text', text: SF2_BIBLE_HEGEMONY },
+      { type: 'text', text: bible },
       {
         type: 'text',
         text: SF2_CHAPTER_MEANING_ROLE,

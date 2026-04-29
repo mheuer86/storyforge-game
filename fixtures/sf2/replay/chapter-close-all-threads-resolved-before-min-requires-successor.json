@@ -1,0 +1,49 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close: all threads resolved before turn 18 requires successor",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "If no unresolved load-bearing thread exists before turn 18, runtime refuses close-ready and flags successor creation need."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "A", "narratorProse": "A", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "B", "narratorProse": "B", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Resolve everything.",
+    "narrator": {
+      "prose": "The last active thread is answered too early.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The only thread was answered.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": true,
+      "stalledFallback": false,
+      "successorRequired": true
+    },
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

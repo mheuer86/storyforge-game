@@ -8,7 +8,7 @@ import {
   buildArchivistSituation,
   buildArchivistTurnMessage,
 } from '@/lib/sf2/archivist/prompt'
-import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
+import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { applyArchivistPatch, summarizePatchOutcome } from '@/lib/sf2/validation/apply-patch'
 import { formatDeferredWrites } from '@/lib/sf2/validation/format-deferred'
@@ -74,14 +74,15 @@ export async function POST(req: NextRequest) {
     const { narratorProse, narratorAnnotation, turnIndex } = parsed.data
 
     const situation = buildArchivistSituation(state)
+    const bible = getSf2BibleForGenre(state.meta.genreId)
     assertNoDynamicLeak(SF2_ARCHIVIST_CORE, 'ARCHIVIST_CORE')
-    assertNoDynamicLeak(SF2_BIBLE_HEGEMONY, 'BIBLE')
+    assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(SF2_ARCHIVIST_ROLE, 'ARCHIVIST_ROLE')
     assertNoDynamicLeak(situation, 'ARCHIVIST_SITUATION')
 
     const { blocks: system } = composeSystemBlocks({
       core: SF2_ARCHIVIST_CORE,
-      bible: SF2_BIBLE_HEGEMONY,
+      bible,
       role: SF2_ARCHIVIST_ROLE,
       situation,
     })
