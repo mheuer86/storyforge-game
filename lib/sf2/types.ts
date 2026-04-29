@@ -233,6 +233,8 @@ export interface Sf2Thread extends Sf2NarrativeEntityBase {
   anchoredArcId?: Sf2EntityId
   loadBearing: boolean
   spineForChapter?: Sf2ChapterNumber
+  successorToThreadId?: Sf2EntityId
+  chapterDriverKind?: Sf2ChapterThreadDriverKind
   tensionHistory: Array<{ chapter: Sf2ChapterNumber; turn: number; value: Sf2Tension }>
   lastAdvancedTurn?: number
 }
@@ -270,6 +272,8 @@ export type ThreadRole =
   | 'deferred'
   | 'background'
   | 'new'
+
+export type Sf2ChapterThreadDriverKind = 'carry_forward' | 'successor' | 'new_pressure'
 
 export interface Sf2ChapterThreadPressure {
   threadId: Sf2EntityId
@@ -772,6 +776,8 @@ export interface Sf2ChapterSetupRuntimeState {
   spineThreadId?: Sf2EntityId
   loadBearingThreadIds: Sf2EntityId[]
   carriedThreadIds: Sf2EntityId[]
+  successorThreadIds?: Sf2EntityId[]
+  newPressureThreadIds?: Sf2EntityId[]
   editorializedLore: Sf2EditorializedLoreItem[]
   openingSceneSpec: Sf2OpeningSceneSpec
   pressureLadder: Sf2PressureLadderStep[]
@@ -995,6 +1001,8 @@ export interface AuthorChapterSetupV2 {
     ownerHint: string
     tension: number
     initialTension?: number
+    successorToThreadId?: string
+    driverKind?: Sf2ChapterThreadDriverKind
     resolutionCriteria: string
     failureMode: string
     retrievalCue: string
@@ -1502,6 +1510,7 @@ export interface Sf2CampaignMeta {
   createdAt: string
   updatedAt: string
   schemaVersion: typeof SF2_SCHEMA_VERSION
+  seedId?: string
   genreId: string
   playbookId: string
   originId: string

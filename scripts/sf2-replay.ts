@@ -89,6 +89,8 @@ interface ReplayFixture {
       closeReady: boolean
       spineResolved?: boolean
       stalledFallback?: boolean
+      successorRequired?: boolean
+      promotedSpineThreadId?: string
     }
     quickActionRepair?: {
       failedSkill?: string
@@ -967,6 +969,22 @@ function assertExpected(
     ) {
       failures.push(
         `chapterCloseReadiness.stalledFallback expected ${expected.chapterCloseReadiness.stalledFallback}, got ${readiness.stalledFallback}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.successorRequired !== undefined &&
+      readiness.successorRequired !== expected.chapterCloseReadiness.successorRequired
+    ) {
+      failures.push(
+        `chapterCloseReadiness.successorRequired expected ${expected.chapterCloseReadiness.successorRequired}, got ${readiness.successorRequired}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.promotedSpineThreadId !== undefined &&
+      readiness.promotedSpineThreadId !== expected.chapterCloseReadiness.promotedSpineThreadId
+    ) {
+      failures.push(
+        `chapterCloseReadiness.promotedSpineThreadId expected ${expected.chapterCloseReadiness.promotedSpineThreadId}, got ${readiness.promotedSpineThreadId ?? '(none)'}`
       )
     }
   }

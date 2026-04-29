@@ -137,6 +137,47 @@ These are the world's voice. Reuse them when the moment fits. Do not over-coin n
 ## Tone
 Gritty 40%, Epic 40%, Witty 20%. Grand but grounded. Humor is dry and usually masks something worse.`
 
+export const SF2_BIBLE_SPACE_OPERA = `## World: The Fractured Compact
+
+The Compact of Two Hundred Systems was good infrastructure before it was good government: beacon corridors, shared communication protocols, standardized docking, and mutual-defense routes. It collapsed through rot. Deferred maintenance broke corridors, broken corridors isolated systems, and isolated systems stopped paying for a government that could no longer reach them. Most people noticed only when the trade ships stopped coming.
+
+## Institutional forces
+- Compact Remnants hold core corridors, cite law, and issue orders that weaken with distance.
+- Corporate Blocs bought infrastructure during the collapse and run it for profit.
+- Pirate Fleets tax frontier routes; some are navies, some are scavengers, and the line is thin.
+- Frontier settlements survive on mutual aid, salvage, reputation, and uncertain supply.
+- Rogue AIs occupy abandoned stations and network nodes; their motives are unclear and no one negotiates with one twice.
+
+## Social pressures
+- A ship is a closed economy: fuel, food, parts, ammunition, morale, and trust are finite.
+- Stations are political pressure cookers where docking clamps, port fees, customs scans, gossip, and favors decide who leaves.
+- Law exists in proportion to the nearest faction's ability to enforce it.
+- Crew warmth and practical wit belong beside danger; scarcity makes loyalty visible.
+
+## Banned registers
+- No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Undrift, attunement arrays, shield lattice.
+- No fantasy or feudal language: houses, sworn retainers, taverns, coins, quills, noble courts, medieval props.
+- No clean exposition dump about the Compact Collapse; show it through failing infrastructure and local leverage.
+
+## Vocabulary
+Compact · Fracture · beacon corridors · last beacon · docking clamps · port fees · station concourse · customs scan · cargo bay · sealed crate · passenger manifest · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust
+
+## Faction voice
+- Station officials speak in fees, safety codes, queue priority, clamp status, and plausible deniability.
+- Corporate representatives speak in margins, liability, contract terms, and risk.
+- Pirates and collectors sound casual until they establish leverage, then exact.
+- Remnant officers keep official cadence even when their authority is thin.
+- Crew members use shorthand, practical worry, and warmth under pressure.
+- Back-channel brokers say less than they know and price information by urgency.
+
+## Tone
+Gritty 40%, Epic 35%, Witty 25%. Lived-in ships, dense stations, scarce supplies, sharp competence, crew warmth, and personal stakes inside galactic decay.`
+
+export function getSf2BibleForGenre(genreId?: string): string {
+  if (genreId === 'space-opera') return SF2_BIBLE_SPACE_OPERA
+  return SF2_BIBLE_HEGEMONY
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE: Narrator's specific job. Session-scoped, cached BP2.
 // ─────────────────────────────────────────────────────────────────────────────

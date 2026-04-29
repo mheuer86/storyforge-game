@@ -215,6 +215,20 @@ const spaceOperaPlaybooks: Record<string, CharacterClass[]> = {
         usesRemaining: 1,
       },
       openingKnowledge: 'You know the beacon corridors the way a river rat knows the current: which ones are patrolled, which ones have dead spots where a ship can drift unscanned, and which ones went dark after the Fracture and stay dark because nobody wants to pay for reactivation. You know the customs officers by shift rotation and the docking fees that aren\'t on any manifest. You know that every sealed container is someone\'s secret, and that the smart move is never opening it.',
+      playbookProfile: {
+        naturalMoves: [
+          'stealth through station and ship security',
+          'piloting under patrol or corridor pressure',
+          'hacking Compact-era and port authority systems',
+          'smuggling contraband past searches and customs scans',
+          'navigating back channels, brokers, and informal debt networks',
+        ],
+        naturalDomains: [
+          'station escape under collector and docking pressure',
+          'sealed-cargo jobs where search risk escalates',
+          'frontier corridor runs beyond the last beacon',
+        ],
+      },
     },
     {
       id: 'pioneer',

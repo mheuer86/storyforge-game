@@ -1,0 +1,64 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close: spine resolution after turn 18 allows close-ready",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Once the chapter reaches minimum close turn, a resolved spine may close the chapter."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "4", "narratorProse": "4", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "5", "narratorProse": "5", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "6", "narratorProse": "6", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "7", "narratorProse": "7", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "8", "narratorProse": "8", "timestamp": "replay" },
+          { "index": 9, "chapter": 1, "playerInput": "9", "narratorProse": "9", "timestamp": "replay" },
+          { "index": 10, "chapter": 1, "playerInput": "10", "narratorProse": "10", "timestamp": "replay" },
+          { "index": 11, "chapter": 1, "playerInput": "11", "narratorProse": "11", "timestamp": "replay" },
+          { "index": 12, "chapter": 1, "playerInput": "12", "narratorProse": "12", "timestamp": "replay" },
+          { "index": 13, "chapter": 1, "playerInput": "13", "narratorProse": "13", "timestamp": "replay" },
+          { "index": 14, "chapter": 1, "playerInput": "14", "narratorProse": "14", "timestamp": "replay" },
+          { "index": 15, "chapter": 1, "playerInput": "15", "narratorProse": "15", "timestamp": "replay" },
+          { "index": 16, "chapter": 1, "playerInput": "16", "narratorProse": "16", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 17,
+    "playerInput": "Land the chapter.",
+    "narrator": {
+      "prose": "The spine lands on a clear answer.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The spine question landed.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": true,
+      "spineResolved": true,
+      "stalledFallback": false,
+      "successorRequired": false
+    },
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

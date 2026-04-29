@@ -162,9 +162,9 @@ const startingNpcsSchema = {
 
 const activeThreadsSchema = {
   type: 'array' as const,
-  description: 'Exactly 3 chapter-usable threads. Reuse existing ids on continuation chapters where possible.',
+  description: 'Ch1: exactly 3 chapter-usable threads. Ch2+: exactly 4, with at least 1 successor or new_pressure driver.',
   minItems: 3,
-  maxItems: 3,
+  maxItems: 4,
   items: {
     type: 'object' as const,
     properties: {
@@ -174,6 +174,15 @@ const activeThreadsSchema = {
       owner_hint: { type: 'string' as const, description: 'NPC name or faction id' },
       tension: { type: 'number' as const, description: '0-10' },
       initial_tension: { type: 'number' as const, description: 'Optional opening chapter pressure for new threads only. 0-8. Omit unless overriding the role default.' },
+      successor_to_thread_id: {
+        type: 'string' as const,
+        description: 'For successor threads only: prior thread id this follows from.',
+      },
+      driver_kind: {
+        type: 'string' as const,
+        enum: ['carry_forward', 'successor', 'new_pressure'],
+        description: 'Required for Ch2+. How this thread drives the continuation chapter.',
+      },
       resolution_criteria: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
       failure_mode: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
       retrieval_cue: { type: 'string' as const, description: '≤16 words.' },

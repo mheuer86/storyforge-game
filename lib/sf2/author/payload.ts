@@ -2,10 +2,10 @@
 // Given an Sf2State and (optionally) a prior chapter close artifact, produce the
 // AuthorInputSeed that the Author consumes.
 //
-// For MVP / Ch1 of Synod Seeker, we return SYNOD_SEEKER_AUTHOR_INPUT_SEED
-// directly (pre-authored in game-data.ts). For Ch2+, we derive from state.
+// For Ch1, return the campaign's selected seed directly. For Ch2+, derive from
+// state while preserving the selected seed's world/tone/NPC rules.
 
-import { SYNOD_SEEKER_AUTHOR_INPUT_SEED } from '../game-data'
+import { getSf2SeedForState } from '../game-data'
 import { getGenreConfig } from '../../genres/index'
 import type { AuthorInputSeed, Sf2ChapterMeaning, Sf2State } from '../types'
 
@@ -40,14 +40,16 @@ export function compileAuthorInputSeed(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): AuthorInputSeed {
-  // Ch1 or fresh campaign: use the pre-authored Synod Seeker seed.
+  const base = getSf2SeedForState(state).seed
+
+  // Ch1 or fresh campaign: use the selected pre-authored seed.
   if (!state || state.history.turns.length === 0) {
     if (state) {
       // State exists (player has selected playbook/origin) but no turns yet —
       // we can still surface PC capabilities so Ch1 Author sees them.
-      return { ...SYNOD_SEEKER_AUTHOR_INPUT_SEED, pcCapabilities: derivePcCapabilities(state) }
+      return { ...base, pcCapabilities: derivePcCapabilities(state) }
     }
-    return SYNOD_SEEKER_AUTHOR_INPUT_SEED
+    return base
   }
 
   // Ch2+: derive a new hook from the prior chapter's meaning + carry-forward
@@ -55,8 +57,6 @@ export function compileAuthorInputSeed(
   // do not change across chapters in the same genre). The hook morphs to reflect
   // where the player landed. Critically: we do NOT pass the Ch1 arcName/title,
   // so the Author doesn't lazily reuse it.
-  const base = SYNOD_SEEKER_AUTHOR_INPUT_SEED
-
   const activeThreads = Object.values(state.campaign.threads).filter(
     (t) => t.status === 'active'
   )
@@ -115,7 +115,7 @@ export function compileAuthorInputSeed(
       ...base.onboardingRules,
       // By Ch2+ the PC is not new to the world; loosen onboarding constraints.
       playerKnowledgeAssumption:
-        'The Seeker has now spent time inside this specific conflict. The world may tighten; the player does not need reintroduction.',
+        `The ${base.playbookName} has now spent time inside this specific conflict. The world may tighten; the player does not need reintroduction.`,
       // mustIntroduce is now optional on the type. Omit entirely rather than
       // setting to []; the prompt's onboarding-budget rule handles this for
       // every chapter, including Ch2+.
