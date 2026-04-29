@@ -1,0 +1,82 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet dormancy addendum fires after threshold",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Bug 13 regression. When an NPC returns on-stage after being absent for the dormancy threshold (DORMANT_TURN_THRESHOLD = 10) or longer, the cast packet appends a re-establish-via-present-tense-detail addendum and a 'no wiki-paragraph reintroduction' prohibition. Without this, the narrator drops a wiki-style summary instead of folding the NPC back into prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_mara": {
+            "id": "npc_mara",
+            "name": "Mara",
+            "affiliation": "Chapel",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "favorable",
+            "identity": {
+              "keyFacts": ["Grave cantor"],
+              "voice": { "note": "quiet", "register": "formal" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Mara, grave cantor.",
+            "chapterCreated": 1,
+            "signatureLines": [],
+            "lastSeenTurn": 1
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_mara"]
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "Open.", "narratorProse": ".", "timestamp": "s" },
+          { "index": 1, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 2, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 3, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 4, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 5, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 6, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 7, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 8, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 9, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 10, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" },
+          { "index": 11, "chapter": 1, "playerInput": ".", "narratorProse": ".", "timestamp": "s" }
+        ]
+      }
+    },
+    "turnIndex": 12,
+    "playerInput": "Continue.",
+    "narrator": {
+      "prose": "The chapel doors swing open.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_mara",
+        "behavioralContractIncludes": ["dormant 12t", "re-establish"],
+        "prohibitionsInclude": ["no wiki-paragraph reintroduction"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet graceful when npc fields are undefined",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression coverage for the runtime crash that the original Phase 1 implementation produced. recentlyFramedByPlayer must not call .trim() on undefined fields; affiliation tokenization must handle missing affiliation strings; the cast packet must build successfully even when an NPC's affiliation is empty or missing."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_partial": {
+            "id": "npc_partial",
+            "name": "Wren",
+            "affiliation": "",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [],
+              "voice": { "note": "", "register": "" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_partial"]
+        }
+      }
+    },
+    "turnIndex": 1,
+    "playerInput": "Look around.",
+    "narrator": {
+      "prose": "The room is quiet.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_partial",
+        "voiceImperativeIncludes": "even, practical, low personal investment",
+        "behavioralContractIncludes": ["responds to situation"],
+        "prohibitionsExclude": ["no first-encounter template", "no wiki-paragraph reintroduction"]
+      }
+    ]
+  }
+}

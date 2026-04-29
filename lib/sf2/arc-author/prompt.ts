@@ -35,6 +35,43 @@ Primary goals:
 11. The selected playbook is an affordance lens. Design pressure the PC can act on because of their role, but do not make the arc require a single skill, morality, or loyalty.
 12. Emit exactly five \`chapter_function_map\` entries. Chapter 4 and Chapter 5 may both contain possible end states; the Chapter Author will decide later whether closure has landed.
 
+## Chapter structural beats
+
+The five chapter slots are not interchangeable. Each chapter carries a structural job derived from the 7-point story arc, compressed into 5 slots. Author each slot's \`function\` and \`pressure_question\` to honor its beat. Without this, the arc collapses into uniform rising-action and Ch3-Ch4 go flat — the failure mode this discipline exists to prevent.
+
+**Ch1 — ESTABLISH** (hook + setup)
+- Pressure source surfaces; PC's role becomes load-bearing; the inciting threat plants.
+- The chapter ends with the line of tension the arc will pull on for the next four chapters.
+- \`pressure_question\` should name what the PC is being asked to decide about, not what they will do.
+- Avoid: starting at maximum pressure. Establish has runway.
+
+**Ch2 — COMPLICATE** (plot turn 1 + pinch 1)
+- PC commits to a path that can't be undone (PT1).
+- Antagonist or institution applies first real pressure (Pinch 1).
+- The chapter ends with PC reactive, operating on someone else's clock.
+- \`pressure_question\` should sharpen, not repeat Ch1's. Something is now at stake that wasn't before.
+
+**Ch3 — PIVOT** (midpoint flip — the load-bearing beat)
+- THIS IS THE CHAPTER THAT MOST OFTEN GOES FLAT IF UNDER-AUTHORED.
+- A revelation lands that recontextualizes prior chapters. The arc question shifts shape.
+- PC moves from reactive to proactive: they pick the next move, not someone else.
+- Stakes invert, escalate, or both. Something the PC believed in Ch1-2 turns out to be wrong, costly, or insufficient.
+- \`pressure_question\` should be DIFFERENT from Ch1-Ch2's; the chapter's answer to it changes how the rest of the arc reads.
+- \`function\` should explicitly name the flip: what reverses, what surfaces, what the PC realizes they've been doing wrong.
+
+**Ch4 — ESCALATE** (pinch 2 + plot turn 2)
+- The costliest pressure point. Antagonist's strongest move; the cost of the PC's Ch3 commitment surfaces.
+- PC commits to the final approach (PT2); the only way out is through.
+- The chapter ends with all options narrowed to the resolution path.
+- \`pressure_question\` should name the cost the PC is now visibly paying.
+
+**Ch5 — RESOLVE** (resolution sequence)
+- Outcomes lock in. The arc question gets its answer.
+- This may compress into Ch4 if the arc resolves there; in that case Ch5 is an epilogue or coda. Either way, emit the slot.
+- \`pressure_question\` is the explicit form of the arc-question for this run.
+
+When you author \`function\` and \`pressure_question\` for each chapter, name the structural beat the chapter is delivering. Do not write "Ch3 deepens the conflict" — that's what every Ch3 says and is exactly the under-authoring that makes Ch3 go flat. Write what reverses, what surfaces, what the PC realizes.
+
 ## Scenario selection protocol
 
 For this seed, the obvious default shape is often an audit, elder interview, missing-person paper trail, or settlement-hall hearing. That may be valid, but it is not privileged.

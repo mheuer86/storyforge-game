@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { applyMechanicalEffectLocally } from '../lib/sf2/replay/mechanics'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
-import { buildScenePacket } from '../lib/sf2/retrieval/scene-packet'
+import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
 import { recordTurnTelemetry } from '../lib/sf2/instrumentation/working-set-telemetry'
 import { buildMessagesForNarrator } from '../lib/sf2/narrator/messages'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
@@ -53,6 +53,14 @@ interface ReplayFixture {
     presentNpcIdsExcludes?: string[]
     scenePacketCastIncludes?: string[]
     scenePacketCastExcludes?: string[]
+    castPacketIncludes?: Array<{
+      npcId: string
+      voiceImperativeIncludes?: string
+      behavioralContractIncludes?: string[]
+      prohibitionsInclude?: string[]
+      prohibitionsExclude?: string[]
+    }>
+    perTurnDeltaIncludes?: string[]
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
@@ -421,14 +429,32 @@ function runFixturePath(path: string): ReplayResult {
   }
 
   let scenePacketCastIds: string[] = []
+  let scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'] = []
+  let perTurnDeltaText = ''
   try {
     const scenePacket = buildScenePacket(stateAfter, fixture.input.playerInput, turnIndex + 1)
     scenePacketCastIds = scenePacket.packet.cast.map((c) => c.npcId)
+    scenePacketCast = scenePacket.packet.cast
+    perTurnDeltaText = renderPerTurnDelta(scenePacket.packet, {
+      advisoryText: scenePacket.advisoryText,
+      isInitial: false,
+      playerInput: fixture.input.playerInput,
+    })
   } catch (error) {
     failures.push(`scene packet build failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 
-  assertExpected(fixture, stateBefore, stateAfter, patchResult, invariantEvents, scenePacketCastIds, failures)
+  assertExpected(
+    fixture,
+    stateBefore,
+    stateAfter,
+    patchResult,
+    invariantEvents,
+    scenePacketCastIds,
+    scenePacketCast,
+    perTurnDeltaText,
+    failures
+  )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertDispositionDerivation(fixture, failures)
@@ -685,6 +711,8 @@ function assertExpected(
   patchResult: ApplyPatchResult,
   invariantEvents: Array<{ kind: string; at: number; data: unknown }>,
   scenePacketCastIds: string[],
+  scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'],
+  perTurnDeltaText: string,
   failures: string[]
 ): void {
   const expected = fixture.expected ?? {}
@@ -699,6 +727,38 @@ function assertExpected(
   }
   for (const id of expected.scenePacketCastExcludes ?? []) {
     if (scenePacketCastIds.includes(id)) failures.push(`scene packet cast unexpectedly includes ${id}`)
+  }
+  for (const want of expected.castPacketIncludes ?? []) {
+    const c = scenePacketCast.find((entry) => entry.npcId === want.npcId)
+    if (!c) {
+      failures.push(`castPacket missing ${want.npcId}`)
+      continue
+    }
+    if (want.voiceImperativeIncludes && !c.voiceImperative.toLowerCase().includes(want.voiceImperativeIncludes.toLowerCase())) {
+      failures.push(`castPacket ${want.npcId} voiceImperative missing "${want.voiceImperativeIncludes}" (got: "${c.voiceImperative}")`)
+    }
+    for (const fragment of want.behavioralContractIncludes ?? []) {
+      if (!c.behavioralContract.toLowerCase().includes(fragment.toLowerCase())) {
+        failures.push(`castPacket ${want.npcId} behavioralContract missing "${fragment}" (got: "${c.behavioralContract}")`)
+      }
+    }
+    for (const fragment of want.prohibitionsInclude ?? []) {
+      const found = c.prohibitions.some((p) => p.toLowerCase().includes(fragment.toLowerCase()))
+      if (!found) {
+        failures.push(`castPacket ${want.npcId} prohibitions missing "${fragment}" (got: ${c.prohibitions.join(', ')})`)
+      }
+    }
+    for (const fragment of want.prohibitionsExclude ?? []) {
+      const found = c.prohibitions.some((p) => p.toLowerCase().includes(fragment.toLowerCase()))
+      if (found) {
+        failures.push(`castPacket ${want.npcId} prohibitions unexpectedly includes "${fragment}" (got: ${c.prohibitions.join(', ')})`)
+      }
+    }
+  }
+  for (const fragment of expected.perTurnDeltaIncludes ?? []) {
+    if (!perTurnDeltaText.toLowerCase().includes(fragment.toLowerCase())) {
+      failures.push(`perTurnDelta missing "${fragment}"`)
+    }
   }
   for (const pressureExpected of expected.threadPressureIncludes ?? []) {
     const entry = state.chapter.setup.threadPressure?.[pressureExpected.threadId]

@@ -13,7 +13,7 @@ import { computePacingAdvisory, renderPacingAdvisories } from '../pacing/signals
 import { buildChapterPacket } from './packets/chapter'
 import { buildMechanicsPacket } from './packets/mechanics'
 import { buildPlayerPacket } from './packets/player'
-import { buildPresentCastPackets } from './packets/cast'
+import { DORMANT_TURN_THRESHOLD, buildPresentCastPackets } from './packets/cast'
 import { buildRecentContextPacket } from './packets/recent-context'
 import { buildThreadPackets } from './packets/tensions'
 import { buildWorkingSet } from './working-set'
@@ -118,7 +118,7 @@ export function renderSceneBundle(
     lines.push(`\n### Cast on-stage (identity — stable within scene)`)
     for (const c of packet.cast) {
       const dormancy =
-        c.turnsAbsent !== undefined && c.turnsAbsent >= 10
+        c.turnsAbsent !== undefined && c.turnsAbsent >= DORMANT_TURN_THRESHOLD
           ? ` · **dormant ${c.turnsAbsent} turns — re-establish on re-encounter**`
           : ''
       lines.push(`- **${c.name}** (${c.npcId}) — ${c.affiliation}${dormancy}`)
@@ -249,7 +249,12 @@ export function renderPerTurnDelta(
     lines.push(`\n### Cast — current read (mutable)`)
     for (const c of packet.cast) {
       const pressure = c.activePressure ? ` · pressure: ${c.activePressure}` : ''
-      lines.push(`- ${c.name} (${c.npcId}): ${c.disposition} · ${c.currentRead}${pressure}`)
+      lines.push(`- ${c.name} (${c.npcId}) — ${c.disposition.toUpperCase()} · ${c.voiceImperative}`)
+      lines.push(`  contract: ${c.behavioralContract}`)
+      if (c.prohibitions.length > 0) {
+        lines.push(`  prose ban: ${c.prohibitions.join(' · ')}`)
+      }
+      lines.push(`  read: ${c.currentRead}${pressure}`)
     }
   }
 
@@ -451,7 +456,7 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     for (const c of packet.cast) {
       const pressure = c.activePressure ? ` · pressure: ${c.activePressure}` : ''
       const dormancy =
-        c.turnsAbsent !== undefined && c.turnsAbsent >= 10
+        c.turnsAbsent !== undefined && c.turnsAbsent >= DORMANT_TURN_THRESHOLD
           ? ` · **dormant ${c.turnsAbsent} turns — re-establish on re-encounter**`
           : ''
       lines.push(`- **${c.name}** (${c.npcId}) — ${c.affiliation}, ${c.disposition}${dormancy}`)

@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet framing addendum fires when player named affiliation",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Bug 12 regression. When the player has framed an NPC operationally within the last 5 turns (by addressing them by name OR by an affiliation token like 'warden'), the cast packet appends a framing-addendum to the behavioral contract and a 'no first-encounter template' prohibition. Without this, the narrator re-uses introduction templates for already-addressed NPCs."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_vrast": {
+            "id": "npc_vrast",
+            "name": "Vrast",
+            "affiliation": "Imperial Warden",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Throne authority"],
+              "voice": { "note": "formal", "register": "imperial" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Vrast, Throne warden.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_vrast"]
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Address the warden first.",
+            "narratorProse": "Vrast looks up from the docket.",
+            "timestamp": "synthetic"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Wait for him to speak.",
+            "narratorProse": "Silence holds.",
+            "timestamp": "synthetic"
+          }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Continue.",
+    "narrator": {
+      "prose": "He weighs the page in his hand.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_vrast",
+        "behavioralContractIncludes": ["recently framed by player"],
+        "prohibitionsInclude": ["no first-encounter template"]
+      }
+    ]
+  }
+}
