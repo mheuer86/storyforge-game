@@ -1,0 +1,96 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet renders disposition imperative per tier",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Phase 1 NPC state-bound rendering. Each disposition tier resolves to a code-derived voice imperative + behavioral contract + prohibition list, surfaced in the per-turn block. Validates the tier→imperative lookup table against the rendered scene-packet text."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "Keep the writ narrow.", "methods": [], "currentMove": "Awaiting the Warden." },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_solv": {
+            "id": "npc_solv",
+            "name": "Solv",
+            "affiliation": "Court Adjudicator",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Adjudicator"],
+              "voice": { "note": "measured", "register": "judicial" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Solv, adjudicator.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_aul", "npc_solv"]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Wait for the next move.",
+    "narrator": {
+      "prose": "The room holds.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_aul",
+        "voiceImperativeIncludes": "warm, plain, low procedural distance",
+        "behavioralContractIncludes": ["volunteers context", "names allies", "helps actively"],
+        "prohibitionsInclude": ["not guarded", "not formally distant"]
+      },
+      {
+        "npcId": "npc_solv",
+        "voiceImperativeIncludes": "guarded, measured, conditional trust",
+        "behavioralContractIncludes": ["narrow answers"],
+        "prohibitionsInclude": ["no volunteered secrets", "no assumed good faith"]
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "Aul (npc_aul) — TRUSTED · WARM, PLAIN, LOW PROCEDURAL DISTANCE",
+      "contract: volunteers context",
+      "prose ban: not guarded",
+      "Solv (npc_solv) — WARY · GUARDED, MEASURED, CONDITIONAL TRUST"
+    ]
+  }
+}

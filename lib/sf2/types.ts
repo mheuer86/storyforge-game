@@ -1342,6 +1342,9 @@ export interface Sf2PresentCastPacket {
   age?: string
   disposition: Sf2DispositionTier
   voice: string
+  voiceImperative: string
+  behavioralContract: string
+  prohibitions: string[]
   currentRead: string
   relationToPlayer: string
   activePressure: string
