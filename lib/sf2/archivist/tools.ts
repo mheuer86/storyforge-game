@@ -6,7 +6,7 @@
 // the apply-patch layer resolves references, assigns IDs, and populates the graph.
 
 import type Anthropic from '@anthropic-ai/sdk'
-import { SF2_EMOTIONAL_BEAT_TAGS } from '../types'
+import { SF2_EMOTIONAL_BEAT_TAGS, SF2_TEMP_LOAD_TAGS } from '../types'
 
 export const ARCHIVIST_TOOL_NAME = 'extract_turn' as const
 
@@ -30,7 +30,7 @@ export const extractTurnTool: Anthropic.Tool = {
             payload: {
               type: 'object',
               description:
-                'Flat fields for the entity. Shape depends on kind. NPCs: {name, affiliation, role, pronoun: "she/her"|"he/him"|"they/them"|"other", age, voice_note, voice_register, retrieval_cue, key_facts: string[], supersedes_id?: string}. The optional supersedes_id field directs an anonymous→named merge: when the prose names a previously-anonymous on-stage NPC (e.g. "the unknown young man" turns out to be "Sev\'s brother"), set supersedes_id to that existing anonymous NPC\'s id. Apply-patch will rename + enrich the existing entity rather than creating a parallel one. Threads: {title, owner: {kind: "npc"|"faction", name_or_id: string}, tension: number 0-10, resolution_criteria, failure_mode, retrieval_cue}. Decisions: {summary, anchored_to: [thread_title_or_id, ...]}. Promises: {obligation, owner: {kind, name_or_id}, anchored_to: [thread_title_or_id, ...]}. Clues: {content, anchored_to: [thread_title_or_id, ...] (may be empty for floating)}. Temporal anchors: {title, kind: deadline|timestamp|duration|sequence|recurrence, label, anchor_text, anchored_to: [entity_id_or_title, ...], retrieval_cue}. Arcs: {title, thread_ids: [...], spans_chapters: number, stakes_definition: string}. Documents: {type: "authorization"|"directive"|"communication"|"record"|"petition"|"notation", kind_label: string (genre flavor noun, e.g. "writ", "transfer order", "court summons", "ship manifest"), title, authorizes (one-line: what it permits/commands/attests/requests), original_summary (canonical terms at issuance — locked, never overwritten by updates), filed_by (npc/faction id-or-name; who originated/registered it), signed_by (npc/faction id-or-name; who authorized it — distinct from filer), additional_parties: [{role: "counter-signer"|"witness"|"custodian"|..., entity_id: string}], subject_entity_ids: [npc/faction ids; whom the document concerns — REQUIRED, must be ≥1. Use canonical IDs from the cast roster (e.g. \\`npc_4\\`, \\`npc_kess_elder\\`). Do NOT synthesize role-descriptive IDs like \\`npc_fled_resonant\\` when an existing NPC matches that role — scan the cast roster and reference their canonical id. Synthesizing role-descriptive IDs causes the same person to be treated as multiple entities in downstream prose.], anchored_to: [thread ids; may be empty for floating], access_level?: "public"|"sealed"|"classified", retrieval_cue}.',
+                'Flat fields for the entity. Shape depends on kind. NPCs: {name, affiliation, role, pronoun: "she/her"|"he/him"|"they/them"|"other", age, voice_note, voice_register, retrieval_cue, key_facts: string[], supersedes_id?: string}. The optional supersedes_id field directs an anonymous→named merge: when the prose names a previously-anonymous on-stage NPC (e.g. "the unknown young man" turns out to be "Sev\'s brother"), set supersedes_id to that existing anonymous NPC\'s id. Apply-patch will rename + enrich the existing entity rather than creating a parallel one. Threads: {title, owner: {kind: "npc"|"faction", name_or_id: string}, tension: number 0-10, resolution_criteria, failure_mode, retrieval_cue, successor_to_thread_id?: thread id/title, arc_id?: existing arc id/title}. Use successor_to_thread_id when a resolved thread opens a follow-up question; code automatically anchors the successor to the same arc as its predecessor. Decisions: {summary, anchored_to: [thread_title_or_id, ...]}. Promises: {obligation, owner: {kind, name_or_id}, anchored_to: [thread_title_or_id, ...]}. Clues: {content, anchored_to: [thread_title_or_id, ...] (may be empty for floating)}. Temporal anchors: {title, kind: deadline|timestamp|duration|sequence|recurrence, label, anchor_text, anchored_to: [entity_id_or_title, ...], retrieval_cue}. Arcs: {title, thread_ids: [...], spans_chapters: number, stakes_definition: string}. Documents: {type: "authorization"|"directive"|"communication"|"record"|"petition"|"notation", kind_label: string (genre flavor noun, e.g. "writ", "transfer order", "court summons", "ship manifest"), title, authorizes (one-line: what it permits/commands/attests/requests), original_summary (canonical terms at issuance — locked, never overwritten by updates), filed_by (npc/faction id-or-name; who originated/registered it), signed_by (npc/faction id-or-name; who authorized it — distinct from filer), additional_parties: [{role: "counter-signer"|"witness"|"custodian"|..., entity_id: string}], subject_entity_ids: [npc/faction ids; whom the document concerns — REQUIRED, must be ≥1. Use canonical IDs from the cast roster (e.g. \\`npc_4\\`, \\`npc_kess_elder\\`). Do NOT synthesize role-descriptive IDs like \\`npc_fled_resonant\\` when an existing NPC matches that role — scan the cast roster and reference their canonical id. Synthesizing role-descriptive IDs causes the same person to be treated as multiple entities in downstream prose.], anchored_to: [thread ids; may be empty for floating], access_level?: "public"|"sealed"|"classified", retrieval_cue}.',
               additionalProperties: true,
             },
             confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
@@ -54,13 +54,19 @@ export const extractTurnTool: Anthropic.Tool = {
             changes: {
               type: 'object',
               description:
-                "Fields to change. NPC: disposition (one of hostile|wary|neutral|favorable|trusted — do NOT emit free-form words like 'closed_off', 'resigned', 'fearful'; pick the closest tier), pronoun (only if not already established), age (only if not already established), temp_load, agenda.current_move, agenda_severity ('standard'|'major'; use major only when the NPC/faction makes a decisive new pressure move), last_seen_turn. Faction: stance (same five-tier enum as disposition), heat (one of none|low|medium|high|boiling), heat_reasons, agenda.current_move, agenda_severity. When agenda changes, code stamps agenda.last_updated_turn automatically. Thread: tension, status (one of active|resolved_clean|resolved_costly|resolved_failure|resolved_catastrophic|abandoned|deferred), last_advanced_turn. **Clue: content (replaces the clue's text with a sharpened version), retrieval_cue (replaces the cue), anchored_to (union-merges with the existing anchor set — add threads, never silently remove).** **Document: amendment-only — current_summary (new active terms; appends a revision entry, original_summary is locked), amendment_reason (what changed it: verdict, addendum, override), changed_by (npc/faction id), anchored_to (union-merge with thread anchors), additional_parties (append-only: counter-signers, witnesses added later), clue_ids (cross-ref new clues that record what the PC knows about this document). Do NOT update filed_by, signed_by, type, or original_summary — to change attribution, supersede the document with a new one and transition the old to 'superseded'.**",
+                "Fields to change. NPC: disposition (one of hostile|wary|neutral|favorable|trusted — do NOT emit free-form words like 'closed_off', 'resigned', 'fearful'; pick the closest tier), pronoun (only if not already established), age (only if not already established), temp_load (numeric saturation gauge), temp_load_tag (one of uneasy_under_scrutiny|vulnerable|betrayed|exhausted|cornered — transient state that modulates the per-turn behavioral imperative; clear by re-asserting disposition), agenda.current_move, agenda_severity ('standard'|'major'; use major only when the NPC/faction makes a decisive new pressure move), last_seen_turn. Faction: stance (same five-tier enum as disposition), heat (one of none|low|medium|high|boiling), heat_reasons, agenda.current_move, agenda_severity. When agenda changes, code stamps agenda.last_updated_turn automatically. Thread: tension, status (one of active|resolved_clean|resolved_costly|resolved_failure|resolved_catastrophic|abandoned|deferred), last_advanced_turn. **Clue: content (replaces the clue's text with a sharpened version), retrieval_cue (replaces the cue), anchored_to (union-merges with the existing anchor set — add threads, never silently remove).** **Document: amendment-only — current_summary (new active terms; appends a revision entry, original_summary is locked), amendment_reason (what changed it: verdict, addendum, override), changed_by (npc/faction id), anchored_to (union-merge with thread anchors), additional_parties (append-only: counter-signers, witnesses added later), clue_ids (cross-ref new clues that record what the PC knows about this document). Do NOT update filed_by, signed_by, type, or original_summary — to change attribution, supersede the document with a new one and transition the old to 'superseded'.**",
               properties: {
                 agenda_severity: {
                   type: 'string',
                   enum: ['standard', 'major'],
                   description:
                     "Optional. Only with NPC/faction agenda.current_move updates. 'standard' for ordinary repositioning; 'major' for decisive agenda action that materially escalates a chapter thread.",
+                },
+                temp_load_tag: {
+                  type: 'string',
+                  enum: [...SF2_TEMP_LOAD_TAGS],
+                  description:
+                    "Optional. NPC only. Transient state lingering from recent events that modulates the per-turn behavioral imperative without changing disposition tier. Distinct from beat tags (those describe what just happened). Clears when a subsequent NPC update restates disposition without this field — pass an empty string to clear explicitly.",
                 },
               },
               additionalProperties: true,
@@ -97,19 +103,23 @@ export const extractTurnTool: Anthropic.Tool = {
       attachments: {
         type: 'array',
         description:
-          'Anchor a decision, promise, or clue to one or more threads. This is the riskiest write — use medium/low confidence when anchor inference is uncertain.',
+          'Anchor a decision, promise, or clue to one or more threads, or anchor a thread to an existing arc. This is the riskiest write — use medium/low confidence when anchor inference is uncertain.',
         items: {
           type: 'object',
           properties: {
             kind: {
               type: 'string',
-              enum: ['anchor_decision', 'anchor_promise', 'anchor_clue'],
+              enum: ['anchor_decision', 'anchor_promise', 'anchor_clue', 'anchor_thread_to_arc'],
             },
             entity_id: { type: 'string' },
             thread_ids: { type: 'array', items: { type: 'string' } },
+            arc_id: {
+              type: 'string',
+              description: 'Required for anchor_thread_to_arc. Existing arc id/title to receive the thread named in entity_id.',
+            },
             confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
           },
-          required: ['kind', 'entity_id', 'thread_ids', 'confidence'],
+          required: ['kind', 'entity_id', 'confidence'],
         },
       },
       scene_result: {

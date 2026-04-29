@@ -10,6 +10,7 @@ import {
 import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
 import { assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import type { Sf2ChapterMeaning, Sf2State } from '@/lib/sf2/types'
+import { startTimer } from '@/lib/sf2/instrumentation/latency'
 
 // Chapter-meaning synthesis defaults to Haiku for low-cost v2 test runs.
 // Override via SF2_CHAPTER_MEANING_MODEL when a higher-quality close read is needed.
@@ -31,6 +32,7 @@ const requestSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const requestTimer = startTimer()
   try {
     const body = await req.json().catch(() => null)
     const parsed = requestSchema.safeParse(body)
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
 
     const client = resolveClient(req)
     try {
+      const apiTimer = startTimer()
       const response = await client.messages.create({
         model: CHAPTER_MEANING_MODEL,
         max_tokens: 2048,
@@ -83,6 +86,7 @@ export async function POST(req: NextRequest) {
         tool_choice: { type: 'any', disable_parallel_tool_use: true },
         messages,
       })
+      const apiMs = apiTimer.elapsed()
 
       const usage = response.usage as {
         input_tokens: number
@@ -111,6 +115,7 @@ export async function POST(req: NextRequest) {
             stopReason: response.stop_reason,
             textPreview: textContent.slice(0, 400),
             usage,
+            latency: { totalMs: requestTimer.elapsed(), apiMs },
           }),
           { status: 502, headers: { 'Content-Type': 'application/json' } }
         )
@@ -150,6 +155,7 @@ export async function POST(req: NextRequest) {
             cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
             cacheReadTokens: usage.cache_read_input_tokens ?? 0,
           },
+          latency: { totalMs: requestTimer.elapsed(), apiMs },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )

@@ -13,12 +13,13 @@ import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
 import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
 import { assertNoDynamicLeak, composeSystemBlocks } from '@/lib/sf2/prompt/compose'
 import type { AuthorInputSeed, Sf2State } from '@/lib/sf2/types'
+import { startTimer } from '@/lib/sf2/instrumentation/latency'
 
 const ARC_AUTHOR_MODEL =
   process.env.SF2_ARC_AUTHOR_MODEL ||
   process.env.SF2_AUTHOR_MODEL ||
-  'claude-sonnet-4-5-20250929'
-const ARC_AUTHOR_MAX_TOKENS = Number(process.env.SF2_ARC_AUTHOR_MAX_TOKENS ?? 8192)
+  'claude-sonnet-4-6'
+const ARC_AUTHOR_MAX_TOKENS = Number(process.env.SF2_ARC_AUTHOR_MAX_TOKENS ?? 4096)
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -48,6 +49,7 @@ function tagTool(tool: Anthropic.Tool): Anthropic.Tool {
 }
 
 export async function POST(req: NextRequest) {
+  const requestTimer = startTimer()
   try {
     const body = await req.json().catch(() => null)
     const parsed = requestSchema.safeParse(body)
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
     ]
 
     const client = resolveClient(req)
+    const apiTimer = startTimer()
     const response = await client.messages.create({
       model: ARC_AUTHOR_MODEL,
       max_tokens: ARC_AUTHOR_MAX_TOKENS,
@@ -94,6 +97,7 @@ export async function POST(req: NextRequest) {
       tool_choice: { type: 'tool', name: ARC_AUTHOR_TOOL_NAME, disable_parallel_tool_use: true },
       messages,
     })
+    const apiMs = apiTimer.elapsed()
 
     const toolUse = response.content.find(
       (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === ARC_AUTHOR_TOOL_NAME
@@ -110,6 +114,7 @@ export async function POST(req: NextRequest) {
           stopReason: response.stop_reason,
           textPreview,
           usage: usagePayload(response.usage as AnthropicUsage),
+          latency: { totalMs: requestTimer.elapsed(), apiMs },
         }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
       )
@@ -124,6 +129,7 @@ export async function POST(req: NextRequest) {
           errors,
           arcPlan,
           usage: usagePayload(response.usage as AnthropicUsage),
+          latency: { totalMs: requestTimer.elapsed(), apiMs },
         }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
       )
@@ -137,6 +143,7 @@ export async function POST(req: NextRequest) {
         selectedArcVariantSeed: seed.arcVariantSeed,
         authored: toolUse.input,
         usage: usagePayload(response.usage as AnthropicUsage),
+        latency: { totalMs: requestTimer.elapsed(), apiMs },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )

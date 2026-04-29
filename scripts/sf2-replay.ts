@@ -55,6 +55,7 @@ interface ReplayFixture {
     scenePacketCastExcludes?: string[]
     castPacketIncludes?: Array<{
       npcId: string
+      tempLoadTag?: string
       voiceImperativeIncludes?: string
       behavioralContractIncludes?: string[]
       prohibitionsInclude?: string[]
@@ -733,6 +734,9 @@ function assertExpected(
     if (!c) {
       failures.push(`castPacket missing ${want.npcId}`)
       continue
+    }
+    if (want.tempLoadTag !== undefined && c.tempLoadTag !== want.tempLoadTag) {
+      failures.push(`castPacket ${want.npcId} tempLoadTag expected "${want.tempLoadTag}", got "${c.tempLoadTag ?? '(unset)'}"`)
     }
     if (want.voiceImperativeIncludes && !c.voiceImperative.toLowerCase().includes(want.voiceImperativeIncludes.toLowerCase())) {
       failures.push(`castPacket ${want.npcId} voiceImperative missing "${want.voiceImperativeIncludes}" (got: "${c.voiceImperative}")`)

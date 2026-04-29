@@ -1,0 +1,122 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressured npc escalation matches temp_load",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Phase 5 cross-layer fixture. Validates that the if-pressured line derives correctly from tempLoadTag + recent beat tags, not from disposition tier alone. A vulnerable NPC who recently accepted a cost reads 'hurt first, defensive second'; a betrayed NPC after intimidation_failed reads 'shut down, refuse procedure'. Different tiers produce the same escalation when the modulating state matches."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "tempLoadTag": "vulnerable",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_solv": {
+            "id": "npc_solv",
+            "name": "Solv",
+            "affiliation": "Court Adjudicator",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "favorable",
+            "tempLoadTag": "betrayed",
+            "identity": {
+              "keyFacts": ["Adjudicator"],
+              "voice": { "note": "measured", "register": "judicial" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Solv, adjudicator.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        },
+        "beats": {
+          "beat_aul_cost": {
+            "category": "emotional_beat",
+            "id": "beat_aul_cost",
+            "title": "Aul accepts a cost",
+            "chapterCreated": 1,
+            "retrievalCue": "Aul agreed to file the writ knowing the consequence.",
+            "text": "Aul signs the writ knowing the cost.",
+            "participants": ["pc", "npc_aul"],
+            "anchoredTo": [],
+            "emotionalTags": ["cost_accepted"],
+            "salience": 0.8,
+            "turn": 6
+          },
+          "beat_solv_intimidation": {
+            "category": "emotional_beat",
+            "id": "beat_solv_intimidation",
+            "title": "Solv refuses intimidation",
+            "chapterCreated": 1,
+            "retrievalCue": "Solv held when the PC pressed.",
+            "text": "Solv refuses to budge under intimidation.",
+            "participants": ["pc", "npc_solv"],
+            "anchoredTo": [],
+            "emotionalTags": ["intimidation_failed"],
+            "salience": 0.85,
+            "turn": 6
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_aul", "npc_solv"]
+        }
+      }
+    },
+    "turnIndex": 7,
+    "playerInput": "Press them harder.",
+    "narrator": {
+      "prose": "The room holds.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_aul",
+        "tempLoadTag": "vulnerable"
+      },
+      {
+        "npcId": "npc_solv",
+        "tempLoadTag": "betrayed"
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "if pressured: hurt first, defensive second",
+      "if pressured: shut down, refuse procedure",
+      "will share: operational concerns, personal worry, limited faction doubt, the cost just paid",
+      "will not: undisclosed allies without ask, responding to repeat displays of pressure"
+    ]
+  }
+}

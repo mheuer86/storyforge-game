@@ -25,12 +25,12 @@ const openingSceneSpecSchema = {
     visible_npc_ids: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'starting_npcs on-stage in opening. Target 1-2. (See rule 18.)',
+      description: 'starting_npcs on-stage in opening. Target 1-2 ids.',
     },
     withheld_premise_facts: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Premise facts true in state but not stated in opening prose. (See rule 19.)',
+      description: 'Premise facts true in state but not stated in opening prose. 1-3 short clauses.',
     },
   },
   required: [
@@ -114,7 +114,9 @@ const antagonistFieldSchema = {
 
 const startingNpcsSchema = {
   type: 'array' as const,
-  description: '3-5 NPCs.',
+  description: 'Exactly 3 NPCs. Reuse existing ids on continuation chapters where possible.',
+  minItems: 3,
+  maxItems: 3,
   items: {
     type: 'object' as const,
     properties: {
@@ -122,10 +124,15 @@ const startingNpcsSchema = {
       name: { type: 'string' as const },
       affiliation: { type: 'string' as const },
       role: { type: 'string' as const },
-      voice_register: { type: 'string' as const },
-      dramatic_function: { type: 'string' as const },
-      hidden_pressure: { type: 'string' as const },
-      retrieval_cue: { type: 'string' as const },
+      voice_register: { type: 'string' as const, description: '≤12 words. The formal speaking style: judicial, procedural, clipped, military, etc. The category, not the personality.' },
+      voice_note: {
+        type: 'string' as const,
+        description:
+          'REQUIRED for character distinctness. ≥4 words, ≤14 words. The PERSONAL flavor that differentiates this NPC from others in the same role: "precise and tired, never finishes a sentence", "drawls vowels under stress", "warm but never first to speak". Avoid generic descriptors ("professional", "competent", "experienced", "measured") — voices that lean on these collapse together when the chapter has multiple trusted NPCs. Distinct voice_note is what lets the narrator render Aul-trusted differently from Solv-trusted.',
+      },
+      dramatic_function: { type: 'string' as const, description: '≤12 words.' },
+      hidden_pressure: { type: 'string' as const, description: '≤16 words.' },
+      retrieval_cue: { type: 'string' as const, description: '≤16 words.' },
       initial_disposition: {
         type: 'string' as const,
         enum: ['hostile', 'wary', 'neutral', 'favorable', 'trusted'],
@@ -134,7 +141,7 @@ const startingNpcsSchema = {
       },
       disposition_reason: {
         type: 'string' as const,
-        description: 'One short line explaining why this disposition.',
+        description: 'One short line, ≤16 words.',
       },
     },
     required: [
@@ -143,6 +150,7 @@ const startingNpcsSchema = {
       'affiliation',
       'role',
       'voice_register',
+      'voice_note',
       'dramatic_function',
       'hidden_pressure',
       'retrieval_cue',
@@ -154,19 +162,21 @@ const startingNpcsSchema = {
 
 const activeThreadsSchema = {
   type: 'array' as const,
-  description: '3-5 threads.',
+  description: 'Exactly 3 chapter-usable threads. Reuse existing ids on continuation chapters where possible.',
+  minItems: 3,
+  maxItems: 3,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const, description: 'thread_<snake_case_subject>' },
       title: { type: 'string' as const },
-      question: { type: 'string' as const },
+      question: { type: 'string' as const, description: '≤16 words.' },
       owner_hint: { type: 'string' as const, description: 'NPC name or faction id' },
       tension: { type: 'number' as const, description: '0-10' },
       initial_tension: { type: 'number' as const, description: 'Optional opening chapter pressure for new threads only. 0-8. Omit unless overriding the role default.' },
-      resolution_criteria: { type: 'string' as const },
-      failure_mode: { type: 'string' as const },
-      retrieval_cue: { type: 'string' as const },
+      resolution_criteria: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
+      failure_mode: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
+      retrieval_cue: { type: 'string' as const, description: '≤16 words.' },
     },
     required: [
       'id',
@@ -308,14 +318,16 @@ const continuationMovesSchema = {
 
 const pressureLadderSchema = {
   type: 'array' as const,
-  description: '3-5 ordered pressure-tightening steps.',
+  description: 'Exactly 3 ordered pressure-tightening steps.',
+  minItems: 3,
+  maxItems: 3,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const },
-      pressure: { type: 'string' as const },
-      trigger_condition: { type: 'string' as const },
-      narrative_effect: { type: 'string' as const },
+      pressure: { type: 'string' as const, description: '≤18 words.' },
+      trigger_condition: { type: 'string' as const, description: 'Specific event, ≤22 words.' },
+      narrative_effect: { type: 'string' as const, description: '≤22 words.' },
       severity: { type: 'string' as const, enum: ['standard', 'hard'] },
     },
     required: ['id', 'pressure', 'trigger_condition', 'narrative_effect'],
@@ -324,18 +336,20 @@ const pressureLadderSchema = {
 
 const possibleRevelationsSchema = {
   type: 'array' as const,
-  description: '2-4 latent truths.',
+  description: 'Exactly 2 latent truths.',
+  minItems: 2,
+  maxItems: 2,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const },
-      statement: { type: 'string' as const },
+      statement: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
       held_by: { type: 'string' as const },
-      emergence_condition: { type: 'string' as const },
-      recontextualizes: { type: 'string' as const },
+      emergence_condition: { type: 'string' as const, description: '≤22 words.' },
+      recontextualizes: { type: 'string' as const, description: '≤22 words.' },
       hint_phrases: {
         type: 'array' as const,
-        description: 'Specific phrases or substrings the Narrator can plant before this reveal fires.',
+        description: '3 short substrings the Narrator can plant before this reveal fires.',
         items: { type: 'string' as const },
       },
       hints_required: {
@@ -381,15 +395,17 @@ const possibleRevelationsSchema = {
 
 const moralFaultLinesSchema = {
   type: 'array' as const,
-  description: '2-4 chapter tensions.',
+  description: 'Exactly 2 chapter tensions.',
+  minItems: 2,
+  maxItems: 2,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const },
-      tension: { type: 'string' as const },
-      side_a: { type: 'string' as const },
-      side_b: { type: 'string' as const },
-      why_it_hurts: { type: 'string' as const },
+      tension: { type: 'string' as const, description: '≤16 words.' },
+      side_a: { type: 'string' as const, description: '≤12 words.' },
+      side_b: { type: 'string' as const, description: '≤12 words.' },
+      why_it_hurts: { type: 'string' as const, description: '≤18 words.' },
     },
     required: ['id', 'tension', 'side_a', 'side_b', 'why_it_hurts'],
   },
@@ -397,14 +413,16 @@ const moralFaultLinesSchema = {
 
 const escalationOptionsSchema = {
   type: 'array' as const,
-  description: '3-5 ways the world can tighten.',
+  description: 'Exactly 3 ways the world can tighten.',
+  minItems: 3,
+  maxItems: 3,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const },
       type: { type: 'string' as const, enum: ['bureaucratic', 'social', 'institutional', 'physical'] },
-      condition: { type: 'string' as const },
-      consequence: { type: 'string' as const },
+      condition: { type: 'string' as const, description: '≤18 words.' },
+      consequence: { type: 'string' as const, description: '≤18 words.' },
     },
     required: ['id', 'type', 'condition', 'consequence'],
   },
@@ -412,13 +430,15 @@ const escalationOptionsSchema = {
 
 const editorializedLoreSchema = {
   type: 'array' as const,
-  description: '2-3 lore items relevant to THIS chapter.',
+  description: 'Exactly 2 lore items relevant to THIS chapter.',
+  minItems: 2,
+  maxItems: 2,
   items: {
     type: 'object' as const,
     properties: {
-      item: { type: 'string' as const },
-      relevance_now: { type: 'string' as const },
-      delivery_method: { type: 'string' as const },
+      item: { type: 'string' as const, description: '≤12 words.' },
+      relevance_now: { type: 'string' as const, description: '≤16 words.' },
+      delivery_method: { type: 'string' as const, description: '≤16 words.' },
     },
     required: ['item', 'relevance_now', 'delivery_method'],
   },

@@ -19,6 +19,7 @@ import { transformAuthorSetup } from '@/lib/sf2/author/transform'
 import { SF2_BIBLE_HEGEMONY } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { CHAPTER_OPEN_CAP } from '@/lib/sf2/pressure/constants'
+import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import type {
   AuthorChapterSetupV2,
   Sf2ChapterMeaning,
@@ -27,8 +28,8 @@ import type {
   Sf2ThreadStatus,
 } from '@/lib/sf2/types'
 
-const AUTHOR_MODEL = process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-5-20250929'
-const AUTHOR_MAX_TOKENS = Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 8192)
+const AUTHOR_MODEL = process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-6'
+const AUTHOR_MAX_TOKENS = Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 6144)
 
 function resolveClient(req: NextRequest): Anthropic {
   const byokKey = req.headers.get('x-anthropic-key')?.trim()
@@ -77,6 +78,7 @@ type AuthorToolResult =
       response: Anthropic.Message
       usage: AnthropicUsage
       attempts: number
+      apiMs: number
     }
   | {
       ok: false
@@ -86,6 +88,7 @@ type AuthorToolResult =
       usage: AnthropicUsage
       attempts: number
       textPreview?: string
+      apiMs: number
     }
 
 // Run a tool-forced call, retry once on validation failure or missing tool_use.
@@ -116,9 +119,11 @@ async function callAuthorToolWithRetry(args: {
   let lastErrors: string[] = []
   let lastTextPreview: string | undefined
   let attempt = 0
+  let apiMsTotal = 0
 
   while (attempt < maxAttempts) {
     attempt += 1
+    const callStart = Date.now()
     const response = await client.messages.create({
       model: AUTHOR_MODEL,
       max_tokens: AUTHOR_MAX_TOKENS,
@@ -131,6 +136,7 @@ async function callAuthorToolWithRetry(args: {
       tool_choice: { type: 'tool', name: toolName, disable_parallel_tool_use: true },
       messages,
     })
+    apiMsTotal += Date.now() - callStart
     lastResponse = response
     const usage = response.usage as AnthropicUsage
     aggregate.input_tokens += usage.input_tokens
@@ -174,6 +180,7 @@ async function callAuthorToolWithRetry(args: {
         usage: aggregate,
         attempts: attempt,
         textPreview: lastTextPreview,
+        apiMs: apiMsTotal,
       }
     }
 
@@ -183,7 +190,7 @@ async function callAuthorToolWithRetry(args: {
       if (attempt > 1) {
         console.log(`[sf2/author] ${toolName} succeeded on retry`, { attempts: attempt })
       }
-      return { ok: true, raw, toolUse, response, usage: aggregate, attempts: attempt }
+      return { ok: true, raw, toolUse, response, usage: aggregate, attempts: attempt, apiMs: apiMsTotal }
     }
     lastErrors = errors
     console.warn(`[sf2/author] ${toolName} validation failed on attempt ${attempt}/${maxAttempts}`, {
@@ -218,10 +225,12 @@ async function callAuthorToolWithRetry(args: {
     response: lastResponse!,
     usage: aggregate,
     attempts: attempt,
+    apiMs: apiMsTotal,
   }
 }
 
 export async function POST(req: NextRequest) {
+  const requestTimer = startTimer()
   try {
     const body = await req.json().catch(() => null)
     const parsed = requestSchema.safeParse(body)
@@ -290,7 +299,7 @@ export async function POST(req: NextRequest) {
           pcPlaybookId: state?.meta.playbookId ?? '',
         }),
         retryNudge: (errors) =>
-          `Your previous tool call was incomplete — these required fields were missing or empty:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. Spend the output tokens you need; do not under-fill. The full chapter setup must come back in this single tool call.`,
+          `Your previous tool call was incomplete — these required fields were missing or empty:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. Stay inside the field-length budgets; compact complete output is preferred over exhaustive prose. The full chapter setup must come back in this single tool call.`,
       })
     } catch (err) {
       return anthropicErrorResponse(err)
@@ -313,6 +322,11 @@ export async function POST(req: NextRequest) {
             cacheWriteTokens: result.usage.cache_creation_input_tokens ?? 0,
             cacheReadTokens: result.usage.cache_read_input_tokens ?? 0,
           },
+          latency: {
+            totalMs: requestTimer.elapsed(),
+            apiMs: result.apiMs,
+            attempts: result.attempts,
+          },
         }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
       )
@@ -331,6 +345,11 @@ export async function POST(req: NextRequest) {
           error: 'author_invalid_output',
           errors: validationErrors,
           usage: usagePayload(result.usage),
+          latency: {
+            totalMs: requestTimer.elapsed(),
+            apiMs: result.apiMs,
+            attempts: result.attempts,
+          },
         }),
         { status: 502, headers: { 'Content-Type': 'application/json' } }
       )
@@ -348,6 +367,11 @@ export async function POST(req: NextRequest) {
         seed,
         usage: usagePayload(result.usage),
         attempts: { setup: result.attempts },
+        latency: {
+          totalMs: requestTimer.elapsed(),
+          apiMs: result.apiMs,
+          attempts: result.attempts,
+        },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
@@ -418,9 +442,9 @@ function validateChapterRaw(
   }
 
   const npcs = getArray(raw, 'starting_npcs', 'startingNPCs')
-  if (npcs.length === 0) errors.push('starting_npcs is empty (need 3-5)')
+  if (npcs.length !== 3) errors.push(`starting_npcs must contain exactly 3 NPCs (got ${npcs.length})`)
   const threads = getArray(raw, 'active_threads', 'activeThreads')
-  if (threads.length === 0) errors.push('active_threads is empty (need at least 1 chapter-driving thread)')
+  if (threads.length !== 3) errors.push(`active_threads must contain exactly 3 threads (got ${threads.length})`)
   threads.forEach((t, i) => {
     const initial = valueField(t, 'initial_tension', 'initialTension')
     if (initial === undefined) return
@@ -462,15 +486,15 @@ function validateChapterRaw(
   })
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
-  if (ladder.length === 0) errors.push('pressure_ladder is empty (need 3-5)')
+  if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
   const revelations = getArray(raw, 'possible_revelations', 'possibleRevelations')
-  if (revelations.length === 0) errors.push('possible_revelations is empty (need 2-4)')
+  if (revelations.length !== 2) errors.push(`possible_revelations must contain exactly 2 revelations (got ${revelations.length})`)
   const faultLines = getArray(raw, 'moral_fault_lines', 'moralFaultLines')
-  if (faultLines.length === 0) errors.push('moral_fault_lines is empty (need 2-4)')
+  if (faultLines.length !== 2) errors.push(`moral_fault_lines must contain exactly 2 fault lines (got ${faultLines.length})`)
   const escalations = getArray(raw, 'escalation_options', 'escalationOptions')
-  if (escalations.length === 0) errors.push('escalation_options is empty (need 3-5)')
+  if (escalations.length !== 3) errors.push(`escalation_options must contain exactly 3 options (got ${escalations.length})`)
   const lore = getArray(raw, 'editorialized_lore', 'editorializedLore')
-  if (lore.length === 0) errors.push('editorialized_lore is empty (need 2-3)')
+  if (lore.length !== 2) errors.push(`editorialized_lore must contain exactly 2 items (got ${lore.length})`)
   return errors
 }
 
@@ -553,6 +577,7 @@ function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapterSetupV
       affiliation: stringField(n, 'affiliation'),
       role: stringField(n, 'role'),
       voiceRegister: stringField(n, 'voice_register', 'voiceRegister'),
+      voiceNote: stringField(n, 'voice_note', 'voiceNote') || undefined,
       dramaticFunction: stringField(n, 'dramatic_function', 'dramaticFunction'),
       hiddenPressure: stringField(n, 'hidden_pressure', 'hiddenPressure'),
       retrievalCue: stringField(n, 'retrieval_cue', 'retrievalCue'),

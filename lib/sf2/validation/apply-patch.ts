@@ -46,10 +46,11 @@ import type {
   Sf2Promise,
   Sf2PronounAnchor,
   Sf2State,
+  Sf2TempLoadTag,
   Sf2TemporalAnchor,
   Sf2Thread,
 } from '../types'
-import { DOCUMENT_VALID_TRANSITIONS } from '../types'
+import { DOCUMENT_VALID_TRANSITIONS, SF2_TEMP_LOAD_TAGS } from '../types'
 
 const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
   'resolved_clean',
@@ -199,6 +200,25 @@ function coerceHeat(
   const mapped = HEAT_SYNONYMS[key]
   if (mapped === undefined) return { level: fallback, coerced: true, rawValue: raw }
   return { level: mapped, coerced: key !== mapped, rawValue: raw }
+}
+
+// Returns the coerced tag, undefined for explicit clear (empty string), or
+// `'unset'` to mean "no field provided — keep prior value." Distinguishing
+// clear-vs-unchanged matters: an archivist update that re-asserts disposition
+// without naming the tag should not silently wipe it.
+function coerceTempLoadTag(
+  raw: unknown
+): { value: Sf2TempLoadTag | undefined; status: 'unset' | 'cleared' | 'set' | 'invalid'; rawValue: string | null } {
+  if (raw === undefined || raw === null) return { value: undefined, status: 'unset', rawValue: null }
+  if (typeof raw !== 'string') return { value: undefined, status: 'invalid', rawValue: String(raw) }
+  const trimmed = raw.trim()
+  if (trimmed === '') return { value: undefined, status: 'cleared', rawValue: raw }
+  const key = trimmed.toLowerCase().replace(/\s+/g, '_')
+  const match = (SF2_TEMP_LOAD_TAGS as readonly string[]).includes(key)
+    ? (key as Sf2TempLoadTag)
+    : undefined
+  if (!match) return { value: undefined, status: 'invalid', rawValue: raw }
+  return { value: match, status: 'set', rawValue: raw }
 }
 
 function normalizePronounAnchor(raw: unknown): Sf2PronounAnchor | undefined {
@@ -412,6 +432,30 @@ function resolveThreadId(state: Sf2State, idOrTitle: string): Sf2EntityId | null
     (t) => t.title.toLowerCase() === idOrTitle.toLowerCase()
   )
   return match?.id ?? null
+}
+
+function resolveArcId(state: Sf2State, idOrTitle: string): Sf2EntityId | null {
+  if (state.campaign.arcs[idOrTitle]) return idOrTitle
+  const match = Object.values(state.campaign.arcs).find(
+    (a) => a.title.toLowerCase() === idOrTitle.toLowerCase()
+  )
+  return match?.id ?? null
+}
+
+function arcIdForThread(state: Sf2State, threadId: Sf2EntityId): Sf2EntityId | null {
+  const thread = state.campaign.threads[threadId]
+  if (thread?.anchoredArcId && state.campaign.arcs[thread.anchoredArcId]) {
+    return thread.anchoredArcId
+  }
+  return Object.values(state.campaign.arcs).find((arc) => arc.threadIds.includes(threadId))?.id ?? null
+}
+
+function attachThreadToArc(state: Sf2State, threadId: Sf2EntityId, arcId: Sf2EntityId): void {
+  const thread = state.campaign.threads[threadId]
+  const arc = state.campaign.arcs[arcId]
+  if (!thread || !arc) return
+  arc.threadIds = Array.from(new Set([...arc.threadIds, threadId]))
+  thread.anchoredArcId = arcId
 }
 
 function resolveTemporalAnchorTargetId(state: Sf2State, idOrName: string): Sf2EntityId | null {
@@ -855,6 +899,33 @@ function applyCreate(
         } else {
           draft.campaign.factions[ownerId].ownedThreadIds.push(id)
         }
+        const explicitArcRef = typeof p.arc_id === 'string' ? p.arc_id : ''
+        const successorRef =
+          typeof p.successor_to_thread_id === 'string'
+            ? p.successor_to_thread_id
+            : typeof p.successor_to_thread === 'string'
+              ? p.successor_to_thread
+              : typeof p.successor_to === 'string'
+                ? p.successor_to
+                : ''
+        const explicitArcId = explicitArcRef ? resolveArcId(draft, explicitArcRef) : null
+        const predecessorThreadId = successorRef ? resolveThreadId(draft, successorRef) : null
+        if (successorRef && !predecessorThreadId) {
+          drift.push({
+            kind: 'anchor_reference_missing',
+            detail: `thread successor predecessor ${successorRef} unresolved`,
+          })
+        }
+        const inheritedArcId = predecessorThreadId ? arcIdForThread(draft, predecessorThreadId) : null
+        const arcId = explicitArcId ?? inheritedArcId
+        if (arcId) {
+          attachThreadToArc(draft, id, arcId)
+        } else if (explicitArcRef) {
+          drift.push({
+            kind: 'anchor_reference_missing',
+            detail: `thread arc ${explicitArcRef} unresolved`,
+          })
+        }
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
@@ -1118,6 +1189,20 @@ function applyCreate(
         if (!draft.campaign.documents) draft.campaign.documents = {}
         const p = write.payload as Record<string, unknown>
         const id = (p.id as string | undefined) ?? nextEntityId('doc', draft)
+        if (draft.campaign.documents[id]) {
+          outcomes.push({
+            accepted: false,
+            reason: `document.id: ${id} already exists; use update/amendment or supersede instead`,
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          drift.push({
+            kind: 'protected_field_write',
+            detail: `document create attempted to overwrite existing ${id}`,
+            entityId: id,
+          })
+          return
+        }
         const type = normalizeDocumentType(p.type ?? p.kind_label ?? p.kindLabel)
 
         // Subjects: required, resolve npc-or-faction.
@@ -1288,6 +1373,20 @@ function applyUpdate(
           entityId: id,
         })
       }
+      const tagUpdate = coerceTempLoadTag(write.changes.temp_load_tag)
+      if (tagUpdate.status === 'invalid' && tagUpdate.rawValue) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `temp_load_tag "${tagUpdate.rawValue}" not in enum; field ignored`,
+          entityId: id,
+        })
+      }
+      const nextTempLoadTag =
+        tagUpdate.status === 'set'
+          ? tagUpdate.value
+          : tagUpdate.status === 'cleared'
+            ? undefined
+            : prior.tempLoadTag
       const next: Sf2Npc = {
         ...prior,
         identity: {
@@ -1297,6 +1396,7 @@ function applyUpdate(
         },
         disposition: dispUpdate.tier,
         tempLoad: (write.changes.temp_load as number | undefined) ?? prior.tempLoad,
+        tempLoadTag: nextTempLoadTag,
         agenda: normalizeAgenda(write.changes.agenda, prior.agenda, turnIndex),
         lastSeenTurn: (write.changes.last_seen_turn as number | undefined) ?? prior.lastSeenTurn,
       }
@@ -1654,6 +1754,33 @@ function applyAttachment(
   deferred: DeferredWrite[],
   drift: Sf2ArchivistFlag[]
 ): void {
+  if (write.kind === 'anchor_thread_to_arc') {
+    const threadId = resolveThreadId(draft, write.entityId)
+    const arcId = write.arcId ? resolveArcId(draft, write.arcId) : null
+    if (!threadId || !arcId) {
+      const missing = !threadId ? `thread ${write.entityId}` : `arc ${write.arcId ?? ''}`
+      drift.push({
+        kind: 'anchor_reference_missing',
+        detail: `anchor_thread_to_arc ${missing} unresolved`,
+      })
+      if (write.confidence === 'low') {
+        deferred.push({ kind: 'attachment', payload: write, reason: 'thread/arc unresolved' })
+        outcomes.push(deferOrReject(write.confidence, 'thread/arc unresolved', ref))
+      } else {
+        outcomes.push({
+          accepted: false,
+          reason: 'thread/arc unresolved',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+      }
+      return
+    }
+    attachThreadToArc(draft, threadId, arcId)
+    outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+    return
+  }
+
   const resolved = write.threadIds
     .map((r) => resolveThreadId(draft, r))
     .filter((x): x is string => Boolean(x))

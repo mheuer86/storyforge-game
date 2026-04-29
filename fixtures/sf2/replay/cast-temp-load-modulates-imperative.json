@@ -1,0 +1,128 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cast packet temp_load_tag modulates imperative",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Phase 3 NPC state-bound rendering. tempLoadTag bends the per-tier imperative without changing disposition: a TRUSTED NPC under uneasy_under_scrutiny still helps but with visible reservation; a FAVORABLE NPC who is betrayed renders as withdrawn; a WARY NPC who is exhausted truncates disclosure. The disposition header keeps its tier; the contract and prohibitions absorb the modulation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_aul": {
+            "id": "npc_aul",
+            "name": "Aul",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "trusted",
+            "tempLoadTag": "uneasy_under_scrutiny",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "Keep the writ narrow.", "methods": [], "currentMove": "Awaiting the Warden." },
+            "ownedThreadIds": [],
+            "retrievalCue": "Aul, registry clerk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_solv": {
+            "id": "npc_solv",
+            "name": "Solv",
+            "affiliation": "Court Adjudicator",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "favorable",
+            "tempLoadTag": "betrayed",
+            "identity": {
+              "keyFacts": ["Adjudicator"],
+              "voice": { "note": "measured", "register": "judicial" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Solv, adjudicator.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_tane": {
+            "id": "npc_tane",
+            "name": "Tane",
+            "affiliation": "Watch",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "tempLoadTag": "exhausted",
+            "identity": {
+              "keyFacts": ["Night watch"],
+              "voice": { "note": "clipped, low", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Tane, watch.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_aul", "npc_solv", "npc_tane"]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Wait for the next move.",
+    "narrator": {
+      "prose": "The room holds.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_aul",
+        "tempLoadTag": "uneasy_under_scrutiny",
+        "voiceImperativeIncludes": "warm, plain, low procedural distance",
+        "behavioralContractIncludes": ["volunteers context", "uneasy under scrutiny", "guarded notes"],
+        "prohibitionsInclude": ["not guarded", "no smooth confidence", "no easy reassurance to PC"]
+      },
+      {
+        "npcId": "npc_solv",
+        "tempLoadTag": "betrayed",
+        "voiceImperativeIncludes": "open, helpful",
+        "behavioralContractIncludes": ["betrayed", "withdrawn", "refuses personal warmth"],
+        "prohibitionsInclude": ["no volunteered intimacy", "no easy forgiveness without state event"]
+      },
+      {
+        "npcId": "npc_tane",
+        "tempLoadTag": "exhausted",
+        "voiceImperativeIncludes": "guarded, measured",
+        "behavioralContractIncludes": ["exhausted", "short answers", "no long disclosure"],
+        "prohibitionsInclude": ["no extended monologue", "no repeating prior confession"]
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "Aul (npc_aul) — TRUSTED [uneasy under scrutiny] · WARM, PLAIN, LOW PROCEDURAL DISTANCE",
+      "Solv (npc_solv) — FAVORABLE [betrayed] · OPEN, HELPFUL, MODERATE PROCEDURAL DISTANCE",
+      "Tane (npc_tane) — WARY [exhausted] · GUARDED, MEASURED, CONDITIONAL TRUST",
+      "temp: uneasy under scrutiny",
+      "temp: betrayed",
+      "temp: exhausted"
+    ]
+  }
+}

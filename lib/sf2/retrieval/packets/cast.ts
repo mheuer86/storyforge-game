@@ -1,8 +1,11 @@
 import type {
   Sf2DispositionTier,
+  Sf2EmotionalBeatTag,
+  Sf2EntityId,
   Sf2Npc,
   Sf2PresentCastPacket,
   Sf2State,
+  Sf2TempLoadTag,
   Sf2WorkingSet,
 } from '../../types'
 
@@ -14,11 +17,17 @@ const FRAMING_WINDOW_TURNS = 5
 // same value instead of duplicating the magic number.
 export const DORMANT_TURN_THRESHOLD = 10
 
-// Phase 1 — static tier→imperative lookup. Phase 5 (per the shaping zettel)
-// adds temp_load + recent-beats modulation to derive the full behavioral
-// contract (default posture, will share, will not, if pressured). Static
-// table is the minimum viable form; expand once temp_load vocabulary is
-// settled. Strings are intentionally compact: the per-turn block renders
+// Phase 5 — beat lookback for behavioral-contract derivation. A `near_confession`
+// older than this window stops carrying the "won't repeat without escalation"
+// rule. Three turns matches the doc's lean and keeps the rule local to the
+// scene where the beat actually landed.
+const BEAT_LOOKBACK_TURNS = 3
+
+// Phase 1 — static tier→imperative lookup. Phase 3 layers tempLoadTag
+// modulation on top (TEMP_LOAD_MODULATIONS below). Phase 5 (per the shaping
+// zettel) adds the full behavioral contract (default posture, will share,
+// will not, if pressured) derived from tier + agenda + recent beats +
+// tempLoadTag. Strings are intentionally compact: the per-turn block renders
 // these for every on-stage NPC and pays for verbosity in tokens.
 const DISPOSITION_IMPERATIVES: Record<
   Sf2DispositionTier,
@@ -51,6 +60,82 @@ const DISPOSITION_IMPERATIVES: Record<
   },
 }
 
+// Phase 3 — transient state modulations layered on top of the base imperative.
+// Tags are emitted by the archivist (lib/sf2/archivist/tools.ts) as
+// `temp_load_tag` and normalized to `tempLoadTag` on the Npc in apply-patch.
+// They do NOT replace disposition; they bend it. A trusted NPC under
+// `uneasy_under_scrutiny` still volunteers context, but with visible
+// reservation. A favorable NPC who is `betrayed` cannot snap to hostile
+// without a disposition write — but the imperative tells the narrator to
+// render withdrawal, not warmth, while the tag is set.
+const TEMP_LOAD_MODULATIONS: Record<
+  Sf2TempLoadTag,
+  { contractAddendum: string; prohibitions: string[] }
+> = {
+  uneasy_under_scrutiny: {
+    contractAddendum: 'guarded notes are allowed; narrate as visible reservation, not as tier change',
+    prohibitions: ['no smooth confidence', 'no easy reassurance to PC'],
+  },
+  vulnerable: {
+    contractAddendum: 'soft underneath; honesty surfaces in small admissions, not speeches',
+    prohibitions: ['no posturing', 'no deflection through procedure'],
+  },
+  betrayed: {
+    contractAddendum: 'withdrawn; cooperates only on procedure, refuses personal warmth',
+    prohibitions: ['no volunteered intimacy', 'no easy forgiveness without state event'],
+  },
+  exhausted: {
+    contractAddendum: 'short answers; one beat per exchange, no long disclosure',
+    prohibitions: ['no extended monologue', 'no repeating prior confession'],
+  },
+  cornered: {
+    contractAddendum: 'binary stance — either holds or breaks; nothing in between',
+    prohibitions: ['no measured middle ground', 'no graceful redirect'],
+  },
+}
+
+// Phase 5 — full behavioral contract per tier. Pairs with the imperative
+// table above; the imperative is the headline, this is the breakdown the
+// narrator reads when deciding what an NPC will and won't say in the moment.
+// Each tier defines a default posture (relational stance toward the PC) and
+// the will/will-not lists that shape disclosure under no special pressure.
+// Beat-driven and tempLoadTag-driven shifts are layered on top in
+// deriveBehavioralContract().
+const TIER_CONTRACT_DEFAULTS: Record<
+  Sf2DispositionTier,
+  {
+    defaultPosture: string
+    willShare: string[]
+    willNot: string[]
+  }
+> = {
+  hostile: {
+    defaultPosture: 'guards self; treats PC as threat',
+    willShare: [],
+    willNot: ['anything strategic without leverage', 'personal context'],
+  },
+  wary: {
+    defaultPosture: 'measures PC; conditional cooperation',
+    willShare: ['public-record context'],
+    willNot: ['secrets', 'allies', 'personal worry'],
+  },
+  neutral: {
+    defaultPosture: 'professional; no investment',
+    willShare: ['routine information'],
+    willNot: ['costly information without reason'],
+  },
+  favorable: {
+    defaultPosture: 'assumes PC acts in good faith',
+    willShare: ['operational concerns', 'shared judgments'],
+    willNot: ['undisclosed allies without ask'],
+  },
+  trusted: {
+    defaultPosture: 'assumes PC is acting in good faith',
+    willShare: ['operational concerns', 'personal worry', 'limited faction doubt'],
+    willNot: ['become cagey without a new state event'],
+  },
+}
+
 export function buildPresentCastPackets(
   state: Sf2State,
   workingSet: Sf2WorkingSet
@@ -75,8 +160,16 @@ export function buildPresentCastPackets(
       const imperative = deriveDispositionImperative(
         npc.disposition,
         recentlyFramedByPlayer(state, npc),
-        turnsAbsent
+        turnsAbsent,
+        npc.tempLoadTag
       )
+      const recentBeatTags = recentBeatTagsFor(state, npc.id, currentTurn)
+      const contract = deriveBehavioralContract({
+        tier: npc.disposition,
+        agenda: npc.agenda,
+        tempLoadTag: npc.tempLoadTag,
+        recentBeatTags,
+      })
       return {
         npcId: npc.id,
         name: npc.name,
@@ -84,9 +177,14 @@ export function buildPresentCastPackets(
         pronoun: npc.identity.pronoun,
         age: npc.identity.age,
         disposition: npc.disposition,
+        tempLoadTag: npc.tempLoadTag,
         voice: npc.identity.voice.note,
         voiceImperative: imperative.voiceImperative,
         behavioralContract: imperative.behavioralContract,
+        defaultPosture: contract.defaultPosture,
+        willShare: contract.willShare,
+        willNot: contract.willNot,
+        ifPressured: contract.ifPressured,
         prohibitions: imperative.prohibitions,
         currentRead: deriveCurrentRead(npc),
         relationToPlayer: deriveRelationToPlayer(npc),
@@ -99,11 +197,20 @@ export function buildPresentCastPackets(
 function deriveDispositionImperative(
   disposition: Sf2DispositionTier,
   recentlyFramed: boolean,
-  turnsAbsent: number | undefined
+  turnsAbsent: number | undefined,
+  tempLoadTag: Sf2TempLoadTag | undefined
 ): { voiceImperative: string; behavioralContract: string; prohibitions: string[] } {
   const base = DISPOSITION_IMPERATIVES[disposition]
   const contractParts: string[] = [base.behavioralContract]
   const prohibitions = [...base.prohibitions]
+  // Phase 3 — tempLoadTag bends the imperative without changing tier. Layered
+  // before framing/dormancy so transient-state addenda sit next to the base
+  // contract, with situational addenda after.
+  if (tempLoadTag !== undefined) {
+    const mod = TEMP_LOAD_MODULATIONS[tempLoadTag]
+    contractParts.push(`temp: ${tempLoadTag.replace(/_/g, ' ')} — ${mod.contractAddendum}`)
+    prohibitions.push(...mod.prohibitions)
+  }
   if (recentlyFramed) {
     contractParts.push('recently framed by player — continue, do not reintroduce')
     prohibitions.push('no first-encounter template')
@@ -160,4 +267,97 @@ function deriveActivePressure(npc: {
 }): string {
   if (npc.agenda?.pursuing) return npc.agenda.pursuing
   return ''
+}
+
+// Phase 5 — recent beat tags for an NPC, scoped to the lookback window. Reads
+// state.campaign.beats (not history.turns); beats are how the archivist marks
+// emotional events that the contract derivation needs to see (`near_confession`
+// shifts willShare; `intimidation_failed` shifts ifPressured). 'pc' beats
+// where the NPC is not a participant are correctly excluded by the
+// participants check.
+function recentBeatTagsFor(
+  state: Sf2State,
+  npcId: Sf2EntityId,
+  currentTurn: number
+): Set<Sf2EmotionalBeatTag> {
+  const tags = new Set<Sf2EmotionalBeatTag>()
+  const beats = state.campaign.beats ?? {}
+  for (const beat of Object.values(beats)) {
+    if (!beat.participants.includes(npcId)) continue
+    if (currentTurn - beat.turn > BEAT_LOOKBACK_TURNS) continue
+    for (const tag of beat.emotionalTags) tags.add(tag)
+  }
+  return tags
+}
+
+// Derives the four-line behavioral contract surfaced under the imperative.
+// Tier defaults set the baseline; recent beats and tempLoadTag layer on top.
+// Beat-driven rules:
+//   - `near_confession` in window: any 'personal worry' entry in willShare
+//     moves to willNot as "already shared, won't repeat without escalation."
+//   - `intimidation_failed` in window: adds "open displays of pressure" to
+//     willNot — the NPC has already refused that lever once.
+// tempLoadTag drives ifPressured directly; in its absence, tier supplies a
+// default escalation pattern.
+function deriveBehavioralContract(input: {
+  tier: Sf2DispositionTier
+  agenda: Sf2Npc['agenda']
+  tempLoadTag: Sf2TempLoadTag | undefined
+  recentBeatTags: Set<Sf2EmotionalBeatTag>
+}): {
+  defaultPosture: string
+  willShare: string[]
+  willNot: string[]
+  ifPressured: string
+} {
+  const base = TIER_CONTRACT_DEFAULTS[input.tier]
+  const willShare = [...base.willShare]
+  const willNot = [...base.willNot]
+  // Default posture is tier-driven; agenda.pursuing colors it when present.
+  const defaultPosture = input.agenda?.pursuing
+    ? `${base.defaultPosture} (pursuing: ${input.agenda.pursuing})`
+    : base.defaultPosture
+  // Beat-driven shifts.
+  if (input.recentBeatTags.has('near_confession')) {
+    const idx = willShare.indexOf('personal worry')
+    if (idx >= 0) {
+      willShare.splice(idx, 1)
+      willNot.push('personal worry — already shared, won\'t repeat without escalation')
+    }
+  }
+  if (input.recentBeatTags.has('intimidation_failed')) {
+    willNot.push('responding to repeat displays of pressure')
+  }
+  if (input.recentBeatTags.has('cost_accepted')) {
+    willShare.push('the cost just paid (in context, not as exposition)')
+  }
+  return {
+    defaultPosture,
+    willShare,
+    willNot,
+    ifPressured: deriveIfPressured(input.tier, input.tempLoadTag, input.recentBeatTags),
+  }
+}
+
+// Escalation gradient. The interesting cases are tempLoadTag + beat
+// combinations; the no-tag fallback hands a relationship-aware default to the
+// narrator so the field is never empty.
+function deriveIfPressured(
+  tier: Sf2DispositionTier,
+  tag: Sf2TempLoadTag | undefined,
+  beats: Set<Sf2EmotionalBeatTag>
+): string {
+  if (tag === 'vulnerable' && beats.has('cost_accepted')) {
+    return 'hurt first, defensive second'
+  }
+  if (tag === 'betrayed' && beats.has('intimidation_failed')) {
+    return 'shut down, refuse procedure'
+  }
+  if (tag === 'cornered') return 'binary: holds or breaks; no middle ground'
+  if (tag === 'exhausted') return 'truncated reactivity; no escalation match'
+  if (tag === 'uneasy_under_scrutiny') return 'composed under pressure but visibly tighter'
+  if (tag === 'vulnerable') return 'softens before defending'
+  if (tag === 'betrayed') return 'withdrawal first; refusal second'
+  if (tier === 'hostile' || tier === 'wary') return 'meets pressure with pressure'
+  return 'protects the relationship; refuses without snapping to hostility'
 }

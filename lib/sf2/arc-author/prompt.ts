@@ -84,7 +84,14 @@ If \`arcVariantSeed.scenarioBias\` is present, strongly prefer that mode unless 
 
 Call \`author_arc_setup\` exactly once.
 
-Keep fields tight. The Chapter Author and Narrator will expand from these seeds.`
+Keep fields tight. The Chapter Author and Narrator will expand from these seeds.
+
+Hard caps:
+- Exactly 3 durable forces, 3 durable NPC seeds, 3 pressure engines, and 3 stance axes.
+- Exactly 3 invariant facts and 2 variable truths.
+- Exactly 5 chapter function slots, but each \`function\` and \`pressure_question\` is one compact sentence.
+- Exactly 3 possible end states per chapter slot and 3 possible endgames.
+- No explanatory paragraphs in JSON fields. Use compact phrases that preserve decisions, not rationale prose.`
 
 export function buildArcAuthorSituation(seed: AuthorInputSeed): string {
   return `## Arc setup context
