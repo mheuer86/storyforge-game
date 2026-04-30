@@ -27,6 +27,10 @@ import {
 } from '@/lib/sf2/replay/mechanics'
 import { computeChapterCloseReadiness } from '@/lib/sf2/chapter-close'
 import { prepareChapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
+import {
+  Sf2PlayShell,
+  type Sf2CloseReadinessView,
+} from '@/components/sf2/play-shell'
 import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
 import type { AuthorChapterSetupV2, Sf2Arc, Sf2ArcPlan, Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
 
@@ -208,10 +212,11 @@ export default function PlayV2Page() {
             setState(loaded)
             setTurnIndex(loaded.history.turns.length)
             setPivotSignaled(chapterHasPivotSignal(loaded))
-            // Restore last prose so the scroll view isn't empty.
+            // Restore quick actions from the last committed turn. Prose is
+            // rendered from history now; live `prose` is reserved for the
+            // currently streaming, uncommitted narrator output.
             const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
-            if (lastTurn?.narratorProse) {
-              setProse(lastTurn.narratorProse)
+            if (lastTurn) {
               setSuggestedActions(lastTurn.narratorAnnotation?.suggestedActions ?? [])
             }
           } else if (typeof window !== 'undefined') {
@@ -1207,6 +1212,9 @@ export default function PlayV2Page() {
     setState(stateAfterMechs)
     setTurnIndex(nextTurnIndex)
     setPivotSignaled(chapterHasPivotSignal(stateAfterMechs))
+    setProse('')
+    setRollResult(null)
+    setInspirationOffer(null)
     pendingInspirationSpendRef.current = 0
     persist(stateAfterMechs)
   }
@@ -1615,480 +1623,60 @@ export default function PlayV2Page() {
     clues: Object.keys(state.campaign.clues).length,
   }
 
+  const closeReadiness: Sf2CloseReadinessView = {
+    closeReady,
+    chapterPivotSignaled,
+    spineResolved,
+    stalledFallback,
+    ladderFiredCount,
+    ladderStepCount,
+    spineStatus,
+    spineTension: spineTension ?? 0,
+    successorRequired,
+    promotedSpineThreadId,
+  }
+  const rollModifier = pendingCheck
+    ? modifierForSkill(state, pendingCheck.skill)
+    : rollResult?.modifier ?? null
+  const currentEffectiveDc = pendingCheck
+    ? effectiveDcFor(pendingCheck)
+    : rollResult?.effectiveDc ?? rollResult?.dc ?? null
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-mono">
-      <div className="max-w-3xl mx-auto p-6 space-y-4">
-        <header className="flex justify-between items-baseline border-b border-neutral-800 pb-2">
-          <div>
-            <div className="text-sm text-neutral-500">Chapter {state.chapter.number}</div>
-            <div className="text-xl text-amber-200">{state.chapter.title}</div>
-          </div>
-          <div className="text-sm text-neutral-400">
-            {state.player.name} · {state.player.class.name} · HP {state.player.hp.current}/{state.player.hp.max} ·{' '}
-            {state.player.credits}c · turn {chapterTurnCount} (Ch{state.meta.currentChapter})
-          </div>
-        </header>
-
-        <div
-          ref={scrollRef}
-          className="min-h-[200px] max-h-[60vh] overflow-y-auto whitespace-pre-wrap leading-relaxed text-neutral-200 p-4 bg-neutral-900/40 border border-neutral-800 rounded"
-        >
-          {prose || (chapterTurnCount === 0 ? '(press "begin the opening" to start the chapter)' : '')}
-          {isStreaming && <span className="animate-pulse text-amber-400"> ▎</span>}
-          {isGeneratingChapter && (
-            <div className="mt-3 text-sm text-amber-300">
-              <span className="animate-pulse">◐ </span>
-              Generating chapter setup (Author, Sonnet 4.6)… {generationElapsed}s elapsed
-              <div className="text-xs text-amber-300/50 mt-1">
-                This is a single large JSON generation; typically 20-60s. No intermediate streaming.
-              </div>
-            </div>
-          )}
-          {isArchiving && !isStreaming && !isGeneratingChapter && (
-            <div className="mt-3 text-xs text-neutral-500 italic">archiving…</div>
-          )}
-        </div>
-
-        {rollResult && (
-          <div
-            className={`p-3 rounded border text-sm ${
-              rollResult.result === 'critical' || rollResult.result === 'success'
-                ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100'
-                : 'bg-red-900/30 border-red-700 text-red-100'
-            }`}
-          >
-            {rollResult.skill && (
-              <span className="text-xs uppercase tracking-wider opacity-70 mr-2">{rollResult.skill}</span>
-            )}
-            <span className="font-bold">{rollResult.result.toUpperCase()}</span> ·{' '}
-            d20 {rollResult.d20} + {rollResult.modifier} ={' '}
-            <span className="font-bold">{rollResult.total}</span> vs DC {rollResult.effectiveDc ?? rollResult.dc}
-            {rollResult.rawRolls && rollResult.rawRolls.length > 1 && (
-              <span className="opacity-70"> ({rollResult.rawRolls.join(', ')})</span>
-            )}
-            {rollResult.modifierType && (
-              <span className="opacity-70"> · {rollResult.modifierType}</span>
-            )}
-            {rollResult.originalRoll && (
-              <span className="opacity-70"> · original {rollResult.originalRoll.total}</span>
-            )}
-          </div>
-        )}
-
-        {pendingCheck && inspirationOffer && (
-          <div className="p-4 rounded border border-sky-700 bg-sky-950/30 space-y-3 text-sm text-sky-100">
-            <div>
-              <div className="font-bold text-sky-300">Spend inspiration?</div>
-              <div className="text-sky-100/80">
-                Reroll this failed {pendingCheck.skill} check. Inspiration remaining: {state.player.inspiration}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={spendInspirationReroll}
-                disabled={isArchiving}
-                className="px-4 py-2 bg-sky-800 hover:bg-sky-700 disabled:opacity-40 rounded"
-              >
-                Spend inspiration
-              </button>
-              <button
-                onClick={declineInspirationReroll}
-                disabled={isArchiving}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 rounded"
-              >
-                Keep result
-              </button>
-            </div>
-          </div>
-        )}
-
-        {pendingCheck && !rollResult && (
-          <div className="p-4 rounded border border-amber-700 bg-amber-900/20 space-y-3">
-            <div>
-              <div className="text-xs text-amber-300 uppercase tracking-wider">
-                Roll required
-              </div>
-              <div className="text-lg text-amber-100">
-                {pendingCheck.skill} · DC {effectiveDcFor(pendingCheck)}
-              </div>
-              {pendingCheck.modifierType && (
-                <div className="text-xs text-amber-200/80 mt-1">
-                  {pendingCheck.modifierType}: {pendingCheck.modifierReason}
-                </div>
-              )}
-              <div className="text-sm text-neutral-300 mt-1">{pendingCheck.why}</div>
-              <div className="text-xs text-neutral-400 mt-1 italic">
-                on fail: {pendingCheck.consequenceOnFail}
-              </div>
-            </div>
-            <button
-              onClick={resolvePendingCheck}
-              disabled={isArchiving}
-              className="px-4 py-2 bg-amber-900 hover:bg-amber-800 disabled:opacity-40 text-amber-100 rounded"
-            >
-              Roll d20 (mod {modifierForSkill(state, pendingCheck.skill) >= 0 ? '+' : ''}
-              {modifierForSkill(state, pendingCheck.skill)})
-            </button>
-          </div>
-        )}
-
-        {closeReady && !busy && (
-          <div className="p-3 rounded border border-amber-700/50 bg-amber-950/30 text-amber-100 text-sm flex items-center justify-between">
-            <div>
-              <div className="font-bold text-amber-300">Chapter ready to close</div>
-              <div className="text-xs text-amber-200/70">
-                {chapterPivotSignaled && 'Narrator signaled a pivot. '}
-                {!chapterPivotSignaled && spineResolved && `Spine thread transitioned to ${spineStatus}. `}
-                {!chapterPivotSignaled && !spineResolved && stalledFallback &&
-                  `Stalled fallback: ${chapterTurnCount} turns · ladder ${ladderFiredCount}/${ladderStepCount} fired · spine tension ${spineTension}/10.`}
-              </div>
-            </div>
-            <button
-              onClick={closeChapterAndOpenNext}
-              className="px-3 py-2 bg-amber-900 hover:bg-amber-800 text-amber-100 rounded text-sm whitespace-nowrap"
-            >
-              close Ch{state.meta.currentChapter} ▸ open Ch{state.meta.currentChapter + 1}
-            </button>
-          </div>
-        )}
-
-        {!closeReady && !busy && successorRequired && (
-          <div className="p-3 rounded border border-amber-700/40 bg-amber-950/20 text-amber-100 text-xs">
-            Chapter spine resolved early; successor pressure needed before the chapter can close.
-          </div>
-        )}
-        {!closeReady && !busy && promotedSpineThreadId && (
-          <div className="p-3 rounded border border-neutral-700 bg-neutral-900/50 text-neutral-300 text-xs">
-            Spine pressure shifted to {state.campaign.threads[promotedSpineThreadId]?.title ?? promotedSpineThreadId}.
-          </div>
-        )}
-
-        {!pendingCheck && suggestedActions.length > 0 && !busy && (
-          <div className="space-y-2">
-            <div className="text-xs text-neutral-500 uppercase tracking-wider">
-              Suggested actions
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {suggestedActions.map((action, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPendingInput(action)}
-                  className="text-sm text-left px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!pendingCheck && (
-          <div className="space-y-2">
-            {chapterTurnCount === 0 ? (
-              <button
-                onClick={() => sendTurn('')}
-                disabled={busy}
-                className="px-4 py-2 bg-amber-900 hover:bg-amber-800 disabled:opacity-40 text-amber-100 rounded"
-              >
-                {isChapterAuthored(state) ? 'Begin the opening' : 'Generate chapter · begin'}
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  value={pendingInput}
-                  onChange={(e) => setPendingInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      sendTurn(pendingInput)
-                    }
-                  }}
-                  disabled={busy}
-                  placeholder="What do you do?"
-                  className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-3 py-2 disabled:opacity-40"
-                />
-                <button
-                  onClick={() => sendTurn(pendingInput)}
-                  disabled={busy || !pendingInput.trim()}
-                  className="px-4 py-2 bg-amber-900 hover:bg-amber-800 disabled:opacity-40 text-amber-100 rounded"
-                >
-                  Submit
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        <details className="border border-neutral-800 rounded p-3 bg-neutral-900/40">
-          <summary className="cursor-pointer text-sm text-neutral-400">
-            Campaign state · npcs {campaignStats.npcs} · threads {campaignStats.threads} · decisions{' '}
-            {campaignStats.decisions} · promises {campaignStats.promises} · clues{' '}
-            {campaignStats.clues}
-          </summary>
-          <div className="mt-2 text-xs text-neutral-400 space-y-1">
-            <div>Scene: {state.world.sceneSnapshot.sceneId} · {state.world.currentTimeLabel}</div>
-            <div>
-              Pressure face: {state.chapter.setup.antagonistField.currentPrimaryFace.name}
-            </div>
-            <div>
-              Pressure step fired: {state.chapter.setup.pressureLadder.filter((s) => s.fired).length}/
-              {state.chapter.setup.pressureLadder.length}
-            </div>
-          </div>
-        </details>
-
-        {sessionSummary && (
-          <details className="border border-neutral-800 rounded p-3 bg-neutral-900/40" open>
-            <summary className="cursor-pointer text-sm text-neutral-400">
-              Session metrics · ${sessionSummary.cost.estimatedUsdTotal.toFixed(3)} ·{' '}
-              <span className={sessionSummary.killCriteria.anchorMissRatePass ? 'text-emerald-400' : 'text-red-400'}>
-                anchor miss {(sessionSummary.archivist.anchorMissRate * 100).toFixed(1)}%
-              </span>{' '}
-              ·{' '}
-              <span className={sessionSummary.killCriteria.arcAdvancementPass ? 'text-emerald-400' : 'text-red-400'}>
-                arc advances {sessionSummary.perChapter.reduce((a, c) => a + c.arcAdvancesThisChapter, 0)}
-              </span>{' '}
-              · {sessionSummary.archivist.driftFlags} drift · {sessionSummary.pacing.advisoriesFired} pacing
-              ·{' '}
-              <span
-                className={
-                  sessionSummary.coherence.bySeverity.high > 0
-                    ? 'text-red-400'
-                    : sessionSummary.coherence.totalFindings > 0
-                      ? 'text-amber-400'
-                      : 'text-neutral-500'
-                }
-                title={`${sessionSummary.coherence.cleanTurns} clean turns · rate ${(
-                  sessionSummary.coherence.findingRate * 100
-                ).toFixed(1)}%`}
-              >
-                coherence {sessionSummary.coherence.totalFindings}
-                {sessionSummary.coherence.bySeverity.high > 0
-                  ? ` (${sessionSummary.coherence.bySeverity.high} high)`
-                  : ''}
-              </span>
-            </summary>
-            <div className="mt-3 space-y-2 text-xs text-neutral-300">
-              <div>
-                Chapters: {sessionSummary.chapters} · turns: {sessionSummary.totalTurns} · writes:{' '}
-                {sessionSummary.archivist.totalWrites} ({sessionSummary.archivist.accepted} accepted /{' '}
-                {sessionSummary.archivist.deferred} deferred / {sessionSummary.archivist.rejected} rejected)
-              </div>
-              <div className="text-neutral-400">
-                Cost — Narrator (Haiku): ${sessionSummary.cost.estimatedUsdNarrator.toFixed(3)} · Archivist (Haiku): ${sessionSummary.cost.estimatedUsdArchivist.toFixed(3)} · Arc Author (Sonnet): ${sessionSummary.cost.estimatedUsdArcAuthor.toFixed(3)} · Chapter Author (Sonnet): ${sessionSummary.cost.estimatedUsdAuthor.toFixed(3)} · Chapter meaning (Haiku): ${sessionSummary.cost.estimatedUsdChapterMeaning.toFixed(3)}
-              </div>
-              {(() => {
-                const w = sessionSummary.waterfall
-                const pct = (n: number) => `${(n * 100).toFixed(0)}%`
-                // Color thresholds reflect the "first three numbers" heuristic
-                // from the cost-improvements doc — generous bands; we just want
-                // to flag obvious anomalies during play, not enforce SLOs.
-                const cacheClass =
-                  w.cacheHitRatio.overall >= 0.6
-                    ? 'text-emerald-400'
-                    : w.cacheHitRatio.overall >= 0.3
-                      ? 'text-amber-400'
-                      : 'text-red-400'
-                const visibleClass =
-                  w.visibleSpendShare >= 0.5
-                    ? 'text-emerald-400'
-                    : w.visibleSpendShare >= 0.3
-                      ? 'text-amber-400'
-                      : 'text-red-400'
-                const archivistClass =
-                  w.archivistCallRate <= 0.7 ? 'text-emerald-400' : 'text-amber-400'
-                return (
-                  <div className="text-neutral-400">
-                    Waterfall —{' '}
-                    <span className={cacheClass} title="cacheRead / (cacheRead + freshIn) across all roles. Aim >60% after warmup.">
-                      cache hit {pct(w.cacheHitRatio.overall)}
-                    </span>{' '}
-                    (N {pct(w.cacheHitRatio.narrator)} · A {pct(w.cacheHitRatio.archivist)}) ·{' '}
-                    <span className={visibleClass} title="Narrator USD / total USD. Below 30% means you're paying mostly for hidden orchestration.">
-                      visible spend {pct(w.visibleSpendShare)}
-                    </span>{' '}
-                    · output share visible {pct(w.visibleOutputShare)} ·{' '}
-                    <span className={archivistClass} title="Archivist invocations per Narrator turn. Skip-gating drives this <1.">
-                      archivist {w.archivistCallRate.toFixed(2)}/turn
-                    </span>{' '}
-                    · author {w.authorCallsPerChapter.toFixed(2)}/chapter
-                    {w.recoveryRate > 0 && (
-                      <>
-                        {' · '}
-                        <span className="text-amber-400" title="narrator_output_recovered / narrator turns">
-                          recovery {pct(w.recoveryRate)}
-                        </span>
-                      </>
-                    )}
-                    {w.metaQuestionRate > 0 && (
-                      <>
-                        {' · '}
-                        <span className="text-red-400" title="narrator broke character — usually upstream context bug">
-                          meta {pct(w.metaQuestionRate)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )
-              })()}
-              <div className="text-neutral-500">
-                Avg/turn — Narrator: in {sessionSummary.waterfall.averages.narrator.freshInput} fresh +{' '}
-                {sessionSummary.waterfall.averages.narrator.cacheRead} cached → out{' '}
-                {sessionSummary.waterfall.averages.narrator.output} · Archivist: in{' '}
-                {sessionSummary.waterfall.averages.archivist.freshInput} fresh +{' '}
-                {sessionSummary.waterfall.averages.archivist.cacheRead} cached → out{' '}
-                {sessionSummary.waterfall.averages.archivist.output}
-                {sessionSummary.waterfall.averages.author.freshInput > 0 && (
-                  <>
-                    {' '}
-                    · Author/chapter: in {sessionSummary.waterfall.averages.author.freshInput} fresh +{' '}
-                    {sessionSummary.waterfall.averages.author.cacheRead} cached → out{' '}
-                    {sessionSummary.waterfall.averages.author.output}
-                  </>
-                )}
-              </div>
-              {(() => {
-                const lat = sessionSummary.waterfall.latency
-                const fmt = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`)
-                const parts: string[] = []
-                if (lat.narrator.samples > 0) {
-                  const ttft = lat.narrator.ttftMs > 0 ? ` (ttft ${fmt(lat.narrator.ttftMs)})` : ''
-                  parts.push(`Narrator ${fmt(lat.narrator.apiMs)}${ttft}`)
-                }
-                if (lat.archivist.samples > 0) parts.push(`Archivist ${fmt(lat.archivist.apiMs)}`)
-                if (lat.author.samples > 0) parts.push(`Author ${fmt(lat.author.apiMs)}`)
-                if (lat.arcAuthor.samples > 0) parts.push(`Arc-Author ${fmt(lat.arcAuthor.apiMs)}`)
-                if (lat.chapterMeaning.samples > 0) parts.push(`Meaning ${fmt(lat.chapterMeaning.apiMs)}`)
-                if (parts.length === 0) return null
-                return (
-                  <div className="text-neutral-500">Latency (avg apiMs) — {parts.join(' · ')}</div>
-                )
-              })()}
-              <div className="text-neutral-400">
-                Kill criteria — anchor miss ≤5%:{' '}
-                <span className={sessionSummary.killCriteria.anchorMissRatePass ? 'text-emerald-400' : 'text-red-400'}>
-                  {sessionSummary.killCriteria.anchorMissRatePass ? '✓' : '✗'}
-                </span>{' '}
-                · arc advances ≥1/chapter:{' '}
-                <span className={sessionSummary.killCriteria.arcAdvancementPass ? 'text-emerald-400' : 'text-red-400'}>
-                  {sessionSummary.killCriteria.arcAdvancementPass ? '✓' : '✗'}
-                </span>{' '}
-                · cost ≤$7:{' '}
-                <span className={sessionSummary.killCriteria.costPass ? 'text-emerald-400' : 'text-red-400'}>
-                  {sessionSummary.killCriteria.costPass ? '✓' : '✗'}
-                </span>
-              </div>
-              {(sessionSummary.coherence.totalFindings > 0 ||
-                sessionSummary.coherence.cleanTurns > 0) && (
-                <div className="text-neutral-400">
-                  Coherence — {sessionSummary.coherence.totalFindings} findings /{' '}
-                  {sessionSummary.coherence.cleanTurns} clean · rate{' '}
-                  {(sessionSummary.coherence.findingRate * 100).toFixed(1)}%
-                  {sessionSummary.coherence.totalFindings > 0 && (
-                    <>
-                      {' '}
-                      · severity L/M/H:{' '}
-                      {sessionSummary.coherence.bySeverity.low}/
-                      {sessionSummary.coherence.bySeverity.medium}/
-                      <span
-                        className={
-                          sessionSummary.coherence.bySeverity.high > 0
-                            ? 'text-red-400'
-                            : 'text-neutral-400'
-                        }
-                      >
-                        {sessionSummary.coherence.bySeverity.high}
-                      </span>
-                      {Object.keys(sessionSummary.coherence.byType).length > 0 && (
-                        <>
-                          {' · types: '}
-                          {Object.entries(sessionSummary.coherence.byType)
-                            .sort((a, b) => b[1] - a[1])
-                            .map(([t, n]) => `${t}=${n}`)
-                            .join(', ')}
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-              <div className="text-neutral-500 italic">
-                Thread continuity rate requires post-replay (computed in scripts/sf2-analyze.mjs against the exported log).
-              </div>
-              <button
-                onClick={downloadSessionLog}
-                className="px-3 py-1.5 mt-2 bg-neutral-800 hover:bg-neutral-700 rounded text-xs"
-              >
-                Download session log (.json)
-              </button>
-              <button
-                onClick={downloadReplayFixture}
-                className="px-3 py-1.5 mt-2 ml-2 bg-neutral-800 hover:bg-neutral-700 rounded text-xs"
-                title="Exports captured model outputs with before/after state for model-free replay tests"
-              >
-                Download replay fixture (.json)
-              </button>
-            </div>
-          </details>
-        )}
-
-        <details className="border border-neutral-800 rounded p-3 bg-neutral-900/40">
-          <summary className="cursor-pointer text-sm text-neutral-400">
-            Debug · {debug.length} events
-            <span className="ml-4 text-neutral-500">
-              {lastNarratorUsage && (
-                <>
-                  narrator — in {lastNarratorUsage.inputTokens} · out{' '}
-                  {lastNarratorUsage.outputTokens} · cache w{' '}
-                  {lastNarratorUsage.cacheWriteTokens} · r {lastNarratorUsage.cacheReadTokens}
-                </>
-              )}
-              {lastArchivistUsage && (
-                <>
-                  {' · '}
-                  archivist — in {lastArchivistUsage.inputTokens} · out{' '}
-                  {lastArchivistUsage.outputTokens} · cache w{' '}
-                  {lastArchivistUsage.cacheWriteTokens} · r {lastArchivistUsage.cacheReadTokens}
-                </>
-              )}
-            </span>
-          </summary>
-          <div className="mt-2 space-y-2 text-xs">
-            {debug
-              .slice()
-              .reverse()
-              .map((e, i) => (
-                <div key={i} className="border-t border-neutral-800 pt-2">
-                  <div className="text-amber-300">{e.kind}</div>
-                  <pre className="text-neutral-400 whitespace-pre-wrap overflow-x-auto">
-                    {JSON.stringify(e.data, null, 2)}
-                  </pre>
-                </div>
-              ))}
-          </div>
-        </details>
-
-        <footer className="flex justify-between text-xs text-neutral-600 pt-4 border-t border-neutral-800">
-          <span>Storyforge v2 · Stage 5 · Narrator Haiku · Archivist Haiku · Author Sonnet 4.6 · IDB</span>
-          <div className="space-x-3">
-            <button
-              onClick={closeChapterAndOpenNext}
-              disabled={busy || chapterTurnCount === 0}
-              className="underline hover:text-amber-400 disabled:opacity-40"
-              title="Run the Author to generate the next chapter's setup from the current state"
-            >
-              close chapter ▸ open Ch{state.meta.currentChapter + 1}
-            </button>
-            <button onClick={resetCampaign} className="underline hover:text-neutral-400">
-              reset campaign
-            </button>
-            <a href="/play" className="underline hover:text-neutral-400">
-              back to v1
-            </a>
-          </div>
-        </footer>
-      </div>
-    </div>
+    <Sf2PlayShell
+      state={state}
+      scrollRef={scrollRef}
+      prose={prose}
+      suggestedActions={suggestedActions}
+      pendingInput={pendingInput}
+      pendingCheck={pendingCheck}
+      rollResult={rollResult}
+      inspirationOffer={inspirationOffer}
+      rollModifier={rollModifier}
+      effectiveDc={currentEffectiveDc}
+      inspirationRemaining={availableInspiration(state)}
+      isStreaming={isStreaming}
+      isArchiving={isArchiving}
+      isGeneratingChapter={isGeneratingChapter}
+      generationElapsed={generationElapsed}
+      busy={busy}
+      chapterTurnCount={chapterTurnCount}
+      closeReadiness={closeReadiness}
+      campaignStats={campaignStats}
+      sessionSummary={sessionSummary}
+      debug={debug}
+      lastNarratorUsage={lastNarratorUsage}
+      lastArchivistUsage={lastArchivistUsage}
+      onPendingInputChange={setPendingInput}
+      onSendTurn={sendTurn}
+      onResolvePendingCheck={resolvePendingCheck}
+      onSpendInspiration={spendInspirationReroll}
+      onDeclineInspiration={declineInspirationReroll}
+      onCloseChapter={closeChapterAndOpenNext}
+      onResetCampaign={resetCampaign}
+      onDownloadSessionLog={downloadSessionLog}
+      onDownloadReplayFixture={downloadReplayFixture}
+    />
   )
 }
 
