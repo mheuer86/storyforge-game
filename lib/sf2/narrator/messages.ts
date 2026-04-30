@@ -75,6 +75,24 @@ function buildPlaybookPreferenceBlock(state: Sf2State): string {
   return `\n\n---\n\n### Playbook preference (soft)\nThe PC's proficiencies are: ${list}. When this turn's tension allows multiple plausible checks, prefer surfacing one that matches the PC's strengths over a peer skill — it makes the chapter feel like *this* PC's chapter, not a generic one. Player intent (an explicit skill tag in the input) overrides this. This is a default preference, not a constraint; surface a different skill if the moment genuinely calls for it.`
 }
 
+function buildLocationContinuityGuardBlock(state: Sf2State): string {
+  const recentSceneText = [
+    state.world.currentLocation?.name,
+    state.world.currentLocation?.description,
+    state.world.currentTimeLabel,
+    ...(state.world.sceneSnapshot?.established ?? []),
+    ...(state.chapter.sceneSummaries ?? []).slice(-2).map((s) => s.summary),
+  ].join(' ').toLowerCase()
+
+  const hasDepartureLock =
+    /\b(departed|undocked|cleared (?:the )?(?:station|departure envelope|clamps)|burned clear|open corridor|deep passage|trajectory|transit)\b/.test(recentSceneText) &&
+    !/\b(on the clamps|still on the clamps|docked against|in port)\b/.test(recentSceneText)
+
+  if (!hasDepartureLock) return ''
+
+  return `\n\n---\n\n### Private location continuity guard (mandatory, never mention)\nCurrent state says the PC's ship has already departed its prior station/dock and is in transit or clear space. Do not reintroduce station-side events as if the ship were still docked: no inspectors boarding from that station, no concourse actions, no clamp-release countdowns, no renewed departure window from the departed location. If the player explicitly returns or docks somewhere, narrate the transit/docking first and emit a fresh set_scene_snapshot. Suggested actions must be takeable from the ship's current location.`
+}
+
 function buildRoleAliasBlock(state: Sf2State, playerInput: string): string {
   const input = playerInput.toLowerCase()
   if (!input.trim()) return ''
@@ -198,6 +216,7 @@ export function buildMessagesForNarrator(
   const roleAliasBlock = buildRoleAliasBlock(state, playerInput)
   const skillTagBlock = buildSkillTagBindingBlock(playerInput)
   const playbookPrefBlock = buildPlaybookPreferenceBlock(state)
+  const locationContinuityGuardBlock = buildLocationContinuityGuardBlock(state)
 
   const openingSeed = state.chapter.artifacts.opening
   const perTurnDeltaText = renderPerTurnDelta(packet, {
@@ -205,7 +224,7 @@ export function buildMessagesForNarrator(
     isInitial,
     playerInput,
     withheldPremiseFacts: isInitial ? openingSeed?.withheldPremiseFacts : undefined,
-  }) + roleAliasBlock + skillTagBlock + playbookPrefBlock + recoveryBlock + coherenceBlock
+  }) + roleAliasBlock + skillTagBlock + playbookPrefBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
 
   // Cache marker strategy:
   //   Anthropic allows at most 4 cache_control markers per request. We already

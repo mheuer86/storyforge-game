@@ -1,0 +1,81 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator: location continuity guard after departure",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: after the ship cleared the station, later Narrator turns reintroduced station-side clamps/inspection/concourse affordances. The per-turn delta must inject a private guard once state says the ship has departed."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "meridian_deep_passage",
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "meridian_deep_passage",
+          "name": "Meridian deep passage",
+          "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+          "atmosphericConditions": ["engine hum", "corridor lights"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "meridian_deep_passage",
+          "location": {
+            "id": "meridian_deep_passage",
+            "name": "Meridian deep passage",
+            "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+            "atmosphericConditions": ["engine hum", "corridor lights"]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "Transit beyond Sable Reach",
+          "established": [
+            "Meridian departed under full burn.",
+            "Trajectory locks toward deep corridor passages.",
+            "No station pursuit vectors are active."
+          ],
+          "firstTurnIndex": 1
+        },
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "chapter": {
+        "currentSceneId": "meridian_deep_passage",
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_departure_burn",
+            "chapter": 1,
+            "summary": "Meridian burned clear of Sable Reach and achieved trajectory beyond station pursuit intercept margins.",
+            "leadsTo": "kinetic_carry"
+          }
+        ]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Burn clear.",
+            "narratorProse": "Meridian burns clear of the station and enters the deep passage.",
+            "timestamp": "replay"
+          }
+        ]
+      }
+    },
+    "playerInput": "Find Kael and ask what just happened.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Find Kael and ask what just happened.",
+      "userMessageContainsAll": [
+        "Private location continuity guard",
+        "already departed",
+        "no inspectors boarding from that station",
+        "Suggested actions must be takeable from the ship's current location"
+      ]
+    }
+  }
+}

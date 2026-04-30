@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "quick actions diversify clustered menu",
+  "name": "quick actions preserve coherent clustered menu",
   "source": {
     "kind": "synthetic",
-    "purpose": "Regression coverage from playtest fixture F11's deterministic half. When all quick actions cluster on one tactical axis, repair should provide at least three categories."
+    "purpose": "Regression coverage from 260430 Playthrough SO Pursuit: quick-action repair must not replace usable, concrete Narrator actions with generic fallbacks merely to diversify categories."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -33,8 +33,18 @@
         "Ask why the record changed."
       ],
       "outputCount": 4,
-      "categoryCountAtLeast": 3,
-      "notesInclude": ["diversified clustered quick actions"]
+      "outputActionsInclude": [
+        "Press the clerk for the missing line.",
+        "Demand the supervisor's name.",
+        "Push the office to answer now.",
+        "Ask why the record changed."
+      ],
+      "outputActionsExclude": [
+        "Use the strongest fact already on the table.",
+        "Examine the scene before responding.",
+        "Change the venue before pressing further.",
+        "Wait, and let the silence work."
+      ]
     }
   }
 }

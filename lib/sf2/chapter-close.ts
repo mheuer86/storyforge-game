@@ -80,7 +80,13 @@ function findBestUnresolvedLoadBearingThread(
   previousSpineThreadId: string
 ): Sf2Thread | null {
   const loadBearing = new Set(state.chapter.setup.loadBearingThreadIds)
-  return state.chapter.setup.activeThreadIds
+  const activeIds = new Set([
+    ...state.chapter.setup.activeThreadIds,
+    ...Object.values(state.campaign.threads)
+      .filter((thread) => thread.status === 'active')
+      .map((thread) => thread.id),
+  ])
+  const activeThreads = [...activeIds]
     .filter((id) => id !== previousSpineThreadId && loadBearing.has(id))
     .map((id) => state.campaign.threads[id])
     .filter((thread): thread is Sf2Thread =>
@@ -91,6 +97,26 @@ function findBestUnresolvedLoadBearingThread(
     .sort((a, b) => {
       const driverScore = driverPriority(b) - driverPriority(a)
       if (driverScore !== 0) return driverScore
+      return b.tension - a.tension
+    })
+
+  if (activeThreads[0]) return activeThreads[0]
+
+  // Mid-chapter successors can be introduced by the Archivist before the
+  // chapter runtime list catches up. If every authored load-bearing thread
+  // has already landed, prefer the most pressured active thread over leaving
+  // the UI stuck on "successor required" forever.
+  return Object.values(state.campaign.threads)
+    .filter((thread) =>
+      thread.id !== previousSpineThreadId &&
+      thread.status === 'active' &&
+      thread.chapterCreated === state.meta.currentChapter
+    )
+    .sort((a, b) => {
+      const driverScore = driverPriority(b) - driverPriority(a)
+      if (driverScore !== 0) return driverScore
+      const loadBearingScore = Number(b.loadBearing) - Number(a.loadBearing)
+      if (loadBearingScore !== 0) return loadBearingScore
       return b.tension - a.tension
     })[0] ?? null
 }

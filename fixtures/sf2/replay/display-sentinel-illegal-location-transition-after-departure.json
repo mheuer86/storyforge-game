@@ -1,0 +1,80 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: illegal location transition after departure",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: once state says the ship departed into transit, Narrator prose must not reintroduce station-side inspections, clamps, concourse, or shift-change pressure without a narrated return/docking."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "meridian_deep_passage",
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "meridian_deep_passage",
+          "name": "Meridian deep passage",
+          "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+          "atmosphericConditions": ["engine hum"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "meridian_deep_passage",
+          "location": {
+            "id": "meridian_deep_passage",
+            "name": "Meridian deep passage",
+            "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+            "atmosphericConditions": ["engine hum"]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "Transit beyond Sable Reach",
+          "established": [
+            "Meridian departed under full burn.",
+            "Trajectory locks toward deep corridor passages."
+          ],
+          "firstTurnIndex": 1
+        },
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "chapter": {
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_departure_burn",
+            "chapter": 1,
+            "summary": "Meridian burned clear of Sable Reach and achieved trajectory beyond station pursuit intercept margins.",
+            "leadsTo": "kinetic_carry"
+          }
+        ]
+      }
+    },
+    "playerInput": "Ask Kael what happens next.",
+    "narrator": {
+      "prose": "The compliance sweep alert chimes through the berth intercom. Inspectors are coming up the dock access, and the departure window will close at shift-change if the clamps do not release."
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 4,
+      "findingsInclude": [
+        {
+          "findingType": "illegal_location_transition",
+          "surfaceEquals": "compliance sweep"
+        },
+        {
+          "findingType": "illegal_location_transition",
+          "surfaceEquals": "Inspectors"
+        },
+        {
+          "findingType": "illegal_location_transition",
+          "surfaceEquals": "departure window"
+        },
+        {
+          "findingType": "illegal_location_transition",
+          "surfaceEquals": "shift-change"
+        }
+      ]
+    }
+  }
+}
