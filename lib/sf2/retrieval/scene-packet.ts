@@ -44,12 +44,13 @@ export function buildScenePacket(
     },
     player: buildPlayerPacket(state),
     cast: buildPresentCastPackets(state, workingSet),
-    tensions: buildThreadPackets(state, workingSet),
+    tensions: buildThreadPackets(state, workingSet, turnIndex),
     emotionalBeats: buildEmotionalBeatPackets(state, workingSet),
     revelationProgress: buildRevelationProgressPackets(state),
     temporalAnchors: buildTemporalAnchorPackets(state),
     chapter: buildChapterPacket(state),
     mechanics: buildMechanicsPacket(state),
+    operationPlan: state.campaign.operationPlan,
     recentContext: buildRecentContextPacket(state),
     pacing: computePacingAdvisory(state),
     playerInput: { text: playerInput, inferredIntent: '', resolvedAction },
@@ -239,6 +240,13 @@ export function renderPerTurnDelta(
     lines.push(`- Timeline anchors: ${packet.temporalAnchors.map((a) => `${a.label}: ${a.anchorText}`).join(' | ')}`)
   }
 
+  if (packet.chapter.firedPressureSteps.length > 0) {
+    lines.push(`\n### Pressure ladder — fired`)
+    for (const step of packet.chapter.firedPressureSteps) {
+      lines.push(`- step ${step.step} (turn ${step.firedAtTurn}): ${step.pressure}`)
+    }
+  }
+
   const revealHints = renderActiveRevelationHintProgress(packet, opts.isInitial)
   if (revealHints.length > 0) {
     lines.push(`\n### Revelation hint progress (GM-only)`)
@@ -263,6 +271,15 @@ export function renderPerTurnDelta(
     }
   }
 
+  if (packet.operationPlan) {
+    const plan = packet.operationPlan
+    lines.push(`\n### Operation plan (mutable)`)
+    lines.push(`- target: ${plan.target}`)
+    lines.push(`- approach: ${plan.approach}`)
+    lines.push(`- fallback: ${plan.fallback}`)
+    lines.push(`- status: ${plan.status} · last updated: turn ${plan.lastUpdatedTurn}`)
+  }
+
   if (packet.tensions.length > 0) {
     lines.push(`\n### Thread tensions (mutable)`)
     for (const t of packet.tensions) {
@@ -274,7 +291,9 @@ export function renderPerTurnDelta(
         t.openingFloor !== undefined
           ? ` · chapter pressure ${t.tension}/10 (opening ${t.openingFloor}/10${t.localEscalation ? ` +${t.localEscalation} local` : ''}; canonical ${t.canonicalTension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}${t.pressureRole ? `; role ${t.pressureRole}` : ''})`
           : ` · tension ${t.tension}/10`
-      lines.push(`- ${t.title} (${t.threadId}): ${t.status}${runtime}${stakeholders}`)
+      const delta = t.tensionDelta ? ` · Δ ${t.tensionDelta > 0 ? '+' : ''}${t.tensionDelta}` : ''
+      const clueTrail = t.clueTier ? ` · clue trail: ${t.clueTier}` : ''
+      lines.push(`- ${t.title} (${t.threadId}): ${t.status}${runtime}${delta}${clueTrail}${stakeholders}`)
     }
   }
 

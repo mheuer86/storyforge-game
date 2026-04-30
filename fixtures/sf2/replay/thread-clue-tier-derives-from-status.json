@@ -1,0 +1,47 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread clue tier derives from status",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Investigation satisfaction should be derived from existing clue status/count against a thread and surfaced as a terse mutable read."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "clues": {
+          "clue_attached_1": {
+            "id": "clue_attached_1",
+            "title": "Stamped Receipt",
+            "chapterCreated": 1,
+            "category": "clue",
+            "status": "attached",
+            "anchoredTo": ["thread_spine"],
+            "content": "The receipt was stamped before the hearing opened.",
+            "turn": 0,
+            "retrievalCue": "Receipt timing contradicts the official sequence."
+          },
+          "clue_attached_2": {
+            "id": "clue_attached_2",
+            "title": "Counter Log",
+            "chapterCreated": 1,
+            "category": "clue",
+            "status": "attached",
+            "anchoredTo": ["thread_spine"],
+            "content": "The counter log skips the accused family's arrival.",
+            "turn": 0,
+            "retrievalCue": "The ledger has a deliberate gap."
+          }
+        }
+      }
+    },
+    "playerInput": "Compare the receipt against the counter log.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "The intake problem (thread_spine): active · tension 5/10 · clue trail: load_bearing"
+    ]
+  }
+}

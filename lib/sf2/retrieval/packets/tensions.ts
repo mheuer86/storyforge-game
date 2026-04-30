@@ -9,7 +9,8 @@ import { getEffectiveThreadPressure } from '../../pressure/derive'
 
 export function buildThreadPackets(
   state: Sf2State,
-  workingSet: Sf2WorkingSet
+  workingSet: Sf2WorkingSet,
+  turnIndex: number
 ): Sf2ThreadPacket[] {
   const { campaign } = state
   const fullSet = new Set(workingSet.fullEntityIds)
@@ -26,12 +27,25 @@ export function buildThreadPackets(
     const stakeholderDispositions = t.stakeholders
       .map((s) => buildStakeholderDisposition(state, s))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
+    const cluesForThread = Object.values(campaign.clues).filter((c) => c.anchoredTo.includes(t.id))
+    // Δ surfaces only on the turn the change actually happened. lastAdvancedTurn
+    // is stamped to the patch's turnIndex (state pointer), which equals the next
+    // narrator render's turnIndex in both replay and production.
+    const tensionJustAdvanced = t.lastAdvancedTurn === turnIndex
+    const previousCanonical = tensionJustAdvanced
+      ? [...t.tensionHistory]
+          .filter((entry) => entry.turn < turnIndex)
+          .sort((a, b) => b.turn - a.turn)[0]?.value
+      : undefined
+    const rawDelta = previousCanonical === undefined ? undefined : t.tension - previousCanonical
+    const tensionDelta = rawDelta !== undefined && rawDelta !== 0 ? rawDelta : undefined
 
     return {
       threadId: t.id,
       title: t.title,
       status: t.status,
       tension: effectivePressure,
+      tensionDelta,
       canonicalTension: t.tension,
       peakTension: t.peakTension,
       pressureRole: chapterPressure?.role,
@@ -47,11 +61,24 @@ export function buildThreadPackets(
       anchoredPromises: Object.values(campaign.promises)
         .filter((p) => p.status === 'active' && p.anchoredTo.includes(t.id))
         .map((p) => ({ id: p.id, obligation: p.obligation })),
-      anchoredClues: Object.values(campaign.clues)
-        .filter((c) => c.status === 'attached' && c.anchoredTo.includes(t.id))
+      anchoredClues: cluesForThread
+        .filter((c) => c.status === 'attached')
         .map((c) => ({ id: c.id, content: c.content })),
+      clueTier: deriveClueTier(cluesForThread),
     }
   })
+}
+
+function deriveClueTier(
+  clues: Array<{ status: 'floating' | 'attached' | 'consumed' }>
+): Sf2ThreadPacket['clueTier'] {
+  if (clues.length === 0) return undefined
+  const floating = clues.filter((c) => c.status === 'floating').length
+  const attached = clues.filter((c) => c.status === 'attached').length
+  const consumed = clues.filter((c) => c.status === 'consumed').length
+  if (consumed >= 1 || attached >= 2) return 'load_bearing'
+  if (attached >= 1 || floating >= 3) return 'evidenced'
+  return 'lead'
 }
 
 function buildOwnerSummary(

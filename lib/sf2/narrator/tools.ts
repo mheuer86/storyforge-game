@@ -19,6 +19,8 @@ export const requestRollTool: Anthropic.Tool = {
       dc: { type: 'number', description: 'Difficulty class 5-25. For level-1 play, 12 easy, 15 meaningful standard, 18 hard/clutch, 20 very hard. Do not stack DC 18s against the same pressure surface.' },
       why: { type: 'string', description: 'One-sentence reason this check is required.' },
       consequence_on_fail: { type: 'string', description: 'What fails forward on a miss — the specific world-response pattern the PC lives through on failure.' },
+      modifier_type: { type: 'string', enum: ['advantage', 'disadvantage', 'challenge'], description: 'Optional code-resolved modifier. Use advantage/disadvantage for strong fictional positioning. Use challenge for unusually hard pressure (+2 effective DC). Inspiration is not requested here; the player may spend it after a failed roll.' },
+      modifier_reason: { type: 'string', description: 'One short clause anchoring why the modifier applies.' },
     },
     required: ['skill', 'dc', 'why', 'consequence_on_fail'],
   },

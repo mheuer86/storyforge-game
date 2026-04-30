@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "per-turn surfaces ladder history",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "The mutable Narrator block should make already-fired pressure ladder steps legible without adding persisted state."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "The clerk seals the intake ledger.",
+              "triggerCondition": "The player delays.",
+              "narrativeEffect": "Procedure narrows.",
+              "severity": "standard",
+              "fired": true,
+              "firedAtTurn": 2
+            },
+            {
+              "id": "pressure_2",
+              "pressure": "The registry calls security to the counter.",
+              "triggerCondition": "The player escalates in public.",
+              "narrativeEffect": "The hall tightens.",
+              "severity": "hard",
+              "fired": true,
+              "firedAtTurn": 5
+            },
+            {
+              "id": "pressure_3",
+              "pressure": "The file is routed upstairs.",
+              "triggerCondition": "The scene stalls.",
+              "narrativeEffect": "Authority moves offstage.",
+              "severity": "standard",
+              "fired": false
+            }
+          ]
+        }
+      }
+    },
+    "playerInput": "Keep pressing the clerk.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "### Pressure ladder — fired",
+      "- step 1 (turn 2): The clerk seals the intake ledger.",
+      "- step 2 (turn 5): The registry calls security to the counter."
+    ]
+  }
+}

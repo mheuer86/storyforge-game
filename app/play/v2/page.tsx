@@ -101,26 +101,38 @@ interface PendingCheck {
   dc: number
   why: string
   consequenceOnFail: string
+  modifierType?: 'advantage' | 'disadvantage' | 'challenge'
+  modifierReason?: string
   priorMessages: unknown[]
 }
 
 interface RollOutcome {
   d20: number
+  rawRolls?: number[]
   modifier: number
   total: number
   dc: number
+  effectiveDc?: number
   result: 'critical' | 'success' | 'failure' | 'fumble'
   skill?: string
+  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
+  modifierReason?: string
+  inspirationSpent?: boolean
+  originalRoll?: RollOutcome
 }
 
-function resolveRoll(d20: number, modifier: number, dc: number): RollOutcome {
+function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc): RollOutcome {
   const total = d20 + modifier
   let result: RollOutcome['result']
   if (d20 === 20) result = 'critical'
   else if (d20 === 1) result = 'fumble'
-  else if (total >= dc) result = 'success'
+  else if (total >= effectiveDc) result = 'success'
   else result = 'failure'
-  return { d20, modifier, total, dc, result }
+  return { d20, modifier, total, dc, effectiveDc, result }
+}
+
+function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
+  return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
 }
 
 // Pick ability by skill name + apply proficiency bonus if the player is
@@ -161,6 +173,7 @@ export default function PlayV2Page() {
   const [pendingInput, setPendingInput] = useState<string>('')
   const [pendingCheck, setPendingCheck] = useState<PendingCheck | null>(null)
   const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
+  const [inspirationOffer, setInspirationOffer] = useState<RollOutcome | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const [debug, setDebug] = useState<DebugEntry[]>([])
@@ -296,6 +309,7 @@ export default function PlayV2Page() {
     setSuggestedActions([])
     setPendingCheck(null)
     setRollResult(null)
+    setInspirationOffer(null)
 
     let proseAccum = ''
     let annotation: Record<string, unknown> | null = null
@@ -353,6 +367,8 @@ export default function PlayV2Page() {
         dc: number
         why: string
         consequenceOnFail: string
+        modifierType?: 'advantage' | 'disadvantage' | 'challenge'
+        modifierReason?: string
         priorMessages: unknown[]
       } | null = null
       let sawNarrateTurn = false
@@ -381,6 +397,13 @@ export default function PlayV2Page() {
                 dc: Number(event.dc ?? 15),
                 why: String(event.why ?? ''),
                 consequenceOnFail: String(event.consequenceOnFail ?? ''),
+                modifierType:
+                  event.modifierType === 'advantage' ||
+                  event.modifierType === 'disadvantage' ||
+                  event.modifierType === 'challenge'
+                    ? event.modifierType
+                    : undefined,
+                modifierReason: typeof event.modifierReason === 'string' ? event.modifierReason : undefined,
                 priorMessages: (event.priorMessages as unknown[]) ?? [],
               }
               break
@@ -524,7 +547,9 @@ export default function PlayV2Page() {
           turn: turnIndex,
           skill: sawRollPrompt.skill,
           dc: sawRollPrompt.dc,
+          effectiveDc: outcome.effectiveDc,
           rollResult: outcome.d20,
+          rawRolls: outcome.rawRolls,
           modifier: outcome.modifier,
           outcome:
             outcome.result === 'critical'
@@ -533,16 +558,35 @@ export default function PlayV2Page() {
                 ? 'critical_failure'
                 : outcome.result,
           consequenceSummary: sawRollPrompt.consequenceOnFail,
+          modifierType: outcome.modifierType,
+          modifierReason: outcome.modifierReason,
+          inspirationSpent: outcome.inspirationSpent,
+          originalRoll: outcome.originalRoll
+            ? {
+                rollResult: outcome.originalRoll.d20,
+                modifier: outcome.originalRoll.modifier,
+                total: outcome.originalRoll.total,
+                outcome:
+                  outcome.originalRoll.result === 'critical'
+                    ? 'critical_success'
+                    : outcome.originalRoll.result === 'fumble'
+                      ? 'critical_failure'
+                      : outcome.originalRoll.result,
+              }
+            : undefined,
         })
 
         rollResolution = {
           toolUseId: sawRollPrompt.toolUseId,
           skill: sawRollPrompt.skill,
           dc: sawRollPrompt.dc,
+          effectiveDc: outcome.effectiveDc,
           d20: outcome.d20,
           modifier: outcome.modifier,
           total: outcome.total,
           result: outcome.result,
+          modifierType: outcome.modifierType,
+          modifierReason: outcome.modifierReason,
           priorMessages: sawRollPrompt.priorMessages,
         }
         // Chip persists for the rest of this turn. Cleared at next turn start
@@ -1306,10 +1350,71 @@ export default function PlayV2Page() {
 
   function resolvePendingCheck() {
     if (!state || !pendingCheck) return
-    const d20 = 1 + Math.floor(Math.random() * 20)
+    const rollOne = () => 1 + Math.floor(Math.random() * 20)
+    const first = rollOne()
+    const second =
+      pendingCheck.modifierType === 'advantage' || pendingCheck.modifierType === 'disadvantage'
+        ? rollOne()
+        : undefined
+    const d20 =
+      pendingCheck.modifierType === 'advantage' && second !== undefined
+        ? Math.max(first, second)
+        : pendingCheck.modifierType === 'disadvantage' && second !== undefined
+          ? Math.min(first, second)
+          : first
     const modifier = modifierForSkill(state, pendingCheck.skill)
-    const outcome = { ...resolveRoll(d20, modifier, pendingCheck.dc), skill: pendingCheck.skill }
+    const effectiveDc = effectiveDcFor(pendingCheck)
+    const outcome = {
+      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      rawRolls: second !== undefined ? [first, second] : undefined,
+      skill: pendingCheck.skill,
+      modifierType: pendingCheck.modifierType,
+      modifierReason: pendingCheck.modifierReason,
+    }
+    const failed = outcome.result === 'failure' || outcome.result === 'fumble'
+    if (failed && state.player.inspiration > 0) {
+      setRollResult(outcome)
+      setInspirationOffer(outcome)
+      return
+    }
     // Hand the outcome back to the paused narrator loop.
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    if (resolver) resolver(outcome)
+  }
+
+  function declineInspirationReroll() {
+    if (!inspirationOffer) return
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    setInspirationOffer(null)
+    if (resolver) resolver(inspirationOffer)
+  }
+
+  // Inspiration is a flat reroll, not advantage-equivalent: a way out of a
+  // failed check, not stacked dice. Original outcome is preserved as
+  // originalRoll so the chronicle can show "rolled 7, spent inspiration,
+  // rolled 14".
+  function spendInspirationReroll() {
+    if (!state || !pendingCheck || !inspirationOffer) return
+    const next: Sf2State = structuredClone(state)
+    next.player.inspiration = Math.max(0, next.player.inspiration - 1)
+    setState(next)
+    void persist(next)
+
+    const d20 = 1 + Math.floor(Math.random() * 20)
+    const modifier = modifierForSkill(next, pendingCheck.skill)
+    const effectiveDc = effectiveDcFor(pendingCheck)
+    const outcome: RollOutcome = {
+      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      skill: pendingCheck.skill,
+      modifierType: 'inspiration',
+      modifierReason: 'spent after failed roll',
+      inspirationSpent: true,
+      originalRoll: inspirationOffer,
+    }
+    setRollResult(outcome)
+    setInspirationOffer(null)
     const resolver = rollResolverRef.current
     rollResolverRef.current = null
     if (resolver) resolver(outcome)
@@ -1508,7 +1613,43 @@ export default function PlayV2Page() {
             )}
             <span className="font-bold">{rollResult.result.toUpperCase()}</span> ·{' '}
             d20 {rollResult.d20} + {rollResult.modifier} ={' '}
-            <span className="font-bold">{rollResult.total}</span> vs DC {rollResult.dc}
+            <span className="font-bold">{rollResult.total}</span> vs DC {rollResult.effectiveDc ?? rollResult.dc}
+            {rollResult.rawRolls && rollResult.rawRolls.length > 1 && (
+              <span className="opacity-70"> ({rollResult.rawRolls.join(', ')})</span>
+            )}
+            {rollResult.modifierType && (
+              <span className="opacity-70"> · {rollResult.modifierType}</span>
+            )}
+            {rollResult.originalRoll && (
+              <span className="opacity-70"> · original {rollResult.originalRoll.total}</span>
+            )}
+          </div>
+        )}
+
+        {pendingCheck && inspirationOffer && (
+          <div className="p-4 rounded border border-sky-700 bg-sky-950/30 space-y-3 text-sm text-sky-100">
+            <div>
+              <div className="font-bold text-sky-300">Spend inspiration?</div>
+              <div className="text-sky-100/80">
+                Reroll this failed {pendingCheck.skill} check. Inspiration remaining: {state.player.inspiration}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={spendInspirationReroll}
+                disabled={isArchiving}
+                className="px-4 py-2 bg-sky-800 hover:bg-sky-700 disabled:opacity-40 rounded"
+              >
+                Spend inspiration
+              </button>
+              <button
+                onClick={declineInspirationReroll}
+                disabled={isArchiving}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 rounded"
+              >
+                Keep result
+              </button>
+            </div>
           </div>
         )}
 
@@ -1519,8 +1660,13 @@ export default function PlayV2Page() {
                 Roll required
               </div>
               <div className="text-lg text-amber-100">
-                {pendingCheck.skill} · DC {pendingCheck.dc}
+                {pendingCheck.skill} · DC {effectiveDcFor(pendingCheck)}
               </div>
+              {pendingCheck.modifierType && (
+                <div className="text-xs text-amber-200/80 mt-1">
+                  {pendingCheck.modifierType}: {pendingCheck.modifierReason}
+                </div>
+              )}
               <div className="text-sm text-neutral-300 mt-1">{pendingCheck.why}</div>
               <div className="text-xs text-neutral-400 mt-1 italic">
                 on fail: {pendingCheck.consequenceOnFail}

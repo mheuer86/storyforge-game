@@ -1478,13 +1478,61 @@ function applyUpdate(
           entityId: id,
         })
       }
+      const tensionChanged = rawTension !== undefined && nextTension !== prior.tension
+      let nextHistory = prior.tensionHistory
+      if (tensionChanged) {
+        // Backfill an initial baseline so the first-ever change in an empty
+        // history can still produce a delta on the same render.
+        if (nextHistory.length === 0) {
+          nextHistory = [
+            { chapter: prior.chapterCreated, turn: Math.max(0, turnIndex - 1), value: prior.tension },
+          ]
+        }
+        nextHistory = [
+          ...nextHistory,
+          { chapter: draft.chapter.setup.chapter, turn: turnIndex, value: nextTension },
+        ]
+      }
+      const explicitLastAdvanced = write.changes.last_advanced_turn as number | undefined
       draft.campaign.threads[id] = {
         ...prior,
         tension: nextTension,
+        tensionHistory: nextHistory,
         peakTension: Math.max(prior.peakTension ?? prior.tension, nextTension),
         status: (write.changes.status as Sf2Thread['status']) ?? prior.status,
-        lastAdvancedTurn:
-          (write.changes.last_advanced_turn as number | undefined) ?? prior.lastAdvancedTurn,
+        lastAdvancedTurn: tensionChanged
+          ? explicitLastAdvanced ?? turnIndex
+          : explicitLastAdvanced ?? prior.lastAdvancedTurn,
+      }
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
+    case 'operation_plan': {
+      const c = write.changes
+      const prior = draft.campaign.operationPlan
+      const status = c.status
+      const nextStatus =
+        status === 'active' || status === 'paused' || status === 'resolved' || status === 'abandoned'
+          ? status
+          : prior?.status ?? 'active'
+      const nextTarget = typeof c.target === 'string' && c.target.trim() ? c.target.trim() : prior?.target ?? ''
+      const nextApproach = typeof c.approach === 'string' && c.approach.trim() ? c.approach.trim() : prior?.approach ?? ''
+      const nextFallback = typeof c.fallback === 'string' && c.fallback.trim() ? c.fallback.trim() : prior?.fallback ?? ''
+      if (!prior && !nextTarget && !nextApproach && !nextFallback) {
+        outcomes.push({
+          accepted: false,
+          reason: 'operation_plan: first write needs at least one of target/approach/fallback',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      draft.campaign.operationPlan = {
+        target: nextTarget,
+        approach: nextApproach,
+        fallback: nextFallback,
+        status: nextStatus,
+        lastUpdatedTurn: turnIndex,
       }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return

@@ -1,0 +1,67 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "archivist tension update records history",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "End-to-end write path. An Archivist update to thread.tension must push a snapshot to tensionHistory so future renders can derive a delta. Without this push, the per-turn delta surface is dead."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 4,
+            "peakTension": 4,
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Push the registry harder.",
+    "narrator": {
+      "prose": "The pressure spikes.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "tension": 7
+            },
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "thread_spine": 3
+          }
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["updates[0]"],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "tension": 7,
+        "peakTension": 7,
+        "tensionHistoryIncludes": [
+          { "turn": 0, "value": 4 },
+          { "turn": 1, "value": 7 }
+        ]
+      }
+    ],
+    "perTurnDeltaIncludes": [
+      "The intake problem (thread_spine): active · tension 7/10 · Δ +3"
+    ]
+  }
+}
