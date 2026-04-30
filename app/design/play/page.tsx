@@ -4,9 +4,9 @@
 // Route: /design/play
 
 import { useEffect } from 'react'
-import { Menu, Send } from 'lucide-react'
+import { Activity, Database, Menu, Send } from 'lucide-react'
 
-const RAIL_IDLE_CLASS = 'opacity-70 saturate-[.82]'
+const RAIL_IDLE_CLASS = 'opacity-85 saturate-[.92]'
 const RAIL_ACTIVE_CLASS = 'hover:opacity-100 hover:saturate-100 focus-within:opacity-100 focus-within:saturate-100'
 
 type DiffTone = 'loss' | 'gain' | 'change'
@@ -23,6 +23,7 @@ type Slot = {
   number: string
   name: string
   status: string
+  state: 'ready' | 'limited' | 'live' | 'spent'
 }
 
 type Location = {
@@ -52,13 +53,23 @@ type Thread = {
 
 type RollCardProps = {
   state: RollState
+  title?: string
+  dc?: string
+  modifier?: string
+  modifierValue?: string
+  prompt?: string
+  result?: string
+  roll?: string
+  total?: string
+  dcValue?: string
+  outcome?: 'critical' | 'success' | 'failure' | 'fumble'
 }
 
 const QUICK_SLOTS: Slot[] = [
-  { number: '01', name: 'Pulse Cutter', status: '1-use' },
-  { number: '02', name: 'Memetic Damp.', status: 'ready' },
-  { number: '03', name: 'Stim - Tier 2', status: '2/3' },
-  { number: '04', name: 'Cipher Spike', status: 'live' },
+  { number: '01', name: 'Pulse Cutter', status: '1-use', state: 'limited' },
+  { number: '02', name: 'Memetic Damp.', status: 'ready', state: 'ready' },
+  { number: '03', name: 'Stim - Tier 2', status: '2/3', state: 'ready' },
+  { number: '04', name: 'Cipher Spike', status: 'live', state: 'live' },
 ]
 
 const LOCATIONS: Location[] = [
@@ -113,12 +124,16 @@ const THREADS: Thread[] = [
   },
 ]
 
-const TURN_14_DIFF: DiffItem[] = [
-  { label: 'HP', delta: '-6', tone: 'loss' },
-  { label: 'CRED', delta: '-25', tone: 'loss' },
-  { label: '+Intel', delta: 'Hostages clustered near Engineering', tone: 'gain' },
-  { label: 'Aysu', delta: '+1 trust', tone: 'gain' },
-  { label: 'Stim', delta: '3/3 -> 2/3', tone: 'change' },
+const TURN_13_DIFF: DiffItem[] = [
+  { label: '+Intel', delta: 'Bay-3 lockout uses Cartel handshake', tone: 'gain' },
+  { label: 'Thread', delta: 'HELIA pulse cycle evidenced', tone: 'gain' },
+  { label: 'Clock', delta: 'HELIA sweep 2/4', tone: 'change' },
+]
+
+const TURN_11_DIFF: DiffItem[] = [
+  { label: 'Clock', delta: 'HELIA sweep 1/4', tone: 'loss' },
+  { label: 'Aysu', delta: 'position exposed', tone: 'loss' },
+  { label: '+Intel', delta: 'Lift A listens for old ciphers', tone: 'gain' },
 ]
 
 const ACTIONS = [
@@ -169,6 +184,13 @@ function actionToneClass(tone: string) {
   return 'border-muted-foreground/40 bg-muted/30 text-muted-foreground'
 }
 
+function slotStateClass(state: Slot['state']) {
+  if (state === 'live') return 'border-primary/70 bg-primary/14 shadow-[inset_0_0_18px_-14px] shadow-primary text-primary'
+  if (state === 'limited') return 'border-warning/55 bg-warning/10 text-warning'
+  if (state === 'spent') return 'border-border/40 bg-background/30 text-muted-foreground/55 opacity-60'
+  return 'border-border/55 bg-background/55 text-foreground'
+}
+
 function TopBar() {
   return (
     <header className="grid grid-cols-[390px_minmax(760px,1fr)_420px] gap-5 px-5 pt-4 pb-3">
@@ -180,14 +202,20 @@ function TopBar() {
         <span className="justify-self-center font-mono text-[14px] tracking-[0.28em] uppercase text-foreground">The Quiet Mutiny</span>
         <span className="justify-self-end font-mono text-[10px] tracking-[0.18em] uppercase text-muted-foreground/55">Turn 14</span>
       </div>
-      <button
-        type="button"
-        className="inline-flex items-center justify-end gap-2 rounded-lg border border-border/60 bg-card/35 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-        aria-label="Open menu"
-      >
-        <Menu className="h-4 w-4" />
-        Menu
-      </button>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <div className="hidden items-center gap-2 rounded-lg border border-border/45 bg-card/30 px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground xl:flex">
+          <Database className="h-3.5 w-3.5 text-primary/70" />
+          Diagnostics in menu
+        </div>
+        <button
+          type="button"
+          className="inline-flex items-center justify-end gap-2 rounded-lg border border-border/60 bg-card/35 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          aria-label="Open menu"
+        >
+          <Menu className="h-4 w-4" />
+          Menu
+        </button>
+      </div>
     </header>
   )
 }
@@ -283,12 +311,52 @@ function QuickSlotsPanel() {
     >
       <div className="grid grid-cols-2 gap-2">
         {QUICK_SLOTS.map((slot) => (
-          <div key={slot.number} className="min-h-[68px] rounded-md border border-border/30 bg-background/30 p-3">
+          <div
+            key={slot.number}
+            className={['min-h-[72px] rounded-md border p-3 transition-colors', slotStateClass(slot.state)].join(' ')}
+          >
             <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">{slot.number}</div>
-            <div className="mt-1 text-[12.5px] leading-snug text-foreground/85">{slot.name}</div>
-            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/85">{slot.status}</div>
+            <div className="mt-1 text-[12.5px] leading-snug text-foreground/90">{slot.name}</div>
+            <div className="mt-1 inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em]">
+              {slot.status}
+            </div>
           </div>
         ))}
+      </div>
+    </HUDPanel>
+  )
+}
+
+function PressurePanel() {
+  return (
+    <HUDPanel
+      title="Pressure"
+      right={
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/45 bg-warning/10 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-warning">
+          <Activity className="h-3 w-3" />
+          step 2/4
+        </span>
+      }
+    >
+      <div className="space-y-3">
+        <div>
+          <div className="font-mono text-[12px] uppercase tracking-[0.18em] text-foreground/90">HELIA hardens the station against rescue</div>
+          <div className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground/85">
+            Current face: core intelligence using old Cartel protocols.
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {[0, 1, 2, 3].map((step) => (
+            <div
+              key={step}
+              className={[
+                'h-1.5 rounded-full border',
+                step < 2 ? 'border-warning/50 bg-warning/65 shadow-[0_0_12px_-4px] shadow-warning' : 'border-border/50 bg-background/60',
+              ].join(' ')}
+            />
+          ))}
+        </div>
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/75">Close readiness: not yet · spine unresolved</div>
       </div>
     </HUDPanel>
   )
@@ -417,19 +485,93 @@ function PlayerMessage({ children }: { children: React.ReactNode }) {
   )
 }
 
-function RollCard({ state }: RollCardProps) {
+function RollCard({
+  state,
+  title = 'Slicing Check',
+  dc = 'DC 14',
+  modifier = 'INT +4',
+  modifierValue = '+4',
+  prompt = "Reach into the bay door's handshake chip and feed it the old Cartel cipher.",
+  result = 'd20 15 + 4 = 19 vs DC 14',
+  roll = '15',
+  total = '19',
+  dcValue = 'DC 14',
+  outcome = 'success',
+}: RollCardProps) {
   const resolved = state === 'resolved'
+  const isBad = outcome === 'failure' || outcome === 'fumble'
+  const isCrit = outcome === 'critical'
+  const outcomeLabel = isCrit ? 'critical' : outcome
+  const outcomeTextClass = isCrit ? 'text-warning' : isBad ? 'text-destructive' : 'text-success'
+  const outcomeBorderClass = isCrit
+    ? 'border-warning/45 bg-warning/10 shadow-warning/15'
+    : isBad
+      ? 'border-destructive/45 bg-destructive/10 shadow-destructive/15'
+      : 'border-success/45 bg-success/10 shadow-success/15'
+  const outcomeLineClass = isCrit ? 'bg-warning/45' : isBad ? 'bg-destructive/45' : 'bg-success/45'
+  const outcomeDotClass = isCrit
+    ? 'bg-warning shadow-warning/40'
+    : isBad
+      ? 'bg-destructive shadow-destructive/40'
+      : 'bg-success shadow-success/40'
+  const playerFormulaTileClass = isCrit
+    ? 'border-warning/55 bg-warning/10 text-warning'
+    : isBad
+      ? 'border-destructive/55 bg-destructive/10 text-destructive'
+      : 'border-success/55 bg-success/10 text-success'
+  const dcFormulaTileClass = isBad
+    ? 'border-destructive/55 bg-destructive/10 text-destructive'
+    : 'border-muted-foreground/30 bg-background/40 text-muted-foreground/70'
+  const formulaTileClass = 'flex h-9 w-14 items-center justify-center rounded border font-mono text-[15px] font-bold leading-none'
+
+  if (resolved) {
+    return (
+      <div className={['border-y px-7 py-4 shadow-[0_0_28px_-20px]', outcomeBorderClass].join(' ')}>
+        <div className="space-y-3 text-center">
+          <div className={['flex items-center gap-4 font-mono text-[12px] uppercase tracking-[0.28em]', outcomeTextClass].join(' ')}>
+            <span className={['h-px flex-1', outcomeLineClass].join(' ')} />
+            <span className={['h-1.5 w-1.5 rounded-full shadow-[0_0_12px_2px]', outcomeDotClass].join(' ')} />
+            <span className="whitespace-nowrap">{title}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="whitespace-nowrap font-bold">{outcomeLabel}</span>
+            <span className={['h-1.5 w-1.5 rounded-full shadow-[0_0_12px_2px]', outcomeDotClass].join(' ')} />
+            <span className={['h-px flex-1', outcomeLineClass].join(' ')} />
+          </div>
+          <p className="mx-auto max-w-[780px] text-[14px] italic leading-relaxed text-foreground/72" style={{ fontFamily: 'var(--font-narrative)' }}>
+            {prompt}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-[12px] tracking-[0.08em]">
+            <span className={[formulaTileClass, playerFormulaTileClass].join(' ')}>
+              {roll}
+            </span>
+            <span className={[formulaTileClass, playerFormulaTileClass].join(' ')}>
+              {modifierValue}
+            </span>
+            <span className="text-muted-foreground/55">=</span>
+            <span className={[formulaTileClass, playerFormulaTileClass].join(' ')}>
+              {total}
+            </span>
+            <span className="text-muted-foreground/55">vs.</span>
+            <span className={[formulaTileClass, 'w-20', dcFormulaTileClass].join(' ')}>
+              {dcValue}
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="border-y border-primary/25 bg-background/20 px-7 py-4 shadow-[0_0_28px_-20px] shadow-primary">
       <div className="space-y-3 text-center">
         <div className="flex items-center gap-4 font-mono text-[12px] uppercase tracking-[0.28em] text-primary">
           <span className="h-px flex-1 bg-primary/35" />
           <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_2px] shadow-primary/40" />
-          <span className="whitespace-nowrap">Slicing Check</span>
+          <span className="whitespace-nowrap">{title}</span>
           <span className="text-muted-foreground/50">·</span>
-          <span className="whitespace-nowrap">DC 14</span>
+          <span className="whitespace-nowrap">{dc}</span>
           <span className="text-muted-foreground/50">·</span>
-          <span className="whitespace-nowrap">INT +4</span>
+          <span className="whitespace-nowrap">{modifier}</span>
           {resolved && (
             <>
               <span className="text-muted-foreground/50">·</span>
@@ -440,11 +582,11 @@ function RollCard({ state }: RollCardProps) {
           <span className="h-px flex-1 bg-primary/35" />
         </div>
         <p className="mx-auto max-w-[780px] text-[14px] italic leading-relaxed text-foreground/70" style={{ fontFamily: 'var(--font-narrative)' }}>
-          Reach into the bay door's handshake chip and feed it the old Cartel cipher.
+          {prompt}
         </p>
         <div>
           {resolved ? (
-            <span className="font-mono text-[12px] tracking-[0.08em] text-success">d20 15 + 4 = 19 vs DC 14</span>
+            <span className="font-mono text-[12px] tracking-[0.08em] text-success">{result}</span>
           ) : (
             <button
               type="button"
@@ -461,7 +603,7 @@ function RollCard({ state }: RollCardProps) {
 
 function StateDiffLine({ turn, items }: { turn: number; items: DiffItem[] }) {
   return (
-    <div className="font-mono text-[11px] leading-relaxed py-1 opacity-65">
+    <div className="font-mono text-[11px] leading-relaxed py-3 opacity-65">
       <span className="text-muted-foreground">turn {turn} -</span>{' '}
       {items.map((item, i) => (
         <span key={`${item.label}-${item.delta}`}>
@@ -477,11 +619,12 @@ function StateDiffLine({ turn, items }: { turn: number; items: DiffItem[] }) {
 function ActionList({ disabled = false, stress = false }: { disabled?: boolean; stress?: boolean }) {
   const actions = stress ? STRESS_ACTIONS : ACTIONS
   return (
-    <div className={['space-y-1.5', disabled ? 'pointer-events-none' : ''].join(' ')}>
+    <div className={['space-y-1.5', disabled ? 'pointer-events-none opacity-45 saturate-50' : ''].join(' ')}>
       {actions.map((action) => (
         <button
           key={action.text}
           type="button"
+          disabled={disabled}
           className="grid w-full grid-cols-[92px_minmax(0,1fr)] items-center gap-4 rounded-lg border border-border/85 bg-card/75 px-5 py-2 text-left shadow-[0_0_16px_-14px] shadow-primary transition-colors hover:border-primary/55 hover:bg-primary/10"
         >
           <span className={['rounded border px-2 py-1 text-center font-mono text-[9px] uppercase tracking-[0.12em]', actionToneClass(action.tone)].join(' ')}>
@@ -498,14 +641,21 @@ function CommandInput({ disabled = false }: { disabled?: boolean }) {
   return (
     <div
       className={[
-        'flex items-center gap-3 rounded-lg border border-primary/45 bg-card/72 px-5 py-2.5 shadow-[0_0_22px_-14px] shadow-primary',
-        disabled ? '' : '',
+        'flex items-end gap-3 rounded-lg border bg-card/72 px-5 py-2.5 shadow-[0_0_22px_-14px] shadow-primary',
+        disabled ? 'border-border/55 opacity-55' : 'border-primary/45 focus-within:border-primary/80',
       ].join(' ')}
     >
-      <span className="font-mono text-[13px] text-primary">▸</span>
-      <div className="min-w-0 flex-1 font-mono text-[13px] text-muted-foreground">Type an action or / for commands...</div>
+      <span className="pb-1.5 font-mono text-[13px] text-primary">▸</span>
+      <textarea
+        rows={1}
+        disabled={disabled}
+        defaultValue=""
+        placeholder={disabled ? 'Resolve the check before acting again...' : 'Type an action or / for commands...'}
+        className="min-h-8 flex-1 resize-none bg-transparent py-1.5 font-mono text-[13px] leading-snug text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+      />
       <button
         type="button"
+        disabled={disabled}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/45 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground"
         aria-label="Submit command"
       >
@@ -520,27 +670,81 @@ function PlaySurface() {
     <main className="flex min-h-0 rounded-xl border border-border/55 bg-background/66 px-12 py-5 shadow-[0_0_34px_-22px] shadow-primary">
       <div className="flex min-h-0 w-full flex-col">
         <section className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="mx-auto max-w-[1000px] space-y-3.5">
-          <SceneMarker label="OBELISK-9 · HANGAR BAY 3 · GRAVITY NOMINAL · TURN 14" />
-          <div className="space-y-3.5">
+        <div className="mx-auto max-w-[1000px] space-y-6">
+          <SceneMarker label="OBELISK-9 · HANGAR BAY 3 · GRAVITY NOMINAL · TURN 11" />
+          <div className="space-y-6">
+            <GMMessage>
+              <p>
+                Aysu points toward Lift A, where the service lights blink in a pattern too regular to be random. The access plate is half-open, its wire bundle breathing cold vapor into the corridor.
+              </p>
+            </GMMessage>
+            <PlayerMessage>
+              I try to ghost across the open stripe before the sweep turns back.
+            </PlayerMessage>
+            <RollCard
+              state="resolved"
+              title="Stealth Check"
+              dc="DC 14"
+              dcValue="DC 14"
+              modifier="DEX +2"
+              modifierValue="+2"
+              prompt="Cross the lit gap before HELIA's sensor sweep returns."
+              roll="4"
+              total="6"
+              outcome="failure"
+            />
+            <GMMessage>
+              <p>
+                The floor light snaps white under Vess's boot. Somewhere inside the lift casing, a relay clicks awake, and the door remembers there is someone here to measure.
+              </p>
+            </GMMessage>
+            <StateDiffLine turn={11} items={TURN_11_DIFF} />
+            <SceneMarker label="TURN 12 · RECOVERY" />
+            <GMMessage>
+              <p>
+                The maintenance corridor narrows into a throat of coolant pipes and shuttered cargo slits. Tessil-3 rolls ahead, one manipulator raised in apology, while Aysu marks the patrol sweep with two fingers against the wall.
+              </p>
+            </GMMessage>
+            <PlayerMessage>
+              I let Tessil take the lead and watch for the first place HELIA's cycle repeats.
+            </PlayerMessage>
+            <RollCard
+              state="resolved"
+              title="Perception Check"
+              dc="DC 13"
+              dcValue="DC 13"
+              modifier="WIS +3"
+              modifierValue="+3"
+              prompt="Hold still long enough to read the pulse without letting HELIA read you back."
+              result="d20 12 + 3 = 15 vs DC 13"
+              roll="12"
+              total="15"
+              outcome="success"
+            />
+            <GMMessage>
+              <p>
+                The repeat comes as a blue stutter across the bay doors: four beats, a silent gap, then the lock panel wakes just long enough to accept a handshake. Old Cartel work, hidden under station paint.
+              </p>
+            </GMMessage>
+            <StateDiffLine turn={13} items={TURN_13_DIFF} />
+            <SceneMarker label="TURN 14 · PLAYER COMMITMENT" />
             <GMMessage>
               <p>
                 The bay's emergency lume strips pulse a slow, sick blue - HELIA's signature. Aysu crouches beside a stack of sealed cryo-pods, fingertips on her sidearm, eyes flicking between the door's handshake panel and the dark slit of the access lift. <em>"Four-point-two seconds,"</em> she breathes. <em>"That's the cycle."</em>
               </p>
             </GMMessage>
-            <div className="space-y-2">
-              <PlayerMessage>
-                I take the panel. Old Cartel cipher first - if she's running anything older than the Drift War, it'll bite.
-              </PlayerMessage>
-            </div>
-            <RollCard state="pending" />
-            <StateDiffLine turn={14} items={TURN_14_DIFF} />
+            <PlayerMessage>
+              I take the panel. Old Cartel cipher first - if she's running anything older than the Drift War, it'll bite.
+            </PlayerMessage>
           </div>
         </div>
         </section>
         <div className="mx-auto mt-2.5 w-full max-w-[1000px] shrink-0 space-y-1.5">
-          <ActionList />
-          <CommandInput />
+          <RollCard state="pending" />
+          <div className="rounded-lg border border-primary/35 bg-primary/10 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+            Check pending · suggested actions return after the roll resolves
+          </div>
+          <CommandInput disabled />
         </div>
       </div>
     </main>
@@ -567,6 +771,7 @@ export default function PlayDesignPreviewPage() {
             <aside className={['sticky top-4 flex max-h-[calc(100vh-2rem)] flex-col gap-3 transition-all duration-300', RAIL_IDLE_CLASS, RAIL_ACTIVE_CLASS].join(' ')}>
               <LocationsPanel />
               <PresentPanel />
+              <PressurePanel />
               <IntelPanel />
             </aside>
           </div>
