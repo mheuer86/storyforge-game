@@ -1,0 +1,56 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene summary coalesces narrator and archivist",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Archivist scene_result and Narrator scene_end can both report the same scene close in one turn; state should keep one summary."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Close the exchange.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The intake exchange ends with the paper still unsigned.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "scene_end",
+            "summary": "Narrator summary: the intake exchange ends.",
+            "leads_to": "kinetic_carry"
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      }
+    },
+    "archivist": {
+      "patch": {
+        "sceneResult": {
+          "sceneId": "scene_intake",
+          "chapter": 1,
+          "summary": "Archivist summary: the intake exchange closes on an unsigned paper.",
+          "leadsTo": "unanswered_question"
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneSummariesCount": 1,
+    "sceneSummariesInclude": [
+      {
+        "sceneId": "scene_intake",
+        "chapter": 1,
+        "leadsTo": "unanswered_question",
+        "summaryIncludes": "Archivist summary"
+      }
+    ],
+    "sceneBundleCacheCleared": true
+  }
+}

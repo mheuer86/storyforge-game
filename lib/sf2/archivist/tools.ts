@@ -64,9 +64,9 @@ export const extractTurnTool: Anthropic.Tool = {
                 },
                 temp_load_tag: {
                   type: 'string',
-                  enum: [...SF2_TEMP_LOAD_TAGS],
+                  enum: [...SF2_TEMP_LOAD_TAGS, ''],
                   description:
-                    "Optional. NPC only. Transient state lingering from recent events that modulates the per-turn behavioral imperative without changing disposition tier. Distinct from beat tags (those describe what just happened). Clears when a subsequent NPC update restates disposition without this field — pass an empty string to clear explicitly.",
+                    "Optional. NPC only. Transient state lingering from recent events that modulates the per-turn behavioral imperative without changing disposition tier. Distinct from beat tags (those describe what just happened). Clears when a subsequent NPC update restates disposition without this field; pass an empty string to clear explicitly without changing disposition.",
                 },
               },
               additionalProperties: true,

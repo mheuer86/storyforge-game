@@ -4,7 +4,6 @@
 // Per-turn content lives in the scene packet, appended at BP4 in the caller.
 
 import type { Sf2State } from '../types'
-import { getEffectiveThreadPressure } from '../pressure/derive'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE: shared craft principles across all roles. Session-scoped, cached BP2.
@@ -386,24 +385,20 @@ The scene packet may include a "Campaign lexicon" block — phrases coined in ea
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SITUATION: chapter-scoped, cached BP3.
-// Built from the Author's chapter setup runtime state + current pressure step.
+// Built from the Author's chapter setup contract. Per-turn pressure state
+// belongs in the scene packet / current-turn delta, not this cached block.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildNarratorSituation(state: Sf2State): string {
   const { chapter } = state
   const setup = chapter.setup
   const frame = setup.frame
-  const face = setup.antagonistField.currentPrimaryFace
   const arc = state.campaign.arcPlan
   const arcLink = setup.arcLink
   const pacing = setup.pacingContract
   const spineThread = setup.spineThreadId
     ? state.campaign.threads[setup.spineThreadId]
     : undefined
-  const currentStep = setup.pressureLadder.find((s) => !s.fired)
-  const spinePressure = spineThread
-    ? renderThreadPressureLine(state, spineThread.id)
-    : ''
 
   return `## Chapter ${chapter.number}: ${chapter.title}
 
@@ -418,13 +413,20 @@ export function buildNarratorSituation(state: Sf2State): string {
 - Failure: ${frame.outcomeSpectrum.failure}
 - Catastrophic: ${frame.outcomeSpectrum.catastrophic}
 
-### Current pressure face
-${face.name} (${face.role}) — ${face.pressureStyle}
+### Antagonist field
+- Source: ${setup.antagonistField.sourceSystem}
+- Core pressure: ${setup.antagonistField.corePressure}
+- Default face: ${setup.antagonistField.defaultFace.name} (${setup.antagonistField.defaultFace.role}) — ${setup.antagonistField.defaultFace.pressureStyle}
+- Escalation logic: ${setup.antagonistField.escalationLogic}
 
-	### Current pressure step
-	${currentStep ? `"${currentStep.pressure}" — fires when: ${currentStep.triggerCondition}` : 'All ladder steps fired; chapter is at final pressure.'}
-	
-	${spineThread ? `### Spine thread\n${spineThread.title} — ${spineThread.retrievalCue}${spinePressure ? `\n${spinePressure}` : ''}` : ''}
+### Pressure ladder plan
+${setup.pressureLadder.length > 0
+  ? setup.pressureLadder
+      .map((step, index) => `- ${index + 1}. "${step.pressure}" — fires when: ${step.triggerCondition}; effect: ${step.narrativeEffect}`)
+      .join('\n')
+  : '- No authored ladder steps.'}
+
+${spineThread ? `### Spine thread anchor\n${spineThread.title} (${spineThread.id}) — ${spineThread.retrievalCue}` : ''}
 
 ${arc ? `### Arc context
 - Arc: ${arc.title}
@@ -433,7 +435,7 @@ ${arc ? `### Arc context
 - Arc question: ${arc.arcQuestion}
 - Chapter function: ${arcLink?.chapterFunction ?? '(not set)'}
 - Player stance read: ${arcLink?.playerStanceRead ?? '(not set)'}
-- Active pressure engines: ${renderPressureEngines(state, arcLink?.pressureEngineIds ?? [])}` : ''}
+- Pressure engine plan: ${renderPressureEnginePlan(state, arcLink?.pressureEngineIds ?? [])}` : ''}
 
 ${pacing ? `### Chapter pacing contract
 - Target: ${pacing.targetTurns.min}-${pacing.targetTurns.max} turns
@@ -444,29 +446,22 @@ ${pacing ? `### Chapter pacing contract
 - Close when: ${pacing.closeWhenAny.join(' | ')}
 
 Do not open a new major branch unless it helps land the chapter question.` : ''}`
-	}
+}
 
-function renderPressureEngines(
+function renderPressureEnginePlan(
   state: Sf2State,
   ids: string[]
 ): string {
-  const runtimeEngines = Object.values(state.campaign.engines ?? {})
+  const plannedEngines = state.campaign.arcPlan?.pressureEngines ?? []
   const selected = ids.length > 0
-    ? ids.map((id) => state.campaign.engines?.[id]).filter((e): e is NonNullable<typeof e> => Boolean(e))
-    : runtimeEngines.slice(0, 2)
+    ? ids
+        .map((id) => plannedEngines.find((engine) => engine.id === id))
+        .filter((e): e is NonNullable<typeof e> => Boolean(e))
+    : plannedEngines.slice(0, 2)
   return selected
     .map((e) => {
-      const anchors = e.anchorThreadIds.length > 0 ? `; anchors ${e.anchorThreadIds.join(', ')}` : ''
-      const status = e.status !== 'active' ? `; status ${e.status}` : ''
-      return `${e.name} ${e.value}/10 (${e.visibleSymptoms}${anchors}${status})`
+      const aggregation = e.aggregation ? `; aggregation ${e.aggregation}` : ''
+      return `${e.name} (${e.visibleSymptoms}; advances when ${e.advancesWhen}; slows when ${e.slowsWhen}${aggregation})`
     })
     .join('; ') || '(none selected)'
-}
-
-function renderThreadPressureLine(state: Sf2State, threadId: string): string {
-  const thread = state.campaign.threads[threadId]
-  const pressure = state.chapter.setup.threadPressure?.[threadId]
-  if (!thread || !pressure) return ''
-  const effective = getEffectiveThreadPressure(threadId, state.chapter.setup)
-  return `Chapter pressure: ${effective}/10 (opening ${pressure.openingFloor}/10${pressure.localEscalation ? ` +${pressure.localEscalation} local` : ''}; canonical ${thread.tension}/10${thread.peakTension !== undefined ? `; peak ${thread.peakTension}/10` : ''}; role ${pressure.role})`
 }

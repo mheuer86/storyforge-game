@@ -1,4 +1,4 @@
-import type { Sf2State } from '../types'
+import { SF2_SCHEMA_VERSION, type Sf2State } from '../types'
 import type {
   Sf2CampaignListItem,
   Sf2ChapterArtifactRecord,
@@ -57,7 +57,13 @@ export class IndexedDbPersistence implements StoryforgePersistence2 {
     const tx = db.transaction(STORE_CAMPAIGNS, 'readonly')
     const store = tx.objectStore(STORE_CAMPAIGNS)
     const result = await txAwait(tx, store.get(campaignId))
-    return (result as Sf2State | undefined) ?? null
+    const state = (result as Sf2State | undefined) ?? null
+    if (!state) return null
+    if (state.meta?.schemaVersion !== SF2_SCHEMA_VERSION) {
+      await this.deleteCampaign(campaignId)
+      return null
+    }
+    return state
   }
 
   async saveCampaign(state: Sf2State): Promise<void> {

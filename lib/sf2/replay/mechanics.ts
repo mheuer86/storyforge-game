@@ -120,7 +120,18 @@ export function applyMechanicalEffectLocally(
       const priorCast = [...state.world.sceneSnapshot.presentNpcIds].sort().join(',')
       const priorOffstageRoster = offstageRosterSignature(state)
       const priorSceneId = state.world.sceneSnapshot.sceneId
-      const nextSceneId = String(snap.location_id ?? m.location_id ?? priorSceneId)
+      const priorLocationId =
+        state.world.currentLocation.id ||
+        state.world.sceneSnapshot.location?.id ||
+        priorSceneId
+      const nextLocationId = String(snap.location_id ?? m.location_id ?? priorLocationId)
+      const explicitSceneId = typeof snap.scene_id === 'string'
+        ? snap.scene_id
+        : typeof m.scene_id === 'string'
+          ? m.scene_id
+          : undefined
+      const locationChanged = nextLocationId !== priorLocationId
+      const nextSceneId = explicitSceneId ?? (locationChanged ? nextLocationId : priorSceneId)
       const sceneChanged = nextSceneId !== priorSceneId
 
       const rawPresentNpcIds = Array.isArray(snap.present_npc_ids)
@@ -183,20 +194,20 @@ export function applyMechanicalEffectLocally(
       const nextCast = [...resolvedPresent].sort().join(',')
 
       let nextLocation = state.world.currentLocation
-      if (nextSceneId !== priorSceneId) {
-        const registered = state.campaign.locations[nextSceneId]
+      if (locationChanged) {
+        const registered = state.campaign.locations[nextLocationId]
         if (registered) {
           nextLocation = registered
         } else {
           nextLocation = {
-            id: nextSceneId,
-            name: nextSceneId.replace(/_/g, ' '),
+            id: nextLocationId,
+            name: nextLocationId.replace(/_/g, ' '),
             description: Array.isArray(snap.established)
               ? (snap.established as string[]).join(' · ')
               : state.world.currentLocation.description,
             atmosphericConditions: state.world.currentLocation.atmosphericConditions,
           }
-          state.campaign.locations[nextSceneId] = nextLocation
+          state.campaign.locations[nextLocationId] = nextLocation
         }
       }
 
@@ -269,14 +280,23 @@ export function applyMechanicalEffectLocally(
     state.meta.currentSceneId = loc.id
     state.world.sceneBundleCache = undefined
   } else if (kind === 'scene_end') {
-    state.chapter.sceneSummaries.push({
+    const summary = {
       sceneId: state.world.sceneSnapshot.sceneId,
       chapter: state.meta.currentChapter,
       summary: String(m.summary ?? ''),
       leadsTo: (m.leads_to as 'unanswered_question' | 'kinetic_carry' | 'relational_tension' | 'unpaid_promise' | 'null') === 'null'
         ? null
         : ((m.leads_to as 'unanswered_question' | 'kinetic_carry' | 'relational_tension' | 'unpaid_promise') ?? null),
-    })
+    }
+    const existing = state.chapter.sceneSummaries.find(
+      (s) => s.chapter === summary.chapter && s.sceneId === summary.sceneId
+    )
+    if (existing) {
+      if (!existing.summary && summary.summary) existing.summary = summary.summary
+      if (!existing.leadsTo && summary.leadsTo) existing.leadsTo = summary.leadsTo
+    } else {
+      state.chapter.sceneSummaries.push(summary)
+    }
     state.world.sceneBundleCache = undefined
   }
 }

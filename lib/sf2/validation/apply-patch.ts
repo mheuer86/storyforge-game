@@ -266,9 +266,8 @@ function coerceHeat(
 }
 
 // Returns the coerced tag, undefined for explicit clear (empty string), or
-// `'unset'` to mean "no field provided — keep prior value." Distinguishing
-// clear-vs-unchanged matters: an archivist update that re-asserts disposition
-// without naming the tag should not silently wipe it.
+// `'unset'` to mean "no field provided." NPC disposition re-assertions clear
+// the transient tag; unrelated updates keep the prior value.
 function coerceTempLoadTag(
   raw: unknown
 ): { value: Sf2TempLoadTag | undefined; status: 'unset' | 'cleared' | 'set' | 'invalid'; rawValue: string | null } {
@@ -1456,11 +1455,14 @@ function applyUpdate(
           entityId: id,
         })
       }
+      const dispositionRestated = Object.prototype.hasOwnProperty.call(write.changes, 'disposition')
       const nextTempLoadTag =
         tagUpdate.status === 'set'
           ? tagUpdate.value
           : tagUpdate.status === 'cleared'
             ? undefined
+            : dispositionRestated
+              ? undefined
             : prior.tempLoadTag
       const next: Sf2Npc = {
         ...prior,
