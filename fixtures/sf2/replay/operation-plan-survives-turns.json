@@ -1,0 +1,34 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "operation plan survives turns",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "The current operation plan is campaign memory and should surface in the mutable Narrator block."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "operationPlan": {
+          "target": "Reach the sealed freight bay under the registry annex.",
+          "approach": "Enter through the morning intake line, then split off at the service stair.",
+          "fallback": "If challenged, pose as misfiled petitioners and retreat to the loading yard.",
+          "status": "active",
+          "lastUpdatedTurn": 3
+        }
+      }
+    },
+    "playerInput": "Review the plan before we move.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "### Operation plan (mutable)",
+      "- target: Reach the sealed freight bay under the registry annex.",
+      "- approach: Enter through the morning intake line, then split off at the service stair.",
+      "- fallback: If challenged, pose as misfiled petitioners and retreat to the loading yard.",
+      "- status: active · last updated: turn 3"
+    ]
+  }
+}

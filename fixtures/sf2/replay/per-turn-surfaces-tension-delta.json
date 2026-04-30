@@ -1,0 +1,32 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "per-turn surfaces tension delta",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Thread packets should derive current pressure movement from existing tension history and render non-zero deltas."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 5,
+            "lastAdvancedTurn": 1,
+            "tensionHistory": [
+              { "chapter": 1, "turn": 0, "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    "playerInput": "Name the contradiction in the file.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "The intake problem (thread_spine): active · tension 5/10 · Δ +2"
+    ]
+  }
+}

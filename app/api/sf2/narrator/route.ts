@@ -32,13 +32,20 @@ function resolveClient(req: NextRequest): Anthropic {
 function rollResultMessage(resolution: {
   skill: string
   dc: number
+  effectiveDc?: number
   d20: number
   modifier: number
   total: number
   result: 'critical' | 'success' | 'failure' | 'fumble'
+  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
+  modifierReason?: string
 }): string {
-  const { skill, dc, d20, modifier, total, result } = resolution
-  const base = `Roll result — ${skill} vs DC ${dc}: rolled d20=${d20} + ${modifier} = ${total}. `
+  const { skill, dc, effectiveDc, d20, modifier, total, result, modifierType, modifierReason } = resolution
+  const dcText = effectiveDc && effectiveDc !== dc ? `DC ${effectiveDc} (base ${dc})` : `DC ${dc}`
+  const modifierText = modifierType
+    ? ` Modifier: ${modifierType}${modifierReason ? ` (${modifierReason})` : ''}.`
+    : ''
+  const base = `Roll result — ${skill} vs ${dcText}: rolled d20=${d20} + ${modifier} = ${total}.${modifierText} `
   if (result === 'critical') {
     return (
       base +
@@ -70,10 +77,13 @@ const rollResolutionSchema = z.object({
   toolUseId: z.string(),
   skill: z.string(),
   dc: z.number(),
+  effectiveDc: z.number().optional(),
   d20: z.number().min(1).max(20),
   modifier: z.number(),
   total: z.number(),
   result: z.enum(['critical', 'success', 'failure', 'fumble']),
+  modifierType: z.enum(['advantage', 'disadvantage', 'inspiration', 'challenge']).optional(),
+  modifierReason: z.string().optional(),
   priorMessages: z.array(z.unknown()),
 })
 
@@ -94,6 +104,8 @@ type Sf2NarratorStreamEvent =
       dc: number
       why: string
       consequenceOnFail: string
+      modifierType?: 'advantage' | 'disadvantage' | 'challenge'
+      modifierReason?: string
       priorMessages: unknown[]
     }
   | {
@@ -545,6 +557,8 @@ export async function POST(req: NextRequest) {
             dc: number
             why: string
             consequence_on_fail: string
+            modifier_type?: 'advantage' | 'disadvantage' | 'challenge'
+            modifier_reason?: string
           }
           const priorMessages: Anthropic.MessageParam[] = [
             ...messages,
@@ -557,6 +571,8 @@ export async function POST(req: NextRequest) {
             dc: input.dc,
             why: input.why,
             consequenceOnFail: input.consequence_on_fail,
+            modifierType: input.modifier_type,
+            modifierReason: input.modifier_reason,
             priorMessages,
           })
         } else if (narrateUse) {

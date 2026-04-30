@@ -62,6 +62,7 @@ interface ReplayFixture {
       prohibitionsExclude?: string[]
     }>
     perTurnDeltaIncludes?: string[]
+    perTurnDeltaExcludes?: string[]
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
@@ -83,7 +84,13 @@ interface ReplayFixture {
     }>
     activeThreadIdsEquals?: string[]
     activeThreadIdsExcludes?: string[]
-    threadsInclude?: Array<{ threadId: string; status?: string; tension?: number; peakTension?: number }>
+    threadsInclude?: Array<{
+      threadId: string
+      status?: string
+      tension?: number
+      peakTension?: number
+      tensionHistoryIncludes?: Array<{ turn: number; value: number }>
+    }>
     chapterCloseReadiness?: {
       pivotSignaled?: boolean
       closeReady: boolean
@@ -766,6 +773,11 @@ function assertExpected(
       failures.push(`perTurnDelta missing "${fragment}"`)
     }
   }
+  for (const fragment of expected.perTurnDeltaExcludes ?? []) {
+    if (perTurnDeltaText.toLowerCase().includes(fragment.toLowerCase())) {
+      failures.push(`perTurnDelta unexpectedly contains "${fragment}"`)
+    }
+  }
   for (const pressureExpected of expected.threadPressureIncludes ?? []) {
     const entry = state.chapter.setup.threadPressure?.[pressureExpected.threadId]
     if (pressureExpected.absent) {
@@ -943,6 +955,14 @@ function assertExpected(
     }
     if (threadExpected.peakTension !== undefined && thread.peakTension !== threadExpected.peakTension) {
       failures.push(`thread ${threadExpected.threadId} peakTension expected ${threadExpected.peakTension}, got ${thread.peakTension}`)
+    }
+    for (const wantEntry of threadExpected.tensionHistoryIncludes ?? []) {
+      const found = thread.tensionHistory.some((e) => e.turn === wantEntry.turn && e.value === wantEntry.value)
+      if (!found) {
+        failures.push(
+          `thread ${threadExpected.threadId} tensionHistory missing { turn: ${wantEntry.turn}, value: ${wantEntry.value} }; got ${JSON.stringify(thread.tensionHistory)}`
+        )
+      }
     }
   }
   if (expected.chapterCloseReadiness) {

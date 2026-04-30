@@ -1,0 +1,48 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "operation plan merges on update",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Partial operation-plan updates should merge into the single campaign-level current plan and stamp the update turn."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "operationPlan": {
+          "target": "Reach the sealed freight bay under the registry annex.",
+          "approach": "Enter through the morning intake line.",
+          "fallback": "Retreat to the loading yard.",
+          "status": "active",
+          "lastUpdatedTurn": 3
+        }
+      }
+    },
+    "playerInput": "If the clerk blocks us, we use the service stair instead.",
+    "isInitial": false,
+    "narrator": { "prose": "If the clerk blocks you, the service stair becomes the route.", "annotation": null },
+    "archivist": {
+      "patch": {
+        "turnIndex": 4,
+        "updates": [
+          {
+            "entityKind": "operation_plan",
+            "entityId": "current",
+            "changes": {
+              "approach": "Enter through the morning intake line; if blocked, use the service stair."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "- target: Reach the sealed freight bay under the registry annex.",
+      "- approach: Enter through the morning intake line; if blocked, use the service stair.",
+      "- fallback: Retreat to the loading yard.",
+      "- status: active · last updated: turn 4"
+    ]
+  }
+}

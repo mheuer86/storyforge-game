@@ -1,0 +1,33 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "per-turn tension delta suppressed on no-change turn",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Δ on a thread should silently disappear on turns where tension didn't change. Without recency gating it would stick across turns until the next change."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 7,
+            "lastAdvancedTurn": 0,
+            "tensionHistory": [
+              { "chapter": 1, "turn": 0, "value": 4 }
+            ]
+          }
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Wait and listen.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "perTurnDeltaExcludes": [
+      "Δ"
+    ]
+  }
+}

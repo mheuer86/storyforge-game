@@ -765,6 +765,14 @@ export interface Sf2OpeningSceneSpec {
   withheldPremiseFacts?: string[]
 }
 
+export interface Sf2OperationPlan {
+  target: string
+  approach: string
+  fallback: string
+  status: 'active' | 'paused' | 'resolved' | 'abandoned'
+  lastUpdatedTurn: number
+}
+
 // Output 1: persisted, retrieval-facing
 export interface Sf2ChapterSetupRuntimeState {
   chapter: Sf2ChapterNumber
@@ -1100,10 +1108,21 @@ export interface Sf2RollRecord {
   turn: number
   skill: string
   dc: number
+  effectiveDc?: number
   rollResult: number
+  rawRolls?: number[]
   modifier: number
   outcome: 'success' | 'failure' | 'critical_success' | 'critical_failure'
   consequenceSummary?: string
+  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
+  modifierReason?: string
+  inspirationSpent?: boolean
+  originalRoll?: {
+    rollResult: number
+    modifier: number
+    total: number
+    outcome: 'success' | 'failure' | 'critical_success' | 'critical_failure'
+  }
 }
 
 export interface Sf2History {
@@ -1172,7 +1191,7 @@ export interface Sf2ArchivistCreate {
 }
 
 export interface Sf2ArchivistUpdate {
-  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document'
+  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document' | 'operation_plan'
   entityId: Sf2EntityId
   changes: Record<string, unknown>
   confidence: Sf2PatchConfidence
@@ -1394,6 +1413,7 @@ export interface Sf2ThreadPacket {
   status: Sf2ThreadStatus
   /** Chapter-effective pressure after opening cooling + local escalation. */
   tension: Sf2Tension
+  tensionDelta?: number
   canonicalTension: Sf2Tension
   peakTension?: Sf2Tension
   pressureRole?: ThreadRole
@@ -1406,6 +1426,7 @@ export interface Sf2ThreadPacket {
   anchoredDecisions: Array<{ id: Sf2EntityId; summary: string }>
   anchoredPromises: Array<{ id: Sf2EntityId; obligation: string }>
   anchoredClues: Array<{ id: Sf2EntityId; content: string }>
+  clueTier?: 'lead' | 'evidenced' | 'load_bearing'
 }
 
 export interface Sf2ChapterPacket {
@@ -1415,6 +1436,7 @@ export interface Sf2ChapterPacket {
   loadBearingThreadIds: Sf2EntityId[]
   currentPressureFace: string | null
   currentPressureStep?: { pressure: string; narrativeEffect: string }
+  firedPressureSteps: Array<{ step: number; firedAtTurn: number; pressure: string }>
   arc?: {
     title: string
     scenario: string
@@ -1476,6 +1498,7 @@ export interface Sf2NarratorScenePacket {
   temporalAnchors: Sf2TemporalAnchorPacket[]
   chapter: Sf2ChapterPacket
   mechanics: Sf2MechanicsPacket
+  operationPlan?: Sf2OperationPlan
   recentContext: Sf2RecentContextPacket
   pacing: Sf2PacingAdvisory
   playerInput: {
@@ -1532,6 +1555,7 @@ export interface Sf2LexiconEntry {
 }
 
 export interface Sf2Campaign {
+  operationPlan?: Sf2OperationPlan
   arcPlan?: Sf2ArcPlan
   arcs: Record<Sf2EntityId, Sf2Arc>
   threads: Record<Sf2EntityId, Sf2Thread>
