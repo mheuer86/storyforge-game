@@ -1,0 +1,87 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "archivist-created successor enters chapter runtime",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: when the Archivist creates a successor thread, code must add it to chapter runtime pressure lists so the spine/pressure system can promote and retrieve it."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "The debt is solved, but the cargo problem opens.",
+    "narrator": {
+      "prose": "The debt clears. In the same breath, the sealed crate becomes the real question: someone at Kess is waiting for this exact cargo.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "thread",
+            "confidence": "high",
+            "payload": {
+              "id": "thread_kess_delivery",
+              "title": "Kess Station Delivery and Bloc Exposure",
+              "owner": { "kind": "faction", "name_or_id": "faction_registry" },
+              "tension": 7,
+              "resolution_criteria": "Determine who is waiting at Kess and what the crate exposes.",
+              "failure_mode": "The crate's pursuers catch the ship before the handoff.",
+              "retrieval_cue": "Whenever the resolved debt opens into the Kess delivery.",
+              "successor_to_thread_id": "thread_spine"
+            }
+          }
+        ],
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The original debt pressure has landed.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "activeThreadIdsEquals": ["thread_kess_delivery"],
+    "loadBearingThreadIdsIncludes": ["thread_kess_delivery"],
+    "successorThreadIdsIncludes": ["thread_kess_delivery"],
+    "threadsInclude": [
+      {
+        "threadId": "thread_kess_delivery",
+        "status": "active",
+        "tension": 7,
+        "peakTension": 7,
+        "loadBearing": true,
+        "chapterDriverKind": "successor",
+        "successorToThreadId": "thread_spine"
+      },
+      {
+        "threadId": "thread_spine",
+        "status": "resolved_clean",
+        "tension": 0
+      }
+    ],
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_kess_delivery",
+        "role": "load_bearing",
+        "openingFloor": 7,
+        "localEscalation": 0,
+        "maxThisChapter": 7,
+        "effectivePressure": 7
+      }
+    ],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "promotedSpineThreadId": "thread_kess_delivery"
+    },
+    "archivistAcceptedRefs": ["creates[0]", "transitions[0]"]
+  }
+}

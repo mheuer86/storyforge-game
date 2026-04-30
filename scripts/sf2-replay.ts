@@ -82,13 +82,24 @@ interface ReplayFixture {
       currentSummaryIncludes?: string
       revisionsCount?: number
     }>
+    sceneSummariesInclude?: Array<{
+      sceneId: string
+      chapter?: number
+      leadsTo?: string | null
+      summaryIncludes?: string
+    }>
     activeThreadIdsEquals?: string[]
     activeThreadIdsExcludes?: string[]
+    loadBearingThreadIdsIncludes?: string[]
+    successorThreadIdsIncludes?: string[]
     threadsInclude?: Array<{
       threadId: string
       status?: string
       tension?: number
       peakTension?: number
+      loadBearing?: boolean
+      chapterDriverKind?: string
+      successorToThreadId?: string
       tensionHistoryIncludes?: Array<{ turn: number; value: number }>
     }>
     chapterCloseReadiness?: {
@@ -137,6 +148,7 @@ interface ReplayFixture {
     }
     threadPressureIncludes?: Array<{
       threadId: string
+      role?: string
       openingFloor?: number
       localEscalation?: number
       maxThisChapter?: number
@@ -417,6 +429,9 @@ function runFixturePath(path: string): ReplayResult {
   const displayFindings = scanDisplayOutput(fixture.input.narrator.prose, {
     action: 'allow_but_quarantine_writes', // observe-mode: don't block, just record
     campaign: stateBefore.campaign,
+    locationContinuity: {
+      recentSceneText: buildLocationContinuityText(stateBefore),
+    },
     absentSpeakers: {
       absentEntityIds: sentinelKernel.absentEntityIds,
       aliasMap: sentinelKernel.aliasMap,
@@ -471,6 +486,16 @@ function runFixturePath(path: string): ReplayResult {
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
+}
+
+function buildLocationContinuityText(state: Sf2State): string {
+  return [
+    state.world.currentLocation?.name,
+    state.world.currentLocation?.description,
+    state.world.currentTimeLabel,
+    ...(state.world.sceneSnapshot?.established ?? []),
+    ...(state.chapter.sceneSummaries ?? []).slice(-2).map((s) => s.summary),
+  ].join(' ')
 }
 
 function assertArcTransform(fixture: ReplayFixture, failures: string[]): void {
@@ -788,6 +813,9 @@ function assertExpected(
       failures.push(`threadPressure ${pressureExpected.threadId} missing`)
       continue
     }
+    if (pressureExpected.role !== undefined && entry.role !== pressureExpected.role) {
+      failures.push(`threadPressure ${pressureExpected.threadId} role expected ${pressureExpected.role}, got ${entry.role}`)
+    }
     if (pressureExpected.openingFloor !== undefined && entry.openingFloor !== pressureExpected.openingFloor) {
       failures.push(`threadPressure ${pressureExpected.threadId} openingFloor expected ${pressureExpected.openingFloor}, got ${entry.openingFloor}`)
     }
@@ -931,6 +959,22 @@ function assertExpected(
       )
     }
   }
+  for (const summaryExpected of expected.sceneSummariesInclude ?? []) {
+    const summary = state.chapter.sceneSummaries.find((s) => s.sceneId === summaryExpected.sceneId)
+    if (!summary) {
+      failures.push(`scene summary ${summaryExpected.sceneId} missing`)
+      continue
+    }
+    if (summaryExpected.chapter !== undefined && summary.chapter !== summaryExpected.chapter) {
+      failures.push(`scene summary ${summaryExpected.sceneId} chapter expected ${summaryExpected.chapter}, got ${summary.chapter}`)
+    }
+    if (summaryExpected.leadsTo !== undefined && summary.leadsTo !== summaryExpected.leadsTo) {
+      failures.push(`scene summary ${summaryExpected.sceneId} leadsTo expected ${summaryExpected.leadsTo}, got ${summary.leadsTo ?? 'null'}`)
+    }
+    if (summaryExpected.summaryIncludes !== undefined && !summary.summary.includes(summaryExpected.summaryIncludes)) {
+      failures.push(`scene summary ${summaryExpected.sceneId} summary missing "${summaryExpected.summaryIncludes}"`)
+    }
+  }
   if (expected.activeThreadIdsEquals !== undefined) {
     const want = [...expected.activeThreadIdsEquals].sort().join(',')
     const got = [...state.chapter.setup.activeThreadIds].sort().join(',')
@@ -939,6 +983,16 @@ function assertExpected(
   for (const id of expected.activeThreadIdsExcludes ?? []) {
     if (state.chapter.setup.activeThreadIds.includes(id)) {
       failures.push(`activeThreadIds unexpectedly includes ${id}`)
+    }
+  }
+  for (const id of expected.loadBearingThreadIdsIncludes ?? []) {
+    if (!state.chapter.setup.loadBearingThreadIds.includes(id)) {
+      failures.push(`loadBearingThreadIds missing ${id}`)
+    }
+  }
+  for (const id of expected.successorThreadIdsIncludes ?? []) {
+    if (!(state.chapter.setup.successorThreadIds ?? []).includes(id)) {
+      failures.push(`successorThreadIds missing ${id}`)
     }
   }
   for (const threadExpected of expected.threadsInclude ?? []) {
@@ -955,6 +1009,15 @@ function assertExpected(
     }
     if (threadExpected.peakTension !== undefined && thread.peakTension !== threadExpected.peakTension) {
       failures.push(`thread ${threadExpected.threadId} peakTension expected ${threadExpected.peakTension}, got ${thread.peakTension}`)
+    }
+    if (threadExpected.loadBearing !== undefined && thread.loadBearing !== threadExpected.loadBearing) {
+      failures.push(`thread ${threadExpected.threadId} loadBearing expected ${threadExpected.loadBearing}, got ${thread.loadBearing}`)
+    }
+    if (threadExpected.chapterDriverKind !== undefined && thread.chapterDriverKind !== threadExpected.chapterDriverKind) {
+      failures.push(`thread ${threadExpected.threadId} chapterDriverKind expected ${threadExpected.chapterDriverKind}, got ${thread.chapterDriverKind ?? '(unset)'}`)
+    }
+    if (threadExpected.successorToThreadId !== undefined && thread.successorToThreadId !== threadExpected.successorToThreadId) {
+      failures.push(`thread ${threadExpected.threadId} successorToThreadId expected ${threadExpected.successorToThreadId}, got ${thread.successorToThreadId ?? '(unset)'}`)
     }
     for (const wantEntry of threadExpected.tensionHistoryIncludes ?? []) {
       const found = thread.tensionHistory.some((e) => e.turn === wantEntry.turn && e.value === wantEntry.value)

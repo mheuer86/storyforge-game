@@ -1,0 +1,38 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene result chapter stamped current",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: Archivist scene_result normalized through the API used chapter: 0 as a placeholder. Apply-patch must stamp the current chapter before persisting the scene summary."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 1,
+    "playerInput": "Burn clear.",
+    "narrator": {
+      "prose": "Meridian burns clear of the station and enters the deep passage.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "sceneResult": {
+          "sceneId": "scene_departure_burn",
+          "chapter": 0,
+          "summary": "Meridian burned clear of Sable Reach.",
+          "leadsTo": "kinetic_carry"
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneSummariesInclude": [
+      {
+        "sceneId": "scene_departure_burn",
+        "chapter": 1,
+        "leadsTo": "kinetic_carry",
+        "summaryIncludes": "burned clear"
+      }
+    ]
+  }
+}

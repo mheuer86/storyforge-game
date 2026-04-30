@@ -18,6 +18,7 @@ import {
   type InvariantResult,
 } from '../invariants'
 import { updateRuntimeEngineValues } from '../pressure/runtime'
+import { NEW_THREAD_INITIAL_TENSION_BY_ROLE } from '../pressure/constants'
 import {
   applyPlayerEngagementReheat,
   reheatLadderFire,
@@ -58,6 +59,68 @@ const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
   'resolved_failure',
   'resolved_catastrophic',
 ])
+
+const CHAPTER_PRESSURE_CAP = 10
+
+function clampPressure(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.min(CHAPTER_PRESSURE_CAP, Math.round(value)))
+}
+
+function syncActiveThreadIntoChapterRuntime(
+  draft: Sf2State,
+  threadId: Sf2EntityId,
+  opts: { loadBearing?: boolean; successor?: boolean } = {}
+): void {
+  const thread = draft.campaign.threads[threadId]
+  if (!thread || thread.status !== 'active') return
+
+  draft.chapter.setup.activeThreadIds ??= []
+  draft.chapter.setup.loadBearingThreadIds ??= []
+  draft.chapter.setup.threadPressure ??= {}
+
+  const wasAlreadyActive = draft.chapter.setup.activeThreadIds.includes(threadId)
+  if (!wasAlreadyActive) {
+    draft.chapter.setup.activeThreadIds.push(threadId)
+  }
+
+  if (opts.loadBearing || thread.loadBearing) {
+    thread.loadBearing = true
+    if (!draft.chapter.setup.loadBearingThreadIds.includes(threadId)) {
+      draft.chapter.setup.loadBearingThreadIds.push(threadId)
+    }
+  }
+
+  if (opts.successor || thread.successorToThreadId) {
+    thread.chapterDriverKind = 'successor'
+    const successorIds = draft.chapter.setup.successorThreadIds ?? []
+    if (!successorIds.includes(threadId)) {
+      draft.chapter.setup.successorThreadIds = [...successorIds, threadId]
+    }
+  }
+
+  if (!draft.chapter.setup.threadPressure[threadId] && !wasAlreadyActive) {
+    const role = threadId === draft.chapter.setup.spineThreadId
+      ? 'spine'
+      : thread.loadBearing
+        ? 'load_bearing'
+        : thread.chapterCreated === draft.chapter.setup.chapter
+          ? 'new'
+          : 'active'
+    const floor = Math.max(
+      NEW_THREAD_INITIAL_TENSION_BY_ROLE[role],
+      clampPressure(thread.tension)
+    )
+    draft.chapter.setup.threadPressure[threadId] = {
+      threadId,
+      role,
+      openingFloor: floor,
+      localEscalation: 0,
+      maxThisChapter: floor,
+      cooledAtOpen: false,
+    }
+  }
+}
 
 // Revelation gate mode. Phase 1 ships in `observe` — gate violations log a
 // drift flag but the reveal still ratifies (`revealed = true`). Phase 2 will
@@ -867,6 +930,27 @@ function applyCreate(
           return
         }
         const id = (p.id as string | undefined) ?? nextEntityId('thread', draft)
+        const successorRef =
+          typeof p.successor_to_thread_id === 'string'
+            ? p.successor_to_thread_id
+            : typeof p.successor_to_thread === 'string'
+              ? p.successor_to_thread
+              : typeof p.successor_to === 'string'
+                ? p.successor_to
+                : ''
+        const predecessorThreadId = successorRef ? resolveThreadId(draft, successorRef) : null
+        if (successorRef && !predecessorThreadId) {
+          drift.push({
+            kind: 'anchor_reference_missing',
+            detail: `thread successor predecessor ${successorRef} unresolved`,
+          })
+        }
+        const rawTension = Number(p.tension ?? 5)
+        const tension = clampPressure(rawTension)
+        const shouldLoadBear =
+          Boolean(p.load_bearing) ||
+          Boolean(predecessorThreadId) ||
+          (draft.chapter.setup.activeThreadIds.length === 0 && tension >= 4)
         const thread: Sf2Thread = {
           id,
           title: String(p.title ?? ''),
@@ -875,12 +959,14 @@ function applyCreate(
           status: 'active',
           owner: { kind: ownerHint.kind, id: ownerId },
           stakeholders: [],
-          tension: Number(p.tension ?? 5),
-          peakTension: Number(p.tension ?? 5),
+          tension,
+          peakTension: tension,
           resolutionCriteria: String(p.resolution_criteria ?? ''),
           failureMode: String(p.failure_mode ?? ''),
           retrievalCue: String(p.retrieval_cue ?? ''),
-          loadBearing: Boolean(p.load_bearing),
+          loadBearing: shouldLoadBear,
+          successorToThreadId: predecessorThreadId ?? undefined,
+          chapterDriverKind: predecessorThreadId ? 'successor' : undefined,
           tensionHistory: [],
         }
         const inv = checkThread(thread, draft.campaign)
@@ -900,22 +986,7 @@ function applyCreate(
           draft.campaign.factions[ownerId].ownedThreadIds.push(id)
         }
         const explicitArcRef = typeof p.arc_id === 'string' ? p.arc_id : ''
-        const successorRef =
-          typeof p.successor_to_thread_id === 'string'
-            ? p.successor_to_thread_id
-            : typeof p.successor_to_thread === 'string'
-              ? p.successor_to_thread
-              : typeof p.successor_to === 'string'
-                ? p.successor_to
-                : ''
         const explicitArcId = explicitArcRef ? resolveArcId(draft, explicitArcRef) : null
-        const predecessorThreadId = successorRef ? resolveThreadId(draft, successorRef) : null
-        if (successorRef && !predecessorThreadId) {
-          drift.push({
-            kind: 'anchor_reference_missing',
-            detail: `thread successor predecessor ${successorRef} unresolved`,
-          })
-        }
         const inheritedArcId = predecessorThreadId ? arcIdForThread(draft, predecessorThreadId) : null
         const arcId = explicitArcId ?? inheritedArcId
         if (arcId) {
@@ -926,6 +997,10 @@ function applyCreate(
             detail: `thread arc ${explicitArcRef} unresolved`,
           })
         }
+        syncActiveThreadIntoChapterRuntime(draft, id, {
+          loadBearing: shouldLoadBear,
+          successor: Boolean(predecessorThreadId),
+        })
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
@@ -1494,15 +1569,25 @@ function applyUpdate(
         ]
       }
       const explicitLastAdvanced = write.changes.last_advanced_turn as number | undefined
+      const nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
       draft.campaign.threads[id] = {
         ...prior,
         tension: nextTension,
         tensionHistory: nextHistory,
         peakTension: Math.max(prior.peakTension ?? prior.tension, nextTension),
-        status: (write.changes.status as Sf2Thread['status']) ?? prior.status,
+        status: nextStatus,
         lastAdvancedTurn: tensionChanged
           ? explicitLastAdvanced ?? turnIndex
           : explicitLastAdvanced ?? prior.lastAdvancedTurn,
+      }
+      if (nextStatus === 'active') {
+        syncActiveThreadIntoChapterRuntime(draft, id, {
+          loadBearing: prior.loadBearing,
+          successor: Boolean(prior.successorToThreadId),
+        })
+      } else if (RESOLVED_THREAD_STATUSES.has(nextStatus)) {
+        draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== id)
+        delete draft.chapter.setup.threadPressure?.[id]
       }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
@@ -1967,7 +2052,10 @@ export function applyArchivistPatch(
   )
 
   if (patch.sceneResult) {
-    draft.chapter.sceneSummaries.push(patch.sceneResult)
+    draft.chapter.sceneSummaries.push({
+      ...patch.sceneResult,
+      chapter,
+    })
   }
 
   if (patch.revelationHintsDelivered && patch.revelationHintsDelivered.length > 0) {

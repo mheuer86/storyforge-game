@@ -1,0 +1,31 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: hindsight grading fires",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: failed-roll prose graded the PC's inference with 'you didn't catch' and 'should have opened a door'. Sentinel must flag these as narrator_reveal patterns."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Press Kael on what is in the crate. [Insight]",
+    "narrator": {
+      "prose": "Kael answers cleanly. But there is a seam you didn't catch: waiting. That detail should have opened a door in your thinking, and it didn't. The station alert chimes before you can ask again."
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCountAtLeast": 2,
+      "findingsInclude": [
+        {
+          "findingType": "narrator_reveal",
+          "surfaceEquals": "you didn't catch"
+        },
+        {
+          "findingType": "narrator_reveal",
+          "surfaceEquals": "should have opened a door"
+        }
+      ]
+    }
+  }
+}

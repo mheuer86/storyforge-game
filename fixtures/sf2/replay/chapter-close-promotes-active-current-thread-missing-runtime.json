@@ -1,0 +1,70 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close: early resolved spine promotes active current thread missing from runtime",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: Archivist-created active threads can exist in campaign.threads without chapter.setup.activeThreadIds/loadBearingThreadIds. Early resolved spine should promote the best live current-chapter pressure instead of staying stuck on successorRequired."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_kess_delivery": {
+            "id": "thread_kess_delivery",
+            "title": "Kess Station Delivery and Bloc Exposure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8,
+            "resolutionCriteria": "The delivery pressure is answered.",
+            "failureMode": "The corridor hunt catches up.",
+            "retrievalCue": "The job that follows the resolved debt.",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "A", "narratorProse": "A", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "B", "narratorProse": "B", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Resolve the debt and leave the station.",
+    "narrator": {
+      "prose": "The debt is handled, but the delivery has become the real pressure.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The debt spine was resolved cleanly.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "promotedSpineThreadId": "thread_kess_delivery"
+    },
+    "archivistAcceptedRefs": ["transitions[0]"]
+  }
+}

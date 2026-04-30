@@ -66,7 +66,7 @@ function rollResultMessage(resolution: {
   }
   return (
     base +
-    `Failure — the stated goal is not achieved in the way the player intended; the scene advances through consequence. Pick one pattern: backfire, escalation, or hard block with cost, but do not write those labels in prose. Both halves required: intended goal not achieved AND the scene moves forward through new pressure. Failure is redirection with cost, not a dead end. If this is the second failure against the same door/NPC/document/barrier, do not ask the player to keep retrying the same obstacle; change the situation, reveal the next pressure-bearing route, or have the world move. Do NOT write this as partial success or "success with cost" — that is a different outcome tier. FORBIDDEN: narrator-reveal ("you don't notice…"), meta-commentary on the miss, invention of new facts, hidden-camera narration about unseen actors. Commit to the false reality from inside the PC's POV.`
+    `Failure — the stated goal is not achieved in the way the player intended; the scene advances through consequence. Pick one pattern: backfire, escalation, or hard block with cost, but do not write those labels in prose. Both halves required: intended goal not achieved AND the scene moves forward through new pressure. Failure is redirection with cost, not a dead end. If this is the second failure against the same door/NPC/document/barrier, do not ask the player to keep retrying the same obstacle; change the situation, reveal the next pressure-bearing route, or have the world move. Do NOT write this as partial success or "success with cost" — that is a different outcome tier. FORBIDDEN: narrator-reveal ("you don't notice…"), hindsight grading ("you didn't catch the seam", "that detail should have opened a door"), meta-commentary on the miss, invention of new facts, hidden-camera narration about unseen actors. Commit to the false reality from inside the PC's POV.`
   )
 }
 
@@ -174,6 +174,16 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
     return { pattern: `system_vocab:${match?.[0] ?? 'unknown'}`, snippet: prose.slice(0, 200) }
   }
   return null
+}
+
+function buildLocationContinuityText(state: Sf2State): string {
+  return [
+    state.world.currentLocation?.name,
+    state.world.currentLocation?.description,
+    state.world.currentTimeLabel,
+    ...(state.world.sceneSnapshot?.established ?? []),
+    ...(state.chapter.sceneSummaries ?? []).slice(-2).map((s) => s.summary),
+  ].join(' ')
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -515,6 +525,9 @@ export async function POST(req: NextRequest) {
               const findings = scanDisplayOutput(proseText, {
                 action: 'allow_but_quarantine_writes',
                 campaign: state.campaign,
+                locationContinuity: {
+                  recentSceneText: buildLocationContinuityText(state),
+                },
                 absentSpeakers: {
                   absentEntityIds: kernel.absentEntityIds,
                   aliasMap: kernel.aliasMap,

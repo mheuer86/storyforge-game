@@ -1119,7 +1119,30 @@ export default function PlayV2Page() {
     if (closeRecovery.promotedSpineThreadId) {
       const promoted = stateAfterMechs.campaign.threads[closeRecovery.promotedSpineThreadId]
       stateAfterMechs.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId
-      if (promoted) promoted.spineForChapter = stateAfterMechs.meta.currentChapter
+      if (promoted) {
+        promoted.spineForChapter = stateAfterMechs.meta.currentChapter
+        promoted.loadBearing = true
+        promoted.chapterDriverKind = promoted.successorToThreadId ? 'successor' : promoted.chapterDriverKind ?? 'new_pressure'
+      }
+      if (!stateAfterMechs.chapter.setup.activeThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
+        stateAfterMechs.chapter.setup.activeThreadIds.push(closeRecovery.promotedSpineThreadId)
+      }
+      if (!stateAfterMechs.chapter.setup.loadBearingThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
+        stateAfterMechs.chapter.setup.loadBearingThreadIds.push(closeRecovery.promotedSpineThreadId)
+      }
+      if (!stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId]) {
+        const openingFloor = Math.max(6, Math.min(10, promoted?.tension ?? 6))
+        stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId] = {
+          threadId: closeRecovery.promotedSpineThreadId,
+          role: 'spine',
+          openingFloor,
+          localEscalation: 0,
+          maxThisChapter: openingFloor,
+          cooledAtOpen: false,
+        }
+      } else {
+        stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId].role = 'spine'
+      }
       invariantEvents.push(makeInvariantEvent('early_spine_resolved_promoted_successor', {
         promotedSpineThreadId: closeRecovery.promotedSpineThreadId,
         chapterTurnCount: closeRecovery.chapterTurnCount,
@@ -1127,7 +1150,7 @@ export default function PlayV2Page() {
     }
     if (closeRecovery.successorRequired) {
       const note =
-        'The chapter spine resolved before turn 18 and no unresolved load-bearing thread could replace it. Continue the chapter by surfacing or creating a successor thread that follows from the resolved spine; do not signal chapter close yet.'
+        'The chapter spine resolved before turn 18 and no unresolved load-bearing thread could replace it. This turn must actively establish successor pressure before the chapter can close: surface an existing unresolved thread in visible prose, or manufacture a concrete new complication that follows from the resolved spine. Put the successor question in the prose with an owner, stakes, and an immediate next pressure-bearing choice so the Archivist can create/anchor the successor thread. Do not signal chapter close yet.'
       stateAfterMechs.campaign.pendingRecoveryNotes = Array.from(new Set([
         ...(stateAfterMechs.campaign.pendingRecoveryNotes ?? []),
         note,

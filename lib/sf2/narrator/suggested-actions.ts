@@ -19,6 +19,13 @@ const FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }>
   { action: 'Wait, and let the silence work.', category: 'wait' },
 ]
 
+const SHIPBOARD_FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }> = [
+  { action: "Check the ship's current position and immediate options from the bridge.", category: 'observe' },
+  { action: 'Talk to the on-board crew about the next constraint.', category: 'direct' },
+  { action: 'Inspect the passenger and cargo situation from where you are. [Perception]', category: 'observe' },
+  { action: 'Use the strongest fact already on the table.', category: 'leverage_state' },
+]
+
 const SKILL_KEYWORDS: Record<string, readonly string[]> = {
   intimidation: ['intimidate', 'threaten', 'scare', 'pressure harder', 'force them', 'lean on'],
   persuasion: ['persuade', 'appeal', 'convince', 'reassure', 'soften'],
@@ -49,6 +56,17 @@ export function repairSuggestedActions(
     })
     .slice(0, 4)
 
+  if (hasDepartureContinuityLock(context.state)) {
+    for (let i = 0; i < actions.length; i++) {
+      if (!isStaleDepartedLocationAction(actions[i])) continue
+      const replacement = firstUnusedFallback(actions, new Set(categoriesFor(actions)), SHIPBOARD_FALLBACK_ACTIONS)
+      if (replacement) {
+        actions[i] = replacement.action
+        notes.push('replaced stale-location quick action after departure')
+      }
+    }
+  }
+
   if (context.failedSkill) {
     const failedSkill = context.failedSkill
     let failedLaneCount = 0
@@ -69,16 +87,6 @@ export function repairSuggestedActions(
     if (!replacement) break
     actions.push(replacement.action)
     notes.push('filled missing quick action with deterministic fallback')
-  }
-
-  if (actions.length >= 3 && new Set(categoriesFor(actions)).size < 3) {
-    for (let i = actions.length - 1; i >= 0 && new Set(categoriesFor(actions)).size < 3; i--) {
-      const categories = new Set(categoriesFor(actions))
-      const replacement = firstUnusedFallback(actions, categories)
-      if (!replacement) break
-      actions[i] = replacement.action
-      notes.push('diversified clustered quick actions')
-    }
   }
 
   return { actions: actions.slice(0, 4), notes }
@@ -111,14 +119,39 @@ function matchesFailedApproach(action: string, failedSkill: string): boolean {
 
 function firstUnusedFallback(
   currentActions: string[],
-  currentCategories: Set<QuickActionCategory>
+  currentCategories: Set<QuickActionCategory>,
+  fallbackActions: Array<{ action: string; category: QuickActionCategory }> = FALLBACK_ACTIONS
 ): { action: string; category: QuickActionCategory } | null {
   const currentText = new Set(currentActions.map((a) => a.toLowerCase()))
   return (
-    FALLBACK_ACTIONS.find(
+    fallbackActions.find(
       (fallback) =>
         !currentCategories.has(fallback.category) &&
         !currentText.has(fallback.action.toLowerCase())
-    ) ?? null
+    ) ??
+    fallbackActions.find((fallback) => !currentText.has(fallback.action.toLowerCase())) ??
+    null
+  )
+}
+
+function hasDepartureContinuityLock(state: Sf2State): boolean {
+  const recentSceneText = [
+    state.world.currentLocation?.name,
+    state.world.currentLocation?.description,
+    state.world.currentTimeLabel,
+    ...(state.world.sceneSnapshot?.established ?? []),
+    ...(state.chapter.sceneSummaries ?? []).slice(-2).map((s) => s.summary),
+  ].join(' ').toLowerCase()
+
+  return /\b(departed|undocked|cleared (?:the )?(?:station|departure envelope|clamps)|burned clear|open corridor|deep passage|trajectory|transit)\b/.test(recentSceneText) &&
+    !/\b(on the clamps|still on the clamps|docked against|in port)\b/.test(recentSceneText)
+}
+
+function isStaleDepartedLocationAction(action: string): boolean {
+  const lower = action.toLowerCase()
+  return (
+    /\b(?:return to|go to|head to|find|reach)\b.*\b(?:concourse|sable reach|station)\b/.test(lower) ||
+    /\b(?:compliance sweep|cargo[- ]bay inspection|dock crew|port authority official|departure window|shift-change)\b/.test(lower) ||
+    /\b(?:inspectors?|clamps?)\b/.test(lower)
   )
 }

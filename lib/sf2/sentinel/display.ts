@@ -89,6 +89,16 @@ const NARRATOR_REVEAL_PHRASES: readonly string[] = [
   "what you fail to",
   "what you're missing",
   "what you are missing",
+  "you didn't catch",
+  'you did not catch',
+  "you hadn't caught",
+  'you had not caught',
+  'a seam you missed',
+  "a seam you didn't catch",
+  'a seam you did not catch',
+  'should have opened a door',
+  'should have told you',
+  'should have tipped you',
 ]
 
 // Excerpt window for evidence quotes. Wide enough to give the repair path
@@ -345,6 +355,10 @@ export interface AbsentSpeakerScanInput {
   aliasMap: Readonly<Record<string, readonly string[]>>
 }
 
+export interface LocationContinuityScanInput {
+  recentSceneText: string
+}
+
 // Scan prose for absent-NPC speech. Conservative-precision regex: only fires
 // on `<alias>\s+<present-tense-verb>` patterns, with skip rules for
 // hypothetical mood and quoted recall. Returns one finding per legitimate
@@ -481,7 +495,63 @@ export interface ScanDisplayOutputOptions extends ScanOptions {
   // Without it, only debug_leak runs (the current default for callers that
   // don't yet have a SceneKernel built).
   absentSpeakers?: AbsentSpeakerScanInput
+  locationContinuity?: LocationContinuityScanInput
   campaign?: Sf2Campaign
+}
+
+const DEPARTED_LOCATION_PATTERN =
+  /\b(departed|undocked|cleared (?:the )?(?:station|departure envelope|clamps)|burned clear|open corridor|deep passage|trajectory|transit)\b/i
+const DOCKED_LOCATION_NEGATION_PATTERN =
+  /\b(on the clamps|still on the clamps|docked against|in port)\b/i
+
+const STALE_DEPARTED_LOCATION_PATTERNS: readonly RegExp[] = [
+  /\bconcourse\b/gi,
+  /\bcompliance sweep\b/gi,
+  /\bcargo[- ]bay inspection\b/gi,
+  /\binspectors?\b/gi,
+  /\bdock crew\b/gi,
+  /\bport authority official\b/gi,
+  /\bclamps?\b/gi,
+  /\bdeparture window\b/gi,
+  /\bshift-change\b/gi,
+]
+
+function hasDepartureContinuityLock(recentSceneText: string): boolean {
+  return DEPARTED_LOCATION_PATTERN.test(recentSceneText) &&
+    !DOCKED_LOCATION_NEGATION_PATTERN.test(recentSceneText)
+}
+
+export function scanForIllegalLocationTransition(
+  prose: string,
+  input: LocationContinuityScanInput,
+  options: ScanOptions = {}
+): Sf2DisplaySentinelFinding[] {
+  if (!prose || typeof prose !== 'string') return []
+  if (!hasDepartureContinuityLock(input.recentSceneText.toLowerCase())) return []
+  const action = options.action ?? 'allow_but_quarantine_writes'
+  const severity = options.severity ?? 'hard'
+  const findings: Sf2DisplaySentinelFinding[] = []
+
+  for (const pattern of STALE_DEPARTED_LOCATION_PATTERNS) {
+    pattern.lastIndex = 0
+    let m: RegExpExecArray | null
+    while ((m = pattern.exec(prose))) {
+      findings.push(
+        buildFinding(
+          prose,
+          m.index,
+          m[0].length,
+          m[0],
+          severity,
+          action,
+          'illegal_location_transition'
+        )
+      )
+    }
+  }
+
+  findings.sort((a, b) => a.matchStart - b.matchStart)
+  return findings
 }
 
 // Scan prose for narrator-reveal patterns: omniscient sidebar narrating what
@@ -542,6 +612,9 @@ export function scanDisplayOutput(
   const findings = scanForDebugLeaks(prose, options)
   findings.push(...scanForFixtureLeaks(prose, options.campaign, options))
   findings.push(...scanForNarratorReveal(prose, options))
+  if (options.locationContinuity) {
+    findings.push(...scanForIllegalLocationTransition(prose, options.locationContinuity, options))
+  }
   if (options.absentSpeakers) {
     findings.push(...scanForAbsentSpeakers(prose, options.absentSpeakers, options))
     findings.push(...scanForAbsentDirectActors(prose, options.absentSpeakers, options))

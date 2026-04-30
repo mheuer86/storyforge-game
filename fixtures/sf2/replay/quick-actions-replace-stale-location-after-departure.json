@@ -1,0 +1,90 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions replace stale location after departure",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from 260430 Playthrough SO Pursuit: after the ship departed, quick actions offered concourse/clamp/departure-window choices. Repair must replace those with shipboard actions before they reach the UI."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "meridian_deep_passage",
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "meridian_deep_passage",
+          "name": "Meridian deep passage",
+          "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+          "atmosphericConditions": ["engine hum"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "meridian_deep_passage",
+          "location": {
+            "id": "meridian_deep_passage",
+            "name": "Meridian deep passage",
+            "description": "Meridian has departed Sable Reach and burned clear into open corridor space.",
+            "atmosphericConditions": ["engine hum"]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "Transit beyond Sable Reach",
+          "established": [
+            "Meridian departed under full burn.",
+            "Trajectory locks toward deep corridor passages."
+          ],
+          "firstTurnIndex": 1
+        },
+        "currentTimeLabel": "Transit beyond Sable Reach"
+      },
+      "chapter": {
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_departure_burn",
+            "chapter": 1,
+            "summary": "Meridian burned clear of Sable Reach and achieved trajectory beyond station pursuit intercept margins.",
+            "leadsTo": "kinetic_carry"
+          }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "What now?",
+    "narrator": {
+      "prose": "The ship hums in transit.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "inputActions": [
+        "Go to the concourse and find Sera Oln. [Persuasion]",
+        "Push the Meridian's departure hard before the clamps lock again.",
+        "Ask Tatch whether Kess is reachable at current fuel.",
+        "Wait for the inspectors to arrive."
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Ask Tatch whether Kess is reachable at current fuel.",
+        "Check the ship's current position and immediate options from the bridge.",
+        "Talk to the on-board crew about the next constraint."
+      ],
+      "outputActionsExclude": [
+        "Go to the concourse and find Sera Oln. [Persuasion]",
+        "Push the Meridian's departure hard before the clamps lock again.",
+        "Wait for the inspectors to arrive."
+      ],
+      "notesInclude": ["replaced stale-location quick action after departure"]
+    }
+  }
+}
