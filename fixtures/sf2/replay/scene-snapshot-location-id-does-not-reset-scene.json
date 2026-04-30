@@ -1,0 +1,91 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene snapshot location_id does not reset scene",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Opening chapters use a scene id like scene_1_1 and a location id like loc_opening. A same-location snapshot must not look like a scene transition."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "scene_1_1"
+      },
+      "campaign": {
+        "locations": {
+          "loc_opening": {
+            "id": "loc_opening",
+            "name": "Opening Hall",
+            "description": "The authored opening location.",
+            "atmosphericConditions": ["stale air"]
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "Opening Hall",
+          "description": "The authored opening location.",
+          "atmosphericConditions": ["stale air"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "Opening Hall",
+            "description": "The authored opening location.",
+            "atmosphericConditions": ["stale air"]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "morning",
+          "established": ["The authored opening location is already established."],
+          "firstTurnIndex": 0
+        },
+        "sceneBundleCache": {
+          "sceneId": "scene_1_1",
+          "bundleText": "opening bundle",
+          "builtAtTurn": 0
+        }
+      }
+    },
+    "playerInput": "Wait.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The same hall holds its breath.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "location_id": "loc_opening",
+              "time_label": "morning",
+              "established": ["The authored opening location is already established."]
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      }
+    },
+    "archivist": {
+      "patch": {}
+    }
+  },
+  "expected": {
+    "currentSceneId": "scene_1_1",
+    "currentLocationId": "loc_opening",
+    "currentTimeLabel": "morning",
+    "sceneBundleCacheCleared": false,
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "sceneSnapshotFirstTurnIndexEquals": 0
+    }
+  }
+}

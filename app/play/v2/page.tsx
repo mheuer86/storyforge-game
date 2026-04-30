@@ -192,6 +192,9 @@ export default function PlayV2Page() {
   // after the player rolls. The narrator loop awaits this promise before
   // resuming with rollResolution.
   const rollResolverRef = useRef<((outcome: RollOutcome) => void) | null>(null)
+  // Inspiration spends are only persisted once the full turn commits. This
+  // keeps a paused roll from mutating state that sendTurn later replaces.
+  const pendingInspirationSpendRef = useRef(0)
 
   // Initialize persistence + try loading last campaign.
   useEffect(() => {
@@ -204,12 +207,15 @@ export default function PlayV2Page() {
           if (loaded) {
             setState(loaded)
             setTurnIndex(loaded.history.turns.length)
+            setPivotSignaled(chapterHasPivotSignal(loaded))
             // Restore last prose so the scroll view isn't empty.
             const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
             if (lastTurn?.narratorProse) {
               setProse(lastTurn.narratorProse)
               setSuggestedActions(lastTurn.narratorAnnotation?.suggestedActions ?? [])
             }
+          } else if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
           }
         })
         .catch(() => {})
@@ -271,6 +277,8 @@ export default function PlayV2Page() {
     setPendingCheck(null)
     setRollResult(null)
     setTurnIndex(0)
+    setPivotSignaled(false)
+    pendingInspirationSpendRef.current = 0
     persist(next)
   }
 
@@ -289,6 +297,8 @@ export default function PlayV2Page() {
     setReplayFrames([])
     setTurnIndex(0)
     setPendingCheck(null)
+    setPivotSignaled(false)
+    pendingInspirationSpendRef.current = 0
   }
 
   async function runNarrator(
@@ -310,6 +320,7 @@ export default function PlayV2Page() {
     setPendingCheck(null)
     setRollResult(null)
     setInspirationOffer(null)
+    pendingInspirationSpendRef.current = 0
 
     let proseAccum = ''
     let annotation: Record<string, unknown> | null = null
@@ -417,8 +428,7 @@ export default function PlayV2Page() {
               ])
               const actions = (annotation?.suggested_actions as string[] | undefined) ?? []
               setSuggestedActions(actions)
-              const moves = annotation?.authorial_moves as { pivot_signaled?: boolean } | undefined
-              if (moves?.pivot_signaled) setPivotSignaled(true)
+              if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
               break
             }
             case 'token_usage': {
@@ -528,6 +538,10 @@ export default function PlayV2Page() {
         })
         setPendingCheck(null)
         setRollResult(outcome)
+        if (outcome.inspirationSpent) {
+          currentState = structuredClone(currentState)
+          currentState.player.inspiration = Math.max(0, currentState.player.inspiration - 1)
+        }
         setDebug((d) => [
           ...d,
           {
@@ -1026,7 +1040,10 @@ export default function PlayV2Page() {
 
     // Narrator
     const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
-    if (!narratorResult.completed) return
+    if (!narratorResult.completed) {
+      pendingInspirationSpendRef.current = 0
+      return
+    }
     const {
       prose: narratorProse,
       annotation,
@@ -1057,6 +1074,10 @@ export default function PlayV2Page() {
         narratorAnnotationRaw: annotation ?? undefined,
         timestamp: new Date().toISOString(),
       })
+      const inspirationSpentCount = rollRecords.filter((r) => r.inspirationSpent).length
+      if (inspirationSpentCount > 0) {
+        next.player.inspiration = Math.max(0, next.player.inspiration - inspirationSpentCount)
+      }
       next.history.rollLog.push(...rollRecords)
       next.history.recentTurns = next.history.turns.slice(-6)
 
@@ -1185,6 +1206,8 @@ export default function PlayV2Page() {
 
     setState(stateAfterMechs)
     setTurnIndex(nextTurnIndex)
+    setPivotSignaled(chapterHasPivotSignal(stateAfterMechs))
+    pendingInspirationSpendRef.current = 0
     persist(stateAfterMechs)
   }
 
@@ -1371,6 +1394,10 @@ export default function PlayV2Page() {
     }
   }
 
+  function availableInspiration(s: Sf2State): number {
+    return Math.max(0, s.player.inspiration - pendingInspirationSpendRef.current)
+  }
+
   function resolvePendingCheck() {
     if (!state || !pendingCheck) return
     const rollOne = () => 1 + Math.floor(Math.random() * 20)
@@ -1395,7 +1422,7 @@ export default function PlayV2Page() {
       modifierReason: pendingCheck.modifierReason,
     }
     const failed = outcome.result === 'failure' || outcome.result === 'fumble'
-    if (failed && state.player.inspiration > 0) {
+    if (failed && availableInspiration(state) > 0) {
       setRollResult(outcome)
       setInspirationOffer(outcome)
       return
@@ -1420,13 +1447,11 @@ export default function PlayV2Page() {
   // rolled 14".
   function spendInspirationReroll() {
     if (!state || !pendingCheck || !inspirationOffer) return
-    const next: Sf2State = structuredClone(state)
-    next.player.inspiration = Math.max(0, next.player.inspiration - 1)
-    setState(next)
-    void persist(next)
+    if (availableInspiration(state) <= 0) return
+    pendingInspirationSpendRef.current += 1
 
     const d20 = 1 + Math.floor(Math.random() * 20)
-    const modifier = modifierForSkill(next, pendingCheck.skill)
+    const modifier = modifierForSkill(state, pendingCheck.skill)
     const effectiveDc = effectiveDcFor(pendingCheck)
     const outcome: RollOutcome = {
       ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
@@ -1508,6 +1533,7 @@ export default function PlayV2Page() {
   }
 
   const busy = isStreaming || isArchiving
+  const chapterPivotSignaled = pivotSignaled || chapterHasPivotSignal(state)
 
   // Close-ready heuristic. Anchored on chapter-scoped *narrative arc progression*,
   // not on turn count + tension (which let chapters close without their
@@ -1537,7 +1563,7 @@ export default function PlayV2Page() {
     spineTension,
     successorRequired,
     promotedSpineThreadId,
-  } = computeChapterCloseReadiness(state, pivotSignaled)
+  } = computeChapterCloseReadiness(state, chapterPivotSignaled)
 
   function downloadSessionLog() {
     if (!state) return
@@ -1711,9 +1737,9 @@ export default function PlayV2Page() {
             <div>
               <div className="font-bold text-amber-300">Chapter ready to close</div>
               <div className="text-xs text-amber-200/70">
-                {pivotSignaled && 'Narrator signaled a pivot. '}
-                {!pivotSignaled && spineResolved && `Spine thread transitioned to ${spineStatus}. `}
-                {!pivotSignaled && !spineResolved && stalledFallback &&
+                {chapterPivotSignaled && 'Narrator signaled a pivot. '}
+                {!chapterPivotSignaled && spineResolved && `Spine thread transitioned to ${spineStatus}. `}
+                {!chapterPivotSignaled && !spineResolved && stalledFallback &&
                   `Stalled fallback: ${chapterTurnCount} turns · ladder ${ladderFiredCount}/${ladderStepCount} fired · spine tension ${spineTension}/10.`}
               </div>
             </div>
@@ -2073,6 +2099,7 @@ export default function PlayV2Page() {
 function normalizeAnnotation(
   input: Record<string, unknown>
 ): Sf2State['history']['turns'][number]['narratorAnnotation'] {
+  const authorialMoves = input.authorial_moves as Record<string, unknown> | undefined
   // pending_check lives on request_roll now, not narrate_turn; no longer parsed here.
   return {
     mechanicalEffects: [],
@@ -2083,7 +2110,41 @@ function normalizeAnnotation(
       promisesImplied: (input.hinted_entities as Record<string, unknown> | undefined)?.promises_implied as string[] ?? [],
       cluesDropped: (input.hinted_entities as Record<string, unknown> | undefined)?.clues_dropped as string[] ?? [],
     },
-    authorialMoves: (input.authorial_moves as Record<string, unknown> | undefined) ?? {},
+    authorialMoves: {
+      plantedRevelationDeployed:
+        typeof authorialMoves?.planted_revelation_deployed === 'string'
+          ? authorialMoves.planted_revelation_deployed
+          : undefined,
+      witnessMarkSurfaced:
+        typeof authorialMoves?.witness_mark_surfaced === 'string'
+          ? authorialMoves.witness_mark_surfaced
+          : undefined,
+      pivotSignaled:
+        authorialMoves?.pivot_signaled === true ||
+        (authorialMoves as { pivotSignaled?: unknown } | undefined)?.pivotSignaled === true
+          ? true
+          : undefined,
+    },
     suggestedActions: (input.suggested_actions as string[] | undefined) ?? [],
   }
+}
+
+function annotationHasPivotSignal(annotation: Record<string, unknown> | null | undefined): boolean {
+  if (!annotation) return false
+  const rawMoves = annotation.authorial_moves as Record<string, unknown> | undefined
+  const normalizedMoves = annotation.authorialMoves as Record<string, unknown> | undefined
+  return rawMoves?.pivot_signaled === true ||
+    rawMoves?.pivotSignaled === true ||
+    normalizedMoves?.pivotSignaled === true ||
+    normalizedMoves?.pivot_signaled === true
+}
+
+function chapterHasPivotSignal(state: Sf2State): boolean {
+  return state.history.turns.some((turn) =>
+    turn.chapter === state.meta.currentChapter &&
+    (
+      turn.narratorAnnotation?.authorialMoves?.pivotSignaled === true ||
+      annotationHasPivotSignal(turn.narratorAnnotationRaw)
+    )
+  )
 }

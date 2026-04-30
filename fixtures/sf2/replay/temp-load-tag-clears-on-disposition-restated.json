@@ -1,0 +1,68 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "temp_load_tag clears on disposition restated",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "The Archivist schema says restating disposition without temp_load_tag clears transient emotional load."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_tane": {
+            "id": "npc_tane",
+            "name": "Tane",
+            "affiliation": "Watch",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "tempLoadTag": "exhausted",
+            "identity": {
+              "keyFacts": ["Night watch"],
+              "voice": { "note": "clipped, low", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": { "pursuing": "", "methods": [], "currentMove": "" },
+            "ownedThreadIds": [],
+            "retrievalCue": "Tane, watch.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_tane"]
+        }
+      }
+    },
+    "playerInput": "Give Tane room to answer plainly.",
+    "narrator": {
+      "prose": "Tane breathes once and steadies.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_tane",
+            "changes": {
+              "disposition": "wary"
+            },
+            "confidence": "high",
+            "sourceQuote": "Tane breathes once and steadies."
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "perTurnDeltaExcludes": [
+      "[exhausted]",
+      "temp: exhausted"
+    ]
+  }
+}

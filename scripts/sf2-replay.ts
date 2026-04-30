@@ -88,6 +88,7 @@ interface ReplayFixture {
       leadsTo?: string | null
       summaryIncludes?: string
     }>
+    sceneSummariesCount?: number
     activeThreadIdsEquals?: string[]
     activeThreadIdsExcludes?: string[]
     loadBearingThreadIdsIncludes?: string[]
@@ -974,6 +975,9 @@ function assertExpected(
     if (summaryExpected.summaryIncludes !== undefined && !summary.summary.includes(summaryExpected.summaryIncludes)) {
       failures.push(`scene summary ${summaryExpected.sceneId} summary missing "${summaryExpected.summaryIncludes}"`)
     }
+  }
+  if (expected.sceneSummariesCount !== undefined && state.chapter.sceneSummaries.length !== expected.sceneSummariesCount) {
+    failures.push(`scene summaries count expected ${expected.sceneSummariesCount}, got ${state.chapter.sceneSummaries.length}`)
   }
   if (expected.activeThreadIdsEquals !== undefined) {
     const want = [...expected.activeThreadIdsEquals].sort().join(',')
