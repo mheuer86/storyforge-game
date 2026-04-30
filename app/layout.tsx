@@ -15,29 +15,35 @@ const geistMono = Geist_Mono({
 })
 const lora = Lora({
   subsets: ["latin"],
-  variable: '--font-lora'
+  variable: '--font-lora',
+  preload: false,
 })
 const robotoMono = Roboto_Mono({
   subsets: ['latin'],
   variable: '--font-roboto-mono',
+  preload: false,
 })
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
+  preload: false,
 })
 const newsreader = Newsreader({
   subsets: ['latin'],
   variable: '--font-newsreader',
+  preload: false,
 })
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
   variable: '--font-cormorant-garamond',
+  preload: false,
 })
 const cinzel = Cinzel({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-cinzel',
+  preload: false,
 })
 const geistPixel = localFont({
   src: './fonts/GeistPixel-Square.woff2',
