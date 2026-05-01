@@ -103,6 +103,7 @@ export interface GenreTheme {
   meta: string
   success: string
   warning: string
+  severe?: string
   titleGlow: string
   actionGlow: string
   actionGlowHover: string
@@ -114,6 +115,13 @@ export interface GenreTheme {
   fontScale?: number  // multiplier for base font sizes — 1.0 is default, 0.9 = 90%
 }
 
+export interface GenreStatLabels {
+  hp: string
+  defense: string
+  currency: string
+  inspiration: string
+}
+
 export interface GenreConfig {
   id: Genre
   name: string
@@ -123,6 +131,7 @@ export interface GenreConfig {
   speciesLabel: string
   classes: CharacterClass[]
   playbooks?: Record<string, CharacterClass[]>  // keyed by species/origin ID — when present, wizard uses these instead of classes
+  statLabels?: GenreStatLabels
   theme: GenreTheme
   currencyName: string
   currencyAbbrev: string
@@ -272,6 +281,7 @@ export function applyGenreTheme(genre: Genre): void {
   root.style.setProperty('--meta', theme.meta)
   root.style.setProperty('--success', theme.success)
   root.style.setProperty('--warning', theme.warning)
+  root.style.setProperty('--severe', theme.severe ?? theme.destructive)
   root.style.setProperty('--title-glow', theme.titleGlow)
   root.style.setProperty('--action-glow', theme.actionGlow)
   root.style.setProperty('--action-glow-hover', theme.actionGlowHover)

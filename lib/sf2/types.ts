@@ -483,6 +483,8 @@ export interface Sf2Location {
   name: string
   description: string
   atmosphericConditions?: string[]
+  locked?: boolean
+  chapterCreated?: Sf2ChapterNumber
 }
 
 export interface Sf2SceneSnapshot {
@@ -766,6 +768,7 @@ export interface Sf2OpeningSceneSpec {
 }
 
 export interface Sf2OperationPlan {
+  name?: string
   target: string
   approach: string
   fallback: string
@@ -1101,7 +1104,29 @@ export interface Sf2TurnRecord {
   narratorAnnotationRaw?: Record<string, unknown>
   archivistPatchApplied?: Sf2ArchivistPatch
   pacingClassification?: Sf2PacingClassification
+  stateDiff?: Sf2TurnDiffEntry[]
   timestamp: string
+}
+
+export type Sf2TurnDiffTone = 'loss' | 'gain' | 'change' | 'severe'
+
+export interface Sf2TurnDiffEntry {
+  kind:
+    | 'hp'
+    | 'credits'
+    | 'inventory'
+    | 'intel'
+    | 'npc'
+    | 'thread'
+    | 'location'
+    | 'operation_plan'
+    | 'other'
+  label: string
+  tone: Sf2TurnDiffTone
+  entityId?: Sf2EntityId
+  from?: string | number
+  to?: string | number
+  value?: string | number
 }
 
 export interface Sf2RollRecord {

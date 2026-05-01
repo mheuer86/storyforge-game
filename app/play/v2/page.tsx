@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiHeaders } from '@/lib/api-key'
+import { applyGenreTheme, type Genre } from '@/lib/genre-config'
 import {
   DEFAULT_SF2_SEED_ID,
   SF2_BOOTSTRAP_SEED_OPTIONS,
@@ -32,7 +33,14 @@ import {
   type Sf2CloseReadinessView,
 } from '@/components/sf2/play-shell'
 import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
-import type { AuthorChapterSetupV2, Sf2Arc, Sf2ArcPlan, Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
+import type {
+  AuthorChapterSetupV2,
+  Sf2Arc,
+  Sf2ArcPlan,
+  Sf2State,
+  Sf2TurnDiffEntry,
+  Sf2WorkingSet,
+} from '@/lib/sf2/types'
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
 
@@ -199,6 +207,11 @@ export default function PlayV2Page() {
   // Inspiration spends are only persisted once the full turn commits. This
   // keeps a paused roll from mutating state that sendTurn later replaces.
   const pendingInspirationSpendRef = useRef(0)
+  const selectedSeed = useMemo(
+    () => SF2_BOOTSTRAP_SEED_OPTIONS.find((seed) => seed.id === selectedSeedId)
+      ?? SF2_BOOTSTRAP_SEED_OPTIONS[0],
+    [selectedSeedId],
+  )
 
   // Initialize persistence + try loading last campaign.
   useEffect(() => {
@@ -233,6 +246,17 @@ export default function PlayV2Page() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [prose, isStreaming])
+
+  useEffect(() => {
+    if (state) return
+    const genreId = selectedSeed.seed.genreId
+    try {
+      applyGenreTheme(genreId as Genre)
+    } catch {
+      document.documentElement.setAttribute('data-genre', genreId)
+    }
+    document.body.setAttribute('data-genre', genreId)
+  }, [selectedSeed, state])
 
   // Live timer while generating a chapter (Author call can take 30-90s).
   useEffect(() => {
@@ -993,7 +1017,9 @@ export default function PlayV2Page() {
         name: data.runtimeState.openingSceneSpec.location,
         description: data.runtimeState.openingSceneSpec.initialState,
         atmosphericConditions: [data.runtimeState.openingSceneSpec.atmosphericCondition],
+        chapterCreated: data.chapter,
       }
+      next.campaign.locations[next.world.currentLocation.id] = next.world.currentLocation
       next.world.sceneSnapshot = {
         sceneId: `scene_${data.chapter}_1`,
         location: next.world.currentLocation,
@@ -1186,6 +1212,13 @@ export default function PlayV2Page() {
         spineThreadId: stateAfterMechs.chapter.setup.spineThreadId,
       }))
     }
+    const stateDiff = buildTurnStateDiff(effectiveState, stateAfterMechs)
+    const committedTurn = stateAfterMechs.history.turns.find((t) => t.index === turnIndex)
+      ?? stateAfterMechs.history.turns.at(-1)
+    if (committedTurn && stateDiff.length > 0) {
+      committedTurn.stateDiff = stateDiff
+    }
+    stateAfterMechs.history.recentTurns = stateAfterMechs.history.turns.slice(-6)
     if (invariantEvents.length > 0) {
       setDebug((d) => [...d, ...invariantEvents])
     }
@@ -1371,7 +1404,9 @@ export default function PlayV2Page() {
         name: data.runtimeState.openingSceneSpec.location || next.world.currentLocation.name,
         description: data.runtimeState.openingSceneSpec.initialState || '',
         atmosphericConditions: atmos ? [atmos] : undefined,
+        chapterCreated: data.chapter,
       }
+      next.campaign.locations[next.world.currentLocation.id] = next.world.currentLocation
       next.world.sceneSnapshot = {
         sceneId: `scene_${data.chapter}_1`,
         location: next.world.currentLocation,
@@ -1487,10 +1522,6 @@ export default function PlayV2Page() {
   }
 
   if (!state) {
-    const selectedSeed =
-      SF2_BOOTSTRAP_SEED_OPTIONS.find((seed) => seed.id === selectedSeedId)
-      ?? SF2_BOOTSTRAP_SEED_OPTIONS[0]
-
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 p-8 font-mono">
         <div className="max-w-2xl mx-auto space-y-6">
@@ -1683,6 +1714,149 @@ export default function PlayV2Page() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+const DISPOSITION_SCORE: Record<string, number> = {
+  hostile: 0,
+  wary: 1,
+  neutral: 2,
+  favorable: 3,
+  trusted: 4,
+}
+
+function buildTurnStateDiff(before: Sf2State, after: Sf2State): Sf2TurnDiffEntry[] {
+  const entries: Sf2TurnDiffEntry[] = []
+  const hpDelta = after.player.hp.current - before.player.hp.current
+  if (hpDelta !== 0) {
+    entries.push({
+      kind: 'hp',
+      label: `HP ${formatDiffSigned(hpDelta)}`,
+      tone: hpDelta > 0 ? 'gain' : after.player.hp.current === 0 ? 'severe' : 'loss',
+      from: before.player.hp.current,
+      to: after.player.hp.current,
+      value: hpDelta,
+    })
+  }
+
+  const creditDelta = after.player.credits - before.player.credits
+  if (creditDelta !== 0) {
+    entries.push({
+      kind: 'credits',
+      label: `CRED ${formatDiffSigned(creditDelta)}`,
+      tone: creditDelta > 0 ? 'gain' : 'loss',
+      from: before.player.credits,
+      to: after.player.credits,
+      value: creditDelta,
+    })
+  }
+
+  const beforeInventory = new Map(before.player.inventory.map((item) => [item.name, item.qty]))
+  const afterInventory = new Map(after.player.inventory.map((item) => [item.name, item.qty]))
+  for (const name of new Set([...beforeInventory.keys(), ...afterInventory.keys()])) {
+    const from = beforeInventory.get(name) ?? 0
+    const to = afterInventory.get(name) ?? 0
+    if (from === to) continue
+    entries.push({
+      kind: 'inventory',
+      label: `${compactLabel(name)} ${from}->${to}`,
+      tone: to > from ? 'gain' : 'loss',
+      from,
+      to,
+      value: to - from,
+    })
+  }
+
+  const currentChapter = after.meta.currentChapter
+  const newClues = Object.values(after.campaign.clues)
+    .filter((clue) => !before.campaign.clues[clue.id])
+    .filter((clue) => clue.chapterCreated === currentChapter)
+  if (newClues.length > 0) {
+    entries.push({
+      kind: 'intel',
+      label: newClues.length === 1 ? '+Intel' : `+${newClues.length} Intel`,
+      tone: 'gain',
+      entityId: newClues[0]?.id,
+      value: newClues.length,
+    })
+  }
+
+  for (const npc of Object.values(after.campaign.npcs)) {
+    const prior = before.campaign.npcs[npc.id]
+    if (!prior || prior.disposition === npc.disposition) continue
+    const delta = (DISPOSITION_SCORE[npc.disposition] ?? 0) - (DISPOSITION_SCORE[prior.disposition] ?? 0)
+    if (delta === 0) continue
+    entries.push({
+      kind: 'npc',
+      label: `${compactLabel(npc.name)} ${formatDiffSigned(delta)}`,
+      tone: delta > 0 ? 'gain' : 'loss',
+      entityId: npc.id,
+      from: prior.disposition,
+      to: npc.disposition,
+      value: delta,
+    })
+  }
+
+  const newLocations = Object.values(after.campaign.locations)
+    .filter((location) => !before.campaign.locations[location.id])
+    .filter((location) => location.chapterCreated === currentChapter && location.id !== 'loc_pending')
+  if (newLocations.length > 0) {
+    entries.push({
+      kind: 'location',
+      label: newLocations.length === 1 ? `+${compactLabel(newLocations[0].name || 'Location')}` : `+${newLocations.length} Locations`,
+      tone: 'gain',
+      entityId: newLocations[0]?.id,
+      value: newLocations.length,
+    })
+  }
+
+  if (operationPlanChanged(before, after)) {
+    entries.push({
+      kind: 'operation_plan',
+      label: before.campaign.operationPlan ? 'Ops plan updated' : '+Ops plan',
+      tone: 'change',
+    })
+  }
+
+  for (const thread of Object.values(after.campaign.threads)) {
+    const prior = before.campaign.threads[thread.id]
+    if (!prior || prior.tension === thread.tension) continue
+    const delta = thread.tension - prior.tension
+    entries.push({
+      kind: 'thread',
+      label: `${compactLabel(thread.title)} ${formatDiffSigned(delta)}`,
+      tone: delta > 0 ? 'loss' : 'gain',
+      entityId: thread.id,
+      from: prior.tension,
+      to: thread.tension,
+      value: delta,
+    })
+  }
+
+  return entries
+}
+
+function operationPlanChanged(before: Sf2State, after: Sf2State): boolean {
+  const prior = before.campaign.operationPlan
+  const next = after.campaign.operationPlan
+  if (!prior && !next) return false
+  if (!prior || !next) return true
+  return (
+    prior.name !== next.name ||
+    prior.target !== next.target ||
+    prior.approach !== next.approach ||
+    prior.fallback !== next.fallback ||
+    prior.status !== next.status
+  )
+}
+
+function compactLabel(label: string): string {
+  const trimmed = label.trim()
+  if (trimmed.length <= 18) return trimmed
+  return `${trimmed.slice(0, 17)}...`
+}
+
+function formatDiffSigned(value: number): string {
+  return value > 0 ? `+${value}` : String(value)
+}
 
 function normalizeAnnotation(
   input: Record<string, unknown>
