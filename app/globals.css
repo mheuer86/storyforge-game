@@ -454,11 +454,11 @@
 }
 
 .sf2-roll-idle-card {
-  background-color: color-mix(in oklch, var(--accent) 12%, transparent);
+  background-color: color-mix(in oklch, var(--background) 88%, var(--primary) 12%);
 }
 
 button.sf2-roll-idle-card:hover {
-  background-color: color-mix(in oklch, var(--accent) 18%, transparent);
+  background-color: color-mix(in oklch, var(--background) 82%, var(--primary) 18%);
 }
 
 .sf2-roll-idle-die {

@@ -37,9 +37,9 @@ type StatLabels = { hp: string; defense: string; currency: string; inspiration: 
 
 const desktopRailClassName = cn(
   'hidden min-h-0 flex-col gap-3 overflow-y-auto pr-1 xl:flex',
-  'opacity-75 brightness-95 saturate-[0.86] transition-[opacity,filter] duration-200 ease-out',
-  'hover:opacity-100 hover:brightness-110 hover:saturate-100',
-  'focus-within:opacity-100 focus-within:brightness-110 focus-within:saturate-100',
+  'opacity-90 saturate-[0.92] transition-[opacity,filter] duration-200 ease-out',
+  'hover:opacity-100 hover:saturate-100',
+  'focus-within:opacity-100 focus-within:saturate-100',
 )
 
 const ambientOverlayStyle = {
@@ -287,9 +287,10 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
             <CharacterPanel state={state} statLabels={statLabels} />
             <ObjectivePanel state={state} />
             <QuickSlotsPanel state={state} />
+            <PlaybookSkillPanel state={state} />
           </aside>
 
-          <main className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/55 bg-background/70 shadow-[0_0_34px_-24px] shadow-accent">
+          <main className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-background/70">
             <div
               ref={scrollRef}
               className="sf2-narrative-scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6"
@@ -307,7 +308,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
               />
             </div>
 
-            <div className="shrink-0 border-t border-border/50 bg-card/70 p-3 shadow-[0_-18px_32px_-30px] shadow-accent md:p-4">
+            <div className="shrink-0 border-t border-border/30 bg-card/70 p-3 md:p-4">
               <ActionSurface
                 state={state}
                 suggestedActions={suggestedActions}
@@ -342,7 +343,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
 
       <Drawer open={mobilePanel !== null} onOpenChange={(open) => !open && setMobilePanel(null)} direction="bottom">
         <DrawerContent className="max-h-[86vh] border-border/50 bg-background/95">
-          <DrawerHeader className="border-b border-border/40 pb-3 text-left">
+          <DrawerHeader className="border-b border-border/30 pb-3 text-left">
             <DrawerTitle className="font-mono text-sm uppercase tracking-[0.22em] text-primary">
               {mobilePanelTitle}
             </DrawerTitle>
@@ -356,6 +357,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 <CharacterPanel state={state} statLabels={statLabels} />
                 <ObjectivePanel state={state} />
                 <QuickSlotsPanel state={state} />
+                <PlaybookSkillPanel state={state} />
               </div>
             )}
             {mobilePanel === 'scene' && (
@@ -401,30 +403,35 @@ function TopBar({
   onOpenPanel: (panel: MobilePanel) => void
 }) {
   return (
-    <header className="shrink-0 px-3 py-3 md:px-5 md:py-4">
-      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border/65 bg-card/70 px-3 py-2.5 shadow-[0_0_28px_-20px] shadow-accent md:px-5">
+    <header className="shrink-0 px-3 py-2 md:px-5 md:py-4">
+      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border/50 bg-card/70 px-3 py-2 md:px-5 md:py-2.5">
         <div className="hidden min-w-[210px] items-center sm:flex">
           <span className="font-mono text-[12px] uppercase tracking-[0.32em] text-primary">Storyforge</span>
         </div>
 
-        <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+        <div className="grid min-w-0 flex-1 grid-cols-1 items-center sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 sm:inline">
             Ch.{String(state.meta.currentChapter).padStart(2, '0')}
           </span>
-          <span className="truncate text-center font-mono text-[12px] uppercase tracking-[0.22em] text-foreground md:text-[14px]">
+          <span className="truncate text-center font-heading text-[12px] font-semibold tracking-[0.08em] text-foreground md:text-sm">
             {state.chapter.title || 'Chapter setup pending'}
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 sm:inline">
             Turn {chapterTurnCount}
           </span>
         </div>
 
-        <div className="flex min-w-[52px] items-center justify-end sm:min-w-[210px]">
+        <div className="flex shrink-0 items-center justify-end gap-1 sm:min-w-[210px]">
+          <div className="flex items-center gap-1 xl:hidden">
+            <MobilePanelButton label="PC" icon={<UserRound className="h-4 w-4" />} onClick={() => onOpenPanel('character')} />
+            <MobilePanelButton label="Scene" icon={<MapIcon className="h-4 w-4" />} onClick={() => onOpenPanel('scene')} />
+            <MobilePanelButton label="Intel" icon={<BookOpen className="h-4 w-4" />} onClick={() => onOpenPanel('intel')} />
+          </div>
           <button
             type="button"
             onClick={() => onOpenPanel('diagnostics')}
             className={cn(
-              'inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 sm:px-3',
+              'inline-flex h-8 items-center justify-center gap-2 rounded-md px-2.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:h-9 sm:px-3',
               busy ? 'text-warning hover:text-warning' : 'text-muted-foreground',
             )}
             aria-label="Open menu"
@@ -433,11 +440,6 @@ function TopBar({
             <span className="hidden sm:inline">{busy ? 'Syncing' : 'Menu'}</span>
           </button>
         </div>
-      </div>
-      <div className="mt-2 flex items-center justify-end gap-1.5 xl:hidden">
-        <MobilePanelButton label="PC" icon={<UserRound className="h-4 w-4" />} onClick={() => onOpenPanel('character')} />
-        <MobilePanelButton label="Scene" icon={<MapIcon className="h-4 w-4" />} onClick={() => onOpenPanel('scene')} />
-        <MobilePanelButton label="Intel" icon={<BookOpen className="h-4 w-4" />} onClick={() => onOpenPanel('intel')} />
       </div>
     </header>
   )
@@ -456,7 +458,7 @@ function MobilePanelButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-10 min-w-10 items-center justify-center rounded-md border border-border/65 bg-card/65 px-2 text-muted-foreground transition-colors hover:border-primary/55 hover:text-primary"
+      className="flex h-8 min-w-8 items-center justify-center rounded-md border border-border/50 bg-card/55 px-1.5 text-muted-foreground transition-colors hover:border-primary/55 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:h-9 md:min-w-9 md:px-2"
       aria-label={`Open ${label}`}
     >
       <span className="sr-only">{label}</span>
@@ -478,7 +480,7 @@ function HudPanel({
 }) {
   return (
     <section className={cn(
-      'rounded-lg border border-border/55 bg-card/70 p-4 shadow-[0_0_24px_-22px] shadow-accent',
+      'rounded-lg border border-border/50 bg-card/70 p-4',
       className,
     )}>
       <div className="mb-3 flex min-h-4 items-center justify-between gap-3">
@@ -502,7 +504,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
     >
       <div className="space-y-4">
         <div>
-          <div className="truncate font-mono text-[18px] uppercase tracking-[0.12em] text-foreground">
+          <div className="truncate font-heading text-[18px] font-semibold tracking-[0.06em] text-foreground">
             {state.player.name}
           </div>
           <div className="mt-1 truncate text-[12px] text-muted-foreground">
@@ -515,7 +517,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
           <Metric value={String(state.player.credits)} label={statLabels.currency} />
           <Metric value={String(state.player.inspiration)} label={statLabels.inspiration} accent />
         </div>
-        <div className="h-1 overflow-hidden rounded-full border border-border/40 bg-background/70">
+        <div className="h-2 overflow-hidden rounded-full border border-border/30 bg-background/70">
           <div
             className="h-full bg-primary/65 shadow-[0_0_14px_0] shadow-primary/35"
             style={{ width: `${hpPct}%` }}
@@ -538,10 +540,10 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
 function Metric({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className={cn('truncate font-mono text-[18px]', accent ? 'text-warning' : 'text-foreground')}>
+      <div className={cn('truncate font-mono text-[18px] font-medium', accent ? 'text-warning' : 'text-foreground')}>
         {value}
       </div>
-      <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/75">
+      <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/75">
         {label}
       </div>
     </div>
@@ -559,14 +561,14 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
     <HudPanel
       title="Ops Plan"
       right={
-        <span className="rounded-md border border-primary/40 px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.16em] text-primary">
+        <span className="rounded-md border border-primary/70 bg-primary/10 px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.16em] text-primary">
           {plan.status ?? 'active'}
         </span>
       }
     >
       <div className="space-y-3">
         {plan.name && (
-          <div className="font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
+          <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
             {plan.name}
           </div>
         )}
@@ -584,19 +586,19 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
   return (
     <HudPanel
       title="Quick Slots"
-      right={<span className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">1-4</span>}
+      right={<span className="rounded border border-border/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">1-4</span>}
     >
       {items.length > 0 ? (
         <div className="grid grid-cols-2 gap-2">
           {items.map((item, index) => (
             <div
               key={`${item.name}-${index}`}
-              className="min-h-[70px] rounded-md border border-border/55 bg-background/55 p-3"
+              className="min-h-[70px] rounded-md border border-border/30 bg-background/55 p-3"
             >
               <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">
                 {String(index + 1).padStart(2, '0')}
               </div>
-              <div className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-foreground/90">
+              <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-foreground/90">
                 {item.name}
               </div>
               <div className="mt-1 inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -608,6 +610,38 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
       ) : (
         <EmptyLine text="No quick inventory yet." />
       )}
+    </HudPanel>
+  )
+}
+
+function PlaybookSkillPanel({ state }: { state: Sf2State }) {
+  const trait = state.player.traits[0]
+
+  if (!trait) {
+    return null
+  }
+
+  const uses = trait.uses
+    ? `${trait.uses.current}/${trait.uses.max}`
+    : null
+
+  return (
+    <HudPanel
+      title="Playbook Skill"
+      right={uses && (
+        <span className="rounded border border-primary/70 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
+          {uses}
+        </span>
+      )}
+    >
+      <div className="rounded-md border border-border/30 bg-background/45 px-3 py-2.5">
+        <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
+          {trait.name}
+        </div>
+        <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+          {uses ? 'Uses remaining' : 'Always available'}
+        </div>
+      </div>
     </HudPanel>
   )
 }
@@ -642,7 +676,7 @@ function LocationsPanel({ state }: { state: Sf2State }) {
   return (
     <HudPanel
       title="Locations"
-      right={<span className="rounded-full border border-primary/45 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{locations.length}</span>}
+      right={<span className="rounded-full border border-primary/70 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{locations.length}</span>}
     >
       {locations.length > 0 ? (
         <div className="space-y-2.5">
@@ -652,10 +686,10 @@ function LocationsPanel({ state }: { state: Sf2State }) {
             return (
               <div key={location.id} className={cn(
                 'rounded-md border px-3 py-2.5',
-                here ? 'border-primary/45 bg-primary/10' : 'border-border/45 bg-background/45',
+                here ? 'border-primary/70 bg-primary/10' : 'border-border/50 bg-background/45',
               )}>
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
+                  <span className="min-w-0 flex-1 truncate font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
                     {location.name || location.id.replace(/_/g, ' ')}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
@@ -680,10 +714,10 @@ function LocationsPanel({ state }: { state: Sf2State }) {
 function LocationChip({ label, tone }: { label: string; tone: 'primary' | 'muted' }) {
   return (
     <span className={cn(
-      'shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
+      'shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
       tone === 'primary'
-        ? 'border-primary/45 bg-primary/10 text-primary'
-        : 'border-border/55 bg-background/60 text-muted-foreground',
+        ? 'border-primary/70 bg-primary/10 text-primary'
+        : 'border-border/30 bg-background/60 text-muted-foreground',
     )}>
       {label}
     </span>
@@ -700,12 +734,21 @@ function PresentPanel({ state }: { state: Sf2State }) {
       {present.length > 0 ? (
         <div className="space-y-2.5">
           {present.map((npc) => (
-            <div key={npc.id} className="flex min-w-0 items-center gap-3">
-              <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dispositionDotClass(npc.disposition))} />
-              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/90">{npc.name}</span>
-              <span className="shrink-0 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {npc.disposition}
-              </span>
+            <div key={npc.id} className="rounded-md border border-border/30 bg-background/45 px-3 py-2">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dispositionDotClass(npc.disposition))} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-foreground/90">{npc.name}</div>
+                  {npc.affiliation && (
+                    <div className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                      {npc.affiliation}
+                    </div>
+                  )}
+                </div>
+                <span className="shrink-0 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {npc.disposition}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -741,11 +784,11 @@ function PressurePanel({
     >
       <div className="space-y-3">
         <div>
-          <div className="font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
+          <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
             {face.name || state.chapter.setup.antagonistField.corePressure || 'Pressure forming'}
           </div>
           {activeStep && (
-            <div className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground/85">
+            <div className="mt-1 text-[12px] leading-relaxed text-muted-foreground/85">
               {activeStep.pressure}
             </div>
           )}
@@ -808,7 +851,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
     <HudPanel
       title="Intel / Case Board"
       className="min-h-0 flex-1 overflow-hidden"
-      right={<span className="rounded-full border border-primary/45 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{visibleClueCount}</span>}
+      right={<span className="rounded-full border border-primary/70 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{visibleClueCount}</span>}
     >
       <div className="max-h-[42vh] space-y-4 overflow-y-auto pr-1 xl:max-h-none">
         {threads.length > 0 ? threads.map((thread) => {
@@ -824,7 +867,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/85">
+                <span className="font-heading text-sm font-medium tracking-[0.05em] text-foreground/85">
                   {thread.title}
                 </span>
                 <IntelTierBadge tier={tier} />
@@ -833,7 +876,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
                 {clues.length > 0 ? clues.map((clue) => (
                   <div
                     key={clue.id}
-                    className="flex gap-2 rounded border border-transparent px-2 py-1.5 text-[12.5px] leading-snug text-foreground/85"
+                    className="flex gap-2 rounded border border-transparent px-2 py-1.5 text-[12px] leading-snug text-foreground/85"
                   >
                     <span className="text-muted-foreground/50">-</span>
                     <span>{clue.content}</span>
@@ -849,7 +892,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
         )}
 
         {floatingClues.length > 0 && (
-          <div className="space-y-2 border-t border-border/40 pt-3">
+          <div className="space-y-2 border-t border-border/30 pt-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               Floating clues
             </div>
@@ -868,10 +911,10 @@ function IntelPanel({ state }: { state: Sf2State }) {
 function IntelTierBadge({ tier }: { tier: 'load-bearing' | 'evidenced' | 'lead' }) {
   return (
     <span className={cn(
-      'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
-      tier === 'load-bearing' && 'border-primary/40 bg-primary/10 text-primary',
+      'rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
+      tier === 'load-bearing' && 'border-primary/70 bg-primary/10 text-primary',
       tier === 'evidenced' && 'border-success/40 bg-success/10 text-success',
-      tier === 'lead' && 'border-border/50 bg-background/45 text-muted-foreground',
+      tier === 'lead' && 'border-border/30 bg-background/45 text-muted-foreground',
     )}>
       {tier}
     </span>
@@ -905,7 +948,7 @@ function TurnStream({
     <div className="mx-auto flex min-h-full max-w-[940px] flex-col justify-end space-y-6">
       {turns.length === 0 && !prose && !isGeneratingChapter && (
         <div className="sf2-border-tertiary-soft sf2-shadow-accent-soft rounded-r-lg border-l bg-card/35 py-5 pl-5 pr-5 text-foreground">
-          <p className="text-[15px] leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
+          <p className="text-sm leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
             {chapterTurnCount === 0
               ? 'Press begin when you are ready to open the chapter.'
               : 'The scene is quiet. Choose the next move.'}
@@ -1029,6 +1072,19 @@ interface RollDieView {
   rolling?: boolean
 }
 
+interface RollFormulaView {
+  roll: number
+  modifier: number
+  total: number
+  dc: number
+}
+
+interface RollStatView {
+  label: string
+  value: ReactNode
+  tone?: 'primary' | 'muted'
+}
+
 function rollToneForHistory(outcome: Sf2State['history']['rollLog'][number]['outcome']): RollTone {
   if (outcome === 'critical_success') return 'critical'
   if (outcome === 'critical_failure') return 'fumble'
@@ -1062,7 +1118,7 @@ function rollResultLabel(tone: RollTone) {
 function rollCardClassName(tone: RollTone, interactive = false) {
   return cn(
     'rounded-lg px-4 py-3 text-left transition-[background-color,transform] duration-200 md:px-5',
-    tone === 'idle' && 'sf2-roll-idle-card',
+    tone === 'idle' && 'sf2-roll-idle-card border border-primary/35 border-l-2 border-l-primary/55',
     tone === 'success' && 'bg-success/10',
     tone === 'failure' && 'bg-warning/10',
     tone === 'critical' && 'bg-warning/15',
@@ -1097,7 +1153,7 @@ function rollResultTextClassName(tone: RollTone) {
 function RollModifierChip({ type }: { type: RollModifierType }) {
   return (
     <span className={cn(
-      'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
+      'rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
       type === 'advantage' && 'border-success/35 bg-success/10 text-success',
       type === 'disadvantage' && 'border-warning/40 bg-warning/10 text-warning',
       type === 'challenge' && 'border-warning/40 bg-warning/10 text-warning',
@@ -1108,10 +1164,40 @@ function RollModifierChip({ type }: { type: RollModifierType }) {
   )
 }
 
+function RollStatBox({ stat }: { stat: RollStatView }) {
+  return (
+    <div className="min-w-[58px] rounded-md border border-border/30 bg-background/45 px-2 py-1">
+      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+        {stat.label}
+      </div>
+      <div className={cn(
+        'mt-0.5 font-mono text-base font-medium leading-none',
+        stat.tone === 'primary' ? 'text-primary' : 'text-foreground',
+      )}>
+        {stat.value}
+      </div>
+    </div>
+  )
+}
+
+function RollFormula({ formula, tone }: { formula: RollFormulaView; tone: RollTone }) {
+  return (
+    <div className="mt-1.5 font-mono text-[15px] leading-snug md:text-base">
+      <span className="font-medium text-foreground">{formula.roll}</span>
+      <span className="text-muted-foreground"> {formatSigned(formula.modifier)} = </span>
+      <span className="font-semibold text-foreground">{formula.total}</span>
+      <span className="text-muted-foreground"> vs </span>
+      <span className="text-foreground/70">DC {formula.dc}</span>
+      <span className="text-muted-foreground"> - </span>
+      <span className={rollResultTextClassName(tone)}>{rollResultLabel(tone)}</span>
+    </div>
+  )
+}
+
 function RollCardView({
   tone,
   title,
-  meta,
+  stats,
   modifierType,
   formula,
   reason,
@@ -1124,9 +1210,9 @@ function RollCardView({
 }: {
   tone: RollTone
   title: string
-  meta?: ReactNode
+  stats?: RollStatView[]
   modifierType?: RollModifierType
-  formula?: string
+  formula?: RollFormulaView
   reason?: string
   consequence?: string
   dice: RollDieView[]
@@ -1135,31 +1221,27 @@ function RollCardView({
   disabled?: boolean
   onClick?: () => void
 }) {
-  const label = rollResultLabel(tone)
   const content = (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
           <Dices className={cn('h-4 w-4', tone === 'idle' ? 'text-primary' : rollResultTextClassName(tone))} />
           <span className="text-foreground">{title}</span>
           {modifierType && <RollModifierChip type={modifierType} />}
-          {meta}
         </div>
 
-        {formula && (
-          <div className="mt-1.5 font-mono text-[14px] text-foreground/90">
-            {formula}
-            {label && (
-              <>
-                <span className="text-muted-foreground"> {' '}—{' '}</span>
-                <span className={rollResultTextClassName(tone)}>{label}</span>
-              </>
-            )}
+        {stats && stats.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {stats.map((stat) => (
+              <RollStatBox key={stat.label} stat={stat} />
+            ))}
           </div>
         )}
 
+        {formula && <RollFormula formula={formula} tone={tone} />}
+
         {reason && (
-          <p className="mt-2 text-[13px] leading-relaxed text-foreground/80" style={{ fontFamily: 'var(--font-narrative)' }}>
+          <p className="mt-2 text-sm leading-relaxed text-foreground/80" style={{ fontFamily: 'var(--font-narrative)' }}>
             {reason}
           </p>
         )}
@@ -1168,19 +1250,21 @@ function RollCardView({
             On fail: {consequence}
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="flex items-center justify-end gap-1.5">
+          {dice.map((die, index) => (
+            <div key={index} className={rollDieClassName(tone, die.kept ?? true, rolling || die.rolling)}>
+              {die.value}
+            </div>
+          ))}
+        </div>
         {actionLabel && (
-          <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/75">
+          <div className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-primary/75">
             {actionLabel}
           </div>
         )}
-      </div>
-
-      <div className="flex items-center justify-end gap-1.5">
-        {dice.map((die, index) => (
-          <div key={index} className={rollDieClassName(tone, die.kept ?? true, rolling || die.rolling)}>
-            {die.value}
-          </div>
-        ))}
       </div>
     </div>
   )
@@ -1219,7 +1303,7 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
       tone={tone}
       title={`${roll.skill} Check`}
       modifierType={roll.modifierType}
-      formula={`${roll.rollResult} ${formatSigned(roll.modifier)} = ${total} vs DC ${dc}`}
+      formula={{ roll: roll.rollResult, modifier: roll.modifier, total, dc }}
       dice={rollDiceFromValues(roll.rawRolls, roll.rollResult)}
     />
   )
@@ -1274,7 +1358,7 @@ function ActionSurface(props: {
       {closeReadiness.closeReady && !busy && (
         <div className="flex flex-col gap-2 rounded-lg border border-warning/45 bg-warning/10 px-4 py-3 text-warning md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.18em]">Chapter ready to close</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.18em]">Chapter ready to close</div>
             <div className="mt-1 text-[12px] text-warning/75">
               {closeReadiness.chapterPivotSignaled && 'Narrator signaled the pivot.'}
               {!closeReadiness.chapterPivotSignaled && closeReadiness.spineResolved && `Spine thread transitioned to ${closeReadiness.spineStatus}.`}
@@ -1285,7 +1369,7 @@ function ActionSurface(props: {
           <button
             type="button"
             onClick={onCloseChapter}
-            className="rounded border border-warning/55 bg-warning/15 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-warning transition-colors hover:bg-warning/25"
+            className="rounded border border-warning/55 bg-warning/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.14em] text-warning transition-colors hover:bg-warning/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-warning/65"
           >
             Close Ch{state.meta.currentChapter} / Open Ch{state.meta.currentChapter + 1}
           </button>
@@ -1299,7 +1383,7 @@ function ActionSurface(props: {
       )}
 
       {!closeReadiness.closeReady && !busy && closeReadiness.promotedSpineThreadId && (
-        <div className="rounded-lg border border-border/55 bg-background/45 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="rounded-lg border border-border/50 bg-background/45 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           Spine pressure shifted to {state.campaign.threads[closeReadiness.promotedSpineThreadId]?.title ?? closeReadiness.promotedSpineThreadId}.
         </div>
       )}
@@ -1326,12 +1410,12 @@ function ActionSurface(props: {
               key={`${action}-${index}`}
               type="button"
               onClick={() => onPendingInputChange(action)}
-              className="grid w-full grid-cols-[74px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/80 bg-card/75 px-3 py-2 text-left shadow-[0_0_16px_-14px] shadow-primary transition-colors hover:border-primary/55 hover:bg-primary/10 md:grid-cols-[92px_minmax(0,1fr)] md:px-5"
+              className="grid w-full grid-cols-[74px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[92px_minmax(0,1fr)] md:px-5"
             >
-              <span className="rounded border border-primary/40 bg-primary/10 px-2 py-1 text-center font-mono text-[9px] uppercase tracking-[0.12em] text-primary">
+              <span className="rounded border border-primary/70 bg-primary/10 px-2 py-1 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
                 Option {index + 1}
               </span>
-              <span className="text-[13px] leading-snug text-foreground md:text-[13.5px]">{action}</span>
+              <span className="text-sm leading-snug text-foreground">{action}</span>
             </button>
           ))}
         </div>
@@ -1342,7 +1426,7 @@ function ActionSurface(props: {
           type="button"
           onClick={() => onSendTurn('')}
           disabled={busy}
-          className="w-full rounded-lg border border-primary/65 bg-primary/15 px-4 py-3 font-mono text-[12px] uppercase tracking-[0.2em] text-primary shadow-[0_0_18px_-12px] shadow-primary transition-colors hover:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-45"
+          className="w-full rounded-lg border border-primary/70 bg-primary/15 px-4 py-3 font-mono text-[12px] uppercase tracking-[0.2em] text-primary transition-colors hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-45"
         >
           {state.chapter.title ? 'Begin the opening' : 'Generate chapter / begin'}
         </button>
@@ -1397,22 +1481,14 @@ function DiceTray({
   }))
   const resultDice = result ? rollDiceFromValues(result.rawRolls, result.d20) : pendingDice
   const formula = result && resolvedDc !== null
-    ? `${result.d20} ${formatSigned(result.modifier)} = ${result.total} vs DC ${resolvedDc}`
+    ? { roll: result.d20, modifier: result.modifier, total: result.total, dc: resolvedDc }
     : undefined
-  const meta = (
-    <>
-      {resolvedDc !== null && (
-        <span>
-          DC <span className="text-foreground">{resolvedDc}</span>
-        </span>
-      )}
-      {resolvedModifier !== null && (
-        <span>
-          mod <span className="text-primary">{formatSigned(resolvedModifier)}</span>
-        </span>
-      )}
-    </>
-  )
+  const stats: RollStatView[] = !result
+    ? [
+      ...(resolvedDc !== null ? [{ label: 'DC', value: resolvedDc }] : []),
+      ...(resolvedModifier !== null ? [{ label: 'Mod', value: formatSigned(resolvedModifier), tone: 'primary' as const }] : []),
+    ]
+    : []
 
   useEffect(() => {
     setDisplay(result?.d20 ?? null)
@@ -1444,7 +1520,7 @@ function DiceTray({
       <RollCardView
         tone={tone}
         title={title}
-        meta={meta}
+        stats={stats}
         modifierType={pendingCheck?.modifierType ?? result?.modifierType}
         formula={formula}
         reason={!result ? pendingCheck?.why : undefined}
@@ -1457,9 +1533,9 @@ function DiceTray({
       />
 
       {inspirationOffer && (
-        <div className="mt-2 flex flex-col gap-2 rounded-lg border border-info/35 bg-background/55 px-3 py-3 text-info shadow-[0_0_20px_-18px] shadow-info md:flex-row md:items-center md:justify-between">
+        <div className="mt-2 flex flex-col gap-2 rounded-lg border border-info/35 bg-background/55 px-3 py-3 text-info md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.16em]">Spend inspiration?</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.16em]">Spend inspiration?</div>
             <div className="mt-1 text-[12px] text-info/80">
               Reroll this failed check. Inspiration remaining: {inspirationRemaining}
             </div>
@@ -1468,14 +1544,14 @@ function DiceTray({
             <button
               type="button"
               onClick={onSpendInspiration}
-              className="rounded-md border border-info/55 bg-info/15 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-info transition-colors hover:bg-info/25"
+              className="rounded-md border border-info/55 bg-info/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-info transition-colors hover:bg-info/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-info/65"
             >
               Spend
             </button>
             <button
               type="button"
               onClick={onDeclineInspiration}
-              className="rounded-md border border-border/60 bg-background/45 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded-md border border-border/50 bg-background/45 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65"
             >
               Keep result
             </button>
@@ -1502,11 +1578,11 @@ function CommandInput({
   return (
     <div
       className={cn(
-        'flex items-end gap-3 rounded-lg border bg-background/70 px-3 py-2.5 shadow-[0_0_22px_-16px] shadow-primary md:px-5',
-        disabled ? 'border-border/55 opacity-55' : 'border-primary/45 focus-within:border-primary/80',
+        'flex items-end gap-3 rounded-lg border bg-background/70 px-3 py-2.5 md:px-5',
+        disabled ? 'border-border/50 opacity-55' : 'border-primary/50 focus-within:border-primary/70',
       )}
     >
-      <span className="pb-1.5 font-mono text-[13px] text-primary">&gt;</span>
+      <span className="pb-1.5 font-mono text-sm text-primary">&gt;</span>
       <textarea
         rows={1}
         value={value}
@@ -1519,13 +1595,13 @@ function CommandInput({
             onSubmit()
           }
         }}
-        className="min-h-8 flex-1 resize-none bg-transparent py-1.5 font-mono text-[13px] leading-snug text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+        className="min-h-8 flex-1 resize-none bg-transparent py-1.5 font-mono text-sm leading-snug text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
       />
       <button
         type="button"
         disabled={disabled || !value.trim()}
         onClick={onSubmit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/45 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/50 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Submit command"
       >
         <Send className="h-4 w-4" />
@@ -1617,8 +1693,8 @@ function DiagnosticsPanel(props: {
           {debug.length === 0 ? (
             <EmptyLine text="No debug events yet." />
           ) : debug.slice().reverse().slice(0, 20).map((entry, index) => (
-            <div key={`${entry.kind}-${entry.at}-${index}`} className="border-t border-border/45 pt-2">
-              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{entry.kind}</div>
+            <div key={`${entry.kind}-${entry.at}-${index}`} className="border-t border-border/30 pt-2">
+              <div className="font-mono text-[12px] uppercase tracking-[0.14em] text-primary">{entry.kind}</div>
               <pre className="mt-1 whitespace-pre-wrap break-words text-muted-foreground">
                 {JSON.stringify(entry.data, null, 2)}
               </pre>
@@ -1639,7 +1715,7 @@ function DiagnosticsPanel(props: {
         <UtilityButton icon={<RotateCcw className="h-4 w-4" />} label="Reset campaign" onClick={onResetCampaign} />
         <a
           href="/play"
-          className="inline-flex items-center justify-center gap-2 rounded border border-border/60 bg-card/55 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground md:col-span-2"
+          className="inline-flex items-center justify-center gap-2 rounded border border-border/50 bg-card/55 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:col-span-2"
         >
           Back to v1
         </a>
@@ -1650,9 +1726,9 @@ function DiagnosticsPanel(props: {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded border border-border/45 bg-background/45 px-2 py-2 text-center">
+    <div className="rounded border border-border/30 bg-background/45 px-2 py-2 text-center">
       <div className="font-mono text-lg text-foreground">{value}</div>
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
     </div>
   )
 }
@@ -1673,7 +1749,7 @@ function UtilityButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center justify-center gap-2 rounded border border-border/60 bg-card/55 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
+      className="inline-flex items-center justify-center gap-2 rounded border border-border/50 bg-card/55 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-45"
     >
       {icon}
       {label}
@@ -1684,8 +1760,8 @@ function UtilityButton({
 function StatusLine({ tone, text, detail }: { tone: 'warning' | 'muted'; text: string; detail?: string }) {
   return (
     <div className={cn(
-      'rounded-lg border px-4 py-3 font-mono text-[11px] uppercase tracking-[0.16em]',
-      tone === 'warning' ? 'border-warning/45 bg-warning/10 text-warning' : 'border-border/45 bg-card/45 text-muted-foreground',
+      'rounded-lg border px-4 py-3 font-mono text-[12px] uppercase tracking-[0.16em]',
+      tone === 'warning' ? 'border-warning/45 bg-warning/10 text-warning' : 'border-border/30 bg-card/45 text-muted-foreground',
     )}>
       <div>{text}</div>
       {detail && <div className="mt-1 normal-case tracking-normal text-muted-foreground">{detail}</div>}
@@ -1705,7 +1781,7 @@ function KeyValue({ label, value, muted }: { label: string; value?: string; mute
 
 function EmptyLine({ text, compact }: { text: string; compact?: boolean }) {
   return (
-    <div className={cn('text-muted-foreground', compact ? 'text-[12px]' : 'text-[12.5px]')}>
+    <div className={cn('text-muted-foreground', compact ? 'text-[12px]' : 'text-sm')}>
       {text}
     </div>
   )
