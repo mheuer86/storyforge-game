@@ -1213,6 +1213,8 @@ function applyCreate(
           atmosphericConditions: Array.isArray(p.atmospheric_conditions)
             ? (p.atmospheric_conditions as string[])
             : undefined,
+          locked: typeof p.locked === 'boolean' ? p.locked : undefined,
+          chapterCreated: chapter,
         }
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
@@ -1605,6 +1607,7 @@ function applyUpdate(
       const nextTarget = typeof c.target === 'string' && c.target.trim() ? c.target.trim() : prior?.target ?? ''
       const nextApproach = typeof c.approach === 'string' && c.approach.trim() ? c.approach.trim() : prior?.approach ?? ''
       const nextFallback = typeof c.fallback === 'string' && c.fallback.trim() ? c.fallback.trim() : prior?.fallback ?? ''
+      const nextName = typeof c.name === 'string' && c.name.trim() ? c.name.trim() : prior?.name
       if (!prior && !nextTarget && !nextApproach && !nextFallback) {
         outcomes.push({
           accepted: false,
@@ -1615,6 +1618,7 @@ function applyUpdate(
         return
       }
       draft.campaign.operationPlan = {
+        name: nextName,
         target: nextTarget,
         approach: nextApproach,
         fallback: nextFallback,

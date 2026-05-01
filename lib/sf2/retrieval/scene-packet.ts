@@ -274,6 +274,7 @@ export function renderPerTurnDelta(
   if (packet.operationPlan) {
     const plan = packet.operationPlan
     lines.push(`\n### Operation plan (mutable)`)
+    if (plan.name) lines.push(`- name: ${plan.name}`)
     lines.push(`- target: ${plan.target}`)
     lines.push(`- approach: ${plan.approach}`)
     lines.push(`- fallback: ${plan.fallback}`)

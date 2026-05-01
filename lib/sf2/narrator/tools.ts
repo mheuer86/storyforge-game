@@ -55,6 +55,14 @@ export const narrateTurnTool: Anthropic.Tool = {
             item: { type: 'string', description: 'Item name for inventory_use.' },
             reason: { type: 'string', description: 'Why this happened (one clause).' },
             location_id: { type: 'string', description: 'For set_location.' },
+            name: { type: 'string', description: 'For set_location: display name for a new location.' },
+            description: { type: 'string', description: 'For set_location: one-line location description.' },
+            atmospheric_conditions: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'For set_location: short atmospheric tags, first tag appears in the UI rail.',
+            },
+            locked: { type: 'boolean', description: 'For set_location or set_scene_snapshot: known but not currently accessible.' },
             leads_to: {
               type: 'string',
               enum: ['unanswered_question', 'kinetic_carry', 'relational_tension', 'unpaid_promise', 'null'],
@@ -69,6 +77,7 @@ export const narrateTurnTool: Anthropic.Tool = {
                 present_npc_ids: { type: 'array', items: { type: 'string' } },
                 time_label: { type: 'string' },
                 established: { type: 'array', items: { type: 'string' } },
+                locked: { type: 'boolean' },
               },
             },
           },

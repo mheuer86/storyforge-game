@@ -65,6 +65,7 @@
   --success: oklch(0.65 0.18 145);
   --warning: oklch(0.75 0.15 85);
   --info: oklch(0.65 0.12 220);
+  --severe: oklch(0.62 0.24 20);
 
   /* Theme-driven glow effects */
   --title-glow: 0 0 40px oklch(0.72 0.15 195 / 0.8), 0 0 80px oklch(0.72 0.15 195 / 0.4);
@@ -167,6 +168,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-severe: var(--severe);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -313,6 +315,16 @@
   background: var(--scrollbar-thumb-hover);
 }
 
+.sf2-narrative-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sf2-narrative-scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* Mist background effect — base structure, colored per genre */
 .mist-bg {
   position: fixed;
@@ -425,6 +437,34 @@
 .dice-crit-card {
   border-color: color-mix(in oklch, var(--tertiary) 60%, transparent);
   background-color: color-mix(in oklch, var(--tertiary) 10%, transparent);
+}
+
+/* SF2 shell token utilities. Tailwind opacity variants do not cover these
+   custom genre tokens consistently, so keep the soft mixes explicit. */
+.sf2-text-tertiary-muted {
+  color: color-mix(in oklch, var(--tertiary) 64%, transparent);
+}
+
+.sf2-border-tertiary-soft {
+  border-color: color-mix(in oklch, var(--tertiary) 30%, transparent);
+}
+
+.sf2-shadow-accent-soft {
+  box-shadow: 0 0 20px -12px color-mix(in oklch, var(--accent) 20%, transparent);
+}
+
+.sf2-roll-idle-card {
+  background-color: color-mix(in oklch, var(--accent) 12%, transparent);
+}
+
+button.sf2-roll-idle-card:hover {
+  background-color: color-mix(in oklch, var(--accent) 18%, transparent);
+}
+
+.sf2-roll-idle-die {
+  border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+  background-color: color-mix(in oklch, var(--background) 60%, transparent);
+  color: var(--primary);
 }
 
 /* Grain texture overlay — SVG noise filter at low opacity */

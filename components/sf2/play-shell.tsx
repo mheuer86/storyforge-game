@@ -3,7 +3,6 @@
 import {
   Activity,
   BookOpen,
-  Database,
   Dices,
   FileDown,
   Map as MapIcon,
@@ -13,7 +12,7 @@ import {
   Send,
   UserRound,
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import {
   Drawer,
   DrawerContent,
@@ -22,8 +21,9 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
+import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
-import type { Sf2State } from '@/lib/sf2/types'
+import type { Sf2State, Sf2TurnDiffEntry } from '@/lib/sf2/types'
 
 type SessionSummary = NonNullable<ReturnType<typeof computeSessionSummary>>
 type DebugEntryView = { kind: string; at: number; data: unknown }
@@ -33,6 +33,22 @@ type TokenUsageView = {
   cacheWriteTokens: number
   cacheReadTokens: number
 }
+type StatLabels = { hp: string; defense: string; currency: string; inspiration: string }
+
+const desktopRailClassName = cn(
+  'hidden min-h-0 flex-col gap-3 overflow-y-auto pr-1 xl:flex',
+  'opacity-75 brightness-95 saturate-[0.86] transition-[opacity,filter] duration-200 ease-out',
+  'hover:opacity-100 hover:brightness-110 hover:saturate-100',
+  'focus-within:opacity-100 focus-within:brightness-110 focus-within:saturate-100',
+)
+
+const ambientOverlayStyle = {
+  background: [
+    'radial-gradient(circle at 18% 0%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 30%)',
+    'radial-gradient(circle at 82% 10%, color-mix(in oklch, var(--primary) 12%, transparent), transparent 28%)',
+    'linear-gradient(90deg, transparent, color-mix(in oklch, var(--tertiary) 7%, transparent), transparent)',
+  ].join(', '),
+} satisfies CSSProperties
 
 export interface Sf2PendingCheckView {
   skill: string
@@ -116,6 +132,51 @@ interface Sf2PlayShellProps {
 
 type MobilePanel = 'character' | 'scene' | 'intel' | 'diagnostics'
 
+const DEFAULT_STAT_LABELS: StatLabels = {
+  hp: 'HP',
+  defense: 'AC',
+  currency: 'Cred',
+  inspiration: 'Insp',
+}
+
+const THEME_ROOT_PROPS = [
+  '--background',
+  '--foreground',
+  '--card',
+  '--card-foreground',
+  '--primary',
+  '--primary-foreground',
+  '--secondary',
+  '--secondary-foreground',
+  '--muted',
+  '--muted-foreground',
+  '--accent',
+  '--accent-foreground',
+  '--destructive',
+  '--border',
+  '--input',
+  '--ring',
+  '--narrative',
+  '--meta',
+  '--success',
+  '--warning',
+  '--severe',
+  '--title-glow',
+  '--action-glow',
+  '--action-glow-hover',
+  '--scrollbar-thumb',
+  '--scrollbar-thumb-hover',
+  '--tertiary',
+  '--tertiary-foreground',
+] as const
+
+const THEME_BODY_PROPS = [
+  '--font-narrative',
+  '--font-heading',
+  '--font-system',
+  '--font-scale',
+] as const
+
 export function Sf2PlayShell(props: Sf2PlayShellProps) {
   const {
     state,
@@ -154,9 +215,39 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel | null>(null)
 
   useEffect(() => {
-    document.body.setAttribute('data-genre', state.meta.genreId)
-    return () => document.body.removeAttribute('data-genre')
+    const root = document.documentElement
+    const body = document.body
+    const priorRootGenre = root.getAttribute('data-genre')
+    const priorBodyGenre = body.getAttribute('data-genre')
+    const priorRootProps = new Map(THEME_ROOT_PROPS.map((prop) => [prop, root.style.getPropertyValue(prop)]))
+    const priorBodyProps = new Map(THEME_BODY_PROPS.map((prop) => [prop, body.style.getPropertyValue(prop)]))
+
+    try {
+      applyGenreTheme(state.meta.genreId as Genre)
+    } catch {
+      root.setAttribute('data-genre', state.meta.genreId)
+    }
+    body.setAttribute('data-genre', state.meta.genreId)
+
+    return () => {
+      if (priorRootGenre === null) root.removeAttribute('data-genre')
+      else root.setAttribute('data-genre', priorRootGenre)
+      if (priorBodyGenre === null) body.removeAttribute('data-genre')
+      else body.setAttribute('data-genre', priorBodyGenre)
+      for (const prop of THEME_ROOT_PROPS) {
+        const prior = priorRootProps.get(prop)
+        if (prior) root.style.setProperty(prop, prior)
+        else root.style.removeProperty(prop)
+      }
+      for (const prop of THEME_BODY_PROPS) {
+        const prior = priorBodyProps.get(prop)
+        if (prior) body.style.setProperty(prop, prior)
+        else body.style.removeProperty(prop)
+      }
+    }
   }, [state.meta.genreId])
+
+  const statLabels = useMemo(() => statLabelsForGenre(state.meta.genreId), [state.meta.genreId])
 
   const rollLogByTurn = useMemo(() => {
     const map = new Map<number, Sf2State['history']['rollLog']>()
@@ -168,6 +259,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     return map
   }, [state.history.rollLog])
 
+  const locationByTurn = useMemo(() => buildLocationByTurn(state), [state])
   const hasActiveRoll = Boolean(pendingCheck || rollResult)
   const mobilePanelTitle = mobilePanel
     ? mobilePanel === 'character'
@@ -181,7 +273,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
 
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_18%,oklch(0.72_0.15_195_/_0.07),transparent_34%),linear-gradient(90deg,transparent,oklch(0.72_0.15_195_/_0.03),transparent)]" />
+      <div className="pointer-events-none fixed inset-0" style={ambientOverlayStyle} />
       <div className="relative flex h-full min-w-0 flex-col">
         <TopBar
           state={state}
@@ -191,21 +283,22 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
         />
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pb-3 md:px-5 md:pb-5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)]">
-          <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto pr-1 xl:flex">
-            <CharacterPanel state={state} />
+          <aside className={desktopRailClassName}>
+            <CharacterPanel state={state} statLabels={statLabels} />
             <ObjectivePanel state={state} />
             <QuickSlotsPanel state={state} />
           </aside>
 
-          <main className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/55 bg-background/70 shadow-[0_0_34px_-24px] shadow-primary">
+          <main className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/55 bg-background/70 shadow-[0_0_34px_-24px] shadow-accent">
             <div
               ref={scrollRef}
-              className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6"
+              className="sf2-narrative-scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6"
             >
               <TurnStream
                 state={state}
                 prose={prose}
                 rollLogByTurn={rollLogByTurn}
+                locationByTurn={locationByTurn}
                 isStreaming={isStreaming}
                 isGeneratingChapter={isGeneratingChapter}
                 generationElapsed={generationElapsed}
@@ -214,7 +307,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
               />
             </div>
 
-            <div className="shrink-0 border-t border-border/50 bg-card/70 p-3 shadow-[0_-18px_32px_-30px] shadow-primary md:p-4">
+            <div className="shrink-0 border-t border-border/50 bg-card/70 p-3 shadow-[0_-18px_32px_-30px] shadow-accent md:p-4">
               <ActionSurface
                 state={state}
                 suggestedActions={suggestedActions}
@@ -239,10 +332,9 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
             </div>
           </main>
 
-          <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto pr-1 xl:flex">
-            <ScenePanel state={state} />
+          <aside className={desktopRailClassName}>
+            <LocationsPanel state={state} />
             <PresentPanel state={state} />
-            <PressurePanel state={state} closeReadiness={closeReadiness} />
             <IntelPanel state={state} />
           </aside>
         </div>
@@ -261,16 +353,15 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
           <div className="max-h-[calc(86vh-5rem)] overflow-y-auto p-4">
             {mobilePanel === 'character' && (
               <div className="space-y-3">
-                <CharacterPanel state={state} />
+                <CharacterPanel state={state} statLabels={statLabels} />
                 <ObjectivePanel state={state} />
                 <QuickSlotsPanel state={state} />
               </div>
             )}
             {mobilePanel === 'scene' && (
               <div className="space-y-3">
-                <ScenePanel state={state} />
+                <LocationsPanel state={state} />
                 <PresentPanel state={state} />
-                <PressurePanel state={state} closeReadiness={closeReadiness} />
               </div>
             )}
             {mobilePanel === 'intel' && <IntelPanel state={state} />}
@@ -284,6 +375,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 lastArchivistUsage={lastArchivistUsage}
                 chapterTurnCount={chapterTurnCount}
                 busy={busy}
+                closeReadiness={closeReadiness}
                 onCloseChapter={onCloseChapter}
                 onResetCampaign={onResetCampaign}
                 onDownloadSessionLog={onDownloadSessionLog}
@@ -310,46 +402,42 @@ function TopBar({
 }) {
   return (
     <header className="shrink-0 px-3 py-3 md:px-5 md:py-4">
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(270px,340px)_minmax(0,1fr)_minmax(300px,360px)] xl:gap-4">
-        <div className="hidden items-center rounded-lg border border-primary/30 bg-card/45 px-5 py-2.5 shadow-[0_0_24px_-14px] shadow-primary xl:flex">
+      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border/65 bg-card/70 px-3 py-2.5 shadow-[0_0_28px_-20px] shadow-accent md:px-5">
+        <div className="hidden min-w-[210px] items-center sm:flex">
           <span className="font-mono text-[12px] uppercase tracking-[0.32em] text-primary">Storyforge</span>
         </div>
 
-        <div className="min-w-0 rounded-lg border border-border/60 bg-card/55 px-4 py-2.5 shadow-[0_0_28px_-20px] shadow-primary">
-          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
-              Ch.{String(state.meta.currentChapter).padStart(2, '0')}
-            </span>
-            <span className="truncate text-center font-mono text-[12px] uppercase tracking-[0.22em] text-foreground md:text-[14px]">
-              {state.chapter.title || 'Chapter setup pending'}
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
-              Turn {chapterTurnCount}
-            </span>
-          </div>
-        </div>
-
-        <div className="hidden min-w-0 items-center justify-end gap-2 xl:flex">
-          <div className="inline-flex items-center gap-2 rounded-lg border border-border/45 bg-card/30 px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            <Database className="h-3.5 w-3.5 text-primary/70" />
-            Diagnostics in menu
-          </div>
-          <span className={cn(
-            'rounded-lg border px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em]',
-            busy
-              ? 'border-warning/45 bg-warning/10 text-warning'
-              : 'border-success/40 bg-success/10 text-success',
-          )}>
-            {busy ? 'Syncing' : 'Ready'}
+        <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+            Ch.{String(state.meta.currentChapter).padStart(2, '0')}
+          </span>
+          <span className="truncate text-center font-mono text-[12px] uppercase tracking-[0.22em] text-foreground md:text-[14px]">
+            {state.chapter.title || 'Chapter setup pending'}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+            Turn {chapterTurnCount}
           </span>
         </div>
 
-        <div className="flex items-center justify-end gap-1.5 xl:hidden">
-          <MobilePanelButton label="PC" icon={<UserRound className="h-4 w-4" />} onClick={() => onOpenPanel('character')} />
-          <MobilePanelButton label="Scene" icon={<MapIcon className="h-4 w-4" />} onClick={() => onOpenPanel('scene')} />
-          <MobilePanelButton label="Intel" icon={<BookOpen className="h-4 w-4" />} onClick={() => onOpenPanel('intel')} />
-          <MobilePanelButton label="More" icon={<Menu className="h-4 w-4" />} onClick={() => onOpenPanel('diagnostics')} />
+        <div className="flex min-w-[52px] items-center justify-end sm:min-w-[210px]">
+          <button
+            type="button"
+            onClick={() => onOpenPanel('diagnostics')}
+            className={cn(
+              'inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 sm:px-3',
+              busy ? 'text-warning hover:text-warning' : 'text-muted-foreground',
+            )}
+            aria-label="Open menu"
+          >
+            <Menu className="h-4 w-4" />
+            <span className="hidden sm:inline">{busy ? 'Syncing' : 'Menu'}</span>
+          </button>
         </div>
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-1.5 xl:hidden">
+        <MobilePanelButton label="PC" icon={<UserRound className="h-4 w-4" />} onClick={() => onOpenPanel('character')} />
+        <MobilePanelButton label="Scene" icon={<MapIcon className="h-4 w-4" />} onClick={() => onOpenPanel('scene')} />
+        <MobilePanelButton label="Intel" icon={<BookOpen className="h-4 w-4" />} onClick={() => onOpenPanel('intel')} />
       </div>
     </header>
   )
@@ -390,7 +478,7 @@ function HudPanel({
 }) {
   return (
     <section className={cn(
-      'rounded-lg border border-border/40 bg-card/45 p-4 shadow-[0_0_24px_-22px] shadow-primary',
+      'rounded-lg border border-border/55 bg-card/70 p-4 shadow-[0_0_24px_-22px] shadow-accent',
       className,
     )}>
       <div className="mb-3 flex min-h-4 items-center justify-between gap-3">
@@ -402,7 +490,7 @@ function HudPanel({
   )
 }
 
-function CharacterPanel({ state }: { state: Sf2State }) {
+function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: StatLabels }) {
   const hpPct = state.player.hp.max > 0
     ? Math.max(0, Math.min(100, (state.player.hp.current / state.player.hp.max) * 100))
     : 0
@@ -422,10 +510,10 @@ function CharacterPanel({ state }: { state: Sf2State }) {
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <Metric value={`${state.player.hp.current}/${state.player.hp.max}`} label="HP" />
-          <Metric value={String(state.player.ac)} label="AC" />
-          <Metric value={String(state.player.credits)} label="Cred" />
-          <Metric value={String(state.player.inspiration)} label="Insp" accent />
+          <Metric value={`${state.player.hp.current}/${state.player.hp.max}`} label={statLabels.hp} />
+          <Metric value={String(state.player.ac)} label={statLabels.defense} />
+          <Metric value={String(state.player.credits)} label={statLabels.currency} />
+          <Metric value={String(state.player.inspiration)} label={statLabels.inspiration} accent />
         </div>
         <div className="h-1 overflow-hidden rounded-full border border-border/40 bg-background/70">
           <div
@@ -471,15 +559,18 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
     <HudPanel
       title="Ops Plan"
       right={
-        <span className="rounded-full border border-primary/40 px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.16em] text-primary">
+        <span className="rounded-md border border-primary/40 px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.16em] text-primary">
           {plan.status ?? 'active'}
         </span>
       }
     >
       <div className="space-y-3">
-        <div className="font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
-          {plan.target || 'Operation plan'}
-        </div>
+        {plan.name && (
+          <div className="font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
+            {plan.name}
+          </div>
+        )}
+        <KeyValue label="Target" value={plan.target} />
         <KeyValue label="Approach" value={plan.approach} />
         <KeyValue label="Fallback" value={plan.fallback} muted />
       </div>
@@ -521,39 +612,81 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
   )
 }
 
-function ScenePanel({ state }: { state: Sf2State }) {
-  const location = state.world.sceneSnapshot.location.name || state.world.currentLocation.name || state.chapter.setup.openingSceneSpec.location
-  const description = state.world.sceneSnapshot.location.description || state.world.currentLocation.description || state.chapter.setup.openingSceneSpec.initialState
-  const time = state.world.sceneSnapshot.timeLabel || state.world.currentTimeLabel || state.meta.currentTimeLabel
+function LocationsPanel({ state }: { state: Sf2State }) {
+  const currentChapter = state.meta.currentChapter
+  const currentLocationId = state.world.currentLocation.id || state.world.sceneSnapshot.location.id
+  const locationMap = new Map<string, Sf2State['world']['currentLocation']>()
+
+  for (const location of Object.values(state.campaign.locations)) {
+    locationMap.set(location.id, location)
+  }
+  if (state.world.currentLocation.id) {
+    locationMap.set(state.world.currentLocation.id, state.world.currentLocation)
+  }
+  if (state.world.sceneSnapshot.location.id) {
+    locationMap.set(state.world.sceneSnapshot.location.id, state.world.sceneSnapshot.location)
+  }
+
+  const locations = [...locationMap.values()]
+    .filter((location) => location.id && location.id !== 'loc_pending')
+    .filter((location) => {
+      if (location.id === currentLocationId) return true
+      return location.chapterCreated === currentChapter
+    })
+    .sort((a, b) => {
+      if (a.id === currentLocationId) return -1
+      if (b.id === currentLocationId) return 1
+      return a.name.localeCompare(b.name)
+    })
 
   return (
     <HudPanel
-      title="Scene"
-      right={<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">live</span>}
+      title="Locations"
+      right={<span className="rounded-full border border-primary/45 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{locations.length}</span>}
     >
-      <div className="space-y-3">
-        <div>
-          <div className="font-mono text-[13px] uppercase tracking-[0.16em] text-foreground/90">
-            {location || 'Unstaged location'}
-          </div>
-          {time && <div className="mt-1 text-[12px] text-muted-foreground">{time}</div>}
-        </div>
-        {description && (
-          <p className="text-[12.5px] leading-relaxed text-muted-foreground/85">
-            {description}
-          </p>
-        )}
-        {state.world.sceneSnapshot.established.length > 0 && (
-          <div className="space-y-1">
-            {state.world.sceneSnapshot.established.slice(-3).map((fact) => (
-              <div key={fact} className="rounded border border-border/35 bg-background/45 px-2 py-1.5 text-[12px] leading-snug text-foreground/80">
-                {fact}
+      {locations.length > 0 ? (
+        <div className="space-y-2.5">
+          {locations.map((location) => {
+            const here = location.id === currentLocationId
+            const tag = location.atmosphericConditions?.[0]
+            return (
+              <div key={location.id} className={cn(
+                'rounded-md border px-3 py-2.5',
+                here ? 'border-primary/45 bg-primary/10' : 'border-border/45 bg-background/45',
+              )}>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] uppercase tracking-[0.16em] text-foreground/90">
+                    {location.name || location.id.replace(/_/g, ' ')}
+                  </span>
+                  {here && <LocationChip tone="primary" label="HERE" />}
+                  {location.locked && <LocationChip tone="muted" label="LOCKED" />}
+                </div>
+                {tag && (
+                  <div className="mt-1.5 line-clamp-1 text-[12px] text-muted-foreground">
+                    {tag}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            )
+          })}
+        </div>
+      ) : (
+        <EmptyLine text="No chapter locations surfaced." />
+      )}
     </HudPanel>
+  )
+}
+
+function LocationChip({ label, tone }: { label: string; tone: 'primary' | 'muted' }) {
+  return (
+    <span className={cn(
+      'shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
+      tone === 'primary'
+        ? 'border-primary/45 bg-primary/10 text-primary'
+        : 'border-border/55 bg-background/60 text-muted-foreground',
+    )}>
+      {label}
+    </span>
   )
 }
 
@@ -644,43 +777,57 @@ function PressurePanel({
 }
 
 function IntelPanel({ state }: { state: Sf2State }) {
-  const threadIds = unique([
+  const currentChapter = state.meta.currentChapter
+  const surfacedThreadIds = new Set([
     ...(state.chapter.setup.surfaceThreads ?? []),
     ...(state.chapter.setup.loadBearingThreadIds ?? []),
     ...(state.chapter.setup.activeThreadIds ?? []),
+  ])
+  const threadIds = unique([
+    ...surfacedThreadIds,
     ...Object.values(state.campaign.threads)
-      .filter((thread) => thread.status === 'active')
+      .filter((thread) => thread.status === 'active' && thread.chapterCreated === currentChapter)
       .map((thread) => thread.id),
   ])
   const threads = threadIds
     .map((id) => state.campaign.threads[id])
     .filter(Boolean)
+    .filter((thread) => thread.status === 'active')
+    .filter((thread) => surfacedThreadIds.has(thread.id) || thread.chapterCreated === currentChapter)
     .slice(0, 5)
   const floatingClues = state.campaign.floatingClueIds
     .map((id) => state.campaign.clues[id])
     .filter(Boolean)
+    .filter((clue) => clue.chapterCreated === currentChapter)
     .slice(0, 3)
+  const visibleClueCount = Object.values(state.campaign.clues)
+    .filter((clue) => clue.chapterCreated === currentChapter)
+    .length
 
   return (
     <HudPanel
       title="Intel / Case Board"
       className="min-h-0 flex-1 overflow-hidden"
-      right={<span className="rounded-full border border-primary/45 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{Object.keys(state.campaign.clues).length}</span>}
+      right={<span className="rounded-full border border-primary/45 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{visibleClueCount}</span>}
     >
       <div className="max-h-[42vh] space-y-4 overflow-y-auto pr-1 xl:max-h-none">
         {threads.length > 0 ? threads.map((thread) => {
           const clues = Object.values(state.campaign.clues)
             .filter((clue) => clue.anchoredTo.includes(thread.id))
+            .filter((clue) => clue.chapterCreated === currentChapter)
             .slice(0, 3)
+          const tier = thread.loadBearing || state.chapter.setup.loadBearingThreadIds.includes(thread.id)
+            ? 'load-bearing'
+            : clues.length > 0
+              ? 'evidenced'
+              : 'lead'
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/85">
                   {thread.title}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-                  tension {thread.tension}
-                </span>
+                <IntelTierBadge tier={tier} />
               </div>
               <div className="space-y-1">
                 {clues.length > 0 ? clues.map((clue) => (
@@ -718,10 +865,24 @@ function IntelPanel({ state }: { state: Sf2State }) {
   )
 }
 
+function IntelTierBadge({ tier }: { tier: 'load-bearing' | 'evidenced' | 'lead' }) {
+  return (
+    <span className={cn(
+      'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
+      tier === 'load-bearing' && 'border-primary/40 bg-primary/10 text-primary',
+      tier === 'evidenced' && 'border-success/40 bg-success/10 text-success',
+      tier === 'lead' && 'border-border/50 bg-background/45 text-muted-foreground',
+    )}>
+      {tier}
+    </span>
+  )
+}
+
 function TurnStream({
   state,
   prose,
   rollLogByTurn,
+  locationByTurn,
   isStreaming,
   isGeneratingChapter,
   generationElapsed,
@@ -731,6 +892,7 @@ function TurnStream({
   state: Sf2State
   prose: string
   rollLogByTurn: Map<number, Sf2State['history']['rollLog']>
+  locationByTurn: Map<number, string>
   isStreaming: boolean
   isGeneratingChapter: boolean
   generationElapsed: number
@@ -742,7 +904,7 @@ function TurnStream({
   return (
     <div className="mx-auto flex min-h-full max-w-[940px] flex-col justify-end space-y-6">
       {turns.length === 0 && !prose && !isGeneratingChapter && (
-        <div className="rounded-r-lg border-l border-primary/35 bg-card/35 py-5 pl-5 pr-5 text-foreground shadow-[0_0_20px_-12px] shadow-primary/20">
+        <div className="sf2-border-tertiary-soft sf2-shadow-accent-soft rounded-r-lg border-l bg-card/35 py-5 pl-5 pr-5 text-foreground">
           <p className="text-[15px] leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
             {chapterTurnCount === 0
               ? 'Press begin when you are ready to open the chapter.'
@@ -753,12 +915,13 @@ function TurnStream({
 
       {turns.map((turn) => (
         <div key={turn.index} className="space-y-4">
-          <SceneMarker label={`Turn ${turn.index + 1}`} />
+          <SceneMarker turn={turn.index + 1} location={locationByTurn.get(turn.index)} />
           {turn.playerInput && <PlayerMessage>{turn.playerInput}</PlayerMessage>}
           {(rollLogByTurn.get(turn.index) ?? []).map((roll, index) => (
             <HistoryRollCard key={`${turn.index}-${index}`} roll={roll} />
           ))}
           <GMMessage>{turn.narratorProse}</GMMessage>
+          <StateDiffLine turnIndex={turn.index} diff={turn.stateDiff} />
         </div>
       ))}
 
@@ -786,11 +949,19 @@ function TurnStream({
   )
 }
 
-function SceneMarker({ label }: { label: string }) {
+function SceneMarker({ turn, location }: { turn: number; location?: string }) {
   return (
-    <div className="flex items-center gap-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/55">
+    <div className="sf2-text-tertiary-muted flex items-center gap-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em]">
       <span className="flex-1 border-t border-dashed border-current opacity-40" />
-      <span>{label}</span>
+      <span className="inline-flex max-w-[70%] min-w-0 items-center gap-2">
+        <span>Turn {turn}</span>
+        {location && (
+          <>
+            <span className="text-muted-foreground/45">/</span>
+            <span className="truncate text-primary/75">{location}</span>
+          </>
+        )}
+      </span>
       <span className="flex-1 border-t border-dashed border-current opacity-40" />
     </div>
   )
@@ -800,8 +971,8 @@ function GMMessage({ children, live }: { children: ReactNode; live?: boolean }) 
   return (
     <div
       className={cn(
-        'whitespace-pre-wrap rounded-r-lg border-l border-primary/25 bg-card/35 py-4 pl-5 pr-5 text-foreground shadow-[0_0_20px_-12px] shadow-primary/15 md:py-5 md:pl-6 md:pr-6',
-        live && 'border-primary/45 bg-primary/5',
+        'sf2-border-tertiary-soft sf2-shadow-accent-soft whitespace-pre-wrap rounded-r-lg border-l bg-card/35 py-4 pl-5 pr-5 text-foreground md:py-5 md:pl-6 md:pr-6',
+        live && 'border-primary/45 bg-primary/5 shadow-primary/20',
       )}
       style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)', lineHeight: 1.7 }}
     >
@@ -821,33 +992,236 @@ function PlayerMessage({ children }: { children: ReactNode }) {
   )
 }
 
-function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number] }) {
-  const success = roll.outcome === 'success' || roll.outcome === 'critical_success'
-  const critical = roll.outcome === 'critical_success'
-  const failure = roll.outcome === 'failure' || roll.outcome === 'critical_failure'
-  const tone = critical ? 'warning' : success ? 'success' : failure ? 'destructive' : 'muted'
+function StateDiffLine({
+  turnIndex,
+  diff,
+}: {
+  turnIndex: number
+  diff?: Sf2TurnDiffEntry[]
+}) {
+  if (!diff || diff.length === 0) return null
 
   return (
-    <div className={cn(
-      'border-y px-4 py-3 text-center shadow-[0_0_26px_-22px] md:px-7',
-      tone === 'warning' && 'border-warning/45 bg-warning/10 text-warning',
-      tone === 'success' && 'border-success/45 bg-success/10 text-success',
-      tone === 'destructive' && 'border-destructive/45 bg-destructive/10 text-destructive',
-      tone === 'muted' && 'border-border/45 bg-background/30 text-muted-foreground',
+    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 font-mono text-[10px] uppercase tracking-[0.16em] opacity-65">
+      <span className="text-muted-foreground">turn {turnIndex + 1}</span>
+      <span className="text-muted-foreground/55">-</span>
+      {diff.slice(0, 6).map((entry, index) => (
+        <span key={`${entry.kind}-${entry.entityId ?? index}-${entry.label}`} className={cn(
+          entry.tone === 'gain' && 'text-success',
+          entry.tone === 'loss' && 'text-destructive',
+          entry.tone === 'severe' && 'text-severe',
+          entry.tone === 'change' && 'text-muted-foreground',
+        )}>
+          {index > 0 && <span className="mr-2 text-muted-foreground/45">/</span>}
+          {entry.label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+type RollTone = 'idle' | 'success' | 'failure' | 'critical' | 'fumble'
+type RollModifierType = NonNullable<Sf2RollOutcomeView['modifierType']>
+
+interface RollDieView {
+  value: ReactNode
+  kept?: boolean
+  rolling?: boolean
+}
+
+function rollToneForHistory(outcome: Sf2State['history']['rollLog'][number]['outcome']): RollTone {
+  if (outcome === 'critical_success') return 'critical'
+  if (outcome === 'critical_failure') return 'fumble'
+  if (outcome === 'success') return 'success'
+  return 'failure'
+}
+
+function rollToneForResult(result?: Sf2RollOutcomeView['result']): RollTone {
+  if (result === 'critical') return 'critical'
+  if (result === 'fumble') return 'fumble'
+  if (result === 'success') return 'success'
+  if (result === 'failure') return 'failure'
+  return 'idle'
+}
+
+function rollResultLabel(tone: RollTone) {
+  switch (tone) {
+    case 'critical':
+      return 'CRITICAL!'
+    case 'success':
+      return 'SUCCESS'
+    case 'failure':
+      return 'FAILURE'
+    case 'fumble':
+      return 'FUMBLE'
+    default:
+      return ''
+  }
+}
+
+function rollCardClassName(tone: RollTone, interactive = false) {
+  return cn(
+    'rounded-lg px-4 py-3 text-left transition-[background-color,transform] duration-200 md:px-5',
+    tone === 'idle' && 'sf2-roll-idle-card',
+    tone === 'success' && 'bg-success/10',
+    tone === 'failure' && 'bg-warning/10',
+    tone === 'critical' && 'bg-warning/15',
+    tone === 'fumble' && 'bg-severe/10',
+    interactive && 'w-full cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.995] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100',
+  )
+}
+
+function rollDieClassName(tone: RollTone, kept = true, rolling = false) {
+  return cn(
+    'flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold transition-all duration-200',
+    !kept && 'border-border/30 bg-card/20 text-muted-foreground/40 line-through',
+    kept && tone === 'idle' && 'sf2-roll-idle-die',
+    kept && tone === 'success' && 'border-success/60 bg-success/15 text-success',
+    kept && tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
+    kept && tone === 'critical' && 'border-warning/70 bg-warning/20 text-warning shadow-[0_0_24px_-12px] shadow-warning',
+    kept && tone === 'fumble' && 'border-severe/65 bg-severe/15 text-severe',
+    rolling && 'animate-pulse',
+  )
+}
+
+function rollResultTextClassName(tone: RollTone) {
+  return cn(
+    'font-bold',
+    tone === 'critical' && 'text-warning',
+    tone === 'success' && 'text-success',
+    tone === 'failure' && 'text-warning',
+    tone === 'fumble' && 'text-severe',
+  )
+}
+
+function RollModifierChip({ type }: { type: RollModifierType }) {
+  return (
+    <span className={cn(
+      'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]',
+      type === 'advantage' && 'border-success/35 bg-success/10 text-success',
+      type === 'disadvantage' && 'border-warning/40 bg-warning/10 text-warning',
+      type === 'challenge' && 'border-warning/40 bg-warning/10 text-warning',
+      type === 'inspiration' && 'border-info/40 bg-info/10 text-info',
     )}>
-      <div className="flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em]">
-        <Dices className="h-3.5 w-3.5" />
-        <span>{roll.skill}</span>
-        <span className="text-muted-foreground/60">/</span>
-        <span>{roll.outcome.replace('_', ' ')}</span>
-      </div>
-      <div className="mt-2 font-mono text-[13px] text-foreground/80">
-        d20 {roll.rollResult} {formatSigned(roll.modifier)} = {roll.rollResult + roll.modifier} vs DC {roll.effectiveDc ?? roll.dc}
-        {roll.rawRolls && roll.rawRolls.length > 1 && (
-          <span className="text-muted-foreground"> ({roll.rawRolls.join(', ')})</span>
+      {type}
+    </span>
+  )
+}
+
+function RollCardView({
+  tone,
+  title,
+  meta,
+  modifierType,
+  formula,
+  reason,
+  consequence,
+  dice,
+  actionLabel,
+  rolling,
+  disabled,
+  onClick,
+}: {
+  tone: RollTone
+  title: string
+  meta?: ReactNode
+  modifierType?: RollModifierType
+  formula?: string
+  reason?: string
+  consequence?: string
+  dice: RollDieView[]
+  actionLabel?: string
+  rolling?: boolean
+  disabled?: boolean
+  onClick?: () => void
+}) {
+  const label = rollResultLabel(tone)
+  const content = (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <Dices className={cn('h-4 w-4', tone === 'idle' ? 'text-primary' : rollResultTextClassName(tone))} />
+          <span className="text-foreground">{title}</span>
+          {modifierType && <RollModifierChip type={modifierType} />}
+          {meta}
+        </div>
+
+        {formula && (
+          <div className="mt-1.5 font-mono text-[14px] text-foreground/90">
+            {formula}
+            {label && (
+              <>
+                <span className="text-muted-foreground"> {' '}—{' '}</span>
+                <span className={rollResultTextClassName(tone)}>{label}</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {reason && (
+          <p className="mt-2 text-[13px] leading-relaxed text-foreground/80" style={{ fontFamily: 'var(--font-narrative)' }}>
+            {reason}
+          </p>
+        )}
+        {consequence && (
+          <p className="mt-1 text-[12px] italic leading-relaxed text-muted-foreground">
+            On fail: {consequence}
+          </p>
+        )}
+        {actionLabel && (
+          <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/75">
+            {actionLabel}
+          </div>
         )}
       </div>
+
+      <div className="flex items-center justify-end gap-1.5">
+        {dice.map((die, index) => (
+          <div key={index} className={rollDieClassName(tone, die.kept ?? true, rolling || die.rolling)}>
+            {die.value}
+          </div>
+        ))}
+      </div>
     </div>
+  )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={rollCardClassName(tone, true)}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return <div className={rollCardClassName(tone)}>{content}</div>
+}
+
+function rollDiceFromValues(values: number[] | undefined, keptValue: number): RollDieView[] {
+  const diceValues = values && values.length > 0 ? values : [keptValue]
+  return diceValues.map((value) => ({
+    value,
+    kept: diceValues.length === 1 || value === keptValue,
+  }))
+}
+
+function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number] }) {
+  const tone = rollToneForHistory(roll.outcome)
+  const dc = roll.effectiveDc ?? roll.dc
+  const total = roll.rollResult + roll.modifier
+
+  return (
+    <RollCardView
+      tone={tone}
+      title={`${roll.skill} Check`}
+      modifierType={roll.modifierType}
+      formula={`${roll.rollResult} ${formatSigned(roll.modifier)} = ${total} vs DC ${dc}`}
+      dice={rollDiceFromValues(roll.rawRolls, roll.rollResult)}
+    />
   )
 }
 
@@ -1010,16 +1384,41 @@ function DiceTray({
 }) {
   const [isRolling, setIsRolling] = useState(false)
   const [display, setDisplay] = useState<number | null>(rollResult?.d20 ?? null)
+  const [display2, setDisplay2] = useState<number | null>(rollResult?.rawRolls?.[1] ?? null)
   const result = rollResult
-  const success = result?.result === 'success' || result?.result === 'critical'
-  const failed = result?.result === 'failure' || result?.result === 'fumble'
-  const tone = result?.result === 'critical' ? 'warning' : success ? 'success' : failed ? 'destructive' : 'primary'
-  const title = pendingCheck?.skill ?? result?.skill ?? 'Skill Check'
+  const tone = rollToneForResult(result?.result)
+  const title = `${pendingCheck?.skill ?? result?.skill ?? 'Skill'} Check`
+  const resolvedDc = result?.effectiveDc ?? result?.dc ?? effectiveDc ?? pendingCheck?.dc ?? null
+  const resolvedModifier = result?.modifier ?? modifier
+  const pendingUsesTwoDice = pendingCheck?.modifierType === 'advantage' || pendingCheck?.modifierType === 'disadvantage'
+  const pendingDice: RollDieView[] = Array.from({ length: pendingUsesTwoDice ? 2 : 1 }, (_, index) => ({
+    value: (index === 0 ? display : display2) ?? 'd20',
+    rolling: isRolling,
+  }))
+  const resultDice = result ? rollDiceFromValues(result.rawRolls, result.d20) : pendingDice
+  const formula = result && resolvedDc !== null
+    ? `${result.d20} ${formatSigned(result.modifier)} = ${result.total} vs DC ${resolvedDc}`
+    : undefined
+  const meta = (
+    <>
+      {resolvedDc !== null && (
+        <span>
+          DC <span className="text-foreground">{resolvedDc}</span>
+        </span>
+      )}
+      {resolvedModifier !== null && (
+        <span>
+          mod <span className="text-primary">{formatSigned(resolvedModifier)}</span>
+        </span>
+      )}
+    </>
+  )
 
   useEffect(() => {
     setDisplay(result?.d20 ?? null)
+    setDisplay2(result?.rawRolls?.[1] ?? null)
     setIsRolling(false)
-  }, [result?.d20])
+  }, [result?.d20, result?.rawRolls])
 
   function handleRoll() {
     if (!pendingCheck || isRolling || busy) return
@@ -1032,6 +1431,7 @@ function DiceTray({
     setIsRolling(true)
     const interval = window.setInterval(() => {
       setDisplay(1 + Math.floor(Math.random() * 20))
+      if (pendingUsesTwoDice) setDisplay2(1 + Math.floor(Math.random() * 20))
     }, 45)
     window.setTimeout(() => {
       window.clearInterval(interval)
@@ -1040,82 +1440,24 @@ function DiceTray({
   }
 
   return (
-    <div className={cn(
-      'rounded-lg border px-4 py-3 shadow-[0_0_26px_-20px] md:px-6',
-      tone === 'primary' && 'border-primary/35 bg-primary/10 shadow-primary',
-      tone === 'warning' && 'border-warning/45 bg-warning/10 shadow-warning',
-      tone === 'success' && 'border-success/45 bg-success/10 shadow-success',
-      tone === 'destructive' && 'border-destructive/45 bg-destructive/10 shadow-destructive',
-    )}>
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em]">
-            <Dices className="h-4 w-4 text-primary" />
-            <span className="text-foreground">{title}</span>
-            {effectiveDc !== null && <span className="text-muted-foreground">DC {effectiveDc}</span>}
-            {modifier !== null && <span className="text-muted-foreground">mod {formatSigned(modifier)}</span>}
-            {pendingCheck?.modifierType && (
-              <span className="rounded border border-current/25 px-1.5 py-0.5 text-primary">
-                {pendingCheck.modifierType}
-              </span>
-            )}
-          </div>
-          {pendingCheck?.why && (
-            <p className="text-[13px] leading-relaxed text-foreground/80" style={{ fontFamily: 'var(--font-narrative)' }}>
-              {pendingCheck.why}
-            </p>
-          )}
-          {pendingCheck?.consequenceOnFail && (
-            <p className="text-[12px] italic leading-relaxed text-muted-foreground">
-              On fail: {pendingCheck.consequenceOnFail}
-            </p>
-          )}
-          {result && (
-            <div className="flex flex-wrap items-center gap-2 font-mono text-[12px] uppercase tracking-[0.14em]">
-              <span className={cn(
-                result.result === 'critical' && 'text-warning',
-                success && result.result !== 'critical' && 'text-success',
-                failed && 'text-destructive',
-              )}>
-                {result.result}
-              </span>
-              <span className="text-muted-foreground">
-                d20 {result.d20} {formatSigned(result.modifier)} = {result.total} vs DC {result.effectiveDc ?? result.dc}
-              </span>
-              {result.rawRolls && result.rawRolls.length > 1 && (
-                <span className="text-muted-foreground">rolls {result.rawRolls.join(' / ')}</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-4 md:justify-end">
-          <div className={cn(
-            'flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 font-mono text-4xl font-bold transition-colors',
-            tone === 'primary' && 'border-primary/50 bg-background/60 text-primary',
-            tone === 'warning' && 'border-warning/60 bg-warning/10 text-warning',
-            tone === 'success' && 'border-success/60 bg-success/10 text-success',
-            tone === 'destructive' && 'border-destructive/60 bg-destructive/10 text-destructive',
-            isRolling && 'animate-pulse',
-          )}>
-            {display ?? 'd20'}
-          </div>
-
-          {!result && pendingCheck && (
-            <button
-              type="button"
-              onClick={handleRoll}
-              disabled={busy || isRolling}
-              className="rounded-full border border-primary/75 px-6 py-2 font-mono text-[12px] uppercase tracking-[0.2em] text-primary shadow-[0_0_18px_-12px] shadow-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {isRolling ? 'Rolling...' : 'Roll d20'}
-            </button>
-          )}
-        </div>
-      </div>
+    <div>
+      <RollCardView
+        tone={tone}
+        title={title}
+        meta={meta}
+        modifierType={pendingCheck?.modifierType ?? result?.modifierType}
+        formula={formula}
+        reason={!result ? pendingCheck?.why : undefined}
+        consequence={!result ? pendingCheck?.consequenceOnFail : undefined}
+        dice={resultDice}
+        actionLabel={!result ? (isRolling ? 'Rolling...' : `Tap to roll${pendingUsesTwoDice ? ' 2d20' : ''}`) : undefined}
+        rolling={isRolling}
+        disabled={busy || isRolling}
+        onClick={!result && pendingCheck ? handleRoll : undefined}
+      />
 
       {inspirationOffer && (
-        <div className="mt-3 flex flex-col gap-2 rounded border border-info/45 bg-info/10 px-3 py-3 text-info md:flex-row md:items-center md:justify-between">
+        <div className="mt-2 flex flex-col gap-2 rounded-lg border border-info/35 bg-background/55 px-3 py-3 text-info shadow-[0_0_20px_-18px] shadow-info md:flex-row md:items-center md:justify-between">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.16em]">Spend inspiration?</div>
             <div className="mt-1 text-[12px] text-info/80">
@@ -1126,14 +1468,14 @@ function DiceTray({
             <button
               type="button"
               onClick={onSpendInspiration}
-              className="rounded border border-info/55 bg-info/15 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-info hover:bg-info/25"
+              className="rounded-md border border-info/55 bg-info/15 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-info transition-colors hover:bg-info/25"
             >
               Spend
             </button>
             <button
               type="button"
               onClick={onDeclineInspiration}
-              className="rounded border border-border/60 bg-background/45 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
+              className="rounded-md border border-border/60 bg-background/45 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Keep result
             </button>
@@ -1201,6 +1543,7 @@ function DiagnosticsPanel(props: {
   lastArchivistUsage: TokenUsageView | null
   chapterTurnCount: number
   busy: boolean
+  closeReadiness: Sf2CloseReadinessView
   onCloseChapter: () => void
   onResetCampaign: () => void
   onDownloadSessionLog: () => void
@@ -1215,6 +1558,7 @@ function DiagnosticsPanel(props: {
     lastArchivistUsage,
     chapterTurnCount,
     busy,
+    closeReadiness,
     onCloseChapter,
     onResetCampaign,
     onDownloadSessionLog,
@@ -1224,6 +1568,8 @@ function DiagnosticsPanel(props: {
 
   return (
     <div className="space-y-3">
+      <PressurePanel state={state} closeReadiness={closeReadiness} />
+
       <HudPanel title="Campaign State">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
           <MiniStat label="NPCs" value={campaignStats.npcs} />
@@ -1383,6 +1729,64 @@ function dispositionDotClass(disposition: string) {
 
 function formatSigned(value: number) {
   return value >= 0 ? `+${value}` : String(value)
+}
+
+function statLabelsForGenre(genreId: string): StatLabels {
+  try {
+    const config = getGenreConfig(genreId as Genre)
+    return {
+      ...DEFAULT_STAT_LABELS,
+      currency: config.currencyAbbrev ? config.currencyAbbrev.toUpperCase() : DEFAULT_STAT_LABELS.currency,
+      ...config.statLabels,
+    }
+  } catch {
+    return DEFAULT_STAT_LABELS
+  }
+}
+
+function buildLocationByTurn(state: Sf2State): Map<number, string> {
+  const locations = new Map<number, string>()
+  const currentSceneLocation = state.world.sceneSnapshot.location.name || state.world.currentLocation.name
+  const firstSceneTurn = state.world.sceneSnapshot.firstTurnIndex ?? Number.POSITIVE_INFINITY
+
+  for (const turn of state.history.turns) {
+    const locationFromRaw = locationNameFromRawEffects(state, turn.narratorAnnotationRaw)
+    if (locationFromRaw) {
+      locations.set(turn.index, locationFromRaw)
+      continue
+    }
+    if (turn.chapter === state.meta.currentChapter && turn.index >= firstSceneTurn && currentSceneLocation) {
+      locations.set(turn.index, currentSceneLocation)
+    }
+  }
+
+  return locations
+}
+
+function locationNameFromRawEffects(
+  state: Sf2State,
+  raw?: Record<string, unknown>
+): string | undefined {
+  const effects = raw?.mechanical_effects
+  if (!Array.isArray(effects)) return undefined
+
+  for (const effect of effects as Array<Record<string, unknown>>) {
+    if (effect.kind === 'set_scene_snapshot') {
+      const snapshot = effect.snapshot as Record<string, unknown> | undefined
+      const id = typeof snapshot?.location_id === 'string'
+        ? snapshot.location_id
+        : typeof effect.location_id === 'string'
+          ? effect.location_id
+          : undefined
+      if (id) return state.campaign.locations[id]?.name ?? id.replace(/_/g, ' ')
+    }
+    if (effect.kind === 'set_location' && typeof effect.location_id === 'string') {
+      return state.campaign.locations[effect.location_id]?.name
+        ?? (typeof effect.name === 'string' ? effect.name : effect.location_id.replace(/_/g, ' '))
+    }
+  }
+
+  return undefined
 }
 
 function unique<T>(items: T[]) {

@@ -194,9 +194,16 @@ export function applyMechanicalEffectLocally(
       const nextCast = [...resolvedPresent].sort().join(',')
 
       let nextLocation = state.world.currentLocation
+      const nextLocked = typeof snap.locked === 'boolean'
+        ? snap.locked
+        : typeof m.locked === 'boolean'
+          ? m.locked
+          : undefined
       if (locationChanged) {
         const registered = state.campaign.locations[nextLocationId]
         if (registered) {
+          registered.chapterCreated ??= state.meta.currentChapter
+          if (nextLocked !== undefined) registered.locked = nextLocked
           nextLocation = registered
         } else {
           nextLocation = {
@@ -206,9 +213,18 @@ export function applyMechanicalEffectLocally(
               ? (snap.established as string[]).join(' · ')
               : state.world.currentLocation.description,
             atmosphericConditions: state.world.currentLocation.atmosphericConditions,
+            locked: nextLocked,
+            chapterCreated: state.meta.currentChapter,
           }
           state.campaign.locations[nextLocationId] = nextLocation
         }
+      } else if (nextLocked !== undefined) {
+        nextLocation = {
+          ...nextLocation,
+          locked: nextLocked,
+          chapterCreated: nextLocation.chapterCreated ?? state.meta.currentChapter,
+        }
+        state.campaign.locations[nextLocation.id] = nextLocation
       }
 
       const timeLabel = String(snap.time_label ?? state.world.sceneSnapshot.timeLabel)
@@ -265,8 +281,13 @@ export function applyMechanicalEffectLocally(
         atmosphericConditions: Array.isArray(m.atmospheric_conditions)
           ? (m.atmospheric_conditions as string[])
           : undefined,
+        locked: typeof m.locked === 'boolean' ? m.locked : undefined,
+        chapterCreated: state.meta.currentChapter,
       }
       state.campaign.locations[locId] = loc
+    } else {
+      loc.chapterCreated ??= state.meta.currentChapter
+      if (typeof m.locked === 'boolean') loc.locked = m.locked
     }
     state.world.currentLocation = loc
     state.world.sceneSnapshot = {
