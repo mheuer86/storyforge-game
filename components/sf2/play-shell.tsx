@@ -3,7 +3,6 @@
 import {
   Activity,
   BookOpen,
-  Dices,
   FileDown,
   Map as MapIcon,
   Menu,
@@ -404,24 +403,24 @@ function TopBar({
 }) {
   return (
     <header className="shrink-0 px-3 py-2 md:px-5 md:py-4">
-      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border/50 bg-card/70 px-3 py-2 md:px-5 md:py-2.5">
-        <div className="hidden min-w-[210px] items-center sm:flex">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border/50 bg-card/70 px-3 py-2 md:px-5 md:py-2.5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)] xl:gap-4 xl:px-0 xl:py-0">
+        <div className="hidden min-w-0 items-center xl:flex xl:px-5 xl:py-2.5">
           <span className="font-mono text-[12px] uppercase tracking-[0.32em] text-primary">Storyforge</span>
         </div>
 
-        <div className="grid min-w-0 flex-1 grid-cols-1 items-center sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3">
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 sm:inline">
+        <div className="grid min-w-0 grid-cols-1 items-center xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-3 xl:py-2.5">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 xl:inline">
             Ch.{String(state.meta.currentChapter).padStart(2, '0')}
           </span>
-          <span className="truncate text-center font-heading text-[12px] font-semibold tracking-[0.08em] text-foreground md:text-sm">
+          <span className="truncate text-center font-heading text-[12px] font-normal tracking-[0.08em] text-foreground md:text-sm">
             {state.chapter.title || 'Chapter setup pending'}
           </span>
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 sm:inline">
+          <span className="hidden text-right font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 xl:inline">
             Turn {chapterTurnCount}
           </span>
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-1 sm:min-w-[210px]">
+        <div className="flex shrink-0 items-center justify-end gap-1 xl:min-w-0 xl:px-5 xl:py-2.5">
           <div className="flex items-center gap-1 xl:hidden">
             <MobilePanelButton label="PC" icon={<UserRound className="h-4 w-4" />} onClick={() => onOpenPanel('character')} />
             <MobilePanelButton label="Scene" icon={<MapIcon className="h-4 w-4" />} onClick={() => onOpenPanel('scene')} />
@@ -504,7 +503,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
     >
       <div className="space-y-4">
         <div>
-          <div className="truncate font-heading text-[18px] font-semibold tracking-[0.06em] text-foreground">
+          <div className="truncate font-heading text-[18px] font-medium tracking-[0.04em] text-foreground">
             {state.player.name}
           </div>
           <div className="mt-1 truncate text-[12px] text-muted-foreground">
@@ -568,7 +567,7 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
     >
       <div className="space-y-3">
         {plan.name && (
-          <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
+          <div className="font-mono text-[12px] tracking-[0.08em] text-foreground/90">
             {plan.name}
           </div>
         )}
@@ -635,7 +634,7 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
       )}
     >
       <div className="rounded-md border border-border/30 bg-background/45 px-3 py-2.5">
-        <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
+        <div className="font-mono text-[12px] tracking-[0.08em] text-foreground/90">
           {trait.name}
         </div>
         <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
@@ -689,7 +688,7 @@ function LocationsPanel({ state }: { state: Sf2State }) {
                 here ? 'border-primary/70 bg-primary/10' : 'border-border/50 bg-background/45',
               )}>
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] tracking-[0.08em] text-foreground/90">
                     {location.name || location.id.replace(/_/g, ' ')}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
@@ -784,7 +783,7 @@ function PressurePanel({
     >
       <div className="space-y-3">
         <div>
-          <div className="font-heading text-sm font-medium tracking-[0.04em] text-foreground/90">
+          <div className="font-mono text-[12px] font-medium tracking-[0.08em] text-foreground/90">
             {face.name || state.chapter.setup.antagonistField.corePressure || 'Pressure forming'}
           </div>
           {activeStep && (
@@ -867,7 +866,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-heading text-sm font-medium tracking-[0.05em] text-foreground/85">
+                <span className="font-mono text-[12px] font-medium tracking-[0.08em] text-foreground/85">
                   {thread.title}
                 </span>
                 <IntelTierBadge tier={tier} />
@@ -947,7 +946,7 @@ function TurnStream({
   return (
     <div className="mx-auto flex min-h-full max-w-[940px] flex-col justify-end space-y-6">
       {turns.length === 0 && !prose && !isGeneratingChapter && (
-        <div className="sf2-border-tertiary-soft sf2-shadow-accent-soft rounded-r-lg border-l bg-card/35 py-5 pl-5 pr-5 text-foreground">
+        <div className="rounded-r-lg border-l border-primary/30 bg-card/35 py-5 pl-5 pr-5 text-foreground">
           <p className="text-sm leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
             {chapterTurnCount === 0
               ? 'Press begin when you are ready to open the chapter.'
@@ -994,7 +993,7 @@ function TurnStream({
 
 function SceneMarker({ turn, location }: { turn: number; location?: string }) {
   return (
-    <div className="sf2-text-tertiary-muted flex items-center gap-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em]">
+    <div className="flex items-center gap-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/65">
       <span className="flex-1 border-t border-dashed border-current opacity-40" />
       <span className="inline-flex max-w-[70%] min-w-0 items-center gap-2">
         <span>Turn {turn}</span>
@@ -1014,7 +1013,7 @@ function GMMessage({ children, live }: { children: ReactNode; live?: boolean }) 
   return (
     <div
       className={cn(
-        'sf2-border-tertiary-soft sf2-shadow-accent-soft whitespace-pre-wrap rounded-r-lg border-l bg-card/35 py-4 pl-5 pr-5 text-foreground md:py-5 md:pl-6 md:pr-6',
+        'whitespace-pre-wrap rounded-r-lg border-l border-primary/30 bg-card/35 py-4 pl-5 pr-5 text-foreground md:py-5 md:pl-6 md:pr-6',
         live && 'border-primary/45 bg-primary/5 shadow-primary/20',
       )}
       style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)', lineHeight: 1.7 }}
@@ -1064,25 +1063,10 @@ function StateDiffLine({
 }
 
 type RollTone = 'idle' | 'success' | 'failure' | 'critical' | 'fumble'
-type RollModifierType = NonNullable<Sf2RollOutcomeView['modifierType']>
 
-interface RollDieView {
+interface RollBreakdownView {
   value: ReactNode
-  kept?: boolean
-  rolling?: boolean
-}
-
-interface RollFormulaView {
-  roll: number
-  modifier: number
-  total: number
-  dc: number
-}
-
-interface RollStatView {
-  label: string
-  value: ReactNode
-  tone?: 'primary' | 'muted'
+  detail?: ReactNode
 }
 
 function rollToneForHistory(outcome: Sf2State['history']['rollLog'][number]['outcome']): RollTone {
@@ -1103,13 +1087,13 @@ function rollToneForResult(result?: Sf2RollOutcomeView['result']): RollTone {
 function rollResultLabel(tone: RollTone) {
   switch (tone) {
     case 'critical':
-      return 'CRITICAL!'
+      return 'Critical'
     case 'success':
-      return 'SUCCESS'
+      return 'Success'
     case 'failure':
-      return 'FAILURE'
+      return 'Failure'
     case 'fumble':
-      return 'FUMBLE'
+      return 'Fumble'
     default:
       return ''
   }
@@ -1117,8 +1101,8 @@ function rollResultLabel(tone: RollTone) {
 
 function rollCardClassName(tone: RollTone, interactive = false) {
   return cn(
-    'rounded-lg px-4 py-3 text-left transition-[background-color,transform] duration-200 md:px-5',
-    tone === 'idle' && 'sf2-roll-idle-card border border-primary/35 border-l-2 border-l-primary/55',
+    'rounded-lg px-4 py-4 text-left transition-[background-color,transform] duration-200 md:px-6 md:py-5',
+    tone === 'idle' && 'sf2-roll-idle-card border border-primary/55',
     tone === 'success' && 'bg-success/10',
     tone === 'failure' && 'bg-warning/10',
     tone === 'critical' && 'bg-warning/15',
@@ -1127,22 +1111,22 @@ function rollCardClassName(tone: RollTone, interactive = false) {
   )
 }
 
-function rollDieClassName(tone: RollTone, kept = true, rolling = false) {
+function rollValueBoxClassName(tone: RollTone, rolling = false) {
   return cn(
-    'flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border font-mono text-3xl font-bold transition-all duration-200',
-    !kept && 'border-border/30 bg-card/20 text-muted-foreground/40 line-through',
-    kept && tone === 'idle' && 'sf2-roll-idle-die',
-    kept && tone === 'success' && 'border-success/60 bg-success/15 text-success',
-    kept && tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
-    kept && tone === 'critical' && 'border-warning/70 bg-warning/20 text-warning shadow-[0_0_24px_-12px] shadow-warning',
-    kept && tone === 'fumble' && 'border-severe/65 bg-severe/15 text-severe',
+    'flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border font-mono transition-all duration-200 md:h-24 md:w-24',
+    tone === 'idle' && 'sf2-roll-idle-die',
+    tone === 'success' && 'border-success/60 bg-success/15 text-success',
+    tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
+    tone === 'critical' && 'border-warning/70 bg-warning/20 text-warning',
+    tone === 'fumble' && 'border-severe/65 bg-severe/15 text-severe',
     rolling && 'animate-pulse',
   )
 }
 
-function rollResultTextClassName(tone: RollTone) {
+function rollToneTextClassName(tone: RollTone) {
   return cn(
     'font-bold',
+    tone === 'idle' && 'text-primary',
     tone === 'critical' && 'text-warning',
     tone === 'success' && 'text-success',
     tone === 'failure' && 'text-warning',
@@ -1150,59 +1134,12 @@ function rollResultTextClassName(tone: RollTone) {
   )
 }
 
-function RollModifierChip({ type }: { type: RollModifierType }) {
-  return (
-    <span className={cn(
-      'rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
-      type === 'advantage' && 'border-success/35 bg-success/10 text-success',
-      type === 'disadvantage' && 'border-warning/40 bg-warning/10 text-warning',
-      type === 'challenge' && 'border-warning/40 bg-warning/10 text-warning',
-      type === 'inspiration' && 'border-info/40 bg-info/10 text-info',
-    )}>
-      {type}
-    </span>
-  )
-}
-
-function RollStatBox({ stat }: { stat: RollStatView }) {
-  return (
-    <div className="min-w-[58px] rounded-md border border-border/30 bg-background/45 px-2 py-1">
-      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
-        {stat.label}
-      </div>
-      <div className={cn(
-        'mt-0.5 font-mono text-base font-medium leading-none',
-        stat.tone === 'primary' ? 'text-primary' : 'text-foreground',
-      )}>
-        {stat.value}
-      </div>
-    </div>
-  )
-}
-
-function RollFormula({ formula, tone }: { formula: RollFormulaView; tone: RollTone }) {
-  return (
-    <div className="mt-1.5 font-mono text-[15px] leading-snug md:text-base">
-      <span className="font-medium text-foreground">{formula.roll}</span>
-      <span className="text-muted-foreground"> {formatSigned(formula.modifier)} = </span>
-      <span className="font-semibold text-foreground">{formula.total}</span>
-      <span className="text-muted-foreground"> vs </span>
-      <span className="text-foreground/70">DC {formula.dc}</span>
-      <span className="text-muted-foreground"> - </span>
-      <span className={rollResultTextClassName(tone)}>{rollResultLabel(tone)}</span>
-    </div>
-  )
-}
-
 function RollCardView({
   tone,
   title,
-  stats,
-  modifierType,
-  formula,
   reason,
-  consequence,
-  dice,
+  dc,
+  roll,
   actionLabel,
   rolling,
   disabled,
@@ -1210,62 +1147,49 @@ function RollCardView({
 }: {
   tone: RollTone
   title: string
-  stats?: RollStatView[]
-  modifierType?: RollModifierType
-  formula?: RollFormulaView
   reason?: string
-  consequence?: string
-  dice: RollDieView[]
+  dc: number | null
+  roll: RollBreakdownView
   actionLabel?: string
   rolling?: boolean
   disabled?: boolean
   onClick?: () => void
 }) {
+  const resolved = tone !== 'idle'
   const content = (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-6">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2 font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-          <Dices className={cn('h-4 w-4', tone === 'idle' ? 'text-primary' : rollResultTextClassName(tone))} />
-          <span className="text-foreground">{title}</span>
-          {modifierType && <RollModifierChip type={modifierType} />}
-        </div>
-
-        {stats && stats.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {stats.map((stat) => (
-              <RollStatBox key={stat.label} stat={stat} />
-            ))}
+        {resolved && (
+          <div className="mb-1 font-mono text-[10px] tracking-[0.08em] text-foreground/65">
+            {title}
           </div>
         )}
-
-        {formula && <RollFormula formula={formula} tone={tone} />}
-
+        <div className={cn(
+          'font-mono leading-none',
+          resolved
+            ? cn('text-[25px] font-semibold md:text-[30px]', rollToneTextClassName(tone))
+            : 'text-[24px] font-semibold text-primary md:text-[30px]',
+        )}>
+          {resolved ? rollResultLabel(tone) : title}
+        </div>
         {reason && (
-          <p className="mt-2 text-sm leading-relaxed text-foreground/80" style={{ fontFamily: 'var(--font-narrative)' }}>
+          <p className="mt-3 max-w-[32rem] text-sm font-medium leading-snug text-foreground/85" style={{ fontFamily: 'var(--font-narrative)' }}>
             {reason}
           </p>
         )}
-        {consequence && (
-          <p className="mt-1 text-[12px] italic leading-relaxed text-muted-foreground">
-            On fail: {consequence}
-          </p>
-        )}
       </div>
 
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="flex items-center justify-end gap-1.5">
-          {dice.map((die, index) => (
-            <div key={index} className={rollDieClassName(tone, die.kept ?? true, rolling || die.rolling)}>
-              {die.value}
-            </div>
-          ))}
-        </div>
-        {actionLabel && (
-          <div className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-primary/75">
-            {actionLabel}
-          </div>
-        )}
+      <div className={cn('grid grid-cols-[auto_auto_auto] items-center justify-start gap-3 md:justify-end md:gap-4', rollToneTextClassName(tone))}>
+        <RollValueBox tone={tone} value={dc !== null ? `DC ${dc}` : 'DC -'} />
+        <div className="font-mono text-2xl font-bold uppercase md:text-3xl">vs</div>
+        <RollValueBox tone={tone} value={roll.value} detail={roll.detail} rolling={rolling} />
       </div>
+
+      {actionLabel && (
+        <div className="sf2-roll-idle-cta flex min-h-9 items-center justify-center rounded-md border px-3 py-2 text-center font-mono text-[12px] tracking-[0.08em] md:col-span-2 md:mx-auto md:w-[70%]">
+          {actionLabel}
+        </div>
+      )}
     </div>
   )
 
@@ -1285,12 +1209,36 @@ function RollCardView({
   return <div className={rollCardClassName(tone)}>{content}</div>
 }
 
-function rollDiceFromValues(values: number[] | undefined, keptValue: number): RollDieView[] {
-  const diceValues = values && values.length > 0 ? values : [keptValue]
-  return diceValues.map((value) => ({
-    value,
-    kept: diceValues.length === 1 || value === keptValue,
-  }))
+function RollValueBox({
+  tone,
+  value,
+  detail,
+  rolling,
+}: {
+  tone: RollTone
+  value: ReactNode
+  detail?: ReactNode
+  rolling?: boolean
+}) {
+  return (
+    <div className={rollValueBoxClassName(tone, rolling)}>
+      <div className="font-mono text-[20px] font-bold leading-none md:text-[24px]">
+        {value}
+      </div>
+      {detail && (
+        <div className="mt-2 font-mono text-[12px] font-semibold leading-none opacity-85 md:text-sm">
+          {detail}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function rollBreakdownDetail(roll: number, modifier: number, rawRolls?: number[]) {
+  const raw = rawRolls && rawRolls.length > 1
+    ? rawRolls.join('/')
+    : String(roll)
+  return `${raw} ${formatSigned(modifier)}`
 }
 
 function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number] }) {
@@ -1302,11 +1250,21 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
     <RollCardView
       tone={tone}
       title={`${roll.skill} Check`}
-      modifierType={roll.modifierType}
-      formula={{ roll: roll.rollResult, modifier: roll.modifier, total, dc }}
-      dice={rollDiceFromValues(roll.rawRolls, roll.rollResult)}
+      reason={roll.consequenceSummary}
+      dc={dc}
+      roll={{ value: total, detail: rollBreakdownDetail(roll.rollResult, roll.modifier, roll.rawRolls) }}
     />
   )
+}
+
+function parseSuggestedAction(action: string) {
+  const match = action.match(/\s*\[([^\]]+)\]\s*$/)
+  if (!match) return { text: action, rollType: null as string | null }
+
+  return {
+    text: action.slice(0, match.index).trim(),
+    rollType: match[1].trim(),
+  }
 }
 
 function ActionSurface(props: {
@@ -1405,19 +1363,26 @@ function ActionSurface(props: {
 
       {!hasActiveRoll && suggestedActions.length > 0 && !busy && !initialTurn && (
         <div className="space-y-1.5">
-          {suggestedActions.map((action, index) => (
-            <button
-              key={`${action}-${index}`}
-              type="button"
-              onClick={() => onPendingInputChange(action)}
-              className="grid w-full grid-cols-[74px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[92px_minmax(0,1fr)] md:px-5"
-            >
-              <span className="rounded border border-primary/70 bg-primary/10 px-2 py-1 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
-                Option {index + 1}
-              </span>
-              <span className="text-sm leading-snug text-foreground">{action}</span>
-            </button>
-          ))}
+          {suggestedActions.map((action, index) => {
+            const parsed = parseSuggestedAction(action)
+
+            return (
+              <button
+                key={`${action}-${index}`}
+                type="button"
+                onClick={() => onPendingInputChange(action)}
+                className="grid w-full grid-cols-[76px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[98px_minmax(0,1fr)] md:px-5"
+              >
+                <span className={cn(
+                  'truncate font-mono text-[10px] uppercase tracking-[0.16em]',
+                  parsed.rollType ? 'text-primary/75' : 'text-muted-foreground/55',
+                )}>
+                  {parsed.rollType ?? 'Action'}
+                </span>
+                <span className="text-sm leading-snug text-foreground">{parsed.text}</span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -1475,20 +1440,15 @@ function DiceTray({
   const resolvedDc = result?.effectiveDc ?? result?.dc ?? effectiveDc ?? pendingCheck?.dc ?? null
   const resolvedModifier = result?.modifier ?? modifier
   const pendingUsesTwoDice = pendingCheck?.modifierType === 'advantage' || pendingCheck?.modifierType === 'disadvantage'
-  const pendingDice: RollDieView[] = Array.from({ length: pendingUsesTwoDice ? 2 : 1 }, (_, index) => ({
-    value: (index === 0 ? display : display2) ?? 'd20',
-    rolling: isRolling,
-  }))
-  const resultDice = result ? rollDiceFromValues(result.rawRolls, result.d20) : pendingDice
-  const formula = result && resolvedDc !== null
-    ? { roll: result.d20, modifier: result.modifier, total: result.total, dc: resolvedDc }
-    : undefined
-  const stats: RollStatView[] = !result
-    ? [
-      ...(resolvedDc !== null ? [{ label: 'DC', value: resolvedDc }] : []),
-      ...(resolvedModifier !== null ? [{ label: 'Mod', value: formatSigned(resolvedModifier), tone: 'primary' as const }] : []),
-    ]
-    : []
+  const pendingRollValue = pendingUsesTwoDice
+    ? (display !== null && display2 !== null ? `${display}/${display2}` : '2d20')
+    : (display ?? 'd20')
+  const rollValue = result
+    ? result.total
+    : pendingRollValue
+  const rollDetail = result
+    ? rollBreakdownDetail(result.d20, result.modifier, result.rawRolls)
+    : (resolvedModifier !== null ? formatSigned(resolvedModifier) : undefined)
 
   useEffect(() => {
     setDisplay(result?.d20 ?? null)
@@ -1516,17 +1476,14 @@ function DiceTray({
   }
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-[820px]">
       <RollCardView
         tone={tone}
         title={title}
-        stats={stats}
-        modifierType={pendingCheck?.modifierType ?? result?.modifierType}
-        formula={formula}
-        reason={!result ? pendingCheck?.why : undefined}
-        consequence={!result ? pendingCheck?.consequenceOnFail : undefined}
-        dice={resultDice}
-        actionLabel={!result ? (isRolling ? 'Rolling...' : `Tap to roll${pendingUsesTwoDice ? ' 2d20' : ''}`) : undefined}
+        reason={pendingCheck?.why}
+        dc={resolvedDc}
+        roll={{ value: rollValue, detail: rollDetail }}
+        actionLabel={!result ? (isRolling ? 'Rolling...' : 'Tap to roll') : undefined}
         rolling={isRolling}
         disabled={busy || isRolling}
         onClick={!result && pendingCheck ? handleRoll : undefined}
