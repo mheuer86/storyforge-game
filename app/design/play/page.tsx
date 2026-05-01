@@ -29,10 +29,10 @@ interface MockPreview {
 }
 
 const SPACE_OPERA_ACTIONS = [
-  'Slice the bay door open before HELIA pings the lock again',
-  'Hand-signal Aysu to flank along the cargo line',
-  'Hold position and watch the cycle for one more pulse',
-  'Burn a Cipher Spike and ghost the door entirely',
+  'Slice the bay door open before HELIA pings the lock again [Slicing]',
+  'Hand-signal Aysu to flank along the cargo line [Tactics]',
+  'Hold position and watch the cycle for one more pulse [Perception]',
+  'Burn a Cipher Spike and ghost the door entirely [Stealth]',
 ]
 
 const SPACE_OPERA_CHECK: Sf2PendingCheckView = {
@@ -45,10 +45,10 @@ const SPACE_OPERA_CHECK: Sf2PendingCheckView = {
 }
 
 const EPIC_SCIFI_ACTIONS = [
-  'Demand the Synod ledger under Warden seal',
-  'Signal Oren to bar the side aisle',
-  'Ask Mara which names vanished between ledgers',
-  'Spend a quarantine writ to delay the selection',
+  'Demand the Synod ledger under Warden seal [Authority]',
+  'Signal Oren to bar the side aisle [Command]',
+  'Ask Mara which names vanished between ledgers [Insight]',
+  'Spend a quarantine writ to delay the selection [Authority]',
 ]
 
 const EPIC_SCIFI_CHECK: Sf2PendingCheckView = {
