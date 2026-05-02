@@ -5,7 +5,10 @@ import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
 import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
-import { buildMessagesForNarrator } from '../lib/sf2/narrator/messages'
+import {
+  buildNarratorTurnContext,
+  type Sf2NarratorRollResolution,
+} from '../lib/sf2/narrator/turn-context'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
@@ -286,17 +289,22 @@ interface ReplayFixture {
       }
     }
     narratorMessages?: {
-      // Run buildMessagesForNarrator(stateBefore, ...) and assert the assembled
+      // Run buildNarratorTurnContext(stateBefore, ...) and assert the assembled
       // message array. Targets regressions where the message build drops or
       // omits required content (cache-invalidation dropping replay window,
       // skill-tag binding not getting injected, etc.).
       stateBefore?: 'fixture-stateBefore' | 'fixture-stateAfter'
       isInitial?: boolean
       playerInput?: string
+      rollResolution?: Sf2NarratorRollResolution
       includesAssistantProseMatching?: string[]
       assistantMessageCountAtLeast?: number
       assistantMessageCountEquals?: number
+      messageCountEquals?: number
       sceneSnapshotFirstTurnIndexEquals?: number
+      workingSetEventAbsent?: boolean
+      sceneBundleEventAbsent?: boolean
+      pacingEventAbsent?: boolean
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
     }
@@ -787,24 +795,31 @@ function assertNarratorMessages(
   const turnIndex = sourceState.history.turns.length
 
   let messages: Array<{ role: string; content: unknown }>
+  let context: ReturnType<typeof buildNarratorTurnContext>
   try {
-    const result = buildMessagesForNarrator(sourceState, playerInput, isInitial, turnIndex)
-    messages = result.messages as Array<{ role: string; content: unknown }>
+    context = buildNarratorTurnContext({
+      state: sourceState,
+      playerInput,
+      isInitial,
+      turnIndex,
+      rollResolution: expected.rollResolution,
+    })
+    messages = context.messages as Array<{ role: string; content: unknown }>
   } catch (error) {
-    failures.push(`buildMessagesForNarrator threw: ${error instanceof Error ? error.message : String(error)}`)
+    failures.push(`buildNarratorTurnContext threw: ${error instanceof Error ? error.message : String(error)}`)
     return
   }
 
   const assistantMessages = messages.filter((m) => m.role === 'assistant')
-  const assistantTexts = assistantMessages.map((m) => {
-    if (typeof m.content === 'string') return m.content
-    if (Array.isArray(m.content)) {
-      return m.content
-        .map((p) => (p && typeof p === 'object' && 'text' in p ? String((p as { text: unknown }).text) : ''))
-        .join('')
+  const assistantTexts = assistantMessages.map((m) => messageContentText(m.content))
+
+  if (typeof expected.messageCountEquals === 'number') {
+    if (messages.length !== expected.messageCountEquals) {
+      failures.push(
+        `narrator messages: expected ${expected.messageCountEquals} total messages, got ${messages.length}`
+      )
     }
-    return ''
-  })
+  }
 
   if (typeof expected.assistantMessageCountEquals === 'number') {
     if (assistantMessages.length !== expected.assistantMessageCountEquals) {
@@ -836,15 +851,7 @@ function assertNarratorMessages(
 
   const userTexts = messages
     .filter((m) => m.role === 'user')
-    .map((m) => {
-      if (typeof m.content === 'string') return m.content
-      if (Array.isArray(m.content)) {
-        return m.content
-          .map((p) => (p && typeof p === 'object' && 'text' in p ? String((p as { text: unknown }).text) : ''))
-          .join('')
-      }
-      return ''
-    })
+    .map((m) => messageContentText(m.content))
   for (const fragment of expected.userMessageContainsAll ?? []) {
     if (!userTexts.some((t) => t.includes(fragment))) {
       failures.push(`narrator user messages: missing required fragment "${fragment.slice(0, 60)}"`)
@@ -855,6 +862,28 @@ function assertNarratorMessages(
       failures.push(`narrator user messages: unexpectedly contains "${fragment.slice(0, 60)}"`)
     }
   }
+  if (expected.workingSetEventAbsent && context.diagnostics.workingSet !== null) {
+    failures.push('narrator context: expected no working-set event payload')
+  }
+  if (expected.sceneBundleEventAbsent && context.diagnostics.sceneBundleBuilt !== null) {
+    failures.push('narrator context: expected no scene-bundle event payload')
+  }
+  if (expected.pacingEventAbsent && context.diagnostics.pacingAdvisory !== null) {
+    failures.push('narrator context: expected no pacing event payload')
+  }
+}
+
+function messageContentText(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      if (!part || typeof part !== 'object') return ''
+      if ('text' in part) return String((part as { text: unknown }).text)
+      if ('content' in part) return String((part as { content: unknown }).content)
+      return ''
+    })
+    .join('')
 }
 
 function buildStateBefore(fixture: ReplayFixture): Sf2State {

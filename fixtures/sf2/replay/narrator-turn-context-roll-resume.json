@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator turn context: roll resumption reuses prior messages",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verifies the Narrator turn-context module treats roll resumption as an explicit mode: append the tool_result to prior messages without rebuilding scene context or emitting fresh working-set, bundle, or pacing diagnostics."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildNarratorTurnContext output, not narrator response)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "",
+      "rollResolution": {
+        "toolUseId": "toolu_roll_resume_fixture",
+        "skill": "Insight",
+        "dc": 12,
+        "d20": 7,
+        "modifier": 2,
+        "total": 9,
+        "result": "failure",
+        "priorMessages": [
+          {
+            "role": "user",
+            "content": "Pre-roll scene packet and current turn delta."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_roll_resume_fixture",
+                "name": "request_roll",
+                "input": {
+                  "skill": "Insight",
+                  "dc": 12,
+                  "why": "Read the elder's hesitation.",
+                  "consequence_on_fail": "The elder closes ranks."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "messageCountEquals": 3,
+      "assistantMessageCountEquals": 1,
+      "workingSetEventAbsent": true,
+      "sceneBundleEventAbsent": true,
+      "pacingEventAbsent": true,
+      "userMessageContainsAll": [
+        "Roll result — Insight vs DC 12: rolled d20=7 + 2 = 9.",
+        "Failure — the stated goal is not achieved"
+      ]
+    }
+  }
+}
