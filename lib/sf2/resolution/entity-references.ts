@@ -1,13 +1,12 @@
 import type {
   Sf2EntityId,
   Sf2Npc,
-  Sf2OwnerRef,
   Sf2State,
 } from '../types'
 
-// Shared entity-reference policy for SF2. Keep fuzzy recovery, placeholder
-// creation, owner-hint parsing, and canonical id allocation here so model
-// drift gets one code-owned answer instead of several similar guesses.
+// Low-level entity-reference helpers. The public policy boundary lives in
+// `lib/sf2/reference-policy`; keep call sites pointed there so mode choices
+// and drift reporting stay explicit.
 
 export type EntityPrefix =
   | 'npc'
@@ -278,80 +277,6 @@ export function findMatchingAnonymousNpc(
     if (overlap.some((t) => t.length >= 4)) return npc
   }
   return null
-}
-
-export function resolveThreadOwnership(
-  state: Sf2State,
-  ownerHint: string
-): { owner: Sf2OwnerRef | null; stakeholders: Sf2OwnerRef[] } {
-  if (!ownerHint) return { owner: null, stakeholders: [] }
-  const parts = ownerHint
-    .split(/[,;/&]|\s+and\s+/i)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-
-  if (parts.length <= 1) {
-    return { owner: resolveThreadOwner(state, ownerHint), stakeholders: [] }
-  }
-
-  const refs: Sf2OwnerRef[] = []
-  const seen = new Set<string>()
-  for (const p of parts) {
-    const ref = resolveThreadOwner(state, p)
-    if (!ref) continue
-    const key = `${ref.kind}:${ref.id}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    refs.push(ref)
-  }
-  if (refs.length === 0) return { owner: null, stakeholders: [] }
-  return { owner: refs[0], stakeholders: refs.slice(1) }
-}
-
-export function resolveThreadOwner(state: Sf2State, ownerHint: string): Sf2OwnerRef | null {
-  if (!ownerHint) return null
-  const hint = ownerHint.trim().toLowerCase()
-
-  if (state.campaign.npcs[ownerHint]) {
-    return { kind: 'npc', id: ownerHint }
-  }
-  if (state.campaign.factions[ownerHint]) {
-    return { kind: 'faction', id: ownerHint }
-  }
-
-  const npc = Object.values(state.campaign.npcs).find(
-    (n) => n.name.toLowerCase() === hint || hint.includes(n.name.toLowerCase())
-  )
-  if (npc) return { kind: 'npc', id: npc.id }
-
-  const faction = Object.values(state.campaign.factions).find(
-    (f) => f.name.toLowerCase() === hint || hint.includes(f.name.toLowerCase())
-  )
-  if (faction) return { kind: 'faction', id: faction.id }
-
-  const affMatch = Object.values(state.campaign.npcs).find((n) => {
-    const aff = (n.affiliation ?? '').toLowerCase()
-    if (!aff) return false
-    return aff === hint || hint.includes(aff) || aff.includes(hint)
-  })
-  if (affMatch?.affiliation) {
-    const seeded = findFactionByName(state, affMatch.affiliation)
-    if (seeded) return { kind: 'faction', id: seeded.id }
-  }
-
-  const autoId = factionIdFromName(ownerHint)
-  if (!state.campaign.factions[autoId]) {
-    state.campaign.factions[autoId] = {
-      id: autoId,
-      name: ownerHint,
-      stance: 'neutral',
-      heat: 'none',
-      heatReasons: [],
-      ownedThreadIds: [],
-      retrievalCue: '',
-    }
-  }
-  return { kind: 'faction', id: autoId }
 }
 
 export function findFactionByName(

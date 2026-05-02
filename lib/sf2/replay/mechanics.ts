@@ -1,12 +1,8 @@
 import type { Sf2State } from '../types'
 import {
   formatViolations,
-  validateSnapshotIds,
-} from '../scene-kernel/canonical-ids'
-import {
-  createPlaceholderNpcFromReference,
-  resolveNpcReference,
-} from '../resolution/entity-references'
+  resolveSceneSnapshotReferences,
+} from '../reference-policy'
 
 export interface Sf2ReplayInvariantEvent {
   kind: 'sf2.invariant'
@@ -89,13 +85,15 @@ export function applyMechanicalEffectLocally(
       const rawInterlocutorIds = Array.isArray(snap.current_interlocutor_ids)
         ? snap.current_interlocutor_ids
         : undefined
-      const idCheck = validateSnapshotIds(
+      const snapshotRefs = resolveSceneSnapshotReferences(
+        state,
         {
           presentNpcIds: rawPresentNpcIds,
           currentInterlocutorIds: rawInterlocutorIds,
-        },
-        state.campaign
+          mode: 'observe',
+        }
       )
+      const idCheck = snapshotRefs.idCheck
       if (!idCheck.ok) {
         invariantEvents?.push(makeInvariantEvent('canonical_id_violation', {
           mode: 'observe',
@@ -115,24 +113,15 @@ export function applyMechanicalEffectLocally(
       }
 
       const resolvedPresent = rawPresentNpcIds !== undefined
-        ? (rawPresentNpcIds as string[])
-            .map((raw) => {
-              const resolved = resolveNpcReference(state, raw)
-              if (resolved) return resolved
-              const placeholder = createPlaceholderNpcFromReference(state, raw)
-              if (placeholder) {
-                invariantEvents?.push(makeInvariantEvent('snapshot_placeholder_npc_created', {
-                  raw,
-                  placeholderId: placeholder,
-                }))
-              }
-              return placeholder
-            })
-            .filter((id): id is string => Boolean(id))
+        ? snapshotRefs.presentNpcIds ?? []
         : sceneChanged
           ? []
           : state.world.sceneSnapshot.presentNpcIds
       const nextCast = [...resolvedPresent].sort().join(',')
+
+      for (const creation of snapshotRefs.placeholderCreations) {
+        invariantEvents?.push(makeInvariantEvent('snapshot_placeholder_npc_created', creation))
+      }
 
       let nextLocation = state.world.currentLocation
       const nextLocked = typeof snap.locked === 'boolean'
@@ -177,9 +166,7 @@ export function applyMechanicalEffectLocally(
       // writes when the Narrator (rarely) sets it.
       const resolvedInterlocutors =
         rawInterlocutorIds !== undefined
-          ? (rawInterlocutorIds as string[])
-              .map((raw) => resolveNpcReference(state, raw))
-              .filter((id): id is string => Boolean(id) && resolvedPresent.includes(id as string))
+          ? snapshotRefs.currentInterlocutorIds?.filter((id) => resolvedPresent.includes(id)) ?? []
           : undefined
       state.world.sceneSnapshot = {
         sceneId: nextSceneId,
