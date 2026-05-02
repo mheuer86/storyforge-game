@@ -15,8 +15,10 @@ Shape A is selected. The backlog should follow the SF2 reliability spine:
 
 1. Shape and implement the Chapter Pressure Runtime Module first.
 2. Shape and implement the Narrator Turn Context Module second.
-3. Keep the four remaining findings discoverable with explicit pull-forward triggers.
-4. Shape individual tickets only when they become next-up.
+3. Shape the Canonical Reference Policy Module as the next SF2 foundation slice.
+4. Keep Save Normalization discoverable with its persistence pull-forward trigger.
+5. Keep the V1 Turn Commit Pipeline and Roll Transaction tickets discoverable but deferred while the active focus is SF2.
+6. Shape individual tickets only when they become next-up.
 
 ## R: Requirements
 
@@ -106,3 +108,5 @@ Rationale:
 1. A is the selected PRD-level shape.
 2. The first ticket, Chapter Pressure Runtime Module, should be shaped next before implementation.
 3. The PRD and all six issue files should carry selected-shape context so the deferred findings remain discoverable without appearing equally urgent.
+4. After pressure runtime and Narrator turn context, Canonical Reference Policy is the next SF2 foundation slice.
+5. The V1 Turn Commit Pipeline and Roll Transaction tickets are real V1 work; skip shaping them while the project is focused on SF2.

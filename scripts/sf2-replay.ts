@@ -31,6 +31,16 @@ import {
   type ThreadRole,
 } from '../lib/sf2/types'
 import {
+  coerceDisposition,
+  coerceHeat,
+  coerceTempLoadTag,
+  repairOwnerRef,
+  resolveAuthoredThreadOwnership,
+  resolveSceneSnapshotReferences,
+  validateSnapshotIdsForMode,
+  type Sf2ReferencePolicyMode,
+} from '../lib/sf2/reference-policy'
+import {
   commitSf2Turn,
   extractMechanicalEffects,
   finalizeArchivistTurn,
@@ -286,6 +296,42 @@ interface ReplayFixture {
         hasCampaignBuckets?: string[]
         threadOwnerEquals?: { threadId: string; kind: string; id: string }
         repairsInclude?: string[]
+      }
+    }
+    referencePolicy?: {
+      // Pure-function checks on lib/sf2/reference-policy. These assert the
+      // policy boundary directly so observe/strict/repair behavior is visible
+      // without relying on a model call.
+      canonicalIds?: Array<{
+        value: string
+        mode: Sf2ReferencePolicyMode
+        ok: boolean
+        violationReasons?: string[]
+      }>
+      sceneSnapshot?: {
+        mode: Sf2ReferencePolicyMode
+        presentNpcIds?: unknown[]
+        currentInterlocutorIds?: unknown[]
+        resolvedPresentNpcIdsEquals?: string[]
+        currentInterlocutorIdsEquals?: string[]
+        placeholderIdsInclude?: string[]
+        violationReasonsInclude?: string[]
+      }
+      ownerHints?: Array<{
+        ownerHint: string
+        ownerKind?: string
+        ownerId?: string
+        stakeholderIds?: string[]
+      }>
+      ownerRepair?: {
+        raw: Record<string, unknown> | null
+        kind: string
+        id: string
+      }
+      coercions?: {
+        disposition?: { raw: unknown; fallback: string; tier: string; coerced?: boolean }
+        heat?: { raw: unknown; fallback: string; level: string; coerced?: boolean }
+        tempLoadTag?: { raw: unknown; status: string; value?: string }
       }
     }
     narratorMessages?: {
@@ -548,6 +594,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertDispositionDerivation(fixture, failures)
   assertAuthorContract(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
+  assertReferencePolicy(fixture, stateBefore, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
@@ -777,6 +824,143 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
     if (!normalized.repairs.some((repair) => repair.includes(fragment))) {
       failures.push(`persistenceNormalize.repairs: expected repair containing "${fragment}", got [${normalized.repairs.join('; ') || 'none'}]`)
     }
+  }
+}
+
+function assertReferencePolicy(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.referencePolicy
+  if (!expected) return
+
+  for (const c of expected.canonicalIds ?? []) {
+    const result = validateSnapshotIdsForMode(
+      { presentNpcIds: [c.value] },
+      stateBefore.campaign,
+      c.mode
+    )
+    if (result.ok !== c.ok) {
+      failures.push(`referencePolicy.canonicalIds[${c.value}].ok: expected ${c.ok}, got ${result.ok}`)
+    }
+    for (const reason of c.violationReasons ?? []) {
+      if (!result.violations.some((v) => v.reason === reason)) {
+        failures.push(
+          `referencePolicy.canonicalIds[${c.value}].violations: expected reason ${reason}, got [${result.violations.map((v) => v.reason).join(',') || 'none'}]`
+        )
+      }
+    }
+  }
+
+  if (expected.sceneSnapshot) {
+    const s = expected.sceneSnapshot
+    const state = structuredClone(stateBefore)
+    const result = resolveSceneSnapshotReferences(state, {
+      mode: s.mode,
+      presentNpcIds: s.presentNpcIds,
+      currentInterlocutorIds: s.currentInterlocutorIds,
+    })
+    if (s.resolvedPresentNpcIdsEquals !== undefined) {
+      assertStringSetEquals(
+        result.presentNpcIds ?? [],
+        s.resolvedPresentNpcIdsEquals,
+        'referencePolicy.sceneSnapshot.presentNpcIds',
+        failures
+      )
+    }
+    if (s.currentInterlocutorIdsEquals !== undefined) {
+      assertStringSetEquals(
+        result.currentInterlocutorIds ?? [],
+        s.currentInterlocutorIdsEquals,
+        'referencePolicy.sceneSnapshot.currentInterlocutorIds',
+        failures
+      )
+    }
+    for (const id of s.placeholderIdsInclude ?? []) {
+      if (!result.placeholderCreations.some((creation) => creation.placeholderId === id)) {
+        failures.push(
+          `referencePolicy.sceneSnapshot.placeholderCreations: expected ${id}, got [${result.placeholderCreations.map((c) => c.placeholderId).join(',') || 'none'}]`
+        )
+      }
+    }
+    for (const reason of s.violationReasonsInclude ?? []) {
+      if (!result.idCheck.violations.some((v) => v.reason === reason)) {
+        failures.push(
+          `referencePolicy.sceneSnapshot.violations: expected reason ${reason}, got [${result.idCheck.violations.map((v) => v.reason).join(',') || 'none'}]`
+        )
+      }
+    }
+  }
+
+  for (const c of expected.ownerHints ?? []) {
+    const state = structuredClone(stateBefore)
+    const result = resolveAuthoredThreadOwnership(state, c.ownerHint)
+    if (c.ownerKind !== undefined && result.owner?.kind !== c.ownerKind) {
+      failures.push(`referencePolicy.ownerHints[${c.ownerHint}].kind: expected ${c.ownerKind}, got ${result.owner?.kind ?? 'null'}`)
+    }
+    if (c.ownerId !== undefined && result.owner?.id !== c.ownerId) {
+      failures.push(`referencePolicy.ownerHints[${c.ownerHint}].id: expected ${c.ownerId}, got ${result.owner?.id ?? 'null'}`)
+    }
+    if (c.stakeholderIds !== undefined) {
+      assertStringSetEquals(
+        result.stakeholders.map((s) => s.id),
+        c.stakeholderIds,
+        `referencePolicy.ownerHints[${c.ownerHint}].stakeholders`,
+        failures
+      )
+    }
+  }
+
+  if (expected.ownerRepair) {
+    const repaired = repairOwnerRef(expected.ownerRepair.raw)
+    if (repaired.kind !== expected.ownerRepair.kind || repaired.id !== expected.ownerRepair.id) {
+      failures.push(
+        `referencePolicy.ownerRepair: expected ${expected.ownerRepair.kind}:${expected.ownerRepair.id}, got ${repaired.kind}:${repaired.id}`
+      )
+    }
+  }
+
+  const coercions = expected.coercions
+  if (coercions?.disposition) {
+    const c = coercions.disposition
+    const result = coerceDisposition(c.raw, c.fallback as Parameters<typeof coerceDisposition>[1])
+    if (result.tier !== c.tier || (c.coerced !== undefined && result.coerced !== c.coerced)) {
+      failures.push(
+        `referencePolicy.coercions.disposition: expected ${c.tier}/${String(c.coerced)}, got ${result.tier}/${String(result.coerced)}`
+      )
+    }
+  }
+  if (coercions?.heat) {
+    const c = coercions.heat
+    const result = coerceHeat(c.raw, c.fallback as Parameters<typeof coerceHeat>[1])
+    if (result.level !== c.level || (c.coerced !== undefined && result.coerced !== c.coerced)) {
+      failures.push(
+        `referencePolicy.coercions.heat: expected ${c.level}/${String(c.coerced)}, got ${result.level}/${String(result.coerced)}`
+      )
+    }
+  }
+  if (coercions?.tempLoadTag) {
+    const c = coercions.tempLoadTag
+    const result = coerceTempLoadTag(c.raw)
+    if (result.status !== c.status || (c.value !== undefined && result.value !== c.value)) {
+      failures.push(
+        `referencePolicy.coercions.tempLoadTag: expected ${c.status}/${c.value ?? ''}, got ${result.status}/${result.value ?? ''}`
+      )
+    }
+  }
+}
+
+function assertStringSetEquals(
+  got: string[],
+  want: string[],
+  label: string,
+  failures: string[]
+): void {
+  const gotSorted = [...got].sort().join(',')
+  const wantSorted = [...want].sort().join(',')
+  if (gotSorted !== wantSorted) {
+    failures.push(`${label}: expected [${wantSorted}], got [${gotSorted}]`)
   }
 }
 

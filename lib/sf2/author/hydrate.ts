@@ -14,8 +14,8 @@ import type {
 import {
   factionIdFromName,
   findFactionByName,
-  resolveThreadOwnership,
-} from '../resolution/entity-references'
+  resolveAuthoredThreadOwnership,
+} from '../reference-policy'
 import { validateVoiceNote } from './validate-voice-note'
 
 // Author's free-form role strings (e.g. "district solicitor") don't fit
@@ -107,7 +107,7 @@ export function applyAuthoredToCampaign(
 
   const loadBearing = new Set(loadBearingIds)
   for (const t of authored.activeThreads) {
-    const { owner, stakeholders } = resolveThreadOwnership(state, t.ownerHint)
+    const { owner, stakeholders } = resolveAuthoredThreadOwnership(state, t.ownerHint)
     const existing = state.campaign.threads[t.id]
     if (existing) {
       // Carry-forward: per Author prompt, resolution_criteria / failure_mode

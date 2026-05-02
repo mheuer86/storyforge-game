@@ -24,6 +24,9 @@ import {
   reheatNpcAgendaAction,
 } from '../pressure/reheat'
 import {
+  coerceDisposition,
+  coerceHeat,
+  coerceTempLoadTag,
   findMatchingAnonymousNpc,
   findMatchingNpc,
   findMatchingSnapshotPlaceholder,
@@ -36,7 +39,7 @@ import {
   resolveNpcId,
   resolveTemporalAnchorTargetId,
   resolveThreadId,
-} from '../resolution/entity-references'
+} from '../reference-policy'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -60,11 +63,10 @@ import type {
   Sf2Promise,
   Sf2PronounAnchor,
   Sf2State,
-  Sf2TempLoadTag,
   Sf2TemporalAnchor,
   Sf2Thread,
 } from '../types'
-import { DOCUMENT_VALID_TRANSITIONS, SF2_TEMP_LOAD_TAGS } from '../types'
+import { DOCUMENT_VALID_TRANSITIONS } from '../types'
 
 const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
   'resolved_clean',
@@ -178,122 +180,6 @@ export interface ApplyPatchResult {
   outcomes: SubWriteOutcome[]
   deferredWrites: DeferredWrite[] // to surface in next Narrator prompt
   drift: Sf2ArchivistFlag[]
-}
-
-// Coerce a free-form disposition string (Archivist sometimes emits "closed_off",
-// "resigned", "fearful", etc.) to the nearest valid Sf2DispositionTier. Returns
-// { tier, coerced } so the caller can log drift when the input wasn't already
-// a valid tier. Keeps the 5-tier enum stable; captures the observation without
-// widening the schema.
-const DISPOSITION_SYNONYMS: Record<string, Sf2Npc['disposition']> = {
-  // hostile
-  hostile: 'hostile',
-  angry: 'hostile',
-  furious: 'hostile',
-  enraged: 'hostile',
-  antagonistic: 'hostile',
-  vengeful: 'hostile',
-  // wary
-  wary: 'wary',
-  cautious: 'wary',
-  guarded: 'wary',
-  suspicious: 'wary',
-  reserved: 'wary',
-  closed_off: 'wary',
-  'closed-off': 'wary',
-  closedoff: 'wary',
-  withholding: 'wary',
-  defensive: 'wary',
-  fearful: 'wary',
-  afraid: 'wary',
-  frightened: 'wary',
-  uneasy: 'wary',
-  // neutral
-  neutral: 'neutral',
-  uncertain: 'neutral',
-  ambivalent: 'neutral',
-  resigned: 'neutral',
-  dismissive: 'neutral',
-  detached: 'neutral',
-  cold: 'neutral',
-  indifferent: 'neutral',
-  // favorable
-  favorable: 'favorable',
-  friendly: 'favorable',
-  warm: 'favorable',
-  supportive: 'favorable',
-  receptive: 'favorable',
-  open: 'favorable',
-  // trusted
-  trusted: 'trusted',
-  trusting: 'trusted',
-  loyal: 'trusted',
-  devoted: 'trusted',
-}
-
-function coerceDisposition(
-  raw: unknown,
-  fallback: Sf2Npc['disposition']
-): { tier: Sf2Npc['disposition']; coerced: boolean; rawValue: string | null } {
-  if (typeof raw !== 'string') return { tier: fallback, coerced: false, rawValue: null }
-  const key = raw.trim().toLowerCase().replace(/\s+/g, '_')
-  if (!key) return { tier: fallback, coerced: false, rawValue: null }
-  const mapped = DISPOSITION_SYNONYMS[key]
-  if (mapped === undefined) {
-    // Unknown string — fall back but log the drift.
-    return { tier: fallback, coerced: true, rawValue: raw }
-  }
-  return { tier: mapped, coerced: key !== mapped, rawValue: raw }
-}
-
-// Faction heat — same shape, different enum. Narrower synonyms since heat is
-// quantitative (none → boiling scale), not relational like disposition.
-const HEAT_SYNONYMS: Record<string, Sf2Faction['heat']> = {
-  none: 'none',
-  cool: 'none',
-  calm: 'none',
-  low: 'low',
-  mild: 'low',
-  simmering: 'low',
-  medium: 'medium',
-  moderate: 'medium',
-  rising: 'medium',
-  high: 'high',
-  hot: 'high',
-  acute: 'high',
-  boiling: 'boiling',
-  critical: 'boiling',
-  overt: 'boiling',
-}
-
-function coerceHeat(
-  raw: unknown,
-  fallback: Sf2Faction['heat']
-): { level: Sf2Faction['heat']; coerced: boolean; rawValue: string | null } {
-  if (typeof raw !== 'string') return { level: fallback, coerced: false, rawValue: null }
-  const key = raw.trim().toLowerCase()
-  if (!key) return { level: fallback, coerced: false, rawValue: null }
-  const mapped = HEAT_SYNONYMS[key]
-  if (mapped === undefined) return { level: fallback, coerced: true, rawValue: raw }
-  return { level: mapped, coerced: key !== mapped, rawValue: raw }
-}
-
-// Returns the coerced tag, undefined for explicit clear (empty string), or
-// `'unset'` to mean "no field provided." NPC disposition re-assertions clear
-// the transient tag; unrelated updates keep the prior value.
-function coerceTempLoadTag(
-  raw: unknown
-): { value: Sf2TempLoadTag | undefined; status: 'unset' | 'cleared' | 'set' | 'invalid'; rawValue: string | null } {
-  if (raw === undefined || raw === null) return { value: undefined, status: 'unset', rawValue: null }
-  if (typeof raw !== 'string') return { value: undefined, status: 'invalid', rawValue: String(raw) }
-  const trimmed = raw.trim()
-  if (trimmed === '') return { value: undefined, status: 'cleared', rawValue: raw }
-  const key = trimmed.toLowerCase().replace(/\s+/g, '_')
-  const match = (SF2_TEMP_LOAD_TAGS as readonly string[]).includes(key)
-    ? (key as Sf2TempLoadTag)
-    : undefined
-  if (!match) return { value: undefined, status: 'invalid', rawValue: raw }
-  return { value: match, status: 'set', rawValue: raw }
 }
 
 function normalizePronounAnchor(raw: unknown): Sf2PronounAnchor | undefined {

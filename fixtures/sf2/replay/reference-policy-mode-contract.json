@@ -1,0 +1,111 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "reference policy exposes observe strict repair and coercion contract",
+  "source": {
+    "kind": "synthetic-architecture-contract",
+    "purpose": "Ticket 06: assert the canonical reference policy boundary directly without flipping live enforcement. Observe mode permits canonical-shaped missing ids and placeholder repair; strict mode rejects missing registry members; repair mode supplies legacy fallback owners; coercions preserve current enum drift behavior."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_mirren": {
+            "id": "npc_mirren",
+            "name": "Mirren Vale",
+            "affiliation": "Registry",
+            "role": "witness",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Knows the intake counter."],
+              "voice": { "note": "Quietly precise.", "register": "settlement" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Mirren, the intake witness.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_mirren"],
+          "surfaceNpcIds": ["npc_mirren"]
+        },
+        "artifacts": {
+          "opening": {
+            "visibleNpcIds": ["npc_mirren"]
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_mirren"],
+          "currentInterlocutorIds": ["npc_mirren"]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Check the reference policy.",
+    "narrator": {
+      "prose": "Mirren waits while the intake ledger is checked.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "referencePolicy": {
+      "canonicalIds": [
+        { "value": "npc_mirren", "mode": "observe", "ok": true },
+        { "value": "grey-coat", "mode": "observe", "ok": false, "violationReasons": ["unrecognized_format"] },
+        { "value": "npc_newcomer", "mode": "observe", "ok": true },
+        { "value": "npc_newcomer", "mode": "strict", "ok": false, "violationReasons": ["not_in_registry"] },
+        { "value": "unknown_young_man", "mode": "observe", "ok": false, "violationReasons": ["unknown_prefix"] }
+      ],
+      "sceneSnapshot": {
+        "mode": "observe",
+        "presentNpcIds": ["Mirren Vale", "grey-coat", "npc_newcomer"],
+        "currentInterlocutorIds": ["Mirren", "grey-coat"],
+        "resolvedPresentNpcIdsEquals": ["npc_mirren", "npc_grey_coat", "npc_newcomer"],
+        "currentInterlocutorIdsEquals": ["npc_mirren", "npc_grey_coat"],
+        "placeholderIdsInclude": ["npc_grey_coat", "npc_newcomer"],
+        "violationReasonsInclude": ["unrecognized_format"]
+      },
+      "ownerHints": [
+        {
+          "ownerHint": "Mirren Vale and Registry",
+          "ownerKind": "npc",
+          "ownerId": "npc_mirren",
+          "stakeholderIds": ["faction_registry"]
+        },
+        {
+          "ownerHint": "Harbor clerks",
+          "ownerKind": "faction",
+          "ownerId": "faction_harbor_clerks"
+        }
+      ],
+      "ownerRepair": {
+        "raw": null,
+        "kind": "faction",
+        "id": "faction_unknown"
+      },
+      "coercions": {
+        "disposition": { "raw": "closed_off", "fallback": "neutral", "tier": "wary", "coerced": true },
+        "heat": { "raw": "critical", "fallback": "none", "level": "boiling", "coerced": true },
+        "tempLoadTag": { "raw": "cornered", "status": "set", "value": "cornered" }
+      }
+    }
+  }
+}

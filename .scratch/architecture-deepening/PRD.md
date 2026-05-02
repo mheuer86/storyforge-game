@@ -24,7 +24,7 @@ The review found several places where real domain concepts exist, but the curren
 
 PRD-level shaping lives in [shaping.md](shaping.md). Selected shape: **A: SF2 Reliability Spine First**.
 
-The backlog should shape and implement the Chapter Pressure Runtime Module first, then the Narrator Turn Context Module. The remaining tickets stay discoverable with pull-forward triggers.
+The backlog shaped and implemented the Chapter Pressure Runtime Module first, then the Narrator Turn Context Module. The current SF2 follow-up is the Canonical Reference Policy Module. The V1 tickets stay discoverable but deferred while the active focus is SF2.
 
 ## Non-goals
 
@@ -44,11 +44,11 @@ The backlog should shape and implement the Chapter Pressure Runtime Module first
 
 ## Suggested order
 
-1. Shape the Chapter Pressure Runtime Module next. It is closest to SF2's current reliability work and the "pressure is computed" principle.
-2. Follow with the Narrator Turn Context Module. It supports bounded scene context and deterministic retrieval.
-3. Pull V1 Turn Commit Pipeline and Roll Transaction forward only when touching shipped V1 turn behavior or roll behavior.
+1. Chapter Pressure Runtime Module was the first SF2 reliability slice.
+2. Narrator Turn Context Module was the second SF2 reliability slice.
+3. Canonical Reference Policy Module is the next shaped SF2 foundation slice. It prepares NPC state-bound rendering, scene-kernel enforcement, and stricter Archivist validation without flipping enforcement yet.
 4. Pull Save Normalization forward when touching persistence, migrations, import/export, or SF2 seed/save interactions.
-5. Pull Canonical Reference Policy forward when NPC state-bound rendering, scene-kernel enforcement, or stricter Archivist validation moves from observe mode to enforcement.
+5. Pull V1 Turn Commit Pipeline and Roll Transaction forward only if the project intentionally returns to shipped V1 turn or roll behavior.
 
 ## Notes
 

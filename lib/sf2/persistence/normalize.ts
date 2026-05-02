@@ -1,5 +1,9 @@
 import { createInitialSf2State } from '../game-data'
 import {
+  ensureReferencedFallbackOwners,
+  repairOwnerRef,
+} from '../reference-policy'
+import {
   SF2_SCHEMA_VERSION,
   type Sf2CampaignMeta,
   type Sf2ChapterNumber,
@@ -9,14 +13,12 @@ import {
   type Sf2Npc,
   type Sf2NpcRole,
   type Sf2NpcStatus,
-  type Sf2OwnerRef,
   type Sf2State,
   type Sf2Thread,
   type Sf2ThreadStatus,
 } from '../types'
 
 const RECENT_TURNS_LIMIT = 6
-const DEFAULT_FACTION_ID = 'faction_unknown'
 
 export interface Sf2PersistenceNormalizeReport {
   state: Sf2State
@@ -109,7 +111,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
     campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter)
   }
 
-  ensureReferencedOwnersExist(state)
+  ensureReferencedFallbackOwners(state)
 }
 
 function normalizeChapter(state: Sf2State, repairs: string[]): void {
@@ -328,9 +330,9 @@ function normalizeThread(
     ['active', 'resolved_clean', 'resolved_costly', 'resolved_failure', 'resolved_catastrophic', 'abandoned', 'deferred'],
     'active'
   )
-  thread.owner = normalizeOwnerRef(thread.owner)
+  thread.owner = repairOwnerRef(thread.owner)
   thread.stakeholders = Array.isArray(thread.stakeholders)
-    ? thread.stakeholders.map(normalizeOwnerRef)
+    ? thread.stakeholders.map(repairOwnerRef)
     : []
   thread.tension = clamp(numberOr(thread.tension, 5), 0, 10)
   thread.peakTension = Math.max(clamp(numberOr(thread.peakTension, thread.tension), 0, 10), thread.tension)
@@ -341,35 +343,6 @@ function normalizeThread(
   thread.loadBearing = Boolean(thread.loadBearing)
   thread.tensionHistory = Array.isArray(thread.tensionHistory) ? thread.tensionHistory : []
   return thread
-}
-
-function ensureReferencedOwnersExist(state: Sf2State): void {
-  const owners = Object.values(state.campaign.threads).flatMap((thread) => [
-    thread.owner,
-    ...thread.stakeholders,
-  ])
-  if (owners.some((owner) => owner.kind === 'faction' && owner.id === DEFAULT_FACTION_ID)) {
-    ensureDefaultFaction(state)
-  }
-}
-
-function ensureDefaultFaction(state: Sf2State): void {
-  if (state.campaign.factions[DEFAULT_FACTION_ID]) return
-  state.campaign.factions[DEFAULT_FACTION_ID] = {
-    id: DEFAULT_FACTION_ID,
-    name: 'Unknown faction',
-    stance: 'neutral',
-    heat: 'none',
-    heatReasons: [],
-    ownedThreadIds: [],
-    retrievalCue: 'Fallback owner for legacy threads missing owner data.',
-  }
-}
-
-function normalizeOwnerRef(raw: unknown): Sf2OwnerRef {
-  if (!isRecord(raw)) return { kind: 'faction', id: DEFAULT_FACTION_ID }
-  const kind = raw.kind === 'npc' || raw.kind === 'faction' ? raw.kind : 'faction'
-  return { kind, id: stringOr(raw.id, DEFAULT_FACTION_ID) }
 }
 
 function normalizeLocation(raw: unknown, fallback: Sf2State['world']['currentLocation']) {
