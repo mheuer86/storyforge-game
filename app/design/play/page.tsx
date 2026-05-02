@@ -16,6 +16,7 @@ import {
   DEFAULT_SF2_SEED_ID,
   SPACE_OPERA_DRIFTRUNNER_SEED_ID,
 } from '@/lib/sf2/game-data'
+import { chapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
 import type { Sf2State } from '@/lib/sf2/types'
 
 type PreviewGenre = 'space-opera' | 'epic-scifi'
@@ -75,6 +76,10 @@ function PlayDesignPreviewContent() {
   const [pendingInput, setPendingInput] = useState('')
   const [rollResult, setRollResult] = useState<Sf2RollOutcomeView | null>(null)
   const preview = useMemo(() => buildMockPreview(previewGenre), [previewGenre])
+  const pressureProjection = useMemo(
+    () => chapterPressureRuntime.project(preview.state, { pivotSignaled: false }),
+    [preview.state]
+  )
   const pendingCheck = rollResult ? null : preview.pendingCheck
   const closeReadiness: Sf2CloseReadinessView = {
     closeReady: false,
@@ -113,6 +118,13 @@ function PlayDesignPreviewContent() {
       state={preview.state}
       scrollRef={scrollRef}
       prose=""
+      activePlayerInput=""
+      liveRolls={pendingCheck ? [{
+        id: 'preview-roll',
+        proseOffset: 0,
+        check: pendingCheck,
+        outcome: rollResult ?? undefined,
+      }] : []}
       suggestedActions={preview.actions}
       pendingInput={pendingInput}
       pendingCheck={pendingCheck}
@@ -127,6 +139,7 @@ function PlayDesignPreviewContent() {
       generationElapsed={0}
       busy={false}
       chapterTurnCount={14}
+      pressureProjection={pressureProjection}
       closeReadiness={closeReadiness}
       campaignStats={{ npcs: 4, threads: 4, decisions: 3, promises: 1, clues: 10 }}
       sessionSummary={null}

@@ -1131,6 +1131,7 @@ export interface Sf2TurnDiffEntry {
 
 export interface Sf2RollRecord {
   turn: number
+  proseOffset?: number
   skill: string
   dc: number
   effectiveDc?: number

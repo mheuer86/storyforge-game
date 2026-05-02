@@ -134,7 +134,7 @@ export const narrateTurnTool: Anthropic.Tool = {
       suggested_actions: {
         type: 'array',
         description:
-          "3-4 quick actions for the next player input. Each should pair a concrete action with emotional framing, physical detail, or underlying intent. **Grounding rule: only reference people, places, or facts the player has actually seen in prose this chapter.** An NPC appearing in the scene packet's cast list is NOT sufficient — the player must have been shown them in the Narrator's prose. If you want to suggest an action involving someone the packet shows but the prose hasn't surfaced, either introduce them in this turn's prose first, or choose a different action.",
+          "3-4 quick actions for the next player input. Each should pair a concrete action with emotional framing, physical detail, or underlying intent. If a single skill clearly dominates the action, append that skill as a bracketed hint, e.g. [Insight]. Do not include DC or difficulty tiers in quick-action hints. **Grounding rule: only reference people, places, or facts the player has actually seen in prose this chapter.** An NPC appearing in the scene packet's cast list is NOT sufficient — the player must have been shown them in the Narrator's prose. If you want to suggest an action involving someone the packet shows but the prose hasn't surfaced, either introduce them in this turn's prose first, or choose a different action.",
         items: { type: 'string' },
       },
     },

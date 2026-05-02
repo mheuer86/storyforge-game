@@ -17,11 +17,10 @@ import {
   checkThread,
   type InvariantResult,
 } from '../invariants'
-import { updateRuntimeEngineValues } from '../pressure/runtime'
+import { chapterPressureRuntime } from '../pressure/runtime'
 import { NEW_THREAD_INITIAL_TENSION_BY_ROLE } from '../pressure/constants'
 import {
   applyPlayerEngagementReheat,
-  reheatLadderFire,
   reheatNpcAgendaAction,
 } from '../pressure/reheat'
 import {
@@ -1908,73 +1907,11 @@ export function applyArchivistPatch(
     }
   }
 
-  // Archivist-driven ladder firing. The Archivist evaluated each unfired
-  // step's triggerCondition against this turn's prose + state and returned
-  // the ids of steps whose conditions read as satisfied. Flip fired=true
-  // with firedAtTurn stamped for instrumentation.
-  //
-  // Two enforcement floors:
-  //   1. Max 2 fires per turn. Prevents cascade bugs where the Archivist
-  //      reads surface context as satisfying multiple triggers at once.
-  //   2. Cooldown: no fires on the turn immediately after a prior fire.
-  //      Prevents the experiential ramp problem where consecutive-turn fires
-  //      collapse the chapter's tension graph into a stair (playthrough 6
-  //      fired on turns 3 + 4, which felt excessive even though cumulative
-  //      pacing was on target). Only enforced when a prior step exists with
-  //      firedAtTurn === patch.turnIndex - 1.
-  const MAX_LADDER_FIRES_PER_TURN = 2
-  if (patch.ladderFires && patch.ladderFires.length > 0) {
-    const firedLastTurn = draft.chapter.setup.pressureLadder.some(
-      (s) => s.fired && s.firedAtTurn === patch.turnIndex - 1
-    )
-    const proposed = patch.ladderFires.filter((id) =>
-      draft.chapter.setup.pressureLadder.some((s) => s.id === id && !s.fired)
-    )
-    if (firedLastTurn) {
-      for (const dropId of proposed) {
-        drift.push({
-          kind: 'contradiction',
-          detail: `ladder fire cooldown: ${dropId} deferred (a step fired on the prior turn — consecutive-turn fires are rejected)`,
-          entityId: dropId,
-        })
-      }
-    } else {
-      const accepted = proposed.slice(0, MAX_LADDER_FIRES_PER_TURN)
-      const dropped = proposed.slice(MAX_LADDER_FIRES_PER_TURN)
-      const acceptedSet = new Set(accepted)
-      for (const step of draft.chapter.setup.pressureLadder) {
-        if (step.fired) continue
-        if (acceptedSet.has(step.id)) {
-          step.fired = true
-          step.firedAtTurn = patch.turnIndex
-          // Reheat the threads the step is anchored to. Falls back to the
-          // chapter spine when the step has no explicit anchors — keeps
-          // chapters authored before threadIds existed working without
-          // broadcasting the fire across the whole pressure surface.
-          const explicitThreadIds = (step.threadIds ?? []).filter(
-            (id) => Boolean(draft.chapter.setup.threadPressure?.[id])
-          )
-          const ladderTargets = explicitThreadIds.length > 0
-            ? explicitThreadIds
-            : draft.chapter.setup.spineThreadId
-              ? [draft.chapter.setup.spineThreadId]
-              : []
-          if (ladderTargets.length > 0) {
-            reheatLadderFire(draft.chapter.setup, ladderTargets, step.severity)
-          }
-        }
-      }
-      for (const dropId of dropped) {
-        drift.push({
-          kind: 'contradiction',
-          detail: `ladder fire cap: ${dropId} deferred (>${MAX_LADDER_FIRES_PER_TURN} proposed fires this turn)`,
-          entityId: dropId,
-        })
-      }
-    }
-  }
-
-  updateRuntimeEngineValues(draft)
+  const pressureResult = chapterPressureRuntime.applyArchivistEffects(draft, {
+    ladderFires: patch.ladderFires,
+    turnIndex: patch.turnIndex,
+  })
+  drift.push(...pressureResult.drift)
 
   // Lexicon additions: dedupe by case-insensitive phrase, cap campaign lexicon
   // at 30 entries (drop oldest when over).

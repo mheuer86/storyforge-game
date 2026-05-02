@@ -8,7 +8,6 @@ import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene
 import { buildMessagesForNarrator } from '../lib/sf2/narrator/messages'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
-import { computeChapterCloseReadiness } from '../lib/sf2/chapter-close'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import {
@@ -18,7 +17,10 @@ import {
   initializeChapterPressure,
   threadContribution,
 } from '../lib/sf2/pressure/derive'
-import { prepareChapterPressureRuntime } from '../lib/sf2/pressure/runtime'
+import {
+  chapterPressureRuntime,
+  computeChapterCloseReadiness,
+} from '../lib/sf2/pressure/runtime'
 import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
@@ -1364,7 +1366,7 @@ function assertExpected(
     const preparedState: Sf2State = structuredClone(stateBefore)
     const priorActiveThreadIds = expected.preparedPressureRuntime.priorActiveThreadIds
       ?? preparedState.chapter.setup.activeThreadIds
-    preparedState.chapter.setup = prepareChapterPressureRuntime(
+    preparedState.chapter.setup = chapterPressureRuntime.prepareChapterOpen(
       preparedState,
       preparedState.chapter.setup,
       priorActiveThreadIds
