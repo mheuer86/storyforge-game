@@ -327,7 +327,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
             <PlaybookSkillPanel state={state} />
           </aside>
 
-          <main className="sf2-center-panel flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/70">
+          <main className="sf2-center-panel flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/45 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)]">
             <div
               ref={scrollRef}
               className="sf2-narrative-scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6"
@@ -444,7 +444,7 @@ function TopBar({
 }) {
   return (
     <header className="shrink-0 px-3 py-2 md:px-5 md:py-4">
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border/50 bg-card/70 px-3 py-2 md:px-5 md:py-2.5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)] xl:gap-4 xl:px-0 xl:py-0">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border/45 bg-card/70 px-3 py-2 shadow-[0_12px_48px_-36px_rgba(0,0,0,0.9)] md:px-5 md:py-2.5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)] xl:gap-4 xl:px-0 xl:py-0">
         <div className="hidden min-w-0 items-center xl:flex xl:px-5 xl:py-2.5">
           <span className="font-mono text-[12px] uppercase tracking-[0.32em] text-primary">Storyforge</span>
         </div>
@@ -453,7 +453,7 @@ function TopBar({
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 xl:inline">
             Ch.{String(state.meta.currentChapter).padStart(2, '0')}
           </span>
-          <span className="truncate text-center font-heading text-[12px] font-normal tracking-[0.08em] text-foreground md:text-sm">
+          <span className="truncate text-center text-[12px] font-medium tracking-[0.03em] text-foreground [text-wrap:balance] md:text-sm xl:overflow-visible xl:text-clip xl:whitespace-normal">
             {state.chapter.title || 'Chapter setup pending'}
           </span>
           <span className="hidden text-right font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 xl:inline">
@@ -471,7 +471,7 @@ function TopBar({
             type="button"
             onClick={() => onOpenPanel('diagnostics')}
             className={cn(
-              'inline-flex h-8 items-center justify-center gap-2 rounded-md px-2.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:h-9 sm:px-3',
+              'inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-lg px-2.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-[color,transform] hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] sm:px-3',
               busy ? 'text-warning hover:text-warning' : 'text-muted-foreground',
             )}
             aria-label="Open menu"
@@ -498,7 +498,7 @@ function MobilePanelButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-8 min-w-8 items-center justify-center rounded-md border border-border/50 bg-card/55 px-1.5 text-muted-foreground transition-colors hover:border-primary/55 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:h-9 md:min-w-9 md:px-2"
+      className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-border/50 bg-card/55 px-2 text-muted-foreground transition-[border-color,color,transform] hover:border-primary/55 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96]"
       aria-label={`Open ${label}`}
     >
       <span className="sr-only">{label}</span>
@@ -520,11 +520,11 @@ function HudPanel({
 }) {
   return (
     <section className={cn(
-      'rounded-lg border border-border/50 bg-card/70 p-4',
+      'rounded-xl border border-border/25 bg-card/70 p-4 shadow-[0_16px_54px_-42px_rgba(0,0,0,0.85)]',
       className,
     )}>
       <div className="mb-3 flex min-h-4 items-center justify-between gap-3">
-        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</div>
+        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{title}</div>
         {right}
       </div>
       {children}
@@ -540,11 +540,11 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
   return (
     <HudPanel
       title="Operative"
-      right={<span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Lv.{state.player.level}</span>}
+      right={<span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">Lv.{state.player.level}</span>}
     >
       <div className="space-y-4">
         <div>
-          <div className="truncate font-heading text-[18px] font-medium tracking-[0.04em] text-foreground">
+          <div className="truncate text-[18px] font-semibold tracking-normal text-foreground">
             {state.player.name}
           </div>
           <div className="mt-1 truncate text-sm text-muted-foreground">
@@ -580,7 +580,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
 function Metric({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className={cn('truncate font-mono text-[18px] font-medium', accent ? 'text-warning' : 'text-foreground')}>
+      <div className={cn('truncate font-mono text-[18px] font-medium tabular-nums', accent ? 'text-warning' : 'text-foreground')}>
         {value}
       </div>
       <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/75">
@@ -608,7 +608,7 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
     >
       <div className="space-y-3">
         {plan.name && (
-          <div className="font-mono text-sm tracking-[0.08em] text-foreground/90">
+          <div className="text-sm font-medium tracking-normal text-foreground/90">
             {plan.name}
           </div>
         )}
@@ -624,16 +624,13 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
   const items = state.player.inventory.slice(0, 4)
 
   return (
-    <HudPanel
-      title="Quick Slots"
-      right={<span className="rounded border border-border/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">1-4</span>}
-    >
+    <HudPanel title="Quick Slots">
       {items.length > 0 ? (
         <div className="grid grid-cols-2 gap-2">
           {items.map((item, index) => (
             <div
               key={`${item.name}-${index}`}
-              className="min-h-[70px] rounded-md border border-border/30 bg-background/55 p-3"
+              className="min-h-[70px] rounded-lg bg-background/50 p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.035)]"
             >
               <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">
                 {String(index + 1).padStart(2, '0')}
@@ -669,13 +666,13 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
     <HudPanel
       title="Playbook Skill"
       right={uses && (
-        <span className="rounded border border-primary/70 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
+        <span className="rounded border border-primary/70 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary tabular-nums">
           {uses}
         </span>
       )}
     >
       <div className="rounded-md border border-border/30 bg-background/45 px-3 py-2.5">
-        <div className="font-mono text-sm tracking-[0.08em] text-foreground/90">
+        <div className="font-sans text-sm font-medium tracking-normal text-foreground/90">
           {trait.name}
         </div>
         <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
@@ -723,22 +720,25 @@ function LocationsPanel({ state }: { state: Sf2State }) {
     })
 
   return (
-    <HudPanel
-      title="Locations"
-      right={<span className="rounded-full border border-primary/70 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{locations.length}</span>}
-    >
+    <HudPanel title="Locations">
       {locations.length > 0 ? (
-        <div className="space-y-2.5">
+        <div className={cn(
+          'space-y-2.5',
+          locations.length > 3 && 'max-h-[14.75rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-gutter:stable]',
+        )}>
           {locations.map((location) => {
             const here = location.id === currentLocationId
             const tag = location.atmosphericConditions?.[0]
             return (
               <div key={location.id} className={cn(
-                'rounded-md border px-3 py-2.5',
-                here ? 'border-primary/70 bg-primary/10' : 'border-border/50 bg-background/45',
+                'relative min-h-[72px] overflow-hidden rounded-lg border px-3 py-2.5',
+                here
+                  ? 'border-border/25 bg-primary/10 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary/70'
+                  : 'border-border/25 bg-background/45',
               )}>
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-mono text-sm tracking-[0.08em] text-foreground/90">
+                  {here && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_12px_-3px] shadow-primary" />}
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium tracking-normal text-foreground/90">
                     {location.name || location.id.replace(/_/g, ' ')}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
@@ -856,7 +856,7 @@ function PressurePanel({
     <HudPanel
       title="Pressure"
       right={
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/45 bg-warning/10 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-warning">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/45 bg-warning/10 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-warning tabular-nums">
           <Activity className="h-3 w-3" />
           {total > 0 ? `${fired}/${total}` : '0/0'}
         </span>
@@ -864,7 +864,7 @@ function PressurePanel({
     >
       <div className="space-y-3">
         <div>
-          <div className="font-mono text-sm font-medium tracking-[0.08em] text-foreground/90">
+          <div className="text-sm font-semibold tracking-normal text-foreground/90">
             {pressureProjection.faceName}
           </div>
           {activeStep && (
@@ -923,15 +923,10 @@ function IntelPanel({ state }: { state: Sf2State }) {
     .filter(Boolean)
     .filter((clue) => clue.chapterCreated === currentChapter)
     .slice(0, 3)
-  const visibleClueCount = Object.values(state.campaign.clues)
-    .filter((clue) => clue.chapterCreated === currentChapter)
-    .length
-
   return (
     <HudPanel
       title="Intel / Case Board"
       className="flex max-h-[42vh] min-h-0 flex-col overflow-hidden xl:max-h-none xl:flex-1"
-      right={<span className="rounded-full border border-primary/70 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{visibleClueCount}</span>}
     >
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {threads.length > 0 ? threads.map((thread) => {
@@ -939,28 +934,30 @@ function IntelPanel({ state }: { state: Sf2State }) {
             .filter((clue) => clue.anchoredTo.includes(thread.id))
             .filter((clue) => clue.chapterCreated === currentChapter)
             .slice(0, 3)
-          const tier = thread.loadBearing || state.chapter.setup.loadBearingThreadIds.includes(thread.id)
-            ? 'load-bearing'
-            : clues.length > 0
-              ? 'evidenced'
-              : 'lead'
+          const pressureRole = thread.id === state.chapter.setup.spineThreadId
+            ? 'spine'
+            : thread.loadBearing || state.chapter.setup.loadBearingThreadIds.includes(thread.id)
+              ? 'pressure'
+              : null
+          const evidenceLabel = clues.length > 0
+            ? `${clues.length} clue${clues.length === 1 ? '' : 's'}`
+            : 'lead'
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-mono text-sm font-medium tracking-[0.08em] text-foreground/85">
+                <span className="text-sm font-semibold tracking-normal text-foreground/85">
                   {thread.title}
                 </span>
-                <IntelTierBadge tier={tier} />
+                <span className="inline-flex flex-wrap gap-1.5">
+                  {pressureRole && <IntelBadge tone="pressure" label={pressureRole} />}
+                  <IntelBadge tone={clues.length > 0 ? 'evidence' : 'lead'} label={evidenceLabel} />
+                </span>
               </div>
               <div className="space-y-1">
                 {clues.length > 0 ? clues.map((clue) => (
-                  <div
-                    key={clue.id}
-                    className="flex gap-2 rounded border border-transparent px-2 py-1.5 text-sm leading-snug text-foreground/85"
-                  >
-                    <span className="text-muted-foreground/50">-</span>
-                    <span>{clue.content}</span>
-                  </div>
+                  <ClueRow key={clue.id} tone="evidence">
+                    {clue.content}
+                  </ClueRow>
                 )) : (
                   <EmptyLine text="No attached clues yet." compact />
                 )}
@@ -977,9 +974,9 @@ function IntelPanel({ state }: { state: Sf2State }) {
               Floating clues
             </div>
             {floatingClues.map((clue) => (
-              <div key={clue.id} className="rounded border border-primary/30 bg-primary/10 px-2 py-1.5 text-sm leading-snug text-foreground/85">
+              <ClueRow key={clue.id} tone="floating">
                 {clue.content}
-              </div>
+              </ClueRow>
             ))}
           </div>
         )}
@@ -988,15 +985,27 @@ function IntelPanel({ state }: { state: Sf2State }) {
   )
 }
 
-function IntelTierBadge({ tier }: { tier: 'load-bearing' | 'evidenced' | 'lead' }) {
+function ClueRow({ children, tone }: { children: ReactNode; tone: 'evidence' | 'floating' }) {
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2 rounded-md bg-background/35 px-2 py-1.5 text-[14px] leading-snug text-foreground/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.025)]">
+      <span className={cn(
+        'mt-1.5 h-1.5 w-1.5 rounded-full',
+        tone === 'evidence' ? 'bg-success/70' : 'bg-primary/70',
+      )} />
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function IntelBadge({ tone, label }: { tone: 'pressure' | 'evidence' | 'lead'; label: string }) {
   return (
     <span className={cn(
       'rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
-      tier === 'load-bearing' && 'border-primary/70 bg-primary/10 text-primary',
-      tier === 'evidenced' && 'border-success/40 bg-success/10 text-success',
-      tier === 'lead' && 'border-border/30 bg-background/45 text-muted-foreground',
+      tone === 'pressure' && 'border-primary/55 bg-primary/10 text-primary',
+      tone === 'evidence' && 'border-success/40 bg-success/10 text-success',
+      tone === 'lead' && 'border-border/25 bg-background/45 text-muted-foreground',
     )}>
-      {tier}
+      {label}
     </span>
   )
 }
@@ -1185,7 +1194,7 @@ function SceneMarker({ turn, location }: { turn: number; location?: string }) {
     <div className="flex items-center gap-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/65">
       <span className="flex-1 border-t border-dashed border-current opacity-40" />
       <span className="inline-flex max-w-[70%] min-w-0 items-center gap-2">
-        <span>Turn {turn}</span>
+        <span className="tabular-nums">Turn {turn}</span>
         {location && (
           <>
             <span className="text-muted-foreground/45">/</span>
@@ -1276,7 +1285,7 @@ function StateDiffLine({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 font-mono text-[10px] uppercase tracking-[0.16em] opacity-65">
-      <span className="text-muted-foreground">turn {turnIndex + 1}</span>
+      <span className="text-muted-foreground tabular-nums">turn {turnIndex + 1}</span>
       <span className="text-muted-foreground/55">-</span>
       {diff.slice(0, 6).map((entry, index) => (
         <span key={`${entry.kind}-${entry.entityId ?? index}-${entry.label}`} className={cn(
@@ -1332,25 +1341,25 @@ function rollResultLabel(tone: RollTone) {
 
 function rollCardClassName(tone: RollTone, interactive = false) {
   return cn(
-    'rounded-lg px-3 py-3 text-left transition-[background-color,transform] duration-200 md:px-4 md:py-4',
+    'rounded-xl px-3 py-3 text-left transition-[background-color,border-color,box-shadow,transform] duration-200 md:px-4 md:py-4',
     tone === 'idle' && 'sf2-roll-idle-card border border-primary/45',
     tone === 'success' && 'bg-success/10',
     tone === 'failure' && 'bg-warning/10',
     tone === 'critical' && 'bg-warning/15',
     tone === 'fumble' && 'bg-severe/10',
-    interactive && 'w-full cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.995] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100',
+    interactive && 'w-full cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100',
   )
 }
 
 function rollValueBoxClassName(tone: RollTone, rolling = false) {
   return cn(
-    'flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg border font-mono transition-all duration-200 md:h-[4.5rem] md:w-[4.5rem]',
+    'flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg border font-mono tabular-nums transition-[background-color,border-color,color,opacity,transform] duration-200 md:h-[4.5rem] md:w-[4.5rem]',
     tone === 'idle' && 'sf2-roll-idle-die',
     tone === 'success' && 'border-success/60 bg-success/15 text-success',
     tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
     tone === 'critical' && 'border-warning/70 bg-warning/20 text-warning',
     tone === 'fumble' && 'border-severe/65 bg-severe/15 text-severe',
-    rolling && 'animate-pulse',
+    rolling && 'shadow-[0_0_22px_-10px_currentColor]',
   )
 }
 
@@ -1404,7 +1413,7 @@ function RollCardView({
           {resolved ? rollResultLabel(tone) : title}
         </div>
         {reason && (
-          <p className="mt-3 max-w-[32rem] text-sm font-medium leading-snug text-foreground/85" style={{ fontFamily: 'var(--font-narrative)' }}>
+          <p className="mt-3 max-w-[32rem] text-sm font-normal leading-snug text-foreground/85 [text-wrap:pretty]" style={{ fontFamily: 'var(--font-narrative)' }}>
             {reason}
           </p>
         )}
@@ -1453,11 +1462,11 @@ function RollValueBox({
 }) {
   return (
     <div className={rollValueBoxClassName(tone, rolling)}>
-      <div className="font-mono text-[18px] font-bold leading-none md:text-[20px]">
-        {value}
+      <div className="font-mono text-[18px] font-bold leading-none tabular-nums md:text-[20px]">
+        <span className={cn(rolling && 'animate-pulse')}>{value}</span>
       </div>
       {detail && (
-        <div className="mt-1.5 font-mono text-[11px] font-semibold leading-none opacity-85 md:text-[12px]">
+        <div className="mt-1.5 font-mono text-[11px] font-semibold leading-none opacity-85 tabular-nums md:text-[12px]">
           {detail}
         </div>
       )}
@@ -1527,7 +1536,7 @@ function ActionSurface(props: {
   const initialTurn = chapterTurnCount === 0
 
   return (
-    <div className="mx-auto w-full max-w-[720px] space-y-2">
+    <div className="mx-auto w-full max-w-[720px] space-y-2 pb-[max(0px,env(safe-area-inset-bottom))]">
       {closeReadiness.closeReady && !busy && (
         <div className="flex flex-col gap-2 rounded-lg border border-warning/45 bg-warning/10 px-4 py-3 text-warning md:flex-row md:items-center md:justify-between">
           <div>
@@ -1542,7 +1551,7 @@ function ActionSurface(props: {
           <button
             type="button"
             onClick={onCloseChapter}
-            className="rounded border border-warning/55 bg-warning/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.14em] text-warning transition-colors hover:bg-warning/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-warning/65"
+            className="rounded-lg border border-warning/55 bg-warning/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.14em] text-warning transition-[background-color,transform] hover:bg-warning/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-warning/65 active:scale-[0.96]"
           >
             Close Ch{state.meta.currentChapter} / Open Ch{state.meta.currentChapter + 1}
           </button>
@@ -1571,7 +1580,8 @@ function ActionSurface(props: {
                 key={`${action}-${index}`}
                 type="button"
                 onClick={() => onPendingInputChange(action)}
-                className="grid w-full grid-cols-[82px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
+                className="sf2-action-enter grid w-full grid-cols-[76px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2.5 text-left transition-[background-color,border-color,transform] hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
+                style={{ '--sf2-action-delay': `${index * 70}ms` } as CSSProperties}
               >
                 <span className={cn(
                   'line-clamp-2 font-mono text-[10px] uppercase leading-snug tracking-[0.16em]',
@@ -1579,7 +1589,7 @@ function ActionSurface(props: {
                 )}>
                   {parsed.rollType ?? 'Action'}
                 </span>
-                <span className="text-sm leading-snug text-foreground">{parsed.text}</span>
+                <span className="text-[14px] leading-snug text-foreground">{parsed.text}</span>
               </button>
             )
           })}
@@ -1591,7 +1601,7 @@ function ActionSurface(props: {
           type="button"
           onClick={() => onSendTurn('')}
           disabled={busy}
-          className="w-full rounded-lg border border-primary/70 bg-primary/15 px-4 py-3 font-mono text-[12px] uppercase tracking-[0.2em] text-primary transition-colors hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-45"
+          className="w-full rounded-lg border border-primary/70 bg-primary/15 px-4 py-3 font-mono text-[12px] uppercase tracking-[0.2em] text-primary transition-[background-color,transform] hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100"
         >
           {state.chapter.title ? 'Begin the opening' : 'Generate chapter / begin'}
         </button>
@@ -1701,14 +1711,14 @@ function DiceTray({
             <button
               type="button"
               onClick={onSpendInspiration}
-              className="rounded-md border border-info/55 bg-info/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-info transition-colors hover:bg-info/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-info/65"
+              className="rounded-lg border border-info/55 bg-info/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-info transition-[background-color,transform] hover:bg-info/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-info/65 active:scale-[0.96]"
             >
               Spend
             </button>
             <button
               type="button"
               onClick={onDeclineInspiration}
-              className="rounded-md border border-border/50 bg-background/45 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65"
+              className="rounded-lg border border-border/50 bg-background/45 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-[color,transform] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96]"
             >
               Keep result
             </button>
@@ -1744,7 +1754,7 @@ function CommandInput({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border bg-background/70 px-3 py-2.5 md:px-5',
+        'flex items-center gap-3 rounded-xl border bg-background/70 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] md:px-5',
         disabled ? 'border-border/50 opacity-55' : 'border-primary/50 focus-within:border-primary/70',
       )}
     >
@@ -1768,10 +1778,10 @@ function CommandInput({
         type="button"
         disabled={disabled || !value.trim()}
         onClick={onSubmit}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-primary/50 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/50 bg-primary/15 text-primary transition-[background-color,color,transform] hover:bg-primary/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
         aria-label="Submit command"
       >
-        <Send className="h-4 w-4" />
+        <Send className="h-4 w-4 translate-x-px -translate-y-[0.5px]" />
       </button>
     </div>
   )
@@ -1894,7 +1904,7 @@ function DiagnosticsPanel(props: {
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded border border-border/30 bg-background/45 px-2 py-2 text-center">
-      <div className="font-mono text-lg text-foreground">{value}</div>
+      <div className="font-mono text-lg text-foreground tabular-nums">{value}</div>
       <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
     </div>
   )
