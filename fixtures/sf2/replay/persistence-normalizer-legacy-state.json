@@ -1,0 +1,134 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer repairs legacy SF2 save shape",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check on lib/sf2/persistence/normalize.ts. Verifies an older/partial IndexedDB campaign blob is upgraded to the current SF2 save shape, scene location metadata is made coherent, stale scene bundle cache is cleared, and derived recentTurns are recomputed."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_legacy_persist",
+          "createdAt": "2026-04-27T00:00:00.000Z",
+          "updatedAt": "2026-04-27T00:05:00.000Z",
+          "schemaVersion": "3.0.0",
+          "genreId": "epic-scifi",
+          "playbookId": "warden",
+          "originId": "imperial-service",
+          "currentChapter": 1,
+          "currentSceneId": "scene_stale",
+          "currentTimeLabel": "old dusk"
+        },
+        "player": {
+          "name": "Ren"
+        },
+        "campaign": {
+          "threads": {
+            "thread_legacy": {
+              "id": "thread_legacy",
+              "title": "Legacy pressure",
+              "category": "thread",
+              "status": "active",
+              "tension": 7,
+              "peakTension": 6,
+              "resolutionCriteria": "Resolve the old pressure.",
+              "failureMode": "The old pressure snaps back.",
+              "retrievalCue": "Legacy pressure cue"
+            }
+          },
+          "npcs": {
+            "npc_kess": {
+              "id": "npc_kess",
+              "name": "Kess Toral",
+              "affiliation": "frontier settlement leadership",
+              "disposition": "wary",
+              "retrievalCue": "Kess guards the ledger."
+            }
+          },
+          "factions": {}
+        },
+        "chapter": {
+          "number": 1,
+          "title": "The Ledger",
+          "setup": {
+            "chapter": 1,
+            "title": "The Ledger",
+            "activeThreadIds": ["thread_legacy"],
+            "loadBearingThreadIds": ["thread_legacy"],
+            "pressureLadder": [
+              {
+                "id": "ladder_legacy",
+                "pressure": "The old ledger resurfaces.",
+                "triggerCondition": "Ren asks who signed it.",
+                "narrativeEffect": "The room remembers the wrong seal."
+              }
+            ]
+          }
+        },
+        "world": {
+          "currentLocation": {
+            "id": "loc_stale",
+            "name": "Old planet",
+            "description": "A place the campaign already left."
+          },
+          "sceneSnapshot": {
+            "sceneId": "scene_current",
+            "location": {
+              "id": "loc_current",
+              "name": "Current counting hall",
+              "description": "The ledger is open under wet tin light."
+            },
+            "presentNpcIds": ["npc_kess"],
+            "timeLabel": "late rain",
+            "established": ["Kess waits by the open ledger."]
+          },
+          "currentTimeLabel": "old dusk",
+          "sceneBundleCache": {
+            "sceneId": "scene_stale",
+            "bundleText": "Stale bundle from the old planet.",
+            "builtAtTurn": 0
+          }
+        },
+        "history": {
+          "turns": [
+            { "index": 0, "chapter": 1, "playerInput": "turn 0", "narratorProse": "prose 0", "timestamp": "2026-04-27T00:00:00.000Z" },
+            { "index": 1, "chapter": 1, "playerInput": "turn 1", "narratorProse": "prose 1", "timestamp": "2026-04-27T00:01:00.000Z" },
+            { "index": 2, "chapter": 1, "playerInput": "turn 2", "narratorProse": "prose 2", "timestamp": "2026-04-27T00:02:00.000Z" },
+            { "index": 3, "chapter": 1, "playerInput": "turn 3", "narratorProse": "prose 3", "timestamp": "2026-04-27T00:03:00.000Z" },
+            { "index": 4, "chapter": 1, "playerInput": "turn 4", "narratorProse": "prose 4", "timestamp": "2026-04-27T00:04:00.000Z" },
+            { "index": 5, "chapter": 1, "playerInput": "turn 5", "narratorProse": "prose 5", "timestamp": "2026-04-27T00:05:00.000Z" },
+            { "index": 6, "chapter": 1, "playerInput": "turn 6", "narratorProse": "prose 6", "timestamp": "2026-04-27T00:06:00.000Z" }
+          ],
+          "rollLog": []
+        }
+      },
+      "expect": {
+        "schemaVersionEquals": "3.1.0",
+        "recentTurnsCountEquals": 6,
+        "currentSceneIdEquals": "scene_current",
+        "currentLocationIdEquals": "loc_current",
+        "currentInterlocutorIdsEquals": ["npc_kess"],
+        "sceneSnapshotFirstTurnIndexEquals": 0,
+        "sceneBundleCacheCleared": true,
+        "hasCampaignBuckets": ["beats", "temporalAnchors", "documents"],
+        "threadOwnerEquals": {
+          "threadId": "thread_legacy",
+          "kind": "faction",
+          "id": "faction_unknown"
+        },
+        "repairsInclude": [
+          "meta.schemaVersion",
+          "world.currentLocation",
+          "world.sceneBundleCache",
+          "history.recentTurns"
+        ]
+      }
+    }
+  }
+}

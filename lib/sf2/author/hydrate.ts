@@ -8,10 +8,14 @@ import type {
   AuthorChapterSetupV2,
   Sf2ChapterNumber,
   Sf2Npc,
-  Sf2OwnerRef,
   Sf2State,
   Sf2Thread,
 } from '../types'
+import {
+  factionIdFromName,
+  findFactionByName,
+  resolveThreadOwnership,
+} from '../resolution/entity-references'
 import { validateVoiceNote } from './validate-voice-note'
 
 // Author's free-form role strings (e.g. "district solicitor") don't fit
@@ -166,123 +170,7 @@ export function applyAuthoredToCampaign(
   }
 }
 
-// Parse a possibly-multi-owner hint into a primary owner + stakeholders.
-// The Author sometimes emits comma-separated or "and"-joined hints like
-// "Tersil Vann, Maret Coss" or "House Kelvari and House Vael". Without
-// splitting, resolveThreadOwner falls through every match attempt and
-// auto-creates a garbage composite faction (e.g. faction_npc_tersil_vann_npc_maret_coss).
-function resolveThreadOwnership(
-  state: Sf2State,
-  ownerHint: string
-): { owner: Sf2OwnerRef | null; stakeholders: Sf2OwnerRef[] } {
-  if (!ownerHint) return { owner: null, stakeholders: [] }
-  // Split on comma, semicolon, slash, ampersand, or " and ".
-  const parts = ownerHint
-    .split(/[,;/&]|\s+and\s+/i)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-
-  if (parts.length <= 1) {
-    // Single hint — preserve prior single-owner behavior.
-    return { owner: resolveThreadOwner(state, ownerHint), stakeholders: [] }
-  }
-
-  // Multi-hint: resolve each part, first resolved becomes owner, rest
-  // become stakeholders. De-dup references.
-  const refs: Sf2OwnerRef[] = []
-  const seen = new Set<string>()
-  for (const p of parts) {
-    const ref = resolveThreadOwner(state, p)
-    if (!ref) continue
-    const key = `${ref.kind}:${ref.id}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    refs.push(ref)
-  }
-  if (refs.length === 0) return { owner: null, stakeholders: [] }
-  return { owner: refs[0], stakeholders: refs.slice(1) }
-}
-
 function clampTension(n: number): Sf2Thread['tension'] {
   const v = Math.max(0, Math.min(10, Math.round(n)))
   return v as Sf2Thread['tension']
-}
-
-function resolveThreadOwner(state: Sf2State, ownerHint: string): Sf2OwnerRef | null {
-  if (!ownerHint) return null
-  const hint = ownerHint.trim().toLowerCase()
-
-  // Exact id match (owner_hint is sometimes just the id).
-  if (state.campaign.npcs[ownerHint]) {
-    return { kind: 'npc', id: ownerHint }
-  }
-  if (state.campaign.factions[ownerHint]) {
-    return { kind: 'faction', id: ownerHint }
-  }
-
-  // Fuzzy name match on NPCs (either exact-name or hint contains the name).
-  const npc = Object.values(state.campaign.npcs).find(
-    (n) => n.name.toLowerCase() === hint || hint.includes(n.name.toLowerCase())
-  )
-  if (npc) return { kind: 'npc', id: npc.id }
-
-  // Fuzzy name match on factions.
-  const faction = Object.values(state.campaign.factions).find(
-    (f) => f.name.toLowerCase() === hint || hint.includes(f.name.toLowerCase())
-  )
-  if (faction) return { kind: 'faction', id: faction.id }
-
-  // Match via NPC affiliation: the Author sometimes writes owner_hint as a
-  // faction-shaped name even though the NPC-created faction id differs (e.g.
-  // hint "The Imperial Service" when NPCs have affiliation "Imperial Service").
-  // Check if any NPC affiliation matches the hint; return that affiliation's
-  // auto-seeded faction.
-  const affMatch = Object.values(state.campaign.npcs).find((n) => {
-    const aff = (n.affiliation ?? '').toLowerCase()
-    if (!aff) return false
-    return aff === hint || hint.includes(aff) || aff.includes(hint)
-  })
-  if (affMatch?.affiliation) {
-    const seeded = findFactionByName(state, affMatch.affiliation)
-    if (seeded) return { kind: 'faction', id: seeded.id }
-  }
-
-  // Last-resort: auto-create a faction from the hint. Better than
-  // faction_unknown — at least the id is readable and future references to
-  // the same name resolve here.
-  const autoId = factionIdFromName(ownerHint)
-  if (!state.campaign.factions[autoId]) {
-    state.campaign.factions[autoId] = {
-      id: autoId,
-      name: ownerHint,
-      stance: 'neutral',
-      heat: 'none',
-      heatReasons: [],
-      ownedThreadIds: [],
-      retrievalCue: '',
-    }
-  }
-  return { kind: 'faction', id: autoId }
-}
-
-function findFactionByName(
-  state: Sf2State,
-  name: string
-): { id: string; name: string } | null {
-  const n = name.trim().toLowerCase()
-  if (!n) return null
-  const match = Object.values(state.campaign.factions).find(
-    (f) => f.name.toLowerCase() === n
-  )
-  return match ?? null
-}
-
-function factionIdFromName(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 60)
-  return `faction_${slug || 'anon'}`
 }

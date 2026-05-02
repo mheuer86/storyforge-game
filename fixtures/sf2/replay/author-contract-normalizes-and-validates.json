@@ -1,0 +1,264 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author contract normalizes raw tool input and validates chapter setup",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check on lib/sf2/author/contract.ts. Verifies raw Author tool validation, snake_case to camelCase normalization, reveal context filtering, visible NPC parsing, and final normalized boundary validation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "epic-scifi",
+        "pcOriginId": "imperial-service",
+        "pcPlaybookId": "warden"
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "The Tithe Ledger",
+          "premise": "A frontier settlement's missing Resonants become a procedural legitimacy crisis.",
+          "active_pressure": "The Synod clock is already counting down.",
+          "central_tension": "Imperial compliance versus settlement survival.",
+          "chapter_scope": "One settlement, one public dispute, one hidden extraction channel.",
+          "objective": "Resolve the missing tithe roster before the Synod escalates.",
+          "crucible": "The Warden must choose what kind of authority binds the room.",
+          "outcome_spectrum": {
+            "clean": "Roster legitimacy is restored without exposing the hidden channel.",
+            "costly": "The roster holds, but a faction hardens against the Warden.",
+            "failure": "The settlement stalls the tithe and the Synod files a breach.",
+            "catastrophic": "The hidden channel detonates into an open crackdown."
+          }
+        },
+        "antagonist_field": {
+          "source_system": "The Synod tithe apparatus",
+          "core_pressure": "Quarterly Resonant compliance cannot be delayed without visible cost.",
+          "default_face": {
+            "name": "Auditor Corvin Hale",
+            "role": "Synod auditor",
+            "pressure_style": "Procedure as threat"
+          },
+          "possible_faces": [
+            {
+              "id": "face_corvin",
+              "name": "Auditor Corvin Hale",
+              "role": "Synod auditor",
+              "becomes_primary_when": "The Warden delays the roster.",
+              "pressure_style": "Procedure as threat"
+            }
+          ],
+          "escalation_logic": "Every delay converts local negotiation into formal breach language."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_vesh",
+            "name": "Vesh Tal",
+            "affiliation": "Imperial Service (sworn to the PC's authority)",
+            "role": "Personal retainer and administrative aide",
+            "voice_register": "quietly formal",
+            "voice_note": "Keeps sentences clipped when the room turns public.",
+            "dramatic_function": "Loyal pressure gauge",
+            "hidden_pressure": "Knows which filing delay would shield the Warden temporarily.",
+            "retrieval_cue": "Vesh measures the room by which official seal is visible.",
+            "initial_disposition": "trusted",
+            "disposition_reason": "years of sworn service bind Vesh directly to the Warden"
+          },
+          {
+            "id": "npc_corvin",
+            "name": "Auditor Corvin Hale",
+            "affiliation": "The Synod",
+            "role": "Synod auditor",
+            "voice_register": "dry procedural",
+            "dramatic_function": "Institutional pressure face",
+            "hidden_pressure": "Needs this audit to erase a prior softness mark.",
+            "retrieval_cue": "Corvin turns every pause into a citation.",
+            "initial_disposition": "hostile",
+            "disposition_reason": "cross institutional rivalry makes Corvin treat mercy as weakness"
+          },
+          {
+            "id": "npc_ash",
+            "name": "Ash Renn",
+            "affiliation": "The Undrift",
+            "role": "Undrift cell handler",
+            "voice_register": "low and indirect",
+            "dramatic_function": "Hidden channel temptation",
+            "hidden_pressure": "Has already moved one Resonant beyond the settlement perimeter.",
+            "retrieval_cue": "Ash never names the route while a seal is visible.",
+            "initial_disposition": "hostile",
+            "disposition_reason": "Undrift doctrine treats Imperial Wardens as extraction hazards"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_missing_roster",
+            "title": "The missing tithe roster",
+            "question": "Can the Warden close the roster without breaking the settlement?",
+            "owner_hint": "Auditor Corvin Hale",
+            "tension": 6,
+            "initial_tension": 4,
+            "resolution_criteria": "A filed roster or a formal extension with named cost.",
+            "failure_mode": "The Synod treats the settlement as noncompliant.",
+            "retrieval_cue": "Roster count, Synod deadline, public compliance."
+          },
+          {
+            "id": "thread_public_refusal",
+            "title": "Public refusal momentum",
+            "question": "Will the settlement make refusal impossible to soften?",
+            "owner_hint": "Frontier settlement leadership",
+            "tension": 5,
+            "initial_tension": 3,
+            "resolution_criteria": "The crowd accepts a concrete next step.",
+            "failure_mode": "The council steps become the real court.",
+            "retrieval_cue": "Crowd, council steps, legitimacy."
+          },
+          {
+            "id": "thread_hidden_route",
+            "title": "The Undrift route",
+            "question": "Does the hidden route stay concealed?",
+            "owner_hint": "Ash Renn",
+            "tension": 4,
+            "initial_tension": 2,
+            "resolution_criteria": "The Warden discovers or deliberately leaves the route unexposed.",
+            "failure_mode": "Extraction becomes public evidence.",
+            "retrieval_cue": "Missing rooms, dawn carts, withheld names."
+          }
+        ],
+        "pressure_ladder": [
+          {
+            "id": "ladder_deadline",
+            "pressure": "Corvin names the filing deadline aloud.",
+            "trigger_condition": "The Warden asks for more time.",
+            "narrative_effect": "The room hears delay as weakness.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_public_count",
+            "pressure": "The shortfall count becomes public.",
+            "trigger_condition": "The crowd sees the ledger.",
+            "narrative_effect": "Private negotiation collapses.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_breach",
+            "pressure": "Corvin prepares breach language.",
+            "trigger_condition": "The roster remains unresolved late.",
+            "narrative_effect": "The Synod clock becomes irreversible.",
+            "severity": "hard"
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_prior_delay",
+            "statement": "The settlement already delayed one tithe filing last quarter.",
+            "held_by": "npc_corvin",
+            "emergence_condition": "Corvin is pressed on why he arrived early.",
+            "recontextualizes": "The audit is not routine.",
+            "hint_phrases": ["last quarter's silence", "the earlier grace"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["confession", "not_a_context"],
+            "invalid_reveal_contexts": ["inadvertent"]
+          },
+          {
+            "id": "rev_moved_resonant",
+            "statement": "One Resonant has already left through an Undrift route.",
+            "held_by": "npc_ash",
+            "emergence_condition": "Ash is cornered away from Corvin.",
+            "recontextualizes": "The shortfall is active resistance, not only scarcity.",
+            "hint_phrases": ["empty sleeping mat", "cart before dawn"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["private_pressure"],
+            "invalid_reveal_contexts": ["documentary_surface"]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_compliance_survival",
+            "tension": "Compliance versus survival",
+            "side_a": "File the roster cleanly.",
+            "side_b": "Protect the remaining Resonants.",
+            "why_it_hurts": "Both sides can name people who die if ignored."
+          },
+          {
+            "id": "fault_public_private",
+            "tension": "Public legitimacy versus private mercy",
+            "side_a": "Rule in front of the crowd.",
+            "side_b": "Bargain in private.",
+            "why_it_hurts": "Each path makes the other look corrupt."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_synod_notice",
+            "type": "institutional",
+            "condition": "The Warden misses a filing beat.",
+            "consequence": "Corvin drafts notice language."
+          },
+          {
+            "id": "esc_crowd_hardens",
+            "type": "social",
+            "condition": "The Warden appears to side with the Synod.",
+            "consequence": "The crowd names the Warden as occupier."
+          },
+          {
+            "id": "esc_route_moves",
+            "type": "procedural",
+            "condition": "Ash senses exposure.",
+            "consequence": "The route moves before dawn."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Synod tithe ledgers are binding public instruments.",
+            "relevance_now": "The ledger makes every delay visible.",
+            "delivery_method": "Corvin taps the seal, not the page."
+          },
+          {
+            "item": "Undrift routes survive by never becoming stories.",
+            "relevance_now": "Ash cannot explain the route without endangering it.",
+            "delivery_method": "Ash refuses the obvious noun."
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_tithe_revolt",
+          "chapter_function": "Establish the public compliance crisis.",
+          "player_stance_read": "The Warden has not yet picked enforcement or mediation.",
+          "pressure_engine_ids": ["engine_synod_clock", "engine_public_refusal"]
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 22 },
+          "chapter_question": "Can the Warden enter the dispute without collapsing it into enforcement?",
+          "acceptable_resolutions": ["formal extension", "filed roster", "public bargain"],
+          "early_pressure": "Show the ledger and deadline.",
+          "middle_pressure": "Force a stance signal.",
+          "late_pressure": "Make breach language imminent.",
+          "close_when_any": ["roster filed", "extension granted", "breach declared"],
+          "avoid_extending_for": ["extra interviews", "ambient worldbuilding"]
+        },
+        "opening_scene_spec": {
+          "location": "settlement counting hall",
+          "atmospheric_condition": "rain ticking against tin ledgers",
+          "initial_state": "The ledger is open before the Warden has sat down.",
+          "first_player_facing": "Corvin asks whether the Warden recognizes the seal.",
+          "immediate_choice": "Accept the ledger frame or challenge the premise.",
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_vesh"],
+          "withheld_premise_facts": ["The Undrift route has already moved one Resonant."]
+        }
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 0,
+        "titleEquals": "The Tithe Ledger",
+        "threadCountEquals": 3,
+        "firstThreadInitialTensionEquals": 4,
+        "visibleNpcIdsEquals": ["npc_vesh"],
+        "firstRevealValidContextsEquals": ["confession"],
+        "pacingTargetEquals": { "min": 18, "max": 22 }
+      }
+    }
+  }
+}

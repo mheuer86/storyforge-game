@@ -6,6 +6,8 @@ This file is for coding agents working in the Storyforge repository.
 
 Read `CLAUDE.md` before making changes. It is the primary project handbook and contains the authoritative overview of architecture, game systems, commands, and code style.
 
+Read `CONTEXT.md` for product vision, current project state, the V1/SF2 distinction, and where project knowledge lives.
+
 This file is intentionally shorter and operational. When `agents.md` and `CLAUDE.md` overlap, follow `CLAUDE.md`.
 
 ## Mission

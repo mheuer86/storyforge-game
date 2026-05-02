@@ -3,6 +3,10 @@ import {
   formatViolations,
   validateSnapshotIds,
 } from '../scene-kernel/canonical-ids'
+import {
+  createPlaceholderNpcFromReference,
+  resolveNpcReference,
+} from '../resolution/entity-references'
 
 export interface Sf2ReplayInvariantEvent {
   kind: 'sf2.invariant'
@@ -11,69 +15,6 @@ export interface Sf2ReplayInvariantEvent {
 }
 
 type InvariantSink = Array<{ kind: string; at: number; data: unknown }>
-
-// Resolve a Narrator-emitted npc reference (id, shortened id, or bare name)
-// to a canonical npc_<id> in the registry. Returns null if no match.
-export function resolveNpcReference(state: Sf2State, raw: string): string | null {
-  if (!raw) return null
-  const r = raw.trim()
-  if (!r) return null
-
-  if (state.campaign.npcs[r]) return r
-
-  const withPrefix = r.startsWith('npc_') ? r : `npc_${r}`
-  if (state.campaign.npcs[withPrefix]) return withPrefix
-
-  const withoutPrefix = r.startsWith('npc_') ? r.slice(4) : r
-  if (state.campaign.npcs[withoutPrefix]) return withoutPrefix
-
-  const normCandidates = [r, withoutPrefix]
-    .map((value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''))
-    .filter((value, index, values) => value && values.indexOf(value) === index)
-  for (const npc of Object.values(state.campaign.npcs)) {
-    const nameSlug = npc.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
-    const idTail = npc.id.replace(/^npc_/, '')
-    for (const norm of normCandidates) {
-      if (nameSlug === norm || idTail === norm) return npc.id
-      const lastToken = nameSlug.split('_').pop() ?? ''
-      if (lastToken && lastToken === norm) return npc.id
-    }
-  }
-  return null
-}
-
-export function createPlaceholderNpcFromReference(state: Sf2State, raw: string): string | null {
-  const trimmed = raw.trim()
-  if (!trimmed) return null
-  const slug = trimmed
-    .replace(/^npc_/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-  if (!slug) return null
-  const id = `npc_${slug}`
-  if (state.campaign.npcs[id]) return id
-
-  state.campaign.npcs[id] = {
-    id,
-    name: slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-    affiliation: 'Unknown',
-    role: 'npc',
-    status: 'alive',
-    disposition: 'neutral',
-    identity: {
-      keyFacts: ['Created from Narrator scene snapshot; Archivist did not canonicalize details yet.'],
-      voice: { note: 'Not yet established.', register: 'Not yet established.' },
-      relations: [],
-    },
-    ownedThreadIds: [],
-    retrievalCue: `${slug.replace(/_/g, ' ')} — placeholder from scene snapshot`,
-    chapterCreated: state.meta.currentChapter,
-    lastSeenTurn: state.history.turns.length,
-    signatureLines: [],
-  }
-  return id
-}
 
 export function makeInvariantEvent(
   type: string,

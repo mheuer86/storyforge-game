@@ -6,6 +6,8 @@ Storyforge is a solo text RPG where Claude acts as Game Master. Players create a
 
 Five genres: space-opera, fantasy, cyberpunk, grimdark, noire. Each has unique species/origins, classes, themes, opening hooks, and prompt flavor.
 
+For product vision, current project state, the V1/SF2 distinction, and the project knowledge map, read `CONTEXT.md`.
+
 ## Commands
 
 ```bash
