@@ -1,24 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { NARRATOR_TOOLS, NARRATOR_TOOL_NAME, REQUEST_ROLL_TOOL_NAME } from '@/lib/sf2/narrator/tools'
-import {
-  SF2_CORE,
-  getSf2BibleForGenre,
-  SF2_NARRATOR_ROLE,
-  buildNarratorSituation,
-} from '@/lib/sf2/narrator/prompt'
-import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
-import { computePacingAdvisory } from '@/lib/sf2/pacing/signals'
-import {
-  buildScenePacket,
-} from '@/lib/sf2/retrieval/scene-packet'
-import { buildSceneKernel } from '@/lib/sf2/scene-kernel/build'
+import { NARRATOR_TOOL_NAME, REQUEST_ROLL_TOOL_NAME } from '@/lib/sf2/narrator/tools'
 import { scanDisplayOutput } from '@/lib/sf2/sentinel/display'
-import { buildMessagesForNarrator } from '@/lib/sf2/narrator/messages'
 import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
+import {
+  buildNarratorTurnContext,
+  type Sf2NarratorTurnContext,
+} from '@/lib/sf2/narrator/turn-context'
 import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
-import type { Sf2State } from '@/lib/sf2/types'
+import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
 
 const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-haiku-4-5-20251001'
 
@@ -27,47 +18,6 @@ function resolveClient(req: NextRequest): Anthropic {
   const envKey = process.env.ANTHROPIC_API_KEY?.trim()
   const chosenKey = byokKey || envKey
   return chosenKey ? new Anthropic({ apiKey: chosenKey }) : new Anthropic()
-}
-
-function rollResultMessage(resolution: {
-  skill: string
-  dc: number
-  effectiveDc?: number
-  d20: number
-  modifier: number
-  total: number
-  result: 'critical' | 'success' | 'failure' | 'fumble'
-  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
-  modifierReason?: string
-}): string {
-  const { skill, dc, effectiveDc, d20, modifier, total, result, modifierType, modifierReason } = resolution
-  const dcText = effectiveDc && effectiveDc !== dc ? `DC ${effectiveDc} (base ${dc})` : `DC ${dc}`
-  const modifierText = modifierType
-    ? ` Modifier: ${modifierType}${modifierReason ? ` (${modifierReason})` : ''}.`
-    : ''
-  const base = `Roll result — ${skill} vs ${dcText}: rolled d20=${d20} + ${modifier} = ${total}.${modifierText} `
-  if (result === 'critical') {
-    return (
-      base +
-      'Natural 20. Critical success. Narrate an exceptional outcome that pays off beyond the baseline.'
-    )
-  }
-  if (result === 'fumble') {
-    return (
-      base +
-      'Natural 1. Critical failure. The attempt fails AND a specific thing breaks AND the consequence cascades into a second bad outcome. Compress backfire + escalation + block in one beat. Do NOT render as partial success.'
-    )
-  }
-  if (result === 'success') {
-    return (
-      base +
-      'Success. Narrate the outcome. The PC accomplishes the stated intent and their position visibly improves. You may attach small friction, exposure, or a future cost, but do not turn success into a miss, wrong belief, closed door, or pure delay.'
-    )
-  }
-  return (
-    base +
-    `Failure — the stated goal is not achieved in the way the player intended; the scene advances through consequence. Pick one pattern: backfire, escalation, or hard block with cost, but do not write those labels in prose. Both halves required: intended goal not achieved AND the scene moves forward through new pressure. Failure is redirection with cost, not a dead end. If this is the second failure against the same door/NPC/document/barrier, do not ask the player to keep retrying the same obstacle; change the situation, reveal the next pressure-bearing route, or have the world move. Do NOT write this as partial success or "success with cost" — that is a different outcome tier. FORBIDDEN: narrator-reveal ("you don't notice…"), hindsight grading ("you didn't catch the seam", "that detail should have opened a door"), meta-commentary on the miss, invention of new facts, hidden-camera narration about unseen actors. Commit to the false reality from inside the PC's POV.`
-  )
 }
 
 export const runtime = 'nodejs'
@@ -111,7 +61,7 @@ type Sf2NarratorStreamEvent =
   | {
       type: 'working_set'
       summary: { full: string[]; stub: string[]; excluded: number; reasons: Record<string, string[]> }
-      workingSet: ReturnType<typeof buildScenePacket>['workingSet']
+      workingSet: Sf2WorkingSet
     }
   | { type: 'pacing_advisory'; tripped: boolean; reactivityRatio: number; reactivityTripped: boolean; sceneLinkTripped: boolean; stagnantThreadIds: string[]; arcDormantIds: string[] }
   | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number }
@@ -174,16 +124,6 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
     return { pattern: `system_vocab:${match?.[0] ?? 'unknown'}`, snippet: prose.slice(0, 200) }
   }
   return null
-}
-
-function buildLocationContinuityText(state: Sf2State): string {
-  return [
-    state.world.currentLocation?.name,
-    state.world.currentLocation?.description,
-    state.world.currentTimeLabel,
-    ...(state.world.sceneSnapshot?.established ?? []),
-    ...(state.chapter.sceneSummaries ?? []).slice(-2).map((s) => s.summary),
-  ].join(' ')
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -282,17 +222,7 @@ export async function POST(req: NextRequest) {
   let state: Sf2State
   let playerInput: string
   let isInitial: boolean
-  let system: Anthropic.TextBlockParam[]
-  let messages: Anthropic.MessageParam[]
-  let cachedTools: Anthropic.Tool[]
-  let workingSet: ReturnType<typeof buildScenePacket>['workingSet']
-  let pacingForEvent: ReturnType<typeof computePacingAdvisory> | null = null
-  let failedRollSkill: string | undefined
-  let bundleRebuilt: {
-    sceneId: string
-    bundleText: string
-    builtAtTurn: number
-  } | null = null
+  let turnContext: Sf2NarratorTurnContext
 
   try {
     const body = await req.json().catch(() => null)
@@ -308,64 +238,14 @@ export async function POST(req: NextRequest) {
     playerInput = parsed.data.playerInput
     isInitial = parsed.data.isInitial
     const rollResolution = parsed.data.rollResolution
-    failedRollSkill =
-      rollResolution && (rollResolution.result === 'failure' || rollResolution.result === 'fumble')
-        ? rollResolution.skill
-        : undefined
-
-    // Compose cached system blocks (BP2 + BP3). Assert no dynamic leaks.
-    const situation = buildNarratorSituation(state)
-    const bible = getSf2BibleForGenre(state.meta.genreId)
-    assertNoDynamicLeak(SF2_CORE, 'CORE')
-    assertNoDynamicLeak(bible, 'BIBLE')
-    assertNoDynamicLeak(SF2_NARRATOR_ROLE, 'ROLE')
-    assertNoDynamicLeak(situation, 'SITUATION')
-
-    const composed = composeSystemBlocks({
-      core: SF2_CORE,
-      bible,
-      role: SF2_NARRATOR_ROLE,
-      situation,
-    })
-    system = composed.blocks
-
     const turnIndex = state.history.turns.length
-    if (rollResolution) {
-      messages = [
-        ...(rollResolution.priorMessages as Anthropic.MessageParam[]),
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'tool_result' as const,
-              tool_use_id: rollResolution.toolUseId,
-              content: rollResultMessage(rollResolution),
-            },
-          ],
-        },
-      ]
-      workingSet = {
-        fullEntityIds: [],
-        stubEntityIds: [],
-        excludedEntityIds: [],
-        emotionalBeatIds: [],
-        reasonsByEntityId: {},
-        computedAtTurn: turnIndex,
-      }
-      pacingForEvent = null
-    } else {
-      const built = buildMessagesForNarrator(state, playerInput, isInitial, turnIndex)
-      messages = built.messages
-      workingSet = built.workingSet
-      bundleRebuilt = built.bundleRebuilt
-      pacingForEvent = computePacingAdvisory(state)
-    }
-
-    cachedTools = NARRATOR_TOOLS.map((t, i) =>
-      i === NARRATOR_TOOLS.length - 1
-        ? { ...t, cache_control: { type: 'ephemeral' as const } }
-        : t
-    )
+    turnContext = buildNarratorTurnContext({
+      state,
+      playerInput,
+      isInitial,
+      turnIndex,
+      rollResolution,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown_error'
     const stack = err instanceof Error ? err.stack : undefined
@@ -388,46 +268,31 @@ export async function POST(req: NextRequest) {
       // Emit working-set diagnostic up front for the debug panel.
       // Skip on roll resumption — working set was computed pre-pause and isn't
       // recomputed; emitting empty arrays is noise.
-      if (workingSet.fullEntityIds.length > 0 || workingSet.stubEntityIds.length > 0) {
+      if (turnContext.diagnostics.workingSet) {
         send({
           type: 'working_set',
-          summary: {
-            full: workingSet.fullEntityIds,
-            stub: workingSet.stubEntityIds,
-            excluded: workingSet.excludedEntityIds.length,
-            reasons: workingSet.reasonsByEntityId,
-          },
-          workingSet,
+          summary: turnContext.diagnostics.workingSet.summary,
+          workingSet: turnContext.diagnostics.workingSet.workingSet,
         })
       }
 
       // Emit scene bundle build event so the client can persist the new
       // cache on state.world.sceneBundleCache. Only fires when the bundle
       // was rebuilt this turn (scene open, or cache invalidated).
-      if (bundleRebuilt) {
+      if (turnContext.diagnostics.sceneBundleBuilt) {
         send({
           type: 'scene_bundle_built',
-          sceneId: bundleRebuilt.sceneId,
-          bundleText: bundleRebuilt.bundleText,
-          builtAtTurn: bundleRebuilt.builtAtTurn,
+          sceneId: turnContext.diagnostics.sceneBundleBuilt.sceneId,
+          bundleText: turnContext.diagnostics.sceneBundleBuilt.bundleText,
+          builtAtTurn: turnContext.diagnostics.sceneBundleBuilt.builtAtTurn,
         })
       }
 
       // Emit pacing advisory diagnostic. Skip on roll resumption (no fresh pacing computed).
-      if (pacingForEvent) {
-        const tripped =
-          pacingForEvent.reactivityTripped ||
-          pacingForEvent.sceneLinkTripped ||
-          pacingForEvent.stagnantThreadIds.length > 0 ||
-          pacingForEvent.arcDormantIds.length > 0
+      if (turnContext.diagnostics.pacingAdvisory) {
         send({
           type: 'pacing_advisory',
-          tripped,
-          reactivityRatio: pacingForEvent.reactivityRatio,
-          reactivityTripped: pacingForEvent.reactivityTripped,
-          sceneLinkTripped: pacingForEvent.sceneLinkTripped,
-          stagnantThreadIds: pacingForEvent.stagnantThreadIds,
-          arcDormantIds: pacingForEvent.arcDormantIds,
+          ...turnContext.diagnostics.pacingAdvisory,
         })
       }
 
@@ -440,8 +305,8 @@ export async function POST(req: NextRequest) {
         const modelStream = await client.messages.stream({
           model: NARRATOR_MODEL,
           max_tokens: 4096,
-          system,
-          tools: cachedTools,
+          system: turnContext.system,
+          tools: turnContext.cachedTools,
           // The Narrator owns two tools — request_roll (mid-turn pause) and
           // narrate_turn (final commit) — and the flow assumes mutual
           // exclusion: one or the other per turn. Without this flag, parallel
@@ -449,7 +314,7 @@ export async function POST(req: NextRequest) {
           // dispatch silently drops the narrate_turn (request_roll wins
           // ordering). disable_parallel_tool_use makes the contract explicit.
           tool_choice: { type: 'auto', disable_parallel_tool_use: true },
-          messages,
+          messages: turnContext.messages,
         })
 
         for await (const event of modelStream) {
@@ -521,18 +386,7 @@ export async function POST(req: NextRequest) {
               })
             }
             try {
-              const kernel = buildSceneKernel(state)
-              const findings = scanDisplayOutput(proseText, {
-                action: 'allow_but_quarantine_writes',
-                campaign: state.campaign,
-                locationContinuity: {
-                  recentSceneText: buildLocationContinuityText(state),
-                },
-                absentSpeakers: {
-                  absentEntityIds: kernel.absentEntityIds,
-                  aliasMap: kernel.aliasMap,
-                },
-              })
+              const findings = scanDisplayOutput(proseText, turnContext.sentinelContext)
               if (findings.length > 0) {
                 console.warn('[sf2/narrator] display_sentinel findings', {
                   count: findings.length,
@@ -574,7 +428,7 @@ export async function POST(req: NextRequest) {
             modifier_reason?: string
           }
           const priorMessages: Anthropic.MessageParam[] = [
-            ...messages,
+            ...turnContext.messages,
             { role: 'assistant' as const, content: completed.content },
           ]
           send({
@@ -592,7 +446,7 @@ export async function POST(req: NextRequest) {
           const recovered = recoverNarrateTurnInput(
             narrateUse.input as Record<string, unknown>,
             state,
-            failedRollSkill
+            turnContext.failedRollSkill
           )
           if (recovered.recoveryNotes.length > 0) {
             console.warn('[sf2/narrator] narrate_turn input recovered', {

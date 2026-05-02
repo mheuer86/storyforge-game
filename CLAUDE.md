@@ -8,6 +8,20 @@ Five genres: space-opera, fantasy, cyberpunk, grimdark, noire. Each has unique s
 
 For product vision, current project state, the V1/SF2 distinction, and the project knowledge map, read `CONTEXT.md`.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+This repo uses the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Storyforge is a single-context repo with root `CONTEXT.md` and supporting architecture docs under `docs/`. See `docs/agents/domain.md`.
+
 ## Commands
 
 ```bash
