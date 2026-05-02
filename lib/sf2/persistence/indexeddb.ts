@@ -1,9 +1,13 @@
-import { SF2_SCHEMA_VERSION, type Sf2State } from '../types'
+import type { Sf2State } from '../types'
 import type {
   Sf2CampaignListItem,
   Sf2ChapterArtifactRecord,
   StoryforgePersistence2,
 } from './types'
+import {
+  normalizePersistedSf2State,
+  normalizeSf2StateForPersistence,
+} from './normalize'
 
 const DB_NAME = 'storyforge_sf2'
 const DB_VERSION = 1
@@ -57,28 +61,23 @@ export class IndexedDbPersistence implements StoryforgePersistence2 {
     const tx = db.transaction(STORE_CAMPAIGNS, 'readonly')
     const store = tx.objectStore(STORE_CAMPAIGNS)
     const result = await txAwait(tx, store.get(campaignId))
-    const state = (result as Sf2State | undefined) ?? null
-    if (!state) return null
-    if (state.meta?.schemaVersion !== SF2_SCHEMA_VERSION) {
-      await this.deleteCampaign(campaignId)
-      return null
-    }
-    return state
+    return normalizePersistedSf2State(result)?.state ?? null
   }
 
   async saveCampaign(state: Sf2State): Promise<void> {
+    const normalized = normalizeSf2StateForPersistence(state)
     const db = await this.db()
     const tx = db.transaction([STORE_CAMPAIGNS, STORE_INDEX], 'readwrite')
     const campaigns = tx.objectStore(STORE_CAMPAIGNS)
     const index = tx.objectStore(STORE_INDEX)
-    await txAwait(tx, campaigns.put(state))
+    await txAwait(tx, campaigns.put(normalized))
     const item: Sf2CampaignListItem = {
-      campaignId: state.meta.campaignId,
-      genreId: state.meta.genreId,
-      playbookId: state.meta.playbookId,
-      originId: state.meta.originId,
-      currentChapter: state.meta.currentChapter,
-      updatedAt: state.meta.updatedAt,
+      campaignId: normalized.meta.campaignId,
+      genreId: normalized.meta.genreId,
+      playbookId: normalized.meta.playbookId,
+      originId: normalized.meta.originId,
+      currentChapter: normalized.meta.currentChapter,
+      updatedAt: normalized.meta.updatedAt,
     }
     await txAwait(tx, index.put(item))
   }

@@ -1,0 +1,94 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "actor firewall observes turn-pipeline writes in observe mode",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Wires the actor firewall into the SF2 turn pipeline without enforcing yet. Legal Narrator and Archivist writes should be recorded, and an illegal Narrator create_entity write should be observed but allowed through for calibration."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "I test the archive locks.",
+    "narrator": {
+      "prose": "You test the archive locks; the intake hall holds its breath.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "location_id": "loc_archive_lock",
+              "present_npc_ids": [],
+              "time_label": "morning",
+              "established": ["The seeker is alone beside the archive lock."]
+            }
+          },
+          {
+            "kind": "create_entity",
+            "payload": {
+              "id": "npc_prompt_drift",
+              "name": "Prompt Drift"
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": ["Try the side latch"]
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "loc_archive_lock",
+            "present_npc_ids": [],
+            "time_label": "morning",
+            "established": ["The seeker is alone beside the archive lock."]
+          }
+        },
+        {
+          "kind": "create_entity",
+          "payload": {
+            "id": "npc_prompt_drift",
+            "name": "Prompt Drift"
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "currentSceneId": "loc_archive_lock",
+    "invariantEventsInclude": ["actor_firewall_observation"],
+    "invariantEventDetailIncludes": [
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "narrator:set_scene_snapshot observed within ownership contract"
+      },
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "narrator:create_entity observed outside ownership contract"
+      },
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "narrator:suggested_actions observed within ownership contract"
+      },
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "archivist:pacing_classification observed within ownership contract"
+      }
+    ]
+  }
+}

@@ -1,4 +1,8 @@
 import { buildSceneKernel } from '../scene-kernel/build'
+import {
+  escapeRegExp,
+  findAliasSurface,
+} from '../resolution/entity-references'
 import type {
   Sf2EntityId,
   Sf2Npc,
@@ -93,7 +97,7 @@ function resolveNamedReferences(
   for (const id of kernel.presentEntityIds) {
     const aliases = kernel.aliasMap[id] ?? []
     for (const alias of aliases) {
-      const match = findAlias(input, alias)
+      const match = findAliasSurface(input, alias)
       if (!match || seen.has(id)) continue
       refs.push({
         surface: match,
@@ -110,7 +114,7 @@ function resolveNamedReferences(
   for (const id of kernel.absentEntityIds) {
     const aliases = kernel.aliasMap[id] ?? []
     for (const alias of aliases) {
-      const match = findAlias(input, alias)
+      const match = findAliasSurface(input, alias)
       if (!match || seen.has(id)) continue
       refs.push({
         surface: match,
@@ -221,14 +225,4 @@ function buildForbiddenSubstitutions(
     }
   }
   return [...forbidden]
-}
-
-function findAlias(input: string, alias: string): string | null {
-  if (!alias.trim()) return null
-  const match = input.match(new RegExp(`\\b${escapeRegExp(alias)}\\b`, 'i'))
-  return match?.[0] ?? null
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

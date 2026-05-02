@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { applyMechanicalEffectLocally } from '../lib/sf2/replay/mechanics'
+import { normalizeAuthorSetup, validateAuthorSetup, validateChapterRaw } from '../lib/sf2/author/contract'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
+import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
 import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
-import { recordTurnTelemetry } from '../lib/sf2/instrumentation/working-set-telemetry'
 import { buildMessagesForNarrator } from '../lib/sf2/narrator/messages'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
@@ -22,11 +22,16 @@ import { prepareChapterPressureRuntime } from '../lib/sf2/pressure/runtime'
 import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
-  type Sf2NarratorAnnotation,
   type Sf2State,
   type ThreadRole,
 } from '../lib/sf2/types'
-import { applyArchivistPatch, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
+import {
+  commitSf2Turn,
+  extractMechanicalEffects,
+  finalizeArchivistTurn,
+  type Sf2TurnPipelineEvent,
+} from '../lib/sf2/runtime/turn-pipeline'
+import { applyArchivistPatch, summarizePatchOutcome, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
 
 interface ReplayFixture {
   schema: 'sf2-replay-fixture/v1'
@@ -243,6 +248,41 @@ interface ReplayFixture {
         flagIncludes?: string  // optional substring match against the error message
       }>
     }
+    authorContract?: {
+      // Pure-function check on the Chapter Author contract module.
+      // Exercises raw tool validation, snake_case/camelCase normalization, and
+      // final normalized boundary validation without making a model call.
+      ctx: { genreId: string; pcOriginId: string; pcPlaybookId: string; isContinuation?: boolean }
+      rawToolInput: Record<string, unknown>
+      expect: {
+        rawErrorCount?: number
+        validationErrorCount?: number
+        titleEquals?: string
+        threadCountEquals?: number
+        firstThreadInitialTensionEquals?: number
+        visibleNpcIdsEquals?: string[]
+        firstRevealValidContextsEquals?: string[]
+        pacingTargetEquals?: { min: number; max: number }
+      }
+    }
+    persistenceNormalize?: {
+      // Pure-function check on the SF2 persistence normalizer. Supplies a
+      // legacy or partial stored blob and asserts the current save-shape that
+      // loadCampaign/saveCampaign will see through the IndexedDB adapter.
+      rawState: Record<string, unknown>
+      expect: {
+        schemaVersionEquals?: string
+        recentTurnsCountEquals?: number
+        currentSceneIdEquals?: string
+        currentLocationIdEquals?: string
+        currentInterlocutorIdsEquals?: string[]
+        sceneSnapshotFirstTurnIndexEquals?: number
+        sceneBundleCacheCleared?: boolean
+        hasCampaignBuckets?: string[]
+        threadOwnerEquals?: { threadId: string; kind: string; id: string }
+        repairsInclude?: string[]
+      }
+    }
     narratorMessages?: {
       // Run buildMessagesForNarrator(stateBefore, ...) and assert the assembled
       // message array. Targets regressions where the message build drops or
@@ -290,7 +330,7 @@ interface ReplayResult {
 
 type JsonRecord = Record<string, unknown>
 
-function main(): void {
+async function main(): Promise<void> {
   const dumpWorkingSetTelemetry = process.argv.includes('--working-set-telemetry')
   const target = process.argv.slice(2).find((arg) => !arg.startsWith('--'))
   if (!target) {
@@ -304,7 +344,7 @@ function main(): void {
     process.exit(2)
   }
 
-  const results = paths.map(runFixturePath)
+  const results = await Promise.all(paths.map(runFixturePath))
   if (dumpWorkingSetTelemetry) {
     printWorkingSetTelemetry()
     for (const result of results) {
@@ -360,7 +400,7 @@ function collectFixturePaths(target: string): string[] {
     .sort()
 }
 
-function runFixturePath(path: string): ReplayResult {
+async function runFixturePath(path: string): Promise<ReplayResult> {
   const fixture = JSON.parse(readFileSync(path, 'utf8')) as ReplayFixture
   const failures: string[] = []
 
@@ -379,45 +419,6 @@ function runFixturePath(path: string): ReplayResult {
     turnIndex
   ).workingSet
 
-  const stateWithTurnLogged: Sf2State = structuredClone(stateBefore)
-  stateWithTurnLogged.derived.workingSet = preTurnWorkingSet
-  stateWithTurnLogged.history.turns.push({
-    index: turnIndex,
-    chapter: stateWithTurnLogged.meta.currentChapter,
-    playerInput: fixture.input.isInitial ? '' : fixture.input.playerInput,
-    narratorProse: fixture.input.narrator.prose,
-    narratorAnnotation: annotation ? normalizeAnnotation(annotation) : undefined,
-    narratorAnnotationRaw: annotation ?? undefined,
-    timestamp: 'replay',
-  })
-  stateWithTurnLogged.history.recentTurns = stateWithTurnLogged.history.turns.slice(-6)
-  stateWithTurnLogged.campaign.pendingRecoveryNotes = undefined
-  stateWithTurnLogged.campaign.pendingCoherenceNotes = undefined
-
-  const patchResult = applyArchivistPatch(
-    stateWithTurnLogged,
-    patch,
-    stateWithTurnLogged.meta.currentChapter
-  )
-  const workingSetTelemetry = recordTurnTelemetry(
-    stateWithTurnLogged,
-    preTurnWorkingSet,
-    fixture.input.narrator.prose,
-    patch,
-    patchResult.outcomes
-  )
-
-  const stateAfter: Sf2State = structuredClone(patchResult.nextState)
-  stateAfter.derived.workingSetTelemetry = [
-    ...(stateAfter.derived.workingSetTelemetry ?? []),
-    workingSetTelemetry,
-  ].slice(-50)
-  const invariantEvents: Array<{ kind: string; at: number; data: unknown }> = []
-  for (const effect of mechanicalEffects) {
-    applyMechanicalEffectLocally(stateAfter, effect, invariantEvents)
-  }
-  stateAfter.meta.updatedAt = 'replay'
-
   // Phase C display sentinel — observe mode. Scan the Narrator prose for
   // forbidden debug/control vocabulary AND absent-NPC speech; surface
   // findings as invariant events so fixtures can assert detection without
@@ -426,6 +427,7 @@ function runFixturePath(path: string): ReplayResult {
   // action='block_and_repair'. The absent_speaker scan is opt-in via the
   // `absentSpeakers` option — built from the kernel projected over the
   // pre-prose state so fixtures can exercise prose-vs-kernel mismatches.
+  const turnSentinelEvents: Sf2TurnPipelineEvent[] = []
   const sentinelKernel = buildSceneKernel(stateBefore)
   const displayFindings = scanDisplayOutput(fixture.input.narrator.prose, {
     action: 'allow_but_quarantine_writes', // observe-mode: don't block, just record
@@ -439,7 +441,7 @@ function runFixturePath(path: string): ReplayResult {
     },
   })
   for (const finding of displayFindings) {
-    invariantEvents.push({
+    turnSentinelEvents.push({
       kind: 'sf2.invariant',
       at: Date.now(),
       data: {
@@ -453,6 +455,56 @@ function runFixturePath(path: string): ReplayResult {
       },
     })
   }
+
+  let patchResult: ApplyPatchResult | null = null
+  let workingSetTelemetry: ReplayResult['workingSetTelemetry']
+  const committedTurn = await commitSf2Turn({
+    stateBefore,
+    turnIndex,
+    playerInput: fixture.input.playerInput,
+    isInitial: Boolean(fixture.input.isInitial),
+    narrator: {
+      prose: fixture.input.narrator.prose,
+      annotation,
+      mechanicalEffects,
+      sentinelEvents: turnSentinelEvents,
+      workingSet: preTurnWorkingSet,
+    },
+    now: () => 'replay',
+    applyArchivist: ({ stateWithTurnLogged, narratorProse }) => {
+      const result = applyArchivistPatch(
+        stateWithTurnLogged,
+        patch,
+        stateWithTurnLogged.meta.currentChapter
+      )
+      patchResult = result
+      const runtimeResult = finalizeArchivistTurn({
+        stateBeforeArchivist: stateWithTurnLogged,
+        narratorProse,
+        patch,
+        applyResult: result,
+        telemetryLimit: 50,
+      })
+      workingSetTelemetry = runtimeResult.workingSetTelemetry
+      return {
+        nextState: runtimeResult.nextState,
+        invariantEvents: runtimeResult.invariantEvents,
+        replay: {
+          patch,
+          outcomes: result.outcomes,
+          deferredWrites: result.deferredWrites,
+          drift: result.drift,
+          summary: summarizePatchOutcome(result),
+          coherenceFindings: runtimeResult.coherenceFindings,
+        },
+      }
+    },
+  })
+  if (!patchResult) {
+    throw new Error(`fixture ${fixture.name} did not apply an Archivist patch`)
+  }
+  const stateAfter = committedTurn.stateAfter
+  const invariantEvents = committedTurn.invariantEvents
 
   let scenePacketCastIds: string[] = []
   let scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'] = []
@@ -484,6 +536,8 @@ function runFixturePath(path: string): ReplayResult {
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertDispositionDerivation(fixture, failures)
+  assertAuthorContract(fixture, stateBefore, failures)
+  assertPersistenceNormalize(fixture, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
@@ -587,6 +641,131 @@ function assertDispositionDerivation(fixture: ReplayFixture, failures: string[])
       if (err) {
         failures.push(`disposition: case "${c.name}" expected accepted, got flagged — "${err}"`)
       }
+    }
+  }
+}
+
+function assertAuthorContract(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.authorContract
+  if (!expected) return
+
+  const ctx = {
+    ...expected.ctx,
+    state: stateBefore,
+  }
+  const rawErrors = validateChapterRaw(expected.rawToolInput, ctx)
+  if (typeof expected.expect.rawErrorCount === 'number' && rawErrors.length !== expected.expect.rawErrorCount) {
+    failures.push(`authorContract.rawErrors: expected ${expected.expect.rawErrorCount}, got ${rawErrors.length} [${rawErrors.join('; ') || 'none'}]`)
+  }
+
+  const authored = normalizeAuthorSetup(expected.rawToolInput)
+  const validationErrors = validateAuthorSetup(authored, {
+    isContinuation: Boolean(expected.ctx.isContinuation),
+    state: stateBefore,
+  })
+  if (typeof expected.expect.validationErrorCount === 'number' && validationErrors.length !== expected.expect.validationErrorCount) {
+    failures.push(`authorContract.validationErrors: expected ${expected.expect.validationErrorCount}, got ${validationErrors.length} [${validationErrors.join('; ') || 'none'}]`)
+  }
+
+  if (expected.expect.titleEquals !== undefined && authored.chapterFrame.title !== expected.expect.titleEquals) {
+    failures.push(`authorContract.title: expected "${expected.expect.titleEquals}", got "${authored.chapterFrame.title}"`)
+  }
+  if (typeof expected.expect.threadCountEquals === 'number' && authored.activeThreads.length !== expected.expect.threadCountEquals) {
+    failures.push(`authorContract.activeThreads: expected ${expected.expect.threadCountEquals}, got ${authored.activeThreads.length}`)
+  }
+  if (
+    typeof expected.expect.firstThreadInitialTensionEquals === 'number' &&
+    authored.activeThreads[0]?.initialTension !== expected.expect.firstThreadInitialTensionEquals
+  ) {
+    failures.push(
+      `authorContract.activeThreads[0].initialTension: expected ${expected.expect.firstThreadInitialTensionEquals}, got ${String(authored.activeThreads[0]?.initialTension)}`
+    )
+  }
+  if (expected.expect.visibleNpcIdsEquals !== undefined) {
+    const got = [...(authored.openingSceneSpec.visibleNpcIds ?? [])].sort().join(',')
+    const want = [...expected.expect.visibleNpcIdsEquals].sort().join(',')
+    if (got !== want) failures.push(`authorContract.visibleNpcIds: expected ${want}, got ${got}`)
+  }
+  if (expected.expect.firstRevealValidContextsEquals !== undefined) {
+    const got = [...(authored.possibleRevelations[0]?.validRevealContexts ?? [])].sort().join(',')
+    const want = [...expected.expect.firstRevealValidContextsEquals].sort().join(',')
+    if (got !== want) failures.push(`authorContract.possibleRevelations[0].validRevealContexts: expected ${want}, got ${got}`)
+  }
+  if (expected.expect.pacingTargetEquals !== undefined) {
+    const got = authored.pacingContract.targetTurns
+    const want = expected.expect.pacingTargetEquals
+    if (got.min !== want.min || got.max !== want.max) {
+      failures.push(`authorContract.pacingContract.targetTurns: expected ${want.min}-${want.max}, got ${got.min}-${got.max}`)
+    }
+  }
+}
+
+function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.persistenceNormalize
+  if (!expected) return
+
+  const normalized = normalizePersistedSf2State(expected.rawState)
+  if (!normalized) {
+    failures.push('persistenceNormalize: expected normalized state, got null')
+    return
+  }
+
+  const state = normalized.state
+  const e = expected.expect
+  if (e.schemaVersionEquals !== undefined && state.meta.schemaVersion !== e.schemaVersionEquals) {
+    failures.push(`persistenceNormalize.schemaVersion: expected ${e.schemaVersionEquals}, got ${state.meta.schemaVersion}`)
+  }
+  if (typeof e.recentTurnsCountEquals === 'number' && state.history.recentTurns.length !== e.recentTurnsCountEquals) {
+    failures.push(`persistenceNormalize.recentTurns: expected ${e.recentTurnsCountEquals}, got ${state.history.recentTurns.length}`)
+  }
+  if (e.currentSceneIdEquals !== undefined && state.meta.currentSceneId !== e.currentSceneIdEquals) {
+    failures.push(`persistenceNormalize.meta.currentSceneId: expected ${e.currentSceneIdEquals}, got ${state.meta.currentSceneId}`)
+  }
+  if (e.currentLocationIdEquals !== undefined && state.world.currentLocation.id !== e.currentLocationIdEquals) {
+    failures.push(`persistenceNormalize.world.currentLocation.id: expected ${e.currentLocationIdEquals}, got ${state.world.currentLocation.id}`)
+  }
+  if (e.currentInterlocutorIdsEquals !== undefined) {
+    const want = [...e.currentInterlocutorIdsEquals].sort().join(',')
+    const got = [...(state.world.sceneSnapshot.currentInterlocutorIds ?? [])].sort().join(',')
+    if (want !== got) failures.push(`persistenceNormalize.currentInterlocutorIds: expected [${want}], got [${got}]`)
+  }
+  if (
+    typeof e.sceneSnapshotFirstTurnIndexEquals === 'number' &&
+    state.world.sceneSnapshot.firstTurnIndex !== e.sceneSnapshotFirstTurnIndexEquals
+  ) {
+    failures.push(
+      `persistenceNormalize.sceneSnapshot.firstTurnIndex: expected ${e.sceneSnapshotFirstTurnIndexEquals}, got ${state.world.sceneSnapshot.firstTurnIndex}`
+    )
+  }
+  if (typeof e.sceneBundleCacheCleared === 'boolean') {
+    const cleared = state.world.sceneBundleCache === undefined
+    if (cleared !== e.sceneBundleCacheCleared) {
+      failures.push(`persistenceNormalize.sceneBundleCacheCleared: expected ${e.sceneBundleCacheCleared}, got ${cleared}`)
+    }
+  }
+  for (const bucket of e.hasCampaignBuckets ?? []) {
+    const value = (state.campaign as unknown as Record<string, unknown>)[bucket]
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      failures.push(`persistenceNormalize.campaign.${bucket}: expected object bucket`)
+    }
+  }
+  if (e.threadOwnerEquals) {
+    const thread = state.campaign.threads[e.threadOwnerEquals.threadId]
+    if (!thread) {
+      failures.push(`persistenceNormalize.threadOwner: missing ${e.threadOwnerEquals.threadId}`)
+    } else if (thread.owner.kind !== e.threadOwnerEquals.kind || thread.owner.id !== e.threadOwnerEquals.id) {
+      failures.push(
+        `persistenceNormalize.threadOwner: expected ${e.threadOwnerEquals.kind}:${e.threadOwnerEquals.id}, got ${thread.owner.kind}:${thread.owner.id}`
+      )
+    }
+  }
+  for (const fragment of e.repairsInclude ?? []) {
+    if (!normalized.repairs.some((repair) => repair.includes(fragment))) {
+      failures.push(`persistenceNormalize.repairs: expected repair containing "${fragment}", got [${normalized.repairs.join('; ') || 'none'}]`)
     }
   }
 }
@@ -705,39 +884,6 @@ function normalizePatch(patch: Partial<Sf2ArchivistPatch> | null, turnIndex: num
     revelationHintsDelivered: patch?.revelationHintsDelivered,
     revelationsRevealed: patch?.revelationsRevealed,
   }
-}
-
-function extractMechanicalEffects(annotation: Record<string, unknown> | null): Array<Record<string, unknown>> {
-  if (!annotation) return []
-  const snake = annotation.mechanical_effects
-  if (Array.isArray(snake)) return snake as Array<Record<string, unknown>>
-  const camel = annotation.mechanicalEffects
-  if (Array.isArray(camel)) return camel as Array<Record<string, unknown>>
-  return []
-}
-
-function normalizeAnnotation(input: Record<string, unknown>): Sf2NarratorAnnotation {
-  const mechanicalEffects = extractMechanicalEffects(input)
-  const hinted = (input.hinted_entities ?? input.hintedEntities ?? {}) as JsonRecord
-  const authorial = (input.authorial_moves ?? input.authorialMoves ?? {}) as JsonRecord
-  const suggested = input.suggested_actions ?? input.suggestedActions
-  return {
-    pendingCheck: undefined,
-    mechanicalEffects: mechanicalEffects as Sf2NarratorAnnotation['mechanicalEffects'],
-    hintedEntities: {
-      npcsMentioned: arrayOfStrings(hinted.npcs_mentioned ?? hinted.npcsMentioned),
-      threadsTouched: arrayOfStrings(hinted.threads_touched ?? hinted.threadsTouched),
-      decisionsImplied: arrayOfStrings(hinted.decisions_implied ?? hinted.decisionsImplied),
-      promisesImplied: arrayOfStrings(hinted.promises_implied ?? hinted.promisesImplied),
-      cluesDropped: arrayOfStrings(hinted.clues_dropped ?? hinted.cluesDropped),
-    },
-    authorialMoves: authorial as Sf2NarratorAnnotation['authorialMoves'],
-    suggestedActions: arrayOfStrings(suggested),
-  }
-}
-
-function arrayOfStrings(value: unknown): string[] {
-  return Array.isArray(value) ? value.map(String) : []
 }
 
 function assertExpected(
@@ -1070,9 +1216,16 @@ function assertExpected(
       expected.chapterCloseReadiness.promotedSpineThreadId !== undefined &&
       readiness.promotedSpineThreadId !== expected.chapterCloseReadiness.promotedSpineThreadId
     ) {
-      failures.push(
-        `chapterCloseReadiness.promotedSpineThreadId expected ${expected.chapterCloseReadiness.promotedSpineThreadId}, got ${readiness.promotedSpineThreadId ?? '(none)'}`
-      )
+      const promotedId = expected.chapterCloseReadiness.promotedSpineThreadId
+      const promotedThread = state.campaign.threads[promotedId]
+      const promotionAlreadyApplied =
+        state.chapter.setup.spineThreadId === promotedId &&
+        promotedThread?.spineForChapter === state.meta.currentChapter
+      if (!promotionAlreadyApplied) {
+        failures.push(
+          `chapterCloseReadiness.promotedSpineThreadId expected ${promotedId}, got ${readiness.promotedSpineThreadId ?? '(none)'}`
+        )
+      }
     }
   }
   if (expected.quickActionRepair) {
@@ -1769,4 +1922,7 @@ function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-main()
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

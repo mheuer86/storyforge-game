@@ -11,14 +11,11 @@ import {
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { applyArchivistPatch, summarizePatchOutcome } from '@/lib/sf2/validation/apply-patch'
-import { formatDeferredWrites } from '@/lib/sf2/validation/format-deferred'
-import { evaluateCurrentPrimaryFace } from '@/lib/sf2/runtime/antagonist-face'
-import { recordTurnTelemetry } from '@/lib/sf2/instrumentation/working-set-telemetry'
 // updatePressureLadder removed: pattern-based trigger matching didn't match
 // any Author-generated natural-language triggers. Ladder firing is now
 // Archivist-driven via extract_turn's ladder_fires field, applied in
 // applyArchivistPatch.
-import { pruneGraph } from '@/lib/sf2/runtime/prune-graph'
+import { finalizeArchivistTurn } from '@/lib/sf2/runtime/turn-pipeline'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import type {
   Sf2ArchivistAttachment,
@@ -177,111 +174,26 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Stamp the patch onto the corresponding turn record so future turns can
-    // read pacingClassification for signal computation.
-    const nextState = applyResult.nextState
-    const turnRecord = nextState.history.turns.find((t) => t.index === patch.turnIndex - 1)
-      ?? nextState.history.turns.at(-1)
-    if (turnRecord) {
-      turnRecord.archivistPatchApplied = patch
-      turnRecord.pacingClassification = patch.pacingClassification
-    }
-
-    // Post-turn recompute (runtime phases per design doc §10):
-    // 1. Evaluate antagonist face from player alignment signals
-    // 2. Ladder fires are Archivist-driven: evaluated inside the extract_turn
-    //    tool call (the Archivist judges triggerCondition against prose+state),
-    //    and applied by applyArchivistPatch above. No server-side recompute.
-    const faceEval = evaluateCurrentPrimaryFace(nextState.chapter, nextState)
-    if (faceEval.shift) {
-      nextState.chapter.setup.antagonistField.currentPrimaryFace = faceEval.face
-      for (const f of nextState.chapter.scaffolding.antagonistFaces) {
-        f.active = f.id === faceEval.face.id
-      }
-    }
-    // Resolve the Archivist-fired ladder steps from the ids it emitted for
-    // the client debug panel. The flip-to-fired already happened in
-    // applyArchivistPatch; this is just the derived instrumentation payload.
-    const firedThisTurn = (patch.ladderFires ?? [])
-      .map((id) => nextState.chapter.setup.pressureLadder.find((s) => s.id === id))
-      .filter((s): s is NonNullable<typeof s> => Boolean(s))
-
-    // Opportunistic graph pruning: demote decisions/promises/clues whose
-    // anchor threads have transitioned out of 'active'.
-    const pruneResult = pruneGraph(nextState)
-    const prunedState = pruneResult.nextState
-
-    if (state.derived?.workingSet) {
-      const telemetry = recordTurnTelemetry(
-        state,
-        state.derived.workingSet,
-        narratorProse,
-        patch,
-        applyResult.outcomes
-      )
-      // Capped at 10 records (~one chapter of recent turns). Telemetry rides
-      // in the canonical state payload sent to the archivist on every turn
-      // and persisted to IndexedDB; a longer buffer adds dead-weight to
-      // every roundtrip without a corresponding consumer. Replay-time review
-      // is the only consumer; production logging would use a side-channel.
-      prunedState.derived.workingSetTelemetry = [
-        ...(prunedState.derived.workingSetTelemetry ?? []),
-        telemetry,
-      ].slice(-10)
-    }
-
-    // Stash low-confidence writes as recovery notes for the NEXT Narrator
-    // turn. The Narrator will see them as "LAST TURN: re-establish if still
-    // relevant" cues, which is the designed recovery path for anchor misses.
-    const recoveryNotes = formatDeferredWrites(applyResult.deferredWrites)
-    prunedState.campaign.pendingRecoveryNotes =
-      recoveryNotes.length > 0 ? recoveryNotes : undefined
-
-    // Derive anchor_miss findings from apply-patch drift. Surfaced as proper
-    // per-turn findings so the debug stream and aggregator see them with
-    // structure rather than only as flat counts in summary.anchorMisses.
-    const anchorMissFindings: Sf2CoherenceFinding[] = applyResult.drift
-      .filter((d) => d.kind === 'anchor_reference_missing')
-      .map((d) => ({
-        type: 'anchor_miss' as Sf2CoherenceFindingType,
-        severity: 'low' as const,
-        evidenceQuote: '',
-        stateReference: d.entityId ?? '',
-        suggestedNote: d.detail.slice(0, 200),
-      }))
-
-    const allFindings = [...(patch.coherenceFindings ?? []), ...anchorMissFindings]
-
-    // Stash coherence notes for the NEXT Narrator turn. Pre-formatted for
-    // direct injection into the per-turn delta; raw findings go out in the
-    // response for the client debug stream.
-    // Anchor-miss findings are excluded from the Narrator's pendingNotes —
-    // they're diagnostic for the system, not corrective context the Narrator
-    // can act on next turn.
-    const coherenceNotes = patch.coherenceFindings
-      ? formatCoherenceNotes(patch.coherenceFindings)
-      : []
-    prunedState.campaign.pendingCoherenceNotes =
-      coherenceNotes.length > 0 ? coherenceNotes : undefined
-    const pruneSummary = {
-      demotedDecisions: pruneResult.demotedDecisions,
-      demotedPromises: pruneResult.demotedPromises,
-      consumedClues: pruneResult.consumedClues,
-      clearedFloatingClues: pruneResult.clearedFloatingClues,
-    }
+    const runtimeResult = finalizeArchivistTurn({
+      stateBeforeArchivist: state,
+      narratorProse,
+      patch,
+      applyResult,
+    })
 
     return new Response(
       JSON.stringify({
-        nextState: prunedState,
+        nextState: runtimeResult.nextState,
         patch,
         outcomes: applyResult.outcomes,
         deferredWrites: applyResult.deferredWrites,
         drift: applyResult.drift,
         summary,
-        faceShift: faceEval.shift,
-        ladderFired: firedThisTurn,
-        pruneSummary,
-        coherenceFindings: allFindings,
+        faceShift: runtimeResult.faceShift,
+        ladderFired: runtimeResult.ladderFired,
+        pruneSummary: runtimeResult.pruneSummary,
+        coherenceFindings: runtimeResult.coherenceFindings,
+        invariantEvents: runtimeResult.invariantEvents,
         usage: {
           inputTokens: usage.input_tokens,
           outputTokens: usage.output_tokens,
@@ -535,10 +447,6 @@ function normalizeCoherenceFinding(r: Record<string, unknown>): Sf2CoherenceFind
     stateReference: String(r.state_reference ?? ''),
     suggestedNote: String(r.suggested_note ?? '').slice(0, 200),
   }
-}
-
-function formatCoherenceNotes(findings: Sf2CoherenceFinding[]): string[] {
-  return findings.map((f) => `[${f.severity}] ${f.type} (${f.stateReference}): ${f.suggestedNote}`)
 }
 
 function normalizeCreate(r: Record<string, unknown>): Sf2ArchivistCreate {

@@ -24,6 +24,20 @@ import {
   reheatLadderFire,
   reheatNpcAgendaAction,
 } from '../pressure/reheat'
+import {
+  findMatchingAnonymousNpc,
+  findMatchingNpc,
+  findMatchingSnapshotPlaceholder,
+  isAnonymousNpc,
+  nextEntityId,
+  resolveAgentId,
+  resolvedBySynthesizedAgentId,
+  resolveArcId,
+  resolveFactionId,
+  resolveNpcId,
+  resolveTemporalAnchorTargetId,
+  resolveThreadId,
+} from '../resolution/entity-references'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -418,90 +432,10 @@ function isValidDocumentTransition(type: Sf2DocumentType, to: string): to is Sf2
   return (valid as string[]).includes(to)
 }
 
-// Resolve any npc or faction by id-or-name. Used for document attribution
-// fields where the Archivist can name either kind of party.
-function resolveAgentId(state: Sf2State, idOrName: string): Sf2EntityId | null {
-  if (!idOrName) return null
-  if (state.campaign.npcs[idOrName]) return idOrName
-  if (state.campaign.factions[idOrName]) return idOrName
-  const direct = resolveNpcId(state, idOrName) ?? resolveFactionId(state, idOrName)
-  if (direct) return direct
-  // Last fallback: synthesized-id recovery. The Archivist sometimes emits
-  // role-descriptive canonical-shaped IDs ("npc_fled_resonant") instead of
-  // resolving to an existing entity ("npc_4" — Mara Vostin, who IS the fled
-  // Resonant). Fuzzy-match against existing NPC role/retrievalCue and accept
-  // unambiguous matches. Closes the playthrough-8 dual-entity bug where the
-  // Narrator's prose treated Mara-as-fled and Mara-as-hidden as separate
-  // people because the Archivist had emitted them as different IDs.
-  return resolveBySynthesizedId(state, idOrName)
-}
-
-// Strip the "npc_"/"faction_" prefix, tokenize by "_", and look for an
-// existing NPC whose role + retrievalCue contains ≥2 of those tokens. Returns
-// null if 0 NPCs match or ≥2 NPCs tie — only unambiguous matches accepted.
-function resolveBySynthesizedId(state: Sf2State, idOrName: string): Sf2EntityId | null {
-  const m = idOrName.match(/^(?:npc|faction)_(.+)$/i)
-  if (!m) return null
-  const tokens = m[1]
-    .toLowerCase()
-    .split('_')
-    .filter((t) => t.length >= 3) // drop noise tokens like "of", "to"
-  if (tokens.length < 2) return null
-
-  let best: { npc: Sf2EntityId; score: number } | null = null
-  let bestTied = false
-  for (const npc of Object.values(state.campaign.npcs)) {
-    const haystack = `${npc.role} ${npc.retrievalCue} ${npc.affiliation}`.toLowerCase()
-    const score = tokens.reduce((acc, t) => (haystack.includes(t) ? acc + 1 : acc), 0)
-    if (score < 2) continue
-    if (!best || score > best.score) {
-      best = { npc: npc.id, score }
-      bestTied = false
-    } else if (score === best.score) {
-      bestTied = true
-    }
-  }
-  return best && !bestTied ? best.npc : null
-}
-
 export interface DeferredWrite {
   kind: 'create' | 'update' | 'transition' | 'attachment'
   payload: unknown
   reason: string // why deferred (usually low confidence + field name)
-}
-
-// Name-or-id resolution. Archivist may emit either an existing id or a new name;
-// we canonicalize here. Returns null when lookup fails (surfaces as a flag).
-function resolveNpcId(state: Sf2State, idOrName: string): Sf2EntityId | null {
-  if (state.campaign.npcs[idOrName]) return idOrName
-  const match = Object.values(state.campaign.npcs).find(
-    (n) => n.name.toLowerCase() === idOrName.toLowerCase()
-  )
-  return match?.id ?? null
-}
-
-function resolveFactionId(state: Sf2State, idOrName: string): Sf2EntityId | null {
-  if (state.campaign.factions[idOrName]) return idOrName
-  const match = Object.values(state.campaign.factions).find(
-    (f) => f.name.toLowerCase() === idOrName.toLowerCase()
-  )
-  return match?.id ?? null
-}
-
-function resolveThreadId(state: Sf2State, idOrTitle: string): Sf2EntityId | null {
-  if (state.campaign.threads[idOrTitle]) return idOrTitle
-  const match = Object.values(state.campaign.threads).find(
-    (t) => t.title.toLowerCase() === idOrTitle.toLowerCase()
-  )
-  return match?.id ?? null
-}
-
-function resolveArcId(state: Sf2State, idOrTitle: string): Sf2EntityId | null {
-  if (state.campaign.arcs[idOrTitle]) return idOrTitle
-  const match = Object.values(state.campaign.arcs).find(
-    (a) => a.title.toLowerCase() === idOrTitle.toLowerCase()
-  )
-  return match?.id ?? null
 }
 
 function arcIdForThread(state: Sf2State, threadId: Sf2EntityId): Sf2EntityId | null {
@@ -518,205 +452,6 @@ function attachThreadToArc(state: Sf2State, threadId: Sf2EntityId, arcId: Sf2Ent
   if (!thread || !arc) return
   arc.threadIds = Array.from(new Set([...arc.threadIds, threadId]))
   thread.anchoredArcId = arcId
-}
-
-function resolveTemporalAnchorTargetId(state: Sf2State, idOrName: string): Sf2EntityId | null {
-  if (!idOrName) return null
-  if (state.campaign.threads[idOrName]) return idOrName
-  if (state.campaign.decisions[idOrName]) return idOrName
-  if (state.campaign.promises[idOrName]) return idOrName
-  if (state.campaign.clues[idOrName]) return idOrName
-  if (state.campaign.npcs[idOrName]) return idOrName
-  if (state.campaign.factions[idOrName]) return idOrName
-  return (
-    resolveThreadId(state, idOrName) ??
-    resolveNpcId(state, idOrName) ??
-    resolveFactionId(state, idOrName)
-  )
-}
-
-function normalizeNpcName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-// Find an existing NPC that matches the proposed name closely enough to be
-// treated as the same entity. Used for dedup on create. Matches:
-//   1. exact normalized name match ("The Granary Watcher" ~ "granary watcher")
-//   2. one name is a subset of the other's tokens (all proposed tokens appear
-//      in existing name, or vice-versa — e.g. "Granary Watcher" ~ "the granary
-//      man" ~ "watcher at the granary")
-// Deliberately conservative: returns null unless confident. When ambiguous,
-// caller creates fresh entity (better to have two than to collapse the wrong ones).
-function findMatchingNpc(state: Sf2State, proposedName: string): Sf2Npc | null {
-  const proposed = normalizeNpcName(proposedName)
-  if (proposed.length < 3) return null // too short, names like "Os" would over-match
-  const proposedTokens = new Set(proposed.split(' ').filter((t) => t.length >= 3))
-  if (proposedTokens.size === 0) return null
-  const kinshipTokens = new Set([
-    'brother',
-    'sister',
-    'father',
-    'mother',
-    'parent',
-    'parents',
-    'son',
-    'daughter',
-    'child',
-    'children',
-    'spouse',
-    'wife',
-    'husband',
-  ])
-
-  for (const npc of Object.values(state.campaign.npcs)) {
-    const existing = normalizeNpcName(npc.name)
-    if (existing === proposed) return npc
-    const existingTokens = new Set(existing.split(' ').filter((t) => t.length >= 3))
-    if (existingTokens.size === 0) continue
-
-    // Merge ONLY when proposed is a shortened form of existing ("Osh" when
-    // "Osh Renner" is on file — prose often uses the short form). Do NOT
-    // merge when existing is a shortened form of proposed ("Pol Sevi" when
-    // "Sevi" is on file) — the fuller name is almost always a distinct
-    // person, most commonly a family member sharing a surname. The Archivist
-    // can emit an identity update later if it turns out to be the same
-    // person; we'd rather split incorrectly than collapse two people.
-    const proposedInExisting = [...proposedTokens].every((t) => existingTokens.has(t))
-    if (!proposedInExisting) continue
-    if (
-      proposedTokens.size === 1 &&
-      [...existingTokens].some((t) => kinshipTokens.has(t))
-    ) {
-      continue
-    }
-
-    // Require at least one distinctive token of length ≥ 4 to reduce false
-    // positives (e.g. don't match "Os" into "Os Ren").
-    const minToken = [...proposedTokens].find((t) => t.length >= 4)
-    if (minToken) return npc
-  }
-  return null
-}
-
-function findMatchingSnapshotPlaceholder(
-  state: Sf2State,
-  proposedName: string,
-  proposedCue: string
-): Sf2Npc | null {
-  const proposed = normalizeNpcName(`${proposedName} ${proposedCue}`)
-  if (proposed.length < 3) return null
-  const proposedTokens = new Set(proposed.split(' ').filter((t) => t.length >= 3))
-  if (proposedTokens.size === 0) return null
-
-  for (const npc of Object.values(state.campaign.npcs)) {
-    const isPlaceholder =
-      npc.retrievalCue.includes('placeholder from scene snapshot') ||
-      npc.identity.keyFacts.some((fact) => fact.includes('Created from Narrator scene snapshot'))
-    if (!isPlaceholder) continue
-
-    const existing = normalizeNpcName(`${npc.id.replace(/^npc_/, '')} ${npc.name} ${npc.retrievalCue}`)
-    const existingTokens = new Set(existing.split(' ').filter((t) => t.length >= 3))
-    const overlap = [...proposedTokens].filter((t) => existingTokens.has(t))
-    if (overlap.some((t) => t.length >= 4)) return npc
-  }
-  return null
-}
-
-function isAnonymousNpc(npc: Sf2Npc): boolean {
-  const haystack = normalizeNpcName(`${npc.id} ${npc.name} ${npc.role} ${npc.retrievalCue}`)
-  return [
-    'unknown',
-    'unnamed',
-    'unidentified',
-    'anonymous',
-    'younger man',
-    'young man',
-    'girl',
-    'boy',
-    'elder',
-  ].some((marker) => haystack.includes(marker))
-}
-
-function findMatchingAnonymousNpc(
-  state: Sf2State,
-  proposedName: string,
-  proposedCue: string
-): Sf2Npc | null {
-  const proposed = normalizeNpcName(`${proposedName} ${proposedCue}`)
-  if (proposed.length < 3) return null
-  const anonymousMarkers = ['younger man', 'young man', 'girl', 'boy', 'elder']
-  const proposedMarker = anonymousMarkers.find((marker) => proposed.includes(marker))
-  if (!proposedMarker) return null
-  const proposedTokens = new Set(proposed.split(' ').filter((t) => t.length >= 3))
-  if (proposedTokens.size === 0) return null
-
-  for (const npc of Object.values(state.campaign.npcs)) {
-    if (!isAnonymousNpc(npc)) continue
-    const existing = normalizeNpcName(`${npc.name} ${npc.role} ${npc.retrievalCue}`)
-    if (!existing.includes(proposedMarker)) continue
-    const existingTokens = new Set(existing.split(' ').filter((t) => t.length >= 3))
-    const overlap = [...proposedTokens].filter((t) => existingTokens.has(t))
-    if (overlap.some((t) => t.length >= 4)) return npc
-  }
-  return null
-}
-
-type EntityPrefix =
-  | 'npc'
-  | 'faction'
-  | 'thread'
-  | 'decision'
-  | 'promise'
-  | 'clue'
-  | 'arc'
-  | 'location'
-  | 'temporal_anchor'
-  | 'doc'
-  | 'beat'
-
-function getEntityRegistry(
-  state: Sf2State,
-  prefix: EntityPrefix
-): Record<string, { id: string }> {
-  switch (prefix) {
-    case 'npc':
-      return state.campaign.npcs as Record<string, { id: string }>
-    case 'faction':
-      return state.campaign.factions as Record<string, { id: string }>
-    case 'thread':
-      return state.campaign.threads as Record<string, { id: string }>
-    case 'decision':
-      return state.campaign.decisions as Record<string, { id: string }>
-    case 'promise':
-      return state.campaign.promises as Record<string, { id: string }>
-    case 'clue':
-      return state.campaign.clues as Record<string, { id: string }>
-    case 'arc':
-      return state.campaign.arcs as Record<string, { id: string }>
-    case 'location':
-      return state.campaign.locations as Record<string, { id: string }>
-    case 'temporal_anchor':
-      return state.campaign.temporalAnchors as Record<string, { id: string }>
-    case 'doc':
-      return (state.campaign.documents ?? {}) as Record<string, { id: string }>
-    case 'beat':
-      return (state.campaign.beats ?? {}) as Record<string, { id: string }>
-  }
-}
-
-function nextEntityId(prefix: EntityPrefix, state: Sf2State): Sf2EntityId {
-  const registry = getEntityRegistry(state, prefix)
-  let i = Object.keys(registry).length
-  let id = `${prefix}_${i}`
-  while (registry[id]) {
-    i += 1
-    id = `${prefix}_${i}`
-  }
-  return id
 }
 
 function deferOrReject(
@@ -1298,13 +1033,7 @@ function applyCreate(
             // didn't match any NPC/faction by id or name but DID resolve via
             // role/retrievalCue fuzzy-match, surface it so we can monitor how
             // often the Archivist emits role-descriptive IDs.
-            if (
-              r !== sid &&
-              !draft.campaign.npcs[r] &&
-              !draft.campaign.factions[r] &&
-              resolveNpcId(draft, r) === null &&
-              resolveFactionId(draft, r) === null
-            ) {
+            if (resolvedBySynthesizedAgentId(draft, r, sid)) {
               drift.push({
                 kind: 'contradiction',
                 detail: `synthesized_id_recovered: document subject "${r}" → "${sid}" via role-descriptor fuzzy match`,

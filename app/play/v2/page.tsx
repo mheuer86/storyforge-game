@@ -22,10 +22,11 @@ import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
 import {
-  applyMechanicalEffectLocally,
-  makeInvariantEvent,
-  offstageRosterSignature,
-} from '@/lib/sf2/replay/mechanics'
+  commitSf2Turn,
+  observeActorFirewallWrite,
+  type Sf2TurnPipelineEvent,
+  type Sf2TurnReplayFrame,
+} from '@/lib/sf2/runtime/turn-pipeline'
 import { computeChapterCloseReadiness } from '@/lib/sf2/chapter-close'
 import { prepareChapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
 import {
@@ -83,29 +84,7 @@ interface DebugEntry {
   data: unknown
 }
 
-interface ReplayFrame {
-  turnIndex: number
-  chapter: number
-  playerInput: string
-  isInitial: boolean
-  stateBefore: Sf2State
-  narrator: {
-    prose: string
-    annotation: Record<string, unknown> | null
-    bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
-  }
-  archivist: {
-    patch: unknown
-    outcomes: unknown
-    deferredWrites: unknown
-    drift: unknown
-    summary: unknown
-    coherenceFindings: unknown
-  } | null
-  mechanicalEffects: Array<Record<string, unknown>>
-  invariantEvents: DebugEntry[]
-  stateAfter: Sf2State
-}
+type ReplayFrame = Sf2TurnReplayFrame
 
 interface PendingCheck {
   toolUseId: string
@@ -145,6 +124,10 @@ function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc
 
 function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
   return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
+}
+
+function firewallTurnIndexFor(state: Sf2State): number {
+  return state.history.turns.at(-1)?.index ?? state.history.turns.length
 }
 
 // Pick ability by skill name + apply proficiency bonus if the player is
@@ -340,7 +323,7 @@ export default function PlayV2Page() {
     annotation: Record<string, unknown> | null
     bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
     rollRecords: Sf2State['history']['rollLog']
-    sentinelEvents: DebugEntry[]
+    sentinelEvents: Sf2TurnPipelineEvent[]
     workingSet: Sf2WorkingSet | null
   }> {
     setIsStreaming(true)
@@ -360,7 +343,7 @@ export default function PlayV2Page() {
     // Display sentinel findings for THIS turn — captured during the stream so
     // they land in the per-turn frame's invariantEvents (and via that into the
     // session-log / replay-fixture downloads). Reset on every narrator call.
-    const turnSentinelEvents: DebugEntry[] = []
+    const turnSentinelEvents: Sf2TurnPipelineEvent[] = []
 
     // Loop: each iteration runs one narrator stream. A request_roll mid-stream
     // pauses; we await the player's roll, then loop again with rollResolution
@@ -532,7 +515,7 @@ export default function PlayV2Page() {
               // Always emit the entry — even findings.length === 0 is useful
               // signal: "scanner ran, clean turn". This makes the false-
               // positive baseline observable in the session log.
-              const entry: DebugEntry = {
+              const entry: Sf2TurnPipelineEvent = {
                 kind: 'display_sentinel',
                 at: Date.now(),
                 data: { mode, findings, findingCount: findings.length },
@@ -663,6 +646,7 @@ export default function PlayV2Page() {
   ): Promise<{
     nextState: Sf2State
     replay: ReplayFrame['archivist']
+    invariantEvents?: Sf2TurnPipelineEvent[]
   }> {
     setIsArchiving(true)
     try {
@@ -712,6 +696,7 @@ export default function PlayV2Page() {
           stateReference: string
           suggestedNote: string
         }>
+        invariantEvents?: Sf2TurnPipelineEvent[]
         usage: TokenUsage
         latency?: LatencyPayload
       }
@@ -819,6 +804,7 @@ export default function PlayV2Page() {
           summary: data.summary,
           coherenceFindings: data.coherenceFindings ?? [],
         },
+        invariantEvents: data.invariantEvents,
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'archivist_error'
@@ -1030,6 +1016,17 @@ export default function PlayV2Page() {
       }
       next.meta.currentSceneId = `scene_${data.chapter}_1`
       next.meta.updatedAt = new Date().toISOString()
+      setDebug((d) => [...d, observeActorFirewallWrite(next, {
+        actor: 'author',
+        writeKind: 'chapter_setup',
+        turnIndex: firewallTurnIndexFor(next),
+        payload: {
+          chapter: data.chapter,
+          title: data.runtimeState.title,
+          activeThreadCount: data.runtimeState.activeThreadIds.length,
+          pressureLadderCount: data.runtimeState.pressureLadder.length,
+        },
+      })])
       setState(next)
       persist(next)
       return next
@@ -1067,8 +1064,6 @@ export default function PlayV2Page() {
       effectiveState = generated
     }
 
-    const preNarratorOffstageRoster = offstageRosterSignature(effectiveState)
-
     // Narrator
     const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
     if (!narratorResult.completed) {
@@ -1093,163 +1088,44 @@ export default function PlayV2Page() {
     // it from presentNpcIds — Moth gets elided from the scene even though
     // prose established her. The Archivist creates those NPCs from prose;
     // running it first means set_scene_snapshot can resolve them below.
-    const nextTurnIndex = turnIndex + 1
-    const stateWithTurnLogged: Sf2State = (() => {
-      const next: Sf2State = structuredClone(effectiveState)
-      next.history.turns.push({
-        index: turnIndex,
-        chapter: next.meta.currentChapter,
-        playerInput: isInitial ? '' : playerInput,
-        narratorProse,
-        narratorAnnotation: annotation ? normalizeAnnotation(annotation) : undefined,
-        narratorAnnotationRaw: annotation ?? undefined,
-        timestamp: new Date().toISOString(),
-      })
-      const inspirationSpentCount = rollRecords.filter((r) => r.inspirationSpent).length
-      if (inspirationSpentCount > 0) {
-        next.player.inspiration = Math.max(0, next.player.inspiration - inspirationSpentCount)
-      }
-      next.history.rollLog.push(...rollRecords)
-      next.history.recentTurns = next.history.turns.slice(-6)
-
-      // Recovery notes are single-use: the Narrator just consumed them, so
-      // clear before the Archivist runs. The Archivist's response will
-      // repopulate them with any new low-confidence writes from this turn.
-      next.campaign.pendingRecoveryNotes = undefined
-      // Same contract for coherence notes: consumed by the last Narrator
-      // call, cleared before the Archivist's next pass can repopulate them.
-      next.campaign.pendingCoherenceNotes = undefined
-
-      // Persist scene bundle if the Narrator built a fresh one this turn.
-      // Subsequent turns in the same scene will hit the cache_control marker.
-      if (bundleBuilt) {
-        next.world.sceneBundleCache = bundleBuilt
-      }
-      if (workingSet) {
-        next.derived.workingSet = workingSet
-      }
-
-      next.meta.updatedAt = new Date().toISOString()
-      return next
-    })()
-
-    // Archivist first: creates new NPCs/threads/clues from prose so the
-    // registry is populated before mechanical effects resolve references.
-    const { nextState: stateAfterArchivist, replay: archivistReplay } = await runArchivist(
-      stateWithTurnLogged,
-      narratorProse,
-      annotation,
-      nextTurnIndex
-    )
-
-    // Now apply mechanical effects. set_scene_snapshot's NPC resolution
-    // can see the Archivist's new entities.
-    const stateAfterMechs: Sf2State = structuredClone(stateAfterArchivist)
-    const mechs = (annotation?.mechanical_effects as Array<Record<string, unknown>> | undefined) ?? []
-    const invariantEvents: DebugEntry[] = []
-    for (const m of mechs) applyMechanicalEffectLocally(stateAfterMechs, m, invariantEvents)
-    if (bundleBuilt) {
-      const bundleSceneStale = stateAfterMechs.world.sceneBundleCache?.sceneId !== stateAfterMechs.world.sceneSnapshot.sceneId
-      const offstageRosterStale = preNarratorOffstageRoster !== offstageRosterSignature(stateAfterMechs)
-      if (bundleSceneStale || offstageRosterStale) {
-        stateAfterMechs.world.sceneBundleCache = undefined
-        invariantEvents.push(makeInvariantEvent('scene_bundle_cache_cleared_after_mechanics', {
-          bundleSceneStale,
-          offstageRosterStale,
-        }))
-      }
-    }
-    stateAfterMechs.meta.updatedAt = new Date().toISOString()
-    // Fold any display_sentinel events from this turn into the frame's
-    // invariantEvents so they survive into replay-fixture downloads and the
-    // session log's per-turn slice. Already pushed to the global debug array
-    // above; this is the per-turn capture path.
-    if (turnSentinelEvents.length > 0) {
-      invariantEvents.push(...turnSentinelEvents)
-    }
-    const closeRecovery = computeChapterCloseReadiness(stateAfterMechs, false)
-    if (closeRecovery.promotedSpineThreadId) {
-      const promoted = stateAfterMechs.campaign.threads[closeRecovery.promotedSpineThreadId]
-      stateAfterMechs.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId
-      if (promoted) {
-        promoted.spineForChapter = stateAfterMechs.meta.currentChapter
-        promoted.loadBearing = true
-        promoted.chapterDriverKind = promoted.successorToThreadId ? 'successor' : promoted.chapterDriverKind ?? 'new_pressure'
-      }
-      if (!stateAfterMechs.chapter.setup.activeThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
-        stateAfterMechs.chapter.setup.activeThreadIds.push(closeRecovery.promotedSpineThreadId)
-      }
-      if (!stateAfterMechs.chapter.setup.loadBearingThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
-        stateAfterMechs.chapter.setup.loadBearingThreadIds.push(closeRecovery.promotedSpineThreadId)
-      }
-      if (!stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId]) {
-        const openingFloor = Math.max(6, Math.min(10, promoted?.tension ?? 6))
-        stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId] = {
-          threadId: closeRecovery.promotedSpineThreadId,
-          role: 'spine',
-          openingFloor,
-          localEscalation: 0,
-          maxThisChapter: openingFloor,
-          cooledAtOpen: false,
-        }
-      } else {
-        stateAfterMechs.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId].role = 'spine'
-      }
-      invariantEvents.push(makeInvariantEvent('early_spine_resolved_promoted_successor', {
-        promotedSpineThreadId: closeRecovery.promotedSpineThreadId,
-        chapterTurnCount: closeRecovery.chapterTurnCount,
-      }))
-    }
-    if (closeRecovery.successorRequired) {
-      const note =
-        'The chapter spine resolved before turn 18 and no unresolved load-bearing thread could replace it. This turn must actively establish successor pressure before the chapter can close: surface an existing unresolved thread in visible prose, or manufacture a concrete new complication that follows from the resolved spine. Put the successor question in the prose with an owner, stakes, and an immediate next pressure-bearing choice so the Archivist can create/anchor the successor thread. Do not signal chapter close yet.'
-      stateAfterMechs.campaign.pendingRecoveryNotes = Array.from(new Set([
-        ...(stateAfterMechs.campaign.pendingRecoveryNotes ?? []),
-        note,
-      ]))
-      invariantEvents.push(makeInvariantEvent('early_spine_resolved_successor_required', {
-        chapterTurnCount: closeRecovery.chapterTurnCount,
-        spineThreadId: stateAfterMechs.chapter.setup.spineThreadId,
-      }))
-    }
-    const stateDiff = buildTurnStateDiff(effectiveState, stateAfterMechs)
-    const committedTurn = stateAfterMechs.history.turns.find((t) => t.index === turnIndex)
-      ?? stateAfterMechs.history.turns.at(-1)
-    if (committedTurn && stateDiff.length > 0) {
-      committedTurn.stateDiff = stateDiff
-    }
-    stateAfterMechs.history.recentTurns = stateAfterMechs.history.turns.slice(-6)
-    if (invariantEvents.length > 0) {
-      setDebug((d) => [...d, ...invariantEvents])
-    }
-    setReplayFrames((frames) => [
-      ...frames,
-      {
-        turnIndex,
-        chapter: effectiveState.meta.currentChapter,
-        playerInput: isInitial ? '' : playerInput,
-        isInitial,
-        stateBefore: structuredClone(effectiveState),
-        narrator: {
-          prose: narratorProse,
-          annotation,
-          bundleBuilt,
-        },
-        archivist: archivistReplay,
-        mechanicalEffects: mechs,
-        invariantEvents,
-        stateAfter: structuredClone(stateAfterMechs),
+    const committedTurn = await commitSf2Turn({
+      stateBefore: effectiveState,
+      turnIndex,
+      playerInput,
+      isInitial,
+      narrator: {
+        prose: narratorProse,
+        annotation,
+        bundleBuilt,
+        rollRecords,
+        sentinelEvents: turnSentinelEvents,
+        workingSet,
       },
-    ])
+      applyArchivist: ({ stateWithTurnLogged, narratorProse, narratorAnnotation, nextTurnIndex }) =>
+        runArchivist(stateWithTurnLogged, narratorProse, narratorAnnotation, nextTurnIndex),
+    })
 
-    setState(stateAfterMechs)
-    setTurnIndex(nextTurnIndex)
-    setPivotSignaled(chapterHasPivotSignal(stateAfterMechs))
+    const stateDiff = buildTurnStateDiff(effectiveState, committedTurn.stateAfter)
+    const turnRecord = committedTurn.stateAfter.history.turns.find((t) => t.index === turnIndex)
+      ?? committedTurn.stateAfter.history.turns.at(-1)
+    if (turnRecord && stateDiff.length > 0) {
+      turnRecord.stateDiff = stateDiff
+    }
+    committedTurn.stateAfter.history.recentTurns = committedTurn.stateAfter.history.turns.slice(-6)
+    committedTurn.replayFrame.stateAfter = structuredClone(committedTurn.stateAfter)
+
+    if (committedTurn.invariantEvents.length > 0) {
+      setDebug((d) => [...d, ...committedTurn.invariantEvents])
+    }
+    setReplayFrames((frames) => [...frames, committedTurn.replayFrame])
+    setState(committedTurn.stateAfter)
+    setTurnIndex(committedTurn.nextTurnIndex)
+    setPivotSignaled(chapterHasPivotSignal(committedTurn.stateAfter))
     setProse('')
     setRollResult(null)
     setInspirationOffer(null)
     pendingInspirationSpendRef.current = 0
-    persist(stateAfterMechs)
+    persist(committedTurn.stateAfter)
   }
 
   async function closeChapterAndOpenNext() {
@@ -1285,6 +1161,15 @@ export default function PlayV2Page() {
         authorBaseState = structuredClone(authorBaseState)
         authorBaseState.chapter.artifacts.meaning = meaningData.meaning
         authorBaseState.meta.updatedAt = new Date().toISOString()
+        setDebug((d) => [...d, observeActorFirewallWrite(authorBaseState, {
+          actor: 'author',
+          writeKind: 'chapter_meaning',
+          turnIndex: firewallTurnIndexFor(authorBaseState),
+          payload: {
+            chapter: authorBaseState.chapter.number,
+            closingResolution: meaningData.meaning.closingResolution,
+          },
+        })])
         setState(authorBaseState)
         await persist(authorBaseState)
       } else {
@@ -1419,6 +1304,17 @@ export default function PlayV2Page() {
       // Narrator route will rebuild on the first turn of the new chapter.
       next.world.sceneBundleCache = undefined
       next.meta.updatedAt = new Date().toISOString()
+      setDebug((d) => [...d, observeActorFirewallWrite(next, {
+        actor: 'author',
+        writeKind: 'chapter_setup',
+        turnIndex: firewallTurnIndexFor(next),
+        payload: {
+          chapter: data.chapter,
+          title: data.runtimeState.title,
+          activeThreadCount: data.runtimeState.activeThreadIds.length,
+          pressureLadderCount: data.runtimeState.pressureLadder.length,
+        },
+      })])
       setState(next)
       await persist(next)
       // Reset scene view — but KEEP turnIndex monotonic across chapters so
@@ -1710,7 +1606,6 @@ export default function PlayV2Page() {
     />
   )
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1856,39 +1751,6 @@ function compactLabel(label: string): string {
 
 function formatDiffSigned(value: number): string {
   return value > 0 ? `+${value}` : String(value)
-}
-
-function normalizeAnnotation(
-  input: Record<string, unknown>
-): Sf2State['history']['turns'][number]['narratorAnnotation'] {
-  const authorialMoves = input.authorial_moves as Record<string, unknown> | undefined
-  // pending_check lives on request_roll now, not narrate_turn; no longer parsed here.
-  return {
-    mechanicalEffects: [],
-    hintedEntities: {
-      npcsMentioned: (input.hinted_entities as Record<string, unknown> | undefined)?.npcs_mentioned as string[] ?? [],
-      threadsTouched: (input.hinted_entities as Record<string, unknown> | undefined)?.threads_touched as string[] ?? [],
-      decisionsImplied: (input.hinted_entities as Record<string, unknown> | undefined)?.decisions_implied as string[] ?? [],
-      promisesImplied: (input.hinted_entities as Record<string, unknown> | undefined)?.promises_implied as string[] ?? [],
-      cluesDropped: (input.hinted_entities as Record<string, unknown> | undefined)?.clues_dropped as string[] ?? [],
-    },
-    authorialMoves: {
-      plantedRevelationDeployed:
-        typeof authorialMoves?.planted_revelation_deployed === 'string'
-          ? authorialMoves.planted_revelation_deployed
-          : undefined,
-      witnessMarkSurfaced:
-        typeof authorialMoves?.witness_mark_surfaced === 'string'
-          ? authorialMoves.witness_mark_surfaced
-          : undefined,
-      pivotSignaled:
-        authorialMoves?.pivot_signaled === true ||
-        (authorialMoves as { pivotSignaled?: unknown } | undefined)?.pivotSignaled === true
-          ? true
-          : undefined,
-    },
-    suggestedActions: (input.suggested_actions as string[] | undefined) ?? [],
-  }
 }
 
 function annotationHasPivotSignal(annotation: Record<string, unknown> | null | undefined): boolean {
