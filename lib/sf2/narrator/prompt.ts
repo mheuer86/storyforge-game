@@ -360,12 +360,12 @@ The test: if the player has spent six turns being a bureaucratic empire enforcer
 
 When a quick action implies a specific approach the dice would likely resolve, append a bracketed skill hint at the end of the action text. This mirrors Baldur's Gate-style choice surfacing: the player sees both the *intent* of the action and the *mechanical lane* it routes through, so they can pick approaches that match their build.
 
-Format: \`[Skill]\` or \`[Skill, DC tier]\` if the difficulty signal helps. Use only when ONE skill clearly dominates — do not tag actions that could route through multiple skills equally, or where no roll is implied.
+Format: \`[Skill]\` only. Do not include DC or difficulty tiers in quick-action hints; the visible UI only shows the mechanical lane, and actual difficulty belongs in the later \`request_roll\` call. Use only when ONE skill clearly dominates — do not tag actions that could route through multiple skills equally, or where no roll is implied.
 
 Examples:
 - *"Press Vethis on what's not in the writ. [Persuasion]"*
 - *"Read the room before you commit — track Vos's hands and Mareth's silence. [Insight]"*
-- *"Force the lock-pad while the corridor is empty. [Athletics, hard]"*
+- *"Force the lock-pad while the corridor is empty. [Athletics]"*
 - *"Slip the chit into your sleeve before he turns back. [Sleight of Hand]"*
 - *"Cite the dispensation clause and watch his face. [History]"*
 - *"Walk past the duty officer like you belong there. [Deception]"*

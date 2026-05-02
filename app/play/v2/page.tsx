@@ -27,11 +27,13 @@ import {
   type Sf2TurnPipelineEvent,
   type Sf2TurnReplayFrame,
 } from '@/lib/sf2/runtime/turn-pipeline'
-import { computeChapterCloseReadiness } from '@/lib/sf2/chapter-close'
-import { prepareChapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
+import {
+  chapterPressureRuntime,
+} from '@/lib/sf2/pressure/runtime'
 import {
   Sf2PlayShell,
   type Sf2CloseReadinessView,
+  type Sf2LiveRollView,
 } from '@/components/sf2/play-shell'
 import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
 import type {
@@ -166,6 +168,8 @@ export default function PlayV2Page() {
   const [prose, setProse] = useState<string>('')
   const [suggestedActions, setSuggestedActions] = useState<string[]>([])
   const [pendingInput, setPendingInput] = useState<string>('')
+  const [activePlayerInput, setActivePlayerInput] = useState<string>('')
+  const [liveRolls, setLiveRolls] = useState<Sf2LiveRollView[]>([])
   const [pendingCheck, setPendingCheck] = useState<PendingCheck | null>(null)
   const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
   const [inspirationOffer, setInspirationOffer] = useState<RollOutcome | null>(null)
@@ -304,6 +308,8 @@ export default function PlayV2Page() {
     if (typeof window !== 'undefined') window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
     setState(null)
     setProse('')
+    setActivePlayerInput('')
+    setLiveRolls([])
     setSuggestedActions([])
     setDebug([])
     setReplayFrames([])
@@ -331,6 +337,7 @@ export default function PlayV2Page() {
     setSuggestedActions([])
     setPendingCheck(null)
     setRollResult(null)
+    setLiveRolls([])
     setInspirationOffer(null)
     pendingInspirationSpendRef.current = 0
 
@@ -543,8 +550,25 @@ export default function PlayV2Page() {
         // Pause the narrator loop. Show the modal, wait for the player to roll.
         // If a roll chip from an earlier roll in this turn is still visible,
         // clear it so the new modal doesn't compete with stale outcome text.
+        const rollId = sawRollPrompt.toolUseId || `roll_${turnIndex}_${rollRecords.length}`
+        const proseOffset = proseAccum.length
         setRollResult(null)
         setPendingCheck(sawRollPrompt)
+        setLiveRolls((cards) => [
+          ...cards,
+          {
+            id: rollId,
+            proseOffset,
+            check: {
+              skill: sawRollPrompt.skill,
+              dc: sawRollPrompt.dc,
+              why: sawRollPrompt.why,
+              consequenceOnFail: sawRollPrompt.consequenceOnFail,
+              modifierType: sawRollPrompt.modifierType,
+              modifierReason: sawRollPrompt.modifierReason,
+            },
+          },
+        ])
         const outcome = await new Promise<RollOutcome>((resolve) => {
           rollResolverRef.current = resolve
         })
@@ -571,6 +595,7 @@ export default function PlayV2Page() {
         ])
         rollRecords.push({
           turn: turnIndex,
+          proseOffset,
           skill: sawRollPrompt.skill,
           dc: sawRollPrompt.dc,
           effectiveDc: outcome.effectiveDc,
@@ -996,7 +1021,7 @@ export default function PlayV2Page() {
         data.chapter as Sf2State['chapter']['number'],
         data.runtimeState.loadBearingThreadIds
       )
-      next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
+      next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
       // Scene snapshot: opening-location name from the opening scene spec.
       next.world.currentLocation = {
         id: 'loc_opening',
@@ -1055,6 +1080,7 @@ export default function PlayV2Page() {
     if (!playerInput && !isInitial) return
 
     setPendingInput('')
+    setActivePlayerInput(isInitial ? '' : playerInput)
 
     // On first turn: ensure Chapter 1 has been authored before Narrator opens.
     let effectiveState = state
@@ -1068,6 +1094,8 @@ export default function PlayV2Page() {
     const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
     if (!narratorResult.completed) {
       pendingInspirationSpendRef.current = 0
+      setActivePlayerInput('')
+      setLiveRolls([])
       return
     }
     const {
@@ -1122,6 +1150,8 @@ export default function PlayV2Page() {
     setTurnIndex(committedTurn.nextTurnIndex)
     setPivotSignaled(chapterHasPivotSignal(committedTurn.stateAfter))
     setProse('')
+    setActivePlayerInput('')
+    setLiveRolls([])
     setRollResult(null)
     setInspirationOffer(null)
     pendingInspirationSpendRef.current = 0
@@ -1239,7 +1269,7 @@ export default function PlayV2Page() {
       // clues carry across; the Author may reference existing ids via ownerHint).
       const next: Sf2State = structuredClone(authorBaseState)
       // Snapshot prior chapter's actives before overwriting next.chapter —
-      // see prepareChapterPressureRuntime: this drives the active vs
+      // see chapterPressureRuntime.prepareChapterOpen: this drives the active vs
       // background role split.
       const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
       next.meta.currentChapter = data.chapter
@@ -1271,7 +1301,7 @@ export default function PlayV2Page() {
         data.chapter as Sf2State['chapter']['number'],
         data.runtimeState.loadBearingThreadIds
       )
-      next.chapter.setup = prepareChapterPressureRuntime(next, next.chapter.setup, priorActiveThreadIds)
+      next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
       // Reset scene view at chapter transition. Derive a fresh timeLabel
       // from the Author's atmosphericCondition so the new chapter opens at
       // its authored moment instead of inheriting the prior chapter's close
@@ -1337,6 +1367,21 @@ export default function PlayV2Page() {
     return Math.max(0, s.player.inspiration - pendingInspirationSpendRef.current)
   }
 
+  function setLatestLiveRollOutcome(outcome: RollOutcome) {
+    setLiveRolls((cards) => {
+      let pendingIndex = -1
+      for (let i = cards.length - 1; i >= 0; i -= 1) {
+        if (!cards[i].outcome) {
+          pendingIndex = i
+          break
+        }
+      }
+      const targetIndex = pendingIndex >= 0 ? pendingIndex : cards.length - 1
+      if (targetIndex < 0) return cards
+      return cards.map((card, i) => i === targetIndex ? { ...card, outcome } : card)
+    })
+  }
+
   function resolvePendingCheck() {
     if (!state || !pendingCheck) return
     const rollOne = () => 1 + Math.floor(Math.random() * 20)
@@ -1360,6 +1405,7 @@ export default function PlayV2Page() {
       modifierType: pendingCheck.modifierType,
       modifierReason: pendingCheck.modifierReason,
     }
+    setLatestLiveRollOutcome(outcome)
     const failed = outcome.result === 'failure' || outcome.result === 'fumble'
     if (failed && availableInspiration(state) > 0) {
       setRollResult(outcome)
@@ -1401,6 +1447,7 @@ export default function PlayV2Page() {
       originalRoll: inspirationOffer,
     }
     setRollResult(outcome)
+    setLatestLiveRollOutcome(outcome)
     setInspirationOffer(null)
     const resolver = rollResolverRef.current
     rollResolverRef.current = null
@@ -1470,35 +1517,10 @@ export default function PlayV2Page() {
   const busy = isStreaming || isArchiving
   const chapterPivotSignaled = pivotSignaled || chapterHasPivotSignal(state)
 
-  // Close-ready heuristic. Anchored on chapter-scoped *narrative arc progression*,
-  // not on turn count + tension (which let chapters close without their
-  // authored climactic beat happening).
-  //
-  // The chapter is ready to close when any of:
-  //   (a) Narrator explicitly signaled pivot (chapter-scoped resolution per
-  //       its prompt), OR
-  //   (b) The spine thread reached a terminal status — resolved/abandoned.
-  //       Deferred is a pause/reopen state, not a landing, OR
-  //   (c) Safety fallback: ≥25 turns AND spine tension ≥8 AND ≥half ladder
-  //       fired — chapter has stalled well past target length. Close anyway
-  //       so the campaign doesn't hang on an unresolved spine.
-  //
-  // A fired pressure ladder is not enough by itself. Playthrough 11 showed a
-  // clean chapter setup reaching the last pressure beat while the actual
-  // chapter question remained unresolved ("Will the Warden file?"). In that
-  // case the next turn should land the decision, not close the chapter.
-  const {
-    closeReady,
-    chapterTurnCount,
-    spineResolved,
-    stalledFallback,
-    ladderFiredCount,
-    ladderStepCount,
-    spineStatus,
-    spineTension,
-    successorRequired,
-    promotedSpineThreadId,
-  } = computeChapterCloseReadiness(state, chapterPivotSignaled)
+  const pressureProjection = chapterPressureRuntime.project(state, {
+    pivotSignaled: chapterPivotSignaled,
+  })
+  const { chapterTurnCount } = pressureProjection.closeReadiness
 
   function downloadSessionLog() {
     if (!state) return
@@ -1551,16 +1573,16 @@ export default function PlayV2Page() {
   }
 
   const closeReadiness: Sf2CloseReadinessView = {
-    closeReady,
+    closeReady: pressureProjection.closeReadiness.closeReady,
     chapterPivotSignaled,
-    spineResolved,
-    stalledFallback,
-    ladderFiredCount,
-    ladderStepCount,
-    spineStatus,
-    spineTension: spineTension ?? 0,
-    successorRequired,
-    promotedSpineThreadId,
+    spineResolved: pressureProjection.closeReadiness.spineResolved,
+    stalledFallback: pressureProjection.closeReadiness.stalledFallback,
+    ladderFiredCount: pressureProjection.closeReadiness.ladderFiredCount,
+    ladderStepCount: pressureProjection.closeReadiness.ladderStepCount,
+    spineStatus: pressureProjection.closeReadiness.spineStatus,
+    spineTension: pressureProjection.closeReadiness.spineTension ?? 0,
+    successorRequired: pressureProjection.closeReadiness.successorRequired,
+    promotedSpineThreadId: pressureProjection.closeReadiness.promotedSpineThreadId,
   }
   const rollModifier = pendingCheck
     ? modifierForSkill(state, pendingCheck.skill)
@@ -1574,6 +1596,8 @@ export default function PlayV2Page() {
       state={state}
       scrollRef={scrollRef}
       prose={prose}
+      activePlayerInput={activePlayerInput}
+      liveRolls={liveRolls}
       suggestedActions={suggestedActions}
       pendingInput={pendingInput}
       pendingCheck={pendingCheck}
@@ -1588,6 +1612,7 @@ export default function PlayV2Page() {
       generationElapsed={generationElapsed}
       busy={busy}
       chapterTurnCount={chapterTurnCount}
+      pressureProjection={pressureProjection}
       closeReadiness={closeReadiness}
       campaignStats={campaignStats}
       sessionSummary={sessionSummary}

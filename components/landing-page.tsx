@@ -407,7 +407,7 @@ export function LandingPage() {
     '--font-narrative': activeConfig.theme.fontNarrative,
     '--font-heading': activeConfig.theme.fontHeading,
     '--font-system': "'Geist Mono', monospace",
-    '--narrative-font-size': (activeGenre === 'space-opera' || activeGenre === 'cyberpunk') ? '0.8125rem' : '0.875rem',
+    '--narrative-font-size': (activeGenre === 'space-opera' || activeGenre === 'cyberpunk') ? '0.9375rem' : '1rem',
     '--primary': activeConfig.theme.primary,
     '--primary-foreground': activeConfig.theme.primaryForeground,
     '--tertiary': activeConfig.theme.tertiary,

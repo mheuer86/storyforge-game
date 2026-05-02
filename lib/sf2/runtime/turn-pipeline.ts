@@ -1,6 +1,6 @@
-import { computeChapterCloseReadiness } from '../chapter-close'
 import { recordObservation } from '../firewall/actor'
 import { recordTurnTelemetry } from '../instrumentation/working-set-telemetry'
+import { chapterPressureRuntime } from '../pressure/runtime'
 import {
   applyMechanicalEffectLocally,
   makeInvariantEvent,
@@ -531,54 +531,10 @@ function applyPostArchivistTurnEffects(input: {
     invariantEvents.push(...input.extraInvariantEvents)
   }
 
-  const closeRecovery = computeChapterCloseReadiness(stateAfter, false)
-  if (closeRecovery.promotedSpineThreadId) {
-    const promoted = stateAfter.campaign.threads[closeRecovery.promotedSpineThreadId]
-    stateAfter.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId
-    if (promoted) {
-      promoted.spineForChapter = stateAfter.meta.currentChapter
-      promoted.loadBearing = true
-      promoted.chapterDriverKind = promoted.successorToThreadId
-        ? 'successor'
-        : promoted.chapterDriverKind ?? 'new_pressure'
-    }
-    if (!stateAfter.chapter.setup.activeThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
-      stateAfter.chapter.setup.activeThreadIds.push(closeRecovery.promotedSpineThreadId)
-    }
-    if (!stateAfter.chapter.setup.loadBearingThreadIds.includes(closeRecovery.promotedSpineThreadId)) {
-      stateAfter.chapter.setup.loadBearingThreadIds.push(closeRecovery.promotedSpineThreadId)
-    }
-    const promotedPressureRole = promoted?.successorToThreadId ? 'load_bearing' : 'spine'
-    if (!stateAfter.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId]) {
-      const openingFloor = Math.max(6, Math.min(10, promoted?.tension ?? 6))
-      stateAfter.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId] = {
-        threadId: closeRecovery.promotedSpineThreadId,
-        role: promotedPressureRole,
-        openingFloor,
-        localEscalation: 0,
-        maxThisChapter: openingFloor,
-        cooledAtOpen: false,
-      }
-    } else {
-      stateAfter.chapter.setup.threadPressure[closeRecovery.promotedSpineThreadId].role = promotedPressureRole
-    }
-    invariantEvents.push(makeInvariantEvent('early_spine_resolved_promoted_successor', {
-      promotedSpineThreadId: closeRecovery.promotedSpineThreadId,
-      chapterTurnCount: closeRecovery.chapterTurnCount,
-    }))
-  }
-  if (closeRecovery.successorRequired) {
-    const note =
-      'The chapter spine resolved before turn 18 and no unresolved load-bearing thread could replace it. This turn must actively establish successor pressure before the chapter can close: surface an existing unresolved thread in visible prose, or manufacture a concrete new complication that follows from the resolved spine. Put the successor question in the prose with an owner, stakes, and an immediate next pressure-bearing choice so the Archivist can create/anchor the successor thread. Do not signal chapter close yet.'
-    stateAfter.campaign.pendingRecoveryNotes = Array.from(new Set([
-      ...(stateAfter.campaign.pendingRecoveryNotes ?? []),
-      note,
-    ]))
-    invariantEvents.push(makeInvariantEvent('early_spine_resolved_successor_required', {
-      chapterTurnCount: closeRecovery.chapterTurnCount,
-      spineThreadId: stateAfter.chapter.setup.spineThreadId,
-    }))
-  }
+  const pressureRecovery = chapterPressureRuntime.recoverAfterTurn(stateAfter)
+  invariantEvents.push(
+    ...pressureRecovery.events.map((event) => makeInvariantEvent(event.type, event.data))
+  )
 
   return { stateAfter, invariantEvents, mechanicalEffects }
 }

@@ -11,7 +11,7 @@ import {
   Send,
   UserRound,
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import {
   Drawer,
   DrawerContent,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
+import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
 import type { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import type { Sf2State, Sf2TurnDiffEntry } from '@/lib/sf2/types'
 
@@ -73,6 +74,13 @@ export interface Sf2RollOutcomeView {
   originalRoll?: Sf2RollOutcomeView
 }
 
+export interface Sf2LiveRollView {
+  id: string
+  proseOffset: number
+  check: Sf2PendingCheckView
+  outcome?: Sf2RollOutcomeView
+}
+
 export interface Sf2CloseReadinessView {
   closeReady: boolean
   chapterPivotSignaled: boolean
@@ -98,10 +106,12 @@ interface Sf2PlayShellProps {
   state: Sf2State
   scrollRef: RefObject<HTMLDivElement | null>
   prose: string
+  activePlayerInput: string
   suggestedActions: string[]
   pendingInput: string
   pendingCheck: Sf2PendingCheckView | null
   rollResult: Sf2RollOutcomeView | null
+  liveRolls: Sf2LiveRollView[]
   inspirationOffer: Sf2RollOutcomeView | null
   rollModifier: number | null
   effectiveDc: number | null
@@ -112,6 +122,7 @@ interface Sf2PlayShellProps {
   generationElapsed: number
   busy: boolean
   chapterTurnCount: number
+  pressureProjection: ChapterPressureProjection
   closeReadiness: Sf2CloseReadinessView
   campaignStats: Sf2CampaignStatsView
   sessionSummary: SessionSummary | null
@@ -167,6 +178,7 @@ const THEME_ROOT_PROPS = [
   '--scrollbar-thumb-hover',
   '--tertiary',
   '--tertiary-foreground',
+  '--narrative-font-size',
 ] as const
 
 const THEME_BODY_PROPS = [
@@ -174,6 +186,7 @@ const THEME_BODY_PROPS = [
   '--font-heading',
   '--font-system',
   '--font-scale',
+  '--narrative-font-size',
 ] as const
 
 export function Sf2PlayShell(props: Sf2PlayShellProps) {
@@ -181,10 +194,12 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     state,
     scrollRef,
     prose,
+    activePlayerInput,
     suggestedActions,
     pendingInput,
     pendingCheck,
     rollResult,
+    liveRolls,
     inspirationOffer,
     rollModifier,
     effectiveDc,
@@ -195,6 +210,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     generationElapsed,
     busy,
     chapterTurnCount,
+    pressureProjection,
     closeReadiness,
     campaignStats,
     sessionSummary,
@@ -259,7 +275,29 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
   }, [state.history.rollLog])
 
   const locationByTurn = useMemo(() => buildLocationByTurn(state), [state])
-  const hasActiveRoll = Boolean(pendingCheck || rollResult)
+  const hasActiveRoll = Boolean(pendingCheck || rollResult || inspirationOffer)
+  const displayedLiveRolls: Sf2LiveRollView[] = liveRolls.length > 0
+    ? liveRolls
+    : pendingCheck
+      ? [{
+          id: 'active-roll',
+          proseOffset: prose.length,
+          check: pendingCheck,
+          outcome: rollResult ?? undefined,
+        }]
+      : rollResult
+        ? [{
+            id: 'active-roll-result',
+            proseOffset: prose.length,
+            check: {
+              skill: rollResult.skill ?? 'Skill',
+              dc: rollResult.dc,
+              why: '',
+              consequenceOnFail: '',
+            },
+            outcome: rollResult,
+          }]
+        : []
   const mobilePanelTitle = mobilePanel
     ? mobilePanel === 'character'
       ? 'Character'
@@ -289,7 +327,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
             <PlaybookSkillPanel state={state} />
           </aside>
 
-          <main className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-background/70">
+          <main className="sf2-center-panel flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/70">
             <div
               ref={scrollRef}
               className="sf2-narrative-scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6"
@@ -297,6 +335,13 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
               <TurnStream
                 state={state}
                 prose={prose}
+                activePlayerInput={activePlayerInput}
+                liveRolls={displayedLiveRolls}
+                inspirationOffer={inspirationOffer}
+                rollModifier={rollModifier}
+                effectiveDc={effectiveDc}
+                inspirationRemaining={inspirationRemaining}
+                rollBusy={busy && !pendingCheck}
                 rollLogByTurn={rollLogByTurn}
                 locationByTurn={locationByTurn}
                 isStreaming={isStreaming}
@@ -304,29 +349,24 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 generationElapsed={generationElapsed}
                 isArchiving={isArchiving}
                 chapterTurnCount={chapterTurnCount}
+                onResolvePendingCheck={onResolvePendingCheck}
+                onSpendInspiration={onSpendInspiration}
+                onDeclineInspiration={onDeclineInspiration}
               />
             </div>
 
-            <div className="shrink-0 border-t border-border/30 bg-card/70 p-3 md:p-4">
+            <div className="shrink-0 border-t border-border/25 bg-transparent p-3 md:p-4">
               <ActionSurface
                 state={state}
                 suggestedActions={suggestedActions}
                 pendingInput={pendingInput}
                 pendingCheck={pendingCheck}
-                rollResult={rollResult}
-                inspirationOffer={inspirationOffer}
-                rollModifier={rollModifier}
-                effectiveDc={effectiveDc}
-                inspirationRemaining={inspirationRemaining}
                 busy={busy}
                 chapterTurnCount={chapterTurnCount}
                 closeReadiness={closeReadiness}
                 hasActiveRoll={hasActiveRoll}
                 onPendingInputChange={onPendingInputChange}
                 onSendTurn={onSendTurn}
-                onResolvePendingCheck={onResolvePendingCheck}
-                onSpendInspiration={onSpendInspiration}
-                onDeclineInspiration={onDeclineInspiration}
                 onCloseChapter={onCloseChapter}
               />
             </div>
@@ -376,6 +416,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 lastArchivistUsage={lastArchivistUsage}
                 chapterTurnCount={chapterTurnCount}
                 busy={busy}
+                pressureProjection={pressureProjection}
                 closeReadiness={closeReadiness}
                 onCloseChapter={onCloseChapter}
                 onResetCampaign={onResetCampaign}
@@ -483,7 +524,7 @@ function HudPanel({
       className,
     )}>
       <div className="mb-3 flex min-h-4 items-center justify-between gap-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{title}</div>
+        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</div>
         {right}
       </div>
       {children}
@@ -506,7 +547,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
           <div className="truncate font-heading text-[18px] font-medium tracking-[0.04em] text-foreground">
             {state.player.name}
           </div>
-          <div className="mt-1 truncate text-[12px] text-muted-foreground">
+          <div className="mt-1 truncate text-sm text-muted-foreground">
             {state.player.class.name} / {state.player.origin.name}
           </div>
         </div>
@@ -567,7 +608,7 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
     >
       <div className="space-y-3">
         {plan.name && (
-          <div className="font-mono text-[12px] tracking-[0.08em] text-foreground/90">
+          <div className="font-mono text-sm tracking-[0.08em] text-foreground/90">
             {plan.name}
           </div>
         )}
@@ -597,7 +638,7 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
               <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">
                 {String(index + 1).padStart(2, '0')}
               </div>
-              <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-foreground/90">
+              <div className="mt-1 line-clamp-2 text-sm leading-snug text-foreground/90">
                 {item.name}
               </div>
               <div className="mt-1 inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -634,7 +675,7 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
       )}
     >
       <div className="rounded-md border border-border/30 bg-background/45 px-3 py-2.5">
-        <div className="font-mono text-[12px] tracking-[0.08em] text-foreground/90">
+        <div className="font-mono text-sm tracking-[0.08em] text-foreground/90">
           {trait.name}
         </div>
         <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
@@ -650,14 +691,23 @@ function LocationsPanel({ state }: { state: Sf2State }) {
   const currentLocationId = state.world.currentLocation.id || state.world.sceneSnapshot.location.id
   const locationMap = new Map<string, Sf2State['world']['currentLocation']>()
 
+  const addLocation = (location: Sf2State['world']['currentLocation']) => {
+    if (!location.id) return
+    const semanticKey = normalizedLocationDisplayKey(location)
+    const existing = locationMap.get(semanticKey)
+    if (!existing || location.id === currentLocationId) {
+      locationMap.set(semanticKey, location)
+    }
+  }
+
   for (const location of Object.values(state.campaign.locations)) {
-    locationMap.set(location.id, location)
+    addLocation(location)
   }
   if (state.world.currentLocation.id) {
-    locationMap.set(state.world.currentLocation.id, state.world.currentLocation)
+    addLocation(state.world.currentLocation)
   }
   if (state.world.sceneSnapshot.location.id) {
-    locationMap.set(state.world.sceneSnapshot.location.id, state.world.sceneSnapshot.location)
+    addLocation(state.world.sceneSnapshot.location)
   }
 
   const locations = [...locationMap.values()]
@@ -688,14 +738,14 @@ function LocationsPanel({ state }: { state: Sf2State }) {
                 here ? 'border-primary/70 bg-primary/10' : 'border-border/50 bg-background/45',
               )}>
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] tracking-[0.08em] text-foreground/90">
+                  <span className="min-w-0 flex-1 truncate font-mono text-sm tracking-[0.08em] text-foreground/90">
                     {location.name || location.id.replace(/_/g, ' ')}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
                   {location.locked && <LocationChip tone="muted" label="LOCKED" />}
                 </div>
                 {tag && (
-                  <div className="mt-1.5 line-clamp-1 text-[12px] text-muted-foreground">
+                  <div className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">
                     {tag}
                   </div>
                 )}
@@ -708,6 +758,38 @@ function LocationsPanel({ state }: { state: Sf2State }) {
       )}
     </HudPanel>
   )
+}
+
+function normalizedLocationDisplayKey(location: Sf2State['world']['currentLocation']) {
+  return canonicalLocationNameKey(location.name || location.id)
+}
+
+function canonicalLocationNameKey(name: string) {
+  const normalized = name
+    .normalize('NFKD')
+    .toLocaleLowerCase()
+    .replace(/[()]/g, ' ')
+    .replace(/[–—-]/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+  const tokens = normalized.split(' ').filter(Boolean)
+  const bayMatch = normalized.match(/\bbay\s*0*(\d+)\b/)
+
+  if (bayMatch) {
+    const bayNumber = bayMatch[1]
+    const context = [...new Set(tokens.filter((token) => {
+      return token !== 'bay' &&
+        token !== bayNumber &&
+        token !== 'station' &&
+        token !== 'exterior' &&
+        !/^\d+$/.test(token)
+    }))].sort().join(' ')
+    const exterior = tokens.includes('exterior') ? ':exterior' : ''
+    return `bay:${bayNumber}${exterior}:${context}`
+  }
+
+  return [...new Set(tokens)].sort().join(' ')
 }
 
 function LocationChip({ label, tone }: { label: string; tone: 'primary' | 'muted' }) {
@@ -759,17 +841,16 @@ function PresentPanel({ state }: { state: Sf2State }) {
 }
 
 function PressurePanel({
-  state,
+  pressureProjection,
   closeReadiness,
 }: {
-  state: Sf2State
+  pressureProjection: ChapterPressureProjection
   closeReadiness: Sf2CloseReadinessView
 }) {
-  const steps = state.chapter.setup.pressureLadder
-  const fired = steps.filter((step) => step.fired).length
-  const total = steps.length
-  const face = state.chapter.setup.antagonistField.currentPrimaryFace
-  const activeStep = steps.find((step) => !step.fired) ?? steps[steps.length - 1]
+  const fired = pressureProjection.ladderFiredCount
+  const total = pressureProjection.ladderStepCount
+  const steps = pressureProjection.ladderSteps
+  const activeStep = pressureProjection.activeStep
 
   return (
     <HudPanel
@@ -783,11 +864,11 @@ function PressurePanel({
     >
       <div className="space-y-3">
         <div>
-          <div className="font-mono text-[12px] font-medium tracking-[0.08em] text-foreground/90">
-            {face.name || state.chapter.setup.antagonistField.corePressure || 'Pressure forming'}
+          <div className="font-mono text-sm font-medium tracking-[0.08em] text-foreground/90">
+            {pressureProjection.faceName}
           </div>
           {activeStep && (
-            <div className="mt-1 text-[12px] leading-relaxed text-muted-foreground/85">
+            <div className="mt-1 text-sm leading-relaxed text-muted-foreground/85">
               {activeStep.pressure}
             </div>
           )}
@@ -849,10 +930,10 @@ function IntelPanel({ state }: { state: Sf2State }) {
   return (
     <HudPanel
       title="Intel / Case Board"
-      className="min-h-0 flex-1 overflow-hidden"
+      className="flex max-h-[42vh] min-h-0 flex-col overflow-hidden xl:max-h-none xl:flex-1"
       right={<span className="rounded-full border border-primary/70 bg-primary/10 px-2 py-1 font-mono text-[10px] text-primary">{visibleClueCount}</span>}
     >
-      <div className="max-h-[42vh] space-y-4 overflow-y-auto pr-1 xl:max-h-none">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {threads.length > 0 ? threads.map((thread) => {
           const clues = Object.values(state.campaign.clues)
             .filter((clue) => clue.anchoredTo.includes(thread.id))
@@ -866,7 +947,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-mono text-[12px] font-medium tracking-[0.08em] text-foreground/85">
+                <span className="font-mono text-sm font-medium tracking-[0.08em] text-foreground/85">
                   {thread.title}
                 </span>
                 <IntelTierBadge tier={tier} />
@@ -875,7 +956,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
                 {clues.length > 0 ? clues.map((clue) => (
                   <div
                     key={clue.id}
-                    className="flex gap-2 rounded border border-transparent px-2 py-1.5 text-[12px] leading-snug text-foreground/85"
+                    className="flex gap-2 rounded border border-transparent px-2 py-1.5 text-sm leading-snug text-foreground/85"
                   >
                     <span className="text-muted-foreground/50">-</span>
                     <span>{clue.content}</span>
@@ -896,7 +977,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
               Floating clues
             </div>
             {floatingClues.map((clue) => (
-              <div key={clue.id} className="rounded border border-primary/30 bg-primary/10 px-2 py-1.5 text-[12px] leading-snug text-foreground/85">
+              <div key={clue.id} className="rounded border border-primary/30 bg-primary/10 px-2 py-1.5 text-sm leading-snug text-foreground/85">
                 {clue.content}
               </div>
             ))}
@@ -923,6 +1004,13 @@ function IntelTierBadge({ tier }: { tier: 'load-bearing' | 'evidenced' | 'lead' 
 function TurnStream({
   state,
   prose,
+  activePlayerInput,
+  liveRolls,
+  inspirationOffer,
+  rollModifier,
+  effectiveDc,
+  inspirationRemaining,
+  rollBusy,
   rollLogByTurn,
   locationByTurn,
   isStreaming,
@@ -930,9 +1018,19 @@ function TurnStream({
   generationElapsed,
   isArchiving,
   chapterTurnCount,
+  onResolvePendingCheck,
+  onSpendInspiration,
+  onDeclineInspiration,
 }: {
   state: Sf2State
   prose: string
+  activePlayerInput: string
+  liveRolls: Sf2LiveRollView[]
+  inspirationOffer: Sf2RollOutcomeView | null
+  rollModifier: number | null
+  effectiveDc: number | null
+  inspirationRemaining: number
+  rollBusy: boolean
   rollLogByTurn: Map<number, Sf2State['history']['rollLog']>
   locationByTurn: Map<number, string>
   isStreaming: boolean
@@ -940,11 +1038,18 @@ function TurnStream({
   generationElapsed: number
   isArchiving: boolean
   chapterTurnCount: number
+  onResolvePendingCheck: () => void
+  onSpendInspiration: () => void
+  onDeclineInspiration: () => void
 }) {
   const turns = state.history.turns.filter((turn) => turn.chapter === state.meta.currentChapter)
+  const showLiveTurn = Boolean(activePlayerInput || prose || isStreaming || isGeneratingChapter || isArchiving)
+  const liveTurnNumber = state.history.turns.length + 1
+  const liveLocation = state.world.sceneSnapshot.location.name || state.world.currentLocation.name
+  const rollPauseActive = liveRolls.some((roll) => !roll.outcome)
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[940px] flex-col justify-end space-y-6">
+    <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col justify-end space-y-6">
       {turns.length === 0 && !prose && !isGeneratingChapter && (
         <div className="rounded-r-lg border-l border-primary/30 bg-card/35 py-5 pl-5 pr-5 text-foreground">
           <p className="text-sm leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-narrative)' }}>
@@ -959,21 +1064,50 @@ function TurnStream({
         <div key={turn.index} className="space-y-4">
           <SceneMarker turn={turn.index + 1} location={locationByTurn.get(turn.index)} />
           {turn.playerInput && <PlayerMessage>{turn.playerInput}</PlayerMessage>}
-          {(rollLogByTurn.get(turn.index) ?? []).map((roll, index) => (
-            <HistoryRollCard key={`${turn.index}-${index}`} roll={roll} />
-          ))}
-          <GMMessage>{turn.narratorProse}</GMMessage>
+          <NarrativeWithRolls
+            prose={turn.narratorProse}
+            rollCards={(rollLogByTurn.get(turn.index) ?? []).map((roll, index) => ({
+              id: `${turn.index}-${index}`,
+              proseOffset: roll.proseOffset,
+              node: <HistoryRollCard roll={roll} />,
+            }))}
+          />
           <StateDiffLine turnIndex={turn.index} diff={turn.stateDiff} />
         </div>
       ))}
 
-      {(prose || isStreaming || isGeneratingChapter || isArchiving) && (
+      {showLiveTurn && (
         <div className="space-y-4">
-          {prose && (
-            <GMMessage live>
-              {prose}
-              {isStreaming && <span className="animate-pulse text-primary"> |</span>}
-            </GMMessage>
+          {activePlayerInput && (
+            <>
+              <SceneMarker turn={liveTurnNumber} location={liveLocation} />
+              <PlayerMessage>{activePlayerInput}</PlayerMessage>
+            </>
+          )}
+          {(prose || liveRolls.length > 0) && (
+            <NarrativeWithRolls
+              prose={prose}
+              live
+              trailing={isStreaming && !rollPauseActive ? <span className="animate-pulse text-primary"> |</span> : undefined}
+              rollCards={liveRolls.map((roll, index) => ({
+                id: roll.id,
+                proseOffset: roll.proseOffset,
+                node: (
+                  <DiceTray
+                    pendingCheck={roll.check}
+                    rollResult={roll.outcome ?? null}
+                    inspirationOffer={index === liveRolls.length - 1 ? inspirationOffer : null}
+                    modifier={rollModifier}
+                    effectiveDc={effectiveDc}
+                    inspirationRemaining={inspirationRemaining}
+                    busy={rollBusy}
+                    onRoll={onResolvePendingCheck}
+                    onSpendInspiration={onSpendInspiration}
+                    onDeclineInspiration={onDeclineInspiration}
+                  />
+                ),
+              }))}
+            />
           )}
           {isGeneratingChapter && (
             <StatusLine
@@ -989,6 +1123,61 @@ function TurnStream({
       )}
     </div>
   )
+}
+
+function NarrativeWithRolls({
+  prose,
+  rollCards,
+  live,
+  trailing,
+}: {
+  prose: string
+  rollCards: Array<{ id: string; proseOffset?: number; node: ReactNode }>
+  live?: boolean
+  trailing?: ReactNode
+}) {
+  const ordered = [...rollCards].sort((a, b) => {
+    const aOffset = typeof a.proseOffset === 'number' ? a.proseOffset : -1
+    const bOffset = typeof b.proseOffset === 'number' ? b.proseOffset : -1
+    return aOffset - bOffset
+  })
+  const nodes: ReactNode[] = []
+  let cursor = 0
+
+  ordered.forEach((roll, index) => {
+    const hasOffset = typeof roll.proseOffset === 'number'
+    const offset = hasOffset
+      ? Math.max(cursor, Math.min(prose.length, roll.proseOffset as number))
+      : cursor
+    const before = prose.slice(cursor, offset)
+    if (before) {
+      nodes.push(
+        <GMMessage key={`prose-${roll.id}`} live={live}>
+          {before}
+        </GMMessage>
+      )
+    }
+    nodes.push(
+      <div key={`roll-${roll.id}`} className="py-0.5">
+        {roll.node}
+      </div>
+    )
+    cursor = hasOffset ? offset : cursor
+    if (!hasOffset && index === ordered.length - 1 && cursor === 0) {
+      cursor = 0
+    }
+  })
+
+  const after = prose.slice(cursor)
+  if (after || trailing) {
+    nodes.push(
+      <GMMessage key="prose-final" live={live} trailing={trailing}>
+        {after}
+      </GMMessage>
+    )
+  }
+
+  return <>{nodes}</>
 }
 
 function SceneMarker({ turn, location }: { turn: number; location?: string }) {
@@ -1009,16 +1198,58 @@ function SceneMarker({ turn, location }: { turn: number; location?: string }) {
   )
 }
 
-function GMMessage({ children, live }: { children: ReactNode; live?: boolean }) {
+function renderNarrativeInline(text: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let buffer = ''
+  let cursor = 0
+  let key = 0
+
+  const flushBuffer = () => {
+    if (!buffer) return
+    nodes.push(buffer)
+    buffer = ''
+  }
+
+  while (cursor < text.length) {
+    if (text.startsWith('**', cursor)) {
+      const end = text.indexOf('**', cursor + 2)
+      if (end > cursor + 2) {
+        flushBuffer()
+        nodes.push(<strong key={`strong-${key++}`} className="font-semibold text-foreground">{text.slice(cursor + 2, end)}</strong>)
+        cursor = end + 2
+        continue
+      }
+    }
+
+    if (text[cursor] === '*' && text[cursor + 1] !== '*') {
+      const end = text.indexOf('*', cursor + 1)
+      if (end > cursor + 1) {
+        flushBuffer()
+        nodes.push(<em key={`em-${key++}`} className="italic">{text.slice(cursor + 1, end)}</em>)
+        cursor = end + 1
+        continue
+      }
+    }
+
+    buffer += text[cursor]
+    cursor += 1
+  }
+
+  flushBuffer()
+  return nodes
+}
+
+function GMMessage({ children, live, trailing }: { children: ReactNode; live?: boolean; trailing?: ReactNode }) {
   return (
     <div
       className={cn(
         'whitespace-pre-wrap rounded-r-lg border-l border-primary/30 bg-card/35 py-4 pl-5 pr-5 text-foreground md:py-5 md:pl-6 md:pr-6',
-        live && 'border-primary/45 bg-primary/5 shadow-primary/20',
+        live && 'border-primary/40 bg-card/45',
       )}
       style={{ fontFamily: 'var(--font-narrative)', fontSize: 'var(--narrative-font-size)', lineHeight: 1.7 }}
     >
-      {children}
+      {typeof children === 'string' ? renderNarrativeInline(children) : children}
+      {trailing}
     </div>
   )
 }
@@ -1101,8 +1332,8 @@ function rollResultLabel(tone: RollTone) {
 
 function rollCardClassName(tone: RollTone, interactive = false) {
   return cn(
-    'rounded-lg px-4 py-4 text-left transition-[background-color,transform] duration-200 md:px-6 md:py-5',
-    tone === 'idle' && 'sf2-roll-idle-card border border-primary/55',
+    'rounded-lg px-3 py-3 text-left transition-[background-color,transform] duration-200 md:px-4 md:py-4',
+    tone === 'idle' && 'sf2-roll-idle-card border border-primary/45',
     tone === 'success' && 'bg-success/10',
     tone === 'failure' && 'bg-warning/10',
     tone === 'critical' && 'bg-warning/15',
@@ -1113,7 +1344,7 @@ function rollCardClassName(tone: RollTone, interactive = false) {
 
 function rollValueBoxClassName(tone: RollTone, rolling = false) {
   return cn(
-    'flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border font-mono transition-all duration-200 md:h-24 md:w-24',
+    'flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg border font-mono transition-all duration-200 md:h-[4.5rem] md:w-[4.5rem]',
     tone === 'idle' && 'sf2-roll-idle-die',
     tone === 'success' && 'border-success/60 bg-success/15 text-success',
     tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
@@ -1157,7 +1388,7 @@ function RollCardView({
 }) {
   const resolved = tone !== 'idle'
   const content = (
-    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-6">
+    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-4">
       <div className="min-w-0">
         {resolved && (
           <div className="mb-1 font-mono text-[10px] tracking-[0.08em] text-foreground/65">
@@ -1167,8 +1398,8 @@ function RollCardView({
         <div className={cn(
           'font-mono leading-none',
           resolved
-            ? cn('text-[25px] font-semibold md:text-[30px]', rollToneTextClassName(tone))
-            : 'text-[24px] font-semibold text-primary md:text-[30px]',
+            ? cn('text-[22px] font-semibold md:text-[25px]', rollToneTextClassName(tone))
+            : 'text-[20px] font-semibold text-primary md:text-[24px]',
         )}>
           {resolved ? rollResultLabel(tone) : title}
         </div>
@@ -1179,14 +1410,14 @@ function RollCardView({
         )}
       </div>
 
-      <div className={cn('grid grid-cols-[auto_auto_auto] items-center justify-start gap-3 md:justify-end md:gap-4', rollToneTextClassName(tone))}>
+      <div className={cn('grid grid-cols-[auto_auto_auto] items-center justify-start gap-2.5 md:justify-end md:gap-3', rollToneTextClassName(tone))}>
         <RollValueBox tone={tone} value={dc !== null ? `DC ${dc}` : 'DC -'} />
-        <div className="font-mono text-2xl font-bold uppercase md:text-3xl">vs</div>
+        <div className="font-mono text-xl font-bold uppercase md:text-2xl">vs</div>
         <RollValueBox tone={tone} value={roll.value} detail={roll.detail} rolling={rolling} />
       </div>
 
       {actionLabel && (
-        <div className="sf2-roll-idle-cta flex min-h-9 items-center justify-center rounded-md border px-3 py-2 text-center font-mono text-[12px] tracking-[0.08em] md:col-span-2 md:mx-auto md:w-[70%]">
+        <div className="sf2-roll-idle-cta flex min-h-8 items-center justify-center rounded-md border px-3 py-1.5 text-center font-mono text-[11px] tracking-[0.08em] md:col-span-2 md:mx-auto md:w-[64%]">
           {actionLabel}
         </div>
       )}
@@ -1222,11 +1453,11 @@ function RollValueBox({
 }) {
   return (
     <div className={rollValueBoxClassName(tone, rolling)}>
-      <div className="font-mono text-[20px] font-bold leading-none md:text-[24px]">
+      <div className="font-mono text-[18px] font-bold leading-none md:text-[20px]">
         {value}
       </div>
       {detail && (
-        <div className="mt-2 font-mono text-[12px] font-semibold leading-none opacity-85 md:text-sm">
+        <div className="mt-1.5 font-mono text-[11px] font-semibold leading-none opacity-85 md:text-[12px]">
           {detail}
         </div>
       )}
@@ -1260,10 +1491,11 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
 function parseSuggestedAction(action: string) {
   const match = action.match(/\s*\[([^\]]+)\]\s*$/)
   if (!match) return { text: action, rollType: null as string | null }
+  const rollType = match[1].split(',')[0]?.trim() || match[1].trim()
 
   return {
     text: action.slice(0, match.index).trim(),
-    rollType: match[1].trim(),
+    rollType,
   }
 }
 
@@ -1272,47 +1504,30 @@ function ActionSurface(props: {
   suggestedActions: string[]
   pendingInput: string
   pendingCheck: Sf2PendingCheckView | null
-  rollResult: Sf2RollOutcomeView | null
-  inspirationOffer: Sf2RollOutcomeView | null
-  rollModifier: number | null
-  effectiveDc: number | null
-  inspirationRemaining: number
   busy: boolean
   chapterTurnCount: number
   closeReadiness: Sf2CloseReadinessView
   hasActiveRoll: boolean
   onPendingInputChange: (value: string) => void
   onSendTurn: (input: string) => void
-  onResolvePendingCheck: () => void
-  onSpendInspiration: () => void
-  onDeclineInspiration: () => void
   onCloseChapter: () => void
 }) {
   const {
     state,
     suggestedActions,
     pendingInput,
-    pendingCheck,
-    rollResult,
-    inspirationOffer,
-    rollModifier,
-    effectiveDc,
-    inspirationRemaining,
     busy,
     chapterTurnCount,
     closeReadiness,
     hasActiveRoll,
     onPendingInputChange,
     onSendTurn,
-    onResolvePendingCheck,
-    onSpendInspiration,
-    onDeclineInspiration,
     onCloseChapter,
   } = props
   const initialTurn = chapterTurnCount === 0
 
   return (
-    <div className="mx-auto w-full max-w-[940px] space-y-2">
+    <div className="mx-auto w-full max-w-[720px] space-y-2">
       {closeReadiness.closeReady && !busy && (
         <div className="flex flex-col gap-2 rounded-lg border border-warning/45 bg-warning/10 px-4 py-3 text-warning md:flex-row md:items-center md:justify-between">
           <div>
@@ -1346,21 +1561,6 @@ function ActionSurface(props: {
         </div>
       )}
 
-      {hasActiveRoll && (
-        <DiceTray
-          pendingCheck={pendingCheck}
-          rollResult={rollResult}
-          inspirationOffer={inspirationOffer}
-          modifier={rollModifier}
-          effectiveDc={effectiveDc}
-          inspirationRemaining={inspirationRemaining}
-          busy={busy}
-          onRoll={onResolvePendingCheck}
-          onSpendInspiration={onSpendInspiration}
-          onDeclineInspiration={onDeclineInspiration}
-        />
-      )}
-
       {!hasActiveRoll && suggestedActions.length > 0 && !busy && !initialTurn && (
         <div className="space-y-1.5">
           {suggestedActions.map((action, index) => {
@@ -1371,10 +1571,10 @@ function ActionSurface(props: {
                 key={`${action}-${index}`}
                 type="button"
                 onClick={() => onPendingInputChange(action)}
-                className="grid w-full grid-cols-[76px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[98px_minmax(0,1fr)] md:px-5"
+                className="grid w-full grid-cols-[82px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2 text-left transition-colors hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
               >
                 <span className={cn(
-                  'truncate font-mono text-[10px] uppercase tracking-[0.16em]',
+                  'line-clamp-2 font-mono text-[10px] uppercase leading-snug tracking-[0.16em]',
                   parsed.rollType ? 'text-primary/75' : 'text-muted-foreground/55',
                 )}>
                   {parsed.rollType ?? 'Action'}
@@ -1476,7 +1676,7 @@ function DiceTray({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[820px]">
+    <div className="mx-auto w-full max-w-[760px]">
       <RollCardView
         tone={tone}
         title={title}
@@ -1532,15 +1732,25 @@ function CommandInput({
   onChange: (value: string) => void
   onSubmit: () => void
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [value, placeholder])
+
   return (
     <div
       className={cn(
-        'flex items-end gap-3 rounded-lg border bg-background/70 px-3 py-2.5 md:px-5',
+        'flex items-center gap-3 rounded-lg border bg-background/70 px-3 py-2.5 md:px-5',
         disabled ? 'border-border/50 opacity-55' : 'border-primary/50 focus-within:border-primary/70',
       )}
     >
-      <span className="pb-1.5 font-mono text-sm text-primary">&gt;</span>
+      <span className="font-mono text-sm leading-5 text-primary">&gt;</span>
       <textarea
+        ref={textareaRef}
         rows={1}
         value={value}
         disabled={disabled}
@@ -1552,13 +1762,13 @@ function CommandInput({
             onSubmit()
           }
         }}
-        className="min-h-8 flex-1 resize-none bg-transparent py-1.5 font-mono text-sm leading-snug text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+        className="min-h-8 flex-1 resize-none overflow-hidden bg-transparent py-1.5 font-mono text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
       />
       <button
         type="button"
         disabled={disabled || !value.trim()}
         onClick={onSubmit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/50 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-primary/50 bg-primary/15 text-primary transition-colors hover:bg-primary/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Submit command"
       >
         <Send className="h-4 w-4" />
@@ -1576,6 +1786,7 @@ function DiagnosticsPanel(props: {
   lastArchivistUsage: TokenUsageView | null
   chapterTurnCount: number
   busy: boolean
+  pressureProjection: ChapterPressureProjection
   closeReadiness: Sf2CloseReadinessView
   onCloseChapter: () => void
   onResetCampaign: () => void
@@ -1591,17 +1802,16 @@ function DiagnosticsPanel(props: {
     lastArchivistUsage,
     chapterTurnCount,
     busy,
+    pressureProjection,
     closeReadiness,
     onCloseChapter,
     onResetCampaign,
     onDownloadSessionLog,
     onDownloadReplayFixture,
   } = props
-  const pressureFired = state.chapter.setup.pressureLadder.filter((step) => step.fired).length
-
   return (
     <div className="space-y-3">
-      <PressurePanel state={state} closeReadiness={closeReadiness} />
+      <PressurePanel pressureProjection={pressureProjection} closeReadiness={closeReadiness} />
 
       <HudPanel title="Campaign State">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -1614,7 +1824,7 @@ function DiagnosticsPanel(props: {
         <div className="mt-3 space-y-1 text-[12px] text-muted-foreground">
           <div>Scene: {state.world.sceneSnapshot.sceneId}</div>
           <div>Pressure face: {state.chapter.setup.antagonistField.currentPrimaryFace.name || 'none'}</div>
-          <div>Pressure fired: {pressureFired}/{state.chapter.setup.pressureLadder.length}</div>
+          <div>Pressure fired: {pressureProjection.ladderFiredCount}/{pressureProjection.ladderStepCount}</div>
         </div>
       </HudPanel>
 
@@ -1729,8 +1939,8 @@ function StatusLine({ tone, text, detail }: { tone: 'warning' | 'muted'; text: s
 function KeyValue({ label, value, muted }: { label: string; value?: string; muted?: boolean }) {
   if (!value) return null
   return (
-    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 text-[12px] leading-relaxed">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">{label}</div>
+    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 text-sm leading-relaxed">
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">{label}</div>
       <div className={muted ? 'text-foreground/65' : 'text-foreground/85'}>{value}</div>
     </div>
   )
@@ -1738,7 +1948,7 @@ function KeyValue({ label, value, muted }: { label: string; value?: string; mute
 
 function EmptyLine({ text, compact }: { text: string; compact?: boolean }) {
   return (
-    <div className={cn('text-muted-foreground', compact ? 'text-[12px]' : 'text-sm')}>
+    <div className={cn('text-sm text-muted-foreground', compact ? 'leading-snug' : 'leading-normal')}>
       {text}
     </div>
   )

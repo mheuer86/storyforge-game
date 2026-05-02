@@ -256,10 +256,15 @@ export function getGenreConfig(genre: Genre): GenreConfig {
   return config
 }
 
+function getNarrativeFontSize(genre: Genre): string {
+  return genre === 'space-opera' || genre === 'cyberpunk' ? '0.9375rem' : '1rem'
+}
+
 export function applyGenreTheme(genre: Genre): void {
   const theme = getGenreConfig(genre).theme
   const root = document.documentElement
   const bodyEl = document.body
+  const narrativeFontSize = getNarrativeFontSize(genre)
 
   root.style.setProperty('--background', theme.background)
   root.style.setProperty('--foreground', theme.foreground)
@@ -289,10 +294,12 @@ export function applyGenreTheme(genre: Genre): void {
   root.style.setProperty('--scrollbar-thumb-hover', theme.scrollbarThumbHover)
   root.style.setProperty('--tertiary', theme.tertiary)
   root.style.setProperty('--tertiary-foreground', theme.tertiaryForeground)
+  root.style.setProperty('--narrative-font-size', narrativeFontSize)
   bodyEl.style.setProperty('--font-narrative', theme.fontNarrative)
   bodyEl.style.setProperty('--font-heading', theme.fontHeading)
   bodyEl.style.setProperty('--font-system', theme.fontSystem)
   bodyEl.style.setProperty('--font-scale', String(theme.fontScale ?? 1))
+  bodyEl.style.setProperty('--narrative-font-size', narrativeFontSize)
   root.dataset.genre = genre
 
   // Background effects are handled purely by CSS via [data-genre] selectors

@@ -94,7 +94,7 @@
 
 [data-genre="space-opera"],
 [data-genre="cyberpunk"] {
-  --narrative-font-size: 0.8125rem; /* 13px — mono/sans reads larger than serif at same size */
+  --narrative-font-size: 0.9375rem; /* 16.875px at the app's 18px root — gives mono prose clearer hierarchy over HUD text */
 }
 
 [data-genre="epic-scifi"] {
@@ -317,12 +317,14 @@
 
 .sf2-narrative-scrollbar-hidden {
   scrollbar-width: none;
+  scrollbar-color: transparent transparent;
   -ms-overflow-style: none;
 }
 
 .sf2-narrative-scrollbar-hidden::-webkit-scrollbar {
   width: 0;
   height: 0;
+  display: none;
 }
 
 /* Mist background effect — base structure, colored per genre */
@@ -453,23 +455,36 @@
   box-shadow: 0 0 20px -12px color-mix(in oklch, var(--accent) 20%, transparent);
 }
 
+.sf2-center-panel {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--background) 84%, var(--primary) 5%) 0%,
+      color-mix(in oklch, var(--background) 88%, var(--card) 12%) 50%,
+      color-mix(in oklch, var(--background) 82%, var(--card) 18%) 100%
+    );
+  box-shadow:
+    inset 0 36px 96px -76px color-mix(in oklch, var(--primary) 26%, transparent),
+    inset 0 -88px 140px -104px color-mix(in oklch, var(--primary) 20%, transparent);
+}
+
 .sf2-roll-idle-card {
-  background-color: color-mix(in oklch, var(--background) 94%, var(--primary) 6%);
+  background-color: color-mix(in oklch, var(--background) 86%, var(--primary) 14%);
 }
 
 button.sf2-roll-idle-card:hover {
-  background-color: color-mix(in oklch, var(--background) 88%, var(--primary) 12%);
+  background-color: color-mix(in oklch, var(--background) 80%, var(--primary) 20%);
 }
 
 .sf2-roll-idle-die {
   border-color: color-mix(in oklch, var(--primary) 45%, transparent);
-  background-color: color-mix(in oklch, var(--background) 60%, transparent);
+  background-color: color-mix(in oklch, var(--primary) 12%, var(--background) 88%);
   color: var(--primary);
 }
 
 .sf2-roll-idle-cta {
   border-color: color-mix(in oklch, var(--primary) 45%, transparent);
-  background-color: color-mix(in oklch, var(--background) 60%, transparent);
+  background-color: color-mix(in oklch, var(--primary) 10%, var(--background) 90%);
   color: var(--primary);
 }
 
