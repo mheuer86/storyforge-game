@@ -493,6 +493,24 @@ button.sf2-roll-idle-card:hover .sf2-roll-idle-cta {
   background-color: color-mix(in oklch, var(--primary) 14%, var(--background) 86%);
 }
 
+@keyframes sf2-action-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sf2-action-enter {
+    animation: sf2-action-enter 220ms cubic-bezier(0.2, 0, 0, 1) both;
+    animation-delay: var(--sf2-action-delay, 0ms);
+  }
+}
+
 /* Grain texture overlay — SVG noise filter at low opacity */
 .grain-overlay {
   position: fixed;
