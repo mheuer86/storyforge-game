@@ -42,6 +42,10 @@ const desktopRailClassName = cn(
   'focus-within:opacity-100 focus-within:saturate-100',
 )
 
+const sidebarTitleTextClassName = '[font-family:var(--font-geist-sans),Geist,system-ui,sans-serif] text-sm font-semibold tracking-normal text-foreground/90'
+const sidebarBodyTextClassName = '[font-family:var(--font-geist-sans),Geist,system-ui,sans-serif] text-xs leading-snug text-muted-foreground/80'
+const sidebarEmptyTextClassName = '[font-family:var(--font-geist-sans),Geist,system-ui,sans-serif] text-xs leading-snug text-muted-foreground/75'
+
 const ambientOverlayStyle = {
   background: [
     'radial-gradient(circle at 18% 0%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 30%)',
@@ -620,34 +624,103 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
   )
 }
 
+type InventoryDisplayDetails = {
+  description?: string
+  modifiers: string[]
+}
+
+function getSelectedPlaybook(state: Sf2State) {
+  const config = getGenreConfig(state.meta.genreId as Genre)
+  const playbooks = config.playbooks?.[state.meta.originId] ?? config.classes
+
+  return playbooks.find((playbook) => playbook.id === state.meta.playbookId || playbook.name === state.player.class.name)
+}
+
+function getInventoryDisplayDetails(state: Sf2State, item: Sf2State['player']['inventory'][number]): InventoryDisplayDetails {
+  const configItem = getSelectedPlaybook(state)?.startingInventory.find((candidate) => candidate.name === item.name)
+  const looseItem = item as Record<string, unknown>
+  const description = typeof looseItem.description === 'string' ? looseItem.description : configItem?.description
+  const damage = typeof looseItem.damage === 'string' ? looseItem.damage : configItem?.damage
+  const effect = typeof looseItem.effect === 'string' ? looseItem.effect : configItem?.effect
+  const charges = typeof looseItem.charges === 'number' ? looseItem.charges : configItem?.charges
+  const maxCharges = typeof looseItem.maxCharges === 'number' ? looseItem.maxCharges : configItem?.maxCharges
+  const modifiers = [
+    damage ?? null,
+    effect ?? null,
+    typeof charges === 'number'
+      ? `Charges ${charges}/${typeof maxCharges === 'number' ? maxCharges : charges}`
+      : null,
+  ].filter((modifier): modifier is string => Boolean(modifier))
+
+  return { description, modifiers }
+}
+
 function QuickSlotsPanel({ state }: { state: Sf2State }) {
-  const items = state.player.inventory.slice(0, 4)
+  const items = state.player.inventory
 
   return (
-    <HudPanel title="Quick Slots">
+    <HudPanel title="Gear">
       {items.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2">
-          {items.map((item, index) => (
-            <div
-              key={`${item.name}-${index}`}
-              className="min-h-[70px] rounded-lg bg-background/50 p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.035)]"
-            >
-              <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">
-                {String(index + 1).padStart(2, '0')}
+        <div className={cn(
+          'space-y-2',
+          items.length > 5 && 'max-h-[18rem] overflow-y-auto overscroll-contain pr-1 [scrollbar-gutter:stable]',
+        )}>
+          {items.map((item, index) => {
+            const details = getInventoryDisplayDetails(state, item)
+            const primaryModifier = details.modifiers[0]
+            const secondaryModifiers = details.modifiers.slice(1)
+
+            return (
+              <div
+                key={`${item.name}-${index}`}
+                className="rounded-lg bg-background/50 px-3 py-2.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.035)]"
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="w-5 shrink-0 pt-0.5 font-mono text-[10px] tracking-[0.18em] text-muted-foreground/60">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <div className={cn('min-w-0 flex-1 truncate', sidebarTitleTextClassName)}>
+                        {item.name}
+                      </div>
+                      {primaryModifier && (
+                        <GearModifierChip label={primaryModifier} />
+                      )}
+                    </div>
+                    {details.description && (
+                      <div className={cn('mt-1 line-clamp-2', sidebarBodyTextClassName)}>
+                        {details.description}
+                      </div>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {item.qty > 1 && (
+                        <span className="inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          {item.qty}x
+                        </span>
+                      )}
+                      {secondaryModifiers.map((modifier) => (
+                        <GearModifierChip key={modifier} label={modifier} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="mt-1 line-clamp-2 text-sm leading-snug text-foreground/90">
-                {item.name}
-              </div>
-              <div className="mt-1 inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {item.qty > 1 ? `${item.qty}x` : 'ready'}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
-        <EmptyLine text="No quick inventory yet." />
+        <EmptyLine text="No gear yet." />
       )}
     </HudPanel>
+  )
+}
+
+function GearModifierChip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex shrink-0 rounded border border-primary/35 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary/90">
+      {label}
+    </span>
   )
 }
 
@@ -661,6 +734,9 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
   const uses = trait.uses
     ? `${trait.uses.current}/${trait.uses.max}`
     : null
+  const configTrait = getSelectedPlaybook(state)?.trait
+  const looseTrait = trait as Record<string, unknown>
+  const description = typeof looseTrait.description === 'string' ? looseTrait.description : configTrait?.description
 
   return (
     <HudPanel
@@ -672,12 +748,19 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
       )}
     >
       <div className="rounded-md border border-border/30 bg-background/45 px-3 py-2.5">
-        <div className="font-sans text-sm font-medium tracking-normal text-foreground/90">
+        <div className={sidebarTitleTextClassName}>
           {trait.name}
         </div>
-        <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
-          {uses ? 'Uses remaining' : 'Always available'}
-        </div>
+        {description && (
+          <div className={cn('mt-1.5 line-clamp-3', sidebarBodyTextClassName)}>
+            {description}
+          </div>
+        )}
+        {!uses && (
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+            Always available
+          </div>
+        )}
       </div>
     </HudPanel>
   )
@@ -738,14 +821,14 @@ function LocationsPanel({ state }: { state: Sf2State }) {
               )}>
                 <div className="flex min-w-0 items-center gap-2">
                   {here && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_12px_-3px] shadow-primary" />}
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium tracking-normal text-foreground/90">
+                  <span className={cn('min-w-0 flex-1 truncate', sidebarTitleTextClassName)}>
                     {location.name || location.id.replace(/_/g, ' ')}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
                   {location.locked && <LocationChip tone="muted" label="LOCKED" />}
                 </div>
                 {tag && (
-                  <div className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">
+                  <div className={cn('mt-1.5 line-clamp-1', sidebarBodyTextClassName)}>
                     {tag}
                   </div>
                 )}
@@ -775,6 +858,7 @@ function canonicalLocationNameKey(name: string) {
     .replace(/\s+/g, ' ')
   const tokens = normalized.split(' ').filter(Boolean)
   const bayMatch = normalized.match(/\bbay\s*0*(\d+)\b/)
+  const berthMatch = normalized.match(/\b(berth|dock|pier|gate)\s*0*(\d+)\s*([a-z])?\b/)
 
   if (bayMatch) {
     const bayNumber = bayMatch[1]
@@ -787,6 +871,19 @@ function canonicalLocationNameKey(name: string) {
     }))].sort().join(' ')
     const exterior = tokens.includes('exterior') ? ':exterior' : ''
     return `bay:${bayNumber}${exterior}:${context}`
+  }
+
+  if (berthMatch) {
+    const [, kind, number, suffix = ''] = berthMatch
+    const berthIndex = tokens.findIndex((token, index) => {
+      return token === kind && tokens[index + 1]?.replace(/^0+/, '') === number
+    })
+    const contextTokens = berthIndex > 0 ? tokens.slice(0, berthIndex) : tokens
+    const context = [...new Set(contextTokens.filter((token) => {
+      return token !== 'station' && token !== kind && token !== number && token !== suffix
+    }))].sort().join(' ')
+
+    return `${kind}:${number}${suffix}:${context}`
   }
 
   return [...new Set(tokens)].sort().join(' ')
@@ -819,9 +916,9 @@ function PresentPanel({ state }: { state: Sf2State }) {
               <div className="flex min-w-0 items-center gap-3">
                 <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dispositionDotClass(npc.disposition))} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground/90">{npc.name}</div>
+                  <div className={cn('truncate', sidebarTitleTextClassName)}>{npc.name}</div>
                   {npc.affiliation && (
-                    <div className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                    <div className={cn('mt-0.5 truncate', sidebarBodyTextClassName)}>
                       {npc.affiliation}
                     </div>
                   )}
@@ -864,11 +961,11 @@ function PressurePanel({
     >
       <div className="space-y-3">
         <div>
-          <div className="text-sm font-semibold tracking-normal text-foreground/90">
+          <div className={sidebarTitleTextClassName}>
             {pressureProjection.faceName}
           </div>
           {activeStep && (
-            <div className="mt-1 text-sm leading-relaxed text-muted-foreground/85">
+            <div className={cn('mt-1', sidebarBodyTextClassName)}>
               {activeStep.pressure}
             </div>
           )}
@@ -945,7 +1042,7 @@ function IntelPanel({ state }: { state: Sf2State }) {
           return (
             <div key={thread.id} className="space-y-2">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-sm font-semibold tracking-normal text-foreground/85">
+                <span className={sidebarTitleTextClassName}>
                   {thread.title}
                 </span>
                 <span className="inline-flex flex-wrap gap-1.5">
@@ -987,7 +1084,10 @@ function IntelPanel({ state }: { state: Sf2State }) {
 
 function ClueRow({ children, tone }: { children: ReactNode; tone: 'evidence' | 'floating' }) {
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2 rounded-md bg-background/35 px-2 py-1.5 text-[14px] leading-snug text-foreground/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.025)]">
+    <div className={cn(
+      'grid grid-cols-[auto_minmax(0,1fr)] gap-2 rounded-md bg-background/35 px-2 py-1.5 text-foreground/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.025)]',
+      sidebarBodyTextClassName,
+    )}>
       <span className={cn(
         'mt-1.5 h-1.5 w-1.5 rounded-full',
         tone === 'evidence' ? 'bg-success/70' : 'bg-primary/70',
@@ -1958,7 +2058,7 @@ function KeyValue({ label, value, muted }: { label: string; value?: string; mute
 
 function EmptyLine({ text, compact }: { text: string; compact?: boolean }) {
   return (
-    <div className={cn('text-sm text-muted-foreground', compact ? 'leading-snug' : 'leading-normal')}>
+    <div className={cn(sidebarEmptyTextClassName, !compact && 'leading-normal')}>
       {text}
     </div>
   )
