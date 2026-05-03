@@ -24,6 +24,11 @@ import {
   reheatNpcAgendaAction,
 } from '../pressure/reheat'
 import {
+  findMatchingLocation,
+  mergeLocationIntoExisting,
+  replaceLocationReferences,
+} from '../locations'
+import {
   coerceDisposition,
   coerceHeat,
   coerceTempLoadTag,
@@ -40,6 +45,7 @@ import {
   resolveTemporalAnchorTargetId,
   resolveThreadId,
 } from '../reference-policy'
+import { normalizeEntityReferenceText } from '../resolution/entity-references'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -80,6 +86,66 @@ const CHAPTER_PRESSURE_CAP = 10
 function clampPressure(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.max(0, Math.min(CHAPTER_PRESSURE_CAP, Math.round(value)))
+}
+
+function normalizedSemanticText(value: unknown): string {
+  return normalizeEntityReferenceText(String(value ?? ''))
+}
+
+function semanticTextMatches(a: unknown, b: unknown): boolean {
+  const left = normalizedSemanticText(a)
+  const right = normalizedSemanticText(b)
+  if (!left || !right) return false
+  return left === right
+}
+
+function semanticTextOverlaps(a: unknown, b: unknown): boolean {
+  const left = normalizedSemanticText(a)
+  const right = normalizedSemanticText(b)
+  if (left.length < 12 || right.length < 12) return false
+  if (left === right || left.includes(right) || right.includes(left)) return true
+
+  const leftTokens = semanticContentTokens(left)
+  const rightTokens = semanticContentTokens(right)
+  if (leftTokens.length < 3 || rightTokens.length < 3) return false
+
+  const rightSet = new Set(rightTokens)
+  const common = leftTokens.filter((token) => rightSet.has(token)).length
+  const smaller = Math.min(leftTokens.length, rightTokens.length)
+  return common >= 3 && common / smaller >= 0.75
+}
+
+function semanticContentTokens(normalized: string): string[] {
+  return uniqueStrings(normalized.split(' ').filter((token) => token.length > 1))
+}
+
+function sameStringSet(a: string[], b: string[]): boolean {
+  const left = new Set(a)
+  const right = new Set(b)
+  if (left.size !== right.size) return false
+  return [...left].every((value) => right.has(value))
+}
+
+function stringSetIntersects(a: string[], b: string[]): boolean {
+  const right = new Set(b)
+  return a.some((value) => right.has(value))
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.filter((value) => value.length > 0)))
+}
+
+function driftDedup(
+  drift: Sf2ArchivistFlag[],
+  kind: string,
+  proposedId: string,
+  existingId: string
+): void {
+  drift.push({
+    kind: 'identity_drift',
+    detail: `${kind} create merged with existing ${existingId} instead of creating ${proposedId}`,
+    entityId: existingId,
+  })
 }
 
 function syncActiveThreadIntoChapterRuntime(
@@ -393,7 +459,12 @@ function applyCreate(
           isAnonymousNpc(draft.campaign.npcs[supersedesId])
             ? draft.campaign.npcs[supersedesId]
             : null
+        const existingById =
+          typeof p.id === 'string' && draft.campaign.npcs[p.id]
+            ? draft.campaign.npcs[p.id]
+            : null
         const existingMatch =
+          existingById ||
           supersedeTarget ||
           findMatchingAnonymousNpc(draft, proposedName, proposedCue) ||
           findMatchingNpc(draft, proposedName) ||
@@ -415,7 +486,18 @@ function applyCreate(
           if (p.affiliation) existingMatch.affiliation = String(p.affiliation)
           if (p.role) existingMatch.role = p.role as Sf2Npc['role']
           const keyFacts = Array.isArray(p.key_facts) ? (p.key_facts as string[]).slice(0, 3) : []
-          if (keyFacts.length > 0) existingMatch.identity.keyFacts = keyFacts
+          if (keyFacts.length > 0 && (existingMatch.identity.keyFacts.length === 0 || isAnonymousNpc(existingMatch))) {
+            existingMatch.identity.keyFacts = keyFacts
+          } else if (
+            keyFacts.length > 0 &&
+            !sameStringSet(existingMatch.identity.keyFacts, keyFacts)
+          ) {
+            drift.push({
+              kind: 'identity_drift',
+              detail: `keyFacts anchor conflict on duplicate npc create: existing [${existingMatch.identity.keyFacts.join('; ')}], proposed [${keyFacts.join('; ')}]`,
+              entityId: existingMatch.id,
+            })
+          }
           const proposedPronoun = npcPronounFromPayload(p)
           if (proposedPronoun && !existingMatch.identity.pronoun) {
             existingMatch.identity.pronoun = proposedPronoun
@@ -496,6 +578,27 @@ function applyCreate(
       case 'faction': {
         const p = write.payload as Record<string, unknown>
         const id = (p.id as string | undefined) ?? nextEntityId('faction', draft)
+        const existing = draft.campaign.factions[id] ??
+          Object.values(draft.campaign.factions).find((faction) =>
+            semanticTextMatches(faction.name, p.name)
+          )
+        if (existing) {
+          const stance = coerceDisposition(p.stance, existing.stance)
+          const heat = coerceHeat(p.heat, existing.heat)
+          existing.stance = stance.tier
+          existing.heat = heat.level
+          existing.heatReasons = uniqueStrings([
+            ...existing.heatReasons,
+            ...(Array.isArray(p.heat_reasons) ? (p.heat_reasons as string[]) : []),
+          ])
+          const proposedCue = String(p.retrieval_cue ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          driftDedup(drift, 'faction', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const faction: Sf2Faction = {
           id,
           name: String(p.name ?? ''),
@@ -548,7 +651,6 @@ function applyCreate(
           })
           return
         }
-        const id = (p.id as string | undefined) ?? nextEntityId('thread', draft)
         const successorRef =
           typeof p.successor_to_thread_id === 'string'
             ? p.successor_to_thread_id
@@ -570,6 +672,46 @@ function applyCreate(
           Boolean(p.load_bearing) ||
           Boolean(predecessorThreadId) ||
           (draft.chapter.setup.activeThreadIds.length === 0 && tension >= 4)
+        const id = (p.id as string | undefined) ?? nextEntityId('thread', draft)
+        const existing = draft.campaign.threads[id] ??
+          Object.values(draft.campaign.threads).find((thread) => {
+            const sameOwner = thread.owner.kind === ownerHint.kind && thread.owner.id === ownerId
+            const sameTitle = semanticTextMatches(thread.title, p.title)
+            const sameResolution = semanticTextOverlaps(thread.resolutionCriteria, p.resolution_criteria)
+            const sameCue = semanticTextOverlaps(thread.retrievalCue, p.retrieval_cue)
+            return sameTitle || (sameOwner && sameResolution) || (sameOwner && sameCue)
+          })
+        if (existing) {
+          existing.tension = Math.max(existing.tension, tension)
+          existing.peakTension = Math.max(existing.peakTension, existing.tension, tension)
+          existing.loadBearing = existing.loadBearing || shouldLoadBear
+          if (!existing.resolutionCriteria && p.resolution_criteria) {
+            existing.resolutionCriteria = String(p.resolution_criteria)
+          }
+          if (!existing.failureMode && p.failure_mode) {
+            existing.failureMode = String(p.failure_mode)
+          }
+          const proposedCue = String(p.retrieval_cue ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          if (predecessorThreadId && !existing.successorToThreadId) {
+            existing.successorToThreadId = predecessorThreadId
+            existing.chapterDriverKind = 'successor'
+          }
+          syncActiveThreadIntoChapterRuntime(draft, existing.id, {
+            loadBearing: existing.loadBearing,
+            successor: Boolean(existing.successorToThreadId),
+          })
+          const explicitArcRef = typeof p.arc_id === 'string' ? p.arc_id : ''
+          const explicitArcId = explicitArcRef ? resolveArcId(draft, explicitArcRef) : null
+          const inheritedArcId = predecessorThreadId ? arcIdForThread(draft, predecessorThreadId) : null
+          const arcId = explicitArcId ?? inheritedArcId
+          if (arcId) attachThreadToArc(draft, existing.id, arcId)
+          driftDedup(drift, 'thread', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const thread: Sf2Thread = {
           id,
           title: String(p.title ?? ''),
@@ -645,6 +787,21 @@ function applyCreate(
           return
         }
         const id = (p.id as string | undefined) ?? nextEntityId('decision', draft)
+        const proposedSummary = String(p.summary ?? '')
+        const existing = draft.campaign.decisions[id] ??
+          Object.values(draft.campaign.decisions).find((decision) =>
+            semanticTextOverlaps(decision.summary, proposedSummary) &&
+            sameStringSet(decision.anchoredTo, threadIds)
+          )
+        if (existing) {
+          const proposedCue = String(p.retrieval_cue ?? p.summary ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          driftDedup(drift, 'decision', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const decision: Sf2Decision = {
           id,
           title: String(p.title ?? p.summary ?? ''),
@@ -653,7 +810,7 @@ function applyCreate(
           retrievalCue: String(p.retrieval_cue ?? p.summary ?? ''),
           status: 'active',
           anchoredTo: threadIds,
-          summary: String(p.summary ?? ''),
+          summary: proposedSummary,
           madeByPC: Boolean(p.made_by_pc ?? true),
           turn: turnIndex,
         }
@@ -716,6 +873,24 @@ function applyCreate(
           return
         }
         const id = (p.id as string | undefined) ?? nextEntityId('promise', draft)
+        const proposedObligation = String(p.obligation ?? '')
+        const existing = draft.campaign.promises[id] ??
+          Object.values(draft.campaign.promises).find((promise) =>
+            promise.owner.kind === ownerHint.kind &&
+            promise.owner.id === ownerId &&
+            semanticTextOverlaps(promise.obligation, proposedObligation) &&
+            stringSetIntersects(promise.anchoredTo, threadIds)
+          )
+        if (existing) {
+          existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...threadIds])
+          const proposedCue = String(p.retrieval_cue ?? p.obligation ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          driftDedup(drift, 'promise', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const promise: Sf2Promise = {
           id,
           title: String(p.title ?? p.obligation ?? ''),
@@ -725,7 +900,7 @@ function applyCreate(
           status: 'active',
           anchoredTo: threadIds,
           owner: { kind: ownerHint.kind, id: ownerId },
-          obligation: String(p.obligation ?? ''),
+          obligation: proposedObligation,
           turn: turnIndex,
         }
         const inv = checkPromise(promise, draft.campaign)
@@ -752,6 +927,33 @@ function applyCreate(
           else drift.push({ kind: 'anchor_reference_missing', detail: `clue anchor ${r} unresolved` })
         }
         const id = (p.id as string | undefined) ?? nextEntityId('clue', draft)
+        const proposedContent = String(p.content ?? '')
+        const existing = draft.campaign.clues[id] ??
+          Object.values(draft.campaign.clues).find((clue) => {
+            const anchorCompatible =
+              clue.anchoredTo.length === 0 ||
+              threadIds.length === 0 ||
+              stringSetIntersects(clue.anchoredTo, threadIds)
+            return anchorCompatible && semanticTextOverlaps(clue.content, proposedContent)
+          })
+        if (existing) {
+          if (proposedContent.length > existing.content.length) {
+            existing.content = proposedContent
+            existing.title = String(p.title ?? p.content ?? existing.title).slice(0, 80)
+          }
+          const proposedCue = String(p.retrieval_cue ?? p.content ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...threadIds])
+          if (existing.anchoredTo.length > 0) {
+            existing.status = 'attached'
+            draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((clueId) => clueId !== existing.id)
+          }
+          driftDedup(drift, 'clue', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const clue: Sf2Clue = {
           id,
           title: String(p.title ?? p.content ?? '').slice(0, 80),
@@ -760,7 +962,7 @@ function applyCreate(
           retrievalCue: String(p.retrieval_cue ?? p.content ?? ''),
           status: threadIds.length > 0 ? 'attached' : 'floating',
           anchoredTo: threadIds,
-          content: String(p.content ?? ''),
+          content: proposedContent,
           turn: turnIndex,
         }
         const inv = checkClue(clue, draft.campaign)
@@ -794,6 +996,27 @@ function applyCreate(
           return
         }
         const id = (p.id as string | undefined) ?? nextEntityId('arc', draft)
+        const existing = draft.campaign.arcs[id] ??
+          Object.values(draft.campaign.arcs).find((arc) =>
+            semanticTextMatches(arc.title, p.title) ||
+            sameStringSet(arc.threadIds, resolvedThreadIds)
+          )
+        if (existing) {
+          existing.threadIds = uniqueStrings([...existing.threadIds, ...resolvedThreadIds])
+          if (!existing.stakesDefinition && p.stakes_definition) {
+            existing.stakesDefinition = String(p.stakes_definition)
+          }
+          const proposedCue = String(p.retrieval_cue ?? '')
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          for (const tid of resolvedThreadIds) {
+            draft.campaign.threads[tid].anchoredArcId = existing.id
+          }
+          driftDedup(drift, 'arc', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const arc: Sf2Arc = {
           id,
           title: String(p.title ?? ''),
@@ -826,7 +1049,7 @@ function applyCreate(
       case 'location': {
         const p = write.payload as Record<string, unknown>
         const id = (p.id as string | undefined) ?? nextEntityId('location', draft)
-        draft.campaign.locations[id] = {
+        const proposed = {
           id,
           name: String(p.name ?? ''),
           description: String(p.description ?? ''),
@@ -836,6 +1059,20 @@ function applyCreate(
           locked: typeof p.locked === 'boolean' ? p.locked : undefined,
           chapterCreated: chapter,
         }
+        const existing = findMatchingLocation(draft, proposed)
+        if (existing) {
+          const merged = mergeLocationIntoExisting(existing, proposed)
+          draft.campaign.locations[existing.id] = merged
+          replaceLocationReferences(draft, id, merged)
+          drift.push({
+            kind: 'identity_drift',
+            detail: `location create merged with existing location ${existing.id} instead of creating ${id}`,
+            entityId: existing.id,
+          })
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
+        draft.campaign.locations[id] = proposed
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
@@ -854,15 +1091,32 @@ function applyCreate(
           })
           .filter((x): x is string => Boolean(x))
         const label = String(p.label ?? p.title ?? '')
+        const kind = normalizeTemporalAnchorKind(p.kind)
+        const anchorText = String(p.anchor_text ?? p.anchorText ?? p.when ?? '')
+        const existing = draft.campaign.temporalAnchors[id] ??
+          Object.values(draft.campaign.temporalAnchors).find((anchor) =>
+            anchor.kind === kind &&
+            (semanticTextOverlaps(anchor.anchorText, anchorText) || semanticTextMatches(anchor.label, label))
+          )
+        if (existing) {
+          existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...anchoredTo])
+          const proposedCue = String(p.retrieval_cue ?? p.anchor_text ?? p.when ?? label)
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          driftDedup(drift, 'temporal_anchor', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const anchor: Sf2TemporalAnchor = {
           id,
           title: String(p.title ?? label),
           chapterCreated: chapter,
           category: 'temporal_anchor',
-          kind: normalizeTemporalAnchorKind(p.kind),
+          kind,
           status: normalizeTemporalAnchorStatus(p.status),
           label,
-          anchorText: String(p.anchor_text ?? p.anchorText ?? p.when ?? ''),
+          anchorText,
           anchoredTo,
           retrievalCue: String(p.retrieval_cue ?? p.anchor_text ?? p.when ?? label),
           turn: turnIndex,
@@ -1009,6 +1263,31 @@ function applyCreate(
             writeRef: ref,
             confidenceTier: write.confidence,
           })
+          return
+        }
+        const existing: Sf2Document | undefined = Object.values(draft.campaign.documents).find((existingDoc) => {
+          const sameTitle = semanticTextMatches(existingDoc.title, doc.title)
+          const sameKind = existingDoc.type === doc.type && semanticTextMatches(existingDoc.kindLabel, doc.kindLabel)
+          const sameSubjects = sameStringSet(existingDoc.subjectEntityIds, doc.subjectEntityIds)
+          const sameTerms = semanticTextOverlaps(existingDoc.originalSummary, doc.originalSummary) ||
+            semanticTextOverlaps(existingDoc.authorizes, doc.authorizes)
+          return sameTitle || (sameKind && sameSubjects && sameTerms)
+        })
+        if (existing) {
+          existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...anchoredTo])
+          const partyKeys = new Set(existing.additionalParties.map((party) => `${party.role}:${party.entityId}`))
+          for (const party of additionalParties) {
+            const key = `${party.role}:${party.entityId}`
+            if (partyKeys.has(key)) continue
+            partyKeys.add(key)
+            existing.additionalParties.push(party)
+          }
+          const proposedCue = String(p.retrieval_cue ?? authorizes ?? title)
+          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
+            existing.retrievalCue = proposedCue
+          }
+          driftDedup(drift, 'document', id, existing.id)
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
           return
         }
         draft.campaign.documents[id] = doc
@@ -1635,6 +1914,37 @@ function buildBeat(
   }
 }
 
+function findMatchingBeat(draft: Sf2State, proposed: Sf2EmotionalBeat): Sf2EmotionalBeat | undefined {
+  return draft.campaign.beats[proposed.id] ??
+    Object.values(draft.campaign.beats).find((beat) => {
+      const participantCompatible =
+        beat.participants.length === 0 ||
+        proposed.participants.length === 0 ||
+        stringSetIntersects(beat.participants, proposed.participants)
+      const anchorCompatible =
+        beat.anchoredTo.length === 0 ||
+        proposed.anchoredTo.length === 0 ||
+        stringSetIntersects(beat.anchoredTo, proposed.anchoredTo)
+      const tagCompatible = stringSetIntersects(beat.emotionalTags, proposed.emotionalTags)
+      return participantCompatible &&
+        anchorCompatible &&
+        tagCompatible &&
+        semanticTextOverlaps(beat.text, proposed.text)
+    })
+}
+
+function mergeBeatIntoExisting(existing: Sf2EmotionalBeat, proposed: Sf2EmotionalBeat): void {
+  if (proposed.text.length > existing.text.length) {
+    existing.text = proposed.text
+    existing.title = proposed.title
+    existing.retrievalCue = proposed.retrievalCue
+  }
+  existing.participants = uniqueStrings([...existing.participants, ...proposed.participants]) as Sf2BeatParticipant[]
+  existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...proposed.anchoredTo])
+  existing.emotionalTags = uniqueStrings([...existing.emotionalTags, ...proposed.emotionalTags]) as Sf2EmotionalBeatTag[]
+  existing.salience = Math.max(existing.salience, proposed.salience)
+}
+
 export function applyArchivistPatch(
   state: Sf2State,
   patch: Sf2ArchivistPatch,
@@ -1843,6 +2153,12 @@ export function applyArchivistPatch(
         continue
       }
       const beat = buildBeat(add, draft, patch.turnIndex, chapter)
+      const existing = findMatchingBeat(draft, beat)
+      if (existing) {
+        mergeBeatIntoExisting(existing, beat)
+        driftDedup(drift, 'emotional beat', beat.id, existing.id)
+        continue
+      }
       draft.campaign.beats[beat.id] = beat
     }
   }

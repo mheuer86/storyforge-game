@@ -1,0 +1,404 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "archivist create dedupes existing registries",
+  "source": {
+    "notes": "Pins create-time dedup guards for non-NPC, non-location Archivist entities. Duplicate creates should merge/no-op against canonical registries instead of minting parallel IDs."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_secondary": {
+            "id": "thread_secondary",
+            "title": "The records question",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": {
+              "kind": "faction",
+              "id": "faction_registry"
+            },
+            "stakeholders": [],
+            "tension": 4,
+            "peakTension": 4,
+            "resolutionCriteria": "The records question is answered.",
+            "failureMode": "The records are buried.",
+            "retrievalCue": "Whether the registry records can be trusted.",
+            "loadBearing": false,
+            "tensionHistory": []
+          }
+        },
+        "arcs": {
+          "arc_0": {
+            "id": "arc_0",
+            "title": "Registry pressure arc",
+            "chapterCreated": 1,
+            "category": "arc",
+            "status": "active",
+            "threadIds": [
+              "thread_spine",
+              "thread_secondary"
+            ],
+            "spansChapters": 3,
+            "noSingleResolvingAction": true,
+            "stakesDefinition": "The registry pressure cannot be resolved by one filing.",
+            "retrievalCue": "Registry pressure across chapters."
+          }
+        },
+        "decisions": {
+          "decision_0": {
+            "id": "decision_0",
+            "title": "Inspect records before filing",
+            "chapterCreated": 1,
+            "category": "decision",
+            "retrievalCue": "The PC will inspect records before filing.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "summary": "Inspect records before filing.",
+            "madeByPC": true,
+            "turn": 0
+          }
+        },
+        "promises": {
+          "promise_0": {
+            "id": "promise_0",
+            "title": "File no false accounting",
+            "chapterCreated": 1,
+            "category": "promise",
+            "retrievalCue": "The PC promised not to file false accounting.",
+            "status": "active",
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "owner": {
+              "kind": "faction",
+              "id": "faction_registry"
+            },
+            "obligation": "File no false accounting.",
+            "turn": 0
+          }
+        },
+        "clues": {
+          "clue_0": {
+            "id": "clue_0",
+            "title": "Fuel stalled",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Fuel transfer stalled at 60%.",
+            "status": "attached",
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "content": "Fuel transfer is stalled at 60%.",
+            "turn": 0
+          }
+        },
+        "temporalAnchors": {
+          "temporal_anchor_0": {
+            "id": "temporal_anchor_0",
+            "title": "Manifest deadline",
+            "chapterCreated": 1,
+            "category": "temporal_anchor",
+            "kind": "deadline",
+            "status": "active",
+            "label": "1600 manifest deadline",
+            "anchorText": "The manifest closes at 1600.",
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "retrievalCue": "The manifest closes at 1600.",
+            "turn": 0
+          }
+        },
+        "documents": {
+          "doc_0": {
+            "id": "doc_0",
+            "title": "Registry amendment order",
+            "chapterCreated": 1,
+            "category": "document",
+            "retrievalCue": "Registry amendment order for the intake problem.",
+            "type": "directive",
+            "kindLabel": "amendment order",
+            "status": "active",
+            "subjectEntityIds": [
+              "faction_registry"
+            ],
+            "additionalParties": [],
+            "authorizes": "Requires the registry to amend the intake filing.",
+            "originalSummary": "Requires the registry to amend the intake filing.",
+            "currentSummary": "Requires the registry to amend the intake filing.",
+            "revisions": [],
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "clueIds": [],
+            "turn": 0
+          }
+        },
+        "beats": {
+          "beat_0": {
+            "id": "beat_0",
+            "title": "PC holds Registry to no false accounting",
+            "chapterCreated": 1,
+            "category": "emotional_beat",
+            "retrievalCue": "PC holds Registry to no false accounting.",
+            "text": "PC holds Registry to no false accounting.",
+            "participants": [
+              "pc",
+              "faction_registry"
+            ],
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "emotionalTags": [
+              "boundary_drawn"
+            ],
+            "salience": 0.75,
+            "turn": 0
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": [
+            "thread_spine",
+            "thread_secondary"
+          ],
+          "loadBearingThreadIds": [
+            "thread_spine"
+          ]
+        },
+        "artifacts": {
+          "opening": {
+            "visibleThreadIds": [
+              "thread_spine",
+              "thread_secondary"
+            ]
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "I inspect the records before filing.",
+    "narrator": {
+      "prose": "You keep the registry at the table and refuse to file false accounting. The fuel transfer is still stalled at sixty percent, and the manifest closes at 1600 under the same amendment order.",
+      "annotation": {
+        "suggested_actions": []
+      }
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "faction",
+            "payload": {
+              "name": "Registry",
+              "stance": "neutral",
+              "heat": "low",
+              "heat_reasons": [
+                "The PC is refusing to file false accounting."
+              ],
+              "retrieval_cue": "Local administrative pressure around the intake records."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "thread",
+            "payload": {
+              "title": "The intake problem",
+              "owner": {
+                "kind": "faction",
+                "name_or_id": "Registry"
+              },
+              "tension": 6,
+              "resolution_criteria": "The immediate intake problem is resolved.",
+              "failure_mode": "The intake problem escalates.",
+              "retrieval_cue": "The public-facing pressure in the current chapter."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "decision",
+            "payload": {
+              "summary": "Inspect records before filing.",
+              "anchored_to": [
+                "thread_spine"
+              ],
+              "retrieval_cue": "The PC will inspect records before filing."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "promise",
+            "payload": {
+              "obligation": "File no false accounting.",
+              "owner": {
+                "kind": "faction",
+                "name_or_id": "Registry"
+              },
+              "anchored_to": [
+                "thread_spine"
+              ],
+              "retrieval_cue": "The PC promised not to file false accounting."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Fuel transfer is still stalled at 60%.",
+              "anchored_to": [
+                "thread_spine"
+              ],
+              "retrieval_cue": "Fuel transfer still stalled at sixty percent."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "arc",
+            "payload": {
+              "title": "Registry pressure arc",
+              "thread_ids": [
+                "thread_spine",
+                "thread_secondary"
+              ],
+              "spans_chapters": 3,
+              "stakes_definition": "The registry pressure cannot be resolved by one filing.",
+              "retrieval_cue": "Registry pressure across chapters."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "temporal_anchor",
+            "payload": {
+              "title": "Manifest deadline",
+              "kind": "deadline",
+              "label": "1600 manifest deadline",
+              "anchor_text": "The manifest closes at 1600.",
+              "anchored_to": [
+                "thread_spine"
+              ],
+              "retrieval_cue": "The manifest closes at 1600."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "document",
+            "payload": {
+              "type": "directive",
+              "kind_label": "amendment order",
+              "title": "Registry amendment order",
+              "authorizes": "Requires the registry to amend the intake filing.",
+              "original_summary": "Requires the registry to amend the intake filing.",
+              "subject_entity_ids": [
+                "faction_registry"
+              ],
+              "anchored_to": [
+                "thread_spine"
+              ],
+              "retrieval_cue": "Registry amendment order for the intake problem."
+            },
+            "confidence": "high"
+          }
+        ],
+        "emotionalBeats": [
+          {
+            "text": "The PC holds the registry to no false accounting.",
+            "participants": [
+              "pc",
+              "faction_registry"
+            ],
+            "anchoredTo": [
+              "thread_spine"
+            ],
+            "emotionalTags": [
+              "boundary_drawn"
+            ],
+            "salience": 0.85
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "entityIdsInclude": [
+      "faction_registry",
+      "thread_spine",
+      "decision_0",
+      "promise_0",
+      "clue_0",
+      "arc_0",
+      "temporal_anchor_0",
+      "doc_0",
+      "beat_0"
+    ],
+    "entityIdsAbsent": [
+      "faction_1",
+      "thread_2",
+      "decision_1",
+      "promise_1",
+      "clue_1",
+      "arc_1",
+      "temporal_anchor_1",
+      "doc_1",
+      "beat_1"
+    ],
+    "beatsCount": 1,
+    "archivistAcceptedRefs": [
+      "creates[0]",
+      "creates[1]",
+      "creates[2]",
+      "creates[3]",
+      "creates[4]",
+      "creates[5]",
+      "creates[6]",
+      "creates[7]"
+    ],
+    "driftIncludes": [
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "faction create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "thread create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "decision create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "promise create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "clue create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "arc create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "temporal_anchor create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "document create merged"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "emotional beat create merged"
+      }
+    ]
+  }
+}

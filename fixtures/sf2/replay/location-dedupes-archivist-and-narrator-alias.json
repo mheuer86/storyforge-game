@@ -1,0 +1,165 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "location dedupes Archivist create and Narrator alias",
+  "source": {
+    "notes": "Captured from sf2-session-camp_1777765176462-2026-05-03T00-02-10: Author created loc_opening, Narrator emitted verath_berth_14c, and Archivist created the same berth again as location_N. State should keep one semantic location."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": "midshift"
+      },
+      "campaign": {
+        "locations": {
+          "loc_opening": {
+            "id": "loc_opening",
+            "name": "Verath Station berth 14-C - a mid-tier refueling slip with corroded docking arm hardware and a view of the concourse through scratched plexite.",
+            "description": "Clamps locked on port-fee hold; fuel transfer stalled at 60%; the PC is aboard or at the berth access hatch with a dead queue number and a collector visible on the concourse.",
+            "atmosphericConditions": [
+              "Recycled air, fuel-line hiss, flickering berth status lamp."
+            ],
+            "chapterCreated": 1
+          }
+        }
+      },
+      "chapter": {
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "Verath Station berth 14-C - a mid-tier refueling slip with corroded docking arm hardware and a view of the concourse through scratched plexite.",
+          "description": "Clamps locked on port-fee hold; fuel transfer stalled at 60%; the PC is aboard or at the berth access hatch with a dead queue number and a collector visible on the concourse.",
+          "atmosphericConditions": [
+            "Recycled air, fuel-line hiss, flickering berth status lamp."
+          ],
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "Verath Station berth 14-C - a mid-tier refueling slip with corroded docking arm hardware and a view of the concourse through scratched plexite.",
+            "description": "Clamps locked on port-fee hold; fuel transfer stalled at 60%; the PC is aboard or at the berth access hatch with a dead queue number and a collector visible on the concourse.",
+            "atmosphericConditions": [
+              "Recycled air, fuel-line hiss, flickering berth status lamp."
+            ],
+            "chapterCreated": 1
+          },
+          "presentNpcIds": [],
+          "timeLabel": "midshift",
+          "established": [
+            "The berth is already established."
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "midshift"
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "",
+    "isInitial": true,
+    "narrator": {
+      "prose": "The berth-14 status lamp has been red so long the color has stopped registering as urgent. Fuel holds at sixty percent while the concourse watches through scratched plexite.",
+      "annotation": {
+        "suggested_actions": []
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_location",
+          "location_id": "verath_berth_14c",
+          "name": "Verath Station - Berth 14-C",
+          "description": "A mid-tier refueling slip with corroded docking arm hardware and a view of the concourse through scratched plexite.",
+          "atmospheric_conditions": [
+            "Clamp hold - red lamp",
+            "Fuel stalled at 60%",
+            "Recycled air, fuel-line hiss"
+          ]
+        },
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "verath_berth_14c",
+            "present_npc_ids": [],
+            "time_label": "midshift",
+            "established": [
+              "Berth-14 clamp status lamp is red - port fee hold SEQ 441-B",
+              "Fuel transfer stalled at 60%"
+            ],
+            "locked": false
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "location",
+            "payload": {
+              "name": "Verath Station - Berth 14-C",
+              "description": "A mid-tier refueling slip with corroded docking arm hardware. Red clamp-hold lamp, fuel line hissing against the hull. View of the concourse through scratched plexite.",
+              "atmospheric_conditions": [
+                "Clamp hold - red lamp, SEQ 441-B",
+                "Fuel transfer stalled at 60%",
+                "Recycled air, fuel-line hiss",
+                "Midshift concourse traffic visible through plexite"
+              ],
+              "locked": false
+            },
+            "confidence": "high",
+            "sourceQuote": "The berth-14 status lamp has been red so long the color has stopped registering as urgent."
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "currentLocationId": "loc_opening",
+    "currentTimeLabel": "midshift",
+    "locationIdsInclude": [
+      "loc_opening"
+    ],
+    "locationIdsAbsent": [
+      "location_2",
+      "verath_berth_14c"
+    ],
+    "locationsMatchingName": [
+      {
+        "name": "Verath Station - Berth 14-C",
+        "count": 1,
+        "idsInclude": [
+          "loc_opening"
+        ],
+        "idsExclude": [
+          "location_2",
+          "verath_berth_14c"
+        ]
+      }
+    ],
+    "archivistTurnMessage": {
+      "containsAll": [
+        "#### Locations (canonical ids; check before creating a new location)",
+        "- loc_opening · Verath Station berth 14-C",
+        "CURRENT",
+        "SCENE"
+      ]
+    },
+    "archivistAcceptedRefs": [
+      "creates[0]"
+    ],
+    "driftIncludes": [
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "location create merged"
+      }
+    ]
+  }
+}

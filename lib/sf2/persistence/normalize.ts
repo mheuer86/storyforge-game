@@ -4,12 +4,18 @@ import {
   repairOwnerRef,
 } from '../reference-policy'
 import {
+  locationSemanticKey,
+  mergeLocationIntoExisting,
+  replaceLocationReferences,
+} from '../locations'
+import {
   SF2_SCHEMA_VERSION,
   type Sf2CampaignMeta,
   type Sf2ChapterNumber,
   type Sf2DispositionTier,
   type Sf2Faction,
   type Sf2HeatLevel,
+  type Sf2Location,
   type Sf2Npc,
   type Sf2NpcRole,
   type Sf2NpcStatus,
@@ -111,6 +117,14 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
     campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter)
   }
 
+  for (const [id, location] of Object.entries(campaign.locations)) {
+    campaign.locations[id] = normalizeLocation(location, {
+      id,
+      name: '',
+      description: '',
+    })
+  }
+
   ensureReferencedFallbackOwners(state)
 }
 
@@ -198,6 +212,8 @@ function normalizeWorld(state: Sf2State, repairs: string[]): void {
     repairs.push(`world.currentLocation:${world.currentLocation.id}→${snapshotLocation.id}`)
     world.currentLocation = snapshotLocation
   }
+
+  dedupeCampaignLocations(state, repairs)
 
   world.sceneSnapshot.sceneId = stringOr(world.sceneSnapshot.sceneId, state.meta.currentSceneId)
   world.sceneSnapshot.presentNpcIds = stringArray(world.sceneSnapshot.presentNpcIds)
@@ -355,7 +371,70 @@ function normalizeLocation(raw: unknown, fallback: Sf2State['world']['currentLoc
     atmosphericConditions: Array.isArray(record.atmosphericConditions)
       ? stringArray(record.atmosphericConditions)
       : fallback.atmosphericConditions,
+    locked: typeof record.locked === 'boolean' ? record.locked : fallback.locked,
+    chapterCreated: record.chapterCreated === undefined
+      ? fallback.chapterCreated
+      : positiveInt(record.chapterCreated, fallback.chapterCreated ?? 0) as Sf2ChapterNumber,
   }
+}
+
+function dedupeCampaignLocations(state: Sf2State, repairs: string[]): void {
+  const locations = state.campaign.locations
+  if (state.world.currentLocation.id) {
+    const current = locations[state.world.currentLocation.id]
+    locations[state.world.currentLocation.id] = current
+      ? mergeLocationIntoExisting(current, state.world.currentLocation)
+      : state.world.currentLocation
+  }
+  if (state.world.sceneSnapshot.location.id) {
+    const snapshot = locations[state.world.sceneSnapshot.location.id]
+    locations[state.world.sceneSnapshot.location.id] = snapshot
+      ? mergeLocationIntoExisting(snapshot, state.world.sceneSnapshot.location)
+      : state.world.sceneSnapshot.location
+  }
+
+  const groups = new Map<string, Sf2Location[]>()
+  for (const location of Object.values(locations)) {
+    const key = locationSemanticKey(location)
+    if (!key) continue
+    const group = groups.get(key) ?? []
+    group.push(location)
+    groups.set(key, group)
+  }
+
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    const canonical = chooseCanonicalLocation(state, group)
+    let merged = canonical
+    for (const location of group) {
+      if (location.id === canonical.id) continue
+      merged = mergeLocationIntoExisting(merged, location)
+    }
+    locations[canonical.id] = merged
+    for (const location of group) {
+      if (location.id === canonical.id) continue
+      delete locations[location.id]
+      replaceLocationReferences(state, location.id, merged)
+      repairs.push(`campaign.locations:${location.id}→${canonical.id}`)
+    }
+  }
+
+  const current = locations[state.world.currentLocation.id]
+  if (current) state.world.currentLocation = current
+  const snapshot = locations[state.world.sceneSnapshot.location.id]
+  if (snapshot) state.world.sceneSnapshot.location = snapshot
+}
+
+function chooseCanonicalLocation(state: Sf2State, locations: Sf2Location[]): Sf2Location {
+  const currentId = state.world.currentLocation.id
+  const snapshotId = state.world.sceneSnapshot.location.id
+  return locations.find((location) => location.id === currentId)
+    ?? locations.find((location) => location.id === snapshotId)
+    ?? locations.find((location) => /^loc_ch\d+_opening$/.test(location.id) || location.id === 'loc_opening')
+    ?? [...locations].sort((a, b) => {
+      const chapterDelta = (a.chapterCreated ?? 0) - (b.chapterCreated ?? 0)
+      return chapterDelta !== 0 ? chapterDelta : a.id.localeCompare(b.id)
+    })[0]
 }
 
 function deepMerge(base: unknown, patch: unknown): unknown {
