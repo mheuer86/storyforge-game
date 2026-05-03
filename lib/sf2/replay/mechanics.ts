@@ -1,5 +1,9 @@
 import type { Sf2State } from '../types'
 import {
+  findMatchingLocation,
+  mergeLocationIntoExisting,
+} from '../locations'
+import {
   formatViolations,
   resolveSceneSnapshotReferences,
 } from '../reference-policy'
@@ -61,7 +65,12 @@ export function applyMechanicalEffectLocally(
         state.world.currentLocation.id ||
         state.world.sceneSnapshot.location?.id ||
         priorSceneId
-      const nextLocationId = String(snap.location_id ?? m.location_id ?? priorLocationId)
+      const requestedLocationId = String(snap.location_id ?? m.location_id ?? priorLocationId)
+      const matchedLocation = findMatchingLocation(state, {
+        id: requestedLocationId,
+        name: typeof snap.name === 'string' ? snap.name : requestedLocationId.replace(/_/g, ' '),
+      })
+      const nextLocationId = matchedLocation?.id ?? requestedLocationId
       const explicitSceneId = typeof snap.scene_id === 'string'
         ? snap.scene_id
         : typeof m.scene_id === 'string'
@@ -132,9 +141,11 @@ export function applyMechanicalEffectLocally(
       if (locationChanged) {
         const registered = state.campaign.locations[nextLocationId]
         if (registered) {
-          registered.chapterCreated ??= state.meta.currentChapter
-          if (nextLocked !== undefined) registered.locked = nextLocked
-          nextLocation = registered
+          nextLocation = mergeLocationIntoExisting(registered, {
+            locked: nextLocked,
+            chapterCreated: state.meta.currentChapter,
+          })
+          state.campaign.locations[nextLocation.id] = nextLocation
         } else {
           nextLocation = {
             id: nextLocationId,
@@ -200,22 +211,24 @@ export function applyMechanicalEffectLocally(
   } else if (kind === 'set_location') {
     const locId = String(m.location_id ?? '')
     if (!locId) return
-    let loc = state.campaign.locations[locId]
+    const proposed = {
+      id: locId,
+      name: String(m.name ?? locId.replace(/_/g, ' ')),
+      description: String(m.description ?? ''),
+      atmosphericConditions: Array.isArray(m.atmospheric_conditions)
+        ? (m.atmospheric_conditions as string[])
+        : undefined,
+      locked: typeof m.locked === 'boolean' ? m.locked : undefined,
+      chapterCreated: state.meta.currentChapter,
+    }
+    const matching = findMatchingLocation(state, proposed)
+    let loc = matching ?? state.campaign.locations[locId]
     if (!loc) {
-      loc = {
-        id: locId,
-        name: String(m.name ?? locId.replace(/_/g, ' ')),
-        description: String(m.description ?? ''),
-        atmosphericConditions: Array.isArray(m.atmospheric_conditions)
-          ? (m.atmospheric_conditions as string[])
-          : undefined,
-        locked: typeof m.locked === 'boolean' ? m.locked : undefined,
-        chapterCreated: state.meta.currentChapter,
-      }
+      loc = proposed
       state.campaign.locations[locId] = loc
     } else {
-      loc.chapterCreated ??= state.meta.currentChapter
-      if (typeof m.locked === 'boolean') loc.locked = m.locked
+      loc = mergeLocationIntoExisting(loc, proposed)
+      state.campaign.locations[loc.id] = loc
     }
     state.world.currentLocation = loc
     state.world.sceneSnapshot = {

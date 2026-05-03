@@ -73,6 +73,7 @@ Ignore \`suggested_actions\` for reconciliation. Suggested actions are forward-l
 - No natural-language commentary in your output. The tool call is the entire output.
 - Emit multiple findings, multiple creates, multiple updates when the prose contains them. Do not collapse distinct issues into one entry.
 - Do not make authorial decisions. Arc creation requires resolution-dependency analysis — if uncertain, emit the component threads and let the Author handle arc construction at chapter close.
+- Before emitting any \`creates\` entry, check the matching registry section below. If the prose sharpens or restates an existing entity, emit an \`updates\` entry or no write; do not create a parallel entity with a new id.
 
 ## NPC identity preservation (load-bearing)
 
@@ -256,6 +257,14 @@ Progressive revelation is common. Before emitting a new clue, check the registry
 Rule of thumb: same anchor threads + same phenomenon (same NPC's knowledge, same institutional fact, same physical observation at the same place) → update. Different phenomenon or different entities → create.
 
 When in doubt: create. Over-updating risks collapsing distinct facts; over-creating just inflates the registry.
+
+## Location identity preservation
+
+Locations can be authored by the Author as opening scene state, moved by the Narrator through \`set_location\` / \`set_scene_snapshot\`, and recorded by you only when the prose establishes a durable place. Before creating a \`location\`, check the Locations registry in the per-turn message.
+
+- If prose describes an existing location row, do NOT create a parallel location. The Narrator may have emitted a new slug in mechanical annotation (for example \`verath_berth_14c\`) for a place the Author already stored as \`loc_opening\`; treat the registry row as canonical.
+- Create a location only when the prose establishes a genuinely new durable place not already listed.
+- Do not treat present-moment atmosphere at the current location as a new location. Add no write unless a new place becomes durable memory.
 
 ## Thread lifecycle (most-missed write)
 
@@ -501,6 +510,9 @@ export function buildArchivistTurnMessage(
       return header
     })
     .join('\n')
+  const arcs = Object.values(campaign.arcs)
+    .map((a) => `- ${a.id} · ${a.title} (status: ${a.status}, threads: ${a.threadIds.join(', ')}) — ${a.retrievalCue || a.stakesDefinition}`)
+    .join('\n')
   const openDecisions = Object.values(campaign.decisions)
     .filter((d) => d.status === 'active')
     .map((d) => `- ${d.id} · ${d.summary} (anchors: ${d.anchoredTo.join(', ')})`)
@@ -517,6 +529,38 @@ export function buildArchivistTurnMessage(
       (c) =>
         `- ${c.id} (anchors: ${c.anchoredTo.join(', ') || 'floating'}) — ${c.content.slice(0, 140)}`
     )
+    .join('\n')
+
+  const currentLocationId = state.world.currentLocation.id || state.world.sceneSnapshot.location.id
+  const snapshotLocationId = state.world.sceneSnapshot.location.id
+  const locationsById = new Map<string, Sf2State['world']['currentLocation']>()
+  for (const location of Object.values(campaign.locations)) {
+    if (location.id) locationsById.set(location.id, location)
+  }
+  if (state.world.currentLocation.id) {
+    locationsById.set(state.world.currentLocation.id, state.world.currentLocation)
+  }
+  if (state.world.sceneSnapshot.location.id) {
+    locationsById.set(state.world.sceneSnapshot.location.id, state.world.sceneSnapshot.location)
+  }
+  const locations = [...locationsById.values()]
+    .filter((location) => location.id && location.id !== 'loc_pending')
+    .sort((a, b) => {
+      if (a.id === currentLocationId) return -1
+      if (b.id === currentLocationId) return 1
+      return a.id.localeCompare(b.id)
+    })
+    .slice(0, 12)
+    .map((location) => {
+      const markers = [
+        location.id === currentLocationId ? 'CURRENT' : '',
+        location.id === snapshotLocationId ? 'SCENE' : '',
+      ].filter(Boolean).join(', ')
+      const tag = location.atmosphericConditions?.[0]
+      const markerText = markers ? ` · ${markers}` : ''
+      const tagText = tag ? ` · atmosphere: ${tag}` : ''
+      return `- ${location.id} · ${location.name}${markerText}${tagText} — ${location.description}`
+    })
     .join('\n')
 
   const temporalAnchors = Object.values(campaign.temporalAnchors ?? {})
@@ -585,6 +629,9 @@ ${factions || '_(none)_'}
 #### Threads
 ${threads || '_(none)_'}
 
+#### Arcs
+${arcs || '_(none)_'}
+
 #### Active decisions
 ${openDecisions || '_(none)_'}
 
@@ -593,6 +640,9 @@ ${openPromises || '_(none)_'}
 
 #### Recent clues (last 10; candidates for update-not-create if this turn sharpens)
 ${recentClues || '_(none)_'}
+
+#### Locations (canonical ids; check before creating a new location)
+${locations || '_(none)_'}
 
 #### Temporal anchors (active canonical time facts)
 ${temporalAnchors || '_(none)_'}

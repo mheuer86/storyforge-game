@@ -13,6 +13,8 @@ import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
+import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
+import { canonicalLocationNameKey } from '../lib/sf2/locations'
 import {
   coolThreadForChapterOpen,
   deriveEngineValue,
@@ -354,6 +356,10 @@ interface ReplayFixture {
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
     }
+    archivistTurnMessage?: {
+      containsAll?: string[]
+      containsNone?: string[]
+    }
     displaySentinel?: {
       findingsCount?: number
       findingsCountAtLeast?: number
@@ -368,6 +374,16 @@ interface ReplayFixture {
     currentSceneId?: string | null
     currentTimeLabel?: string | null
     currentLocationId?: string | null
+    entityIdsInclude?: string[]
+    entityIdsAbsent?: string[]
+    locationIdsInclude?: string[]
+    locationIdsAbsent?: string[]
+    locationsMatchingName?: Array<{
+      name: string
+      count?: number
+      idsInclude?: string[]
+      idsExclude?: string[]
+    }>
     sceneBundleCacheCleared?: boolean | null
     invariantEventsInclude?: string[]
     archivistAcceptedRefs?: string[]
@@ -561,6 +577,12 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   }
   const stateAfter = committedTurn.stateAfter
   const invariantEvents = committedTurn.invariantEvents
+  const archivistTurnMessage = buildArchivistTurnMessage(
+    committedTurn.stateWithTurnLogged,
+    turnIndex + 1,
+    fixture.input.narrator.prose,
+    annotation
+  )
 
   let scenePacketCastIds: string[] = []
   let scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'] = []
@@ -587,6 +609,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
     scenePacketCastIds,
     scenePacketCast,
     perTurnDeltaText,
+    archivistTurnMessage,
     failures
   )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
@@ -1110,6 +1133,7 @@ function assertExpected(
   scenePacketCastIds: string[],
   scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'],
   perTurnDeltaText: string,
+  archivistTurnMessage: string,
   failures: string[]
 ): void {
   const expected = fixture.expected ?? {}
@@ -1638,6 +1662,46 @@ function assertExpected(
       failures.push(`currentLocation.id expected ${expected.currentLocationId}, got ${state.world.currentLocation.id}`)
     }
   }
+  for (const id of expected.entityIdsInclude ?? []) {
+    if (!hasEntityId(state, id)) failures.push(`entity ${id} missing`)
+  }
+  for (const id of expected.entityIdsAbsent ?? []) {
+    if (hasEntityId(state, id)) failures.push(`entity ${id} unexpectedly present`)
+  }
+  for (const id of expected.locationIdsInclude ?? []) {
+    if (!state.campaign.locations[id]) failures.push(`location ${id} missing`)
+  }
+  for (const id of expected.locationIdsAbsent ?? []) {
+    if (state.campaign.locations[id]) failures.push(`location ${id} unexpectedly present`)
+  }
+  for (const matchExpected of expected.locationsMatchingName ?? []) {
+    const key = canonicalLocationNameKey(matchExpected.name)
+    const matches = Object.values(state.campaign.locations)
+      .filter((location) => canonicalLocationNameKey(location.name || location.id) === key)
+    if (matchExpected.count !== undefined && matches.length !== matchExpected.count) {
+      failures.push(`locations matching "${matchExpected.name}" expected ${matchExpected.count}, got ${matches.length} [${matches.map((l) => l.id).join(',')}]`)
+    }
+    for (const id of matchExpected.idsInclude ?? []) {
+      if (!matches.some((location) => location.id === id)) {
+        failures.push(`locations matching "${matchExpected.name}" missing ${id} [${matches.map((l) => l.id).join(',')}]`)
+      }
+    }
+    for (const id of matchExpected.idsExclude ?? []) {
+      if (matches.some((location) => location.id === id)) {
+        failures.push(`locations matching "${matchExpected.name}" unexpectedly includes ${id}`)
+      }
+    }
+  }
+  for (const fragment of expected.archivistTurnMessage?.containsAll ?? []) {
+    if (!archivistTurnMessage.includes(fragment)) {
+      failures.push(`archivist turn message missing "${fragment.slice(0, 80)}"`)
+    }
+  }
+  for (const fragment of expected.archivistTurnMessage?.containsNone ?? []) {
+    if (archivistTurnMessage.includes(fragment)) {
+      failures.push(`archivist turn message unexpectedly contains "${fragment.slice(0, 80)}"`)
+    }
+  }
   if (expected.sceneBundleCacheCleared !== undefined && expected.sceneBundleCacheCleared !== null) {
     const cleared = state.world.sceneBundleCache === undefined
     if (cleared !== expected.sceneBundleCacheCleared) {
@@ -1894,6 +1958,22 @@ function assertExpected(
       checkBucket('referencedByRole', want.referencedByRoleIncludes, latest.referencedByRole)
     }
   }
+}
+
+function hasEntityId(state: Sf2State, id: string): boolean {
+  return Boolean(
+    state.campaign.arcs[id] ||
+    state.campaign.threads[id] ||
+    state.campaign.decisions[id] ||
+    state.campaign.promises[id] ||
+    state.campaign.clues[id] ||
+    state.campaign.beats[id] ||
+    state.campaign.temporalAnchors[id] ||
+    state.campaign.npcs[id] ||
+    state.campaign.factions[id] ||
+    state.campaign.locations[id] ||
+    state.campaign.documents[id]
+  )
 }
 
 function assertSensitiveDisclosureGaps(
