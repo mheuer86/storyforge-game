@@ -345,20 +345,20 @@
     radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.18 0.06 70 / 0.30) 0%, transparent 100%);
 }
 
-/* Grimdark: ashen red mist — embers and dried blood */
+/* Grimdark: cold ash mist — iron, winter, and breath on stone */
 [data-genre="grimdark"] .mist-bg {
   background:
-    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.20 0.10 28 / 0.45) 0%, transparent 100%),
-    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.18 0.06 35 / 0.30) 0%, transparent 100%),
-    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.16 0.08 20 / 0.35) 0%, transparent 100%);
+    radial-gradient(ellipse 620px 420px at 18% 82%, oklch(0.20 0.028 225 / 0.45) 0%, transparent 100%),
+    radial-gradient(ellipse 520px 320px at 82% 18%, oklch(0.19 0.020 245 / 0.34) 0%, transparent 100%),
+    radial-gradient(ellipse 860px 540px at 50% 50%, oklch(0.16 0.016 250 / 0.38) 0%, transparent 100%);
 }
 
-/* Noir: cold grey-blue mist — rain, streetlights, cigarette smoke */
+/* Noir: Sin City contrast — black rain cut by blood-red light */
 [data-genre="noire"] .mist-bg {
   background:
-    radial-gradient(ellipse 600px 400px at 20% 80%, oklch(0.18 0.04 250 / 0.40) 0%, transparent 100%),
-    radial-gradient(ellipse 500px 300px at 80% 20%, oklch(0.16 0.03 230 / 0.30) 0%, transparent 100%),
-    radial-gradient(ellipse 800px 500px at 50% 50%, oklch(0.14 0.02 240 / 0.25) 0%, transparent 100%);
+    radial-gradient(ellipse 620px 420px at 18% 78%, oklch(0.22 0.110 25 / 0.48) 0%, transparent 100%),
+    radial-gradient(ellipse 420px 280px at 86% 16%, oklch(0.26 0.150 25 / 0.34) 0%, transparent 100%),
+    radial-gradient(ellipse 900px 560px at 50% 50%, oklch(0.10 0.010 20 / 0.35) 0%, transparent 100%);
 }
 
 @keyframes mist-drift {

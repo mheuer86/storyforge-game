@@ -161,6 +161,14 @@ const DEFAULT_STAT_LABELS: StatLabels = {
   inspiration: 'Insp',
 }
 
+function getStateGenreConfig(state: Pick<Sf2State, 'meta'>) {
+  try {
+    return getGenreConfig(state.meta.genreId as Genre)
+  } catch {
+    return null
+  }
+}
+
 const THEME_ROOT_PROPS = [
   '--background',
   '--foreground',
@@ -477,14 +485,23 @@ function TopBar({
   busy: boolean
   onOpenPanel: (panel: ShellPanel) => void
 }) {
+  const genreConfig = getStateGenreConfig(state)
+  const genreName = genreConfig?.name ?? state.meta.genreId
+
   return (
     <header className="shrink-0 px-3 py-2 md:px-5 md:py-4">
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border/45 bg-card/70 px-3 py-2 shadow-[0_12px_48px_-36px_rgba(0,0,0,0.9)] md:px-5 md:py-2.5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)] xl:gap-4 xl:px-0 xl:py-0">
-        <div className="hidden min-w-0 items-center xl:flex xl:px-5 xl:py-2.5">
-          <span className="font-mono text-[12px] uppercase tracking-[0.32em] text-primary">Storyforge</span>
+        <div className="hidden min-w-0 flex-col xl:flex xl:px-5 xl:py-2.5">
+          <span className="truncate font-mono text-[12px] uppercase tracking-[0.28em] text-primary">{genreName}</span>
+          <span className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+            {state.player.origin.name} / {state.player.class.name}
+          </span>
         </div>
 
         <div className="grid min-w-0 grid-cols-1 items-center xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-3 xl:py-2.5">
+          <span className="mb-0.5 truncate text-center font-mono text-[9px] uppercase tracking-[0.16em] text-primary/70 xl:hidden">
+            {genreName} · Ch.{String(state.meta.currentChapter).padStart(2, '0')}
+          </span>
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 xl:inline">
             Ch.{String(state.meta.currentChapter).padStart(2, '0')}
           </span>
@@ -568,13 +585,14 @@ function HudPanel({
 }
 
 function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: StatLabels }) {
+  const genreConfig = getStateGenreConfig(state)
   const hpPct = state.player.hp.max > 0
     ? Math.max(0, Math.min(100, (state.player.hp.current / state.player.hp.max) * 100))
     : 0
 
   return (
     <HudPanel
-      title="Operative"
+      title={state.player.class.name}
       right={<span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">Lv.{state.player.level}</span>}
     >
       <div className="space-y-4">
@@ -583,7 +601,7 @@ function CharacterPanel({ state, statLabels }: { state: Sf2State; statLabels: St
             {state.player.name}
           </div>
           <div className="mt-1 truncate text-sm text-muted-foreground">
-            {state.player.class.name} / {state.player.origin.name}
+            {genreConfig?.name ?? state.meta.genreId} / {state.player.origin.name}
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
@@ -658,7 +676,10 @@ function ObjectivePanel({ state }: { state: Sf2State }) {
 type InventoryDisplayDetails = {
   description?: string
   modifiers: string[]
+  quantityLabel?: string
 }
+
+const INLINE_GEAR_MODIFIER_MAX_LENGTH = 14
 
 function getSelectedPlaybook(state: Sf2State) {
   const config = getGenreConfig(state.meta.genreId as Genre)
@@ -673,17 +694,45 @@ function getInventoryDisplayDetails(state: Sf2State, item: Sf2State['player']['i
   const description = typeof looseItem.description === 'string' ? looseItem.description : configItem?.description
   const damage = typeof looseItem.damage === 'string' ? looseItem.damage : configItem?.damage
   const effect = typeof looseItem.effect === 'string' ? looseItem.effect : configItem?.effect
-  const charges = typeof looseItem.charges === 'number' ? looseItem.charges : configItem?.charges
-  const maxCharges = typeof looseItem.maxCharges === 'number' ? looseItem.maxCharges : configItem?.maxCharges
+  const configCharges = configItem?.charges
+  const configMaxCharges = configItem?.maxCharges
+  const configQuantity = configItem?.quantity
+  const looseCharges = typeof looseItem.charges === 'number' ? looseItem.charges : undefined
+  const looseMaxCharges = typeof looseItem.maxCharges === 'number' ? looseItem.maxCharges : undefined
+  const chargeCountMirrorsQuantity = (
+    typeof configCharges === 'number'
+    && typeof configMaxCharges === 'number'
+    && configQuantity === configMaxCharges
+    && looseCharges === undefined
+  )
+  const charges = chargeCountMirrorsQuantity ? item.qty : looseCharges ?? configCharges
+  const maxCharges = looseMaxCharges ?? configMaxCharges
+  const chargeLabel = typeof charges === 'number'
+    ? `Charges ${charges}/${typeof maxCharges === 'number' ? maxCharges : charges}`
+    : null
+  const showEffectModifier = Boolean(effect && !descriptionContainsQualifier(description, effect))
   const modifiers = [
     damage ?? null,
-    effect ?? null,
-    typeof charges === 'number'
-      ? `Charges ${charges}/${typeof maxCharges === 'number' ? maxCharges : charges}`
-      : null,
+    showEffectModifier ? effect : null,
+    chargeLabel,
   ].filter((modifier): modifier is string => Boolean(modifier))
+  const quantityLabel = item.qty > 1 && !chargeCountMirrorsQuantity ? `${item.qty}x` : undefined
 
-  return { description, modifiers }
+  return { description, modifiers, quantityLabel }
+}
+
+function descriptionContainsQualifier(description: string | undefined, qualifier: string): boolean {
+  if (!description) return false
+  const normalizedDescription = normalizeInventoryQualifier(description)
+  const normalizedQualifier = normalizeInventoryQualifier(qualifier)
+  return normalizedQualifier.length > 2 && normalizedDescription.includes(normalizedQualifier)
+}
+
+function normalizeInventoryQualifier(value: string): string {
+  return value
+    .toLocaleLowerCase()
+    .replace(/\b(heals?|restores?|healing|hp|when|applied)\b/g, '')
+    .replace(/[^a-z0-9+]+/g, '')
 }
 
 function QuickSlotsPanel({ state }: { state: Sf2State }) {
@@ -699,7 +748,9 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
           {items.map((item, index) => {
             const details = getInventoryDisplayDetails(state, item)
             const primaryModifier = details.modifiers[0]
-            const secondaryModifiers = details.modifiers.slice(1)
+            const inlineModifier = primaryModifier && isCompactGearModifier(primaryModifier) ? primaryModifier : undefined
+            const metadataModifiers = inlineModifier ? details.modifiers.slice(1) : details.modifiers
+            const hasMetadata = Boolean(details.quantityLabel || metadataModifiers.length > 0)
 
             return (
               <div
@@ -715,8 +766,8 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
                       <div className={cn('min-w-0 flex-1 truncate', sidebarTitleTextClassName)}>
                         {item.name}
                       </div>
-                      {primaryModifier && (
-                        <GearModifierChip label={primaryModifier} />
+                      {inlineModifier && (
+                        <GearModifierChip label={inlineModifier} />
                       )}
                     </div>
                     {details.description && (
@@ -724,16 +775,18 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
                         {details.description}
                       </div>
                     )}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {item.qty > 1 && (
-                        <span className="inline-flex rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                          {item.qty}x
-                        </span>
-                      )}
-                      {secondaryModifiers.map((modifier) => (
-                        <GearModifierChip key={modifier} label={modifier} />
-                      ))}
-                    </div>
+                    {hasMetadata && (
+                      <div className="mt-2 flex min-w-0 flex-wrap gap-1">
+                        {details.quantityLabel && (
+                          <span className="inline-flex max-w-full rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] uppercase leading-4 tracking-[0.14em] text-muted-foreground [overflow-wrap:anywhere]">
+                            {details.quantityLabel}
+                          </span>
+                        )}
+                        {metadataModifiers.map((modifier) => (
+                          <GearModifierChip key={modifier} label={modifier} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -747,9 +800,13 @@ function QuickSlotsPanel({ state }: { state: Sf2State }) {
   )
 }
 
+function isCompactGearModifier(label: string): boolean {
+  return label.length <= INLINE_GEAR_MODIFIER_MAX_LENGTH && !label.includes(',')
+}
+
 function GearModifierChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex shrink-0 rounded border border-primary/35 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary/90">
+    <span className="inline-flex max-w-full rounded border border-primary/35 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-primary/90 [overflow-wrap:anywhere]">
       {label}
     </span>
   )
