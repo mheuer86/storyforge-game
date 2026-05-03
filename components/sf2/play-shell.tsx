@@ -118,6 +118,7 @@ interface Sf2PlayShellProps {
   state: Sf2State
   scrollRef: RefObject<HTMLDivElement | null>
   prose: string
+  turnCommitError: string | null
   activePlayerInput: string
   suggestedActions: string[]
   pendingInput: string
@@ -214,6 +215,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     state,
     scrollRef,
     prose,
+    turnCommitError,
     activePlayerInput,
     suggestedActions,
     pendingInput,
@@ -396,6 +398,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
               <TurnStream
                 state={state}
                 prose={prose}
+                turnCommitError={turnCommitError}
                 activePlayerInput={activePlayerInput}
                 liveRolls={displayedLiveRolls}
                 inspirationOffer={inspirationOffer}
@@ -1201,6 +1204,7 @@ function IntelBadge({ tone, label }: { tone: 'pressure' | 'evidence' | 'lead'; l
 function TurnStream({
   state,
   prose,
+  turnCommitError,
   activePlayerInput,
   liveRolls,
   inspirationOffer,
@@ -1221,6 +1225,7 @@ function TurnStream({
 }: {
   state: Sf2State
   prose: string
+  turnCommitError: string | null
   activePlayerInput: string
   liveRolls: Sf2LiveRollView[]
   inspirationOffer: Sf2RollOutcomeView | null
@@ -1240,7 +1245,7 @@ function TurnStream({
   onDeclineInspiration: () => void
 }) {
   const turns = state.history.turns.filter((turn) => turn.chapter === state.meta.currentChapter)
-  const showLiveTurn = Boolean(activePlayerInput || prose || isStreaming || isGeneratingChapter || isArchiving)
+  const showLiveTurn = Boolean(activePlayerInput || prose || turnCommitError || isStreaming || isGeneratingChapter || isArchiving)
   const liveTurnNumber = state.history.turns.length + 1
   const liveLocation = state.world.sceneSnapshot.location.name || state.world.currentLocation.name
   const rollPauseActive = liveRolls.some((roll) => !roll.outcome)
@@ -1315,6 +1320,9 @@ function TurnStream({
           )}
           {isArchiving && !isStreaming && !isGeneratingChapter && (
             <StatusLine tone="muted" text="Archiving turn state" />
+          )}
+          {turnCommitError && !isStreaming && !isArchiving && !isGeneratingChapter && (
+            <StatusLine tone="warning" text={turnCommitError} />
           )}
         </div>
       )}
@@ -1673,12 +1681,16 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
   const tone = rollToneForHistory(roll.outcome)
   const dc = roll.effectiveDc ?? roll.dc
   const total = roll.rollResult + roll.modifier
+  const failureReason =
+    roll.outcome === 'failure' || roll.outcome === 'critical_failure'
+      ? roll.consequenceSummary
+      : undefined
 
   return (
     <RollCardView
       tone={tone}
       title={`${roll.skill} Check`}
-      reason={roll.consequenceSummary}
+      reason={failureReason}
       dc={dc}
       roll={{ value: total, detail: rollBreakdownDetail(roll.rollResult, roll.modifier, roll.rawRolls) }}
     />

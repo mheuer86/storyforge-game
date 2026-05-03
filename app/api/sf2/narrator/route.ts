@@ -8,6 +8,7 @@ import {
   buildNarratorTurnContext,
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
+import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
 import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
 
@@ -217,6 +218,61 @@ function recoverNarrateTurnInput(
   return { input: next, recoveryNotes }
 }
 
+async function repairMissingNarrateTurn(args: {
+  client: Anthropic
+  turnContext: Sf2NarratorTurnContext
+  completedContent: Anthropic.Message['content']
+  state: Sf2State
+}): Promise<{
+  input: Record<string, unknown> | null
+  usage: Anthropic.Usage | null
+  recoveryNotes: string[]
+  apiMs: number
+}> {
+  const { client, turnContext, completedContent, state } = args
+  const apiTimer = startTimer()
+  const repairRequest = buildMissingNarrateTurnRepairRequest({ turnContext, completedContent })
+  const repair = await client.messages.create({
+    model: NARRATOR_MODEL,
+    max_tokens: repairRequest.maxTokens,
+    system: repairRequest.system,
+    tools: repairRequest.tools,
+    tool_choice: repairRequest.toolChoice,
+    messages: repairRequest.messages,
+  })
+
+  const toolUse = repair.content.find(
+    (b): b is Anthropic.ToolUseBlock =>
+      b.type === 'tool_use' && b.name === NARRATOR_TOOL_NAME
+  )
+  if (!toolUse) {
+    return {
+      input: null,
+      usage: repair.usage,
+      recoveryNotes: [
+        `narrate_turn missing; commit repair failed with stop_reason=${repair.stop_reason}`,
+      ],
+      apiMs: apiTimer.elapsed(),
+    }
+  }
+
+  const recovered = recoverNarrateTurnInput(
+    toolUse.input as Record<string, unknown>,
+    state,
+    turnContext.failedRollSkill
+  )
+
+  return {
+    input: recovered.input,
+    usage: repair.usage,
+    recoveryNotes: [
+      'narrate_turn missing; repaired via commit-only retry against already-streamed prose',
+      ...recovered.recoveryNotes,
+    ],
+    apiMs: apiTimer.elapsed(),
+  }
+}
+
 export async function POST(req: NextRequest) {
   const requestTimer = startTimer()
   let state: Sf2State
@@ -357,6 +413,10 @@ export async function POST(req: NextRequest) {
           (b): b is Anthropic.ToolUseBlock =>
             b.type === 'tool_use' && b.name === NARRATOR_TOOL_NAME
         )
+        const proseText = completed.content
+          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+          .map((b) => b.text)
+          .join('')
 
         // Display sentinel — observe mode. Scan the assembled prose for
         // debug-vocabulary leaks and absent-NPC speech. Findings flow to the
@@ -366,10 +426,6 @@ export async function POST(req: NextRequest) {
         // request — the prose is partial and the kernel doesn't reflect the
         // post-roll state.
         if (!rollUse) {
-          const proseText = completed.content
-            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-            .map((b) => b.text)
-            .join('')
           if (proseText.trim().length > 0) {
             const metaHit = detectNarratorMetaQuestion(proseText)
             if (metaHit) {
@@ -460,6 +516,48 @@ export async function POST(req: NextRequest) {
             })
           }
           send({ type: 'narrate_turn', input: recovered.input })
+        } else if (completed.stop_reason !== 'max_tokens' && proseText.trim().length > 0) {
+          const repaired = await repairMissingNarrateTurn({
+            client,
+            turnContext,
+            completedContent: completed.content,
+            state,
+          })
+          apiMsForLatency = (apiMsForLatency ?? 0) + repaired.apiMs
+
+          if (repaired.usage) {
+            const repairUsage = repaired.usage as {
+              input_tokens: number
+              output_tokens: number
+              cache_creation_input_tokens?: number
+              cache_read_input_tokens?: number
+            }
+            send({
+              type: 'token_usage',
+              usage: {
+                inputTokens: repairUsage.input_tokens,
+                outputTokens: repairUsage.output_tokens,
+                cacheWriteTokens: repairUsage.cache_creation_input_tokens ?? 0,
+                cacheReadTokens: repairUsage.cache_read_input_tokens ?? 0,
+              },
+            })
+          }
+
+          console.warn('[sf2/narrator] narrate_turn missing; attempted commit repair', {
+            repaired: Boolean(repaired.input),
+            recoveryNotes: repaired.recoveryNotes,
+            turnIndex: state.history.turns.length,
+          })
+          send({
+            type: 'narrator_output_recovered',
+            recoveryNotes: repaired.recoveryNotes,
+            turnIndex: state.history.turns.length,
+          })
+          if (repaired.input) {
+            send({ type: 'narrate_turn', input: repaired.input })
+          } else {
+            send({ type: 'error', message: 'narrate_turn missing and commit repair failed' })
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'unknown_error'

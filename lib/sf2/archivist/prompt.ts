@@ -235,6 +235,15 @@ A **clue is NOT** a present-moment sensory observation, body-language read, or a
 
 If prose produces both a tempLoad observation AND a structural fact, emit both.
 
+### Critical operational facts
+
+Some world facts are mechanically small but continuity-critical. When prose states one of these, emit a high-confidence clue unless an existing clue already says the same thing:
+
+- **Clearance/hold/lien/clamp status** — a ship hold is lifted, a lien is cleared, clamps release, clearance is authorized, an override is filed, or the terms of that clearance change.
+- **Diagnostics/readouts/scans** — a diagnostic, sensor, telemetry, port reading, or scan returns a concrete result, especially life signs, respiration, thermal/moisture cycles, pressure readings, or cargo/passenger status.
+
+These are not atmosphere. They are durable operational state. If you skip them, the next Narrator may contradict a fact the player already saw.
+
 **Cap: at most 2 new clues per turn under normal play.** A turn that genuinely surfaces 3+ structural facts is rare (revelation moment). 4+ clues means you're treating tempLoad as clues — demote.
 
 ## Update vs create (clue sharpening)

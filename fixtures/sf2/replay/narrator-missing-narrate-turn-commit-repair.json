@@ -1,0 +1,39 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator-missing-narrate-turn-commit-repair",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Covers the failure shape where the Narrator streamed player-visible prose after a roll but omitted narrate_turn. The repair path must ask only for the missing commit annotation against the already-streamed prose, without rewriting prose or requesting another roll."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Let Auln run the diagnostic and tell me what the readout says.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - this fixture asserts on the missing-narrate_turn repair request shape)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "narratorCommitRepair": {
+      "completedAssistantProse": "Auln clips the external diagnostic lead into the berth-side port. The panel thinks for three seconds, then paints the cargo bay in thermal amber: one body-sized bloom, cycling moisture and heat like breath. The crate is not inert cargo. Whatever Solv paid to move is alive.",
+      "toolNamesEquals": ["narrate_turn"],
+      "toolChoiceTypeEquals": "any",
+      "messageCountAtLeast": 2,
+      "assistantMessageContainsAll": [
+        "one body-sized bloom",
+        "Whatever Solv paid to move is alive"
+      ],
+      "requestMessageContainsAll": [
+        "COMMIT REPAIR ONLY.",
+        "already streamed to the player",
+        "Do not rewrite it",
+        "Emit exactly one narrate_turn tool call",
+        "Do not request a roll"
+      ]
+    }
+  }
+}
