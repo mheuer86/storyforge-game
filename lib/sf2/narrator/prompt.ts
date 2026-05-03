@@ -159,7 +159,7 @@ The Compact of Two Hundred Systems was good infrastructure before it was good go
 - No clean exposition dump about the Compact Collapse; show it through failing infrastructure and local leverage.
 
 ## Vocabulary
-Compact · Fracture · beacon corridors · last beacon · docking clamps · port fees · station concourse · customs scan · cargo bay · sealed crate · passenger manifest · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust
+Compact · Fracture · beacon corridors · last beacon · docking clamps · port fees · station concourse · customs scan · cargo bay · sealed cargo · transit manifest · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust
 
 ## Faction voice
 - Station officials speak in fees, safety codes, queue priority, clamp status, and plausible deniability.
@@ -172,8 +172,160 @@ Compact · Fracture · beacon corridors · last beacon · docking clamps · port
 ## Tone
 Gritty 40%, Epic 35%, Witty 25%. Lived-in ships, dense stations, scarce supplies, sharp competence, crew warmth, and personal stakes inside galactic decay.`
 
+export const SF2_BIBLE_FANTASY = `## World: The Forgetting Kingdoms
+
+The Five Kingdoms still stand and the Accord of Thorns still holds on paper, but the world is forgetting itself. Ancient ruins, dead languages, failing magic, disputed treaties, and Collegium catalogues with dangerous gaps make knowledge a political force. Magic is not ascending; it is echo. Every spell draws on a reservoir no one knows how to replenish.
+
+## Institutional forces
+- The Collegium studies lost knowledge, protects its reputation, and hides failures behind catalogue language.
+- The Five Kingdoms rely on treaties and records few living scholars fully understand.
+- Churches and local lords claim relics when knowledge threatens authority.
+- Dragonkin oral memory preserves fragments that written institutions mistrust.
+- Ancient ruins still function even when no one alive understands their purpose.
+
+## Social pressures
+- Knowledge is leverage, inheritance, danger, and proof all at once.
+- Magic has physical cost: fatigue, trembling, blood, memory, or unwanted attention.
+- Common folk need practical answers while scholars argue over names and dates.
+- Old institutions protect archives as fiercely as borders.
+- The past is active pressure, not scenery.
+
+## Banned registers
+- No sci-fi or cyberpunk terms: credits, stations, corps, net, drones, scanners, data packets.
+- No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Drift lanes.
+- No clean prophecy language that removes mud, cost, and institutional pressure.
+
+## Vocabulary
+Collegium · Accord of Thorns · Five Kingdoms · Sundering · second library · catalogue gap · ruin · inscription · reliquary · ward · scroll · codex · oath · charter · dispel scroll · cartographer's kit · lantern · gold
+
+## Faction voice
+- Collegium scholars speak in cautious claims, citations, and reputation management.
+- Lords and officials turn records into jurisdiction.
+- Church voices frame dangerous knowledge as custody, heresy, or care.
+- Expedition workers are practical, superstitious, and attentive to hazard.
+- Dragonkin memory-keepers speak from inherited fragments, not institutional proof.
+- Common folk want the old thing made safe before scholars name it.
+
+## Tone
+Epic 60%, Gritty 30%, Witty 10%. Ancient wonder grounded by mud, fatigue, sharp scholarship, and the politics of who gets to name the truth.`
+
+export const SF2_BIBLE_CYBERPUNK = `## World: The Megacity
+
+A vertical city owned by megacorporations, private security, fixers, gangs, infrastructure monopolies, and systems that never forget. The Net is a parallel city with locks, predators, ghosts, and paid doors. The player lives where operational competence, street debt, chrome, and attention decide who gets through the night.
+
+## Institutional forces
+- Megacorporations own infrastructure, media, medicine, housing, and private force.
+- Fixers broker talent, secrets, and survival through debts that compound.
+- Gangs and neighborhood crews control street-level territory.
+- NCPD and private security respond according to contracts, liability, and optics.
+- Rogue AIs and netrunner collectives occupy systems the corps pretend are empty.
+
+## Social pressures
+- Privacy is a commodity and most people cannot afford it.
+- Every hack creates a trace, a favor, a log gap, or a future debt.
+- Street trust and corporate access rarely survive the same decision.
+- The city notices patterns faster than people do.
+- Technology is intimate: chrome, neural stress, heat, addiction, and identity erosion.
+
+## Banned registers
+- No fantasy language: taverns, scrolls, spells, gold, kings, ruins, noble courts.
+- No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Drift lanes.
+- No space-opera travel language: beacon corridors, docking clamps, jump routes, frontier settlements.
+
+## Vocabulary
+blackout · six-block radius · local channel · Net · ICE · daemon · quickhack · chrome · fixer · corpo · NCPD · private security · access log · camera loop · signal trace · neural deck · eddies
+
+## Faction voice
+- Corporate reps speak in risk, liability, asset control, and brand damage.
+- Fixers sound relaxed while pricing urgency.
+- Gang crews speak territorial, practical, and suspicious of outside attention.
+- Private security speaks in protocols, perimeters, and escalation tiers.
+- Netrunners use precise technical shorthand and watch every log gap.
+- Residents speak with the anger of people whose power, locks, and lives are collateral.
+
+## Tone
+Gritty 50%, Witty 30%, Epic 20%. Neon pressure, dry survival humor, and big systemic violence felt through one room losing power.`
+
+export const SF2_BIBLE_GRIMDARK = `## World: The Shattered Provinces
+
+The Shattered Provinces are ruled by houses, Church authority, mercenary contracts, inherited grudges, and hunger. The Wasting spreads through land and bodies while institutions argue over doctrine, ownership, and liability. The player is useful because they can move through systems, and vulnerable because those systems can deny ever knowing them.
+
+## Institutional forces
+- The Pale Flame Church controls doctrine, waystations, quarantine, and what counts as heresy.
+- Great houses turn oaths, contracts, trade, and bloodline memory into power.
+- Mercenary companies survive on provisions, reputation, and ugly terms.
+- The Oathless move between institutions because none can fully claim them.
+- The Wasting makes every delay, burial, and ration political.
+
+## Social pressures
+- Food and medicine are moral pressure, not background supplies.
+- An oath protects and cages; refusing one frees and isolates.
+- Contracts and doctrine can make cruelty sound lawful.
+- The dead still impose obligations through maps, debts, and unfinished warnings.
+- No faction is clean, but some choices still matter.
+
+## Banned registers
+- No sci-fi or cyberpunk terms: credits, corps, scanners, drones, stations, data.
+- No clean heroic fantasy where virtue is obvious and institutions are simple villains.
+- No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Drift lanes.
+
+## Vocabulary
+Shattered Provinces · Oathless · Pale Flame · Church waystation · Wasting · company · contract · provisions · patrol window · sealed cache · map · house seal · crossroads · field dressing · heresy · buried evidence
+
+## Faction voice
+- Church officials speak in doctrine, custody, contamination, and mercy with teeth.
+- House agents speak in obligation, reputation, leverage, and old debts.
+- Mercenaries count food, distance, wounds, and odds before ideals.
+- Oathless contacts are direct, transactional, and alert to betrayal.
+- Common folk speak from hunger first and politics second.
+- Rival scavengers respect competence but assume everyone is holding something back.
+
+## Tone
+Gritty 60%, Epic 25%, Witty 15%. Hunger, ash, hard competence, and dry fatalism around choices that still matter.`
+
+export const SF2_BIBLE_NOIR = `## World: The City
+
+A rain-soaked city runs on money, secrets, police files, favors, court records, union ledgers, back rooms, and the people paid to look away. The player works cases in a city where the truth is always uglier than the lie it replaced, and evidence becomes dangerous the moment someone knows it exists.
+
+## Institutional forces
+- Police precincts are overworked, bought, or protecting old casework.
+- City hall, courts, unions, and business offices bury decisions in records.
+- Criminal crews control blocks through favors, fear, and who owes whom.
+- The wealthy stay untouchable by making other people touch the evidence.
+- Neighborhood witnesses survive by remembering selectively.
+
+## Social pressures
+- Everyone lies for a reason; the reason matters as much as the lie.
+- Evidence creates attention as soon as someone knows it exists.
+- Money, favors, and reputation are currencies with interest.
+- Violence is short, ugly, and followed by paperwork or silence.
+- The truth usually makes the client look smaller, not cleaner.
+
+## Banned registers
+- No fantasy or sci-fi terms: spells, relics, stations, corps, scanners, drones, credits.
+- No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Drift lanes.
+- No superhero detective certainty; noir evidence is partial, social, and dangerous.
+
+## Vocabulary
+case · will · locked box · five names · four alive · precinct · business card · case file · stakeout · tail · mark · fall guy · heat · retainer · marks · frosted glass · rain · alibi
+
+## Faction voice
+- Cops are tired, procedural, territorial, and protective of their case files.
+- Lawyers and officials speak smoothly and avoid anything actionable.
+- Criminals are cautious, territorial, and attentive to what the player knows.
+- Service workers remember faces and habits but sell memory carefully.
+- Clients are desperate enough to hire the player and desperate enough to lie.
+- Wealthy voices treat consequences as a staffing problem.
+
+## Tone
+Gritty 50%, Witty 35%, Epic 15%. Dry observation, human rot, procedural patience, and the small grandeur of a revelation landing.`
+
 export function getSf2BibleForGenre(genreId?: string): string {
   if (genreId === 'space-opera') return SF2_BIBLE_SPACE_OPERA
+  if (genreId === 'fantasy') return SF2_BIBLE_FANTASY
+  if (genreId === 'cyberpunk') return SF2_BIBLE_CYBERPUNK
+  if (genreId === 'grimdark') return SF2_BIBLE_GRIMDARK
+  if (genreId === 'noire') return SF2_BIBLE_NOIR
   return SF2_BIBLE_HEGEMONY
 }
 

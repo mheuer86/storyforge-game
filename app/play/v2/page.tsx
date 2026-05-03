@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiHeaders } from '@/lib/api-key'
-import { applyGenreTheme, type Genre } from '@/lib/genre-config'
+import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import {
   DEFAULT_SF2_SEED_ID,
   SF2_BOOTSTRAP_SEED_OPTIONS,
@@ -143,10 +143,21 @@ function modifierForSkill(state: Sf2State, skill: string): number {
   const proficiencyBonus = Math.floor((level - 1) / 4) + 2
 
   let abilityMod = mod(stats.WIS)
-  if (s.includes('investigation') || s.includes('arcana') || s.includes('history') || s.includes('nature')) abilityMod = mod(stats.INT)
+  if (
+    s.includes('investigation')
+    || s.includes('arcana')
+    || s.includes('history')
+    || s.includes('nature')
+    || s.includes('hacking')
+    || s.includes('electronics')
+    || s.includes('net architecture')
+    || s.includes('engineering')
+    || s.includes('apothecary')
+    || s.includes('appraisal')
+  ) abilityMod = mod(stats.INT)
   else if (s.includes('persua') || s.includes('decept') || s.includes('intimid') || s.includes('performance')) abilityMod = mod(stats.CHA)
   else if (s.includes('athlet')) abilityMod = mod(stats.STR)
-  else if (s.includes('acrob') || s.includes('stealth') || s.includes('sleight')) abilityMod = mod(stats.DEX)
+  else if (s.includes('acrob') || s.includes('stealth') || s.includes('sleight') || s.includes('lockpick')) abilityMod = mod(stats.DEX)
   else if (s.includes('constitution') || s.includes('endur')) abilityMod = mod(stats.CON)
   else if (s.includes('heavy weapon') || s.includes('melee') || s.includes('ranged')) abilityMod = mod(stats.STR)
   // Default WIS for insight/perception/religion/survival/medicine + fallback
@@ -199,6 +210,13 @@ export default function PlayV2Page() {
       ?? SF2_BOOTSTRAP_SEED_OPTIONS[0],
     [selectedSeedId],
   )
+  const selectedGenreConfig = useMemo(() => {
+    try {
+      return getGenreConfig(selectedSeed.seed.genreId as Genre)
+    } catch {
+      return null
+    }
+  }, [selectedSeed])
 
   // Initialize persistence + try loading last campaign.
   useEffect(() => {
@@ -1458,57 +1476,105 @@ export default function PlayV2Page() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100 font-mono flex items-center justify-center">
-        <div className="text-sm text-neutral-500">loading…</div>
+      <div className="flex min-h-screen items-center justify-center bg-background font-mono text-foreground">
+        <div className="text-sm text-muted-foreground">loading...</div>
       </div>
     )
   }
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100 p-8 font-mono">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-2xl">Storyforge v2 · seed bootstrap</h1>
-          <p className="text-sm text-neutral-400">
-            {selectedSeed.seed.genreName} · origin: {selectedSeed.seed.originName} · class:{' '}
-            {selectedSeed.seed.playbookName} · hook: {selectedSeed.seed.hook.title}.
-            On first "Begin" the Author (Haiku) generates the chapter setup from the seed.
-          </p>
-          <div className="space-y-2">
-            <label className="text-sm text-neutral-400" htmlFor="seed">
-              Dev seed
-            </label>
-            <select
-              id="seed"
-              value={selectedSeedId}
-              onChange={(e) => setSelectedSeedId(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-neutral-100"
+      <div className="min-h-screen bg-background px-4 py-6 text-foreground md:px-8 md:py-10">
+        <div className="pointer-events-none fixed inset-0" style={{
+          background: [
+            'radial-gradient(circle at 16% 0%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 30%)',
+            'radial-gradient(circle at 86% 10%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 28%)',
+            'linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 82%, var(--card) 18%))',
+          ].join(', '),
+        }} />
+        <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-5xl content-center gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
+          <section className="space-y-5">
+            <div className="space-y-3">
+              <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
+                {selectedGenreConfig?.name ?? selectedSeed.seed.genreName}
+              </div>
+              <h1 className="font-heading text-3xl font-semibold tracking-normal text-foreground md:text-5xl">
+                {selectedSeed.seed.hook.title}
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty] md:text-base">
+                {selectedGenreConfig?.tagline ?? selectedSeed.description}
+              </p>
+            </div>
+
+            <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Origin</div>
+                <div className="truncate text-foreground">{selectedSeed.seed.originName}</div>
+              </div>
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Playbook</div>
+                <div className="truncate text-foreground">{selectedSeed.seed.playbookName}</div>
+              </div>
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Hook</div>
+                <div className="truncate text-foreground">{selectedSeed.seed.hook.title}</div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/35 bg-card/45 p-4 text-sm leading-6 text-muted-foreground">
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/80">
+                Pressure
+              </div>
+              <p className="[text-wrap:pretty]">{selectedSeed.seed.hook.premise}</p>
+              <p className="mt-3 text-foreground/85 [text-wrap:pretty]">{selectedSeed.seed.hook.crucible}</p>
+            </div>
+          </section>
+
+          <section className="self-center rounded-lg border border-border/45 bg-card/75 p-5 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <div className="mb-5 space-y-1">
+              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Storyforge v2
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">{selectedSeed.description}</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-mono text-sm text-muted-foreground" htmlFor="seed">
+                SF2 seed
+              </label>
+              <select
+                id="seed"
+                value={selectedSeedId}
+                onChange={(e) => setSelectedSeedId(e.target.value)}
+                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+              >
+                {SF2_BOOTSTRAP_SEED_OPTIONS.map((seed) => (
+                  <option key={seed.id} value={seed.id}>
+                    {seed.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <label className="font-mono text-sm text-muted-foreground" htmlFor="name">
+                Character name
+              </label>
+              <input
+                id="name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+              />
+            </div>
+
+            <button
+              onClick={startCampaign}
+              className="action-glow mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-[box-shadow,transform,filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70 active:scale-[0.98]"
             >
-              {SF2_BOOTSTRAP_SEED_OPTIONS.map((seed) => (
-                <option key={seed.id} value={seed.id}>
-                  {seed.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-neutral-500">{selectedSeed.description}</p>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-neutral-400" htmlFor="name">
-              Character name
-            </label>
-            <input
-              id="name"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-neutral-100"
-            />
-          </div>
-          <button
-            onClick={startCampaign}
-            className="px-4 py-2 bg-amber-900 hover:bg-amber-800 text-amber-100 rounded"
-          >
-            Create campaign
-          </button>
+              Create campaign
+            </button>
+          </section>
         </div>
       </div>
     )
