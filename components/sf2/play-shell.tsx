@@ -19,6 +19,14 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { useIsMobile } from '@/components/ui/use-mobile'
 import { cn } from '@/lib/utils'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
@@ -144,7 +152,7 @@ interface Sf2PlayShellProps {
   onDownloadReplayFixture: () => void
 }
 
-type MobilePanel = 'character' | 'scene' | 'intel' | 'diagnostics'
+type ShellPanel = 'character' | 'scene' | 'intel' | 'diagnostics'
 
 const DEFAULT_STAT_LABELS: StatLabels = {
   hp: 'HP',
@@ -231,7 +239,8 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     onDownloadSessionLog,
     onDownloadReplayFixture,
   } = props
-  const [mobilePanel, setMobilePanel] = useState<MobilePanel | null>(null)
+  const [activePanel, setActivePanel] = useState<ShellPanel | null>(null)
+  const isMobileViewport = useIsMobile()
 
   useEffect(() => {
     const root = document.documentElement
@@ -302,15 +311,55 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
             outcome: rollResult,
           }]
         : []
-  const mobilePanelTitle = mobilePanel
-    ? mobilePanel === 'character'
+  const activePanelTitle = activePanel
+    ? activePanel === 'character'
       ? 'Character'
-      : mobilePanel === 'scene'
+      : activePanel === 'scene'
         ? 'Scene'
-        : mobilePanel === 'intel'
+        : activePanel === 'intel'
           ? 'Intel'
           : 'Diagnostics'
     : ''
+  const activePanelBody = (
+    <div className={cn(
+      'overflow-y-auto p-4',
+      isMobileViewport ? 'max-h-[calc(86vh-5rem)]' : 'min-h-0 flex-1 p-5',
+    )}>
+      {activePanel === 'character' && (
+        <div className="space-y-3">
+          <CharacterPanel state={state} statLabels={statLabels} />
+          <ObjectivePanel state={state} />
+          <QuickSlotsPanel state={state} />
+          <PlaybookSkillPanel state={state} />
+        </div>
+      )}
+      {activePanel === 'scene' && (
+        <div className="space-y-3">
+          <LocationsPanel state={state} />
+          <PresentPanel state={state} />
+        </div>
+      )}
+      {activePanel === 'intel' && <IntelPanel state={state} />}
+      {activePanel === 'diagnostics' && (
+        <DiagnosticsPanel
+          state={state}
+          campaignStats={campaignStats}
+          sessionSummary={sessionSummary}
+          debug={debug}
+          lastNarratorUsage={lastNarratorUsage}
+          lastArchivistUsage={lastArchivistUsage}
+          chapterTurnCount={chapterTurnCount}
+          busy={busy}
+          pressureProjection={pressureProjection}
+          closeReadiness={closeReadiness}
+          onCloseChapter={onCloseChapter}
+          onResetCampaign={onResetCampaign}
+          onDownloadSessionLog={onDownloadSessionLog}
+          onDownloadReplayFixture={onDownloadReplayFixture}
+        />
+      )}
+    </div>
+  )
 
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground">
@@ -320,7 +369,7 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
           state={state}
           chapterTurnCount={chapterTurnCount}
           busy={busy}
-          onOpenPanel={setMobilePanel}
+          onOpenPanel={setActivePanel}
         />
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pb-3 md:px-5 md:pb-5 xl:grid-cols-[minmax(270px,340px)_minmax(620px,1fr)_minmax(300px,360px)]">
@@ -384,53 +433,35 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
         </div>
       </div>
 
-      <Drawer open={mobilePanel !== null} onOpenChange={(open) => !open && setMobilePanel(null)} direction="bottom">
-        <DrawerContent className="max-h-[86vh] border-border/50 bg-background/95">
-          <DrawerHeader className="border-b border-border/30 pb-3 text-left">
-            <DrawerTitle className="font-mono text-sm uppercase tracking-[0.22em] text-primary">
-              {mobilePanelTitle}
-            </DrawerTitle>
-            <DrawerDescription className="sr-only">
-              Mobile Storyforge side panel
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="max-h-[calc(86vh-5rem)] overflow-y-auto p-4">
-            {mobilePanel === 'character' && (
-              <div className="space-y-3">
-                <CharacterPanel state={state} statLabels={statLabels} />
-                <ObjectivePanel state={state} />
-                <QuickSlotsPanel state={state} />
-                <PlaybookSkillPanel state={state} />
-              </div>
-            )}
-            {mobilePanel === 'scene' && (
-              <div className="space-y-3">
-                <LocationsPanel state={state} />
-                <PresentPanel state={state} />
-              </div>
-            )}
-            {mobilePanel === 'intel' && <IntelPanel state={state} />}
-            {mobilePanel === 'diagnostics' && (
-              <DiagnosticsPanel
-                state={state}
-                campaignStats={campaignStats}
-                sessionSummary={sessionSummary}
-                debug={debug}
-                lastNarratorUsage={lastNarratorUsage}
-                lastArchivistUsage={lastArchivistUsage}
-                chapterTurnCount={chapterTurnCount}
-                busy={busy}
-                pressureProjection={pressureProjection}
-                closeReadiness={closeReadiness}
-                onCloseChapter={onCloseChapter}
-                onResetCampaign={onResetCampaign}
-                onDownloadSessionLog={onDownloadSessionLog}
-                onDownloadReplayFixture={onDownloadReplayFixture}
-              />
-            )}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      {isMobileViewport ? (
+        <Drawer open={activePanel !== null} onOpenChange={(open) => !open && setActivePanel(null)} direction="bottom">
+          <DrawerContent className="max-h-[86vh] border-border/50 bg-background/95 backdrop-blur-xl">
+            <DrawerHeader className="border-b border-border/30 pb-3 text-left">
+              <DrawerTitle className="font-mono text-sm uppercase tracking-[0.22em] text-primary">
+                {activePanelTitle}
+              </DrawerTitle>
+              <DrawerDescription className="sr-only">
+                Storyforge side panel
+              </DrawerDescription>
+            </DrawerHeader>
+            {activePanelBody}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={activePanel !== null} onOpenChange={(open) => !open && setActivePanel(null)}>
+          <DialogContent className="grid max-h-[min(82vh,760px)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden border-border/45 bg-background/95 p-0 shadow-[0_32px_110px_-60px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:max-w-[min(760px,calc(100vw-3rem))] lg:max-w-[880px]">
+            <DialogHeader className="border-b border-border/30 px-5 py-4 pr-12 text-left">
+              <DialogTitle className="font-mono text-sm uppercase tracking-[0.22em] text-primary">
+                {activePanelTitle}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Storyforge side panel
+              </DialogDescription>
+            </DialogHeader>
+            {activePanelBody}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
@@ -444,7 +475,7 @@ function TopBar({
   state: Sf2State
   chapterTurnCount: number
   busy: boolean
-  onOpenPanel: (panel: MobilePanel) => void
+  onOpenPanel: (panel: ShellPanel) => void
 }) {
   return (
     <header className="shrink-0 px-3 py-2 md:px-5 md:py-4">
