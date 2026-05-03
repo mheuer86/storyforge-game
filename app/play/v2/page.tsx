@@ -128,6 +128,12 @@ function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): numbe
   return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
 }
 
+function rollFailureSummary(result: RollOutcome['result'], consequenceOnFail: string): string | undefined {
+  if (result !== 'failure' && result !== 'fumble') return undefined
+  const trimmed = consequenceOnFail.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
 function firewallTurnIndexFor(state: Sf2State): number {
   return state.history.turns.at(-1)?.index ?? state.history.turns.length
 }
@@ -180,6 +186,7 @@ export default function PlayV2Page() {
   const [suggestedActions, setSuggestedActions] = useState<string[]>([])
   const [pendingInput, setPendingInput] = useState<string>('')
   const [activePlayerInput, setActivePlayerInput] = useState<string>('')
+  const [turnCommitError, setTurnCommitError] = useState<string | null>(null)
   const [liveRolls, setLiveRolls] = useState<Sf2LiveRollView[]>([])
   const [pendingCheck, setPendingCheck] = useState<PendingCheck | null>(null)
   const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
@@ -303,6 +310,7 @@ export default function PlayV2Page() {
     })
     setState(next)
     setProse('')
+    setTurnCommitError(null)
     setSuggestedActions([])
     setDebug([])
     setReplayFrames([])
@@ -326,6 +334,7 @@ export default function PlayV2Page() {
     if (typeof window !== 'undefined') window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
     setState(null)
     setProse('')
+    setTurnCommitError(null)
     setActivePlayerInput('')
     setLiveRolls([])
     setSuggestedActions([])
@@ -626,7 +635,7 @@ export default function PlayV2Page() {
               : outcome.result === 'fumble'
                 ? 'critical_failure'
                 : outcome.result,
-          consequenceSummary: sawRollPrompt.consequenceOnFail,
+          consequenceSummary: rollFailureSummary(outcome.result, sawRollPrompt.consequenceOnFail),
           modifierType: outcome.modifierType,
           modifierReason: outcome.modifierReason,
           inspirationSpent: outcome.inspirationSpent,
@@ -1098,6 +1107,7 @@ export default function PlayV2Page() {
     if (!playerInput && !isInitial) return
 
     setPendingInput('')
+    setTurnCommitError(null)
     setActivePlayerInput(isInitial ? '' : playerInput)
 
     // On first turn: ensure Chapter 1 has been authored before Narrator opens.
@@ -1112,8 +1122,17 @@ export default function PlayV2Page() {
     const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
     if (!narratorResult.completed) {
       pendingInspirationSpendRef.current = 0
+      setProse('')
+      setSuggestedActions([])
+      setPendingInput(isInitial ? '' : playerInput)
       setActivePlayerInput('')
       setLiveRolls([])
+      setRollResult(null)
+      setTurnCommitError(
+        narratorResult.prose.trim()
+          ? 'Narrator output was discarded because it did not commit state. Retry the action.'
+          : 'Narrator did not commit the turn. Retry the action.'
+      )
       return
     }
     const {
@@ -1662,6 +1681,7 @@ export default function PlayV2Page() {
       state={state}
       scrollRef={scrollRef}
       prose={prose}
+      turnCommitError={turnCommitError}
       activePlayerInput={activePlayerInput}
       liveRolls={liveRolls}
       suggestedActions={suggestedActions}

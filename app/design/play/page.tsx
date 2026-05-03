@@ -118,6 +118,7 @@ function PlayDesignPreviewContent() {
       state={preview.state}
       scrollRef={scrollRef}
       prose=""
+      turnCommitError={null}
       activePlayerInput=""
       liveRolls={pendingCheck ? [{
         id: 'preview-roll',

@@ -9,6 +9,7 @@ import {
   buildNarratorTurnContext,
   type Sf2NarratorRollResolution,
 } from '../lib/sf2/narrator/turn-context'
+import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit-repair'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
@@ -356,6 +357,15 @@ interface ReplayFixture {
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
     }
+    narratorCommitRepair?: {
+      completedAssistantProse: string
+      toolNamesEquals?: string[]
+      toolChoiceTypeEquals?: string
+      requestMessageContainsAll?: string[]
+      requestMessageContainsNone?: string[]
+      assistantMessageContainsAll?: string[]
+      messageCountAtLeast?: number
+    }
     archivistTurnMessage?: {
       containsAll?: string[]
       containsNone?: string[]
@@ -614,6 +624,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
+  assertNarratorCommitRepair(fixture, stateBefore, failures)
   assertDispositionDerivation(fixture, failures)
   assertAuthorContract(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
@@ -1091,6 +1102,75 @@ function messageContentText(content: unknown): string {
       return ''
     })
     .join('')
+}
+
+function assertNarratorCommitRepair(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.narratorCommitRepair
+  if (!expected) return
+
+  let request: ReturnType<typeof buildMissingNarrateTurnRepairRequest>
+  try {
+    const context = buildNarratorTurnContext({
+      state: stateBefore,
+      playerInput: fixture.input.playerInput,
+      isInitial: Boolean(fixture.input.isInitial),
+      turnIndex: fixture.input.turnIndex ?? stateBefore.history.turns.length,
+    })
+    request = buildMissingNarrateTurnRepairRequest({
+      turnContext: context,
+      completedContent: [{ type: 'text', text: expected.completedAssistantProse }],
+    })
+  } catch (error) {
+    failures.push(`buildMissingNarrateTurnRepairRequest threw: ${error instanceof Error ? error.message : String(error)}`)
+    return
+  }
+
+  if (expected.toolNamesEquals) {
+    const actual = request.tools.map((tool) => tool.name).sort().join(',')
+    const want = [...expected.toolNamesEquals].sort().join(',')
+    if (actual !== want) failures.push(`narratorCommitRepair.tools expected ${want}, got ${actual}`)
+  }
+
+  if (
+    expected.toolChoiceTypeEquals !== undefined &&
+    request.toolChoice.type !== expected.toolChoiceTypeEquals
+  ) {
+    failures.push(`narratorCommitRepair.toolChoice expected ${expected.toolChoiceTypeEquals}, got ${request.toolChoice.type}`)
+  }
+
+  if (
+    typeof expected.messageCountAtLeast === 'number' &&
+    request.messages.length < expected.messageCountAtLeast
+  ) {
+    failures.push(`narratorCommitRepair.messages expected at least ${expected.messageCountAtLeast}, got ${request.messages.length}`)
+  }
+
+  const userTexts = request.messages
+    .filter((message) => message.role === 'user')
+    .map((message) => messageContentText(message.content))
+  const assistantTexts = request.messages
+    .filter((message) => message.role === 'assistant')
+    .map((message) => messageContentText(message.content))
+
+  for (const fragment of expected.requestMessageContainsAll ?? []) {
+    if (!userTexts.some((text) => text.includes(fragment))) {
+      failures.push(`narratorCommitRepair request missing required fragment "${fragment.slice(0, 80)}"`)
+    }
+  }
+  for (const fragment of expected.requestMessageContainsNone ?? []) {
+    if (userTexts.some((text) => text.includes(fragment))) {
+      failures.push(`narratorCommitRepair request unexpectedly contains "${fragment.slice(0, 80)}"`)
+    }
+  }
+  for (const fragment of expected.assistantMessageContainsAll ?? []) {
+    if (!assistantTexts.some((text) => text.includes(fragment))) {
+      failures.push(`narratorCommitRepair assistant messages missing required fragment "${fragment.slice(0, 80)}"`)
+    }
+  }
 }
 
 function buildStateBefore(fixture: ReplayFixture): Sf2State {
