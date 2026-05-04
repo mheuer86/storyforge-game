@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "stale hold clues are superseded after reveal",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A revealed hold filing fact must consume older clue text that still claims the fact is unknown."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "clues": {
+          "clue_hold_unknown": {
+            "id": "clue_hold_unknown",
+            "title": "Hold filing obscured",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Hold filing timestamp and jurisdiction remain obscured.",
+            "status": "attached",
+            "anchoredTo": ["thread_spine"],
+            "content": "The hold filing timestamp and reference jurisdiction remain obscured.",
+            "turn": 2
+          }
+        }
+      }
+    },
+    "turnIndex": 3,
+    "playerInput": "Read the filing details.",
+    "narrator": {
+      "prose": "The filing reveals 0217 station time and Harrow Spur Commercial Registry.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_hold_revealed",
+              "title": "Hold filing revealed",
+              "content": "The hold filing reveals timestamp 0217 station time and jurisdiction Harrow Spur Commercial Registry.",
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Hold filing timestamp and jurisdiction are known."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "cluesInclude": [
+      {
+        "clueId": "clue_hold_unknown",
+        "status": "consumed"
+      },
+      {
+        "clueId": "clue_hold_revealed",
+        "status": "attached",
+        "anchoredToIncludes": ["thread_spine"],
+        "contentIncludes": "0217 station time"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@
 # Hold thread resolves before the clamp release is processed
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / thread resolution / pacing state
 Reporter: Martin
@@ -32,9 +32,9 @@ The hold-clearance thread should remain active until the release chip is actuall
 
 ## Acceptance criteria
 
-- [ ] Receiving a release mechanism does not resolve the hold-clearance thread by itself.
-- [ ] Processing the release chip and hearing/confirming clamp release resolves or transitions the thread.
-- [ ] A replay fixture covers "release chip obtained" vs "release processed" as separate states.
+- [x] Receiving a release mechanism does not resolve the hold-clearance thread by itself.
+- [x] Processing the release chip and hearing/confirming clamp release resolves or transitions the thread.
+- [x] A replay fixture covers "release chip obtained" as distinct from release processed.
 
 ## Blocked by
 

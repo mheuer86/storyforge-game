@@ -1,0 +1,54 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "cargo corridor location aliases merge",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Case, punctuation, and Arm4 vs Arm 4 variants of the same corridor should canonicalize to one location."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 8,
+    "playerInput": "Move to the cargo corridor.",
+    "narrator": {
+      "prose": "You move into the cargo-side corridor of Docking Arm 4.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "location",
+            "payload": {
+              "id": "loc_arm4_upper",
+              "name": "HARROW SPUR DOCKING ARM4 CORRIDOR",
+              "description": "A cargo-side corridor.",
+              "atmospheric_conditions": ["busy"]
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "location",
+            "payload": {
+              "id": "loc_arm_4_cargo",
+              "name": "Harrow Spur - Docking Arm 4, Cargo-Side Corridor",
+              "description": "A cargo-side corridor beside the docking arm.",
+              "atmospheric_conditions": ["sealant smell"]
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "locationsMatchingName": [
+      {
+        "name": "Harrow Spur Docking Arm 4 Cargo Side Corridor",
+        "count": 1,
+        "includesId": "loc_arm4_upper",
+        "excludesIds": ["loc_arm_4_cargo"]
+      }
+    ],
+    "locationIdsAbsent": ["loc_arm_4_cargo"]
+  }
+}

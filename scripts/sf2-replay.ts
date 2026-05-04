@@ -130,6 +130,12 @@ interface ReplayFixture {
       successorToThreadId?: string
       tensionHistoryIncludes?: Array<{ turn: number; value: number }>
     }>
+    cluesInclude?: Array<{
+      clueId: string
+      status?: string
+      anchoredToIncludes?: string[]
+      contentIncludes?: string
+    }>
     chapterCloseReadiness?: {
       pivotSignaled?: boolean
       closeReady: boolean
@@ -1626,6 +1632,24 @@ function assertExpected(
         failures.push(
           `thread ${threadExpected.threadId} tensionHistory missing { turn: ${wantEntry.turn}, value: ${wantEntry.value} }; got ${JSON.stringify(thread.tensionHistory)}`
         )
+      }
+    }
+  }
+  for (const clueExpected of expected.cluesInclude ?? []) {
+    const clue = state.campaign.clues[clueExpected.clueId]
+    if (!clue) {
+      failures.push(`clue ${clueExpected.clueId} missing`)
+      continue
+    }
+    if (clueExpected.status !== undefined && clue.status !== clueExpected.status) {
+      failures.push(`clue ${clueExpected.clueId} status expected ${clueExpected.status}, got ${clue.status}`)
+    }
+    if (clueExpected.contentIncludes !== undefined && !clue.content.includes(clueExpected.contentIncludes)) {
+      failures.push(`clue ${clueExpected.clueId} content expected to include "${clueExpected.contentIncludes}", got "${clue.content}"`)
+    }
+    for (const threadId of clueExpected.anchoredToIncludes ?? []) {
+      if (!clue.anchoredTo.includes(threadId)) {
+        failures.push(`clue ${clueExpected.clueId} anchoredTo missing ${threadId}`)
       }
     }
   }

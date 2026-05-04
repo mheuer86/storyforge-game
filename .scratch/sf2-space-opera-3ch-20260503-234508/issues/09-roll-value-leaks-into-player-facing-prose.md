@@ -3,7 +3,7 @@
 # Roll value leaks into player-facing prose
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / Narrator / display sentinel
 Reporter: Martin
@@ -34,9 +34,9 @@ Roll result values should stay in the mechanical roll UI/log, not the player-fac
 
 ## Acceptance criteria
 
-- [ ] Narrator roll continuations do not include raw roll values like `19. Clean.` in prose.
-- [ ] Existing display sentinel behavior for `roll_value_leak` is clarified: observe-only, block, or repair.
-- [ ] A replay fixture or narrator fixture covers roll-value leakage in success prose.
+- [x] Narrator roll continuations do not include raw roll values like `19. Clean.` in prose.
+- [x] Existing display sentinel behavior for `roll_value_leak` is clarified: repair on live stream, observe in replay.
+- [x] A replay fixture or narrator fixture covers roll-value leakage in success prose.
 
 ## Blocked by
 

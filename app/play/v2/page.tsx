@@ -203,6 +203,7 @@ export default function PlayV2Page() {
   const [isGeneratingChapter, setIsGeneratingChapter] = useState(false)
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
   const [generationElapsed, setGenerationElapsed] = useState(0)
+  const [exportCopyStatus, setExportCopyStatus] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const persistenceRef = useRef<StoryforgePersistence2 | null>(null)
   // When a roll_prompt arrives mid-stream, we store a resolver the modal calls
@@ -546,6 +547,10 @@ export default function PlayV2Page() {
             case 'display_sentinel': {
               const findings = (event.findings as Array<Record<string, unknown>>) ?? []
               const mode = String(event.mode ?? 'observe')
+              if (mode === 'enforce' && typeof event.repairedProse === 'string') {
+                proseAccum = event.repairedProse
+                setProse(proseAccum)
+              }
               // Always emit the entry — even findings.length === 0 is useful
               // signal: "scanner ran, clean turn". This makes the false-
               // positive baseline observable in the session log.
@@ -1607,46 +1612,85 @@ export default function PlayV2Page() {
   })
   const { chapterTurnCount } = pressureProjection.closeReadiness
 
-  function downloadSessionLog() {
-    if (!state) return
+  function buildSessionLogExport() {
+    if (!state) return null
     const summary = computeSessionSummary(state, debug)
-    const blob = new Blob(
-      [JSON.stringify({ summary, state, debug, replayFrames }, null, 2)],
-      { type: 'application/json' }
-    )
+    return {
+      filename: `sf2-session-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      payload: { summary, state, debug, replayFrames },
+    }
+  }
+
+  function buildReplayFixtureExport() {
+    if (!state) return null
+    const summary = computeSessionSummary(state, debug)
+    return {
+      filename: `sf2-replay-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      payload: {
+        schema: 'sf2-replay-fixture/v1',
+        exportedAt: new Date().toISOString(),
+        campaignId: state.meta.campaignId,
+        summary,
+        finalState: state,
+        debug,
+        frames: replayFrames,
+        note:
+          'Replay frames are captured model outputs plus before/after states. They are intended for model-free testing of deterministic tool application, cache invalidation, scene packets, and invariants.',
+      },
+    }
+  }
+
+  function downloadJsonExport(exportData: { filename: string; payload: unknown } | null) {
+    if (!exportData) return
+    const blob = new Blob([JSON.stringify(exportData.payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `sf2-session-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
+    a.download = exportData.filename
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
   }
 
+  function downloadSessionLog() {
+    downloadJsonExport(buildSessionLogExport())
+  }
+
   function downloadReplayFixture() {
-    if (!state) return
-    const summary = computeSessionSummary(state, debug)
-    const fixture = {
-      schema: 'sf2-replay-fixture/v1',
-      exportedAt: new Date().toISOString(),
-      campaignId: state.meta.campaignId,
-      summary,
-      finalState: state,
-      debug,
-      frames: replayFrames,
-      note:
-        'Replay frames are captured model outputs plus before/after states. They are intended for model-free testing of deterministic tool application, cache invalidation, scene packets, and invariants.',
+    downloadJsonExport(buildReplayFixtureExport())
+  }
+
+  async function copyJsonExport(label: 'session' | 'replay', exportData: { filename: string; payload: unknown } | null) {
+    if (!exportData) return
+    const json = JSON.stringify(exportData.payload, null, 2)
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(json)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = json
+        textarea.setAttribute('readonly', 'true')
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        textarea.remove()
+      }
+      setExportCopyStatus(`Copied ${label} JSON: ${exportData.filename}`)
+    } catch (error) {
+      setExportCopyStatus(`Copy failed: ${error instanceof Error ? error.message : 'unknown error'}`)
     }
-    const blob = new Blob([JSON.stringify(fixture, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `sf2-replay-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => setExportCopyStatus(null), 5000)
+  }
+
+  function copySessionLog() {
+    void copyJsonExport('session', buildSessionLogExport())
+  }
+
+  function copyReplayFixture() {
+    void copyJsonExport('replay', buildReplayFixtureExport())
   }
 
   const campaignStats = {
@@ -1714,6 +1758,9 @@ export default function PlayV2Page() {
       onResetCampaign={resetCampaign}
       onDownloadSessionLog={downloadSessionLog}
       onDownloadReplayFixture={downloadReplayFixture}
+      onCopySessionLog={copySessionLog}
+      onCopyReplayFixture={copyReplayFixture}
+      exportCopyStatus={exportCopyStatus}
     />
   )
 }

@@ -77,6 +77,7 @@ type Sf2NarratorStreamEvent =
       // stream of findings.
       type: 'display_sentinel'
       mode: 'observe' | 'enforce'
+      repairedProse?: string
       findings: Array<{
         type: string
         severity: string
@@ -125,6 +126,28 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
     return { pattern: `system_vocab:${match?.[0] ?? 'unknown'}`, snippet: prose.slice(0, 200) }
   }
   return null
+}
+
+function repairRollValueLeaks(
+  prose: string,
+  findings: Array<{ type: string; matchStart: number; surface?: string }>
+): string {
+  const rollFindings = findings
+    .filter((finding) => finding.type === 'roll_value_leak' && finding.surface)
+    .sort((a, b) => b.matchStart - a.matchStart)
+  let repaired = prose
+  for (const finding of rollFindings) {
+    const surface = finding.surface ?? ''
+    const start = finding.matchStart
+    if (!surface || start < 0 || start >= repaired.length) continue
+    const end = start + surface.length
+    repaired = `${repaired.slice(0, start)}${repaired.slice(end)}`
+  }
+  return repaired
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -451,9 +474,14 @@ export async function POST(req: NextRequest) {
                   turnIndex: state.history.turns.length,
                 })
               }
+              const repairedProse = findings.some((f) => f.type === 'roll_value_leak')
+                ? repairRollValueLeaks(proseText, findings)
+                : proseText
+              const didRepair = repairedProse !== proseText
               send({
                 type: 'display_sentinel',
-                mode: 'observe',
+                mode: didRepair ? 'enforce' : 'observe',
+                ...(didRepair ? { repairedProse } : {}),
                 findings: findings.map((f) => ({
                   type: f.type,
                   severity: f.severity,

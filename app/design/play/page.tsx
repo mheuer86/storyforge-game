@@ -156,6 +156,9 @@ function PlayDesignPreviewContent() {
       onResetCampaign={() => {}}
       onDownloadSessionLog={() => {}}
       onDownloadReplayFixture={() => {}}
+      onCopySessionLog={() => {}}
+      onCopyReplayFixture={() => {}}
+      exportCopyStatus={null}
     />
   )
 }

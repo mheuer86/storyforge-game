@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "current turn clue anchors new pressure thread",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "When a reveal creates pressure, current-turn floating evidence should attach to the new thread immediately."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 10,
+    "playerInput": "Inspect the cargo hatch.",
+    "narrator": {
+      "prose": "Fresh sealant around the hatch shows the cargo was staged tonight through a side-access bypass.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_hatch_staged",
+              "title": "Hatch staged tonight",
+              "content": "Fresh sealant around the hatch shows the cargo was staged tonight through a side-access bypass.",
+              "anchored_to": [],
+              "retrieval_cue": "Cargo hatch staging evidence."
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "thread",
+            "payload": {
+              "id": "thread_data_core_delivery",
+              "title": "Deliver the Data Core to Dead-Drop",
+              "question": "Can the data core leave before the cargo trail exposes the ship?",
+              "owner": { "kind": "faction", "name_or_id": "Registry" },
+              "tension": 7,
+              "resolution_criteria": "The data core is delivered or safely abandoned.",
+              "failure_mode": "The cargo trail exposes the ship.",
+              "retrieval_cue": "Data core cargo pressure.",
+              "load_bearing": true
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_data_core_delivery",
+        "status": "active",
+        "loadBearing": true
+      }
+    ],
+    "cluesInclude": [
+      {
+        "clueId": "clue_hatch_staged",
+        "status": "attached",
+        "anchoredToIncludes": ["thread_data_core_delivery"]
+      }
+    ]
+  }
+}

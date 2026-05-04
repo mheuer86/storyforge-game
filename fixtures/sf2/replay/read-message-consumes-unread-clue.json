@@ -1,0 +1,64 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "read message consumes unread clue",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Reading a broker message must supersede stale unread-status clues while preserving message facts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "clues": {
+          "clue_message_unread": {
+            "id": "clue_message_unread",
+            "title": "Unread broker message",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "The Sable Margin message is unread.",
+            "status": "attached",
+            "anchoredTo": ["thread_spine"],
+            "content": "The Sable Margin sent an urgent message to the comm. The message is unread.",
+            "turn": 4
+          }
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "Read the broker message.",
+    "narrator": {
+      "prose": "The message opens: Lira Voss sent it at 0209, naming 40,200 credits as the exact hold amount.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_message_read",
+              "title": "Broker message read",
+              "content": "The Sable Margin message is read: Lira Voss sent it at 0209 and names 40,200 credits as the exact hold amount.",
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Broker message read with timestamp, sender, and amount."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "cluesInclude": [
+      {
+        "clueId": "clue_message_unread",
+        "status": "consumed"
+      },
+      {
+        "clueId": "clue_message_read",
+        "status": "attached",
+        "contentIncludes": "40,200"
+      }
+    ]
+  }
+}

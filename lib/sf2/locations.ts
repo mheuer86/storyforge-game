@@ -8,12 +8,13 @@ export function canonicalLocationNameKey(name: string): string {
     .toLocaleLowerCase()
     .replace(/[()]/g, ' ')
     .replace(/[\u2013\u2014-]/g, ' ')
+    .replace(/\b(arm|bay|berth|dock|pier|gate)\s*0*(\d+)/g, '$1 $2')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
   const tokens = normalized.split(' ').filter(Boolean)
   const bayMatch = normalized.match(/\bbay\s*0*(\d+)\b/)
-  const berthMatch = normalized.match(/\b(berth|dock|pier|gate)\s*0*(\d+)\s*([a-z])?\b/)
+  const berthMatch = normalized.match(/\b(arm|berth|dock|pier|gate)\s*0*(\d+)\s*([a-z])?\b/)
 
   if (bayMatch) {
     const bayNumber = bayMatch[1]
@@ -39,6 +40,10 @@ export function canonicalLocationNameKey(name: string): string {
     const context = [...new Set(contextTokens.filter((token) => {
       return token !== 'station' &&
         token !== kind &&
+        token !== 'corridor' &&
+        token !== 'cargo' &&
+        token !== 'side' &&
+        token !== 'docking' &&
         token !== number &&
         token !== suffix &&
         token !== compactNumber

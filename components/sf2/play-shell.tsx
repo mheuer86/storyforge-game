@@ -3,6 +3,7 @@
 import {
   Activity,
   BookOpen,
+  Copy,
   FileDown,
   Map as MapIcon,
   Menu,
@@ -151,6 +152,9 @@ interface Sf2PlayShellProps {
   onResetCampaign: () => void
   onDownloadSessionLog: () => void
   onDownloadReplayFixture: () => void
+  onCopySessionLog: () => void
+  onCopyReplayFixture: () => void
+  exportCopyStatus: string | null
 }
 
 type ShellPanel = 'character' | 'scene' | 'intel' | 'diagnostics'
@@ -248,6 +252,9 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     onResetCampaign,
     onDownloadSessionLog,
     onDownloadReplayFixture,
+    onCopySessionLog,
+    onCopyReplayFixture,
+    exportCopyStatus,
   } = props
   const [activePanel, setActivePanel] = useState<ShellPanel | null>(null)
   const isMobileViewport = useIsMobile()
@@ -366,6 +373,9 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
           onResetCampaign={onResetCampaign}
           onDownloadSessionLog={onDownloadSessionLog}
           onDownloadReplayFixture={onDownloadReplayFixture}
+          onCopySessionLog={onCopySessionLog}
+          onCopyReplayFixture={onCopyReplayFixture}
+          exportCopyStatus={exportCopyStatus}
         />
       )}
     </div>
@@ -2002,6 +2012,9 @@ function DiagnosticsPanel(props: {
   onResetCampaign: () => void
   onDownloadSessionLog: () => void
   onDownloadReplayFixture: () => void
+  onCopySessionLog: () => void
+  onCopyReplayFixture: () => void
+  exportCopyStatus: string | null
 }) {
   const {
     state,
@@ -2018,6 +2031,9 @@ function DiagnosticsPanel(props: {
     onResetCampaign,
     onDownloadSessionLog,
     onDownloadReplayFixture,
+    onCopySessionLog,
+    onCopyReplayFixture,
+    exportCopyStatus,
   } = props
   return (
     <div className="space-y-3">
@@ -2083,6 +2099,8 @@ function DiagnosticsPanel(props: {
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <UtilityButton icon={<FileDown className="h-4 w-4" />} label="Download session log" onClick={onDownloadSessionLog} />
         <UtilityButton icon={<FileDown className="h-4 w-4" />} label="Download replay fixture" onClick={onDownloadReplayFixture} />
+        <UtilityButton icon={<Copy className="h-4 w-4" />} label="Copy session JSON" onClick={onCopySessionLog} />
+        <UtilityButton icon={<Copy className="h-4 w-4" />} label="Copy replay JSON" onClick={onCopyReplayFixture} />
         <UtilityButton
           icon={<ScrollText className="h-4 w-4" />}
           label={`Close chapter / Open Ch${state.meta.currentChapter + 1}`}
@@ -2097,6 +2115,11 @@ function DiagnosticsPanel(props: {
           Back to v1
         </a>
       </div>
+      {exportCopyStatus && (
+        <div className="rounded border border-primary/25 bg-primary/10 px-3 py-2 font-mono text-[11px] text-primary">
+          {exportCopyStatus}
+        </div>
+      )}
     </div>
   )
 }
