@@ -1,0 +1,82 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "optional resolution gate stays optional on merge",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A partial gate update that omits required must not turn an existing optional gate into a required blocker."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionGates": [
+              {
+                "id": "gate_optional_context",
+                "label": "Optional context learned",
+                "condition": "The PC learns optional context that improves the resolution.",
+                "required": false,
+                "status": "open"
+              }
+            ],
+            "progressEvents": []
+          }
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Resolve the core problem.",
+    "narrator": {
+      "prose": "The core problem is resolved without learning the optional context.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "resolution_gates": [
+                {
+                  "id": "gate_optional_context",
+                  "label": "Optional context learned",
+                  "condition": "The PC learns optional context that improves the resolution.",
+                  "status": "open"
+                }
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "without learning the optional context"
+          }
+        ],
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The core problem is resolved.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "resolved_clean",
+        "tension": 0,
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_optional_context",
+            "status": "open"
+          }
+        ]
+      }
+    ],
+    "archivistAcceptedRefs": ["updates[0]", "transitions[0]"]
+  }
+}

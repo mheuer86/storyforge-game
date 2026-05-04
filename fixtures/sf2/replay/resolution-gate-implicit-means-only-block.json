@@ -1,0 +1,53 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "implicit means only resolution is blocked without gates",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Legacy no-gate threads still block successful closure when criteria require a final action and evidence only shows obtaining the means."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Clear the Forty-Thousand Hold",
+            "resolutionCriteria": "The hold is cleared when the release chip is processed and the clamp releases.",
+            "failureMode": "The ship remains clamped.",
+            "resolutionGates": [],
+            "progressEvents": []
+          }
+        }
+      }
+    },
+    "turnIndex": 13,
+    "playerInput": "Take the release chip.",
+    "narrator": {
+      "prose": "Lira passes over the release chip, but the clamp has not released yet.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The release chip was obtained, but the clamp has not released yet.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "tension": 5
+      }
+    ],
+    "archivistRejectedRefs": ["transitions[0]"]
+  }
+}

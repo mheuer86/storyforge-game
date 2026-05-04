@@ -7,6 +7,7 @@ import type {
 } from './types'
 
 type UnknownRecord = Record<string, unknown>
+type NormalizedGate = Sf2ThreadResolutionGate & { requiredSpecified: boolean }
 
 const GATE_STATUSES = new Set<Sf2ThreadResolutionGateStatus>([
   'open',
@@ -25,7 +26,7 @@ export function normalizeThreadResolutionGates(raw: unknown): Sf2ThreadResolutio
     if (existing) {
       mergeGate(existing, gate)
     } else {
-      gates.push(gate)
+      gates.push(publicGate(gate))
     }
   }
   return gates
@@ -46,10 +47,13 @@ export function mergeThreadResolutionGates(
   raw: unknown
 ): Sf2ThreadResolutionGate[] {
   const gates = [...existing]
-  for (const gate of normalizeThreadResolutionGates(raw)) {
+  if (!Array.isArray(raw)) return gates
+  for (const [index, item] of raw.entries()) {
+    const gate = normalizeGate(item, index)
+    if (!gate) continue
     const current = gates.find((g) => g.id === gate.id)
     if (current) mergeGate(current, gate)
-    else gates.push(gate)
+    else gates.push(publicGate(gate))
   }
   return gates
 }
@@ -107,18 +111,26 @@ export function applyThreadProgressChanges(
 
 export function unresolvedRequiredResolutionGates(thread: Sf2Thread): Sf2ThreadResolutionGate[] {
   return (thread.resolutionGates ?? []).filter(
-    (gate) => gate.required !== false && gate.status === 'open'
+    (gate) =>
+      gate.required !== false &&
+      gate.status !== 'satisfied' &&
+      gate.status !== 'waived'
   )
 }
 
 export function successfulThreadResolutionBlocked(
   thread: Sf2Thread,
-  toStatus: string
+  toStatus: string,
+  evidence?: string
 ): string | null {
   if (toStatus !== 'resolved_clean' && toStatus !== 'resolved_costly') return null
   const blockers = unresolvedRequiredResolutionGates(thread)
-  if (blockers.length === 0) return null
-  return `required resolution gates still open: ${blockers.map((gate) => `${gate.id} (${gate.label})`).join(', ')}`
+  if (blockers.length > 0) {
+    return `required resolution gates still unresolved: ${blockers.map((gate) => `${gate.id} (${gate.label}; ${gate.status})`).join(', ')}`
+  }
+  const implicitBlock = implicitMeansOnlyResolutionBlocked(thread, evidence)
+  if (implicitBlock) return implicitBlock
+  return null
 }
 
 function normalizeProgressInput(
@@ -169,7 +181,7 @@ function normalizeProgressEvent(raw: unknown, index: number): Sf2ThreadProgressE
   }
 }
 
-function normalizeGate(raw: unknown, index: number): Sf2ThreadResolutionGate | null {
+function normalizeGate(raw: unknown, index: number): NormalizedGate | null {
   const record = asRecord(raw)
   const label = typeof raw === 'string'
     ? raw.trim()
@@ -181,24 +193,63 @@ function normalizeGate(raw: unknown, index: number): Sf2ThreadResolutionGate | n
   const id = stringValue(record, 'id') || `gate_${slugify(label || condition || String(index + 1))}`
   const statusRaw = stringValue(record, 'status') as Sf2ThreadResolutionGateStatus
   const status = GATE_STATUSES.has(statusRaw) ? statusRaw : 'open'
+  const requiredSpecified = hasOwn(record, 'required')
   return {
     id,
     label: label || condition || id,
     condition: condition || label || id,
-    required: record?.required === undefined ? true : Boolean(record.required),
+    required: requiredSpecified ? Boolean(record?.required) : true,
     status,
     satisfiedTurn: numberValue(record, undefined, 'satisfied_turn', 'satisfiedTurn'),
     evidenceQuote: stringValue(record, 'evidence_quote', 'evidenceQuote') || undefined,
+    requiredSpecified,
   }
 }
 
-function mergeGate(target: Sf2ThreadResolutionGate, incoming: Sf2ThreadResolutionGate): void {
+function mergeGate(target: Sf2ThreadResolutionGate, incoming: NormalizedGate): void {
   target.label = incoming.label || target.label
   target.condition = incoming.condition || target.condition
-  target.required = incoming.required
+  if (incoming.requiredSpecified) target.required = incoming.required
   if (incoming.status !== 'open' || target.status === 'open') target.status = incoming.status
   target.satisfiedTurn = incoming.satisfiedTurn ?? target.satisfiedTurn
   target.evidenceQuote = incoming.evidenceQuote ?? target.evidenceQuote
+}
+
+function publicGate(gate: NormalizedGate): Sf2ThreadResolutionGate {
+  return {
+    id: gate.id,
+    label: gate.label,
+    condition: gate.condition,
+    required: gate.required,
+    status: gate.status,
+    satisfiedTurn: gate.satisfiedTurn,
+    evidenceQuote: gate.evidenceQuote,
+  }
+}
+
+function implicitMeansOnlyResolutionBlocked(
+  thread: Sf2Thread,
+  evidence?: string
+): string | null {
+  if ((thread.resolutionGates ?? []).length > 0) return null
+  const criteria = normalizeForComparison(thread.resolutionCriteria)
+  const proof = normalizeForComparison(evidence)
+  if (!criteria || !proof) return null
+
+  const criteriaRequiresFinalStep =
+    /\b(process|processed|processing|activate|activated|activating|install|installed|use|used|apply|applied|deliver|delivered|present|presented|submit|submitted|unlock|unlocked|decode|decoded)\b/.test(criteria) ||
+    /\bclamp (?:visibly )?releases?\b/.test(criteria)
+  const proofOnlyObtainsMeans =
+    /\b(obtain|obtained|take|took|get|got|receive|received|acquire|acquired|find|found|handover|handed over)\b/.test(proof)
+  const proofShowsFinalStep =
+    /\b(processed|activated|installed|used|applied|delivered|presented|submitted|unlocked|decoded|cleared|released|resolved|completed)\b/.test(proof)
+  const proofNegatesFinalStep =
+    /\b(not|never|without|has not|had not|does not|did not|cannot|can't|is not|isn't)\b.{0,48}\b(processed|activated|installed|used|applied|delivered|presented|submitted|unlocked|decoded|cleared|released|resolved|completed)\b/.test(proof)
+
+  if (criteriaRequiresFinalStep && proofOnlyObtainsMeans && (!proofShowsFinalStep || proofNegatesFinalStep)) {
+    return 'resolution criteria require the final step, but evidence only shows obtaining the means'
+  }
+  return null
 }
 
 function satisfyGateIds(
@@ -260,6 +311,16 @@ function stringArray(value: unknown): string[] {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)))
+}
+
+function hasOwn(record: UnknownRecord | null, key: string): boolean {
+  return Boolean(record && Object.prototype.hasOwnProperty.call(record, key))
+}
+
+function normalizeForComparison(value: unknown): string {
+  return typeof value === 'string'
+    ? value.toLowerCase().replace(/\s+/g, ' ').trim()
+    : ''
 }
 
 function slugify(value: string): Sf2EntityId {
