@@ -45,6 +45,7 @@ const ALLOWED: Record<Sf2Actor, ReadonlySet<Sf2WriteKind>> = {
     'ladder_fire',
     'working_set_compute',
     'cohesion_recompute',
+    'drift_flag',
   ]),
   unknown: new Set<Sf2WriteKind>(),
 }

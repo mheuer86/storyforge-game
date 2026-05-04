@@ -1,0 +1,135 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "turn resolution successful roll without state flags drift",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A successful roll against a resolved target should not be considered handled merely because generic player engagement reheated pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "owner": { "kind": "npc", "id": "npc_osh" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5
+          }
+        },
+        "npcs": {
+          "npc_osh": {
+            "id": "npc_osh",
+            "category": "npc",
+            "name": "Osh",
+            "status": "alive",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "affiliation": "Registry",
+            "role": "registry clerk",
+            "disposition": "wary",
+            "tempLoad": [],
+            "agenda": {
+              "pursuing": "Keep the intake writ narrow.",
+              "methods": ["procedural delay"],
+              "currentMove": "Waiting for the Warden to speak."
+            },
+            "ownedThreadIds": ["thread_spine"],
+            "retrievalCue": "Osh carries the procedural pressure.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_osh"],
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 3,
+              "localEscalation": 0,
+              "maxThisChapter": 3,
+              "cooledAtOpen": true
+            }
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_osh"]
+        }
+      }
+    },
+    "turnIndex": 3,
+    "playerInput": "Persuade Osh to hand over the registry key.",
+    "narrator": {
+      "prose": "Osh exhales and gives you the key.",
+      "annotation": null,
+      "mechanicalEffects": [],
+      "rollRecords": [
+        {
+          "turn": 3,
+          "skill": "Persuasion",
+          "dc": 14,
+          "effectiveDc": 14,
+          "rollResult": 18,
+          "modifier": 2,
+          "outcome": "success",
+          "consequenceSummary": "Osh relents."
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_spine",
+        "openingFloor": 3,
+        "localEscalation": 2,
+        "maxThisChapter": 5,
+        "effectivePressure": 5
+      }
+    ],
+    "turnResolution": {
+      "actionType": "other",
+      "targetEntityIdsEquals": ["npc_osh"],
+      "targetThreadIdsEquals": ["thread_spine"],
+      "consequenceEventsInclude": [
+        {
+          "kind": "roll_success_requires_state",
+          "rollOutcome": "success",
+          "stateMutationObserved": false,
+          "targetThreadIdsEquals": ["thread_spine"],
+          "noteIncludes": "durable state trace"
+        }
+      ],
+      "driftFindingsInclude": [
+        {
+          "type": "state_drift",
+          "stateReference": "thread_spine",
+          "suggestedNoteIncludes": "successful roll needs"
+        }
+      ]
+    },
+    "invariantEventDetailIncludes": [
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "code:drift_flag observed within ownership contract"
+      }
+    ]
+  }
+}

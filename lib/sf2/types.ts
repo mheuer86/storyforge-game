@@ -686,6 +686,32 @@ export interface Sf2ResolvedPlayerAction {
   forbiddenTargetSubstitutions: Sf2EntityId[]
 }
 
+export type Sf2TurnResolutionConsequenceKind =
+  | 'roll_failure_pressure'
+  | 'roll_success_requires_state'
+  | 'targeted_action_requires_state'
+
+export interface Sf2TurnResolutionConsequence {
+  id: string
+  kind: Sf2TurnResolutionConsequenceKind
+  rollOutcome?: Sf2RollRecord['outcome']
+  skill?: string
+  targetEntityIds: Sf2EntityId[]
+  targetThreadIds: Sf2EntityId[]
+  pressureDelta?: number
+  stateMutationObserved: boolean
+  note: string
+}
+
+export interface Sf2TurnResolutionRecord {
+  turnIndex: number
+  action: Sf2ResolvedPlayerAction
+  targetThreadIds: Sf2EntityId[]
+  rollRecords: Sf2RollRecord[]
+  consequenceEvents: Sf2TurnResolutionConsequence[]
+  driftFindings: Sf2CoherenceFinding[]
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Chapter state (runtime + scaffolding + opening seed)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1106,6 +1132,7 @@ export interface Sf2TurnRecord {
   // log review see what scene snapshots / hp deltas / scene_end signals the
   // Narrator actually emitted.
   narratorAnnotationRaw?: Record<string, unknown>
+  turnResolution?: Sf2TurnResolutionRecord
   archivistPatchApplied?: Sf2ArchivistPatch
   pacingClassification?: Sf2PacingClassification
   stateDiff?: Sf2TurnDiffEntry[]
@@ -1298,6 +1325,7 @@ export type Sf2CoherenceFindingType =
   | 'stale_reentry'
   | 'clue_leak'
   | 'identity_drift'
+  | 'state_drift'
   | 'npc_fabrication'
   // Prose-level drift detected by scanning the Narrator's prose against
   // canonical state. The Archivist scans NPC name/alias usage near pronouns
