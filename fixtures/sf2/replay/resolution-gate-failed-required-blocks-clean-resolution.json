@@ -1,0 +1,64 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "failed required gate blocks clean resolution",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A failed required gate is not cleared for successful resolution, so clean/costly closure must remain blocked."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionGates": [
+              {
+                "id": "gate_action_processed",
+                "label": "Action processed",
+                "condition": "The required action is processed in the fiction.",
+                "required": true,
+                "status": "failed"
+              }
+            ],
+            "progressEvents": []
+          }
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Try to wrap this up anyway.",
+    "narrator": {
+      "prose": "The required action failed, but the scene tries to move on cleanly.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The attempt can be considered finished cleanly.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "tension": 5,
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_action_processed",
+            "status": "failed"
+          }
+        ]
+      }
+    ],
+    "archivistRejectedRefs": ["transitions[0]"]
+  }
+}

@@ -1596,7 +1596,7 @@ function applyUpdate(
           : explicitLastAdvanced ?? prior.lastAdvancedTurn,
       }
       applyThreadProgressChanges(updatedThread, write.changes, turnIndex, write.sourceQuote)
-      const resolutionBlock = successfulThreadResolutionBlocked(updatedThread, nextStatus)
+      const resolutionBlock = successfulThreadResolutionBlocked(updatedThread, nextStatus, write.sourceQuote)
       if (resolutionBlock) {
         drift.push({
           kind: 'contradiction',
@@ -1830,7 +1830,7 @@ function applyTransition(
       }
       const toStatus = write.toStatus as Sf2Thread['status']
       const thread = draft.campaign.threads[id]
-      const resolutionBlock = successfulThreadResolutionBlocked(thread, toStatus)
+      const resolutionBlock = successfulThreadResolutionBlocked(thread, toStatus, write.reason)
       if (resolutionBlock) {
         outcomes.push({
           accepted: false,
