@@ -3,7 +3,7 @@
 # Cargo corridor location aliases render as duplicate locations
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / location normalization / UI rendering
 Reporter: Martin

@@ -35,6 +35,16 @@
               "atmospheric_conditions": ["sealant smell"]
             },
             "confidence": "high"
+          },
+          {
+            "kind": "location",
+            "payload": {
+              "id": "loc_arm_4_kiosk",
+              "name": "Harrow Spur Docking Arm 4 Kiosk",
+              "description": "A payment kiosk on the docking arm.",
+              "atmospheric_conditions": ["quiet"]
+            },
+            "confidence": "high"
           }
         ]
       }
@@ -45,8 +55,14 @@
       {
         "name": "Harrow Spur Docking Arm 4 Cargo Side Corridor",
         "count": 1,
-        "includesId": "loc_arm4_upper",
-        "excludesIds": ["loc_arm_4_cargo"]
+        "idsInclude": ["loc_arm4_upper"],
+        "idsExclude": ["loc_arm_4_cargo", "loc_arm_4_kiosk"]
+      },
+      {
+        "name": "Harrow Spur Docking Arm 4 Kiosk",
+        "count": 1,
+        "idsInclude": ["loc_arm_4_kiosk"],
+        "idsExclude": ["loc_arm4_upper", "loc_arm_4_cargo"]
       }
     ],
     "locationIdsAbsent": ["loc_arm_4_cargo"]

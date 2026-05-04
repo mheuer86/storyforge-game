@@ -109,9 +109,11 @@ const EVIDENCE_WINDOW_CHARS = 120
 const DEFAULT_DEBUG_LEAK_SEVERITY: Sf2DisplaySentinelSeverity = 'hard'
 const DEFAULT_DEBUG_LEAK_ACTION: Sf2DisplaySentinelAction = 'block_and_repair'
 
-const ROLL_VALUE_PATTERNS: readonly RegExp[] = [
-  /\bNatural\s+(?:1|20|\d+)\b/gi,
-  /(?:^|[.!?]\s+)(Twenty(?:-two)?|Sixteen|Nineteen|Twenty)\.\s/gi,
+const ROLL_VALUE_PATTERNS: ReadonlyArray<{ pattern: RegExp; group?: number }> = [
+  { pattern: /\bNatural\s+(?:1|20|\d+)\b/gi },
+  { pattern: /(?:^|[.!?]\s+)((?:Twenty(?:-two)?|Sixteen|Nineteen|Twenty)\.\s*(?:Clean|Success|Failure|Fail|Hit|Miss)\.?)/gi, group: 1 },
+  { pattern: /(?:^|[.!?]\s+)((?:[1-9]|[12]\d|3\d)\.\s*(?:Clean|Success|Failure|Fail|Hit|Miss)\.?)/gi, group: 1 },
+  { pattern: /(?:^|[.!?]\s+)((?:Twenty(?:-two)?|Sixteen|Nineteen|Twenty)\.)\s/gi, group: 1 },
 ]
 
 const STAGE_LABEL_PATTERNS: readonly RegExp[] = [
@@ -178,11 +180,14 @@ export function scanForFixtureLeaks(
   const severity = options.severity ?? DEFAULT_DEBUG_LEAK_SEVERITY
   const findings: Sf2DisplaySentinelFinding[] = []
 
-  for (const pattern of ROLL_VALUE_PATTERNS) {
+  for (const { pattern, group } of ROLL_VALUE_PATTERNS) {
     pattern.lastIndex = 0
     let m: RegExpExecArray | null
     while ((m = pattern.exec(prose))) {
-      findings.push(buildFinding(prose, m.index, m[0].length, m[0].trim(), severity, action, 'roll_value_leak'))
+      const surface = group ? m[group] : m[0]
+      const offset = group && surface ? m[0].indexOf(surface) : 0
+      const start = m.index + Math.max(0, offset)
+      findings.push(buildFinding(prose, start, surface.length, surface.trim(), severity, action, 'roll_value_leak'))
     }
   }
 
@@ -648,6 +653,7 @@ function buildFinding(
     surface,
     evidence,
     matchStart: start,
+    matchEnd: start + length,
     recommendedAction: action,
   }
 }

@@ -3,7 +3,7 @@
 # Hatch staging clue is not attached when first discovered
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / Archivist / clue attachment
 Reporter: Martin

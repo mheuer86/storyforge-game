@@ -36,14 +36,14 @@ export function canonicalLocationNameKey(name: string): string {
       const next = tokens[index + 1]?.replace(/^0+/, '')
       return token === kind && (next === number || next === compactNumber)
     })
-    const contextTokens = berthIndex > 0 ? tokens.slice(0, berthIndex) : tokens
+    const contextTokens = kind === 'arm'
+      ? tokens
+      : berthIndex > 0 ? tokens.slice(0, berthIndex) : tokens
+    const genericArmContext = new Set(['corridor', 'cargo', 'side', 'docking'])
     const context = [...new Set(contextTokens.filter((token) => {
       return token !== 'station' &&
         token !== kind &&
-        token !== 'corridor' &&
-        token !== 'cargo' &&
-        token !== 'side' &&
-        token !== 'docking' &&
+        (kind !== 'arm' || !genericArmContext.has(token)) &&
         token !== number &&
         token !== suffix &&
         token !== compactNumber

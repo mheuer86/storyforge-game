@@ -22,6 +22,25 @@
             "resolutionCriteria": "The hold is cleared when the release chip is processed and the clamp releases.",
             "failureMode": "The ship remains clamped.",
             "retrievalCue": "Forty-thousand hold clamp clearance.",
+            "resolutionGates": [
+              {
+                "id": "gate_release_chip_obtained",
+                "label": "Release chip obtained",
+                "condition": "The PC obtains the release mechanism.",
+                "required": true,
+                "status": "satisfied",
+                "satisfiedTurn": 13,
+                "evidenceQuote": "Lira passes over the release chip"
+              },
+              {
+                "id": "gate_release_processed",
+                "label": "Release processed",
+                "condition": "The release mechanism is processed and the clamp visibly releases.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": [],
             "chapterCreated": 1,
             "loadBearing": true,
             "tensionHistory": []
@@ -55,6 +74,15 @@
         "threadId": "thread_spine",
         "status": "active",
         "tension": 7
+      },
+      {
+        "threadId": "thread_spine",
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_release_processed",
+            "status": "open"
+          }
+        ]
       }
     ],
     "archivistRejectedRefs": ["transitions[0]"]

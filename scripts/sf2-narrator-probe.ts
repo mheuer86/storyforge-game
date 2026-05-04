@@ -174,6 +174,8 @@ function createMinimalState(): Sf2State {
           retrievalCue: 'The public-facing pressure in the current chapter.',
           loadBearing: true,
           spineForChapter: 1,
+          resolutionGates: [],
+          progressEvents: [],
           tensionHistory: [],
         },
       },

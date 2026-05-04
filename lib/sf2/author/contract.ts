@@ -3,6 +3,7 @@ import {
   type DispositionDerivationContext,
 } from './disposition-defaults'
 import { CHAPTER_OPEN_CAP } from '../pressure/constants'
+import { normalizeThreadResolutionGates } from '../thread-resolution'
 import type {
   AuthorChapterSetupV2,
   Sf2RevealContext,
@@ -259,6 +260,7 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       successorToThreadId: stringField(t, 'successor_to_thread_id', 'successorToThreadId') || undefined,
       driverKind: normalizeDriverKind(valueField(t, 'driver_kind', 'driverKind')),
       resolutionCriteria: stringField(t, 'resolution_criteria', 'resolutionCriteria'),
+      resolutionGates: normalizeThreadResolutionGates(valueField(t, 'resolution_gates', 'resolutionGates')),
       failureMode: stringField(t, 'failure_mode', 'failureMode'),
       retrievalCue: stringField(t, 'retrieval_cue', 'retrievalCue'),
     })),

@@ -3,7 +3,7 @@
 # Hold facts duplicate across threads with contradictory stale variants
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / Archivist / clue dedupe / retrieval
 Reporter: Martin

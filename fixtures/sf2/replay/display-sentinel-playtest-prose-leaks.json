@@ -28,7 +28,7 @@
     "displaySentinel": {
       "findingsCountAtLeast": 3,
       "findingsInclude": [
-        { "findingType": "roll_value_leak", "surfaceEquals": "Twenty-two." },
+        { "findingType": "roll_value_leak", "surfaceEquals": "Twenty-two. Clean." },
         { "findingType": "stage_label_leak", "surfaceEquals": "**THE ESCALATION.**" },
         { "findingType": "disposition_label_leak", "surfaceEquals": "remains wary" }
       ]

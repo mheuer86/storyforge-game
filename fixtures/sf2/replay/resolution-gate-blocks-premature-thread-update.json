@@ -1,0 +1,67 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "resolution gate blocks premature thread update",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A thread update that attempts successful resolution before required gates are satisfied must not zero tension or mark the thread resolved."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionGates": [
+              {
+                "id": "gate_action_processed",
+                "label": "Action processed",
+                "condition": "The required action is processed in the fiction.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": []
+          }
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Take the means to solve it.",
+    "narrator": {
+      "prose": "You obtain the means, but the required action has not been processed.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "status": "resolved_clean",
+              "tension": 0
+            },
+            "confidence": "high",
+            "sourceQuote": "You obtain the means"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "tension": 5,
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_action_processed",
+            "status": "open"
+          }
+        ]
+      }
+    ],
+    "archivistRejectedRefs": ["updates[0]"]
+  }
+}

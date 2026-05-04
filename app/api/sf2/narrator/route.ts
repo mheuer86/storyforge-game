@@ -85,6 +85,7 @@ type Sf2NarratorStreamEvent =
         entityId?: string
         evidence: string
         matchStart: number
+        matchEnd?: number
         recommendedAction: string
       }>
     }
@@ -130,7 +131,7 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
 
 function repairRollValueLeaks(
   prose: string,
-  findings: Array<{ type: string; matchStart: number; surface?: string }>
+  findings: Array<{ type: string; matchStart: number; matchEnd?: number; surface?: string }>
 ): string {
   const rollFindings = findings
     .filter((finding) => finding.type === 'roll_value_leak' && finding.surface)
@@ -140,7 +141,7 @@ function repairRollValueLeaks(
     const surface = finding.surface ?? ''
     const start = finding.matchStart
     if (!surface || start < 0 || start >= repaired.length) continue
-    const end = start + surface.length
+    const end = Math.max(start, finding.matchEnd ?? start + surface.length)
     repaired = `${repaired.slice(0, start)}${repaired.slice(end)}`
   }
   return repaired
@@ -489,6 +490,7 @@ export async function POST(req: NextRequest) {
                   entityId: f.entityId,
                   evidence: f.evidence,
                   matchStart: f.matchStart,
+                  matchEnd: f.matchEnd,
                   recommendedAction: f.recommendedAction,
                 })),
               })

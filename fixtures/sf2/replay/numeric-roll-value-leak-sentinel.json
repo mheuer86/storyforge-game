@@ -1,16 +1,16 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "roll value leak sentinel detects raw result prose",
+  "name": "numeric roll value leak sentinel detects raw result prose",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Narrator prose that repeats raw roll values should be detected as roll_value_leak."
+    "purpose": "Bare numeric roll-result prose like '19. Clean.' should be detected as roll_value_leak."
   },
   "input": {
     "stateBeforePreset": "minimal",
     "turnIndex": 18,
     "playerInput": "Make the check.",
     "narrator": {
-      "prose": "Nineteen. Clean. The clamp release sounds through the gantry.",
+      "prose": "19. Clean. The lock accepts the bypass.",
       "annotation": null
     },
     "archivist": {
@@ -23,7 +23,7 @@
       "findingsInclude": [
         {
           "findingType": "roll_value_leak",
-          "surfaceEquals": "Nineteen. Clean."
+          "surfaceEquals": "19. Clean."
         }
       ]
     }

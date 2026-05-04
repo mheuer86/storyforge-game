@@ -163,6 +163,9 @@ export function renderSceneBundle(
       if (t.anchoredClues.length > 0) {
         lines.push(`  clues: ${t.anchoredClues.map((c) => c.content.slice(0, 100)).join(' | ')}`)
       }
+      if (t.resolutionGates.length > 0) {
+        lines.push(`  gates: ${t.resolutionGates.map((g) => `${g.id}:${g.status} — ${g.condition}`).join(' | ')}`)
+      }
     }
     lines.push(
       `\nTension values shift turn-by-turn — they're provided in the per-turn block, not here.`
@@ -514,6 +517,9 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
       }
       if (t.anchoredClues.length > 0) {
         lines.push(`  clues: ${t.anchoredClues.map((c) => c.content.slice(0, 100)).join(' | ')}`)
+      }
+      if (t.resolutionGates.length > 0) {
+        lines.push(`  gates: ${t.resolutionGates.map((g) => `${g.id}:${g.status} — ${g.condition}`).join(' | ')}`)
       }
     }
   }

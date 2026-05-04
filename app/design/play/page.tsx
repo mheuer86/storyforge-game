@@ -604,6 +604,8 @@ function thread(
     loadBearing,
     spineForChapter: loadBearing ? 2 : undefined,
     tensionHistory: [{ chapter: 2, turn: 13, value: tension }],
+    resolutionGates: [],
+    progressEvents: [],
   }
 }
 

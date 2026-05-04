@@ -3,7 +3,7 @@
 # SF2 diagnostics exports are unavailable in the in-app browser
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / diagnostics export / playtest workflow
 Reporter: Martin
