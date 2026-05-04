@@ -31,6 +31,7 @@ import {
 import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
+  type Sf2RollRecord,
   type Sf2State,
   type ThreadRole,
 } from '../lib/sf2/types'
@@ -67,6 +68,7 @@ interface ReplayFixture {
       prose: string
       annotation?: Record<string, unknown> | null
       mechanicalEffects?: Array<Record<string, unknown>>
+      rollRecords?: Sf2RollRecord[]
     }
     archivist?: {
       patch?: Partial<Sf2ArchivistPatch> | null
@@ -230,6 +232,24 @@ interface ReplayFixture {
       targetEntityIdsEquals?: string[]
       forbiddenTargetSubstitutionsIncludes?: string[]
       resolvedReferenceIncludes?: Array<{ surface?: string; resolvedToEntityId?: string; confidence?: string }>
+    }
+    turnResolution?: {
+      actionType?: string
+      targetEntityIdsEquals?: string[]
+      targetThreadIdsEquals?: string[]
+      consequenceEventsInclude?: Array<{
+        kind: string
+        rollOutcome?: string
+        pressureDelta?: number
+        stateMutationObserved?: boolean
+        targetThreadIdsEquals?: string[]
+        noteIncludes?: string
+      }>
+      driftFindingsInclude?: Array<{
+        type?: string
+        stateReference?: string
+        suggestedNoteIncludes?: string
+      }>
     }
     invariantEventDetailIncludes?: Array<{ type: string; detailIncludes: string }>
     arcTransform?: {
@@ -573,6 +593,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
       prose: fixture.input.narrator.prose,
       annotation,
       mechanicalEffects,
+      rollRecords: fixture.input.narrator.rollRecords,
       sentinelEvents: turnSentinelEvents,
       workingSet: preTurnWorkingSet,
     },
@@ -2089,6 +2110,66 @@ function assertExpected(
           return true
         })
         if (!match) failures.push(`resolvedAction.resolvedReference missing ${JSON.stringify(refExpected)}`)
+      }
+    }
+  }
+  if (expected.turnResolution) {
+    const resolution = state.history.turns.find((t) => t.index === (fixture.input.turnIndex ?? stateBefore.history.turns.length))
+      ?.turnResolution ?? state.history.turns.at(-1)?.turnResolution
+    const want = expected.turnResolution
+    if (!resolution) {
+      failures.push('turnResolution missing from turn record')
+    } else {
+      if (want.actionType !== undefined && resolution.action.actionType !== want.actionType) {
+        failures.push(`turnResolution.actionType expected ${want.actionType}, got ${resolution.action.actionType}`)
+      }
+      if (want.targetEntityIdsEquals !== undefined) {
+        const expectedIds = [...want.targetEntityIdsEquals].sort().join(',')
+        const actualIds = [...resolution.action.targetEntityIds].sort().join(',')
+        if (expectedIds !== actualIds) {
+          failures.push(`turnResolution.targetEntityIds expected [${expectedIds}], got [${actualIds}]`)
+        }
+      }
+      if (want.targetThreadIdsEquals !== undefined) {
+        const expectedIds = [...want.targetThreadIdsEquals].sort().join(',')
+        const actualIds = [...resolution.targetThreadIds].sort().join(',')
+        if (expectedIds !== actualIds) {
+          failures.push(`turnResolution.targetThreadIds expected [${expectedIds}], got [${actualIds}]`)
+        }
+      }
+      for (const eventExpected of want.consequenceEventsInclude ?? []) {
+        const match = resolution.consequenceEvents.find((event) => {
+          if (event.kind !== eventExpected.kind) return false
+          if (eventExpected.rollOutcome !== undefined && event.rollOutcome !== eventExpected.rollOutcome) return false
+          if (eventExpected.pressureDelta !== undefined && event.pressureDelta !== eventExpected.pressureDelta) return false
+          if (
+            eventExpected.stateMutationObserved !== undefined &&
+            event.stateMutationObserved !== eventExpected.stateMutationObserved
+          ) return false
+          if (eventExpected.targetThreadIdsEquals !== undefined) {
+            const expectedIds = [...eventExpected.targetThreadIdsEquals].sort().join(',')
+            const actualIds = [...event.targetThreadIds].sort().join(',')
+            if (expectedIds !== actualIds) return false
+          }
+          if (
+            eventExpected.noteIncludes !== undefined &&
+            !event.note.toLowerCase().includes(eventExpected.noteIncludes.toLowerCase())
+          ) return false
+          return true
+        })
+        if (!match) failures.push(`turnResolution consequence missing ${JSON.stringify(eventExpected)}`)
+      }
+      for (const findingExpected of want.driftFindingsInclude ?? []) {
+        const match = resolution.driftFindings.find((finding) => {
+          if (findingExpected.type !== undefined && finding.type !== findingExpected.type) return false
+          if (findingExpected.stateReference !== undefined && finding.stateReference !== findingExpected.stateReference) return false
+          if (
+            findingExpected.suggestedNoteIncludes !== undefined &&
+            !finding.suggestedNote.toLowerCase().includes(findingExpected.suggestedNoteIncludes.toLowerCase())
+          ) return false
+          return true
+        })
+        if (!match) failures.push(`turnResolution drift finding missing ${JSON.stringify(findingExpected)}`)
       }
     }
   }

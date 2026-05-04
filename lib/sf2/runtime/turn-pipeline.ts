@@ -17,9 +17,14 @@ import type {
   Sf2ObservedWrite,
   Sf2NarratorAnnotation,
   Sf2State,
+  Sf2TurnResolutionRecord,
   Sf2WriteKind,
   Sf2WorkingSet,
 } from '../types'
+import {
+  applyTurnResolutionConsequences,
+  buildTurnResolutionRecord,
+} from '../turn-resolution/resolve'
 import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
 
@@ -123,7 +128,14 @@ export async function commitSf2Turn(input: CommitSf2TurnInput): Promise<CommitSf
   const now = input.now ?? (() => new Date().toISOString())
   const nextTurnIndex = input.turnIndex + 1
   const preNarratorOffstageRoster = offstageRosterSignature(input.stateBefore)
-  const loggedTurn = logNarratedTurn(input, now())
+  const turnResolution = buildTurnResolutionRecord({
+    stateBefore: input.stateBefore,
+    turnIndex: input.turnIndex,
+    playerInput: input.playerInput,
+    isInitial: input.isInitial,
+    rollRecords: input.narrator.rollRecords,
+  })
+  const loggedTurn = logNarratedTurn(input, now(), turnResolution)
   const stateWithTurnLogged = loggedTurn.state
 
   const archivist = await input.applyArchivist({
@@ -143,6 +155,8 @@ export async function commitSf2Turn(input: CommitSf2TurnInput): Promise<CommitSf
     mechanicalEffectsOverride: input.narrator.mechanicalEffects,
     bundleBuilt: input.narrator.bundleBuilt ?? null,
     preNarratorOffstageRoster,
+    stateBeforeTurn: input.stateBefore,
+    turnResolution,
     extraInvariantEvents: [
       ...loggedTurn.invariantEvents,
       ...(input.narrator.sentinelEvents ?? []),
@@ -397,7 +411,8 @@ export function normalizeNarratorAnnotationForHistory(
 
 function logNarratedTurn(
   input: CommitSf2TurnInput,
-  timestamp: string
+  timestamp: string,
+  turnResolution: Sf2TurnResolutionRecord | null
 ): { state: Sf2State; invariantEvents: Sf2TurnPipelineEvent[] } {
   const next: Sf2State = structuredClone(input.stateBefore)
   const invariantEvents: Sf2TurnPipelineEvent[] = []
@@ -410,6 +425,7 @@ function logNarratedTurn(
       ? normalizeNarratorAnnotationForHistory(input.narrator.annotation)
       : undefined,
     narratorAnnotationRaw: input.narrator.annotation ?? undefined,
+    turnResolution: turnResolution ?? undefined,
     timestamp,
   })
   const inspirationSpentCount = (input.narrator.rollRecords ?? [])
@@ -486,6 +502,8 @@ function applyPostArchivistTurnEffects(input: {
   mechanicalEffectsOverride?: Array<Record<string, unknown>>
   bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
   preNarratorOffstageRoster: string
+  stateBeforeTurn: Sf2State
+  turnResolution: Sf2TurnResolutionRecord | null
   extraInvariantEvents: Sf2TurnPipelineEvent[]
   now: () => string
 }): {
@@ -511,6 +529,39 @@ function applyPostArchivistTurnEffects(input: {
       }))
     }
     applyMechanicalEffectLocally(stateAfter, effect, invariantEvents)
+  }
+
+  const resolutionResult = applyTurnResolutionConsequences({
+    stateBefore: input.stateBeforeTurn,
+    stateAfter,
+    record: input.turnResolution,
+  })
+  if (resolutionResult.record) {
+    const turnRecord = stateAfter.history.turns.find((t) => t.index === resolutionResult.record?.turnIndex)
+      ?? stateAfter.history.turns.at(-1)
+    if (turnRecord) turnRecord.turnResolution = resolutionResult.record
+  }
+  for (const event of resolutionResult.events) {
+    invariantEvents.push(makeInvariantEvent('turn_resolution_consequence', {
+      ...event,
+      detail: event.note,
+    }))
+  }
+  if (resolutionResult.driftFindings.length > 0) {
+    stateAfter.campaign.pendingCoherenceNotes = [
+      ...(stateAfter.campaign.pendingCoherenceNotes ?? []),
+      ...formatCoherenceNotes(resolutionResult.driftFindings),
+    ]
+    for (const finding of resolutionResult.driftFindings) {
+      invariantEvents.push(observeActorFirewallWrite(stateAfter, {
+        actor: 'code',
+        writeKind: 'drift_flag',
+        turnIndex,
+        entityId: finding.stateReference,
+        payload: finding as unknown as Record<string, unknown>,
+        timestamp,
+      }))
+    }
   }
 
   if (input.bundleBuilt) {

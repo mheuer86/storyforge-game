@@ -1,0 +1,130 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "turn resolution failed roll applies deterministic pressure",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A failed roll against a resolved state target must produce a durable consequence even when the Archivist omits all state writes."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "owner": { "kind": "npc", "id": "npc_osh" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5
+          }
+        },
+        "npcs": {
+          "npc_osh": {
+            "id": "npc_osh",
+            "category": "npc",
+            "name": "Osh",
+            "status": "alive",
+            "identity": {
+              "keyFacts": ["Registry clerk"],
+              "voice": { "note": "precise and tired", "register": "procedural" },
+              "relations": []
+            },
+            "affiliation": "Registry",
+            "role": "registry clerk",
+            "disposition": "wary",
+            "tempLoad": [],
+            "agenda": {
+              "pursuing": "Keep the intake writ narrow.",
+              "methods": ["procedural delay"],
+              "currentMove": "Waiting for the Warden to speak."
+            },
+            "ownedThreadIds": ["thread_spine"],
+            "stakeholderThreadIds": [],
+            "retrievalCue": "Osh carries the procedural pressure.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_osh"],
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 3,
+              "localEscalation": 0,
+              "maxThisChapter": 3,
+              "cooledAtOpen": true
+            }
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_osh"]
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Intimidate Osh into handing over the registry key.",
+    "narrator": {
+      "prose": "You put hard weight behind the demand. Osh does not fold; the clerk's jaw sets around procedure.",
+      "annotation": null,
+      "mechanicalEffects": [],
+      "rollRecords": [
+        {
+          "turn": 2,
+          "skill": "Intimidation",
+          "dc": 14,
+          "effectiveDc": 14,
+          "rollResult": 7,
+          "modifier": 1,
+          "outcome": "failure",
+          "consequenceSummary": "Osh digs in and the procedural pressure rises."
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_spine",
+        "openingFloor": 3,
+        "localEscalation": 4,
+        "maxThisChapter": 7,
+        "effectivePressure": 7
+      }
+    ],
+    "turnResolution": {
+      "actionType": "pressure_npc",
+      "targetEntityIdsEquals": ["npc_osh"],
+      "targetThreadIdsEquals": ["thread_spine"],
+      "consequenceEventsInclude": [
+        {
+          "kind": "roll_failure_pressure",
+          "rollOutcome": "failure",
+          "pressureDelta": 2,
+          "stateMutationObserved": true,
+          "targetThreadIdsEquals": ["thread_spine"],
+          "noteIncludes": "Failed Intimidation"
+        }
+      ]
+    },
+    "invariantEventDetailIncludes": [
+      {
+        "type": "turn_resolution_consequence",
+        "detailIncludes": "Failed Intimidation"
+      }
+    ]
+  }
+}
