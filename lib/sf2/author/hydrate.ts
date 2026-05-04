@@ -12,16 +12,14 @@ import type {
   Sf2Thread,
 } from '../types'
 import {
+  ensureReferencedFallbackOwners,
   factionIdFromName,
   findFactionByName,
   resolveAuthoredThreadOwnership,
 } from '../reference-policy'
+import { rebuildOwnerThreadBackrefs } from '../state-indexes'
 import { validateVoiceNote } from './validate-voice-note'
 
-// Author's free-form role strings (e.g. "district solicitor") don't fit
-// Sf2NpcRole's narrow union ('crew'|'contact'|'npc'). Store them as-is for
-// display/retrieval; the type union is only used defensively by role-aware
-// code paths (crew rollup etc.). Cast loosely here.
 export function applyAuthoredToCampaign(
   state: Sf2State,
   authored: AuthorChapterSetupV2,
@@ -168,6 +166,9 @@ export function applyAuthoredToCampaign(
     }
     activeArc.threadIds = [...existing]
   }
+
+  ensureReferencedFallbackOwners(state)
+  rebuildOwnerThreadBackrefs(state)
 }
 
 function clampTension(n: number): Sf2Thread['tension'] {

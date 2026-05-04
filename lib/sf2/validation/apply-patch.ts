@@ -46,6 +46,10 @@ import {
   resolveThreadId,
 } from '../reference-policy'
 import { normalizeEntityReferenceText } from '../resolution/entity-references'
+import {
+  rebuildOwnerThreadBackrefs,
+  syncArcPlanStatusFromArcEntity,
+} from '../state-indexes'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -741,11 +745,6 @@ function applyCreate(
           return
         }
         draft.campaign.threads[id] = thread
-        if (ownerHint.kind === 'npc') {
-          draft.campaign.npcs[ownerId].ownedThreadIds.push(id)
-        } else {
-          draft.campaign.factions[ownerId].ownedThreadIds.push(id)
-        }
         const explicitArcRef = typeof p.arc_id === 'string' ? p.arc_id : ''
         const explicitArcId = explicitArcRef ? resolveArcId(draft, explicitArcRef) : null
         const inheritedArcId = predecessorThreadId ? arcIdForThread(draft, predecessorThreadId) : null
@@ -1537,6 +1536,7 @@ function applyUpdate(
         ...prior,
         status: (write.changes.status as Sf2Arc['status']) ?? prior.status,
       }
+      syncArcPlanStatusFromArcEntity(draft)
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
@@ -1739,6 +1739,7 @@ function applyTransition(
         return
       }
       arc.status = write.toStatus as Sf2Arc['status']
+      syncArcPlanStatusFromArcEntity(draft)
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
@@ -2162,6 +2163,8 @@ export function applyArchivistPatch(
       draft.campaign.beats[beat.id] = beat
     }
   }
+
+  rebuildOwnerThreadBackrefs(draft)
 
   return { nextState: draft, outcomes, deferredWrites: deferred, drift }
 }

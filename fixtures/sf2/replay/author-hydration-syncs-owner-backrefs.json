@@ -1,0 +1,103 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author hydration syncs owner backrefs",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check that Author-authored threads use thread.owner as the source of truth and rebuild NPC/faction ownedThreadIds, while preserving free-form NPC role strings."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - author hydration pure-function fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "authorHydration": {
+      "chapter": 1,
+      "loadBearingIds": ["thread_ledger"],
+      "rawToolInput": {
+        "starting_npcs": [
+          {
+            "id": "npc_mara",
+            "name": "Mara Venn",
+            "affiliation": "District Office",
+            "role": "district solicitor",
+            "voice_register": "procedural",
+            "voice_note": "precise, tired, never quite looks away",
+            "dramatic_function": "holds disputed ledger",
+            "hidden_pressure": "needs the writ validated",
+            "retrieval_cue": "Mara owns the ledger dispute.",
+            "initial_disposition": "wary",
+            "disposition_reason": "She needs the PC but distrusts outside authority."
+          },
+          {
+            "id": "npc_orrin",
+            "name": "Orrin Hale",
+            "affiliation": "Freight Guild",
+            "role": "dock broker",
+            "voice_register": "commercial",
+            "voice_note": "warm until numbers are named",
+            "dramatic_function": "prices every delay",
+            "hidden_pressure": "owes the guild a concession",
+            "retrieval_cue": "Orrin knows who moved the cargo.",
+            "initial_disposition": "neutral",
+            "disposition_reason": "He has no prior loyalty to the PC."
+          },
+          {
+            "id": "npc_sola",
+            "name": "Sola Reeve",
+            "affiliation": "District Office",
+            "role": "records aide",
+            "voice_register": "quiet",
+            "voice_note": "answers softly, corrects dates instantly",
+            "dramatic_function": "spots the missing seal",
+            "hidden_pressure": "fears being named",
+            "retrieval_cue": "Sola remembers the seal change.",
+            "initial_disposition": "favorable",
+            "disposition_reason": "She believes the PC can keep her name out."
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_ledger",
+            "title": "Validate the disputed ledger",
+            "question": "Can the ledger be validated before the writ expires?",
+            "owner_hint": "District Office",
+            "tension": 7,
+            "resolution_criteria": "The ledger is validated or publicly rejected.",
+            "failure_mode": "The writ expires and the district loses standing.",
+            "retrieval_cue": "The District Office owns the ledger dispute."
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_fixture",
+          "chapter_function": "Establish the ledger dispute.",
+          "player_stance_read": "Undeclared",
+          "pressure_engine_ids": []
+        }
+      },
+      "expect": {
+        "npcRolesInclude": [
+          {
+            "npcId": "npc_mara",
+            "role": "district solicitor"
+          }
+        ],
+        "threadOwnerEquals": {
+          "threadId": "thread_ledger",
+          "kind": "faction",
+          "id": "faction_district_office"
+        },
+        "ownerThreadIdsEquals": [
+          {
+            "ownerKind": "faction",
+            "ownerId": "faction_district_office",
+            "threadIds": ["thread_ledger"]
+          }
+        ]
+      }
+    }
+  }
+}

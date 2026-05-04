@@ -226,18 +226,22 @@ function deriveDispositionImperative(
   }
 }
 
-// Match player-input substrings against NPC name + affiliation tokens within
-// the recent framing window. Drops `npc.role` because that's a category enum
-// (`'crew' | 'contact' | 'npc'`), not a job role players address NPCs by.
-// Affiliation tokenization covers the "Officer Aul" / "the warden" pattern
-// by splitting strings like "Imperial Warden" into matchable tokens.
+// Match player-input substrings against NPC name, role, and affiliation tokens
+// within the recent framing window. Affiliation tokenization covers the
+// "Officer Aul" / "the warden" pattern by splitting strings like
+// "Imperial Warden" into matchable tokens.
 function recentlyFramedByPlayer(state: Sf2State, npc: Sf2Npc): boolean {
   const affiliationTokens = (npc.affiliation ?? '')
     .toLowerCase()
     .split(/\s+/)
     .filter((t) => t.length >= 4)
+  const roleTokens = (npc.role ?? '')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 4)
   const name = (npc.name ?? '').toLowerCase().trim()
-  const terms = [name, ...affiliationTokens].filter((s) => s.length >= 3)
+  const role = (npc.role ?? '').toLowerCase().trim()
+  const terms = [name, role, ...roleTokens, ...affiliationTokens].filter((s) => s.length >= 3)
   if (terms.length === 0) return false
   return state.history.turns.slice(-FRAMING_WINDOW_TURNS).some((turn) => {
     const input = (turn.playerInput ?? '').toLowerCase()

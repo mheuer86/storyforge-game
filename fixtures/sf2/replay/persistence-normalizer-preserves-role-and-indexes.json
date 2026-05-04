@@ -1,0 +1,155 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer preserves roles and rebuilds graph indexes",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function check that save normalization preserves free-form NPC role strings, derives owner backrefs from thread.owner, and syncs ArcPlan status from the canonical arc entity."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_role_index",
+          "createdAt": "2026-04-27T00:00:00.000Z",
+          "updatedAt": "2026-04-27T00:05:00.000Z",
+          "schemaVersion": "3.1.0",
+          "genreId": "epic-scifi",
+          "playbookId": "warden",
+          "originId": "imperial-service",
+          "currentChapter": 1,
+          "currentSceneId": "scene_current",
+          "currentTimeLabel": "morning"
+        },
+        "player": {
+          "name": "Ren"
+        },
+        "campaign": {
+          "arcPlan": {
+            "id": "arc_ledger",
+            "status": "active",
+            "title": "The Ledger",
+            "sourceHook": {
+              "title": "The Ledger",
+              "premise": "A frontier ledger is contested.",
+              "crucible": "Authority against local survival."
+            },
+            "scenarioShape": {
+              "mode": "procedural_contest",
+              "premise": "The ledger becomes public pressure.",
+              "whyThisRun": "It centers the PC's authority.",
+              "whatThisIsNot": "Not an office audit.",
+              "selectionRationale": "Public pressure beats paperwork.",
+              "rejectedDefaultShape": "Rejected private audit."
+            },
+            "arcQuestion": "What does lawful pressure cost?",
+            "coreCrucible": "Authority against local survival.",
+            "invariantFacts": [],
+            "variableTruthsForThisRun": [],
+            "durableForces": [],
+            "durableNpcSeeds": [],
+            "pressureEngines": [],
+            "playerStanceAxes": [],
+            "chapterFunctionMap": [],
+            "possibleEndgames": []
+          },
+          "arcs": {
+            "arc_ledger": {
+              "id": "arc_ledger",
+              "title": "The Ledger",
+              "category": "arc",
+              "status": "resolved",
+              "chapterCreated": 1,
+              "retrievalCue": "The ledger arc has landed.",
+              "threadIds": ["thread_ledger"],
+              "spansChapters": 5,
+              "noSingleResolvingAction": true,
+              "stakesDefinition": "Authority against local survival."
+            }
+          },
+          "threads": {
+            "thread_ledger": {
+              "id": "thread_ledger",
+              "title": "Validate the disputed ledger",
+              "category": "thread",
+              "status": "active",
+              "owner": { "kind": "faction", "id": "faction_district_office" },
+              "stakeholders": [],
+              "tension": 7,
+              "peakTension": 7,
+              "resolutionCriteria": "The ledger is validated or publicly rejected.",
+              "failureMode": "The writ expires and the district loses standing.",
+              "retrievalCue": "The District Office owns the ledger dispute.",
+              "chapterCreated": 1,
+              "loadBearing": true,
+              "tensionHistory": []
+            }
+          },
+          "npcs": {
+            "npc_mara": {
+              "id": "npc_mara",
+              "name": "Mara Venn",
+              "affiliation": "District Office",
+              "role": "district solicitor",
+              "status": "alive",
+              "disposition": "wary",
+              "identity": {
+                "keyFacts": [],
+                "voice": { "note": "precise and tired", "register": "procedural" },
+                "relations": []
+              },
+              "ownedThreadIds": ["thread_stale"],
+              "retrievalCue": "Mara owns the ledger dispute.",
+              "chapterCreated": 1,
+              "signatureLines": []
+            }
+          },
+          "factions": {
+            "faction_district_office": {
+              "id": "faction_district_office",
+              "name": "District Office",
+              "stance": "neutral",
+              "heat": "low",
+              "heatReasons": [],
+              "ownedThreadIds": ["thread_stale"],
+              "retrievalCue": "District records authority."
+            }
+          }
+        }
+      },
+      "expect": {
+        "npcRolesInclude": [
+          {
+            "npcId": "npc_mara",
+            "role": "district solicitor"
+          }
+        ],
+        "ownerThreadIdsEquals": [
+          {
+            "ownerKind": "npc",
+            "ownerId": "npc_mara",
+            "threadIds": []
+          },
+          {
+            "ownerKind": "faction",
+            "ownerId": "faction_district_office",
+            "threadIds": ["thread_ledger"]
+          }
+        ],
+        "arcPlanStatusEquals": "resolved",
+        "arcEntityStatusEquals": {
+          "arcId": "arc_ledger",
+          "status": "resolved"
+        },
+        "repairsInclude": ["campaign.arcPlan.status"]
+      }
+    }
+  }
+}

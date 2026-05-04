@@ -1,0 +1,85 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc transition syncs ArcPlan status",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Archivist arc lifecycle writes must keep campaign.arcPlan.status aligned with the canonical arc entity so chapter generation gates and Author context read the same arc state."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_tithe",
+          "status": "active",
+          "title": "The Tithe",
+          "sourceHook": {
+            "title": "The Tithe",
+            "premise": "A frontier tithe goes missing.",
+            "crucible": "Authority against need."
+          },
+          "scenarioShape": {
+            "mode": "procedural_contest",
+            "premise": "The missing tithe becomes a public contest.",
+            "whyThisRun": "The PC is the pressure face.",
+            "whatThisIsNot": "Not a hearing-room reprise.",
+            "selectionRationale": "Public contest gives better leverage than audit or interview.",
+            "rejectedDefaultShape": "Rejected compliance audit."
+          },
+          "arcQuestion": "What does authority cost when scarcity is real?",
+          "coreCrucible": "Authority against need.",
+          "invariantFacts": [],
+          "variableTruthsForThisRun": [],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "pressureEngines": [],
+          "playerStanceAxes": [],
+          "chapterFunctionMap": [],
+          "possibleEndgames": []
+        },
+        "arcs": {
+          "arc_tithe": {
+            "id": "arc_tithe",
+            "title": "The Tithe",
+            "category": "arc",
+            "status": "active",
+            "chapterCreated": 1,
+            "retrievalCue": "procedural_contest: authority against need",
+            "threadIds": ["thread_spine"],
+            "spansChapters": 5,
+            "noSingleResolvingAction": true,
+            "stakesDefinition": "Authority against need."
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Let the arc resolve.",
+    "narrator": {
+      "prose": "The last public answer lands; the tithe question is visibly over.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "arc",
+            "entityId": "arc_tithe",
+            "toStatus": "resolved",
+            "reason": "The arc question was visibly answered.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "arcStatusesInclude": [
+      {
+        "arcId": "arc_tithe",
+        "status": "resolved",
+        "arcPlanStatus": "resolved"
+      }
+    ]
+  }
+}
