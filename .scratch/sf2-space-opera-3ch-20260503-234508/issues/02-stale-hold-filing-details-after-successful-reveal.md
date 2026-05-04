@@ -3,7 +3,7 @@
 # Stale hold filing details remain after successful reveal
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / Archivist / thread clue consolidation
 Reporter: Martin

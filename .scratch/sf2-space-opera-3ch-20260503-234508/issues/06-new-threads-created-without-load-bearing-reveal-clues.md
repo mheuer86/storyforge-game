@@ -3,7 +3,7 @@
 # New pressure threads are created without the reveal clues that caused them
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / thread creation / clue attachment
 Reporter: Martin

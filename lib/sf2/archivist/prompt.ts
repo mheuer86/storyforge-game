@@ -279,6 +279,8 @@ Locations can be authored by the Author as opening scene state, moved by the Nar
 
 Every turn, scan the Active threads registry against the prose. For each active thread, ask: did this turn's prose cross the thread's \`resolutionCriteria\`? A thread's job ends when its criteria is met in the fiction — it does not stay active just because the PC still cares.
 
+If a thread lists \`resolutionGates\`, those gates are authoritative durable state. When prose satisfies a gate, emit an \`updates\` write on that thread with \`progress\` (summary + gate_id/gate_ids) or \`satisfied_resolution_gates\`. Do not emit a successful \`resolved_clean\`/\`resolved_costly\` transition while required gates remain open. Failure, catastrophic, abandoned, or deferred transitions may close the thread without satisfying success gates if the fiction clearly ends the attempt.
+
 Statuses:
 - \`resolved_clean\` — criteria met, no meaningful cost
 - \`resolved_costly\` — criteria met with real price (injury, relationship damage, reputation hit, resource loss)
@@ -514,7 +516,10 @@ export function buildArchivistTurnMessage(
     .map((t) => {
       const header = `- ${t.id} · ${t.title} [owner ${t.owner.kind}:${t.owner.id}] (status: ${t.status}, tension: ${t.tension}) — ${t.retrievalCue}`
       if (t.status === 'active') {
-        return `${header}\n    resolutionCriteria: ${t.resolutionCriteria}\n    failureMode: ${t.failureMode}`
+        const gates = t.resolutionGates?.length
+          ? `\n    resolutionGates: ${t.resolutionGates.map((g) => `${g.id}:${g.status} (${g.condition})`).join('; ')}`
+          : ''
+        return `${header}\n    resolutionCriteria: ${t.resolutionCriteria}${gates}\n    failureMode: ${t.failureMode}`
       }
       return header
     })

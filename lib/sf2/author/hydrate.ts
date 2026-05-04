@@ -18,6 +18,7 @@ import {
   resolveAuthoredThreadOwnership,
 } from '../reference-policy'
 import { rebuildOwnerThreadBackrefs } from '../state-indexes'
+import { mergeThreadResolutionGates } from '../thread-resolution'
 import { validateVoiceNote } from './validate-voice-note'
 
 export function applyAuthoredToCampaign(
@@ -115,6 +116,8 @@ export function applyAuthoredToCampaign(
       existing.resolutionCriteria = t.resolutionCriteria || existing.resolutionCriteria
       existing.failureMode = t.failureMode || existing.failureMode
       existing.retrievalCue = t.retrievalCue || existing.retrievalCue
+      existing.resolutionGates = mergeThreadResolutionGates(existing.resolutionGates ?? [], t.resolutionGates ?? [])
+      existing.progressEvents = existing.progressEvents ?? []
       if (typeof t.tension === 'number') existing.tension = clampTension(t.tension)
       existing.peakTension = Math.max(existing.peakTension ?? existing.tension, existing.tension)
       existing.loadBearing = loadBearing.has(t.id)
@@ -150,6 +153,8 @@ export function applyAuthoredToCampaign(
       loadBearing: loadBearing.has(t.id),
       successorToThreadId: t.successorToThreadId,
       chapterDriverKind: t.driverKind,
+      resolutionGates: t.resolutionGates ?? [],
+      progressEvents: [],
       tensionHistory: [],
     }
   }

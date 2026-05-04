@@ -184,6 +184,21 @@ const activeThreadsSchema = {
         description: 'Required for Ch2+. How this thread drives the continuation chapter.',
       },
       resolution_criteria: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
+      resolution_gates: {
+        type: 'array' as const,
+        description:
+          'Optional. Use for multi-step threads where obtaining a means is distinct from resolving the problem. Items: {id, label, condition, required?: boolean}. Omit for simple one-beat threads.',
+        items: {
+          type: 'object' as const,
+          properties: {
+            id: { type: 'string' as const, description: 'gate_<snake_case_fact>' },
+            label: { type: 'string' as const, description: 'Short state label.' },
+            condition: { type: 'string' as const, description: 'Fictional event that satisfies this gate.' },
+            required: { type: 'boolean' as const },
+          },
+          required: ['id', 'label', 'condition'],
+        },
+      },
       failure_mode: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
       retrieval_cue: { type: 'string' as const, description: '≤16 words.' },
     },

@@ -131,6 +131,8 @@ interface ReplayFixture {
       chapterDriverKind?: string
       successorToThreadId?: string
       tensionHistoryIncludes?: Array<{ turn: number; value: number }>
+      resolutionGatesInclude?: Array<{ gateId: string; status?: string; evidenceQuoteIncludes?: string }>
+      progressEventsInclude?: Array<{ summaryIncludes: string; gateIdsInclude?: string[] }>
     }>
     cluesInclude?: Array<{
       clueId: string
@@ -1655,6 +1657,31 @@ function assertExpected(
         )
       }
     }
+    for (const gateExpected of threadExpected.resolutionGatesInclude ?? []) {
+      const gate = (thread.resolutionGates ?? []).find((g) => g.id === gateExpected.gateId)
+      if (!gate) {
+        failures.push(`thread ${threadExpected.threadId} resolution gate ${gateExpected.gateId} missing`)
+        continue
+      }
+      if (gateExpected.status !== undefined && gate.status !== gateExpected.status) {
+        failures.push(`thread ${threadExpected.threadId} gate ${gate.id} status expected ${gateExpected.status}, got ${gate.status}`)
+      }
+      if (
+        gateExpected.evidenceQuoteIncludes !== undefined &&
+        !String(gate.evidenceQuote ?? '').includes(gateExpected.evidenceQuoteIncludes)
+      ) {
+        failures.push(`thread ${threadExpected.threadId} gate ${gate.id} evidence missing "${gateExpected.evidenceQuoteIncludes}"`)
+      }
+    }
+    for (const eventExpected of threadExpected.progressEventsInclude ?? []) {
+      const event = (thread.progressEvents ?? []).find((e) =>
+        e.summary.includes(eventExpected.summaryIncludes) &&
+        (eventExpected.gateIdsInclude ?? []).every((id) => (e.gateIds ?? []).includes(id))
+      )
+      if (!event) {
+        failures.push(`thread ${threadExpected.threadId} progress event missing ${JSON.stringify(eventExpected)}`)
+      }
+    }
   }
   for (const clueExpected of expected.cluesInclude ?? []) {
     const clue = state.campaign.clues[clueExpected.clueId]
@@ -2371,6 +2398,8 @@ function createMinimalState(): Sf2State {
           retrievalCue: 'The public-facing pressure in the current chapter.',
           loadBearing: true,
           spineForChapter: 1,
+          resolutionGates: [],
+          progressEvents: [],
           tensionHistory: [],
         },
       },

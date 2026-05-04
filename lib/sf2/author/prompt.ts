@@ -94,6 +94,7 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: compact phrase or sentence (≤16 words).
   - \`starting_npcs[].voice_note\`: 4-14 words. The PERSONAL flavor (not the formal register). Aim for distinctness — three NPCs of the same affiliation should read as three different people. Avoid generic adjectives like "professional", "competent", "experienced", "measured" — voices that lean on these collapse together. Examples: "precise and tired, never finishes a sentence", "drawls vowels under stress", "warm but never first to speak", "speaks in clipped fragments when watched".
   - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤12 words). \`resolution_criteria\`, \`failure_mode\`: 1 sentence each (≤24 words).
+  - Use \`resolution_gates\` only when a thread has distinct required steps before successful resolution (e.g. means obtained vs action processed). Gates are genre-neutral state facts, not prose beats.
   - \`pressure_ladder[].{pressure, trigger_condition, narrative_effect}\`: 1 sentence each (≤22 words).
   - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤24 words). \`held_by\`: short phrase. Add exactly 3 \`hint_phrases\`, \`hints_required\`, and \`valid_reveal_contexts\`.
   - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: compact phrase or sentence (≤18 words).
@@ -181,7 +182,10 @@ How this chapter should respond to the landing:
         const pressure = chapterPressure
           ? `chapter pressure ${getEffectiveThreadPressure(t.id, state.chapter.setup)}/10 (opening ${chapterPressure.openingFloor}/10${chapterPressure.localEscalation ? ` +${chapterPressure.localEscalation} local` : ''}; role ${chapterPressure.role}; cooledAtOpen ${chapterPressure.cooledAtOpen ? 'yes' : 'no'}); canonical tension ${t.tension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}`
           : `canonical tension ${t.tension}/10${t.peakTension !== undefined ? `; peak ${t.peakTension}/10` : ''}`
-        return `- ${t.id} · ${t.title} (${pressure}) — ${t.retrievalCue} [owner: ${t.owner.kind}:${t.owner.id}]\n    resolution_criteria: ${t.resolutionCriteria}\n    failure_mode: ${t.failureMode}`
+        const gates = t.resolutionGates?.length
+          ? `\n    resolution_gates: ${t.resolutionGates.map((g) => `${g.id}:${g.status}`).join(', ')}`
+          : ''
+        return `- ${t.id} · ${t.title} (${pressure}) — ${t.retrievalCue} [owner: ${t.owner.kind}:${t.owner.id}]\n    resolution_criteria: ${t.resolutionCriteria}${gates}\n    failure_mode: ${t.failureMode}`
       }
     )
     .join('\n')

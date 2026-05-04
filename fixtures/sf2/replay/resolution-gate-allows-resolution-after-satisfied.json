@@ -1,0 +1,107 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "resolution gate allows resolution after satisfied",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Resolution gates are current durable state, so prior prose negations do not block a later turn once the required gate is satisfied."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Complete the required process",
+            "resolutionCriteria": "The process is complete once the final action is processed.",
+            "resolutionGates": [
+              {
+                "id": "gate_final_action_processed",
+                "label": "Final action processed",
+                "condition": "The final action is processed and confirmed in fiction.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": []
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Try the release.",
+            "narratorProse": "The mechanism is in hand, but the final action has not been processed yet.",
+            "timestamp": "2026-05-04T00:00:00.000Z"
+          }
+        ],
+        "recentTurns": [
+          {
+            "index": 3,
+            "chapter": 1,
+            "playerInput": "Try the release.",
+            "narratorProse": "The mechanism is in hand, but the final action has not been processed yet.",
+            "timestamp": "2026-05-04T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Process the final action.",
+    "narrator": {
+      "prose": "The final action is processed and confirmed.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "progress": {
+                "summary": "The final action is processed and confirmed.",
+                "gate_id": "gate_final_action_processed"
+              }
+            },
+            "confidence": "high",
+            "sourceQuote": "The final action is processed and confirmed"
+          }
+        ],
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The required final action was processed.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "resolved_clean",
+        "tension": 0,
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_final_action_processed",
+            "status": "satisfied",
+            "evidenceQuoteIncludes": "final action is processed"
+          }
+        ],
+        "progressEventsInclude": [
+          {
+            "summaryIncludes": "final action is processed",
+            "gateIdsInclude": ["gate_final_action_processed"]
+          }
+        ]
+      }
+    ],
+    "archivistAcceptedRefs": ["updates[0]", "transitions[0]"]
+  }
+}

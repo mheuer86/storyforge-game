@@ -50,6 +50,11 @@ import {
   rebuildOwnerThreadBackrefs,
   syncArcPlanStatusFromArcEntity,
 } from '../state-indexes'
+import {
+  applyThreadProgressChanges,
+  normalizeThreadResolutionGates,
+  successfulThreadResolutionBlocked,
+} from '../thread-resolution'
 import type {
   Sf2Arc,
   Sf2ArchivistAttachment,
@@ -311,24 +316,6 @@ function attachCurrentTurnCluesToThread(draft: Sf2State, threadId: string, turnI
     clue.status = 'attached'
     draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((id) => id !== clue.id)
   }
-}
-
-function holdReleaseProcessed(state: Sf2State): boolean {
-  const haystack = [
-    ...Object.values(state.campaign.clues).map((clue) => clue.content),
-    ...Object.values(state.campaign.documents ?? {}).map((doc) => `${doc.currentSummary} ${doc.originalSummary}`),
-    ...state.history.turns.map((turn) => turn.narratorProse),
-  ].join(' ').toLowerCase()
-  if (/\bnot\s+(?:yet\s+)?released\b|\bhas\s+not\s+released\b|\bnot\s+processed\b/.test(haystack)) {
-    return false
-  }
-  return /\b(clamp|hold)\b/.test(haystack) &&
-    /\b(released|release processed|clamp release|accepted the chip|processed the chip)\b/.test(haystack)
-}
-
-function isHoldClearanceThread(thread: Sf2Thread): boolean {
-  const text = `${thread.title} ${thread.resolutionCriteria} ${thread.retrievalCue}`.toLowerCase()
-  return /\bhold\b/.test(text) && /\b(clear|release|clamp|forty|40,?000)\b/.test(text)
 }
 
 // Revelation gate mode. Phase 1 ships in `observe` — gate violations log a
@@ -856,6 +843,8 @@ function applyCreate(
           loadBearing: shouldLoadBear,
           successorToThreadId: predecessorThreadId ?? undefined,
           chapterDriverKind: predecessorThreadId ? 'successor' : undefined,
+          resolutionGates: normalizeThreadResolutionGates(p.resolution_gates ?? p.resolutionGates),
+          progressEvents: [],
           tensionHistory: [],
         }
         const inv = checkThread(thread, draft.campaign)
@@ -1595,16 +1584,8 @@ function applyUpdate(
         ]
       }
       const explicitLastAdvanced = write.changes.last_advanced_turn as number | undefined
-      let nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
-      if (RESOLVED_THREAD_STATUSES.has(nextStatus) && isHoldClearanceThread(prior) && !holdReleaseProcessed(draft)) {
-        nextStatus = 'active'
-        drift.push({
-          kind: 'contradiction',
-          detail: `thread ${id} hold-clearance resolution blocked until clamp release is processed`,
-          entityId: id,
-        })
-      }
-      draft.campaign.threads[id] = {
+      const nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
+      const updatedThread: Sf2Thread = {
         ...prior,
         tension: nextTension,
         tensionHistory: nextHistory,
@@ -1614,6 +1595,23 @@ function applyUpdate(
           ? explicitLastAdvanced ?? turnIndex
           : explicitLastAdvanced ?? prior.lastAdvancedTurn,
       }
+      applyThreadProgressChanges(updatedThread, write.changes, turnIndex, write.sourceQuote)
+      const resolutionBlock = successfulThreadResolutionBlocked(updatedThread, nextStatus)
+      if (resolutionBlock) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `thread ${id} resolution blocked: ${resolutionBlock}`,
+          entityId: id,
+        })
+        outcomes.push({
+          accepted: false,
+          reason: `thread.resolution_gates: ${resolutionBlock}`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      draft.campaign.threads[id] = updatedThread
       if (nextStatus === 'active') {
         syncActiveThreadIntoChapterRuntime(draft, id, {
           loadBearing: prior.loadBearing,
@@ -1832,10 +1830,11 @@ function applyTransition(
       }
       const toStatus = write.toStatus as Sf2Thread['status']
       const thread = draft.campaign.threads[id]
-      if (RESOLVED_THREAD_STATUSES.has(toStatus) && isHoldClearanceThread(thread) && !holdReleaseProcessed(draft)) {
+      const resolutionBlock = successfulThreadResolutionBlocked(thread, toStatus)
+      if (resolutionBlock) {
         outcomes.push({
           accepted: false,
-          reason: 'thread.hold_clearance: release mechanism obtained but clamp release not processed',
+          reason: `thread.resolution_gates: ${resolutionBlock}`,
           writeRef: ref,
           confidenceTier: write.confidence,
         })

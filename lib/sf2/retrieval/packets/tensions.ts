@@ -64,6 +64,12 @@ export function buildThreadPackets(
       anchoredClues: cluesForThread
         .filter((c) => c.status === 'attached')
         .map((c) => ({ id: c.id, content: c.content })),
+      resolutionGates: (t.resolutionGates ?? []).map((g) => ({
+        id: g.id,
+        label: g.label,
+        condition: g.condition,
+        status: g.status,
+      })),
       clueTier: deriveClueTier(cluesForThread),
     }
   })

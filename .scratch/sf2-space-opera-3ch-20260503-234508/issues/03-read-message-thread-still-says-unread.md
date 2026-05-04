@@ -3,7 +3,7 @@
 # Broker message thread still says unread after the message is read
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / Archivist / thread state
 Reporter: Martin

@@ -26,6 +26,10 @@ import {
   rebuildOwnerThreadBackrefs,
   syncArcPlanStatusFromArcEntity,
 } from '../state-indexes'
+import {
+  normalizeThreadProgressEvents,
+  normalizeThreadResolutionGates,
+} from '../thread-resolution'
 
 const RECENT_TURNS_LIMIT = 6
 
@@ -365,6 +369,8 @@ function normalizeThread(
   thread.retrievalCue = stringOr(thread.retrievalCue, thread.title)
   thread.chapterCreated = positiveInt(thread.chapterCreated, currentChapter) as Sf2ChapterNumber
   thread.loadBearing = Boolean(thread.loadBearing)
+  thread.resolutionGates = normalizeThreadResolutionGates(thread.resolutionGates)
+  thread.progressEvents = normalizeThreadProgressEvents(thread.progressEvents)
   thread.tensionHistory = Array.isArray(thread.tensionHistory) ? thread.tensionHistory : []
   return thread
 }

@@ -220,6 +220,26 @@ export interface Sf2Timer {
 
 export type Sf2Deterioration = Sf2Clock | Sf2Timer
 
+export type Sf2ThreadResolutionGateStatus = 'open' | 'satisfied' | 'failed' | 'waived'
+
+export interface Sf2ThreadResolutionGate {
+  id: Sf2EntityId
+  label: string
+  condition: string
+  required: boolean
+  status: Sf2ThreadResolutionGateStatus
+  satisfiedTurn?: number
+  evidenceQuote?: string
+}
+
+export interface Sf2ThreadProgressEvent {
+  id: Sf2EntityId
+  turn: number
+  summary: string
+  evidenceQuote?: string
+  gateIds?: Sf2EntityId[]
+}
+
 export interface Sf2Thread extends Sf2NarrativeEntityBase {
   category: 'thread'
   status: Sf2ThreadStatus
@@ -235,6 +255,8 @@ export interface Sf2Thread extends Sf2NarrativeEntityBase {
   spineForChapter?: Sf2ChapterNumber
   successorToThreadId?: Sf2EntityId
   chapterDriverKind?: Sf2ChapterThreadDriverKind
+  resolutionGates: Sf2ThreadResolutionGate[]
+  progressEvents: Sf2ThreadProgressEvent[]
   tensionHistory: Array<{ chapter: Sf2ChapterNumber; turn: number; value: Sf2Tension }>
   lastAdvancedTurn?: number
 }
@@ -567,6 +589,7 @@ export interface Sf2DisplaySentinelFinding {
   // Character offset of the match start in the original prose. Lets future
   // streaming integration cut the buffer at the violation point.
   matchStart: number
+  matchEnd?: number
   recommendedAction: Sf2DisplaySentinelAction
 }
 
@@ -1045,6 +1068,7 @@ export interface AuthorChapterSetupV2 {
     successorToThreadId?: string
     driverKind?: Sf2ChapterThreadDriverKind
     resolutionCriteria: string
+    resolutionGates?: Sf2ThreadResolutionGate[]
     failureMode: string
     retrievalCue: string
   }>
@@ -1484,6 +1508,7 @@ export interface Sf2ThreadPacket {
   anchoredDecisions: Array<{ id: Sf2EntityId; summary: string }>
   anchoredPromises: Array<{ id: Sf2EntityId; obligation: string }>
   anchoredClues: Array<{ id: Sf2EntityId; content: string }>
+  resolutionGates: Array<{ id: Sf2EntityId; label: string; condition: string; status: Sf2ThreadResolutionGateStatus }>
   clueTier?: 'lead' | 'evidenced' | 'load_bearing'
 }
 

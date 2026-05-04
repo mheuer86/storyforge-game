@@ -3,7 +3,7 @@
 # Hold thread resolves before the clamp release is processed
 
 Category: bug
-Status: fixed-locally
+Status: ready-for-human
 Type: AFK
 Area: SF2 / thread resolution / pacing state
 Reporter: Martin
