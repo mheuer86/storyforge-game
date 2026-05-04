@@ -3,7 +3,7 @@
 # Stale hold filing details remain after successful reveal
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / Archivist / thread clue consolidation
 Reporter: Martin
@@ -31,9 +31,9 @@ When a turn reveals a previously unknown critical fact, existing clue/thread tex
 
 ## Acceptance criteria
 
-- [ ] A successful reveal of filing timestamp/jurisdiction updates or supersedes all visible clue text that claimed those fields were unknown.
-- [ ] Thread summaries do not preserve contradictory "remains unread/obscured" text after a fact is known.
-- [ ] A replay fixture covers the reveal -> stale clue contradiction.
+- [x] A successful reveal of filing timestamp/jurisdiction updates or supersedes all visible clue text that claimed those fields were unknown.
+- [x] Thread summaries do not preserve contradictory "remains unread/obscured" text after a fact is known.
+- [x] A replay fixture covers the reveal -> stale clue contradiction.
 
 ## Blocked by
 

@@ -3,7 +3,7 @@
 # Cargo corridor location aliases render as duplicate locations
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / location normalization / UI rendering
 Reporter: Martin
@@ -36,9 +36,9 @@ Location aliases that differ only by case, punctuation, spacing, or generated ID
 
 ## Acceptance criteria
 
-- [ ] The corridor renders as one player-facing location after scene movement.
-- [ ] Alias normalization handles case, punctuation, and `Arm4` vs `Arm 4`.
-- [ ] A replay fixture covers this exact alias family or a minimized equivalent.
+- [x] The corridor renders as one player-facing location after scene movement.
+- [x] Alias normalization handles case, punctuation, and `Arm4` vs `Arm 4`.
+- [x] A replay fixture covers this exact alias family or a minimized equivalent.
 
 ## Blocked by
 

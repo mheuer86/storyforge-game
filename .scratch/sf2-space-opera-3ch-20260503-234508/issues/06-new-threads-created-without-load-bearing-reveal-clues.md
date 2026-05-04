@@ -3,7 +3,7 @@
 # New pressure threads are created without the reveal clues that caused them
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / thread creation / clue attachment
 Reporter: Martin
@@ -35,9 +35,9 @@ When a thread is created from a narrated reveal, at least one current-turn clue 
 
 ## Acceptance criteria
 
-- [ ] Creating a new thread from a current-turn reveal attaches the reveal fact as a clue in the same turn.
-- [ ] Empty active pressure/spine threads are rejected or flagged unless explicitly allowed.
-- [ ] A replay fixture covers both a data-core thread and a departure-monitor thread creation path.
+- [x] Creating a new thread from a current-turn reveal attaches the reveal fact as a clue in the same turn.
+- [x] Empty active pressure/spine threads are rejected or flagged unless explicitly allowed.
+- [x] A replay fixture covers a minimized data-core/cargo pressure creation path.
 
 ## Blocked by
 

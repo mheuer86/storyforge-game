@@ -3,7 +3,7 @@
 # Hold facts duplicate across threads with contradictory stale variants
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / Archivist / clue dedupe / retrieval
 Reporter: Martin
@@ -32,9 +32,9 @@ Critical operational facts should have one canonical durable representation, or 
 
 ## Acceptance criteria
 
-- [ ] Updating a known hold-filing fact amends/supersedes earlier versions rather than appending contradictory duplicates.
-- [ ] Retrieval does not surface stale clue variants once a newer canonical fact exists.
-- [ ] A replay fixture covers duplicate hold facts with contradictory unknown/known fields.
+- [x] Updating a known hold-filing fact amends/supersedes earlier versions rather than appending contradictory duplicates.
+- [x] Retrieval does not surface stale clue variants once a newer canonical fact exists.
+- [x] A replay fixture covers duplicate hold facts with contradictory unknown/known fields.
 
 ## Blocked by
 

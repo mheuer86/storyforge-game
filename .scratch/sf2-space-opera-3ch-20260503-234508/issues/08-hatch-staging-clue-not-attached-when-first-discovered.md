@@ -3,7 +3,7 @@
 # Hatch staging clue is not attached when first discovered
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / Archivist / clue attachment
 Reporter: Martin
@@ -30,9 +30,9 @@ A successful perception/investigation reveal about the cargo should attach to a 
 
 ## Acceptance criteria
 
-- [ ] The first successful hatch/cargo reveal becomes durable in the same turn.
-- [ ] If no cargo thread exists, the system creates or selects an appropriate destination thread.
-- [ ] A replay fixture covers a current-turn object/location clue that should anchor a later thread.
+- [x] The first successful hatch/cargo reveal becomes durable in the same turn.
+- [x] If no cargo thread exists, the system creates or selects an appropriate destination thread.
+- [x] A replay fixture covers a current-turn object/location clue that should anchor a later thread.
 
 ## Blocked by
 

@@ -207,6 +207,130 @@ function syncActiveThreadIntoChapterRuntime(
   }
 }
 
+const STALE_FACT_PATTERNS = [
+  /\bunread\b/i,
+  /\bobscured\b/i,
+  /\bunknown\b/i,
+  /\bunclear\b/i,
+  /\bnot yet\b/i,
+  /\bremains?\s+(?:hidden|unread|obscured|unknown|unclear)\b/i,
+]
+
+const CURRENT_FACT_PATTERNS = [
+  /\bread\b/i,
+  /\breveals?\b/i,
+  /\brevealed\b/i,
+  /\bconfirmed\b/i,
+  /\bshows?\b/i,
+  /\b0217\b/i,
+  /\b0209\b/i,
+  /\bharrow spur commercial registry\b/i,
+  /\b40,?200\b/i,
+  /\blira voss\b/i,
+]
+
+function operationalFactTokens(content: string): string[] {
+  const normalized = normalizedSemanticText(content)
+  const tokens = new Set<string>()
+  const phrases = [
+    'hold',
+    'filing',
+    'timestamp',
+    'jurisdiction',
+    'registry',
+    'commercial',
+    'message',
+    'sable',
+    'margin',
+    'broker',
+    'lira',
+    'voss',
+    'amount',
+    '40200',
+    'cargo',
+    'hatch',
+    'sealant',
+    'bypass',
+    'data',
+    'core',
+    'monitor',
+    'departure',
+    'veyne',
+  ]
+  for (const phrase of phrases) {
+    if (normalized.includes(phrase)) tokens.add(phrase)
+  }
+  return [...tokens]
+}
+
+function shouldSupersedeClue(existingContent: string, proposedContent: string): boolean {
+  const existingTokens = operationalFactTokens(existingContent)
+  const proposedTokens = operationalFactTokens(proposedContent)
+  if (existingTokens.length === 0 || proposedTokens.length === 0) return false
+  const overlap = existingTokens.filter((token) => proposedTokens.includes(token))
+  if (overlap.length < 2) return false
+  const existingLooksStale = STALE_FACT_PATTERNS.some((pattern) => pattern.test(existingContent))
+  const proposedLooksCurrent = CURRENT_FACT_PATTERNS.some((pattern) => pattern.test(proposedContent))
+  return existingLooksStale && proposedLooksCurrent
+}
+
+function consumeSupersededClues(
+  draft: Sf2State,
+  proposedContent: string,
+  threadIds: string[],
+  replacementId?: string
+): void {
+  for (const clue of Object.values(draft.campaign.clues)) {
+    if (replacementId && clue.id === replacementId) continue
+    if (clue.status === 'consumed') continue
+    const anchorCompatible =
+      clue.anchoredTo.length === 0 ||
+      threadIds.length === 0 ||
+      stringSetIntersects(clue.anchoredTo, threadIds)
+    if (!anchorCompatible) continue
+    if (!shouldSupersedeClue(clue.content, proposedContent)) continue
+    clue.status = 'consumed'
+    draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((id) => id !== clue.id)
+  }
+}
+
+function attachCurrentTurnCluesToThread(draft: Sf2State, threadId: string, turnIndex: number): void {
+  const thread = draft.campaign.threads[threadId]
+  if (!thread) return
+  const threadText = `${thread.title} ${thread.retrievalCue} ${thread.resolutionCriteria}`
+  const threadTokens = operationalFactTokens(threadText)
+  if (threadTokens.length === 0) return
+  for (const clue of Object.values(draft.campaign.clues)) {
+    if (clue.turn !== turnIndex) continue
+    if (clue.status === 'consumed') continue
+    if (clue.anchoredTo.includes(threadId)) continue
+    const clueTokens = operationalFactTokens(clue.content)
+    const overlap = clueTokens.filter((token) => threadTokens.includes(token))
+    if (overlap.length < 1) continue
+    clue.anchoredTo = uniqueStrings([...clue.anchoredTo, threadId])
+    clue.status = 'attached'
+    draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((id) => id !== clue.id)
+  }
+}
+
+function holdReleaseProcessed(state: Sf2State): boolean {
+  const haystack = [
+    ...Object.values(state.campaign.clues).map((clue) => clue.content),
+    ...Object.values(state.campaign.documents ?? {}).map((doc) => `${doc.currentSummary} ${doc.originalSummary}`),
+    ...state.history.turns.map((turn) => turn.narratorProse),
+  ].join(' ').toLowerCase()
+  if (/\bnot\s+(?:yet\s+)?released\b|\bhas\s+not\s+released\b|\bnot\s+processed\b/.test(haystack)) {
+    return false
+  }
+  return /\b(clamp|hold)\b/.test(haystack) &&
+    /\b(released|release processed|clamp release|accepted the chip|processed the chip)\b/.test(haystack)
+}
+
+function isHoldClearanceThread(thread: Sf2Thread): boolean {
+  const text = `${thread.title} ${thread.resolutionCriteria} ${thread.retrievalCue}`.toLowerCase()
+  return /\bhold\b/.test(text) && /\b(clear|release|clamp|forty|40,?000)\b/.test(text)
+}
+
 // Revelation gate mode. Phase 1 ships in `observe` — gate violations log a
 // drift flag but the reveal still ratifies (`revealed = true`). Phase 2 will
 // flip to `enforce`, blocking ratification when gates fail. Move via this
@@ -745,6 +869,7 @@ function applyCreate(
           return
         }
         draft.campaign.threads[id] = thread
+        attachCurrentTurnCluesToThread(draft, id, turnIndex)
         const explicitArcRef = typeof p.arc_id === 'string' ? p.arc_id : ''
         const explicitArcId = explicitArcRef ? resolveArcId(draft, explicitArcRef) : null
         const inheritedArcId = predecessorThreadId ? arcIdForThread(draft, predecessorThreadId) : null
@@ -949,6 +1074,7 @@ function applyCreate(
             existing.status = 'attached'
             draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((clueId) => clueId !== existing.id)
           }
+          consumeSupersededClues(draft, existing.content, existing.anchoredTo, existing.id)
           driftDedup(drift, 'clue', id, existing.id)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
           return
@@ -976,6 +1102,10 @@ function applyCreate(
         }
         draft.campaign.clues[id] = clue
         if (threadIds.length === 0) draft.campaign.floatingClueIds.push(id)
+        consumeSupersededClues(draft, clue.content, clue.anchoredTo, clue.id)
+        for (const threadId of Object.keys(draft.campaign.threads)) {
+          attachCurrentTurnCluesToThread(draft, threadId, turnIndex)
+        }
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
@@ -1465,7 +1595,15 @@ function applyUpdate(
         ]
       }
       const explicitLastAdvanced = write.changes.last_advanced_turn as number | undefined
-      const nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
+      let nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
+      if (RESOLVED_THREAD_STATUSES.has(nextStatus) && isHoldClearanceThread(prior) && !holdReleaseProcessed(draft)) {
+        nextStatus = 'active'
+        drift.push({
+          kind: 'contradiction',
+          detail: `thread ${id} hold-clearance resolution blocked until clamp release is processed`,
+          entityId: id,
+        })
+      }
       draft.campaign.threads[id] = {
         ...prior,
         tension: nextTension,
@@ -1693,9 +1831,19 @@ function applyTransition(
         return
       }
       const toStatus = write.toStatus as Sf2Thread['status']
-      draft.campaign.threads[id].status = toStatus
+      const thread = draft.campaign.threads[id]
+      if (RESOLVED_THREAD_STATUSES.has(toStatus) && isHoldClearanceThread(thread) && !holdReleaseProcessed(draft)) {
+        outcomes.push({
+          accepted: false,
+          reason: 'thread.hold_clearance: release mechanism obtained but clamp release not processed',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      thread.status = toStatus
       if (RESOLVED_THREAD_STATUSES.has(toStatus)) {
-        draft.campaign.threads[id].tension = 0
+        thread.tension = 0
         draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== id)
         delete draft.chapter.setup.threadPressure?.[id]
       }

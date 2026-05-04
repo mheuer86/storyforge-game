@@ -99,6 +99,7 @@ Use `fixtures/sf2/replay/*.json` as the regression harness for SF2 contracts. Th
 - When a playthrough reveals a bug, create or update a fixture that would fail on the old behavior and pass on the fix. Do this for narrative-state drift, duplicate entities, missed writes, tool/result mismatch, pacing gates, retrieval mistakes, display sentinels, and streaming/tool-call recovery bugs.
 - Keep fixtures deterministic. If the bug lives inside a route or model-call path, extract the contract into a pure helper and fixture that helper rather than depending on a live Anthropic call.
 - For exported SF2 playthrough logs, use `npm run sf2:fixture -- --input <export.json> --turn <index> --name <fixture-name>` to turn a replay frame into `fixtures/sf2/replay/<fixture-name>.json`, then trim it to the smallest state/prose/patch that preserves the failure.
+- In the Codex in-app browser, native downloads may not produce files. Use the diagnostics panel's `Copy session JSON` and `Copy replay JSON` actions as the export fallback; persist the copied JSON under the run's `.scratch/` artifacts directory before converting it into fixtures.
 - Run the new or changed fixture directly first: `npm run sf2:replay -- fixtures/sf2/replay/<fixture-name>.json`.
 - Before calling the fix done, run the full SF2 replay suite: `npm run sf2:replay -- fixtures/sf2/replay`.
 - If the full fixture suite cannot run, state that explicitly and say which focused fixture did run.

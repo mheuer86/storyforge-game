@@ -3,7 +3,7 @@
 # Broker message thread still says unread after the message is read
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / Archivist / thread state
 Reporter: Martin
@@ -29,9 +29,9 @@ Once a message is read, the durable state should no longer present it as unread.
 
 ## Acceptance criteria
 
-- [ ] Reading a message clears or supersedes any visible "message is unread" clue.
-- [ ] The message timestamp and exact amount are preserved as durable clues.
-- [ ] A replay fixture proves stale unread clues do not survive after the read turn.
+- [x] Reading a message clears or supersedes any visible "message is unread" clue.
+- [x] The message timestamp and exact amount are preserved as durable clues.
+- [x] A replay fixture proves stale unread clues do not survive after the read turn.
 
 ## Blocked by
 

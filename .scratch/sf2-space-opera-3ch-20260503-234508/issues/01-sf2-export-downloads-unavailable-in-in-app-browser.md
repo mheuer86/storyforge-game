@@ -3,7 +3,7 @@
 # SF2 diagnostics exports are unavailable in the in-app browser
 
 Category: bug
-Status: ready-for-agent
+Status: fixed-locally
 Type: AFK
 Area: SF2 / diagnostics export / playtest workflow
 Reporter: Martin
@@ -33,10 +33,10 @@ SF2 playtest diagnostics should have an export path that works in the Codex in-a
 
 ## Acceptance criteria
 
-- [ ] A playtester can export/capture the current session log from the in-app browser without relying on native download support.
-- [ ] A playtester can export/capture the current replay fixture from the in-app browser without relying on native download support.
-- [ ] Exported artifacts preserve the same JSON shape currently produced by `downloadSessionLog()` and `downloadReplayFixture()`.
-- [ ] The workflow is documented wherever SF2 playtest/regression fixture instructions live.
+- [x] A playtester can export/capture the current session log from the in-app browser without relying on native download support.
+- [x] A playtester can export/capture the current replay fixture from the in-app browser without relying on native download support.
+- [x] Exported artifacts preserve the same JSON shape currently produced by `downloadSessionLog()` and `downloadReplayFixture()`.
+- [x] The workflow is documented wherever SF2 playtest/regression fixture instructions live.
 
 ## Blocked by
 
@@ -67,3 +67,9 @@ Key interfaces: diagnostics export payload builders, diagnostics panel actions, 
 Acceptance criteria: A playtester can capture both session logs and replay fixtures from the in-app browser; fallback artifacts preserve the same JSON shape as the current downloads; the UI reports success or failure clearly; the documented playtest workflow names the fallback.
 
 Out of scope: Adding a production persistence service, changing the replay/session schema, or replacing working native downloads where they are supported.
+
+### Fix Note - 2026-05-04
+
+Implemented a local fallback in `app/play/v2/page.tsx` and `components/sf2/play-shell.tsx`: diagnostics now keep the existing download buttons and add "Copy session JSON" / "Copy replay JSON" buttons that copy the same payloads to the clipboard with a visible success/failure message. `app/design/play/page.tsx` was updated with no-op props for the design preview. `AGENTS.md` now documents the in-app-browser copy fallback in the SF2 regression fixture workflow.
+
+Verification: `npm run build` passes.
