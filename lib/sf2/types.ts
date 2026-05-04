@@ -429,7 +429,7 @@ export interface Sf2NpcAgenda {
 }
 
 export type Sf2NpcStatus = 'alive' | 'dead' | 'gone' | 'unknown'
-export type Sf2NpcRole = 'crew' | 'contact' | 'npc'
+export type Sf2NpcRole = string
 
 export interface Sf2Npc {
   id: Sf2EntityId
@@ -442,6 +442,8 @@ export interface Sf2Npc {
   tempLoad?: number
   tempLoadTag?: Sf2TempLoadTag
   agenda?: Sf2NpcAgenda
+  // Derived from campaign.threads[].owner for currently unresolved pressure
+  // threads. Treat thread.owner as the source of truth.
   ownedThreadIds: Sf2EntityId[]
   retrievalCue: string
   chapterCreated: Sf2ChapterNumber
@@ -470,6 +472,8 @@ export interface Sf2Faction {
   heat: Sf2HeatLevel
   heatReasons: string[]
   agenda?: Sf2FactionAgenda
+  // Derived from campaign.threads[].owner for currently unresolved pressure
+  // threads. Treat thread.owner as the source of truth.
   ownedThreadIds: Sf2EntityId[]
   retrievalCue: string
 }

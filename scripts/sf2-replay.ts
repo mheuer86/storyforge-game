@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { normalizeAuthorSetup, validateAuthorSetup, validateChapterRaw } from '../lib/sf2/author/contract'
+import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
@@ -89,6 +90,9 @@ interface ReplayFixture {
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
+    npcRolesInclude?: Array<{ npcId: string; role: string }>
+    ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
+    arcStatusesInclude?: Array<{ arcId: string; status: string; arcPlanStatus?: string }>
     npcIdentityIncludes?: Array<{ npcId: string; pronoun?: string; age?: string }>
     npcAgendasInclude?: Array<{ npcId: string; currentMove?: string; lastUpdatedTurn?: number }>
     temporalAnchorsInclude?: Array<{ anchorId: string; kind?: string; label?: string; anchorText?: string }>
@@ -298,7 +302,21 @@ interface ReplayFixture {
         sceneBundleCacheCleared?: boolean
         hasCampaignBuckets?: string[]
         threadOwnerEquals?: { threadId: string; kind: string; id: string }
+        npcRolesInclude?: Array<{ npcId: string; role: string }>
+        ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
+        arcPlanStatusEquals?: string
+        arcEntityStatusEquals?: { arcId: string; status: string }
         repairsInclude?: string[]
+      }
+    }
+    authorHydration?: {
+      rawToolInput: Record<string, unknown>
+      chapter?: number
+      loadBearingIds?: string[]
+      expect: {
+        npcRolesInclude?: Array<{ npcId: string; role: string }>
+        ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
+        threadOwnerEquals?: { threadId: string; kind: string; id: string }
       }
     }
     referencePolicy?: {
@@ -627,6 +645,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertNarratorCommitRepair(fixture, stateBefore, failures)
   assertDispositionDerivation(fixture, failures)
   assertAuthorContract(fixture, stateBefore, failures)
+  assertAuthorHydration(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
   assertReferencePolicy(fixture, stateBefore, failures)
   assertArcTransform(fixture, failures)
@@ -795,6 +814,39 @@ function assertAuthorContract(
   }
 }
 
+function assertAuthorHydration(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.authorHydration
+  if (!expected) return
+
+  const state = structuredClone(stateBefore)
+  const authored = normalizeAuthorSetup(expected.rawToolInput)
+  applyAuthoredToCampaign(
+    state,
+    authored,
+    (expected.chapter ?? state.meta.currentChapter) as Sf2State['meta']['currentChapter'],
+    expected.loadBearingIds ?? []
+  )
+
+  assertNpcRoles(state, expected.expect.npcRolesInclude, 'authorHydration', failures)
+  assertOwnerThreadIds(state, expected.expect.ownerThreadIdsEquals, 'authorHydration', failures)
+
+  const threadOwner = expected.expect.threadOwnerEquals
+  if (threadOwner) {
+    const thread = state.campaign.threads[threadOwner.threadId]
+    if (!thread) {
+      failures.push(`authorHydration.threadOwner: missing ${threadOwner.threadId}`)
+    } else if (thread.owner.kind !== threadOwner.kind || thread.owner.id !== threadOwner.id) {
+      failures.push(
+        `authorHydration.threadOwner: expected ${threadOwner.kind}:${threadOwner.id}, got ${thread.owner.kind}:${thread.owner.id}`
+      )
+    }
+  }
+}
+
 function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]): void {
   const expected = fixture.expected?.persistenceNormalize
   if (!expected) return
@@ -851,6 +903,23 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
     } else if (thread.owner.kind !== e.threadOwnerEquals.kind || thread.owner.id !== e.threadOwnerEquals.id) {
       failures.push(
         `persistenceNormalize.threadOwner: expected ${e.threadOwnerEquals.kind}:${e.threadOwnerEquals.id}, got ${thread.owner.kind}:${thread.owner.id}`
+      )
+    }
+  }
+  assertNpcRoles(state, e.npcRolesInclude, 'persistenceNormalize', failures)
+  assertOwnerThreadIds(state, e.ownerThreadIdsEquals, 'persistenceNormalize', failures)
+  if (e.arcPlanStatusEquals !== undefined && state.campaign.arcPlan?.status !== e.arcPlanStatusEquals) {
+    failures.push(
+      `persistenceNormalize.arcPlan.status: expected ${e.arcPlanStatusEquals}, got ${state.campaign.arcPlan?.status ?? 'unset'}`
+    )
+  }
+  if (e.arcEntityStatusEquals) {
+    const arc = state.campaign.arcs[e.arcEntityStatusEquals.arcId]
+    if (!arc) {
+      failures.push(`persistenceNormalize.arcEntityStatus: missing ${e.arcEntityStatusEquals.arcId}`)
+    } else if (arc.status !== e.arcEntityStatusEquals.status) {
+      failures.push(
+        `persistenceNormalize.arcEntityStatus: expected ${e.arcEntityStatusEquals.status}, got ${arc.status}`
       )
     }
   }
@@ -995,6 +1064,66 @@ function assertStringSetEquals(
   const wantSorted = [...want].sort().join(',')
   if (gotSorted !== wantSorted) {
     failures.push(`${label}: expected [${wantSorted}], got [${gotSorted}]`)
+  }
+}
+
+function assertNpcRoles(
+  state: Sf2State,
+  expected: Array<{ npcId: string; role: string }> | undefined,
+  label: string,
+  failures: string[]
+): void {
+  for (const want of expected ?? []) {
+    const npc = state.campaign.npcs[want.npcId]
+    if (!npc) {
+      failures.push(`${label}.npcRoles: missing ${want.npcId}`)
+    } else if (npc.role !== want.role) {
+      failures.push(`${label}.npcRoles ${want.npcId}: expected "${want.role}", got "${npc.role}"`)
+    }
+  }
+}
+
+function assertOwnerThreadIds(
+  state: Sf2State,
+  expected: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }> | undefined,
+  label: string,
+  failures: string[]
+): void {
+  for (const want of expected ?? []) {
+    const owner =
+      want.ownerKind === 'npc'
+        ? state.campaign.npcs[want.ownerId]
+        : state.campaign.factions[want.ownerId]
+    if (!owner) {
+      failures.push(`${label}.ownerThreadIds: missing ${want.ownerKind}:${want.ownerId}`)
+      continue
+    }
+    assertStringSetEquals(
+      owner.ownedThreadIds,
+      want.threadIds,
+      `${label}.ownerThreadIds ${want.ownerKind}:${want.ownerId}`,
+      failures
+    )
+  }
+}
+
+function assertArcStatuses(
+  state: Sf2State,
+  expected: Array<{ arcId: string; status: string; arcPlanStatus?: string }> | undefined,
+  failures: string[]
+): void {
+  for (const want of expected ?? []) {
+    const arc = state.campaign.arcs[want.arcId]
+    if (!arc) {
+      failures.push(`arcStatuses: missing ${want.arcId}`)
+    } else if (arc.status !== want.status) {
+      failures.push(`arcStatuses ${want.arcId}: expected ${want.status}, got ${arc.status}`)
+    }
+    if (want.arcPlanStatus !== undefined && state.campaign.arcPlan?.status !== want.arcPlanStatus) {
+      failures.push(
+        `arcStatuses arcPlan: expected ${want.arcPlanStatus}, got ${state.campaign.arcPlan?.status ?? 'unset'}`
+      )
+    }
   }
 }
 
@@ -1301,6 +1430,9 @@ function assertExpected(
   for (const id of expected.npcIdsIncludes ?? []) {
     if (!state.campaign.npcs[id]) failures.push(`npc registry missing ${id}`)
   }
+  assertNpcRoles(state, expected.npcRolesInclude, 'stateAfter', failures)
+  assertOwnerThreadIds(state, expected.ownerThreadIdsEquals, 'stateAfter', failures)
+  assertArcStatuses(state, expected.arcStatusesInclude, failures)
   for (const name of expected.npcNamesInclude ?? []) {
     const match = Object.values(state.campaign.npcs).find(
       (npc) => npc.name.trim().toLowerCase() === name.trim().toLowerCase()

@@ -667,7 +667,7 @@ ${unfiredLadder || '_(all steps fired)_'}
 
 For each unfired step above: did the prose THIS turn + current state satisfy the triggerCondition? If yes, include the step's id in \`ladder_fires\`. Mechanical evaluation only — does the trigger text literally read as met?
 
-**Fire skeptically.** A 3-step ladder is meant to pace a 15-25 turn chapter — that's roughly one fire every 5-8 turns on average. Most turns fire ZERO.
+**Fire skeptically.** A 3-step ladder is meant to pace an 18-25 turn chapter — that's roughly one fire every 6-8 turns on average. Most turns fire ZERO.
 
 **Hard floor: never fire on consecutive turns.** If a step fired last turn, do NOT fire another step this turn, even if the trigger looks satisfied. Two fires in adjacent turns reads to the player as a runaway ramp; the chapter's tension graph collapses into a stair. If two trigger conditions both seem to cross within two turns, fire the more decisive one and treat the other as implicit (or fire it later when it has its own beat). The runtime enforces this floor too — fires on consecutive turns will be rejected and surfaced as a diagnostic event, so propose responsibly.
 
@@ -678,7 +678,7 @@ When ambiguous, **prefer not firing.** Common false-positive patterns:
 - Trigger is descriptive of where the chapter starts ("the opening scene; X presents…") → already true at chapter start; never fire it. Treat it as a freebie the Author wrote in error and skip it.
 - Two unfired steps both *could* match this turn → fire at most one (the earliest), or none if the match is weak. Two-fire turns should be vanishingly rare.
 
-If a chapter ends with all 5 steps fired by turn 5-8, the Author wrote the ladder badly OR you fired too eagerly — both are problems.
+If a chapter ends with all 3 steps fired by turn 5-8, the Author wrote the ladder badly OR you fired too eagerly — both are problems.
 
 ### Active thread lifecycle audit (every turn)
 

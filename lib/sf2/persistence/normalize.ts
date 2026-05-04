@@ -17,12 +17,15 @@ import {
   type Sf2HeatLevel,
   type Sf2Location,
   type Sf2Npc,
-  type Sf2NpcRole,
   type Sf2NpcStatus,
   type Sf2State,
   type Sf2Thread,
   type Sf2ThreadStatus,
 } from '../types'
+import {
+  rebuildOwnerThreadBackrefs,
+  syncArcPlanStatusFromArcEntity,
+} from '../state-indexes'
 
 const RECENT_TURNS_LIMIT = 6
 
@@ -117,6 +120,10 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
     campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter)
   }
 
+  if (syncArcPlanStatusFromArcEntity(state)) {
+    repairs.push('campaign.arcPlan.status:synced-from-arc')
+  }
+
   for (const [id, location] of Object.entries(campaign.locations)) {
     campaign.locations[id] = normalizeLocation(location, {
       id,
@@ -126,6 +133,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   }
 
   ensureReferencedFallbackOwners(state)
+  rebuildOwnerThreadBackrefs(state)
 }
 
 function normalizeChapter(state: Sf2State, repairs: string[]): void {
@@ -287,7 +295,7 @@ function normalizeNpc(
   npc.id = stringOr(npc.id, id)
   npc.name = stringOr(npc.name, npc.id)
   npc.affiliation = stringOr(npc.affiliation, '')
-  npc.role = oneOf<Sf2NpcRole>(npc.role, ['crew', 'contact', 'npc'], 'npc')
+  npc.role = stringOr(npc.role, 'npc')
   npc.status = oneOf<Sf2NpcStatus>(npc.status, ['alive', 'dead', 'gone', 'unknown'], 'unknown')
   npc.disposition = oneOf<Sf2DispositionTier>(
     npc.disposition,
