@@ -1,6 +1,8 @@
 import { ENGINE_AGGREGATION_DEFAULT } from './constants'
 import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
+import { isSf2bState } from '../../sf2b/mode'
+import { readSf2bObjectiveGate } from '../../sf2b/objective-gate'
 import type {
   Sf2ArchivistFlag,
   Sf2ChapterSetupRuntimeState,
@@ -33,6 +35,10 @@ export interface ChapterPressureCloseReadiness {
   spineStatus?: Sf2Thread['status']
   spineTension?: number
   promotedSpineThreadId?: string
+  objectiveResolved?: boolean
+  objectiveOutcome?: 'active' | 'resolved' | 'failed' | 'deferred'
+  reframeCandidateThreadId?: string
+  closeOrReframeDirective?: string
 }
 
 export interface ChapterPressureStepProjection {
@@ -57,7 +63,10 @@ export interface ChapterPressureLadderResult {
 
 export interface ChapterPressureRecoveryResult {
   events: Array<{
-    type: 'early_spine_resolved_promoted_successor' | 'early_spine_resolved_successor_required'
+    type:
+      | 'early_spine_resolved_promoted_successor'
+      | 'early_spine_resolved_successor_required'
+      | 'sf2b_objective_close_or_reframe'
     data: Record<string, unknown>
   }>
 }
@@ -232,10 +241,16 @@ export function computeChapterCloseReadiness(
   const ladderFiredCount = ladderSteps.filter((s) => s.fired).length
   const halfLadderFired = ladderSteps.length > 0 && ladderFiredCount >= Math.ceil(ladderSteps.length / 2)
   const spineResolved = spineThread !== null && CLOSE_TERMINAL_THREAD_STATUSES.has(spineThread.status)
+  const sf2bObjective = isSf2bState(state) ? readSf2bObjectiveGate(state) : null
   let promotedSpineThreadId: string | undefined
   let successorRequired = false
 
-  if (spineThread && spineResolved && chapterTurnCount < MIN_CLOSE_TURN) {
+  if (
+    spineThread &&
+    spineResolved &&
+    chapterTurnCount < MIN_CLOSE_TURN &&
+    !sf2bObjective?.shouldCloseOrReframe
+  ) {
     const nextSpine = findBestUnresolvedLoadBearingThread(state, spineThread.id)
     if (nextSpine) {
       promotedSpineThreadId = nextSpine.id
@@ -252,8 +267,11 @@ export function computeChapterCloseReadiness(
   const stalledFallback =
     chapterTurnCount >= 25 && halfLadderFired && (effectiveSpineThread?.tension ?? 0) >= 8
   const closeReady =
-    chapterTurnCount >= MIN_CLOSE_TURN &&
-    (pivotSignaled || spineResolvedAfterPromotion || stalledFallback)
+    sf2bObjective?.shouldCloseOrReframe ||
+    (
+      chapterTurnCount >= MIN_CLOSE_TURN &&
+      (pivotSignaled || spineResolvedAfterPromotion || stalledFallback)
+    )
 
   return {
     closeReady,
@@ -266,12 +284,31 @@ export function computeChapterCloseReadiness(
     spineStatus: effectiveSpineThread?.status,
     spineTension: effectiveSpineThread?.tension,
     promotedSpineThreadId,
+    objectiveResolved: sf2bObjective?.foregroundAnswered,
+    objectiveOutcome: sf2bObjective?.foregroundOutcome,
+    reframeCandidateThreadId: sf2bObjective?.reframeCandidate?.threadId,
+    closeOrReframeDirective: sf2bObjective?.directive,
   }
 }
 
 function applyPostTurnPressureRecovery(state: Sf2State): ChapterPressureRecoveryResult {
   const events: ChapterPressureRecoveryResult['events'] = []
   const closeRecovery = computeChapterCloseReadiness(state, false)
+  if (closeRecovery.closeOrReframeDirective) {
+    state.campaign.pendingRecoveryNotes = Array.from(new Set([
+      ...(state.campaign.pendingRecoveryNotes ?? []),
+      closeRecovery.closeOrReframeDirective,
+    ])).slice(-6)
+    events.push({
+      type: 'sf2b_objective_close_or_reframe',
+      data: {
+        chapterTurnCount: closeRecovery.chapterTurnCount,
+        objectiveOutcome: closeRecovery.objectiveOutcome,
+        spineThreadId: state.chapter.setup.spineThreadId,
+        reframeCandidateThreadId: closeRecovery.reframeCandidateThreadId,
+      },
+    })
+  }
   if (closeRecovery.promotedSpineThreadId) {
     const promoted = state.campaign.threads[closeRecovery.promotedSpineThreadId]
     state.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId

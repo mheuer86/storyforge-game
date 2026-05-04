@@ -249,6 +249,17 @@ function implicitMeansOnlyResolutionBlocked(
   if (criteriaRequiresFinalStep && proofOnlyObtainsMeans && (!proofShowsFinalStep || proofNegatesFinalStep)) {
     return 'resolution criteria require the final step, but evidence only shows obtaining the means'
   }
+  const criteriaRequiresOriginIntent =
+    /\b(identify|identified|confirm|confirmed|name|determine|learn|establish)\b/.test(criteria) &&
+    /\b(origin|intent|affiliation|owner|source|who|why)\b/.test(criteria)
+  const proofOnlyShowsEvasion =
+    /\b(evade|evaded|shake|shook|lose|lost|cannot see|can't see|did not intercept|no active interdiction|sensor|parallel|wake|tail)\b/.test(proof)
+  const proofNamesOriginOrIntent =
+    /\b(origin|intent|affiliation|identified as|confirmed as|named as|belongs to|works for|source is|hunting|taxing|tracking|waiting for|pursuing)\b/.test(proof)
+
+  if (criteriaRequiresOriginIntent && proofOnlyShowsEvasion && !proofNamesOriginOrIntent) {
+    return 'resolution criteria require identifying origin/intent, but evidence only shows temporary evasion or contact geometry'
+  }
   return null
 }
 

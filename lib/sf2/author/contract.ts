@@ -4,8 +4,14 @@ import {
 } from './disposition-defaults'
 import { CHAPTER_OPEN_CAP } from '../pressure/constants'
 import { normalizeThreadResolutionGates } from '../thread-resolution'
+import { isSf2bState } from '../../sf2b/mode'
+import {
+  deriveSf2bContinuityLock,
+  validateSf2bContinuityLockUsage,
+} from '../../sf2b/continuity-lock'
 import type {
   AuthorChapterSetupV2,
+  Sf2ChapterTensionRole,
   Sf2RevealContext,
   Sf2State,
   Sf2ThreadStatus,
@@ -153,6 +159,21 @@ export function validateChapterRaw(
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
   if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
+  const tensionScore = getArray(raw, 'tension_score', 'tensionScore')
+  const requiresTensionScore = ctx.isContinuation && ctx.state && isSf2bState(ctx.state)
+  if (requiresTensionScore && (tensionScore.length < 3 || tensionScore.length > 4)) {
+    errors.push(`tension_score must contain 3-4 lines for SF2B continuation chapters (got ${tensionScore.length})`)
+  }
+  tensionScore.forEach((line, i) => {
+    const role = stringField(line, 'role')
+    if (!TENSION_SCORE_ROLES.has(role as Sf2ChapterTensionRole)) {
+      errors.push(`tension_score[${i}].role is invalid`)
+    }
+    for (const key of ['pressure', 'prose_surface', 'advances_when', 'resolves_or_reframes_when']) {
+      const camel = key.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase())
+      if (!stringField(line, key, camel).trim()) errors.push(`tension_score[${i}].${key} is empty`)
+    }
+  })
   const revelations = getArray(raw, 'possible_revelations', 'possibleRevelations')
   if (revelations.length !== 2) errors.push(`possible_revelations must contain exactly 2 revelations (got ${revelations.length})`)
   const faultLines = getArray(raw, 'moral_fault_lines', 'moralFaultLines')
@@ -270,6 +291,17 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       triggerCondition: stringField(s, 'trigger_condition', 'triggerCondition'),
       narrativeEffect: stringField(s, 'narrative_effect', 'narrativeEffect'),
       severity: stringField(s, 'severity') === 'hard' ? 'hard' : 'standard',
+    })),
+    tensionScore: getArray(raw, 'tension_score', 'tensionScore').map((line) => ({
+      id: stringField(line, 'id'),
+      role: normalizeTensionScoreRole(valueField(line, 'role')),
+      sourceEntityId: stringField(line, 'source_entity_id', 'sourceEntityId') || undefined,
+      sourceThreadId: stringField(line, 'source_thread_id', 'sourceThreadId') || undefined,
+      pressure: stringField(line, 'pressure'),
+      proseSurface: stringField(line, 'prose_surface', 'proseSurface'),
+      advancesWhen: stringField(line, 'advances_when', 'advancesWhen'),
+      resolvesOrReframesWhen: stringField(line, 'resolves_or_reframes_when', 'resolvesOrReframesWhen'),
+      carried: Boolean(valueField(line, 'carried')),
     })),
     possibleRevelations: getArray(raw, 'possible_revelations', 'possibleRevelations').map((r) => ({
       id: stringField(r, 'id'),
@@ -437,6 +469,30 @@ export function validateAuthorSetup(
     errors.push('pacing_contract.target_turns is invalid')
   }
 
+  const tensionScoreState = opts.isContinuation && opts.state && isSf2bState(opts.state)
+    ? opts.state
+    : null
+  if (tensionScoreState) {
+    if (!authored.tensionScore || authored.tensionScore.length < 3 || authored.tensionScore.length > 4) {
+      errors.push(`tension_score must contain 3-4 lines for SF2B continuation chapters (got ${authored.tensionScore?.length ?? 0})`)
+    } else {
+      const roles = new Set(authored.tensionScore.map((line) => line.role))
+      if (!roles.has('foreground_objective')) errors.push('tension_score must include foreground_objective')
+      if (!roles.has('relational_social_pressure')) errors.push('tension_score must include relational_social_pressure')
+      if (!roles.has('shadow_faction_pressure')) errors.push('tension_score must include shadow_faction_pressure')
+      authored.tensionScore.forEach((line, i) => {
+        if (!line.sourceEntityId?.trim() && !line.sourceThreadId?.trim()) {
+          errors.push(`tension_score[${i}] must include source_entity_id or source_thread_id`)
+        }
+        if (!line.pressure.trim()) errors.push(`tension_score[${i}].pressure is empty`)
+        if (!line.proseSurface.trim()) errors.push(`tension_score[${i}].prose_surface is empty`)
+        if (!line.advancesWhen.trim()) errors.push(`tension_score[${i}].advances_when is empty`)
+        if (!line.resolvesOrReframesWhen.trim()) errors.push(`tension_score[${i}].resolves_or_reframes_when is empty`)
+      })
+    }
+    errors.push(...validateSf2bContinuityLockUsage(authored, deriveSf2bContinuityLock(tensionScoreState)))
+  }
+
   // Continuation Chapter Law enforcement (chapter ≥ 2 only). The five-move
   // discipline lives in SF2_AUTHOR_ROLE; validation here makes it load-bearing.
   if (opts.isContinuation) {
@@ -487,6 +543,20 @@ function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThread
   return value === 'carry_forward' || value === 'successor' || value === 'new_pressure'
     ? value
     : undefined
+}
+
+const TENSION_SCORE_ROLES = new Set<Sf2ChapterTensionRole>([
+  'foreground_objective',
+  'relational_social_pressure',
+  'shadow_faction_pressure',
+  'cargo_system_pressure',
+  'environmental_pressure',
+])
+
+function normalizeTensionScoreRole(value: unknown): Sf2ChapterTensionRole {
+  return TENSION_SCORE_ROLES.has(value as Sf2ChapterTensionRole)
+    ? (value as Sf2ChapterTensionRole)
+    : 'foreground_objective'
 }
 
 const REVEAL_CONTEXTS: Sf2RevealContext[] = [

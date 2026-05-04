@@ -1,0 +1,124 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "sf2b repeated beat active thread progress no advisory",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "SF2B repeated-beat advisory must not fire just because the same active route thread recurs while the story is materially advancing."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_repeated_progress",
+        "experimentMode": "sf2b-hook"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "status": "active",
+            "title": "The intake route",
+            "tension": 5,
+            "peakTension": 5,
+            "resolutionCriteria": "The PC identifies a viable route out of the port.",
+            "progressEvents": [
+              {
+                "id": "progress_route_1",
+                "turn": 1,
+                "summary": "The route remains open, and the dockhand names the cargo lift as a viable way through."
+              },
+              {
+                "id": "progress_route_2",
+                "turn": 2,
+                "summary": "The route remains open, and the PC reaches the lift access corridor."
+              }
+            ],
+            "tensionHistory": [
+              { "chapter": 1, "turn": 0, "value": 3 },
+              { "chapter": 1, "turn": 2, "value": 5 }
+            ]
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Ask how to get out.",
+            "narratorProse": "The route remains open, but port authority notices the question.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [],
+                "threadsTouched": ["thread_spine"],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": []
+              },
+              "authorialMoves": {},
+              "suggestedActions": []
+            },
+            "timestamp": "2026-05-05T10:00:00Z"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Follow the cargo signs.",
+            "narratorProse": "The route remains open as the cargo lift indicator turns green.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [],
+                "threadsTouched": ["thread_spine"],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": []
+              },
+              "authorialMoves": {},
+              "suggestedActions": []
+            },
+            "timestamp": "2026-05-05T10:01:00Z"
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "Take the lift down.",
+            "narratorProse": "The route remains open; below, the service corridor exposes a second exit.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [
+                {
+                  "kind": "scene_end",
+                  "leadsTo": "kinetic_carry",
+                  "summary": "The PC moves from the lift to the service corridor."
+                }
+              ],
+              "hintedEntities": {
+                "npcsMentioned": [],
+                "threadsTouched": ["thread_spine"],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": []
+              },
+              "authorialMoves": {},
+              "suggestedActions": []
+            },
+            "timestamp": "2026-05-05T10:02:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Check whether the second exit is watched.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Check whether the second exit is watched.",
+      "userMessageContainsNone": [
+        "Private turn-density advisory"
+      ]
+    }
+  }
+}

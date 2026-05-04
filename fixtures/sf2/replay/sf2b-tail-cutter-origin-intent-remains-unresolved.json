@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B tail cutter origin intent remains unresolved after evasion",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A tail/contact thread that asks who or why cannot resolve cleanly from temporary evasion or contact geometry alone."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_tail_cutter",
+        "experimentMode": "sf2b-hook"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Contact in Wake",
+            "resolutionCriteria": "Identify who owns the cutter in your wake and why it is tracking the sealed cargo.",
+            "failureMode": "The unknown contact chooses the time and lane of interception.",
+            "retrievalCue": "wake contact, cutter silhouette, unknown owner or intent",
+            "resolutionGates": []
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "Cut engines cold and drift behind the ore screen until the cutter loses us.",
+    "narrator": {
+      "prose": "The cutter's sensor fan passes over empty wake. For the moment, it cannot see you.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The cutter cannot see the ship after the evasion drift.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "tension": 5
+      }
+    ],
+    "archivistRejectedRefs": ["transitions[0]"]
+  }
+}

@@ -358,6 +358,55 @@ const pressureLadderSchema = {
   },
 }
 
+const tensionScoreSchema = {
+  type: 'array' as const,
+  description:
+    'SF2B Ch2+: exactly 3-4 pressure lines. Use locked existing ids for carried pressure.',
+  minItems: 3,
+  maxItems: 4,
+  items: {
+    type: 'object' as const,
+    properties: {
+      id: { type: 'string' as const },
+      role: {
+        type: 'string' as const,
+        enum: [
+          'foreground_objective',
+          'relational_social_pressure',
+          'shadow_faction_pressure',
+          'cargo_system_pressure',
+          'environmental_pressure',
+        ],
+      },
+      source_entity_id: {
+        type: 'string' as const,
+        description: 'Existing NPC/faction/location id when the pressure is entity-owned.',
+      },
+      source_thread_id: {
+        type: 'string' as const,
+        description: 'Existing or authored thread id. Required for carried thread pressure.',
+      },
+      pressure: { type: 'string' as const, description: 'How this line pressures the PC, ≤20 words.' },
+      prose_surface: { type: 'string' as const, description: 'How the Narrator should imply it in prose, ≤22 words.' },
+      advances_when: { type: 'string' as const, description: 'What advances this pressure, ≤20 words.' },
+      resolves_or_reframes_when: { type: 'string' as const, description: 'What resolves or reframes it, ≤22 words.' },
+      carried: {
+        type: 'boolean' as const,
+        description: 'True when this carries pressure from the continuity lock.',
+      },
+    },
+    required: [
+      'id',
+      'role',
+      'pressure',
+      'prose_surface',
+      'advances_when',
+      'resolves_or_reframes_when',
+      'carried',
+    ],
+  },
+}
+
 const possibleRevelationsSchema = {
   type: 'array' as const,
   description: 'Exactly 2 latent truths.',
@@ -535,6 +584,7 @@ export const authorChapterSetupTool: Anthropic.Tool = {
       pacing_contract: pacingContractSchema,
       continuation_moves: continuationMovesSchema,
       pressure_ladder: pressureLadderSchema,
+      tension_score: tensionScoreSchema,
       possible_revelations: possibleRevelationsSchema,
       moral_fault_lines: moralFaultLinesSchema,
       escalation_options: escalationOptionsSchema,

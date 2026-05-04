@@ -54,6 +54,8 @@ Call the \`synthesize_chapter_meaning\` tool exactly once with the 5 elements pl
 That is the entire output.`
 
 import type { Sf2State } from '../types'
+import { isSf2bState } from '../../sf2b/mode'
+import { buildMeaningDigestCandidate } from '../../sf2b/meaning-digest'
 
 export function buildChapterMeaningSituation(state: Sf2State): string {
   const { chapter, campaign } = state
@@ -90,6 +92,9 @@ export function buildChapterMeaningSituation(state: Sf2State): string {
 
   const ladderFired = chapter.setup.pressureLadder.filter((s) => s.fired).length
   const ladderTotal = chapter.setup.pressureLadder.length
+  const sf2bDigest = isSf2bState(state)
+    ? `\n\n### SF2B deterministic meaning digest candidate\nThis is a code-derived candidate, not a script. Use it to preserve consequences and hard facts while writing a sharper five-element retrospective.\n\n${buildMeaningDigestCandidate(state).compactSummary}`
+    : ''
 
   return `## Chapter ${currentChapter} — closing synthesis context
 
@@ -124,6 +129,7 @@ ${lexiconItems || '_(empty)_'}
 
 ### Recent narrator prose (last 5 turns, for voice continuity)
 ${recentProse || '_(no turns played)_'}
+${sf2bDigest}
 
 ---
 

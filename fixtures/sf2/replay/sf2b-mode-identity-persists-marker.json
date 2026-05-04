@@ -1,0 +1,56 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B mode identity persists experiment marker",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "SF2B campaign state must remain identifiable from durable state, not just from the URL that opened the page."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_20260505090000000",
+        "experimentMode": "sf2b-hook",
+        "seedId": "space-opera/human/operative/forty-thousand",
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human"
+      }
+    },
+    "playerInput": "Begin the opening.",
+    "isInitial": true,
+    "narrator": {
+      "prose": "The clamp light holds amber.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "modeIdentity": {
+      "state": "fixture-stateBefore",
+      "runtimeModeForStateEquals": "sf2b",
+      "isSf2bStateEquals": true,
+      "campaignIdPrefix": "sf2b_camp_",
+      "experimentModeEquals": "sf2b-hook",
+      "seedIdEquals": "space-opera/human/operative/forty-thousand"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": true,
+      "playerInput": "Begin the opening.",
+      "systemContainsAll": [
+        "The prose is your craft. Make it good.",
+        "Treat the dramatic brief as your table notes"
+      ],
+      "systemContainsNone": [
+        "Treat scene packet inputs as ground truth.",
+        "## Prose rules (scene packet discipline)"
+      ],
+      "userMessageContainsAll": [
+        "SF2B dramatic brief"
+      ]
+    }
+  }
+}

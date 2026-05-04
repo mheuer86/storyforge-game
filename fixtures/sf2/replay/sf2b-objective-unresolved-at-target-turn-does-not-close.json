@@ -1,0 +1,69 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B unresolved objective at target turn does not close",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "The close/reframe gate should not turn the upper-bound target into a forced close when the foreground objective is still active."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_objective_unresolved",
+        "experimentMode": "sf2b-hook"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Clear the checkpoint",
+            "resolutionCriteria": "Deliver the sealed cargo to the checkpoint clerk and receive clearance.",
+            "failureMode": "The checkpoint locks the corridor and marks the ship.",
+            "retrievalCue": "checkpoint clearance, sealed cargo, corridor gate"
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "4", "narratorProse": "4", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "5", "narratorProse": "5", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "6", "narratorProse": "6", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "7", "narratorProse": "7", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "8", "narratorProse": "8", "timestamp": "replay" },
+          { "index": 9, "chapter": 1, "playerInput": "9", "narratorProse": "9", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 10,
+    "playerInput": "Try to talk the clerk into opening the cargo lane.",
+    "narrator": {
+      "prose": "The clerk keeps the cargo lane amber and asks who authorized the sealed crate.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "objectiveResolved": false,
+      "objectiveOutcome": "active"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "isInitial": false,
+      "playerInput": "Try another angle.",
+      "userMessageContainsNone": [
+        "Close/reframe pressure"
+      ]
+    }
+  }
+}

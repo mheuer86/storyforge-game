@@ -1,0 +1,81 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B objective resolved after ten turns closes or reframes",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Once the SF2B foreground objective has a terminal answer and the chapter has enough runway, close/reframe guidance should override the regular 18-turn minimum."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_objective_resolved",
+        "experimentMode": "sf2b-hook"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Clear the checkpoint",
+            "resolutionCriteria": "Deliver the sealed cargo to the checkpoint clerk and receive clearance.",
+            "failureMode": "The checkpoint locks the corridor and marks the ship.",
+            "retrievalCue": "checkpoint clearance, sealed cargo, corridor gate"
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "4", "narratorProse": "4", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "5", "narratorProse": "5", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "6", "narratorProse": "6", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "7", "narratorProse": "7", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "8", "narratorProse": "8", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 9,
+    "playerInput": "Set the cargo in the clerk's cradle and take the clearance.",
+    "narrator": {
+      "prose": "The clerk's cradle seals around the crate and the checkpoint light turns green.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The sealed cargo was delivered to the checkpoint clerk and clearance was received.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["transitions[0]"],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": true,
+      "spineResolved": true,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "objectiveResolved": true,
+      "objectiveOutcome": "resolved",
+      "closeOrReframeDirectiveIncludes": "move toward chapter close"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "isInitial": false,
+      "playerInput": "What does the clearance cost now?",
+      "userMessageContainsAll": [
+        "Close/reframe pressure",
+        "move toward chapter close"
+      ]
+    }
+  }
+}

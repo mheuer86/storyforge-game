@@ -52,6 +52,7 @@ import {
   type Sf2TurnPipelineEvent,
 } from '../lib/sf2/runtime/turn-pipeline'
 import { applyArchivistPatch, summarizePatchOutcome, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
+import { isSf2bState, runtimeModeForState, type Sf2RuntimeMode } from '../lib/sf2b/mode'
 
 interface ReplayFixture {
   schema: 'sf2-replay-fixture/v1'
@@ -147,6 +148,18 @@ interface ReplayFixture {
       stalledFallback?: boolean
       successorRequired?: boolean
       promotedSpineThreadId?: string
+      objectiveResolved?: boolean
+      objectiveOutcome?: string
+      reframeCandidateThreadId?: string
+      closeOrReframeDirectiveIncludes?: string
+    }
+    modeIdentity?: {
+      state?: 'fixture-stateBefore' | 'fixture-stateAfter'
+      runtimeModeForStateEquals?: Sf2RuntimeMode
+      isSf2bStateEquals?: boolean
+      campaignIdPrefix?: string
+      experimentModeEquals?: string
+      seedIdEquals?: string
     }
     quickActionRepair?: {
       failedSkill?: string
@@ -400,6 +413,8 @@ interface ReplayFixture {
       workingSetEventAbsent?: boolean
       sceneBundleEventAbsent?: boolean
       pacingEventAbsent?: boolean
+      systemContainsAll?: string[]
+      systemContainsNone?: string[]
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
     }
@@ -677,6 +692,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertAuthorHydration(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
   assertReferencePolicy(fixture, stateBefore, failures)
+  assertModeIdentity(fixture, stateBefore, stateAfter, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
@@ -959,6 +975,51 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
   }
 }
 
+function assertModeIdentity(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  stateAfter: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.modeIdentity
+  if (!expected) return
+
+  const state = expected.state === 'fixture-stateAfter' ? stateAfter : stateBefore
+  if (
+    expected.runtimeModeForStateEquals !== undefined &&
+    runtimeModeForState(state) !== expected.runtimeModeForStateEquals
+  ) {
+    failures.push(
+      `modeIdentity.runtimeModeForState: expected ${expected.runtimeModeForStateEquals}, got ${runtimeModeForState(state)}`
+    )
+  }
+  if (
+    expected.isSf2bStateEquals !== undefined &&
+    isSf2bState(state) !== expected.isSf2bStateEquals
+  ) {
+    failures.push(`modeIdentity.isSf2bState: expected ${expected.isSf2bStateEquals}, got ${isSf2bState(state)}`)
+  }
+  if (
+    expected.campaignIdPrefix !== undefined &&
+    !state.meta.campaignId.startsWith(expected.campaignIdPrefix)
+  ) {
+    failures.push(
+      `modeIdentity.meta.campaignId: expected prefix ${expected.campaignIdPrefix}, got ${state.meta.campaignId}`
+    )
+  }
+  if (
+    expected.experimentModeEquals !== undefined &&
+    state.meta.experimentMode !== expected.experimentModeEquals
+  ) {
+    failures.push(
+      `modeIdentity.meta.experimentMode: expected ${expected.experimentModeEquals}, got ${state.meta.experimentMode ?? 'unset'}`
+    )
+  }
+  if (expected.seedIdEquals !== undefined && state.meta.seedId !== expected.seedIdEquals) {
+    failures.push(`modeIdentity.meta.seedId: expected ${expected.seedIdEquals}, got ${state.meta.seedId ?? 'unset'}`)
+  }
+}
+
 function assertReferencePolicy(
   fixture: ReplayFixture,
   stateBefore: Sf2State,
@@ -1188,6 +1249,9 @@ function assertNarratorMessages(
 
   const assistantMessages = messages.filter((m) => m.role === 'assistant')
   const assistantTexts = assistantMessages.map((m) => messageContentText(m.content))
+  const systemTexts = context.system.map((block) =>
+    typeof block.text === 'string' ? block.text : ''
+  )
 
   if (typeof expected.messageCountEquals === 'number') {
     if (messages.length !== expected.messageCountEquals) {
@@ -1214,6 +1278,16 @@ function assertNarratorMessages(
   for (const fragment of expected.includesAssistantProseMatching ?? []) {
     if (!assistantTexts.some((t) => t.includes(fragment))) {
       failures.push(`narrator messages: no assistant message contains "${fragment.slice(0, 60)}"`)
+    }
+  }
+  for (const fragment of expected.systemContainsAll ?? []) {
+    if (!systemTexts.some((t) => t.includes(fragment))) {
+      failures.push(`narrator system blocks: missing required fragment "${fragment.slice(0, 60)}"`)
+    }
+  }
+  for (const fragment of expected.systemContainsNone ?? []) {
+    if (systemTexts.some((t) => t.includes(fragment))) {
+      failures.push(`narrator system blocks: unexpectedly contains "${fragment.slice(0, 60)}"`)
     }
   }
   if (typeof expected.sceneSnapshotFirstTurnIndexEquals === 'number') {
@@ -1749,6 +1823,38 @@ function assertExpected(
           `chapterCloseReadiness.promotedSpineThreadId expected ${promotedId}, got ${readiness.promotedSpineThreadId ?? '(none)'}`
         )
       }
+    }
+    if (
+      expected.chapterCloseReadiness.objectiveResolved !== undefined &&
+      readiness.objectiveResolved !== expected.chapterCloseReadiness.objectiveResolved
+    ) {
+      failures.push(
+        `chapterCloseReadiness.objectiveResolved expected ${expected.chapterCloseReadiness.objectiveResolved}, got ${readiness.objectiveResolved}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.objectiveOutcome !== undefined &&
+      readiness.objectiveOutcome !== expected.chapterCloseReadiness.objectiveOutcome
+    ) {
+      failures.push(
+        `chapterCloseReadiness.objectiveOutcome expected ${expected.chapterCloseReadiness.objectiveOutcome}, got ${readiness.objectiveOutcome ?? 'unset'}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.reframeCandidateThreadId !== undefined &&
+      readiness.reframeCandidateThreadId !== expected.chapterCloseReadiness.reframeCandidateThreadId
+    ) {
+      failures.push(
+        `chapterCloseReadiness.reframeCandidateThreadId expected ${expected.chapterCloseReadiness.reframeCandidateThreadId}, got ${readiness.reframeCandidateThreadId ?? 'unset'}`
+      )
+    }
+    if (
+      expected.chapterCloseReadiness.closeOrReframeDirectiveIncludes !== undefined &&
+      !readiness.closeOrReframeDirective?.includes(expected.chapterCloseReadiness.closeOrReframeDirectiveIncludes)
+    ) {
+      failures.push(
+        `chapterCloseReadiness.closeOrReframeDirective expected to include "${expected.chapterCloseReadiness.closeOrReframeDirectiveIncludes}", got "${readiness.closeOrReframeDirective ?? 'unset'}"`
+      )
     }
   }
   if (expected.quickActionRepair) {

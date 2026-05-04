@@ -88,6 +88,9 @@ export function transformAuthorSetup(
       severity: step.severity ?? 'standard',
       fired: false,
     })),
+    tensionScore: authored.tensionScore && authored.tensionScore.length > 0
+      ? authored.tensionScore
+      : undefined,
     threadPressure: {},
     threadInitialTensions: Object.fromEntries(
       authored.activeThreads
