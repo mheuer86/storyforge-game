@@ -84,6 +84,9 @@ function normalizeMeta(
   if (meta.schemaVersion !== SF2_SCHEMA_VERSION) repairs.push(`meta.schemaVersion:${String(meta.schemaVersion)}→${SF2_SCHEMA_VERSION}`)
   meta.schemaVersion = SF2_SCHEMA_VERSION
   meta.seedId = stringOr(meta.seedId, fallback.seedId)
+  if (meta.experimentMode !== 'sf2b-hook') {
+    meta.experimentMode = fallback.experimentMode
+  }
   meta.genreId = stringOr(meta.genreId, fallback.genreId)
   meta.playbookId = stringOr(meta.playbookId, fallback.playbookId)
   meta.originId = stringOr(meta.originId, fallback.originId)
@@ -168,6 +171,16 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
         fired: Boolean(step.fired),
       }))
     : []
+  if (state.chapter.setup.tensionScore !== undefined) {
+    state.chapter.setup.tensionScore = Array.isArray(state.chapter.setup.tensionScore)
+      ? state.chapter.setup.tensionScore.map((line) => ({
+          ...line,
+          sourceEntityId: stringOr(line.sourceEntityId, undefined),
+          sourceThreadId: stringOr(line.sourceThreadId, undefined),
+          carried: Boolean(line.carried),
+        }))
+      : undefined
+  }
   state.chapter.setup.threadPressure = objectMap(
     state.chapter.setup.threadPressure,
     'chapter.setup.threadPressure',

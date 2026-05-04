@@ -112,6 +112,7 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 - If a prior objective was already satisfied, transition that old thread in \`thread_transitions\` and create a successor instead of reusing the answered question as this chapter's spine.
 - Prefer the new/successor load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
 - Emit exactly 3 pressure ladder items.
+- For SF2B continuation chapters, emit exactly 3-4 \`tension_score\` lines with distinct dramatic roles. Include \`foreground_objective\`, \`relational_social_pressure\`, and \`shadow_faction_pressure\`; add \`cargo_system_pressure\` or \`environmental_pressure\` only when it is load-bearing. Each carried line must set \`carried: true\` and cite a locked \`source_entity_id\` or \`source_thread_id\`.
 - Emit exactly 2 possible revelations.
 - Emit exactly 2 moral fault lines.
 - Emit exactly 3 escalation options.
@@ -137,16 +138,24 @@ If someone read only your JSON, they should understand:
 
 import type { Sf2ChapterMeaning, Sf2State } from '../types'
 import { getEffectiveThreadPressure } from '../pressure/derive'
+import { isSf2bState } from '../../sf2b/mode'
+import {
+  deriveSf2bContinuityLock,
+  renderSf2bContinuityLock,
+} from '../../sf2b/continuity-lock'
 
 export function buildAuthorSituation(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): string {
+  const sf2bDirective = state && isSf2bState(state) ? sf2bAuthorDirective() : ''
+
   if (!state || state.history.turns.length === 0) {
     const arc = state?.campaign?.arcPlan
     return `## Chapter setup context
 
 This is the opening chapter of a new campaign. No prior chapters exist. The ArcPlan below is the stable pressure field — derive Chapter 1 from it, not directly from the raw hook.
+${sf2bDirective}
 
 ### Stable ArcPlan
 ${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
@@ -154,6 +163,9 @@ ${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2
 
   const priorChapter = state.meta.currentChapter
   const arc = state.campaign.arcPlan
+  const continuityLockBlock = isSf2bState(state)
+    ? `\n${renderSf2bContinuityLock(deriveSf2bContinuityLock(state))}\n`
+    : ''
   const meaningBlock = priorChapterMeaning
     ? `
 ### Prior chapter (${priorChapter}) retrospective
@@ -229,6 +241,7 @@ How this chapter should respond to the landing:
 
 This is the setup for chapter ${nextChapter}. The campaign has ${priorChapter} prior chapter(s) of play.
 ${meaningBlock}
+${sf2bDirective}
 
 ${structuralBeatBlock}
 
@@ -246,6 +259,7 @@ ${activeNpcs || '_(none)_'}
 
 ### Prior chapter closing geometry
 ${closingGeometry.join('\n')}
+${continuityLockBlock}
 
 Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the closing geometry above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there or explicitly encode the transition away from it in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
 
@@ -299,6 +313,22 @@ Correct output:
 This is chapter ${priorChapter + 1}. You MUST emit a complete \`continuation_moves\` block per the Continuation Chapter Law in your role. All five moves are required: \`prior_chapter_meaning\`, \`larger_pattern_revealed\`, \`institutional_scale_escalation\` (from + to), \`new_named_threat_from_prior_success\` (name + emerged_from + why_inevitable), \`worsened_existing_thread\` (thread_id + prior_small_detail + why_load_bearing_now), \`planted_midchapter_revelation\` (hidden_statement + recontextualizes). \`relationship_deepening_target\` is optional but encouraged when a recurring NPC carries pressure forward. The validator rejects continuations that skip this — the five-move discipline is what keeps the chapter from being "the next scene of the prior chapter" or "a disconnected new scenario."
 
 Derive the new chapter from the ArcPlan, prior chapter meaning, and carried state above. The AuthorInputSeed below is source context, not the chapter driver.`
+}
+
+function sf2bAuthorDirective(): string {
+  return `
+### SF2B hook-driven experiment directive
+
+This run tests strict durable state with looser narration. Author a dramatic hook brief, not a procedural machine. Keep the chapter state valid, but make the opening playable as a living situation with pressure, voice, leverage, and choice.
+
+- Prefer one sharp dramatic problem over multiple visible gates.
+- Do not make the player wait on repeated procedural predicates; if clamps, holds, codes, queues, or releases matter, they must escalate, compress, force a choice, or become a chapter-close vector.
+- The Narrator will receive a compact dramatic kernel, not the full graph. Put only load-bearing durable facts into chapter setup.
+- For Chapter 2+, open from what the prior chapter meant and who now cares, not from raw continuity pickup.
+- Treat the SF2B canon continuity lock as hard canon. New social/faction pressure must bridge from locked names, locations, route/cargo facts, contacts, promises, and thread ids.
+- Emit \`tension_score\` with exactly 3-4 lines. Use distinct roles: \`foreground_objective\`, \`relational_social_pressure\`, \`shadow_faction_pressure\`, and when relevant \`cargo_system_pressure\`.
+- Each \`tension_score\` line must name source entity/thread id, pressure, prose surface, what advances it, and what resolves or reframes it. For carried pressure, set \`carried: true\` and reference a locked existing id; do not create a parallel replacement.
+- Favor dramatic scene pressure over procedural task queues: social leverage, faction alternatives, withheld facts, and meaningful objective beats should carry the opening.`
 }
 
 // 7-point story arc compressed into 5 chapter slots. Each chapter has a

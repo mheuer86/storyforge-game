@@ -1,0 +1,472 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B Author continuity lock rejects replacement chapter frame",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Ensures SF2B Ch2 Author validation rejects a locally plausible replacement broker/location/pressure that fails to preserve Calla Voss, Sable Notch, Redline/Carrow, and the unresolved tail/cutter pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_20260503000100000",
+        "experimentMode": "sf2b-hook",
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human",
+        "currentChapter": 1,
+        "currentSceneId": "loc_sable_notch",
+        "currentTimeLabel": "night cycle"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "status": "resolved_clean"
+          },
+          "thread_tail_cutter": {
+            "id": "thread_tail_cutter",
+            "title": "The unresolved tail and cutter",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "Identify whether the cutter shadowing Redline/Carrow belongs to Calla, a rival, or the cargo's owner.",
+            "failureMode": "The cutter forces the route before the cargo terms are understood.",
+            "retrievalCue": "tail, cutter silhouette, sealed Redline/Carrow cargo",
+            "loadBearing": true,
+            "spineForChapter": 1,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          },
+          "thread_redline_carrow_cargo": {
+            "id": "thread_redline_carrow_cargo",
+            "title": "The sealed Redline/Carrow cargo",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "stakeholders": [],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "Determine what obligation the sealed cargo creates before leaving Sable Notch.",
+            "failureMode": "The cargo becomes leverage before the PC knows who owns the risk.",
+            "retrievalCue": "sealed cargo, Redline/Carrow route, Calla's brokerage",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        },
+        "npcs": {
+          "npc_calla_voss": {
+            "id": "npc_calla_voss",
+            "name": "Calla Voss",
+            "affiliation": "Sable Notch brokers",
+            "role": "cargo broker",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Brokered the sealed Redline/Carrow cargo."],
+              "voice": { "note": "smiles only after the price lands", "register": "dry dockside" },
+              "relations": []
+            },
+            "ownedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+            "retrievalCue": "Calla Voss, broker, sealed Redline/Carrow cargo",
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": []
+          }
+        },
+        "locations": {
+          "loc_sable_notch": {
+            "id": "loc_sable_notch",
+            "name": "Sable Notch",
+            "description": "A hard-edged transfer port where cargo jobs become debts.",
+            "locked": true,
+            "chapterCreated": 1
+          }
+        },
+        "promises": {
+          "promise_calla_delivery": {
+            "id": "promise_calla_delivery",
+            "category": "promise",
+            "status": "active",
+            "anchoredTo": ["thread_redline_carrow_cargo"],
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "obligation": "Do not open or reroute the sealed cargo before Calla names the buyer.",
+            "turn": 1
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "spineThreadId": "thread_tail_cutter",
+          "loadBearingThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "carriedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"]
+        },
+        "sceneSummaries": [
+          {
+            "sceneId": "loc_sable_notch",
+            "chapter": 1,
+            "summary": "Calla Voss left the PC at Sable Notch with sealed Redline/Carrow cargo and an unresolved cutter tail.",
+            "leadsTo": "unanswered_question"
+          }
+        ]
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_sable_notch",
+          "name": "Sable Notch",
+          "description": "A hard-edged transfer port where cargo jobs become debts.",
+          "locked": true,
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "loc_sable_notch",
+          "location": {
+            "id": "loc_sable_notch",
+            "name": "Sable Notch",
+            "description": "A hard-edged transfer port where cargo jobs become debts.",
+            "locked": true,
+            "chapterCreated": 1
+          },
+          "presentNpcIds": ["npc_calla_voss"],
+          "currentInterlocutorIds": ["npc_calla_voss"],
+          "timeLabel": "night cycle",
+          "established": [
+            "Calla Voss brokered the sealed Redline/Carrow cargo.",
+            "The PC is still at Sable Notch.",
+            "A cutter tail remains unresolved outside the port lane."
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "night cycle"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I take the job but keep watching the cutter.",
+            "narratorProse": "Calla Voss lets the sealed Redline/Carrow crate rest between you while Sable Notch's lane glass catches the cutter's shadow.",
+            "timestamp": "2026-05-03T00:01:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      }
+    },
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "space-opera",
+        "pcOriginId": "human",
+        "pcPlaybookId": "operative",
+        "isContinuation": true
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "Dawn Ledger",
+          "premise": "A new port broker forces the PC to move a nameless container before a patrol sweep.",
+          "active_pressure": "A patrol-backed broker turns transit into a loyalty test.",
+          "central_tension": "Move fast or learn who is using the PC.",
+          "chapter_scope": "One port queue and one replacement broker.",
+          "objective": "Decide whether to accept Kira's new container job.",
+          "crucible": "The PC must choose speed or scrutiny under patrol pressure.",
+          "outcome_spectrum": {
+            "clean": "The container clears without exposing the PC.",
+            "costly": "The container clears but Kira claims leverage.",
+            "failure": "The patrol marks the PC as noncompliant.",
+            "catastrophic": "The container opens into a faction seizure."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Dawn Quay",
+          "atmospheric_condition": "white port glare",
+          "initial_state": "Kira Maal has a new container already tagged to the PC's hull.",
+          "first_player_facing": "Kira asks whether the PC wants speed or explanations.",
+          "immediate_choice": "Accept Kira's terms or demand the manifest.",
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_kira_maal"],
+          "withheld_premise_facts": ["The patrol knows more than Kira admits."]
+        },
+        "antagonist_field": {
+          "source_system": "Port patrol compliance",
+          "core_pressure": "A sealed container cannot wait in the queue.",
+          "default_face": { "name": "Kira Maal", "role": "port broker", "pressure_style": "Charm as deadline" },
+          "possible_faces": [
+            {
+              "id": "face_kira",
+              "name": "Kira Maal",
+              "role": "port broker",
+              "becomes_primary_when": "The PC challenges her container terms.",
+              "pressure_style": "Charm as deadline"
+            }
+          ],
+          "escalation_logic": "Every delay gives the patrol more authority over the hull."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_kira_maal",
+            "name": "Kira Maal",
+            "affiliation": "Port patrol brokers",
+            "role": "replacement cargo broker",
+            "voice_register": "bright coercive",
+            "voice_note": "laughs before every hard term lands",
+            "dramatic_function": "New pressure face",
+            "hidden_pressure": "Needs the PC to carry patrol evidence.",
+            "retrieval_cue": "Kira, new container, patrol queue",
+            "initial_disposition": "wary",
+            "disposition_reason": "she sees the operative as useful but uncontrolled"
+          },
+          {
+            "id": "npc_patrol_lio",
+            "name": "Patrol Lio",
+            "affiliation": "Port patrol",
+            "role": "queue officer",
+            "voice_register": "flat official",
+            "voice_note": "counts pauses under his breath",
+            "dramatic_function": "Visible enforcement",
+            "hidden_pressure": "Already has a seizure order drafted.",
+            "retrieval_cue": "Lio, queue, seizure order",
+            "initial_disposition": "hostile",
+            "disposition_reason": "the patrol treats unverified haulers as seizure targets"
+          },
+          {
+            "id": "npc_jex_orro",
+            "name": "Jex Orro",
+            "affiliation": "Free haulers",
+            "role": "dock witness",
+            "voice_register": "muttered practical",
+            "voice_note": "answers sideways while watching exits",
+            "dramatic_function": "Alternative witness",
+            "hidden_pressure": "Saw Kira switch the tag.",
+            "retrieval_cue": "Jex, tag switch, exit watching",
+            "initial_disposition": "neutral",
+            "disposition_reason": "he has no prior tie and wants to avoid patrol attention"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_kira_container",
+            "title": "Kira's container",
+            "question": "Will the PC move Kira's container?",
+            "owner_hint": "Kira Maal",
+            "tension": 7,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The PC accepts, rejects, or exposes Kira's container terms.",
+            "failure_mode": "The patrol locks the hull under compliance authority.",
+            "retrieval_cue": "Kira, container, patrol tag."
+          },
+          {
+            "id": "thread_patrol_sweep",
+            "title": "The patrol sweep",
+            "question": "Can the PC clear the queue?",
+            "owner_hint": "Patrol Lio",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The queue clears or the PC is detained.",
+            "failure_mode": "Detention turns transit into a seizure.",
+            "retrieval_cue": "patrol sweep, queue, detention."
+          },
+          {
+            "id": "thread_manifest_gap",
+            "title": "The manifest gap",
+            "question": "Who switched the manifest?",
+            "owner_hint": "Jex Orro",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The switch is named or made irrelevant.",
+            "failure_mode": "The switch becomes evidence against the PC.",
+            "retrieval_cue": "manifest gap, switched tag."
+          },
+          {
+            "id": "thread_free_hauler_debt",
+            "title": "Free hauler debt",
+            "question": "Will Jex owe the PC?",
+            "owner_hint": "Jex Orro",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "Jex helps or refuses in public.",
+            "failure_mode": "Jex disappears before the tag switch matters.",
+            "retrieval_cue": "Jex debt, public help."
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_cargo_pressure",
+          "chapter_function": "Complicate cargo transit with public pressure.",
+          "player_stance_read": "The PC favors questions before speed.",
+          "pressure_engine_ids": []
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 25 },
+          "chapter_question": "Will the PC accept the new container pressure?",
+          "acceptable_resolutions": ["accept", "reject", "expose"],
+          "early_pressure": "Kira frames speed as safety.",
+          "middle_pressure": "The patrol makes delay visible.",
+          "late_pressure": "The hull faces seizure.",
+          "close_when_any": ["container accepted", "container exposed", "hull seized"],
+          "avoid_extending_for": ["extra queue color"]
+        },
+        "continuation_moves": {
+          "prior_chapter_meaning": "The PC became useful to cargo brokers.",
+          "larger_pattern_revealed": "Ports use sealed freight as loyalty tests.",
+          "institutional_scale_escalation": { "from": "private cargo job", "to": "patrol-backed port pressure" },
+          "new_named_threat_from_prior_success": {
+            "name": "Kira Maal",
+            "emerged_from": "the PC taking cargo work",
+            "why_inevitable": "cargo success attracts broker pressure"
+          },
+          "worsened_existing_thread": {
+            "thread_id": "thread_kira_container",
+            "prior_small_detail": "the crate was sealed",
+            "why_load_bearing_now": "the seal lets Kira control what can be known"
+          },
+          "planted_midchapter_revelation": {
+            "hidden_statement": "The patrol planted the container tag.",
+            "recontextualizes": "Kira is a pressure face, not the full source."
+          }
+        },
+        "pressure_ladder": [
+          {
+            "id": "ladder_queue_count",
+            "pressure": "The queue counter assigns the hull.",
+            "trigger_condition": "Kira formally invokes the patrol tag.",
+            "narrative_effect": "Choice becomes visible to the whole queue.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_manifest_lock",
+            "pressure": "The manifest locks against edits.",
+            "trigger_condition": "Lio rejects a correction request.",
+            "narrative_effect": "The PC must choose evidence or motion.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_hull_seizure",
+            "pressure": "The patrol starts seizure authority.",
+            "trigger_condition": "The container remains unaccepted late.",
+            "narrative_effect": "The hull becomes the bargaining chip.",
+            "severity": "hard"
+          }
+        ],
+        "tension_score": [
+          {
+            "id": "ts_container",
+            "role": "foreground_objective",
+            "source_thread_id": "thread_kira_container",
+            "pressure": "Kira needs the PC to move the container now.",
+            "prose_surface": "She treats hesitation as already expensive.",
+            "advances_when": "The PC delays or demands terms.",
+            "resolves_or_reframes_when": "The PC accepts, rejects, or exposes her terms.",
+            "carried": true
+          },
+          {
+            "id": "ts_social",
+            "role": "relational_social_pressure",
+            "source_entity_id": "npc_kira_maal",
+            "pressure": "Kira offers intimacy as leverage.",
+            "prose_surface": "Her friendliness sharpens around every refusal.",
+            "advances_when": "The PC asks for trust without compliance.",
+            "resolves_or_reframes_when": "Kira is exposed or becomes useful.",
+            "carried": false
+          },
+          {
+            "id": "ts_shadow",
+            "role": "shadow_faction_pressure",
+            "source_entity_id": "npc_patrol_lio",
+            "pressure": "The patrol can seize the hull.",
+            "prose_surface": "Lio's stamps arrive before his words.",
+            "advances_when": "The manifest gap becomes public.",
+            "resolves_or_reframes_when": "The patrol source is named.",
+            "carried": false
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_patrol_tag",
+            "statement": "The patrol planted the container tag.",
+            "held_by": "npc_jex_orro",
+            "emergence_condition": "Jex is protected from Lio.",
+            "recontextualizes": "Kira is not the full author of pressure.",
+            "hint_phrases": ["wrong tag", "too clean", "before she arrived"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["private_pressure"]
+          },
+          {
+            "id": "rev_kira_debt",
+            "statement": "Kira owes the patrol a seizure.",
+            "held_by": "npc_kira_maal",
+            "emergence_condition": "Kira loses control of the queue.",
+            "recontextualizes": "Her urgency is debt, not only profit.",
+            "hint_phrases": ["old mark", "not my clock", "Lio's favor"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["accusation"]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_speed_truth",
+            "tension": "Speed versus truth",
+            "side_a": "Move before seizure.",
+            "side_b": "Name the hidden author.",
+            "why_it_hurts": "Both choices create evidence."
+          },
+          {
+            "id": "fault_broker_patrol",
+            "tension": "Broker leverage versus patrol authority",
+            "side_a": "Use Kira.",
+            "side_b": "Defy the patrol.",
+            "why_it_hurts": "Each ally can become the owner."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_queue_witness",
+            "type": "social",
+            "condition": "The PC challenges Kira publicly.",
+            "consequence": "The queue starts judging the hull."
+          },
+          {
+            "id": "esc_stamp_lock",
+            "type": "bureaucratic",
+            "condition": "Lio touches the manifest.",
+            "consequence": "The tag becomes harder to alter."
+          },
+          {
+            "id": "esc_physical_block",
+            "type": "physical",
+            "condition": "The PC moves without clearance.",
+            "consequence": "Patrol bodies close the lane."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Port tags outrank broker promises.",
+            "relevance_now": "The tag gives patrol pressure teeth.",
+            "delivery_method": "Lio points to the tag, not Kira."
+          },
+          {
+            "item": "Queue witnesses make debt public.",
+            "relevance_now": "Every refusal changes reputation.",
+            "delivery_method": "Jex watches who hears each answer."
+          }
+        ]
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 9,
+        "threadCountEquals": 4,
+        "pacingTargetEquals": { "min": 18, "max": 25 }
+      }
+    }
+  }
+}

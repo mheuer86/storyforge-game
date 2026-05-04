@@ -1,0 +1,129 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B narrator receives foreground and undertow tension score",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Author tension_score must feed the SF2B dramatic brief as a bounded private pressure slice, not remain inert stored state."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_tension_score",
+        "experimentMode": "sf2b-hook"
+      },
+      "campaign": {
+        "threads": {
+          "thread_shadow": {
+            "id": "thread_shadow",
+            "title": "The cutter's owner",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "Identify who owns the cutter.",
+            "failureMode": "The owner chooses the intercept lane.",
+            "retrievalCue": "cutter owner, shadow faction",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          },
+          "thread_social": {
+            "id": "thread_social",
+            "title": "Calla's leverage",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "Determine what Calla wants now.",
+            "failureMode": "Calla turns the debt into a public claim.",
+            "retrievalCue": "Calla, leverage, debt",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_spine", "thread_social", "thread_shadow"],
+          "loadBearingThreadIds": ["thread_spine", "thread_social", "thread_shadow"],
+          "tensionScore": [
+            {
+              "id": "score_foreground",
+              "role": "foreground_objective",
+              "sourceThreadId": "thread_spine",
+              "pressure": "Get the sealed cargo cleared before port clocks expire.",
+              "proseSurface": "Amber clearance lights and officials measuring pauses.",
+              "advancesWhen": "The PC secures clearance or exposes the cargo problem.",
+              "resolvesOrReframesWhen": "Clearance is granted, denied, or displaced by a stronger threat.",
+              "carried": true
+            },
+            {
+              "id": "score_social",
+              "role": "relational_social_pressure",
+              "sourceThreadId": "thread_social",
+              "pressure": "Calla can make the debt personal if ignored.",
+              "proseSurface": "Calla's name appears before her body does.",
+              "advancesWhen": "The PC negotiates, deflects, or burns Calla's leverage.",
+              "resolvesOrReframesWhen": "Calla becomes ally, creditor, or open antagonist.",
+              "carried": true
+            },
+            {
+              "id": "score_shadow",
+              "role": "shadow_faction_pressure",
+              "sourceThreadId": "thread_shadow",
+              "pressure": "The cutter's owner is closer than the PC knows.",
+              "proseSurface": "Sensor echoes arrive one beat too late.",
+              "advancesWhen": "The PC identifies, accepts, or loses the tail.",
+              "resolvesOrReframesWhen": "The cutter owner is named or forces contact.",
+              "carried": true
+            },
+            {
+              "id": "score_cargo",
+              "role": "cargo_system_pressure",
+              "sourceThreadId": "thread_spine",
+              "pressure": "The crate's seal is becoming a procedural weapon.",
+              "proseSurface": "The manifest refuses to stay quiet.",
+              "advancesWhen": "The crate is scanned, opened, or certified.",
+              "resolvesOrReframesWhen": "The cargo's status becomes known.",
+              "carried": true
+            }
+          ]
+        }
+      }
+    },
+    "playerInput": "Watch Calla's leverage and the cutter at the same time.",
+    "narrator": {
+      "prose": "The amber light holds.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Watch Calla's leverage and the cutter at the same time.",
+      "userMessageContainsAll": [
+        "Tension surfaces (private)",
+        "foreground_objective",
+        "relational_social_pressure",
+        "shadow_faction_pressure"
+      ],
+      "userMessageContainsNone": [
+        "cargo_system_pressure"
+      ]
+    }
+  }
+}

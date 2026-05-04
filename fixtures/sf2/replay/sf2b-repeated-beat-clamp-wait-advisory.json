@@ -1,0 +1,56 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "sf2b repeated beat clamp wait advisory",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "SF2B repeated-beat advisory should still fire when the same waiting predicate repeats without leverage, choice, time cut, roll, consequence, or state movement."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_repeated_wait",
+        "experimentMode": "sf2b-hook"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Wait by the sealed door.",
+            "narratorProse": "Nothing changes.",
+            "timestamp": "2026-05-05T11:00:00Z"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Keep waiting.",
+            "narratorProse": "Nothing changes.",
+            "timestamp": "2026-05-05T11:01:00Z"
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "Hold position.",
+            "narratorProse": "Nothing changes.",
+            "timestamp": "2026-05-05T11:02:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Wait one more minute.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Wait one more minute.",
+      "userMessageContainsAll": [
+        "Private turn-density advisory",
+        "waiting beat"
+      ]
+    }
+  }
+}

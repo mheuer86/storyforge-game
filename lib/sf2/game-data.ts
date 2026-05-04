@@ -9,6 +9,7 @@
 
 import type {
   AuthorInputSeed,
+  Sf2ExperimentMode,
   Sf2ChapterRuntime,
   Sf2Player,
   Sf2State,
@@ -20,6 +21,7 @@ export interface NewCampaignInputs {
   campaignId: string
   playerName: string
   seedId?: string
+  experimentMode?: Sf2ExperimentMode
 }
 
 // Warden / Imperial Service base stats per lib/genres/epic-scifi.ts.
@@ -185,6 +187,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       updatedAt: now,
       schemaVersion: SF2_SCHEMA_VERSION,
       seedId: seedEntry.id,
+      experimentMode: inputs.experimentMode,
       genreId: seed.genreId,
       playbookId: seed.playbookId,
       originId: seed.originId,

@@ -16,6 +16,17 @@ import {
   isArcAuthored,
   isChapterAuthored,
 } from '@/lib/sf2/game-data'
+import {
+  SF2B_DEFAULT_SEED_ID,
+  SF2B_CAMPAIGN_ID_PREFIX,
+  SF2B_EXPERIMENT_MODE,
+  SF2B_LAST_CAMPAIGN_KEY,
+  runtimeModeForState,
+  isSf2bState,
+  makeSf2bCampaignId,
+  type Sf2RuntimeMode,
+} from '@/lib/sf2b/mode'
+import { bindSf2bRollSkill, extractSf2bSkillTags } from '@/lib/sf2b/skill-tags'
 import { applyAuthoredToCampaign } from '@/lib/sf2/author/hydrate'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
@@ -46,6 +57,29 @@ import type {
 } from '@/lib/sf2/types'
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
+
+const API_ENDPOINTS: Record<Sf2RuntimeMode, {
+  narrator: string
+  archivist: string
+  arcAuthor: string
+  author: string
+  chapterMeaning: string
+}> = {
+  sf2: {
+    narrator: '/api/sf2/narrator',
+    archivist: '/api/sf2/archivist',
+    arcAuthor: '/api/sf2/arc-author',
+    author: '/api/sf2/author',
+    chapterMeaning: '/api/sf2/chapter-meaning',
+  },
+  sf2b: {
+    narrator: '/api/sf2b/narrator',
+    archivist: '/api/sf2b/archivist',
+    arcAuthor: '/api/sf2b/arc-author',
+    author: '/api/sf2b/author',
+    chapterMeaning: '/api/sf2b/chapter-meaning',
+  },
+}
 
 interface TokenUsage {
   inputTokens: number
@@ -82,6 +116,7 @@ interface DebugEntry {
     | 'display_sentinel'
     | 'narrator_meta_observed'
     | 'narrator_output_recovered'
+    | 'experiment'
   at: number
   data: unknown
 }
@@ -122,6 +157,24 @@ function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc
   else if (total >= effectiveDc) result = 'success'
   else result = 'failure'
   return { d20, modifier, total, dc, effectiveDc, result }
+}
+
+function resolveRuntimeModeFromUrl(): Sf2RuntimeMode {
+  if (typeof window === 'undefined') return 'sf2'
+  const value = new URLSearchParams(window.location.search).get('mode')
+  return value === 'sf2b' ? 'sf2b' : 'sf2'
+}
+
+function lastCampaignKeyFor(mode: Sf2RuntimeMode): string {
+  return mode === 'sf2b' ? SF2B_LAST_CAMPAIGN_KEY : LAST_CAMPAIGN_KEY
+}
+
+function campaignIdFor(mode: Sf2RuntimeMode): string {
+  return mode === 'sf2b' ? makeSf2bCampaignId(Date.now()) : `camp_${Date.now()}`
+}
+
+function endpointFamilyFor(mode: Sf2RuntimeMode): string {
+  return mode === 'sf2b' ? '/api/sf2b/' : '/api/sf2/'
 }
 
 function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
@@ -179,6 +232,8 @@ function modifierForSkill(state: Sf2State, skill: string): number {
 }
 
 export default function PlayV2Page() {
+  const [urlRuntimeMode, setUrlRuntimeMode] = useState<Sf2RuntimeMode | null>(null)
+  const [runtimeMode, setRuntimeMode] = useState<Sf2RuntimeMode | null>(null)
   const [state, setState] = useState<Sf2State | null>(null)
   const [playerName, setPlayerName] = useState('Ren')
   const [selectedSeedId, setSelectedSeedId] = useState(DEFAULT_SF2_SEED_ID)
@@ -206,6 +261,7 @@ export default function PlayV2Page() {
   const [exportCopyStatus, setExportCopyStatus] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const persistenceRef = useRef<StoryforgePersistence2 | null>(null)
+  const modeInvariantKeysRef = useRef<Set<string>>(new Set())
   // When a roll_prompt arrives mid-stream, we store a resolver the modal calls
   // after the player rolls. The narrator loop awaits this promise before
   // resuming with rollResolution.
@@ -218,6 +274,15 @@ export default function PlayV2Page() {
       ?? SF2_BOOTSTRAP_SEED_OPTIONS[0],
     [selectedSeedId],
   )
+
+  useEffect(() => {
+    const resolved = resolveRuntimeModeFromUrl()
+    setUrlRuntimeMode(resolved)
+    setRuntimeMode(resolved)
+    if (resolved === 'sf2b') {
+      setSelectedSeedId(SF2B_DEFAULT_SEED_ID)
+    }
+  }, [])
   const selectedGenreConfig = useMemo(() => {
     try {
       return getGenreConfig(selectedSeed.seed.genreId as Genre)
@@ -226,15 +291,85 @@ export default function PlayV2Page() {
     }
   }, [selectedSeed])
 
+  const recordModeInvariant = useCallback((type: string, data: Record<string, unknown>) => {
+    const key = `${type}:${JSON.stringify(data)}`
+    if (modeInvariantKeysRef.current.has(key)) return
+    modeInvariantKeysRef.current.add(key)
+    setDebug((d) => [
+      ...d,
+      {
+        kind: 'sf2.invariant',
+        at: Date.now(),
+        data: { type, ...data },
+      },
+    ])
+  }, [])
+
+  const reconcileRuntimeModeForState = useCallback((nextState: Sf2State, source: string) => {
+    const stateMode = runtimeModeForState(nextState)
+    const endpointFamily = endpointFamilyFor(stateMode)
+    const hasSf2bCampaignId = nextState.meta.campaignId.startsWith(SF2B_CAMPAIGN_ID_PREFIX)
+    const hasSf2bExperimentMode = nextState.meta.experimentMode === SF2B_EXPERIMENT_MODE
+    const endpointMismatch = Object.values(API_ENDPOINTS[stateMode]).some(
+      (endpoint) => !endpoint.startsWith(endpointFamily)
+    )
+    if (hasSf2bCampaignId !== hasSf2bExperimentMode) {
+      recordModeInvariant('state_mode_marker_mismatch', {
+        source,
+        stateMode,
+        campaignId: nextState.meta.campaignId,
+        hasSf2bCampaignId,
+        experimentMode: nextState.meta.experimentMode,
+      })
+    }
+    if (runtimeMode && runtimeMode !== stateMode) {
+      recordModeInvariant('runtime_state_mode_mismatch', {
+        source,
+        urlRuntimeMode,
+        runtimeMode,
+        stateMode,
+        campaignId: nextState.meta.campaignId,
+        experimentMode: nextState.meta.experimentMode,
+      })
+    }
+    if (urlRuntimeMode && urlRuntimeMode !== stateMode) {
+      recordModeInvariant('url_state_mode_mismatch', {
+        source,
+        urlRuntimeMode,
+        stateMode,
+        campaignId: nextState.meta.campaignId,
+        experimentMode: nextState.meta.experimentMode,
+      })
+    }
+    if (endpointMismatch) {
+      recordModeInvariant('endpoint_family_mismatch', {
+        source,
+        stateMode,
+        expectedEndpointFamily: endpointFamily,
+        endpoints: API_ENDPOINTS[stateMode],
+      })
+    }
+    if (runtimeMode !== stateMode) setRuntimeMode(stateMode)
+    return stateMode
+  }, [recordModeInvariant, runtimeMode, urlRuntimeMode])
+
   // Initialize persistence + try loading last campaign.
   useEffect(() => {
+    if (!runtimeMode) return
     const p = createIndexedDbPersistence()
     persistenceRef.current = p
-    const lastId = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_CAMPAIGN_KEY) : null
+    const lastCampaignKey = lastCampaignKeyFor(runtimeMode)
+    const lastId = typeof window !== 'undefined' ? window.localStorage.getItem(lastCampaignKey) : null
     if (lastId) {
       p.loadCampaign(lastId)
         .then((loaded) => {
           if (loaded) {
+            const stateMode = reconcileRuntimeModeForState(loaded, 'loadCampaign')
+            const stateLastCampaignKey = lastCampaignKeyFor(stateMode)
+            if (typeof window !== 'undefined' && stateLastCampaignKey !== lastCampaignKey) {
+              window.localStorage.removeItem(lastCampaignKey)
+              window.localStorage.setItem(stateLastCampaignKey, loaded.meta.campaignId)
+            }
             setState(loaded)
             setTurnIndex(loaded.history.turns.length)
             setPivotSignaled(chapterHasPivotSignal(loaded))
@@ -246,7 +381,7 @@ export default function PlayV2Page() {
               setSuggestedActions(lastTurn.narratorAnnotation?.suggestedActions ?? [])
             }
           } else if (typeof window !== 'undefined') {
-            window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+            window.localStorage.removeItem(lastCampaignKey)
           }
         })
         .catch(() => {})
@@ -254,7 +389,12 @@ export default function PlayV2Page() {
     } else {
       setLoading(false)
     }
-  }, [])
+  }, [reconcileRuntimeModeForState, runtimeMode])
+
+  useEffect(() => {
+    if (!state) return
+    reconcileRuntimeModeForState(state, 'activeState')
+  }, [reconcileRuntimeModeForState, state])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -286,10 +426,11 @@ export default function PlayV2Page() {
   const persist = useCallback(async (s: Sf2State) => {
     const p = persistenceRef.current
     if (!p) return
+    const stateMode = runtimeModeForState(s)
     try {
       await p.saveCampaign(s)
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(LAST_CAMPAIGN_KEY, s.meta.campaignId)
+        window.localStorage.setItem(lastCampaignKeyFor(stateMode), s.meta.campaignId)
       }
     } catch {
       // non-fatal; surface in debug if needed
@@ -304,10 +445,13 @@ export default function PlayV2Page() {
   )
 
   function startCampaign() {
+    const mode = urlRuntimeMode ?? runtimeMode ?? 'sf2'
+    const seedId = mode === 'sf2b' ? SF2B_DEFAULT_SEED_ID : selectedSeedId
     const next = createInitialSf2State({
-      campaignId: `camp_${Date.now()}`,
+      campaignId: campaignIdFor(mode),
       playerName: playerName.trim() || 'Ren',
-      seedId: selectedSeedId,
+      seedId,
+      experimentMode: mode === 'sf2b' ? SF2B_EXPERIMENT_MODE : undefined,
     })
     setState(next)
     setProse('')
@@ -322,6 +466,16 @@ export default function PlayV2Page() {
     setTurnIndex(0)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
+    setDebug((d) => [...d, {
+      kind: 'experiment',
+      at: Date.now(),
+      data: {
+        runtimeMode: mode,
+        experimentMode: next.meta.experimentMode,
+        seedId,
+      },
+    }])
+    setRuntimeMode(runtimeModeForState(next))
     persist(next)
   }
 
@@ -332,7 +486,9 @@ export default function PlayV2Page() {
         await p.deleteCampaign(state.meta.campaignId)
       } catch {}
     }
-    if (typeof window !== 'undefined') window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+    if (typeof window !== 'undefined' && state) {
+      window.localStorage.removeItem(lastCampaignKeyFor(runtimeModeForState(state)))
+    }
     setState(null)
     setProse('')
     setTurnCommitError(null)
@@ -379,11 +535,15 @@ export default function PlayV2Page() {
     // they land in the per-turn frame's invariantEvents (and via that into the
     // session-log / replay-fixture downloads). Reset on every narrator call.
     const turnSentinelEvents: Sf2TurnPipelineEvent[] = []
+    const intendedRollSkills = isSf2bState(currentState) && !isInitial
+      ? extractSf2bSkillTags(playerInput)
+      : []
 
     // Loop: each iteration runs one narrator stream. A request_roll mid-stream
     // pauses; we await the player's roll, then loop again with rollResolution
     // in the request body. Terminates when narrate_turn arrives.
     while (true) {
+      const requestEndpoints = API_ENDPOINTS[runtimeModeForState(currentState)]
       const body = rollResolution
         ? {
             state: currentState,
@@ -397,7 +557,7 @@ export default function PlayV2Page() {
             isInitial,
           }
 
-      const res = await fetch('/api/sf2/narrator', {
+      const res = await fetch(requestEndpoints.narrator, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify(body),
@@ -425,6 +585,9 @@ export default function PlayV2Page() {
         dc: number
         why: string
         consequenceOnFail: string
+        requestedSkill?: string
+        intendedSkills?: string[]
+        skillOverrideReason?: string
         modifierType?: 'advantage' | 'disadvantage' | 'challenge'
         modifierReason?: string
         priorMessages: unknown[]
@@ -449,9 +612,13 @@ export default function PlayV2Page() {
               break
             }
             case 'roll_prompt': {
+              const binding = bindSf2bRollSkill(String(event.skill ?? ''), intendedRollSkills)
               sawRollPrompt = {
                 toolUseId: String(event.toolUseId ?? ''),
-                skill: String(event.skill ?? ''),
+                skill: binding.skill,
+                requestedSkill: binding.requestedSkill,
+                intendedSkills: binding.intendedSkills,
+                skillOverrideReason: binding.diagnostic,
                 dc: Number(event.dc ?? 15),
                 why: String(event.why ?? ''),
                 consequenceOnFail: String(event.consequenceOnFail ?? ''),
@@ -463,6 +630,23 @@ export default function PlayV2Page() {
                     : undefined,
                 modifierReason: typeof event.modifierReason === 'string' ? event.modifierReason : undefined,
                 priorMessages: (event.priorMessages as unknown[]) ?? [],
+              }
+              if (binding.overridden) {
+                setDebug((d) => [
+                  ...d,
+                  {
+                    kind: 'roll',
+                    at: Date.now(),
+                    data: {
+                      type: 'sf2b_skill_tag_override',
+                      requestedSkill: binding.requestedSkill,
+                      intendedSkills: binding.intendedSkills,
+                      chosenSkill: binding.skill,
+                      diagnostic: binding.diagnostic,
+                      turnIndex,
+                    },
+                  },
+                ])
               }
               break
             }
@@ -621,6 +805,9 @@ export default function PlayV2Page() {
               dc: sawRollPrompt?.dc,
               why: sawRollPrompt?.why,
               consequenceOnFail: sawRollPrompt?.consequenceOnFail,
+              requestedSkill: sawRollPrompt?.requestedSkill,
+              intendedSkills: sawRollPrompt?.intendedSkills,
+              skillOverrideReason: sawRollPrompt?.skillOverrideReason,
               turnIndex,
             },
           },
@@ -629,6 +816,10 @@ export default function PlayV2Page() {
           turn: turnIndex,
           proseOffset,
           skill: sawRollPrompt.skill,
+          intendedSkill: sawRollPrompt.intendedSkills?.[0],
+          intendedSkills: sawRollPrompt.intendedSkills,
+          requestedSkill: sawRollPrompt.requestedSkill,
+          skillOverrideReason: sawRollPrompt.skillOverrideReason,
           dc: sawRollPrompt.dc,
           effectiveDc: outcome.effectiveDc,
           rollResult: outcome.d20,
@@ -707,7 +898,8 @@ export default function PlayV2Page() {
   }> {
     setIsArchiving(true)
     try {
-      const res = await fetch('/api/sf2/archivist', {
+      const requestEndpoints = API_ENDPOINTS[runtimeModeForState(preTurnState)]
+      const res = await fetch(requestEndpoints.archivist, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -887,7 +1079,8 @@ export default function PlayV2Page() {
     setIsGeneratingChapter(true)
     setGenerationStartTime(Date.now())
     try {
-      const res = await fetch('/api/sf2/arc-author', {
+      const requestEndpoints = API_ENDPOINTS[runtimeModeForState(currentState)]
+      const res = await fetch(requestEndpoints.arcAuthor, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ state: currentState }),
@@ -982,7 +1175,8 @@ export default function PlayV2Page() {
         return null
       }
 
-      const res = await fetch('/api/sf2/author', {
+      const requestEndpoints = API_ENDPOINTS[runtimeModeForState(currentState)]
+      const res = await fetch(requestEndpoints.author, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -1206,10 +1400,12 @@ export default function PlayV2Page() {
     setIsArchiving(true)
     try {
       let authorBaseState = state
+      const chapterMode = runtimeModeForState(authorBaseState)
+      const chapterEndpoints = API_ENDPOINTS[chapterMode]
       // Step 1: synthesize chapter_meaning (Haiku retrospective by default).
       // Step 2: pass it to Author as priorChapterMeaning.
       // Step 3: persist meaning on chapter.artifacts.
-      const meaningRes = await fetch('/api/sf2/chapter-meaning', {
+      const meaningRes = await fetch(chapterEndpoints.chapterMeaning, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ state }),
@@ -1261,7 +1457,7 @@ export default function PlayV2Page() {
         return
       }
 
-      const res = await fetch('/api/sf2/author', {
+      const res = await fetch(chapterEndpoints.author, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -1498,7 +1694,7 @@ export default function PlayV2Page() {
 
   // ────────── Render ──────────
 
-  if (loading) {
+  if (loading || !runtimeMode) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background font-mono text-foreground">
         <div className="text-sm text-muted-foreground">loading...</div>
@@ -1557,28 +1753,34 @@ export default function PlayV2Page() {
           <section className="self-center rounded-lg border border-border/45 bg-card/75 p-5 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <div className="mb-5 space-y-1">
               <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-                Storyforge v2
+                {runtimeMode === 'sf2b' ? 'Storyforge SF2B spike' : 'Storyforge v2'}
               </div>
               <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">{selectedSeed.description}</p>
             </div>
 
-            <div className="space-y-2">
-              <label className="font-mono text-sm text-muted-foreground" htmlFor="seed">
-                SF2 seed
-              </label>
-              <select
-                id="seed"
-                value={selectedSeedId}
-                onChange={(e) => setSelectedSeedId(e.target.value)}
-                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
-              >
-                {SF2_BOOTSTRAP_SEED_OPTIONS.map((seed) => (
-                  <option key={seed.id} value={seed.id}>
-                    {seed.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {runtimeMode === 'sf2b' ? (
+              <div className="rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 font-mono text-xs text-primary">
+                SF2B locks this spike to Space Opera · Driftrunner · Forty Thousand.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="font-mono text-sm text-muted-foreground" htmlFor="seed">
+                  SF2 seed
+                </label>
+                <select
+                  id="seed"
+                  value={selectedSeedId}
+                  onChange={(e) => setSelectedSeedId(e.target.value)}
+                  className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+                >
+                  {SF2_BOOTSTRAP_SEED_OPTIONS.map((seed) => (
+                    <option key={seed.id} value={seed.id}>
+                      {seed.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="mt-5 space-y-2">
               <label className="font-mono text-sm text-muted-foreground" htmlFor="name">
@@ -1615,24 +1817,65 @@ export default function PlayV2Page() {
   function buildSessionLogExport() {
     if (!state) return null
     const summary = computeSessionSummary(state, debug)
+    const exportRuntimeMode: Sf2RuntimeMode = isSf2bState(state) ? 'sf2b' : 'sf2'
+    let exportDebug = debug
+    if (runtimeMode && runtimeMode !== exportRuntimeMode) {
+      const invariantData = {
+        source: 'session-export',
+        urlRuntimeMode,
+        runtimeMode,
+        stateMode: exportRuntimeMode,
+        campaignId: state.meta.campaignId,
+        experimentMode: state.meta.experimentMode,
+      }
+      recordModeInvariant('export_runtime_state_mode_mismatch', invariantData)
+      const entry: DebugEntry = {
+        kind: 'sf2.invariant',
+        at: Date.now(),
+        data: { type: 'export_runtime_state_mode_mismatch', ...invariantData },
+      }
+      exportDebug = [...debug, entry]
+    }
+    const prefix = exportRuntimeMode === 'sf2b' ? 'sf2b-session' : 'sf2-session'
     return {
-      filename: `sf2-session-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
-      payload: { summary, state, debug, replayFrames },
+      filename: `${prefix}-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      payload: { runtimeMode: exportRuntimeMode, summary, state, debug: exportDebug, replayFrames },
     }
   }
 
   function buildReplayFixtureExport() {
     if (!state) return null
     const summary = computeSessionSummary(state, debug)
+    const exportRuntimeMode: Sf2RuntimeMode = isSf2bState(state) ? 'sf2b' : 'sf2'
+    let exportDebug = debug
+    if (runtimeMode && runtimeMode !== exportRuntimeMode) {
+      const invariantData = {
+        source: 'replay-export',
+        urlRuntimeMode,
+        runtimeMode,
+        stateMode: exportRuntimeMode,
+        campaignId: state.meta.campaignId,
+        experimentMode: state.meta.experimentMode,
+      }
+      recordModeInvariant('export_runtime_state_mode_mismatch', invariantData)
+      const entry: DebugEntry = {
+        kind: 'sf2.invariant',
+        at: Date.now(),
+        data: { type: 'export_runtime_state_mode_mismatch', ...invariantData },
+      }
+      exportDebug = [...debug, entry]
+    }
+    const prefix = exportRuntimeMode === 'sf2b' ? 'sf2b-replay' : 'sf2-replay'
     return {
-      filename: `sf2-replay-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      filename: `${prefix}-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
       payload: {
         schema: 'sf2-replay-fixture/v1',
         exportedAt: new Date().toISOString(),
+        runtimeMode: exportRuntimeMode,
         campaignId: state.meta.campaignId,
         summary,
         finalState: state,
-        debug,
+        debug: exportDebug,
         frames: replayFrames,
         note:
           'Replay frames are captured model outputs plus before/after states. They are intended for model-free testing of deterministic tool application, cache invalidation, scene packets, and invariants.',

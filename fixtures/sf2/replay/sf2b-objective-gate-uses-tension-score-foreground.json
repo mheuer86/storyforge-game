@@ -1,0 +1,100 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B objective gate uses tension score foreground thread",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "When Author marks a foreground_objective in tension_score, the close gate should follow that source thread instead of an older spine id."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_tension_foreground",
+        "experimentMode": "sf2b-hook"
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_spine", "thread_checkpoint"],
+          "loadBearingThreadIds": ["thread_spine", "thread_checkpoint"],
+          "tensionScore": [
+            {
+              "id": "score_checkpoint",
+              "role": "foreground_objective",
+              "sourceThreadId": "thread_checkpoint",
+              "pressure": "Clear the checkpoint before the handoff window closes.",
+              "proseSurface": "The checkpoint clock makes every answer transactional.",
+              "advancesWhen": "The PC secures or loses clearance.",
+              "resolvesOrReframesWhen": "The checkpoint is cleared, denied, or displaced.",
+              "carried": false
+            }
+          ]
+        }
+      },
+      "campaign": {
+        "threads": {
+          "thread_checkpoint": {
+            "id": "thread_checkpoint",
+            "title": "Clear the checkpoint",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "Secure or lose checkpoint clearance.",
+            "failureMode": "The handoff window closes under inspection.",
+            "retrievalCue": "checkpoint clock, handoff window, clearance",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "4", "narratorProse": "4", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "5", "narratorProse": "5", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "6", "narratorProse": "6", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "7", "narratorProse": "7", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "8", "narratorProse": "8", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 9,
+    "playerInput": "Hand over the clearance chit.",
+    "narrator": {
+      "prose": "The clerk stamps the chit and the checkpoint clock goes green.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_checkpoint",
+            "toStatus": "resolved_clean",
+            "reason": "The checkpoint clearance was secured before the handoff window closed.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["transitions[0]"],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": true,
+      "spineResolved": false,
+      "objectiveResolved": true,
+      "objectiveOutcome": "resolved",
+      "closeOrReframeDirectiveIncludes": "Clear the checkpoint"
+    }
+  }
+}

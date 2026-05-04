@@ -85,6 +85,7 @@ export type Sf2RevealContext =
   | 'accusation'
   | 'forced_disclosure'
   | 'inadvertent'
+export type Sf2ExperimentMode = 'sf2b-hook'
 
 // Document lifecycle. Closed enum + per-type transition map (DOCUMENT_VALID_TRANSITIONS)
 // constrains which statuses are reachable for each Sf2DocumentType.
@@ -757,6 +758,25 @@ export interface Sf2ChapterFrame {
   outcomeSpectrum: Sf2OutcomeSpectrum
 }
 
+export type Sf2ChapterTensionRole =
+  | 'foreground_objective'
+  | 'relational_social_pressure'
+  | 'shadow_faction_pressure'
+  | 'cargo_system_pressure'
+  | 'environmental_pressure'
+
+export interface Sf2ChapterTensionScoreLine {
+  id: Sf2EntityId
+  role: Sf2ChapterTensionRole
+  sourceEntityId?: Sf2EntityId
+  sourceThreadId?: Sf2EntityId
+  pressure: string
+  proseSurface: string
+  advancesWhen: string
+  resolvesOrReframesWhen: string
+  carried?: boolean
+}
+
 export interface Sf2AntagonistFace {
   id: string
   name: string
@@ -845,6 +865,7 @@ export interface Sf2ChapterSetupRuntimeState {
   editorializedLore: Sf2EditorializedLoreItem[]
   openingSceneSpec: Sf2OpeningSceneSpec
   pressureLadder: Sf2PressureLadderStep[]
+  tensionScore?: Sf2ChapterTensionScoreLine[]
   threadPressure: Record<Sf2EntityId, Sf2ChapterThreadPressure>
   threadInitialTensions?: Record<Sf2EntityId, Sf2Tension>
   arcLink?: Sf2ChapterArcLink
@@ -1079,6 +1100,7 @@ export interface AuthorChapterSetupV2 {
     narrativeEffect: string
     severity?: 'standard' | 'hard'
   }>
+  tensionScore?: Sf2ChapterTensionScoreLine[]
   possibleRevelations: Array<{
     id: string
     statement: string
@@ -1188,6 +1210,10 @@ export interface Sf2RollRecord {
   turn: number
   proseOffset?: number
   skill: string
+  intendedSkill?: string
+  intendedSkills?: string[]
+  requestedSkill?: string
+  skillOverrideReason?: string
   dc: number
   effectiveDc?: number
   rollResult: number
@@ -1617,6 +1643,7 @@ export interface Sf2CampaignMeta {
   updatedAt: string
   schemaVersion: typeof SF2_SCHEMA_VERSION
   seedId?: string
+  experimentMode?: Sf2ExperimentMode
   genreId: string
   playbookId: string
   originId: string
