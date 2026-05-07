@@ -281,10 +281,10 @@ export const CAMPAIGN_INITIAL_SEED: AuthorInputSeed = {
       'The Great Houses compete for allocation, privilege, and exemption.',
       'The Throne balances Houses and Synod rather than abolishing either.',
       'Resonants are treated as infrastructure inside the system\'s logic.',
-      'Administrative language is routinely used to make violence sound procedural.',
+      'Administrative language makes violence sound routine; it reveals harm when someone must pay for the wording.',
     ],
     socialPressures: [
-      'Political and bureaucratic failures are as dangerous as physical failures.',
+      'Political and institutional failures are as dangerous as physical failures.',
       'Ordinary people live under inherited institutional pressure they did not create.',
       'Compliance is framed as care.',
       'Silence, omission, and reframing are normal tools of survival.',
@@ -305,8 +305,8 @@ export const CAMPAIGN_INITIAL_SEED: AuthorInputSeed = {
     toneMix:
       'Gritty 40%, Epic 40%, Witty 20% - grand but grounded. Humor is dry and usually masks something worse.',
     narrativePrinciples: [
-      'Institutional weight should be felt in speech, process, and omission.',
-      'Use bureaucratic language as horror.',
+      'Institutional weight should be felt in speech, ritual, rank, and omission.',
+      'Use administrative language as the surface of harm, not as a checklist.',
       'Alternate long sentences that compress time with short sentences that stop it.',
       'Center small, specific human courage against overwhelming systems.',
       'Let details echo across scenes with changed meaning.',
@@ -335,7 +335,7 @@ export const CAMPAIGN_INITIAL_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player does not know this world yet and should learn it through behavior, procedure, and observable pressure.',
+      'The player does not know this world yet and should learn it through behavior, ritual, omission, and observable pressure.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the setting',
@@ -359,7 +359,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'Forty Thousand',
     premise:
-      'Your ship is trapped at a station until forty thousand credits of leverage clears. The cause might be debt, lien, bounty, missing fee, crew obligation, bad paperwork, or damaged reputation; the person or faction holding it is not fixed. A back-channel offer arrives for exactly forty thousand credits and can get you moving tonight, but the job carries an undisclosed passenger, cargo, route, or faction claim. Keep the number fixed; author who is owed, why, who pays, what they want moved, and where the route leads differently for this run.',
+      'Your ship cannot leave cleanly until forty thousand credits of leverage clears. The surface might be debt, lien, bounty, missing fee, crew obligation, bad paperwork, damaged reputation, or someone blocking the route; the person or faction holding it is not fixed. A back-channel offer arrives for exactly forty thousand credits and can get you moving tonight, but the job carries an undisclosed passenger, cargo, route, or faction claim. Keep the number fixed; author who is owed, why, who pays, what they want moved, and where the route leads differently for this run.',
     crucible:
       'Forty thousand credits can buy immediate freedom only by creating a larger obligation to someone who knows exactly which exit the Driftrunner needs.',
   },
@@ -375,7 +375,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     ],
     socialPressures: [
       'A ship is a closed economy of fuel, parts, food, ammo, morale, and trust.',
-      'Station politics are personal because everyone needs something before the clamps release.',
+      'Station politics are personal because information, route permission, fuel, favors, and reputation are local.',
       'The thing holding a ship can be debt, lien, bounty, permit hold, crew obligation, or damaged reputation.',
       'Crew warmth matters most when scarcity makes every choice costly.',
       'Law is local, factional, and often less binding than reputation.',
@@ -386,17 +386,17 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'exposition-dump explanation of the Compact Collapse',
     ],
     vocabulary: [
-      'Compact', 'Fracture', 'beacon corridors', 'last beacon', 'docking clamps',
-      'port fees', 'cargo bay', 'sealed cargo', 'transit manifest', 'station concourse',
+      'Compact', 'Fracture', 'beacon corridors', 'last beacon', 'berth lock',
+      'route chit', 'cargo bay', 'sealed cargo', 'shadow manifest', 'station concourse',
       'Corporate Bloc', 'Compact Remnant', 'Pirate Fleet', 'frontier settlement',
-      'Rogue AI', 'fuel reserves', 'shipboard trust', 'customs scan', 'back channel',
+      'Rogue AI', 'fuel reserves', 'shipboard trust', 'passive sweep', 'back channel',
     ],
   },
   toneRules: {
     toneMix:
-      'Gritty 40%, Epic 35%, Witty 25% - danger with lived-in ship warmth, dry station humor, and personal stakes inside galactic decay.',
+      'Epic 40%, Gritty 30%, Witty 30% - vast distance, daily scarcity, sharp competence, crew warmth, and gallows humor from people in over their heads.',
     narrativePrinciples: [
-      'Show scale through human-sized details: one customs officer, one locked clamp, one crew member watching the fuel gauge.',
+      'Show scale through human-sized details: one bored official, one bad route offer, one crew member watching the fuel gauge.',
       'Make ships and stations feel lived-in, worn, repaired, and socially dense.',
       'Use competence as characterization: piloting, hacking, stealth, and back-channel navigation reveal who the Driftrunner is.',
       'Keep politics personal; galactic instability matters because it decides whether the ship can leave tonight.',
@@ -405,9 +405,9 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   npcRules: {
     likelyAffiliations: [
-      'station port authority',
+      'station-route authority',
       'creditor or collector network',
-      'customs or lien office',
+      'registry contact or lien holder',
       'Corporate Bloc',
       'Compact Remnant',
       'Pirate Fleet',
@@ -416,7 +416,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'back-channel broker',
     ],
     factionVoiceRules: [
-      'Station officials speak in fees, safety codes, queue priority, and clamp status.',
+      'Station officials speak in berth priority, safety codes, route permission, and reputation risk.',
       'Corporate representatives speak in risk, contract terms, and liability.',
       'Pirates and collectors speak casually until leverage is established, then become exact.',
       'Remnant officers sound official even when their authority is thin.',
@@ -428,12 +428,12 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player does not need a lecture on the galaxy; teach Space Opera through docking clamps, port fees, exit pressure, ship scarcity, and the cost of taking the job.',
+      'The player does not need a lecture on the galaxy; teach Space Opera through exit pressure, ship scarcity, route constraints, broker leverage, and the cost of taking the job.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the Compact Collapse',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
-      'opening away from station, ship, exit pressure, or job pressure',
+      'opening away from ship, exit pressure, or job pressure',
     ],
   },
 }
@@ -486,7 +486,7 @@ export const FANTASY_SEEKER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     narrativePrinciples: [
       'Make ancient things physical: stone that does not weather, ink that refuses to fade, doors with no locks.',
       'Use scholarship as action, not exposition; deciphering should change leverage in the scene.',
-      'Let institutions speak through records, seals, catalogue terms, and guarded omissions.',
+      'Let institutions speak through records, seals, testimony, and guarded omissions.',
       'Keep magic costly and embodied.',
       'Make the player learn the world through traces, behavior, and contested evidence.',
     ],
@@ -515,7 +515,7 @@ export const FANTASY_SEEKER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player does not need a lecture on the Sundering; teach Fantasy through records, ruins, institutional claims, bodily magic costs, and the dead scholar\'s impossible familiarity.',
+      'The player does not need a lecture on the Sundering; teach Fantasy through traces, ruins, institutional claims, bodily magic costs, and the dead scholar\'s impossible familiarity.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the Five Kingdoms or the Sundering',
@@ -541,7 +541,7 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   worldRules: {
     settingSummary:
-      'A vertical megacity owned by megacorporations, private security, fixers, gangs, and infrastructure monopolies. The Net is a parallel city with locks, predators, ghosts, and paid doors. The player is a freelance Netrunner whose body may be in a chair while their name moves through cameras, emergency channels, access logs, and rumor markets.',
+      'A vertical megacity owned by megacorporations, private security, fixers, gangs, and infrastructure monopolies. The Net is a parallel city with locks, predators, ghosts, and paid doors. The player is a freelance Netrunner whose body may be in a chair while their name moves through cameras, emergency channels, compromised records, and rumor markets.',
     institutionalForces: [
       'Megacorporations own infrastructure, media, medicine, housing, and private force.',
       'Fixers broker talent, secrets, and survival through debts that compound.',
@@ -551,7 +551,7 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     ],
     socialPressures: [
       'Privacy is a commodity and most people cannot afford it.',
-      'Every hack creates a trace, a favor, a log gap, or a future debt.',
+      'Every hack can create a trace, a favor, a log gap, or a future debt.',
       'Street trust and corporate access rarely survive the same decision.',
       'The city notices patterns faster than people do.',
       'Technology is intimate: chrome, neural stress, heat, addiction, and identity erosion.',
@@ -572,7 +572,7 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'Gritty 50%, Witty 30%, Epic 20% - neon pressure, dry survival humor, and big systemic violence felt through one room losing power.',
     narrativePrinciples: [
       'Show the city as infrastructure with motives: locks, cameras, elevators, feeds, blackout grids.',
-      'Use competence as characterization: tracing, spoofing, reading architecture, and choosing which trace to leave.',
+      'Use competence as characterization: spoofing, reading architecture, choosing exposure, and deciding which trace to leave.',
       'Keep body and Net connected; neural strain and meat-space vulnerability matter.',
       'Make every faction response transactional.',
       'Let humor come from exhaustion, professionalism, and bad odds.',
@@ -602,7 +602,7 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player can learn Cyberpunk through blackout symptoms, surveillance gaps, fixer warnings, grid behavior, and the cost of tracing their own name.',
+      'The player can learn Cyberpunk through blackout symptoms, surveillance gaps, fixer warnings, grid behavior, and the cost of following their own name.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the megacity or corporate order',
@@ -622,7 +622,7 @@ export const GRIMDARK_SCAVENGER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'The Cache',
     premise:
-      'A dying Scavenger from a rival outfit gets a map into your hands. It points to a supply cache buried under a Church waystation, enough provisions to keep a company alive for a month. She says the Church killed her crew for finding it and that something else is buried there. Keep the rival Scavenger, map, cache, Church waystation, and patrol window fixed; author who she was, how she reaches you, what else is buried, and which faction moves first differently for this run.',
+      'A dying Scavenger from a rival outfit gets a map into your hands. It points to a supply cache buried under a Church waystation, enough provisions to keep a company alive for a month. She says the Church killed her crew for finding it and that something else is buried there. Keep the rival Scavenger, map, cache, Church waystation, and Church patrol pressure fixed; author who she was, how she reaches you, what else is buried, and which faction moves first differently for this run.',
     crucible:
       'The cache can keep people alive, but taking it means trespassing under Church authority and learning what the Church was willing to kill to keep buried.',
   },
@@ -650,7 +650,7 @@ export const GRIMDARK_SCAVENGER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     ],
     vocabulary: [
       'Shattered Provinces', 'Oathless', 'Pale Flame', 'Church waystation', 'Wasting',
-      'company', 'contract', 'provisions', 'patrol window', 'sealed cache', 'map',
+      'company', 'contract', 'provisions', 'patrol pressure', 'sealed cache', 'map',
       'house seal', 'crossroads', 'field dressing', 'heresy', 'buried evidence',
     ],
   },
@@ -689,7 +689,7 @@ export const GRIMDARK_SCAVENGER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player should learn Grimdark through hunger, Church procedure, house leverage, map pressure, and the risks of being useful but unsworn.',
+      'The player should learn Grimdark through hunger, Church doctrine, house leverage, map pressure, and the risks of being useful but unsworn.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the Shattered Provinces',
@@ -715,7 +715,7 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   worldRules: {
     settingSummary:
-      'A rain-soaked city runs on money, secrets, police files, favors, court records, union ledgers, back rooms, and the people paid to look away. The player is a Methodical PI: procedure, evidence chains, patience, and the bad habit of finding the uglier truth behind the simple case.',
+      'A rain-soaked city runs on money, secrets, police files, favors, court records, union ledgers, back rooms, and the people paid to look away. The player is a Methodical PI: patience, evidence chains, and the bad habit of finding the uglier truth behind the simple case.',
     institutionalForces: [
       'Police precincts are overworked, bought, or protecting old casework.',
       'City hall, courts, unions, and business offices bury decisions in records.',
@@ -743,7 +743,7 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   toneRules: {
     toneMix:
-      'Gritty 50%, Witty 35%, Epic 15% - dry observation, human rot, procedural patience, and the small grandeur of a revelation landing.',
+      'Gritty 50%, Witty 35%, Epic 15% - dry observation, human rot, patient pressure, and the small grandeur of a revelation landing.',
     narrativePrinciples: [
       'Use the city as a pressure system: weather, files, phones, precincts, hotels, bars, offices.',
       'Make lies specific and human; no one lies generically.',
@@ -776,7 +776,7 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player should learn Noir through the office, the box, the will, hesitant witnesses, procedural evidence, and attention from people who preferred the list stay closed.',
+      'The player should learn Noir through the office, the box, the will, hesitant witnesses, partial evidence, and attention from people who preferred the list stay closed.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the city',

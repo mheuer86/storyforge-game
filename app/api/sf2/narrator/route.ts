@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { NARRATOR_TOOL_NAME, REQUEST_ROLL_TOOL_NAME } from '@/lib/sf2/narrator/tools'
-import { scanDisplayOutput } from '@/lib/sf2/sentinel/display'
+import { repairVisibleLeaks, scanDisplayOutput } from '@/lib/sf2/sentinel/display'
 import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
 import {
   buildNarratorTurnContext,
@@ -77,6 +77,10 @@ type Sf2NarratorStreamEvent =
       // stream of findings.
       type: 'display_sentinel'
       mode: 'observe' | 'enforce'
+      // When true, `repairedProse` supersedes all prior `text` events for
+      // this Narrator turn. Clients should replace the accumulated visible
+      // turn prose with `repairedProse` instead of appending it.
+      repaired: boolean
       repairedProse?: string
       findings: Array<{
         type: string
@@ -129,28 +133,6 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
   return null
 }
 
-function repairRollValueLeaks(
-  prose: string,
-  findings: Array<{ type: string; matchStart: number; matchEnd?: number; surface?: string }>
-): string {
-  const rollFindings = findings
-    .filter((finding) => finding.type === 'roll_value_leak' && finding.surface)
-    .sort((a, b) => b.matchStart - a.matchStart)
-  let repaired = prose
-  for (const finding of rollFindings) {
-    const surface = finding.surface ?? ''
-    const start = finding.matchStart
-    if (!surface || start < 0 || start >= repaired.length) continue
-    const end = Math.max(start, finding.matchEnd ?? start + surface.length)
-    repaired = `${repaired.slice(0, start)}${repaired.slice(end)}`
-  }
-  return repaired
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/[ \t]{2,}/g, ' ')
-    .trim()
-}
-
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
 // shapes observed in playthrough 7:
 //   - turn 6: hinted_entities arrived as a literal string containing
@@ -165,7 +147,9 @@ function repairRollValueLeaks(
 function recoverNarrateTurnInput(
   raw: Record<string, unknown>,
   state: Sf2State,
-  failedSkill?: string
+  failedSkill?: string,
+  playerInput?: string,
+  visibleProse?: string
 ): { input: Record<string, unknown>; recoveryNotes: string[] } {
   const recoveryNotes: string[] = []
   const next = { ...raw }
@@ -232,7 +216,7 @@ function recoverNarrateTurnInput(
 
   const repairedActions = repairSuggestedActions(
     Array.isArray(next.suggested_actions) ? (next.suggested_actions as string[]) : [],
-    { state, failedSkill }
+    { state, failedSkill, playerInput, visibleProse }
   )
   if (repairedActions.notes.length > 0) {
     next.suggested_actions = repairedActions.actions
@@ -247,13 +231,14 @@ async function repairMissingNarrateTurn(args: {
   turnContext: Sf2NarratorTurnContext
   completedContent: Anthropic.Message['content']
   state: Sf2State
+  playerInput?: string
 }): Promise<{
   input: Record<string, unknown> | null
   usage: Anthropic.Usage | null
   recoveryNotes: string[]
   apiMs: number
 }> {
-  const { client, turnContext, completedContent, state } = args
+  const { client, turnContext, completedContent, state, playerInput } = args
   const apiTimer = startTimer()
   const repairRequest = buildMissingNarrateTurnRepairRequest({ turnContext, completedContent })
   const repair = await client.messages.create({
@@ -283,7 +268,12 @@ async function repairMissingNarrateTurn(args: {
   const recovered = recoverNarrateTurnInput(
     toolUse.input as Record<string, unknown>,
     state,
-    turnContext.failedRollSkill
+    turnContext.failedRollSkill,
+    playerInput,
+    completedContent
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map((b) => b.text)
+      .join('')
   )
 
   return {
@@ -475,13 +465,17 @@ export async function POST(req: NextRequest) {
                   turnIndex: state.history.turns.length,
                 })
               }
-              const repairedProse = findings.some((f) => f.type === 'roll_value_leak')
-                ? repairRollValueLeaks(proseText, findings)
+              const shouldRepairVisibleLeaks = findings.some(
+                (f) => f.type === 'roll_value_leak' || f.type === 'suggested_action_leak'
+              )
+              const repairedProse = shouldRepairVisibleLeaks
+                ? repairVisibleLeaks(proseText, findings)
                 : proseText
               const didRepair = repairedProse !== proseText
               send({
                 type: 'display_sentinel',
                 mode: didRepair ? 'enforce' : 'observe',
+                repaired: didRepair,
                 ...(didRepair ? { repairedProse } : {}),
                 findings: findings.map((f) => ({
                   type: f.type,
@@ -532,7 +526,9 @@ export async function POST(req: NextRequest) {
           const recovered = recoverNarrateTurnInput(
             narrateUse.input as Record<string, unknown>,
             state,
-            turnContext.failedRollSkill
+            turnContext.failedRollSkill,
+            playerInput,
+            proseText
           )
           if (recovered.recoveryNotes.length > 0) {
             console.warn('[sf2/narrator] narrate_turn input recovered', {
@@ -552,6 +548,7 @@ export async function POST(req: NextRequest) {
             turnContext,
             completedContent: completed.content,
             state,
+            playerInput,
           })
           apiMsForLatency = (apiMsForLatency ?? 0) + repaired.apiMs
 

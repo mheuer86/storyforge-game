@@ -1,0 +1,47 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "role schema parity rollout",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 5: parity checks for Narrator, Author, Arc-author, and Chapter Meaning role contracts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I wait for the next pressure to reveal itself.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The room holds its breath. Nothing changes yet, but every face is waiting for who moves first.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "roleSchemaParity": {
+      "assertNarrator": true,
+      "assertAuthor": true,
+      "assertArcAuthor": true,
+      "assertChapterMeaning": true,
+      "assertFirewallDevAssertion": true
+    }
+  }
+}

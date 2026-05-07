@@ -14,7 +14,7 @@ import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
 import {
   normalizeAuthorSetup,
   validateAuthorSetup,
-  validateChapterRaw,
+  validateAuthorToolInput,
 } from '@/lib/sf2/author/contract'
 import { transformAuthorSetup } from '@/lib/sf2/author/transform'
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
@@ -39,20 +39,65 @@ export const runtime = 'nodejs'
 // Single Sonnet chapter-setup call can be slow on first uncached run.
 export const maxDuration = 300
 
+const procedureResidueModeSchema = z.enum(['constraint', 'leverage', 'background', 'discard'])
+
+const transitionSeedSchema = z.object({
+  priorChapterMeant: z.string(),
+  earnedConsequence: z.string(),
+  pressureOwnerCandidate: z.string(),
+  worsenedDetail: z.string(),
+  unresolvedQuestion: z.string(),
+  doNotRestage: z.array(z.string()),
+  procedureResidue: z.object({
+    mechanism: z.string(),
+    keepAs: procedureResidueModeSchema,
+  }),
+})
+
+const transitionSeedSnakeSchema = z.object({
+  prior_chapter_meant: z.string(),
+  earned_consequence: z.string(),
+  pressure_owner_candidate: z.string(),
+  worsened_detail: z.string(),
+  unresolved_question: z.string(),
+  do_not_restage: z.array(z.string()),
+  procedure_residue: z.object({
+    mechanism: z.string(),
+    keep_as: procedureResidueModeSchema,
+  }),
+}).transform((seed) => ({
+  priorChapterMeant: seed.prior_chapter_meant,
+  earnedConsequence: seed.earned_consequence,
+  pressureOwnerCandidate: seed.pressure_owner_candidate,
+  worsenedDetail: seed.worsened_detail,
+  unresolvedQuestion: seed.unresolved_question,
+  doNotRestage: seed.do_not_restage,
+  procedureResidue: {
+    mechanism: seed.procedure_residue.mechanism,
+    keepAs: seed.procedure_residue.keep_as,
+  },
+}))
+
+const chapterMeaningSchema = z.object({
+  chapter: z.number(),
+  situation: z.string(),
+  tension: z.string(),
+  ticking: z.string(),
+  question: z.string(),
+  closer: z.string(),
+  closingResolution: z.enum(['clean', 'costly', 'failure', 'catastrophic', 'unresolved']),
+  transitionSeed: transitionSeedSchema.optional(),
+  transition_seed: transitionSeedSnakeSchema.optional(),
+}).transform(({ transition_seed, ...meaning }) => {
+  const transitionSeed = meaning.transitionSeed ?? transition_seed
+  return transitionSeed
+    ? { ...meaning, transitionSeed }
+    : meaning
+})
+
 const requestSchema = z.object({
   state: z.record(z.unknown()).nullable().optional(), // null = fresh campaign
-  priorChapterMeaning: z
-    .object({
-      chapter: z.number(),
-      situation: z.string(),
-      tension: z.string(),
-      ticking: z.string(),
-      question: z.string(),
-      closer: z.string(),
-      closingResolution: z.enum(['clean', 'costly', 'failure', 'catastrophic', 'unresolved']),
-    })
-    .nullable()
-    .optional(),
+  priorChapterMeaning: chapterMeaningSchema.nullable().optional(),
   targetChapter: z.number(),
 })
 
@@ -292,7 +337,7 @@ export async function POST(req: NextRequest) {
         initialMessages,
         tool: AUTHOR_TOOLS[0],
         toolName: AUTHOR_TOOL_NAME,
-        validate: (raw) => validateChapterRaw(raw, {
+        validate: (raw) => validateAuthorToolInput(raw, {
           genreId: state?.meta.genreId ?? '',
           pcOriginId: state?.meta.originId ?? '',
           pcPlaybookId: state?.meta.playbookId ?? '',
@@ -300,7 +345,7 @@ export async function POST(req: NextRequest) {
           state: state ?? undefined,
         }),
         retryNudge: (errors) =>
-          `Your previous tool call was incomplete — these required fields were missing or empty:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. Stay inside the field-length budgets; compact complete output is preferred over exhaustive prose. The full chapter setup must come back in this single tool call.`,
+          `Your previous tool call was invalid. Repair these exact issues:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. For continuation_dramatic_turn/procedure_gravity errors, make the next chapter's first pressure a person/faction/institution using leverage; any mechanism, timer, readout, query, route choice, or access gate must have an owner and occupy at most one opening beat. For SF2B continuity_lock errors, preserve the locked ids/facts exactly: bridge closing geometry in opening_scene_spec, mention locked continuity facets, and set carried tension_score lines only to source ids listed in the continuity lock. New NPCs or new pressures must use carried=false. Stay inside the field-length budgets; compact complete output is preferred over exhaustive prose. The full chapter setup must come back in this single tool call.`,
       })
     } catch (err) {
       return anthropicErrorResponse(err)
@@ -410,4 +455,3 @@ function usagePayload(usage: AnthropicUsage) {
     cacheReadTokens: usage.cache_read_input_tokens ?? 0,
   }
 }
-

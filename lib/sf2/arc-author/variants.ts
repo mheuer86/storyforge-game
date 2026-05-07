@@ -54,7 +54,7 @@ const FORTY_THOUSAND_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'forty-thousand-smuggler-run',
     scenarioBias: 'extraction',
     creativeAngle:
-      'The back-channel offer is an off-book run through customs scans, false manifests, patrol windows, or blockade lanes; the forty thousand clears departure only if the Driftrunner keeps the cargo, passenger, or data uninspected until handoff.',
+      'The back-channel offer is an off-book run through deniable brokers, blind route chits, patrol lanes, or blockade gaps; the forty thousand clears departure only if the Driftrunner keeps the cargo, passenger, or data protected until handoff.',
     avoidModes: ['chamber_play', 'procedural_contest'],
   },
   {
@@ -99,7 +99,7 @@ const SECOND_LIBRARY_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'second-library-archive-custody',
     scenarioBias: 'procedural_contest',
     creativeAngle:
-      'The second library exists first as an archive fight over notes, seals, charters, catalogue authority, publication rights, and who gets to name dangerous knowledge.',
+      'The second library exists first as a human archive fight: notes, seals, charters, and catalogue authority become weapons over who gets to name dangerous knowledge.',
     avoidModes: ['siege'],
   },
   {
@@ -154,7 +154,7 @@ const CACHE_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'cache-waystation-heist',
     scenarioBias: 'extraction',
     creativeAngle:
-      'The cache must be removed from beneath Church custody before patrol timing, Wasting symptoms, or hungry allies make stealth impossible.',
+      'The cache must be removed from beneath Church custody before patrol pressure, Wasting symptoms, or hungry allies make stealth impossible.',
     avoidModes: ['chamber_play'],
   },
   {
@@ -168,7 +168,7 @@ const CACHE_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'cache-map-race',
     scenarioBias: 'pursuit',
     creativeAngle:
-      'The map, rival witnesses, patrol route, or buried proof keeps moving; the Scavenger must track the route before the Church edits it.',
+      'The map, rival witnesses, patrol claims, or buried proof keeps moving; the Scavenger must follow the pressure before the Church edits it.',
     avoidModes: ['chamber_play'],
   },
   {
@@ -192,7 +192,7 @@ const FIVE_NAMES_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'five-names-probate-squeeze',
     scenarioBias: 'procedural_contest',
     creativeAngle:
-      'The will, locked box, probate records, and official custody of the list become weapons before the street-level danger shows itself.',
+      'The will, locked box, probate records, and official custody of the list become weapons in living hands before the street-level danger shows itself.',
     avoidModes: ['siege'],
   },
   {
@@ -213,7 +213,7 @@ const FIVE_NAMES_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'five-names-case-web',
     scenarioBias: 'investigation',
     creativeAngle:
-      'The Methodical PI works the list as an evidence web: old files, aliases, alibis, debts, and case notes reveal why the dead woman trusted the PC.',
+      'The Methodical PI works the list as a social evidence web: old files, aliases, alibis, debts, and case notes point to why the dead woman trusted the PC.',
     avoidModes: ['siege', 'revolt'],
   },
 ]

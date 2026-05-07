@@ -169,12 +169,25 @@ function lastCampaignKeyFor(mode: Sf2RuntimeMode): string {
   return mode === 'sf2b' ? SF2B_LAST_CAMPAIGN_KEY : LAST_CAMPAIGN_KEY
 }
 
+function otherLastCampaignKeyFor(mode: Sf2RuntimeMode): string {
+  return mode === 'sf2b' ? LAST_CAMPAIGN_KEY : SF2B_LAST_CAMPAIGN_KEY
+}
+
 function campaignIdFor(mode: Sf2RuntimeMode): string {
   return mode === 'sf2b' ? makeSf2bCampaignId(Date.now()) : `camp_${Date.now()}`
 }
 
 function endpointFamilyFor(mode: Sf2RuntimeMode): string {
   return mode === 'sf2b' ? '/api/sf2b/' : '/api/sf2/'
+}
+
+function ensureUrlQualifierForMode(mode: Sf2RuntimeMode): boolean {
+  if (typeof window === 'undefined' || mode !== 'sf2b') return false
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('mode') === 'sf2b') return false
+  url.searchParams.set('mode', 'sf2b')
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+  return true
 }
 
 function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
@@ -349,6 +362,15 @@ export default function PlayV2Page() {
         endpoints: API_ENDPOINTS[stateMode],
       })
     }
+    if (ensureUrlQualifierForMode(stateMode)) {
+      setUrlRuntimeMode(stateMode)
+      recordModeInvariant('url_mode_qualifier_repaired', {
+        source,
+        stateMode,
+        campaignId: nextState.meta.campaignId,
+        experimentMode: nextState.meta.experimentMode,
+      })
+    }
     if (runtimeMode !== stateMode) setRuntimeMode(stateMode)
     return stateMode
   }, [recordModeInvariant, runtimeMode, urlRuntimeMode])
@@ -430,7 +452,12 @@ export default function PlayV2Page() {
     try {
       await p.saveCampaign(s)
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(lastCampaignKeyFor(stateMode), s.meta.campaignId)
+        const correctKey = lastCampaignKeyFor(stateMode)
+        const staleKey = otherLastCampaignKeyFor(stateMode)
+        window.localStorage.setItem(correctKey, s.meta.campaignId)
+        if (window.localStorage.getItem(staleKey) === s.meta.campaignId) {
+          window.localStorage.removeItem(staleKey)
+        }
       }
     } catch {
       // non-fatal; surface in debug if needed
@@ -503,6 +530,45 @@ export default function PlayV2Page() {
     pendingInspirationSpendRef.current = 0
   }
 
+  function formatNarratorHttpError(status: number, body: unknown): string {
+    const bodyMessage = extractErrorMessage(body)
+    return bodyMessage ? `HTTP ${status}: ${bodyMessage}` : `HTTP ${status}`
+  }
+
+  function cleanNarratorErrorMessage(message: string): string {
+    return parseEmbeddedAnthropicError(message) ?? message
+  }
+
+  function extractErrorMessage(value: unknown): string | null {
+    if (!value) return null
+    if (typeof value === 'string') return parseEmbeddedAnthropicError(value) ?? value
+    if (typeof value !== 'object') return String(value)
+    const record = value as Record<string, unknown>
+    const direct = record.message ?? record.error
+    if (typeof direct === 'string') return direct
+    if (direct && typeof direct === 'object') {
+      const nested = direct as Record<string, unknown>
+      if (typeof nested.message === 'string') return nested.message
+    }
+    if (typeof record.body === 'string') return parseEmbeddedAnthropicError(record.body) ?? record.body
+    return null
+  }
+
+  function parseEmbeddedAnthropicError(message: string): string | null {
+    const jsonStart = message.indexOf('{')
+    if (jsonStart < 0) return null
+    try {
+      const parsed = JSON.parse(message.slice(jsonStart)) as Record<string, unknown>
+      const error = parsed.error
+      if (error && typeof error === 'object') {
+        const nested = error as Record<string, unknown>
+        if (typeof nested.message === 'string') return nested.message
+      }
+      if (typeof parsed.message === 'string') return parsed.message
+    } catch {}
+    return null
+  }
+
   async function runNarrator(
     currentState: Sf2State,
     playerInput: string,
@@ -511,6 +577,7 @@ export default function PlayV2Page() {
     completed: boolean
     prose: string
     annotation: Record<string, unknown> | null
+    errorMessage?: string
     bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
     rollRecords: Sf2State['history']['rollLog']
     sentinelEvents: Sf2TurnPipelineEvent[]
@@ -573,7 +640,16 @@ export default function PlayV2Page() {
           { kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } },
         ])
         setIsStreaming(false)
-        return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+        return {
+          completed: false,
+          prose: proseAccum,
+          annotation,
+          errorMessage: formatNarratorHttpError(res.status, errorBody),
+          bundleBuilt,
+          rollRecords,
+          sentinelEvents: turnSentinelEvents,
+          workingSet: turnWorkingSet,
+        }
       }
 
       const reader = res.body.getReader()
@@ -594,6 +670,7 @@ export default function PlayV2Page() {
       } | null = null
       let sawNarrateTurn = false
       let sawStreamError = false
+      let streamErrorMessage: string | undefined
 
       while (true) {
         const { value, done } = await reader.read()
@@ -731,7 +808,9 @@ export default function PlayV2Page() {
             case 'display_sentinel': {
               const findings = (event.findings as Array<Record<string, unknown>>) ?? []
               const mode = String(event.mode ?? 'observe')
-              if (mode === 'enforce' && typeof event.repairedProse === 'string') {
+              const repaired = event.repaired === true
+                || (event.repaired === undefined && mode === 'enforce' && typeof event.repairedProse === 'string')
+              if (repaired && typeof event.repairedProse === 'string') {
                 proseAccum = event.repairedProse
                 setProse(proseAccum)
               }
@@ -741,7 +820,7 @@ export default function PlayV2Page() {
               const entry: Sf2TurnPipelineEvent = {
                 kind: 'display_sentinel',
                 at: Date.now(),
-                data: { mode, findings, findingCount: findings.length },
+                data: { mode, repaired, findings, findingCount: findings.length },
               }
               turnSentinelEvents.push(entry)
               setDebug((d) => [...d, entry])
@@ -749,7 +828,8 @@ export default function PlayV2Page() {
             }
             case 'error':
               sawStreamError = true
-              setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: event.message }])
+              streamErrorMessage = String(event.message ?? 'Narrator stream failed')
+              setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: streamErrorMessage }])
               break
             case 'done':
               break
@@ -759,7 +839,16 @@ export default function PlayV2Page() {
 
       if (sawStreamError) {
         setIsStreaming(false)
-        return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+        return {
+          completed: false,
+          prose: proseAccum,
+          annotation,
+          errorMessage: streamErrorMessage,
+          bundleBuilt,
+          rollRecords,
+          sentinelEvents: turnSentinelEvents,
+          workingSet: turnWorkingSet,
+        }
       }
 
       if (sawRollPrompt) {
@@ -879,7 +968,16 @@ export default function PlayV2Page() {
         },
       }])
       setIsStreaming(false)
-      return { completed: false, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+      return {
+        completed: false,
+        prose: proseAccum,
+        annotation,
+        errorMessage: 'stream ended before narrate_turn; turn was not committed',
+        bundleBuilt,
+        rollRecords,
+        sentinelEvents: turnSentinelEvents,
+        workingSet: turnWorkingSet,
+      }
     }
 
     setIsStreaming(false)
@@ -1328,7 +1426,9 @@ export default function PlayV2Page() {
       setLiveRolls([])
       setRollResult(null)
       setTurnCommitError(
-        narratorResult.prose.trim()
+        narratorResult.errorMessage
+          ? `Narrator failed: ${cleanNarratorErrorMessage(narratorResult.errorMessage)}`
+          : narratorResult.prose.trim()
           ? 'Narrator output was discarded because it did not commit state. Retry the action.'
           : 'Narrator did not commit the turn. Retry the action.'
       )

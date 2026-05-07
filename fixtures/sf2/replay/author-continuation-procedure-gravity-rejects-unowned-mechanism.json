@@ -1,0 +1,377 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Author continuation rejects unowned procedural opener",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Ensures Ch2+ Author validation rejects an opener centered on waiting/scanning/clearing a mechanism without a pressure owner or human leverage."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 1,
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I take the cargo and leave the dock.",
+            "narratorProse": "The Driftrunner lifts with the sealed container aboard and the dockmaster watching the departure light.",
+            "timestamp": "2026-05-05T10:00:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      },
+      "chapter": {
+        "artifacts": {
+          "meaning": {
+            "chapter": 1,
+            "situation": "The PC accepted sealed cargo and cleared the dock.",
+            "tension": "The cargo promise stayed private while the dock still had procedural reach.",
+            "ticking": "The dock release mechanism finished its prior job.",
+            "question": "Who can still use dock procedure against the cargo?",
+            "closer": "The clamp was behind the ship, but its record was not.",
+            "closingResolution": "unresolved",
+            "synthesizedAtTurn": 1,
+            "transitionSeed": {
+              "priorChapterMeant": "The PC accepted sealed cargo and became reachable through release records.",
+              "earnedConsequence": "Someone can use the prior release process as institutional pressure.",
+              "pressureOwnerCandidate": "Inspector Hale",
+              "worsenedDetail": "The clamp release was logged.",
+              "unresolvedQuestion": "Who controls the release record now?",
+              "doNotRestage": ["prior clamp release", "release code consumption"],
+              "procedureResidue": {
+                "mechanism": "clamp release timer",
+                "keepAs": "constraint"
+              }
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "space-opera",
+        "pcOriginId": "human",
+        "pcPlaybookId": "operative",
+        "isContinuation": true
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "Clamp Window",
+          "premise": "The next dock clamp release determines whether the cargo can move before inspection.",
+          "active_pressure": "The clamp timer is counting down.",
+          "central_tension": "Wait for release or scan the code.",
+          "chapter_scope": "One cargo bay and one release window.",
+          "objective": "Clear the clamp and move the sealed container.",
+          "crucible": "The PC must clear a dock mechanism before the timer closes.",
+          "outcome_spectrum": {
+            "clean": "The clamp releases and the cargo moves.",
+            "costly": "The clamp releases after a traceable scan.",
+            "failure": "The release window expires.",
+            "catastrophic": "The scan flags the container."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Driftrunner cargo bay",
+          "atmospheric_condition": "amber clamp light",
+          "initial_state": "The clamp timer shows seven minutes before the cargo release window closes.",
+          "first_player_facing": "The release console asks for a scan before the bay clamp unlocks.",
+          "immediate_choice": "Wait for clamp release or scan the code.",
+          "dramatic_situation": "The cargo cannot move until the clamp procedure resolves.",
+          "first_visible_pressure": "A timer counts down beside the sealed container.",
+          "first_human_or_institutional_move": "The clamp timer ticks down without anyone making a new move.",
+          "do_not_restage": ["Chapter 1 cargo acceptance", "dock departure"],
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_hale"],
+          "withheld_premise_facts": ["Hale cares about the container because of its owner."]
+        },
+        "antagonist_field": {
+          "source_system": "Dock release procedure",
+          "core_pressure": "The cargo cannot move until the clamp clears.",
+          "default_face": { "name": "Inspector Hale", "role": "dock inspector", "pressure_style": "timer pressure" },
+          "possible_faces": [
+            {
+              "id": "face_hale",
+              "name": "Inspector Hale",
+              "role": "dock inspector",
+              "becomes_primary_when": "The PC scans the code.",
+              "pressure_style": "timer pressure"
+            }
+          ],
+          "escalation_logic": "Every minute brings the release window closer to expiry."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_hale",
+            "name": "Inspector Hale",
+            "affiliation": "Dock Authority",
+            "role": "dock inspector",
+            "voice_register": "flat procedural",
+            "voice_note": "pauses before nouns that matter",
+            "dramatic_function": "Procedure face",
+            "hidden_pressure": "Knows the cargo owner's name.",
+            "retrieval_cue": "Hale, clamp, release console",
+            "initial_disposition": "wary",
+            "disposition_reason": "dock inspectors distrust runners leaving with sealed freight"
+          },
+          {
+            "id": "npc_mira",
+            "name": "Mira Voss",
+            "affiliation": "Independent haulers",
+            "role": "bay witness",
+            "voice_register": "low practical",
+            "voice_note": "answers while counting exits",
+            "dramatic_function": "Witness",
+            "hidden_pressure": "Saw Hale delay the release.",
+            "retrieval_cue": "Mira, witness, delayed release",
+            "initial_disposition": "neutral",
+            "disposition_reason": "she has no prior tie and wants to avoid dock heat"
+          },
+          {
+            "id": "npc_corro",
+            "name": "Corro Vale",
+            "affiliation": "Dock Authority",
+            "role": "release technician",
+            "voice_register": "rushed technical",
+            "voice_note": "speaks in fragments under supervision",
+            "dramatic_function": "Technical witness",
+            "hidden_pressure": "Can show who paused the clamp.",
+            "retrieval_cue": "Corro, release log, clamp pause",
+            "initial_disposition": "neutral",
+            "disposition_reason": "technicians avoid taking sides during inspections"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_spine",
+            "title": "The intake problem",
+            "question": "Can the immediate problem stay coherent?",
+            "owner_hint": "Registry",
+            "tension": 5,
+            "driver_kind": "carry_forward",
+            "resolution_criteria": "The immediate intake problem is resolved.",
+            "failure_mode": "The intake problem escalates.",
+            "retrieval_cue": "existing replay pressure"
+          },
+          {
+            "id": "thread_clamp_release",
+            "title": "Clamp release",
+            "question": "Will the clamp clear?",
+            "owner_hint": "Inspector Hale",
+            "tension": 7,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The clamp clears or becomes irrelevant.",
+            "failure_mode": "The release window expires.",
+            "retrieval_cue": "clamp, release, timer"
+          },
+          {
+            "id": "thread_scan_trace",
+            "title": "Scan trace",
+            "question": "Will the scan mark the cargo?",
+            "owner_hint": "Dock Authority",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The PC avoids, accepts, or spoofs the trace.",
+            "failure_mode": "The trace becomes evidence.",
+            "retrieval_cue": "scan, trace, evidence"
+          },
+          {
+            "id": "thread_witness_delay",
+            "title": "Witnessed delay",
+            "question": "Who delayed the clamp?",
+            "owner_hint": "Mira Voss",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The delay is named or rendered moot.",
+            "failure_mode": "The delay hides its owner.",
+            "retrieval_cue": "Mira, delay, clamp"
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_cargo_pressure",
+          "chapter_function": "Test whether cargo movement exposes the PC.",
+          "player_stance_read": "The PC chose motion over certainty.",
+          "pressure_engine_ids": []
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 25 },
+          "chapter_question": "Can the PC clear the cargo before inspection hardens?",
+          "acceptable_resolutions": ["cargo moved", "inspection reframed", "clamp bypassed"],
+          "early_pressure": "The clamp timer counts down.",
+          "middle_pressure": "The scan creates a record.",
+          "late_pressure": "The release window expires.",
+          "close_when_any": ["cargo moved", "cargo marked", "clamp bypassed"],
+          "avoid_extending_for": ["extra timer ticks"]
+        },
+        "continuation_moves": {
+          "prior_chapter_meaning": "The PC accepted sealed cargo and left the dock.",
+          "larger_pattern_revealed": "Dock procedure can still reach cargo after departure.",
+          "institutional_scale_escalation": { "from": "private cargo acceptance", "to": "dock release control" },
+          "new_named_threat_from_prior_success": {
+            "name": "Inspector Hale",
+            "emerged_from": "the PC moving sealed freight",
+            "why_inevitable": "sealed freight attracts release authority"
+          },
+          "worsened_existing_thread": {
+            "thread_id": "thread_spine",
+            "prior_small_detail": "the cargo was sealed",
+            "why_load_bearing_now": "the seal makes scan authority matter"
+          },
+          "planted_midchapter_revelation": {
+            "hidden_statement": "Hale delayed the clamp manually.",
+            "recontextualizes": "The timer was not neutral procedure."
+          }
+        },
+        "continuation_dramatic_turn": {
+          "prior_chapter_meant": "The PC accepted sealed cargo and became subject to dock release procedure.",
+          "larger_pattern_revealed": "Cargo systems can keep pressing after a runner leaves.",
+          "pressure_owner": {
+            "id_or_new_bridge": "npc_hale",
+            "why_they_now_act": "The release window gives him a reason to inspect."
+          },
+          "human_leverage": {
+            "what_they_can_take_or_offer": "The clamp can release.",
+            "what_they_need_from_pc": "The PC must wait or scan."
+          },
+          "worsened_detail": {
+            "prior_detail": "The cargo was sealed.",
+            "why_it_is_load_bearing_now": "The seal needs a release code."
+          },
+          "offscreen_antagonist_presence": "The dock authority appears as a timer.",
+          "procedure_budget": {
+            "mechanism": "clamp release timer",
+            "owner_using_it": "none",
+            "dramatic_function": "The clamp releases after the countdown.",
+            "max_opening_beats": 1
+          }
+        },
+        "pressure_ladder": [
+          {
+            "id": "ladder_timer_low",
+            "pressure": "The timer drops below five minutes.",
+            "trigger_condition": "The PC waits without acting.",
+            "narrative_effect": "The scan becomes harder to avoid.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_trace_ready",
+            "pressure": "The scan trace arms.",
+            "trigger_condition": "The PC touches the console.",
+            "narrative_effect": "Cargo movement becomes recordable.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_window_expires",
+            "pressure": "The release window expires.",
+            "trigger_condition": "The clamp remains unresolved late.",
+            "narrative_effect": "The cargo is stuck under authority.",
+            "severity": "hard"
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_manual_delay",
+            "statement": "Hale delayed the clamp manually.",
+            "held_by": "npc_corro",
+            "emergence_condition": "Corro is pressed away from Hale.",
+            "recontextualizes": "The timer is not neutral.",
+            "hint_phrases": ["manual pause", "not automatic", "Hale's override"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["private_pressure"]
+          },
+          {
+            "id": "rev_owner_name",
+            "statement": "The cargo owner is already in the release log.",
+            "held_by": "npc_hale",
+            "emergence_condition": "The PC obtains the release log.",
+            "recontextualizes": "The dock knew more than it asked.",
+            "hint_phrases": ["owner field", "pre-filled", "not your manifest"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["documentary_surface"]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_speed_record",
+            "tension": "Speed versus record",
+            "side_a": "Scan and move.",
+            "side_b": "Wait and stay unmarked.",
+            "why_it_hurts": "Both let authority shape the cargo."
+          },
+          {
+            "id": "fault_witness_authority",
+            "tension": "Witness versus authority",
+            "side_a": "Trust Mira.",
+            "side_b": "Comply with Hale.",
+            "why_it_hurts": "Each can expose the other."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_public_scan",
+            "type": "institutional",
+            "condition": "The PC scans publicly.",
+            "consequence": "The cargo trace becomes official."
+          },
+          {
+            "id": "esc_witness_warns",
+            "type": "social",
+            "condition": "Mira sees hesitation.",
+            "consequence": "She offers a costly warning."
+          },
+          {
+            "id": "esc_hale_steps_in",
+            "type": "physical",
+            "condition": "The PC bypasses the console.",
+            "consequence": "Hale blocks the bay."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Dock clamps preserve authority after departure.",
+            "relevance_now": "The clamp keeps the cargo reachable.",
+            "delivery_method": "The console shows authority before cargo."
+          },
+          {
+            "item": "Release logs outlive spoken bargains.",
+            "relevance_now": "A scan creates durable evidence.",
+            "delivery_method": "Hale points to the log field."
+          }
+        ]
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 6,
+        "combinedErrorCount": 6,
+        "validationErrorIncludesAll": [
+          "pressure_ladder[1].trigger_condition is scene-coupled",
+          "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
+          "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
+          "procedure_gravity: immediate procedural choice needs a first human/institutional move",
+          "transition_seed.do_not_restage not reflected",
+          "transition_seed.procedure_residue clamp release timer marked constraint but opening restages it as an immediate choice"
+        ],
+        "combinedErrorIncludesAll": [
+          "pressure_ladder[1].trigger_condition is scene-coupled",
+          "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
+          "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
+          "procedure_gravity: immediate procedural choice needs a first human/institutional move",
+          "transition_seed.do_not_restage not reflected",
+          "transition_seed.procedure_residue clamp release timer marked constraint but opening restages it as an immediate choice"
+        ],
+        "threadCountEquals": 4,
+        "pacingTargetEquals": { "min": 18, "max": 25 }
+      }
+    }
+  }
+}

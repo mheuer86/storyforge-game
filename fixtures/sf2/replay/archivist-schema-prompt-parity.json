@@ -1,0 +1,25 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "archivist schema-prompt parity",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issues 4 and 13: prompt-required Archivist fields and protected payload rails must stay reflected in extract_turn schema."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Check schema parity.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on Archivist tool schema)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "archivistSchemaParity": {
+      "assertContract": true
+    }
+  }
+}

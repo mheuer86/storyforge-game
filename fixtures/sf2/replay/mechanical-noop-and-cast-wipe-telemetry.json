@@ -1,0 +1,133 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "mechanical no-op and cast-wipe telemetry",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 12: malformed Narrator mechanical effects must surface as invariant events, and scene cast wipes must produce next-turn recovery context."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Moth",
+            "affiliation": "Dockside",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Knows the underpass routes."],
+              "voice": {
+                "note": "Low, quick warnings.",
+                "register": "streetwise"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Moth, currently in the alley scene.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "alley",
+          "name": "Alley",
+          "description": "A narrow rain-bright alley.",
+          "atmosphericConditions": ["rain"],
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "alley",
+          "location": {
+            "id": "alley",
+            "name": "Alley",
+            "description": "A narrow rain-bright alley.",
+            "atmosphericConditions": ["rain"],
+            "chapterCreated": 1
+          },
+          "presentNpcIds": ["npc_moth"],
+          "timeLabel": "night",
+          "established": ["Moth is present."],
+          "firstTurnIndex": 0
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth"],
+          "surfaceNpcIds": ["npc_moth"]
+        }
+      }
+    },
+    "playerInput": "I sprint for the service tunnel.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "You break from the alley into the service tunnel. The rain noise drops behind you.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_moth"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "inventory_use",
+          "item": "Ghost Key"
+        },
+        {
+          "kind": "set_location"
+        },
+        {
+          "kind": "unmapped_effect"
+        },
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "scene_id": "service_tunnel",
+            "location_id": "service_tunnel",
+            "time_label": "night",
+            "established": ["You are in the service tunnel."]
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "creates": []
+      }
+    }
+  },
+  "expected": {
+    "currentSceneId": "service_tunnel",
+    "presentNpcIdsExact": [],
+    "invariantEventsInclude": [
+      "mechanical_effect_no_op",
+      "scene_snapshot_missing_present_npc_ids"
+    ],
+    "invariantEventDetailIncludes": [
+      {
+        "type": "mechanical_effect_no_op",
+        "detailIncludes": "inventory item unavailable"
+      },
+      {
+        "type": "mechanical_effect_no_op",
+        "detailIncludes": "set_location missing location_id"
+      },
+      {
+        "type": "mechanical_effect_no_op",
+        "detailIncludes": "unknown mechanical effect kind"
+      }
+    ],
+    "pendingCoherenceNotesInclude": ["cast_wipe"]
+  }
+}

@@ -54,7 +54,15 @@ export function applyMechanicalEffectLocally(
   } else if (kind === 'inventory_use') {
     const itemName = String(m.item ?? '')
     const item = state.player.inventory.find((it) => it.name === itemName)
-    if (item && item.qty > 0) item.qty -= 1
+    if (item && item.qty > 0) {
+      item.qty -= 1
+    } else {
+      emitMechanicalNoOp(invariantEvents, {
+        kind,
+        reason: 'inventory item unavailable',
+        item: itemName,
+      })
+    }
   } else if (kind === 'set_scene_snapshot') {
     const snap = m.snapshot as Record<string, unknown> | undefined
     if (snap) {
@@ -119,6 +127,10 @@ export function applyMechanicalEffectLocally(
           nextSceneId,
           action: 'cleared_cast_for_new_scene',
         }))
+        state.campaign.pendingCoherenceNotes = [
+          ...(state.campaign.pendingCoherenceNotes ?? []),
+          `[medium] cast_wipe (${nextSceneId}): Prior scene cast was cleared because set_scene_snapshot omitted present_npc_ids. Re-establish who is visibly present before using dialogue or direct action.`,
+        ].slice(-6)
       }
 
       const resolvedPresent = rawPresentNpcIds !== undefined
@@ -207,10 +219,21 @@ export function applyMechanicalEffectLocally(
       ) {
         state.world.sceneBundleCache = undefined
       }
+    } else {
+      emitMechanicalNoOp(invariantEvents, {
+        kind,
+        reason: 'set_scene_snapshot missing snapshot payload',
+      })
     }
   } else if (kind === 'set_location') {
     const locId = String(m.location_id ?? '')
-    if (!locId) return
+    if (!locId) {
+      emitMechanicalNoOp(invariantEvents, {
+        kind,
+        reason: 'set_location missing location_id',
+      })
+      return
+    }
     const proposed = {
       id: locId,
       name: String(m.name ?? locId.replace(/_/g, ' ')),
@@ -260,5 +283,20 @@ export function applyMechanicalEffectLocally(
       state.chapter.sceneSummaries.push(summary)
     }
     state.world.sceneBundleCache = undefined
+  } else {
+    emitMechanicalNoOp(invariantEvents, {
+      kind,
+      reason: 'unknown mechanical effect kind',
+    })
   }
+}
+
+function emitMechanicalNoOp(
+  invariantEvents: InvariantSink | undefined,
+  data: Record<string, unknown>
+): void {
+  invariantEvents?.push(makeInvariantEvent('mechanical_effect_no_op', {
+    detail: String(data.reason ?? 'mechanical effect no-op'),
+    ...data,
+  }))
 }

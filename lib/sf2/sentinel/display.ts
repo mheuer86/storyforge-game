@@ -123,6 +123,8 @@ const STAGE_LABEL_PATTERNS: readonly RegExp[] = [
 
 const DISPOSITION_PREDICATE_PATTERN =
   /\b(?:is|was|remains|stays|seems|feels|looks|reads as)\s+(?:still\s+)?(favorable|wary|hostile|trusted|neutral)\b/gi
+const SUGGESTED_ACTION_HEADER_PATTERN =
+  /(?:^|\n)\s*(?:-{3,}\s*)?(?:\*\*)?\s*Suggested actions:?\s*(?:\*\*)?\s*(?:\n|$)/i
 
 export interface ScanOptions {
   // Override the default action returned on finding. Useful for observe-mode
@@ -247,6 +249,30 @@ export function scanForFixtureLeaks(
 
   findings.sort((a, b) => a.matchStart - b.matchStart)
   return findings
+}
+
+export function scanForSuggestedActionLeaks(
+  prose: string,
+  options: ScanOptions = {}
+): Sf2DisplaySentinelFinding[] {
+  if (!prose || typeof prose !== 'string') return []
+  const match = prose.match(SUGGESTED_ACTION_HEADER_PATTERN)
+  if (!match || match.index === undefined) return []
+  const tail = prose.slice(match.index)
+  if (!/(?:^|\n)\s*[-*]\s+/.test(tail)) return []
+  const action = options.action ?? 'block_and_repair'
+  const severity = options.severity ?? 'hard'
+  return [
+    buildFinding(
+      prose,
+      match.index,
+      tail.length,
+      'Suggested actions',
+      severity,
+      action,
+      'suggested_action_leak'
+    ),
+  ]
 }
 
 // Present-tense dialogue verbs. Past-tense forms ('said', 'asked', etc.) are
@@ -616,6 +642,7 @@ export function scanDisplayOutput(
 ): Sf2DisplaySentinelFinding[] {
   const findings = scanForDebugLeaks(prose, options)
   findings.push(...scanForFixtureLeaks(prose, options.campaign, options))
+  findings.push(...scanForSuggestedActionLeaks(prose, options))
   findings.push(...scanForNarratorReveal(prose, options))
   if (options.locationContinuity) {
     findings.push(...scanForIllegalLocationTransition(prose, options.locationContinuity, options))
@@ -633,6 +660,30 @@ export function scanDisplayOutput(
 export function formatFinding(finding: Sf2DisplaySentinelFinding): string {
   const surface = finding.surface ? `"${finding.surface}"` : ''
   return `${finding.type}${surface ? ` ${surface}` : ''} @ ${finding.matchStart}: ${finding.evidence.slice(0, 80)}`
+}
+
+export function repairVisibleLeaks(
+  prose: string,
+  findings: Array<{ type: string; matchStart: number; matchEnd?: number; surface?: string }>
+): string {
+  const visibleLeakFindings = findings
+    .filter((finding) => finding.type === 'roll_value_leak' || finding.type === 'suggested_action_leak')
+    .sort((a, b) => b.matchStart - a.matchStart)
+  let repaired = prose
+  for (const finding of visibleLeakFindings) {
+    const start = finding.matchStart
+    if (start < 0 || start >= repaired.length) continue
+    const surface = finding.surface ?? ''
+    const fallbackEnd = finding.type === 'suggested_action_leak'
+      ? repaired.length
+      : start + surface.length
+    const end = Math.max(start, finding.matchEnd ?? fallbackEnd)
+    repaired = `${repaired.slice(0, start)}${repaired.slice(end)}`
+  }
+  return repaired
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function buildFinding(

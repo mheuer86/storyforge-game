@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "turn resolution stable json ignores key order",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 1: durable target mutation detection must use structural equality, not JSON insertion order."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I press the spine thread without changing anything durable.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "You press the point, but no durable fact changes yet.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "turnResolutionStableJson": {
+      "assertThreadKeyOrderIgnored": true
+    }
+  }
+}

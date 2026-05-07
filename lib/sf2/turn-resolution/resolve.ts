@@ -253,5 +253,21 @@ function overlaps(ids: Sf2EntityId[] | undefined, targets: Set<Sf2EntityId>): bo
 }
 
 function stableJson(value: unknown): string {
-  return JSON.stringify(value ?? null)
+  return JSON.stringify(sortForStableJson(value ?? null))
+}
+
+function sortForStableJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortForStableJson)
+  if (!value || typeof value !== 'object') return value
+  return Object.keys(value as Record<string, unknown>)
+    .sort()
+    .reduce<Record<string, unknown>>((sorted, key) => {
+      sorted[key] = sortForStableJson((value as Record<string, unknown>)[key])
+      return sorted
+    }, {})
+}
+
+export const __sf2TurnResolutionTestHooks = {
+  stableJson,
+  hasDurableTargetMutation,
 }

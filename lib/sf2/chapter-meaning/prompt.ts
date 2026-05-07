@@ -47,9 +47,28 @@ Each is ONE SENTENCE. Tight, weighted, distinct.
 
 ### What you emit
 
-Call the \`synthesize_chapter_meaning\` tool exactly once with the 5 elements plus one field:
+Call the \`synthesize_chapter_meaning\` tool exactly once with the 5 elements plus two fields:
 
 - **closingResolution**: from \`{clean, costly, failure, catastrophic, unresolved}\` — which outcome the chapter actually landed on per the spectrum. "unresolved" is legitimate when the chapter closed without a decisive landing (rare but real).
+- **transition_seed**: the practical handoff to the next Author. This is where poetic meaning becomes playable consequence.
+
+### Transition seed rules
+
+The transition seed is not another summary. It answers: what should the next chapter open from?
+
+- **prior_chapter_meant** — the durable meaning of the chapter in campaign terms.
+- **earned_consequence** — what the player earned the world to do next, through success, cost, failure, or unresolved pressure.
+- **pressure_owner_candidate** — the person, faction, institution, or role most likely to act next because of that consequence.
+- **worsened_detail** — a small prior detail that should become load-bearing next chapter.
+- **unresolved_question** — the question the next chapter cannot ignore.
+- **do_not_restage** — 2-5 prior mechanisms or milestones that must not become pending again.
+- **procedure_residue** — classify any formal mechanism that mattered. If the chapter involved a route milestone, access gate, legal record, diagnostic, countdown, audit, queue, or other procedure-like surface, name it here and choose how the next chapter should keep it:
+  - \`constraint\`: it happened or exists; it should prevent contradiction, not drive the opener.
+  - \`leverage\`: a person/faction can actively use it against the PC.
+  - \`background\`: it colors the world but should not be foregrounded.
+  - \`discard\`: it has served its purpose; do not carry it forward.
+
+Default away from procedure. A mechanism becomes next-chapter material only when someone can use it as leverage. A completed milestone, finished diagnostic, released constraint, or expired countdown should usually be \`constraint\` or \`background\`, not the next opener.
 
 That is the entire output.`
 

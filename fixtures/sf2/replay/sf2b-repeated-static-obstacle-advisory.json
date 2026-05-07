@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "sf2b repeated static obstacle advisory",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "SF2B repeated-beat detection should catch a generic static obstacle without depending on clamp or ship vocabulary."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_repeated_static_obstacle",
+        "experimentMode": "sf2b-hook",
+        "genreId": "noir"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Try the alley again.",
+            "narratorProse": "The alley remains blocked.",
+            "timestamp": "2026-05-05T11:00:00Z"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Look for a way through the alley.",
+            "narratorProse": "The alley remains blocked.",
+            "timestamp": "2026-05-05T11:01:00Z"
+          },
+          {
+            "index": 2,
+            "chapter": 1,
+            "playerInput": "Wait for the alley to clear.",
+            "narratorProse": "The alley remains blocked.",
+            "timestamp": "2026-05-05T11:02:00Z"
+          }
+        ]
+      }
+    },
+    "playerInput": "Try the alley one more time.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Try the alley one more time.",
+      "userMessageContainsAll": [
+        "Private turn-density advisory",
+        "static constraint"
+      ]
+    }
+  }
+}

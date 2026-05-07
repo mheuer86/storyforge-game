@@ -1,0 +1,89 @@
+SPACE OPERA
+HUMAN / DRIFTRUNNER
+CH.01
+The Forty Thousand Ask
+TURN 1
+MENU
+DRIFTRUNNER
+LV.1
+Codex
+Space Opera / Human
+9/9
+HP
+15
+SHLD
+120
+CRED
+0
+INSP
+GEAR
+01
+Pulse Pistol
+1D8 ENERGY
+Standard sidearm
+02
+Vibro-Knife
+1D4+DEX
+Compact blade with vibrating edge
+03
+Holo-Cloak
+CHARGES 1/1
+Advantage on Stealth checks
+04
+Lockbreaker Kit
+Electronic lock bypass tools
+PLAYBOOK SKILL
+1/1
+Smuggler's Luck
+Once per chapter, when caught, searched, or cornered, one contraband item or piece of evidence goes undetected. Luck has memory. Each use in the same port or with the same faction makes the next search more thorough.
+TURN 1
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+The strip-light above kiosk seven flickers twice, catches, holds. It's been doing that since you docked — three days ago, when the hold first appeared in your queue notification and you told yourself it was a processing error.
+
+It is not a processing error.
+
+The display reads 40,000 CR — ADMINISTRATIVE HOLD — DOCKING ARM 4 — CLAMP ACTIVE. Behind the scratched observation panel to your left, the Driftrunner sits exactly where you left her: sealed, grounded, going nowhere. The clamp housing on her forward strut has a green status light. Green means locked.
+
+Behind the kiosk window, Port Assessor Coll — Harrow Spur's procedural face for everything involving clamp authority on arm four — pulls up a second screen without looking at you. She's mid-fifties, uniform pressed out of habit rather than pride, and she has the particular stillness of someone who has explained fee codes to desperate people every day for twenty years and stopped feeling the weight of it around year three.
+
+"Hold reference four-dash-seven-nine-one." She reads it aloud even though you didn't ask. "Administrative. Forty thousand, two hundred credits. Fee cycle refreshes—" she checks the second screen— "in approximately four hours."
+
+Your comm has one unread message. Flagged urgent. Sender listed as The Sable Margin.
+
+You haven't opened it yet.
+TURN 1
+-
++2 INTEL
+/+HARROW SPUR — DOC...
+INVESTIGATION
+Ask Coll what 'administrative hold' actually means — who filed it and under what authority.
+ACTION
+Open the Sable Margin message now, here, in sight of the kiosk.
+ACTION
+Ask Coll whether a payment plan or partial deposit would pause the fee cycle clock.
+ACTION
+Say nothing to Coll. Step away from the kiosk window and read the message in private.
+>
+LOCATIONS
+Harrow Spur — Docking Arm 4, Clamp Kiosk
+HERE
+flickering strip-light
+Harrow Spur station concourse, docking arm four — cargo-side corridor outside the clamp authority kiosk.
+Recycled air, flickering strip-light, distant hull hum.
+PRESENT
+Coll
+Harrow Spur Port Authority
+NEUTRAL
+INTEL / CASE BOARD
+Clear the Forty-Thousand Hold
+SPINE
+1 CLUE
+Hold reference 4-791, 40,200 CR, filed as administrative hold on Docking Arm 4. Fee cycle refresh in approximately 4 hours.
+The Broker's Sealed Offer
+PRESSURE
+1 CLUE
+The Sable Margin sent an urgent message to the Driftrunner's comm. The message is unread.
+Who Filed the Hold?
+LEAD
+No attached clues yet.

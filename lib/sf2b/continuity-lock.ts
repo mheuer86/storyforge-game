@@ -14,8 +14,7 @@ export interface Sf2bContinuityLock {
     disposition: string
   }>
   locations: Array<{ id: Sf2EntityId; name: string; description?: string }>
-  routeFacts: string[]
-  cargoFacts: string[]
+  continuityFacets: Sf2bContinuityFacet[]
   unresolvedContacts: Array<{ id: Sf2EntityId; name: string; reason: string }>
   openPromises: Array<{ id: Sf2EntityId; ownerId: Sf2EntityId; obligation: string; anchoredTo: Sf2EntityId[] }>
   activeThreads: Array<{
@@ -38,8 +37,33 @@ export interface Sf2bContinuityLock {
   }
 }
 
-const ROUTE_RE = /\b(route|transit|jump|gate|corridor|port|dock|bay|tail|cutter|notch|carrow|redline)\b/i
-const CARGO_RE = /\b(cargo|crate|sealed|seal|manifest|redline|carrow|hold|container|shipment|freight)\b/i
+export interface Sf2bContinuityFacet {
+  id: string
+  label: string
+  facts: string[]
+  milestones: Sf2bContinuityMilestone[]
+}
+
+export interface Sf2bContinuityMilestone {
+  id: string
+  label: string
+  state: 'already_crossed'
+  source: string
+}
+
+interface ContinuityFacetDefinition {
+  id: string
+  label: string
+  factPattern: RegExp
+  deriveMilestones?: (facts: string[]) => Sf2bContinuityMilestone[]
+}
+
+const SPACE_OPERA_TRANSIT_RE = /\b(route|transit|jump|gate|corridor|port|dock|bay|tail|cutter|notch|carrow|redline)\b/i
+const SPACE_OPERA_CARRIED_OBJECT_RE = /\b(cargo|crate|sealed|seal|manifest|redline|carrow|hold|container|shipment|freight)\b/i
+const FORK_CROSSED_RE =
+  /(?:\b(?:after|past|beyond|through)\b.{0,80}\bfork\b|\bfork\b.{0,80}\b(?:behind|passed|crossed|taken|committed|executed|cleared|past)\b|\b(?:took|taken|crossed|passed|cleared|committed|executed|left|burned(?:\s+past)?)\b.{0,80}\bfork\b)/i
+const FORK_PENDING_RE =
+  /(?:\b(?:minutes?|seconds?|turns?)\b.{0,80}\b(?:from|to|before)\b.{0,80}\bfork\b|\bfork\b.{0,100}\b(?:coming up|ahead|queued|waiting|ready to execute|about to|approaching|approach|before|pending|commit to|heading change)\b|\b(?:approaching|before|from|to)\b.{0,80}\bfork\b)/i
 
 export function deriveSf2bContinuityLock(state: Sf2State): Sf2bContinuityLock {
   const currentTurn = state.history.turns.length
@@ -89,15 +113,13 @@ export function deriveSf2bContinuityLock(state: Sf2State): Sf2bContinuityLock {
     .map((loc) => ({ id: loc.id, name: loc.name, description: loc.description }))
 
   const factSources = collectFactSources(state)
-  const routeFacts = unique(factSources.filter((fact) => ROUTE_RE.test(fact))).slice(0, 8)
-  const cargoFacts = unique(factSources.filter((fact) => CARGO_RE.test(fact))).slice(0, 8)
+  const continuityFacets = deriveContinuityFacets(state, factSources)
 
   return {
     chapter: state.meta.currentChapter,
     canonicalNpcs,
     locations,
-    routeFacts,
-    cargoFacts,
+    continuityFacets,
     unresolvedContacts,
     openPromises: Object.values(state.campaign.promises)
       .filter((promise) => promise.status === 'active')
@@ -130,6 +152,7 @@ export function deriveSf2bContinuityLock(state: Sf2State): Sf2bContinuityLock {
 }
 
 export function renderSf2bContinuityLock(lock: Sf2bContinuityLock): string {
+  const allowedCarriedSourceIds = allowedSf2bCarriedSourceIds(lock)
   return `### SF2B canon continuity lock — hard constraints
 
 Treat these as established canon, not inspiration. You may time-jump, relocate, or add new pressure only if the chapter explicitly bridges from these facts.
@@ -137,15 +160,15 @@ Treat these as established canon, not inspiration. You may time-jump, relocate, 
 - Closing geometry: ${lock.closingGeometry.locationName} (${lock.closingGeometry.locationId}); time ${lock.closingGeometry.timeLabel || '(unspecified)'}; present NPC ids ${lock.closingGeometry.presentNpcIds.join(', ') || '(none)'}
 - Canonical NPCs: ${lock.canonicalNpcs.map((npc) => `${npc.id}=${npc.name} (${npc.role}, ${npc.affiliation}, ${npc.disposition})`).join('; ') || '(none)'}
 - Locked locations: ${lock.locations.map((loc) => `${loc.id}=${loc.name}`).join('; ') || '(none)'}
-- Route facts: ${lock.routeFacts.join(' | ') || '(none)'}
-- Cargo facts: ${lock.cargoFacts.join(' | ') || '(none)'}
+- Continuity facets: ${renderContinuityFacets(lock.continuityFacets)}
 - Unresolved contacts: ${lock.unresolvedContacts.map((contact) => `${contact.id}=${contact.name} (${contact.reason})`).join('; ') || '(none)'}
 - Open promises: ${lock.openPromises.map((promise) => `${promise.id} to ${promise.ownerId}: ${promise.obligation}`).join('; ') || '(none)'}
 - Active/load-bearing threads: ${lock.activeThreads.map((thread) => `${thread.id}="${thread.title}" t${thread.tension}${thread.loadBearing ? ' load-bearing' : ''}`).join('; ') || '(none)'}
+- Allowed carried tension_score source ids: ${allowedCarriedSourceIds.join(', ') || '(none)'}
 - Recent established facts: ${lock.closingGeometry.establishedFacts.join(' | ') || '(none)'}
 ${lock.closingGeometry.lastSceneSummary ? `- Last scene summary: ${lock.closingGeometry.lastSceneSummary}` : ''}
 
-Continuity law: do not replace a locked broker/contact, location, route/cargo fact, or unresolved pressure with a parallel equivalent. Reuse existing ids for carried NPCs/threads. If a new face or place enters, name which locked fact it follows from.`
+Continuity law: do not replace a locked broker/contact, location, continuity fact, continuity milestone, or unresolved pressure with a parallel equivalent. Reuse existing ids for carried NPCs/threads. If a continuity milestone is already_crossed, do not stage it as upcoming or pending; start after it or identify a different new choice. If \`tension_score.carried\` is true, its source id MUST be one of the allowed carried ids above. New NPCs or new pressures must set carried false. If a new face or place enters, name which locked fact it follows from.`
 }
 
 export function validateSf2bContinuityLockUsage(
@@ -174,29 +197,43 @@ export function validateSf2bContinuityLockUsage(
     errors.push(`continuity_lock.closing_geometry missing ${lock.closingGeometry.locationId} (${currentLocation}) bridge`)
   }
 
-  for (const fact of unique([...lock.routeFacts, ...lock.cargoFacts])) {
+  const lockedFacts = unique(lock.continuityFacets.flatMap((facet) => facet.facts))
+  for (const fact of lockedFacts) {
     const terms = importantTerms(fact)
     if (terms.length > 0 && !mentionsAny(haystack, terms)) {
       errors.push(`continuity_lock.fact missing bridge for "${fact}"`)
     }
   }
 
-  const carriedIds = new Set([
-    ...lock.unresolvedContacts.map((contact) => contact.id),
-    ...lock.loadBearingThreadIds,
-    ...lock.activeThreads.map((thread) => thread.id),
-  ])
+  for (const facet of lock.continuityFacets) {
+    for (const milestone of facet.milestones) {
+      if (milestoneRegressed(milestone, haystack)) {
+        errors.push(`continuity_lock.milestone regresses ${milestone.id}: ${milestone.label}; source "${milestone.source}" says it is already crossed`)
+      }
+    }
+  }
+
+  const allowedCarriedSourceIds = allowedSf2bCarriedSourceIds(lock)
+  const allowedCarriedSourceIdSet = new Set(allowedCarriedSourceIds)
   authored.tensionScore?.forEach((line, index) => {
     const sourceId = line.sourceEntityId || line.sourceThreadId
-    if (line.carried && (!sourceId || !carriedIds.has(sourceId))) {
-      errors.push(`tension_score[${index}] carried pressure must reference a locked existing entity/thread id`)
+    if (line.carried && (!sourceId || !allowedCarriedSourceIdSet.has(sourceId))) {
+      errors.push(`tension_score[${index}] carried pressure must reference a locked existing entity/thread id; allowed carried source ids: ${allowedCarriedSourceIds.join(', ') || '(none)'}`)
     }
-    if (sourceId && !carriedIds.has(sourceId) && line.carried) {
-      errors.push(`tension_score[${index}] source id ${sourceId} is not in the SF2B continuity lock`)
+    if (sourceId && !allowedCarriedSourceIdSet.has(sourceId) && line.carried) {
+      errors.push(`tension_score[${index}] source id ${sourceId} is not in the SF2B continuity lock; set carried=false for new pressure or use one of: ${allowedCarriedSourceIds.join(', ') || '(none)'}`)
     }
   })
 
   return errors
+}
+
+export function allowedSf2bCarriedSourceIds(lock: Sf2bContinuityLock): Sf2EntityId[] {
+  return unique([
+    ...lock.unresolvedContacts.map((contact) => contact.id),
+    ...lock.loadBearingThreadIds,
+    ...lock.activeThreads.map((thread) => thread.id),
+  ])
 }
 
 function npcContinuityRank(
@@ -214,8 +251,14 @@ function npcContinuityRank(
 
 function collectFactSources(state: Sf2State): string[] {
   const turns = state.history.turns.slice(-4)
+  const meaning = state.chapter.artifacts.meaning
   return [
     ...state.world.sceneSnapshot.established,
+    meaning?.situation,
+    meaning?.tension,
+    meaning?.ticking,
+    meaning?.question,
+    meaning?.closer,
     ...state.chapter.sceneSummaries.slice(-3).map((summary) => summary.summary),
     ...turns.flatMap((turn) => [turn.playerInput, turn.narratorProse]),
     state.campaign.operationPlan?.name,
@@ -226,6 +269,66 @@ function collectFactSources(state: Sf2State): string[] {
   ]
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .map((value) => value.trim())
+}
+
+function deriveContinuityFacets(state: Sf2State, factSources: string[]): Sf2bContinuityFacet[] {
+  return continuityFacetDefinitionsFor(state).map((definition) => {
+    const facts = unique(factSources.filter((fact) => definition.factPattern.test(fact))).slice(0, 8)
+    const milestones = definition.deriveMilestones?.(factSources) ?? []
+    return {
+      id: definition.id,
+      label: definition.label,
+      facts,
+      milestones,
+    }
+  }).filter((facet) => facet.facts.length > 0 || facet.milestones.length > 0)
+}
+
+function continuityFacetDefinitionsFor(state: Sf2State): ContinuityFacetDefinition[] {
+  if (state.meta.genreId !== 'space-opera') return []
+  return [
+    {
+      id: 'space_opera_transit_chronology',
+      label: 'Space-opera transit chronology',
+      factPattern: SPACE_OPERA_TRANSIT_RE,
+      deriveMilestones: deriveSpaceOperaTransitMilestones,
+    },
+    {
+      id: 'space_opera_carried_object_status',
+      label: 'Space-opera carried-object status',
+      factPattern: SPACE_OPERA_CARRIED_OBJECT_RE,
+    },
+  ]
+}
+
+function deriveSpaceOperaTransitMilestones(factSources: string[]): Sf2bContinuityMilestone[] {
+  const milestones: Sf2bContinuityMilestone[] = []
+  for (const fact of factSources) {
+    if (FORK_CROSSED_RE.test(fact)) {
+      milestones.push({
+        id: 'route_fork',
+        label: 'route fork already crossed/taken',
+        state: 'already_crossed',
+        source: compactFact(fact),
+      })
+    }
+  }
+  return uniqueByKey(milestones, (milestone) => `${milestone.id}:${milestone.state}`).slice(0, 4)
+}
+
+function renderContinuityFacets(facets: Sf2bContinuityFacet[]): string {
+  if (facets.length === 0) return '(none)'
+  return facets.map((facet) => {
+    const facts = facet.facts.join(' | ') || '(none)'
+    const milestones = facet.milestones
+      .map((milestone) => `${milestone.id}=${milestone.label} (${milestone.state}; source: ${milestone.source})`)
+      .join(' | ') || '(none)'
+    return `\n  - ${facet.label}: facts ${facts}; milestones ${milestones}`
+  }).join('')
+}
+
+function milestoneRegressed(milestone: Sf2bContinuityMilestone, haystack: string): boolean {
+  return milestone.id === 'route_fork' && milestone.state === 'already_crossed' && FORK_PENDING_RE.test(haystack)
 }
 
 function collectAuthoredText(authored: AuthorChapterSetupV2): string {
@@ -252,11 +355,26 @@ function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))]
 }
 
+function compactFact(value: string, max = 180): string {
+  const compacted = value.replace(/\s+/g, ' ').trim()
+  return compacted.length <= max ? compacted : `${compacted.slice(0, max - 1)}…`
+}
+
 function uniqueById<T extends { id: string }>(values: T[]): T[] {
   const seen = new Set<string>()
   return values.filter((value) => {
     if (!value.id || seen.has(value.id)) return false
     seen.add(value.id)
+    return true
+  })
+}
+
+function uniqueByKey<T>(values: T[], keyFor: (value: T) => string): T[] {
+  const seen = new Set<string>()
+  return values.filter((value) => {
+    const key = keyFor(value)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
     return true
   })
 }

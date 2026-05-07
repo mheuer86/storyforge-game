@@ -4,6 +4,7 @@ import {
 } from './disposition-defaults'
 import { CHAPTER_OPEN_CAP } from '../pressure/constants'
 import { normalizeThreadResolutionGates } from '../thread-resolution'
+import { PROCEDURE_NONE } from '../procedure'
 import { isSf2bState } from '../../sf2b/mode'
 import {
   deriveSf2bContinuityLock,
@@ -35,6 +36,22 @@ const TERMINAL_THREAD_STATUSES = new Set<Sf2ThreadStatus>([
   'abandoned',
 ])
 
+const BASE_PROCEDURE_GRAVITY_RE =
+  /\b(countdown|timer|minutes?|seconds?|percent(?:age)?|decryption|decrypt|unlock|lock|scan|sweep|passive|audit|query|warrant|protocol|queue|window|threshold|code|authorization)\b/i
+const PROCEDURE_GRAVITY_BY_GENRE: Record<string, RegExp> = {
+  'space-opera': /\b(clamp|release|manifest|fork|route|corridor|beacon|clearance)\b/i,
+  cyberpunk: /\b(daemon|ice|firewall|credential|credentialed|backdoor|trace|traceback|exploit|blackout)\b/i,
+  fantasy: /\b(ward|seal|rite|ritual|oath|geas|sigil|threshold|key|gate)\b/i,
+  grimdark: /\b(edict|tithe|seal|writ|ration|muster|purge|inquest|confession)\b/i,
+  noire: /\b(warrant|ledger|wire|tail|stakeout|alibi|booking|evidence|docket)\b/i,
+}
+const PROCEDURE_CHOICE_RE =
+  /\b(wait|read|answer|scan|clear|lock|unlock|decrypt|authorize|hold|release|route|reroute|file|confirm|query)\b/i
+const HUMAN_LEVERAGE_RE =
+  /\b(threats?|offers?|takes?|withholds?|exposes?|leverage|pressure|forces?|demands?|bargains?|trades?|promises?|costs?|authority|warrant|blackmail|protects?|betrays?|needs?|wants?|asks?|uses?)\b/i
+const SCENE_COUPLED_TRIGGER_RE =
+  /\b(room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive|record room|control room)\b/i
+
 export function validateChapterRaw(
   raw: Record<string, unknown>,
   ctx: AuthorRawValidationContext
@@ -63,6 +80,16 @@ export function validateChapterRaw(
   for (const key of ['location', 'atmospheric_condition', 'initial_state', 'first_player_facing', 'immediate_choice']) {
     const camel = key.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase())
     if (!stringField(opening, key, camel).trim()) errors.push(`opening_scene_spec.${key} is empty`)
+  }
+  if (ctx.isContinuation) {
+    for (const key of ['dramatic_situation', 'first_visible_pressure', 'first_human_or_institutional_move']) {
+      const camel = key.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase())
+      if (!stringField(opening, key, camel).trim()) errors.push(`opening_scene_spec.${key} is empty for chapter ≥ 2`)
+    }
+    if (stringArray(opening, 'do_not_restage', 'doNotRestage').length === 0) {
+      errors.push('opening_scene_spec.do_not_restage must list at least one prior mechanism/milestone for chapter ≥ 2')
+    }
+    errors.push(...validateRawContinuationDramaticTurn(raw))
   }
 
   const npcs = getArray(raw, 'starting_npcs', 'startingNPCs')
@@ -185,6 +212,26 @@ export function validateChapterRaw(
   return errors
 }
 
+export function validateAuthorToolInput(
+  raw: Record<string, unknown>,
+  ctx: AuthorRawValidationContext
+): string[] {
+  const rawErrors = validateChapterRaw(raw, ctx)
+  try {
+    const authored = normalizeAuthorSetup(raw)
+    const semanticErrors = validateAuthorSetup(authored, {
+      isContinuation: Boolean(ctx.isContinuation),
+      state: ctx.state,
+    })
+    return uniqueErrors([...rawErrors, ...semanticErrors])
+  } catch (error) {
+    return uniqueErrors([
+      ...rawErrors,
+      `author setup normalization failed: ${error instanceof Error ? error.message : String(error)}`,
+    ])
+  }
+}
+
 export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapterSetupV2 {
   const frame = getObject(raw, 'chapter_frame', 'chapterFrame')
   const antag = getObject(raw, 'antagonist_field', 'antagonistField')
@@ -198,6 +245,7 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
   const pacing = getObject(raw, 'pacing_contract', 'pacingContract')
   const targetTurns = getObject(pacing, 'target_turns', 'targetTurns')
   const continuation = getObject(raw, 'continuation_moves', 'continuationMoves')
+  const dramaticTurn = getObject(raw, 'continuation_dramatic_turn', 'continuationDramaticTurn')
   const continuationMoves =
     Object.keys(continuation).length > 0
       ? {
@@ -227,6 +275,34 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
                 pressure: stringField(getObject(continuation, 'relationship_deepening_target', 'relationshipDeepeningTarget'), 'pressure'),
               }
             : undefined,
+        }
+      : undefined
+  const continuationDramaticTurn =
+    Object.keys(dramaticTurn).length > 0
+      ? {
+          priorChapterMeant: stringField(dramaticTurn, 'prior_chapter_meant', 'priorChapterMeant'),
+          largerPatternRevealed: stringField(dramaticTurn, 'larger_pattern_revealed', 'largerPatternRevealed'),
+          pressureOwner: {
+            idOrNewBridge: stringField(getObject(dramaticTurn, 'pressure_owner', 'pressureOwner'), 'id_or_new_bridge', 'idOrNewBridge'),
+            whyTheyNowAct: stringField(getObject(dramaticTurn, 'pressure_owner', 'pressureOwner'), 'why_they_now_act', 'whyTheyNowAct'),
+          },
+          humanLeverage: {
+            whatTheyCanTakeOrOffer: stringField(getObject(dramaticTurn, 'human_leverage', 'humanLeverage'), 'what_they_can_take_or_offer', 'whatTheyCanTakeOrOffer'),
+            whatTheyNeedFromPc: stringField(getObject(dramaticTurn, 'human_leverage', 'humanLeverage'), 'what_they_need_from_pc', 'whatTheyNeedFromPc'),
+          },
+          worsenedDetail: {
+            priorDetail: stringField(getObject(dramaticTurn, 'worsened_detail', 'worsenedDetail'), 'prior_detail', 'priorDetail'),
+            whyItIsLoadBearingNow: stringField(getObject(dramaticTurn, 'worsened_detail', 'worsenedDetail'), 'why_it_is_load_bearing_now', 'whyItIsLoadBearingNow'),
+          },
+          offscreenAntagonistPresence: stringField(dramaticTurn, 'offscreen_antagonist_presence', 'offscreenAntagonistPresence'),
+          procedureBudget: {
+            mechanism: stringField(getObject(dramaticTurn, 'procedure_budget', 'procedureBudget'), 'mechanism'),
+            ownerUsingIt: stringField(getObject(dramaticTurn, 'procedure_budget', 'procedureBudget'), 'owner_using_it', 'ownerUsingIt'),
+            dramaticFunction: stringField(getObject(dramaticTurn, 'procedure_budget', 'procedureBudget'), 'dramatic_function', 'dramaticFunction'),
+            maxOpeningBeats: normalizeMaxOpeningBeats(
+              valueField(getObject(dramaticTurn, 'procedure_budget', 'procedureBudget'), 'max_opening_beats', 'maxOpeningBeats')
+            ),
+          },
         }
       : undefined
 
@@ -352,6 +428,7 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       avoidExtendingFor: stringArray(pacing, 'avoid_extending_for', 'avoidExtendingFor'),
     },
     continuationMoves,
+    continuationDramaticTurn,
     threadTransitions: getArray(raw, 'thread_transitions', 'threadTransitions').length > 0
       ? getArray(raw, 'thread_transitions', 'threadTransitions').map((t) => ({
           id: stringField(t, 'id'),
@@ -365,6 +442,10 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       initialState: stringField(opening, 'initial_state', 'initialState'),
       firstPlayerFacing: stringField(opening, 'first_player_facing', 'firstPlayerFacing'),
       immediateChoice: stringField(opening, 'immediate_choice', 'immediateChoice'),
+      dramaticSituation: stringField(opening, 'dramatic_situation', 'dramaticSituation') || undefined,
+      firstVisiblePressure: stringField(opening, 'first_visible_pressure', 'firstVisiblePressure') || undefined,
+      firstHumanOrInstitutionalMove: stringField(opening, 'first_human_or_institutional_move', 'firstHumanOrInstitutionalMove') || undefined,
+      doNotRestage: stringArray(opening, 'do_not_restage', 'doNotRestage'),
       noStartingCombat: Boolean(valueField(opening, 'no_starting_combat', 'noStartingCombat')),
       noExpositionDump: Boolean(valueField(opening, 'no_exposition_dump', 'noExpositionDump')),
       visibleNpcIds: Array.isArray(valueField(opening, 'visible_npc_ids', 'visibleNpcIds'))
@@ -465,9 +546,14 @@ export function validateAuthorSetup(
   if (!authored.arcLink.arcId.trim()) errors.push('arc_link.arc_id is empty')
   if (!authored.arcLink.chapterFunction.trim()) errors.push('arc_link.chapter_function is empty')
   if (!authored.pacingContract.chapterQuestion.trim()) errors.push('pacing_contract.chapter_question is empty')
-  if (authored.pacingContract.targetTurns.min < 1 || authored.pacingContract.targetTurns.max < authored.pacingContract.targetTurns.min) {
+  if (
+    authored.pacingContract.targetTurns.min < 12 ||
+    authored.pacingContract.targetTurns.max > 30 ||
+    authored.pacingContract.targetTurns.max < authored.pacingContract.targetTurns.min
+  ) {
     errors.push('pacing_contract.target_turns is invalid')
   }
+  errors.push(...validatePressureLadderDiscipline(authored))
 
   const tensionScoreState = opts.isContinuation && opts.state && isSf2bState(opts.state)
     ? opts.state
@@ -515,10 +601,217 @@ export function validateAuthorSetup(
         errors.push('continuation_moves.planted_midchapter_revelation.hidden_statement is empty')
       }
     }
+    errors.push(...validateContinuationDramaticTurn(authored))
+    errors.push(...validateProcedureGravity(authored, opts.state?.meta.genreId))
+    if (opts.state?.chapter?.artifacts?.meaning?.transitionSeed) {
+      errors.push(...validateTransitionSeedHonored(authored, opts.state.chapter.artifacts.meaning.transitionSeed))
+    }
   }
 
   return errors
 }
+
+function validatePressureLadderDiscipline(authored: AuthorChapterSetupV2): string[] {
+  const errors: string[] = []
+  const ladder = authored.pressureLadder
+  if (ladder.length > 0 && !ladder.some((step) => step.severity === 'hard')) {
+    errors.push('pressure_ladder must include at least one hard-severity rung')
+  }
+
+  ladder.forEach((step, i) => {
+    const trigger = step.triggerCondition ?? ''
+    if (SCENE_COUPLED_TRIGGER_RE.test(trigger)) {
+      errors.push(`pressure_ladder[${i}].trigger_condition is scene-coupled; bind it to an entity-level action instead`)
+    }
+  })
+  return errors
+}
+
+function validateRawContinuationDramaticTurn(raw: Record<string, unknown>): string[] {
+  const errors: string[] = []
+  const turn = getObject(raw, 'continuation_dramatic_turn', 'continuationDramaticTurn')
+  if (Object.keys(turn).length === 0) {
+    return ['continuation_dramatic_turn is missing (required for chapter ≥ 2)']
+  }
+  for (const key of ['prior_chapter_meant', 'larger_pattern_revealed', 'offscreen_antagonist_presence']) {
+    const camel = key.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase())
+    if (!stringField(turn, key, camel).trim()) errors.push(`continuation_dramatic_turn.${key} is empty`)
+  }
+  const owner = getObject(turn, 'pressure_owner', 'pressureOwner')
+  if (!stringField(owner, 'id_or_new_bridge', 'idOrNewBridge').trim() || !stringField(owner, 'why_they_now_act', 'whyTheyNowAct').trim()) {
+    errors.push('continuation_dramatic_turn.pressure_owner requires id_or_new_bridge and why_they_now_act')
+  }
+  const leverage = getObject(turn, 'human_leverage', 'humanLeverage')
+  if (!stringField(leverage, 'what_they_can_take_or_offer', 'whatTheyCanTakeOrOffer').trim() || !stringField(leverage, 'what_they_need_from_pc', 'whatTheyNeedFromPc').trim()) {
+    errors.push('continuation_dramatic_turn.human_leverage requires what_they_can_take_or_offer and what_they_need_from_pc')
+  }
+  const detail = getObject(turn, 'worsened_detail', 'worsenedDetail')
+  if (!stringField(detail, 'prior_detail', 'priorDetail').trim() || !stringField(detail, 'why_it_is_load_bearing_now', 'whyItIsLoadBearingNow').trim()) {
+    errors.push('continuation_dramatic_turn.worsened_detail requires prior_detail and why_it_is_load_bearing_now')
+  }
+  const budget = getObject(turn, 'procedure_budget', 'procedureBudget')
+  if (!stringField(budget, 'mechanism').trim() || !stringField(budget, 'owner_using_it', 'ownerUsingIt').trim() || !stringField(budget, 'dramatic_function', 'dramaticFunction').trim()) {
+    errors.push('continuation_dramatic_turn.procedure_budget requires mechanism, owner_using_it, and dramatic_function')
+  }
+  if (isInvalidMaxOpeningBeats(valueField(budget, 'max_opening_beats', 'maxOpeningBeats'))) {
+    errors.push('continuation_dramatic_turn.procedure_budget.max_opening_beats must be 0 or 1')
+  }
+  return errors
+}
+
+function validateContinuationDramaticTurn(authored: AuthorChapterSetupV2): string[] {
+  const errors: string[] = []
+  const turn = authored.continuationDramaticTurn
+  if (!turn) {
+    return ['continuation_dramatic_turn is missing (required for chapter ≥ 2)']
+  }
+  if (!turn.priorChapterMeant.trim()) errors.push('continuation_dramatic_turn.prior_chapter_meant is empty')
+  if (!turn.largerPatternRevealed.trim()) errors.push('continuation_dramatic_turn.larger_pattern_revealed is empty')
+  if (!turn.pressureOwner.idOrNewBridge.trim() || !turn.pressureOwner.whyTheyNowAct.trim()) {
+    errors.push('continuation_dramatic_turn.pressure_owner requires id_or_new_bridge and why_they_now_act')
+  }
+  if (!turn.humanLeverage.whatTheyCanTakeOrOffer.trim() || !turn.humanLeverage.whatTheyNeedFromPc.trim()) {
+    errors.push('continuation_dramatic_turn.human_leverage requires what_they_can_take_or_offer and what_they_need_from_pc')
+  }
+  if (!turn.worsenedDetail.priorDetail.trim() || !turn.worsenedDetail.whyItIsLoadBearingNow.trim()) {
+    errors.push('continuation_dramatic_turn.worsened_detail requires prior_detail and why_it_is_load_bearing_now')
+  }
+  if (!turn.offscreenAntagonistPresence.trim()) errors.push('continuation_dramatic_turn.offscreen_antagonist_presence is empty')
+  if (!turn.procedureBudget.mechanism.trim() || !turn.procedureBudget.ownerUsingIt.trim() || !turn.procedureBudget.dramaticFunction.trim()) {
+    errors.push('continuation_dramatic_turn.procedure_budget requires mechanism, owner_using_it, and dramatic_function')
+  }
+  if (isInvalidMaxOpeningBeats(turn.procedureBudget.maxOpeningBeats)) {
+    errors.push('continuation_dramatic_turn.procedure_budget.max_opening_beats must be 0 or 1')
+  }
+  const opening = authored.openingSceneSpec
+  if (!opening.dramaticSituation?.trim()) errors.push('opening_scene_spec.dramatic_situation is empty for chapter ≥ 2')
+  if (!opening.firstVisiblePressure?.trim()) errors.push('opening_scene_spec.first_visible_pressure is empty for chapter ≥ 2')
+  if (!opening.firstHumanOrInstitutionalMove?.trim()) errors.push('opening_scene_spec.first_human_or_institutional_move is empty for chapter ≥ 2')
+  if (!opening.doNotRestage || opening.doNotRestage.length === 0) {
+    errors.push('opening_scene_spec.do_not_restage must list at least one prior mechanism/milestone for chapter ≥ 2')
+  }
+  return errors
+}
+
+function procedureGravityForGenre(genreId?: string | null): RegExp[] {
+  const genrePattern = genreId ? PROCEDURE_GRAVITY_BY_GENRE[genreId] : undefined
+  return genrePattern ? [BASE_PROCEDURE_GRAVITY_RE, genrePattern] : [BASE_PROCEDURE_GRAVITY_RE]
+}
+
+function validateProcedureGravity(authored: AuthorChapterSetupV2, genreId?: string | null): string[] {
+  const opening = authored.openingSceneSpec
+  const openingText = [
+    opening.location,
+    opening.atmosphericCondition,
+    opening.initialState,
+    opening.firstPlayerFacing,
+    opening.immediateChoice,
+    opening.dramaticSituation,
+    opening.firstVisiblePressure,
+    opening.firstHumanOrInstitutionalMove,
+    authored.chapterFrame.premise,
+    authored.chapterFrame.activePressure,
+    authored.chapterFrame.centralTension,
+  ].filter(Boolean).join('\n')
+  if (!procedureGravityForGenre(genreId).some((pattern) => pattern.test(openingText))) return []
+
+  const turn = authored.continuationDramaticTurn
+  if (!turn) return []
+
+  const budgetText = [
+    turn.procedureBudget.mechanism,
+    turn.procedureBudget.ownerUsingIt,
+    turn.procedureBudget.dramaticFunction,
+    turn.humanLeverage.whatTheyCanTakeOrOffer,
+    turn.humanLeverage.whatTheyNeedFromPc,
+    opening.firstHumanOrInstitutionalMove,
+  ].join('\n')
+  const errors: string[] = []
+  if (!turn.procedureBudget.ownerUsingIt.trim() || turn.procedureBudget.ownerUsingIt.trim().toLowerCase() === PROCEDURE_NONE) {
+    errors.push('procedure_gravity: procedural opener must name who uses the mechanism for leverage')
+  }
+  if (!turn.procedureBudget.dramaticFunction.trim() || !HUMAN_LEVERAGE_RE.test(budgetText)) {
+    errors.push('procedure_gravity: procedural opener must state the human leverage or irreversible choice the mechanism creates')
+  }
+  if (isInvalidMaxOpeningBeats(turn.procedureBudget.maxOpeningBeats)) {
+    errors.push('procedure_gravity: procedural mechanism may occupy at most one opening beat')
+  }
+  if (PROCEDURE_CHOICE_RE.test(opening.immediateChoice) && !HUMAN_LEVERAGE_RE.test(opening.firstHumanOrInstitutionalMove ?? '')) {
+    errors.push('procedure_gravity: immediate procedural choice needs a first human/institutional move that changes leverage')
+  }
+  return errors
+}
+
+function validateTransitionSeedHonored(
+  authored: AuthorChapterSetupV2,
+  seed: NonNullable<Sf2State['chapter']['artifacts']['meaning']>['transitionSeed']
+): string[] {
+  if (!seed) return []
+  const errors: string[] = []
+  const authoredDoNotRestage = (authored.openingSceneSpec.doNotRestage ?? []).join('\n')
+  if (
+    seed.doNotRestage.length > 0 &&
+    !seed.doNotRestage.some((item) => hasMeaningfulOverlap(item, authoredDoNotRestage))
+  ) {
+    errors.push('transition_seed.do_not_restage not reflected in opening_scene_spec.do_not_restage')
+  }
+
+  const mechanism = seed.procedureResidue.mechanism.trim()
+  if (!mechanism || mechanism.toLowerCase() === PROCEDURE_NONE) return errors
+
+  const openingChoiceText = [
+    authored.openingSceneSpec.immediateChoice,
+    authored.openingSceneSpec.firstPlayerFacing,
+    authored.openingSceneSpec.firstVisiblePressure,
+  ].filter(Boolean).join('\n')
+  const openingFullText = [
+    openingChoiceText,
+    authored.openingSceneSpec.initialState,
+    authored.openingSceneSpec.dramaticSituation,
+    authored.openingSceneSpec.firstHumanOrInstitutionalMove,
+  ].filter(Boolean).join('\n')
+  const budget = authored.continuationDramaticTurn?.procedureBudget
+  const budgetText = budget ? [budget.mechanism, budget.ownerUsingIt, budget.dramaticFunction].join('\n') : ''
+
+  if (seed.procedureResidue.keepAs === 'leverage') {
+    if (!budget || !hasMeaningfulOverlap(mechanism, budgetText) || budget.ownerUsingIt.trim().toLowerCase() === PROCEDURE_NONE) {
+      errors.push(`transition_seed.procedure_residue ${mechanism} marked leverage but continuation_dramatic_turn.procedure_budget does not assign it to a pressure owner`)
+    }
+  } else if (hasMeaningfulOverlap(mechanism, openingChoiceText)) {
+    errors.push(`transition_seed.procedure_residue ${mechanism} marked ${seed.procedureResidue.keepAs} but opening restages it as an immediate choice`)
+  } else if (seed.procedureResidue.keepAs === 'discard' && hasMeaningfulOverlap(mechanism, openingFullText)) {
+    errors.push(`transition_seed.procedure_residue ${mechanism} marked discard but opening still foregrounds it`)
+  }
+
+  return errors
+}
+
+function hasMeaningfulOverlap(source: string, target: string): boolean {
+  const targetLower = target.toLowerCase()
+  return meaningfulTerms(source).some((term) => targetLower.includes(term))
+}
+
+function meaningfulTerms(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s_-]/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 4 && !COMMON_TERMS.has(term))
+}
+
+const COMMON_TERMS = new Set([
+  'chapter',
+  'prior',
+  'scene',
+  'opening',
+  'pressure',
+  'detail',
+  'cargo',
+  'sealed',
+  'choice',
+  'route',
+])
 
 function valueField(obj: Record<string, unknown> | undefined, snake: string, camel?: string): unknown {
   if (!obj) return undefined
@@ -537,6 +830,20 @@ function optionalPositiveInt(value: unknown): number | undefined {
   const n = Number(value)
   if (!Number.isFinite(n)) return undefined
   return Math.max(0, Math.round(n))
+}
+
+function normalizeMaxOpeningBeats(value: unknown): number {
+  const n = Number(value ?? 1)
+  return Number.isFinite(n) ? n : Number.NaN
+}
+
+function isInvalidMaxOpeningBeats(value: unknown): boolean {
+  const n = Number(value)
+  return !Number.isFinite(n) || !Number.isInteger(n) || n < 0 || n > 1
+}
+
+function uniqueErrors(errors: string[]): string[] {
+  return [...new Set(errors)]
 }
 
 function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThreads'][number]['driverKind'] {

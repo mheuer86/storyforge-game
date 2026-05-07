@@ -114,6 +114,9 @@ export function renderSceneBundle(
     const p = packet.chapter.pacingContract
     lines.push(`- Pacing target: resolve "${p.chapterQuestion}" in ${p.targetTurns.min}-${p.targetTurns.max} turns`)
   }
+  if (packet.chapter.continuationDramaticTurn) {
+    lines.push(renderContinuationDramaticTurn(packet.chapter.continuationDramaticTurn))
+  }
 
   if (packet.cast.length > 0) {
     lines.push(`\n### Cast on-stage (identity — stable within scene)`)
@@ -553,6 +556,9 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     const p = packet.chapter.pacingContract
     lines.push(`- Pacing target: resolve "${p.chapterQuestion}" in ${p.targetTurns.min}-${p.targetTurns.max} turns`)
   }
+  if (packet.chapter.continuationDramaticTurn) {
+    lines.push(renderContinuationDramaticTurn(packet.chapter.continuationDramaticTurn))
+  }
 
   if (packet.mechanics.activeModules.length > 0) {
     lines.push(`\n### Mechanics active`)
@@ -590,6 +596,23 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
   }
 
   return lines.join('\n')
+}
+
+function renderContinuationDramaticTurn(turn: NonNullable<Sf2NarratorScenePacket['chapter']['continuationDramaticTurn']>): string {
+  const procedure =
+    turn.procedureBudget.mechanism.toLowerCase() === 'none'
+      ? 'none'
+      : `${turn.procedureBudget.mechanism}; owner: ${turn.procedureBudget.ownerUsingIt}; function: ${turn.procedureBudget.dramaticFunction}; max opening beats: ${turn.procedureBudget.maxOpeningBeats}`
+  return [
+    `\n### Continuation dramatic turn (play this, not the procedure)`,
+    `- Prior chapter meant: ${turn.priorChapterMeant}`,
+    `- Larger pattern: ${turn.largerPatternRevealed}`,
+    `- Pressure owner: ${turn.pressureOwner.idOrNewBridge} — ${turn.pressureOwner.whyTheyNowAct}`,
+    `- Human leverage: can take/offer ${turn.humanLeverage.whatTheyCanTakeOrOffer}; needs ${turn.humanLeverage.whatTheyNeedFromPc}`,
+    `- Worsened detail: ${turn.worsenedDetail.priorDetail} — ${turn.worsenedDetail.whyItIsLoadBearingNow}`,
+    `- Offscreen antagonist presence: ${turn.offscreenAntagonistPresence}`,
+    `- Procedure budget: ${procedure}`,
+  ].join('\n')
 }
 
 // Render campaign lexicon as a compact block. Returns empty string when no

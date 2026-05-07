@@ -9,6 +9,7 @@
 //   PER-TURN    — uncached registry + prose (BP4)
 
 import type { Sf2State } from '../types'
+import { containsAnonymousMarker } from '../anonymous-placeholders'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE: who you are, what you don't do. Session-scoped.
@@ -235,14 +236,15 @@ A **clue is NOT** a present-moment sensory observation, body-language read, or a
 
 If prose produces both a tempLoad observation AND a structural fact, emit both.
 
-### Critical operational facts
+### Continuity-critical operational facts
 
-Some world facts are mechanically small but continuity-critical. When prose states one of these, emit a high-confidence clue unless an existing clue already says the same thing:
+Some world facts are mechanically small but continuity-critical. Emit a high-confidence clue when prose states a concrete operational result that changes future options and no existing clue already preserves the same fact.
 
-- **Clearance/hold/lien/clamp status** — a ship hold is lifted, a lien is cleared, clamps release, clearance is authorized, an override is filed, or the terms of that clearance change.
-- **Diagnostics/readouts/scans** — a diagnostic, sensor, telemetry, port reading, or scan returns a concrete result, especially life signs, respiration, thermal/moisture cycles, pressure readings, or cargo/passenger status.
+- **Access or movement status** — a hold, lien, route, warrant, ward, lock, passage, or authorization changes state.
+- **Carried-object or custody status** — cargo, evidence, passenger, relic, cache, or record changes who controls it or what can happen to it.
+- **Concrete readouts or diagnostics** — a sensor, inspection, magical test, medical check, or ledger comparison returns an actionable result.
 
-These are not atmosphere. They are durable operational state. If you skip them, the next Narrator may contradict a fact the player already saw.
+These are not atmosphere when they change what later play can contradict. Do not turn ambient monitors, routine scan language, or present-moment color into clues just because they sound technical.
 
 **Cap: at most 2 new clues per turn under normal play.** A turn that genuinely surfaces 3+ structural facts is rare (revelation moment). 4+ clues means you're treating tempLoad as clues — demote.
 
@@ -317,11 +319,11 @@ Tension tracks *progress toward resolution or failure*, not how kinetic the pros
 ## Agenda movement and chapter pressure
 
 When an NPC or faction changes what it is actively doing, emit an \`updates\` write with \`changes.agenda.current_move\`.
-Add \`changes.agenda_severity: "major"\` only when that move is decisive: a new enforcement action, a public commitment, a revealed betrayal, an irreversible procedural step, or a direct move against a chapter-driving thread. Ordinary repositioning, waiting, probing, deflecting, or restating existing intent is \`standard\` or omitted.
+Add \`changes.agenda_severity: "major"\` only when that move is decisive: a new enforcement action, a public commitment, a revealed betrayal, an irreversible formal step, or a direct move against a chapter-driving thread. Ordinary repositioning, waiting, probing, deflecting, or restating existing intent is \`standard\` or omitted.
 
 ## Lexicon capture
 
-The Narrator occasionally coins a phrase that nails the world's institutional voice — a bureaucratic euphemism, a procedural formula, a register-perfect coinage. Capture sparingly: at most 1 per turn, most turns produce zero.
+The Narrator occasionally coins a phrase that nails the world's institutional or genre voice — an official euphemism, a ritual formula, a street phrase, a register-perfect coinage. Capture sparingly: at most 1 per turn, most turns produce zero.
 
 Capture only when:
 - Specific (not a generic noun).
@@ -368,11 +370,11 @@ If you emit a reveal without enough prior hints or in the wrong context, the sys
 - \`unpaid_promise\` — PC committed to something that must be honored later
 - \`null\` — clean closure with no forward pull (avoid; flag as scene-link-break)
 
-## Documents (writs, orders, records, petitions — anything with attribution)
+## Documents (writs, orders, records, manifests — only when attribution matters)
 
-When prose introduces a named artifact whose authority, contents, or signers carry weight in the fiction, create a \`document\`. Documents are first-class because their attribution drifts under normal play — across turns, the Narrator forgets which writ was signed by whom and substitutes "the system" for actual signers. Canonicalizing them prevents that drift.
+When prose introduces a named artifact whose authority, contents, or signers carry weight in future play, create a \`document\`. Documents are first-class because attribution can drift under normal play — across turns, the Narrator forgets who authorized what and substitutes "the system" for actual actors. Canonicalizing them prevents that drift.
 
-**Artifact-noun gate (high precision required).** Only create a document when prose names an actual artifact-noun: writ, petition, charter, summons, decree, order, transfer, discharge, manifest, ledger entry, court record, dossier, memo, dispatch, license, warrant, registry entry, mandate. Casual phrases like "she signed off on it" or "the agreement they made" do NOT meet the gate — those are decisions or promises, not documents.
+**Artifact-noun gate (high precision required).** Only create a document when prose names an actual artifact-noun whose terms or provenance matter: writ, petition, charter, summons, decree, order, transfer, discharge, manifest, ledger entry, court record, dossier, memo, dispatch, license, warrant, registry entry, mandate. Casual phrases like "she signed off on it" or "the agreement they made" do NOT meet the gate — those are decisions or promises, not documents.
 
 **Required fields.** \`type\` (closed enum: authorization | directive | communication | record | petition | notation), \`kind_label\` (the genre-flavor noun the prose used: "writ", "transfer order", "court summons"), \`authorizes\` (one-line: what it permits/commands/attests/requests), \`subject_entity_ids\` (≥1 npc or faction the document concerns), \`original_summary\` (the canonical terms at issuance — locked, drift detection compares prose claims to this baseline).
 
@@ -390,7 +392,7 @@ Apply-patch rejects invalid transitions (a record cannot be revoked; a communica
 
 **Attribution is also locked baseline.** Do NOT update \`filed_by\`, \`signed_by\`, \`type\`, or \`original_summary\` via \`updates\`. To change attribution, create a successor document and transition the old one to superseded. This preserves the canonical record of who originally authorized what — drift detection's whole job depends on that baseline.
 
-**Documents and clues.** Discovering a document IS often a clue (the PC found the writ). Emit both: the \`document\` records the artifact's existence + provenance in the world; the \`clue\` records what the PC knows about it (which can be partial, wrong, or sharpening across turns). Cross-reference via \`clue_ids\` on the document update.
+**Documents and clues.** Discovering a document can also be a clue. Emit both only when the artifact's existence/provenance matters as canon AND the PC learned an actionable fact from it. The \`document\` records the artifact in the world; the \`clue\` records what the PC knows about it, which can be partial, wrong, or sharpened across turns. Cross-reference via \`clue_ids\` on the document update.
 
 Worked example. Prose: *"Tam shows you his transfer order, dated three weeks back. Stamped 'Filed under Warden Hess,' with the Factor's seal beneath."* Emit:
 \`\`\`json
@@ -497,12 +499,10 @@ export function buildArchivistTurnMessage(
   // - anonymous marker: signals which on-stage NPCs are placeholders that
   //   should be merged-into rather than parallel-created
   const presentNpcIdSet = new Set(state.world.sceneSnapshot.presentNpcIds)
-  const ANONYMOUS_MARKERS = ['unknown', 'unnamed', 'unidentified', 'younger man', 'young man', 'girl', 'boy', 'elder', 'aide']
   const npcs = Object.values(campaign.npcs)
     .map((n) => {
       const onStage = presentNpcIdSet.has(n.id) ? ' · ON-STAGE' : ''
-      const haystack = `${n.name} ${n.role} ${n.retrievalCue}`.toLowerCase()
-      const isAnonymous = ANONYMOUS_MARKERS.some((m) => haystack.includes(m))
+      const isAnonymous = containsAnonymousMarker(`${n.name} ${n.role} ${n.retrievalCue}`, state.meta.genreId)
       const anonymous = isAnonymous ? ' · ANONYMOUS-PLACEHOLDER' : ''
       const pronoun = n.identity.pronoun ? ` · pronoun: ${n.identity.pronoun}` : ''
       const age = n.identity.age ? ` · age: ${n.identity.age}` : ''

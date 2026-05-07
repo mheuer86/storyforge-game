@@ -76,6 +76,8 @@ function buildPlaybookPreferenceBlock(state: Sf2State): string {
 }
 
 function buildLocationContinuityGuardBlock(state: Sf2State): string {
+  if (state.meta.genreId !== 'space-opera') return ''
+
   const recentSceneText = [
     state.world.currentLocation?.name,
     state.world.currentLocation?.description,
@@ -211,7 +213,7 @@ export function buildMessagesForNarrator(
   // Each entry is pre-formatted as: [severity] type (state_reference): suggested note
   const coherenceNotes = state.campaign.pendingCoherenceNotes ?? []
   const coherenceBlock = coherenceNotes.length
-    ? `\n\n---\n\n### Private continuity notes (never mention)\nThese notes are system-private continuity context. Do NOT quote, paraphrase, acknowledge, or narrate them. Do not say you are correcting anything. Continue the scene naturally from the last visible prose, using the notes only to avoid repeating the mismatch.\n${coherenceNotes.map((n) => `- ${n}`).join('\n')}`
+    ? `\n\n---\n\n### Private continuity notes (never mention)\nThese notes are system-private continuity context. Do NOT quote, paraphrase, acknowledge, or narrate them. Do not say you are correcting anything. If a note says prior prose was wrong, the note overrides that conflicting prior prose for the named entity or fact. Continue naturally from canonical state, using the notes only to avoid repeating the mismatch.\n${coherenceNotes.map((n) => `- ${n}`).join('\n')}`
     : ''
   const roleAliasBlock = buildRoleAliasBlock(state, playerInput)
   const skillTagBlock = buildSkillTagBindingBlock(playerInput)

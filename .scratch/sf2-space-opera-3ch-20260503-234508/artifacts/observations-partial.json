@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ch1-state-drift-timestamp-jurisdiction-obscured-after-revealed",
+    "chapter": 1,
+    "turn": 4,
+    "category": "state drift / missed write consolidation",
+    "evidenceFile": "chapter-01-turn-04.txt",
+    "summary": "Turn 3 persuasion success revealed filing timestamp 0217 and Harrow Spur Commercial Registry jurisdiction, but Turn 4 Who Filed the Hold thread still says filing timestamp and reference jurisdiction remain obscured."
+  },
+  {
+    "id": "ch1-thread-not-updated-message-unread-after-read",
+    "chapter": 1,
+    "turn": 5,
+    "category": "missed write / state drift",
+    "evidenceFile": "chapter-01-turn-05.txt",
+    "summary": "Turn 5 reads the Sable Margin message and extracts timestamp/exact hold amount, but The Broker's Sealed Offer thread still retains the old clue \"message is unread\"."
+  },
+  {
+    "id": "ch1-duplicate-stale-hold-details-across-threads",
+    "chapter": 1,
+    "turn": 5,
+    "category": "duplicate facts / stale thread text",
+    "evidenceFile": "chapter-01-turn-05.txt",
+    "summary": "Case board contains multiple variants of the hold filing fact; some say filing timestamp/details remain unread or obscured while newer clues establish 0217 and Harrow Spur Commercial Registry."
+  },
+  {
+    "id": "ch1-location-duplicate-normalization-docking-arm4-corridor",
+    "chapter": 1,
+    "turn": 8,
+    "category": "duplicate entities / location normalization",
+    "evidenceFile": "chapter-01-turn-08.txt",
+    "summary": "Moving to the cargo corridor created/displayed inconsistent location names: heading \"HARROW SPUR DOCKING ARM4 CORRIDOR\", location list \"harrow spur docking arm4 corridor\" and \"Harrow Spur — Docking Arm 4, Cargo-Side Corridor\"."
+  },
+  {
+    "id": "ch1-hatch-sealant-clue-not-visible-in-case-board",
+    "chapter": 1,
+    "turn": 10,
+    "category": "missed write / retrieval surface",
+    "evidenceFile": "chapter-01-turn-10.txt",
+    "summary": "Perception success establishes sealed cargo was placed in the corridor tonight via side-access bypass with sealant matching a pipe joint, but visible case board remains limited to hold/broker threads and does not show a cargo/hatch clue."
+  },
+  {
+    "id": "ch1-data-core-thread-created-without-clues",
+    "chapter": 1,
+    "turn": 12,
+    "category": "missed write / thread transition",
+    "evidenceFile": "chapter-01-turn-12.txt",
+    "summary": "Turn 12 reveals/accepts the data-core job, Veyne wants it back, and dead-drop destination, but new \"Deliver the Data Core to Dead-Drop\" thread appears with no attached clues while prior broker thread is removed/decremented."
+  },
+  {
+    "id": "ch1-clear-hold-thread-removed-before-release-processed",
+    "chapter": 1,
+    "turn": 13,
+    "category": "premature thread resolution / state drift",
+    "evidenceFile": "chapter-01-turn-13.txt",
+    "summary": "After Lira explains the release chip but before the player returns to Coll or processes it, the visible \"Clear the Forty-Thousand Hold\" spine disappears/decrements heavily, making the hold look resolved before the fiction actually clears it."
+  },
+  {
+    "id": "ch1-vayne-departure-monitor-thread-empty-after-reveal",
+    "chapter": 1,
+    "turn": 17,
+    "category": "missed write / thread creation",
+    "evidenceFile": "chapter-01-turn-17.txt",
+    "summary": "Perception success reveals Coll notified Sev Anrath / Veyne Logistics and departure monitor is active, but new \"Evade Veyne Logistics Tracking\" thread appears with no attached clues."
+  }
+]

@@ -1,0 +1,99 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "anonymous placeholder: elder merges with named create",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 2: implicit anonymous NPC reveals should merge into the existing placeholder and emit merge telemetry."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_elder": {
+            "id": "npc_elder",
+            "name": "the elder",
+            "affiliation": "Unknown",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [],
+              "voice": {
+                "note": "Measured and grave.",
+                "register": "formal"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "anonymous elder from the threshold council",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_elder"]
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_elder"],
+          "surfaceNpcIds": ["npc_elder"]
+        }
+      }
+    },
+    "playerInput": "I ask the elder for their name before we cross the threshold.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "\"Renn,\" the elder says, tapping the threshold stone with a silver ring. \"And you will remember the cost before you pass.\"",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_elder", "Renn"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": ["Renn knows the threshold's cost."]
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "confidence": "high",
+            "source_quote": "Renn, the elder says",
+            "payload": {
+              "name": "Renn",
+              "affiliation": "Unknown",
+              "role": "npc",
+              "disposition": "neutral",
+              "key_facts": ["Named themself after appearing as the anonymous elder."],
+              "voice_note": "Measured and grave.",
+              "voice_register": "formal",
+              "retrieval_cue": "Renn, the anonymous elder from the threshold council"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "npcNamesInclude": ["Renn"],
+    "npcNamesAbsent": ["the elder"],
+    "driftIncludes": [
+      {
+        "kind": "entity_merged",
+        "detailIncludes": "matcher=findMatchingAnonymousNpc"
+      }
+    ]
+  }
+}

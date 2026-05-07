@@ -1,0 +1,526 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2B Author continuity lock rejects route milestone regression",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Ensures SF2B Ch2 Author validation rejects an opening that makes an already-taken route fork upcoming again."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "campaignId": "sf2b_camp_route_milestone",
+        "experimentMode": "sf2b-hook",
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human",
+        "currentChapter": 1,
+        "currentSceneId": "location_driftrunner_transit",
+        "currentTimeLabel": "post-fork transit"
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "status": "resolved_clean"
+          },
+          "thread_tail_cutter": {
+            "id": "thread_tail_cutter",
+            "title": "The unresolved tail and cutter",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "Identify whether the cutter shadowing Redline/Carrow belongs to Calla, a rival, or the cargo's owner.",
+            "failureMode": "The cutter forces the route before the cargo terms are understood.",
+            "retrievalCue": "tail, cutter silhouette, sealed Redline/Carrow cargo",
+            "loadBearing": true,
+            "spineForChapter": 1,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          },
+          "thread_redline_carrow_cargo": {
+            "id": "thread_redline_carrow_cargo",
+            "title": "The sealed Redline/Carrow cargo",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "stakeholders": [],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "Determine what obligation the sealed cargo creates before committing to Redline.",
+            "failureMode": "The cargo becomes leverage before the PC knows who owns the risk.",
+            "retrievalCue": "sealed cargo, Redline/Carrow route, Calla's brokerage",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        },
+        "npcs": {
+          "npc_calla_voss": {
+            "id": "npc_calla_voss",
+            "name": "Calla Voss",
+            "affiliation": "Sable Notch brokers",
+            "role": "cargo broker",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Brokered the sealed Redline/Carrow cargo."],
+              "voice": { "note": "smiles only after the price lands", "register": "dry dockside" },
+              "relations": []
+            },
+            "ownedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+            "retrievalCue": "Calla Voss, broker, sealed Redline/Carrow cargo",
+            "chapterCreated": 1,
+            "lastSeenTurn": 18,
+            "signatureLines": []
+          }
+        },
+        "locations": {
+          "location_driftrunner_transit": {
+            "id": "location_driftrunner_transit",
+            "name": "Driftrunner - Transit Bridge",
+            "description": "The Driftrunner's bridge after the Redline fork.",
+            "locked": true,
+            "chapterCreated": 1
+          }
+        },
+        "promises": {
+          "promise_calla_delivery": {
+            "id": "promise_calla_delivery",
+            "category": "promise",
+            "status": "active",
+            "anchoredTo": ["thread_redline_carrow_cargo"],
+            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "obligation": "Do not open or reroute the sealed cargo before Calla names the buyer.",
+            "turn": 1
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "spineThreadId": "thread_tail_cutter",
+          "loadBearingThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "carriedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"]
+        },
+        "artifacts": {
+          "meaning": {
+            "chapter": 1,
+            "situation": "The Driftrunner has already taken the Redline fork with Calla Voss's sealed cargo aboard.",
+            "tension": "The cutter still follows after the fork, turning the Carrow cover leg into old cover rather than a future route choice.",
+            "ticking": "The passive display shows the cutter holding four ships back after the fork crossing.",
+            "question": "Who is following the Driftrunner after the Redline fork?",
+            "closer": "The fork is behind the ship, but the cutter is not.",
+            "closingResolution": "unresolved",
+            "synthesizedAtTurn": 19
+          }
+        },
+        "sceneSummaries": [
+          {
+            "sceneId": "location_driftrunner_transit",
+            "chapter": 1,
+            "summary": "The Driftrunner took the Redline fork, left the Carrow cover leg behind, and kept the sealed cargo cold while the cutter followed.",
+            "leadsTo": "unanswered_question"
+          }
+        ]
+      },
+      "world": {
+        "currentLocation": {
+          "id": "location_driftrunner_transit",
+          "name": "Driftrunner - Transit Bridge",
+          "description": "The Driftrunner's bridge after the Redline fork.",
+          "locked": true,
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "location_driftrunner_transit",
+          "location": {
+            "id": "location_driftrunner_transit",
+            "name": "Driftrunner - Transit Bridge",
+            "description": "The Driftrunner's bridge after the Redline fork.",
+            "locked": true,
+            "chapterCreated": 1
+          },
+          "presentNpcIds": [],
+          "currentInterlocutorIds": [],
+          "timeLabel": "post-fork transit",
+          "established": [
+            "The Driftrunner has already taken the Redline fork.",
+            "The Carrow cover leg is behind the ship.",
+            "A cutter still follows four ships back.",
+            "Cryo container holding temperature, sealed in hold."
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "post-fork transit"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 18,
+            "chapter": 1,
+            "playerInput": "I take the Redline fork and keep the passive sweep on the cutter.",
+            "narratorProse": "The Driftrunner takes the Redline fork. Carrow falls behind as cover, not destination, while the sealed cryo container holds temperature in the dark.",
+            "timestamp": "2026-05-03T00:18:00.000Z"
+          },
+          {
+            "index": 19,
+            "chapter": 1,
+            "playerInput": "I watch whether the cutter follows after the fork.",
+            "narratorProse": "Four ships back, the cutter follows after the fork crossing, close enough to be intent and far enough to pretend otherwise.",
+            "timestamp": "2026-05-03T00:19:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      }
+    },
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "space-opera",
+        "pcOriginId": "human",
+        "pcPlaybookId": "operative",
+        "isContinuation": true
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "The Chit Burns",
+          "premise": "The Vethara hail turns the Driftrunner's sealed Redline cargo into a legal problem.",
+          "active_pressure": "A corporate warrant tests whether the PC will negotiate before the destination decrypts.",
+          "central_tension": "Answer Sollar now or learn the destination first.",
+          "chapter_scope": "The Driftrunner bridge under a live corporate hail.",
+          "objective": "Decide how to handle Sollar while the chit decrypts.",
+          "crucible": "The PC must choose between information control and legal exposure.",
+          "outcome_spectrum": {
+            "clean": "The PC controls the hail and preserves the cargo secret.",
+            "costly": "The PC gains terms but confirms interest in the cargo.",
+            "failure": "Sollar pins the ship to a monitored route.",
+            "catastrophic": "The cutter and warrant become one enforcement action."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Driftrunner - Transit Bridge",
+          "atmospheric_condition": "dark running lights",
+          "initial_state": "The Driftrunner runs dark with Calla Voss's sealed cryo container stable, but the Redline fork is coming up in the nav buffer.",
+          "first_player_facing": "Sollar's Vethara hail arrives while the cutter holds four ships back after the Carrow cover leg.",
+          "immediate_choice": "Answer Sollar now or wait for the chit destination before speaking.",
+          "dramatic_situation": "Sollar times legal contact to Calla's cargo secret so silence and speech both become evidence.",
+          "first_visible_pressure": "The Vethara hail arrives before the PC can control what the chit reveals.",
+          "first_human_or_institutional_move": "Sollar uses the warrant hail to make the PC's next answer legally useful.",
+          "do_not_restage": ["Redline fork crossing", "Carrow cover leg", "dark-hold tail test"],
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_renn_sollar"],
+          "withheld_premise_facts": ["The cutter may be Vethara's collection shadow."]
+        },
+        "antagonist_field": {
+          "source_system": "Vethara corporate warrants",
+          "core_pressure": "Legal contact can become route control before the cargo destination is known.",
+          "default_face": { "name": "Renn Sollar", "role": "Vethara warrant officer", "pressure_style": "patient procedural leverage" },
+          "possible_faces": [
+            {
+              "id": "face_sollar",
+              "name": "Renn Sollar",
+              "role": "Vethara warrant officer",
+              "becomes_primary_when": "The PC lets the hail frame the cargo.",
+              "pressure_style": "patient procedural leverage"
+            }
+          ],
+          "escalation_logic": "Every silence lets Vethara make the Driftrunner's route look evasive."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_calla_voss",
+            "name": "Calla Voss",
+            "affiliation": "Sable Notch brokers",
+            "role": "off-stage cargo broker",
+            "voice_register": "dry dockside",
+            "voice_note": "smiles only after price lands",
+            "dramatic_function": "Prior promise owner",
+            "hidden_pressure": "Her second-layer chit controls the destination.",
+            "retrieval_cue": "Calla Voss, sealed Redline/Carrow cargo",
+            "initial_disposition": "wary",
+            "disposition_reason": "her cargo is aboard and still opaque"
+          },
+          {
+            "id": "npc_renn_sollar",
+            "name": "Renn Sollar",
+            "affiliation": "Vethara corporate security",
+            "role": "warrant officer",
+            "voice_register": "procedural velvet",
+            "voice_note": "never raises volume under stress",
+            "dramatic_function": "New named threat",
+            "hidden_pressure": "Needs voluntary contact to widen authority.",
+            "retrieval_cue": "Sollar, Vethara hail, warrant voice",
+            "initial_disposition": "hostile",
+            "disposition_reason": "he treats silent cargo runners as warrant targets"
+          },
+          {
+            "id": "npc_lyra_keel",
+            "name": "Lyra Keel",
+            "affiliation": "Independent lane chatter",
+            "role": "traffic relay witness",
+            "voice_register": "low-channel practical",
+            "voice_note": "talks like she is already leaving",
+            "dramatic_function": "Outside corroboration",
+            "hidden_pressure": "Can confirm whether the cutter mirrored the fork.",
+            "retrieval_cue": "Lyra, lane chatter, cutter witness",
+            "initial_disposition": "neutral",
+            "disposition_reason": "she has no stake beyond avoiding Vethara heat"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_tail_cutter",
+            "title": "The unresolved tail",
+            "question": "Who owns the cutter?",
+            "owner_hint": "Calla Voss",
+            "tension": 7,
+            "driver_kind": "carry_forward",
+            "resolution_criteria": "Identify whether the cutter belongs to Calla, Vethara, a rival, or the cargo's owner.",
+            "failure_mode": "The cutter forces the Driftrunner before Sollar's leverage is understood.",
+            "retrieval_cue": "cutter silhouette, four ships back, Redline fork"
+          },
+          {
+            "id": "thread_redline_carrow_cargo",
+            "title": "The sealed cargo",
+            "question": "What does the cargo require?",
+            "owner_hint": "Calla Voss",
+            "tension": 6,
+            "driver_kind": "carry_forward",
+            "resolution_criteria": "Learn the cargo destination and terms without breaking Calla's seal.",
+            "failure_mode": "The cargo becomes legal leverage before the destination is known.",
+            "retrieval_cue": "sealed cryo container, Calla chit, Redline/Carrow"
+          },
+          {
+            "id": "thread_vethara_hail",
+            "title": "Sollar's warrant hail",
+            "question": "Will the PC answer?",
+            "owner_hint": "Renn Sollar",
+            "tension": 7,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The PC answers, refuses, or reframes Sollar's legal contact.",
+            "failure_mode": "Sollar turns nonresponse into authority over the Driftrunner.",
+            "retrieval_cue": "Sollar hail, Vethara tag, warrant pressure"
+          },
+          {
+            "id": "thread_chit_destination",
+            "title": "The destination chit",
+            "question": "What will decrypt?",
+            "owner_hint": "Calla Voss",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The destination decrypts and becomes actionable.",
+            "failure_mode": "The PC negotiates blind while Vethara records intent.",
+            "retrieval_cue": "chit reader, destination, decryption"
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_cargo_pressure",
+          "chapter_function": "Turn cargo uncertainty into corporate contact pressure.",
+          "player_stance_read": "The PC favors information control before compliance.",
+          "pressure_engine_ids": []
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 25 },
+          "chapter_question": "Can the PC control Sollar before the cargo terms become unavoidable?",
+          "acceptable_resolutions": ["terms controlled", "hail refused", "warrant reframed"],
+          "early_pressure": "Sollar's hail makes silence meaningful.",
+          "middle_pressure": "The chit gives a destination with strings.",
+          "late_pressure": "The cutter's owner becomes actionable.",
+          "close_when_any": ["Sollar's authority is framed", "the destination is acted on", "the cutter declares itself"],
+          "avoid_extending_for": ["passive sweep repetition"]
+        },
+        "continuation_moves": {
+          "prior_chapter_meaning": "The Driftrunner left Sable Notch with sealed cargo and an unresolved cutter tail.",
+          "larger_pattern_revealed": "Vethara treats blind cargo routes as legal handles.",
+          "institutional_scale_escalation": { "from": "private broker cargo", "to": "corporate warrant contact" },
+          "new_named_threat_from_prior_success": {
+            "name": "Renn Sollar",
+            "emerged_from": "the Driftrunner taking Calla's cargo",
+            "why_inevitable": "Vethara watches sealed traffic after Redline."
+          },
+          "worsened_existing_thread": {
+            "thread_id": "thread_tail_cutter",
+            "prior_small_detail": "the cutter stayed four ships back",
+            "why_load_bearing_now": "its silence lets Sollar speak first"
+          },
+          "planted_midchapter_revelation": {
+            "hidden_statement": "The cutter is not Vethara but benefits from the hail.",
+            "recontextualizes": "Sollar is pressure, not the whole pursuit."
+          }
+        },
+        "continuation_dramatic_turn": {
+          "prior_chapter_meant": "The PC chose Calla's sealed Redline cargo and proved willing to run the deception layer.",
+          "larger_pattern_revealed": "Vethara turns blind cargo timing into voluntary legal exposure.",
+          "pressure_owner": {
+            "id_or_new_bridge": "npc_renn_sollar",
+            "why_they_now_act": "He can exploit the chit unlock window before the PC controls the destination facts."
+          },
+          "human_leverage": {
+            "what_they_can_take_or_offer": "Sollar can offer procedural cleanliness or mark the Driftrunner as evasive.",
+            "what_they_need_from_pc": "He needs the PC to speak before the cargo destination becomes defensible."
+          },
+          "worsened_detail": {
+            "prior_detail": "Calla controlled the second-layer chit timing.",
+            "why_it_is_load_bearing_now": "The hail proves someone else knew the timing window."
+          },
+          "offscreen_antagonist_presence": "The cutter stays four ships back as proof of reach, not as a direct boarding scene.",
+          "procedure_budget": {
+            "mechanism": "Vethara hail during chit unlock",
+            "owner_using_it": "Renn Sollar",
+            "dramatic_function": "The timing makes either silence or answer a legal posture.",
+            "max_opening_beats": 1
+          }
+        },
+        "pressure_ladder": [
+          {
+            "id": "ladder_open_record",
+            "pressure": "Sollar opens a voluntary contact record.",
+            "trigger_condition": "Sollar names the Driftrunner and asks for confirmation.",
+            "narrative_effect": "Silence and speech both become evidence.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_chit_names",
+            "pressure": "The chit names a destination under warrant heat.",
+            "trigger_condition": "The destination decrypts while Sollar remains active.",
+            "narrative_effect": "The PC must decide what to reveal.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_cutter_claims",
+            "pressure": "The cutter makes its alignment visible.",
+            "trigger_condition": "The PC commits to a stance against Sollar.",
+            "narrative_effect": "The shadow pressure stops being ambiguous.",
+            "severity": "hard"
+          }
+        ],
+        "tension_score": [
+          {
+            "id": "ts_tail",
+            "role": "shadow_faction_pressure",
+            "source_thread_id": "thread_tail_cutter",
+            "pressure": "The cutter's owner remains unknown after the fork.",
+            "prose_surface": "Four ships back becomes a measurement of intent.",
+            "advances_when": "The PC exposes route intent or tests the tail.",
+            "resolves_or_reframes_when": "The cutter declares, breaks, or is identified.",
+            "carried": true
+          },
+          {
+            "id": "ts_cargo",
+            "role": "foreground_objective",
+            "source_thread_id": "thread_redline_carrow_cargo",
+            "pressure": "The sealed cargo's destination is still controlled by Calla's chit.",
+            "prose_surface": "The reader makes ignorance visible by percentage.",
+            "advances_when": "The chit decrypts or the PC opens the cargo.",
+            "resolves_or_reframes_when": "The destination terms become known.",
+            "carried": true
+          },
+          {
+            "id": "ts_sollar",
+            "role": "relational_social_pressure",
+            "source_entity_id": "npc_renn_sollar",
+            "pressure": "Sollar makes contact feel like compliance.",
+            "prose_surface": "His patience turns every delay into posture.",
+            "advances_when": "The PC speaks, stalls, or refuses the hail.",
+            "resolves_or_reframes_when": "Sollar's authority is accepted, narrowed, or broken.",
+            "carried": false
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_cutter_not_vethara",
+            "statement": "The cutter is not Vethara's asset.",
+            "held_by": "Lyra Keel",
+            "emergence_condition": "Lyra compares the cutter's lane behavior to Vethara procedure.",
+            "recontextualizes": "The hail and tail are overlapping pressures.",
+            "hint_phrases": ["wrong spacing", "no warrant flash", "too patient"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["traffic_scan", "private_channel"]
+          },
+          {
+            "id": "rev_chit_legal_trap",
+            "statement": "The destination chit can incriminate voluntary intent.",
+            "held_by": "Renn Sollar",
+            "emergence_condition": "Sollar gets the PC to name destination knowledge.",
+            "recontextualizes": "Reading first is useful but not free.",
+            "hint_phrases": ["knowledge matters", "declared route", "voluntary answer"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["hail_exchange", "document_read"]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_speech_silence",
+            "tension": "Speech versus silence",
+            "side_a": "Answer and shape the record.",
+            "side_b": "Wait and learn the cargo.",
+            "why_it_hurts": "Both moves create evidence."
+          },
+          {
+            "id": "fault_calla_vethara",
+            "tension": "Broker promise versus legal command",
+            "side_a": "Protect Calla's sealed terms.",
+            "side_b": "Reduce Vethara exposure.",
+            "why_it_hurts": "Each authority can punish compliance."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_open_channel",
+            "type": "social",
+            "condition": "The PC answers without naming cargo.",
+            "consequence": "Sollar narrows questions to destination knowledge."
+          },
+          {
+            "id": "esc_dark_run",
+            "type": "technical",
+            "condition": "The PC keeps running dark.",
+            "consequence": "The cutter's spacing becomes easier to read."
+          },
+          {
+            "id": "esc_chit_read",
+            "type": "revelation",
+            "condition": "The chit completes decryption.",
+            "consequence": "The destination becomes hard to deny."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Vethara warrants prize voluntary answers.",
+            "relevance_now": "Sollar wants the PC to speak first.",
+            "delivery_method": "He asks for confirmation, not compliance."
+          },
+          {
+            "item": "Blind chits split route from intent.",
+            "relevance_now": "Reading the chit changes legal posture.",
+            "delivery_method": "The reader percentage interrupts the hail."
+          }
+        ]
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 1,
+        "combinedErrorCount": 1,
+        "validationErrorIncludesAll": [
+          "continuity_lock.milestone regresses route_fork"
+        ],
+        "combinedErrorIncludesAll": [
+          "continuity_lock.milestone regresses route_fork"
+        ],
+        "threadCountEquals": 4,
+        "pacingTargetEquals": { "min": 18, "max": 25 }
+      }
+    }
+  }
+}

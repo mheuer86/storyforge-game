@@ -29,6 +29,7 @@ import type {
   Sf2EmotionalBeatAddition,
   Sf2EmotionalBeatTag,
   Sf2PatchConfidence,
+  Sf2PronounAnchor,
   Sf2RevealContext,
   Sf2RevelationHintDelivered,
   Sf2RevelationRevealed,
@@ -38,15 +39,8 @@ import type {
 
 const ARCHIVIST_MODEL = process.env.SF2_ARCHIVIST_MODEL || 'claude-haiku-4-5-20251001'
 
-type CriticalOperationalFactKind = 'clearance_status' | 'diagnostic_result'
-
-interface CriticalOperationalFact {
-  kind: CriticalOperationalFactKind
-  title: string
-  content: string
-  retrievalCue: string
-  sourceQuote: string
-  anchoredTo: string[]
+interface ArchivistNormalizationTelemetry {
+  fallbackCounters: Record<string, number>
 }
 
 function resolveClient(req: NextRequest): Anthropic {
@@ -54,196 +48,6 @@ function resolveClient(req: NextRequest): Anthropic {
   const envKey = process.env.ANTHROPIC_API_KEY?.trim()
   const chosenKey = byokKey || envKey
   return chosenKey ? new Anthropic({ apiKey: chosenKey }) : new Anthropic()
-}
-
-function augmentPatchWithCriticalOperationalFacts(
-  state: Sf2State,
-  patch: Sf2ArchivistPatch,
-  narratorProse: string
-): Sf2ArchivistPatch {
-  const facts = detectCriticalOperationalFacts(state, narratorProse)
-    .filter((fact) => !criticalFactAlreadyRecorded(state, patch, fact))
-  if (facts.length === 0) return patch
-
-  return {
-    ...patch,
-    creates: [
-      ...patch.creates,
-      ...facts.map((fact): Sf2ArchivistCreate => ({
-        kind: 'clue',
-        payload: {
-          title: fact.title,
-          content: fact.content,
-          retrieval_cue: fact.retrievalCue,
-          anchored_to: fact.anchoredTo,
-        },
-        confidence: 'high',
-        sourceQuote: fact.sourceQuote,
-      })),
-    ],
-  }
-}
-
-function detectCriticalOperationalFacts(
-  state: Sf2State,
-  narratorProse: string
-): CriticalOperationalFact[] {
-  const facts: CriticalOperationalFact[] = []
-  const units = proseFactUnits(narratorProse)
-
-  const clearanceQuote = units.find(isClearanceStatusFact)
-  if (clearanceQuote) {
-    facts.push({
-      kind: 'clearance_status',
-      title: 'Operational clearance status',
-      content: `Operational clearance status: ${clearanceQuote}`,
-      retrievalCue: 'ship hold, lien, clamp, berth clearance, release authorization',
-      sourceQuote: clearanceQuote,
-      anchoredTo: criticalFactAnchors(state, 'clearance_status', clearanceQuote),
-    })
-  }
-
-  const diagnosticQuote = units.find(isDiagnosticResultFact)
-  if (diagnosticQuote) {
-    facts.push({
-      kind: 'diagnostic_result',
-      title: 'Diagnostic readout result',
-      content: `Diagnostic result: ${diagnosticQuote}`,
-      retrievalCue: 'diagnostic readout, scan result, telemetry, life signs, cargo status',
-      sourceQuote: diagnosticQuote,
-      anchoredTo: criticalFactAnchors(state, 'diagnostic_result', diagnosticQuote),
-    })
-  }
-
-  return facts
-}
-
-function proseFactUnits(prose: string): string[] {
-  const paragraphs = prose
-    .split(/\n{2,}/)
-    .map((unit) => cleanFactQuote(unit))
-    .filter((unit) => unit.length > 0)
-  const sentences = prose
-    .split(/(?<=[.!?])\s+/)
-    .map((unit) => cleanFactQuote(unit))
-    .filter((unit) => unit.length > 0)
-  return [...paragraphs, ...sentences]
-}
-
-function cleanFactQuote(value: string): string {
-  const cleaned = value.replace(/\s+/g, ' ').trim()
-  if (cleaned.length <= 360) return cleaned
-  return `${cleaned.slice(0, 357).trimEnd()}...`
-}
-
-function isClearanceStatusFact(quote: string): boolean {
-  const q = quote.toLowerCase()
-  if (/\b(?:not|no|never|cannot|can't|isn't|wasn't)\b.{0,48}\b(?:lifted|cleared|released|authorized|granted)\b/.test(q)) {
-    return false
-  }
-  return [
-    /\bhold\s+(?:is\s+)?(?:lifted|cleared|released)\b/,
-    /\blien\s+(?:is\s+)?(?:lifted|cleared|released)\b/,
-    /\bclamps?\s+(?:are\s+)?(?:released|unlocked|open)\b/,
-    /\bclamp release\s+(?:is\s+)?authorized\b/,
-    /\bclearance\s+(?:is\s+)?(?:authorized|granted|green|clear)\b/,
-    /\bhold lifted\b/,
-  ].some((pattern) => pattern.test(q))
-}
-
-function isDiagnosticResultFact(quote: string): boolean {
-  const q = quote.toLowerCase()
-  const hasDiagnosticSource = /\b(?:diagnostics?|readout|scan|sensor|telemetry|external diagnostic|port reading)\b/.test(q)
-  const hasDiagnosticFinding = /\b(?:respiration|breath(?:ing)?|life signs?|heartbeat|pulse|oxygen|moisture|thermal|pressure|bio(?:logical)?|metabolic|alive|body heat|occupant)\b/.test(q)
-  return hasDiagnosticSource && hasDiagnosticFinding
-}
-
-function criticalFactAlreadyRecorded(
-  state: Sf2State,
-  patch: Sf2ArchivistPatch,
-  fact: CriticalOperationalFact
-): boolean {
-  const existingTexts = [
-    ...Object.values(state.campaign.clues).flatMap((clue) => [
-      clue.title,
-      clue.content,
-      clue.retrievalCue,
-    ]),
-    ...patch.creates
-      .filter((create) => create.kind === 'clue')
-      .flatMap((create) => clueLikePatchText(create.payload, create.sourceQuote)),
-    ...patch.updates
-      .filter((update) => update.entityKind === 'clue')
-      .flatMap((update) => clueLikePatchText(update.changes, update.sourceQuote)),
-  ]
-
-  return existingTexts.some((text) => textMatchesCriticalFactKind(text, fact.kind))
-}
-
-function clueLikePatchText(payload: Record<string, unknown>, sourceQuote?: string): string[] {
-  return [
-    payload.title,
-    payload.content,
-    payload.retrieval_cue,
-    payload.retrievalCue,
-    sourceQuote,
-  ].map((value) => String(value ?? ''))
-}
-
-function textMatchesCriticalFactKind(
-  text: string,
-  kind: CriticalOperationalFactKind
-): boolean {
-  const q = text.toLowerCase()
-  if (kind === 'clearance_status') {
-    const mentionsSubject = /\b(?:hold|lien|clamps?|clearance|berth release)\b/.test(q)
-    const mentionsStatus = /\b(?:lifted|cleared|released|authorized|granted|unlocked|open)\b/.test(q)
-    return mentionsSubject && mentionsStatus
-  }
-
-  const mentionsDiagnostic = /\b(?:diagnostics?|readout|scan|sensor|telemetry|port reading)\b/.test(q)
-  const mentionsFinding = /\b(?:respiration|breath(?:ing)?|life signs?|heartbeat|pulse|oxygen|moisture|thermal|pressure|bio(?:logical)?|metabolic|alive|body heat|occupant)\b/.test(q)
-  return mentionsDiagnostic && mentionsFinding
-}
-
-function criticalFactAnchors(
-  state: Sf2State,
-  kind: CriticalOperationalFactKind,
-  sourceQuote: string
-): string[] {
-  const candidateIds = [
-    state.chapter.setup.spineThreadId,
-    ...(state.chapter.setup.loadBearingThreadIds ?? []),
-    ...(state.chapter.setup.activeThreadIds ?? []),
-  ].filter((id): id is string => Boolean(id && state.campaign.threads[id]?.status === 'active'))
-
-  const uniqueIds = [...new Set(candidateIds)]
-  const query = [
-    sourceQuote,
-    kind === 'clearance_status'
-      ? 'hold lien clamp clearance berth release ship station port'
-      : 'diagnostic readout scan telemetry cargo passenger life signs',
-  ].join(' ').toLowerCase()
-
-  const scored = uniqueIds
-    .map((id) => {
-      const thread = state.campaign.threads[id]
-      const haystack = [
-        thread.title,
-        thread.retrievalCue,
-        thread.resolutionCriteria,
-        thread.failureMode,
-      ].join(' ').toLowerCase()
-      const score = query
-        .split(/\W+/)
-        .filter((token) => token.length >= 4 && haystack.includes(token))
-        .length + (id === state.chapter.setup.spineThreadId ? 2 : 0)
-      return { id, score }
-    })
-    .sort((a, b) => b.score - a.score)
-
-  const relevant = scored.filter((entry) => entry.score > 0).map((entry) => entry.id)
-  return (relevant.length > 0 ? relevant : uniqueIds).slice(0, 3)
 }
 
 export const runtime = 'nodejs'
@@ -353,11 +157,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const patch = augmentPatchWithCriticalOperationalFacts(
-      state,
-      normalizeArchivistPatch(toolUse.input as Record<string, unknown>, turnIndex),
-      narratorProse
-    )
+    const normalization = collectArchivistNormalizationTelemetry(toolUse.input as Record<string, unknown>)
+    const patch = normalizeArchivistPatch(toolUse.input as Record<string, unknown>, turnIndex)
     const applyResult = applyArchivistPatch(state, patch, state.meta.currentChapter)
     const summary = summarizePatchOutcome(applyResult)
 
@@ -399,6 +200,7 @@ export async function POST(req: NextRequest) {
         pruneSummary: runtimeResult.pruneSummary,
         coherenceFindings: runtimeResult.coherenceFindings,
         invariantEvents: runtimeResult.invariantEvents,
+        normalization,
         usage: {
           inputTokens: usage.input_tokens,
           outputTokens: usage.output_tokens,
@@ -539,6 +341,109 @@ function normalizeArchivistPatch(raw: Record<string, unknown>, turnIndex: number
     ladderFires: ladderFires.length > 0 ? ladderFires : undefined,
     coherenceFindings: coherenceFindings.length > 0 ? coherenceFindings : undefined,
   }
+}
+
+function collectArchivistNormalizationTelemetry(raw: Record<string, unknown>): ArchivistNormalizationTelemetry {
+  const counters: Record<string, number> = {}
+  const inc = (key: string): void => {
+    counters[key] = (counters[key] ?? 0) + 1
+  }
+
+  for (const create of arrayRecords(raw.creates)) {
+    countConfidenceFallback(create.confidence, inc)
+    countHighRiskPayloadFallbacks(create.kind, create.payload, inc)
+  }
+  for (const update of arrayRecords(raw.updates)) {
+    countConfidenceFallback(update.confidence, inc)
+    countHighRiskPayloadFallbacks(update.entity_kind, update.changes, inc)
+  }
+  for (const transition of arrayRecords(raw.transitions)) {
+    countConfidenceFallback(transition.confidence, inc)
+  }
+  for (const attachment of arrayRecords(raw.attachments)) {
+    countConfidenceFallback(attachment.confidence, inc)
+  }
+  for (const finding of arrayRecords(raw.coherence_findings)) {
+    if (
+      typeof finding.severity === 'string' &&
+      finding.severity.trim().length > 0 &&
+      finding.severity !== 'low' &&
+      finding.severity !== 'medium' &&
+      finding.severity !== 'high'
+    ) {
+      inc('coherence_severity_defaulted')
+    }
+    if (
+      typeof finding.type === 'string' &&
+      finding.type.trim().length > 0 &&
+      !COHERENCE_FINDING_TYPES.includes(finding.type as Sf2CoherenceFindingType)
+    ) {
+      inc('coherence_finding_dropped')
+    }
+  }
+
+  return { fallbackCounters: counters }
+}
+
+function arrayRecords(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object' && !Array.isArray(item)))
+    : []
+}
+
+function countConfidenceFallback(value: unknown, inc: (key: string) => void): void {
+  if (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value !== 'high' &&
+    value !== 'medium' &&
+    value !== 'low'
+  ) {
+    inc('confidence_defaulted')
+  }
+}
+
+function countHighRiskPayloadFallbacks(
+  kindRaw: unknown,
+  payloadRaw: unknown,
+  inc: (key: string) => void
+): void {
+  if (!payloadRaw || typeof payloadRaw !== 'object' || Array.isArray(payloadRaw)) return
+  const payload = payloadRaw as Record<string, unknown>
+  const kind = typeof kindRaw === 'string' ? kindRaw : ''
+
+  const pronoun = payload.pronoun ?? payload.pronouns
+  if (typeof pronoun === 'string' && pronoun.trim().length > 0) {
+    const canonical = normalizePronounAnchorForTelemetry(pronoun)
+    if (!canonical) inc('npc_pronoun_dropped')
+    else if (canonical !== pronoun.trim().toLowerCase()) inc('npc_pronoun_coerced')
+  }
+
+  if (Array.isArray(payload.key_facts) && payload.key_facts.length > 3) {
+    inc('npc_key_facts_truncated')
+  }
+
+  if (kind === 'temporal_anchor') {
+    const temporalKind = payload.kind
+    const canonicalTemporalKinds = ['deadline', 'timestamp', 'duration', 'sequence', 'recurrence']
+    if (
+      typeof temporalKind === 'string' &&
+      temporalKind.trim().length > 0 &&
+      !canonicalTemporalKinds.includes(temporalKind.trim())
+    ) {
+      inc('temporal_anchor_kind_defaulted')
+    }
+  }
+}
+
+function normalizePronounAnchorForTelemetry(raw: string): Sf2PronounAnchor | null {
+  const key = raw.trim().toLowerCase().replace(/\s+/g, '')
+  if (!key) return null
+  if (['she', 'her', 'she/her', 'she-hers', 'shehers'].includes(key)) return 'she/her'
+  if (['he', 'him', 'he/him', 'he-him', 'hehim'].includes(key)) return 'he/him'
+  if (['they', 'them', 'they/them', 'they-them', 'theythem'].includes(key)) return 'they/them'
+  if (key === 'other') return 'other'
+  return null
 }
 
 const EMOTIONAL_BEAT_TAGS: Sf2EmotionalBeatTag[] = [

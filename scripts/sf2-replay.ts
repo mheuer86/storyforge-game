@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { normalizeAuthorSetup, validateAuthorSetup, validateChapterRaw } from '../lib/sf2/author/contract'
+import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
@@ -12,10 +12,17 @@ import {
 } from '../lib/sf2/narrator/turn-context'
 import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit-repair'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
-import { formatFinding, scanDisplayOutput } from '../lib/sf2/sentinel/display'
+import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
+import { ARCHIVIST_PARITY_CONTRACT, extractTurnTool } from '../lib/sf2/archivist/tools'
+import { AUTHOR_TOOLS, AUTHOR_TOOL_NAME } from '../lib/sf2/author/tools'
+import { ARC_AUTHOR_TOOLS, ARC_AUTHOR_TOOL_NAME } from '../lib/sf2/arc-author/tools'
+import { CHAPTER_MEANING_TOOLS, CHAPTER_MEANING_TOOL_NAME } from '../lib/sf2/chapter-meaning/tools'
+import { NARRATOR_MECHANICAL_EFFECT_KINDS, NARRATOR_TOOL_NAME, NARRATOR_TOOLS } from '../lib/sf2/narrator/tools'
+import { evaluateWrite, recordObservation } from '../lib/sf2/firewall/actor'
+import { validateChapterMeaningTransitionSeed } from '../lib/sf2/chapter-meaning/validation'
 import { canonicalLocationNameKey } from '../lib/sf2/locations'
 import {
   coolThreadForChapterOpen,
@@ -31,6 +38,7 @@ import {
 import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
+  type Sf2ChapterMeaning,
   type Sf2RollRecord,
   type Sf2State,
   type ThreadRole,
@@ -53,6 +61,7 @@ import {
 } from '../lib/sf2/runtime/turn-pipeline'
 import { applyArchivistPatch, summarizePatchOutcome, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
 import { isSf2bState, runtimeModeForState, type Sf2RuntimeMode } from '../lib/sf2b/mode'
+import { __sf2TurnResolutionTestHooks } from '../lib/sf2/turn-resolution/resolve'
 
 interface ReplayFixture {
   schema: 'sf2-replay-fixture/v1'
@@ -78,6 +87,7 @@ interface ReplayFixture {
   expected?: {
     presentNpcIdsIncludes?: string[]
     presentNpcIdsExcludes?: string[]
+    presentNpcIdsExact?: string[]
     scenePacketCastIncludes?: string[]
     scenePacketCastExcludes?: string[]
     castPacketIncludes?: Array<{
@@ -163,6 +173,8 @@ interface ReplayFixture {
     }
     quickActionRepair?: {
       failedSkill?: string
+      playerInput?: string
+      visibleProse?: string
       inputActions: string[]
       outputActionsInclude?: string[]
       outputActionsExclude?: string[]
@@ -320,6 +332,9 @@ interface ReplayFixture {
       expect: {
         rawErrorCount?: number
         validationErrorCount?: number
+        combinedErrorCount?: number
+        validationErrorIncludesAll?: string[]
+        combinedErrorIncludesAll?: string[]
         titleEquals?: string
         threadCountEquals?: number
         firstThreadInitialTensionEquals?: number
@@ -435,6 +450,10 @@ interface ReplayFixture {
       findingsCount?: number
       findingsCountAtLeast?: number
       findingsAbsent?: boolean
+      repairsVisibleProse?: {
+        containsAll?: string[]
+        containsNone?: string[]
+      }
       findingsInclude?: Array<{
         findingType?: string
         severity?: string
@@ -457,10 +476,29 @@ interface ReplayFixture {
     }>
     sceneBundleCacheCleared?: boolean | null
     invariantEventsInclude?: string[]
+    pendingCoherenceNotesInclude?: string[]
     archivistAcceptedRefs?: string[]
     archivistRejectedRefs?: string[]
     driftIncludes?: Array<{ kind: string; detailIncludes?: string }>
     sensitiveDisclosureGaps?: Array<{ npcId: string; terms: string[] }>
+    chapterMeaningValidation?: {
+      meaning: Sf2ChapterMeaning
+      findingCount?: number
+      findingsInclude?: Array<{ field?: string; messageIncludes?: string; severity?: string }>
+    }
+    archivistSchemaParity?: {
+      assertContract?: boolean
+    }
+    roleSchemaParity?: {
+      assertNarrator?: boolean
+      assertAuthor?: boolean
+      assertArcAuthor?: boolean
+      assertChapterMeaning?: boolean
+      assertFirewallDevAssertion?: boolean
+    }
+    turnResolutionStableJson?: {
+      assertThreadKeyOrderIgnored?: boolean
+    }
   }
 }
 
@@ -695,7 +733,202 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertModeIdentity(fixture, stateBefore, stateAfter, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
+  assertChapterMeaningValidation(fixture, stateBefore, failures)
+  assertArchivistSchemaParity(fixture, failures)
+  assertRoleSchemaParity(fixture, failures)
+  assertTurnResolutionStableJson(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
+}
+
+function assertTurnResolutionStableJson(fixture: ReplayFixture, failures: string[]): void {
+  if (!fixture.expected?.turnResolutionStableJson?.assertThreadKeyOrderIgnored) return
+  const stateBefore = createMinimalState()
+  const stateAfter = structuredClone(stateBefore)
+  const thread = stateBefore.campaign.threads.thread_spine
+  stateAfter.campaign.threads.thread_spine = Object.keys(thread)
+    .reverse()
+    .reduce((acc, key) => {
+      acc[key] = (thread as unknown as Record<string, unknown>)[key]
+      return acc
+    }, {} as Record<string, unknown>) as unknown as typeof thread
+  const beforeJson = __sf2TurnResolutionTestHooks.stableJson(stateBefore.campaign.threads.thread_spine)
+  const afterJson = __sf2TurnResolutionTestHooks.stableJson(stateAfter.campaign.threads.thread_spine)
+  if (beforeJson !== afterJson) failures.push('turnResolutionStableJson: stableJson changed with object key order')
+  const mutated = __sf2TurnResolutionTestHooks.hasDurableTargetMutation({
+    stateBefore,
+    stateAfter,
+    targetEntityIds: [],
+    targetThreadIds: ['thread_spine'],
+    includePressure: false,
+  })
+  if (mutated) failures.push('turnResolutionStableJson: hasDurableTargetMutation treated key order as mutation')
+}
+
+function assertRoleSchemaParity(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.roleSchemaParity
+  if (!expected) return
+
+  if (expected.assertNarrator) {
+    const tool = NARRATOR_TOOLS.find((t) => t.name === NARRATOR_TOOL_NAME)
+    const schema = tool?.input_schema as Record<string, unknown> | undefined
+    const properties = schema?.properties as Record<string, unknown> | undefined
+    const effectItems = ((properties?.mechanical_effects as Record<string, unknown> | undefined)?.items as Record<string, unknown> | undefined) ?? {}
+    const effectKindEnum = (((effectItems.properties as Record<string, unknown> | undefined)?.kind as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+    const expectedKinds = [...NARRATOR_MECHANICAL_EFFECT_KINDS]
+    if (!sameMembers(effectKindEnum, expectedKinds)) {
+      failures.push(`roleSchemaParity.narrator: mechanical effect enum ${effectKindEnum.join(',')} != contract ${expectedKinds.join(',')}`)
+    }
+    for (const kind of expectedKinds) {
+      const decision = evaluateWrite({
+        actor: 'narrator',
+        kind: kind as Parameters<typeof evaluateWrite>[0]['kind'],
+        turnIndex: 0,
+        chapter: 1,
+        timestamp: 'replay',
+      })
+      if (!decision.permitted || decision.reason) failures.push(`roleSchemaParity.narrator: firewall rejects schema kind ${kind}`)
+    }
+    const combatDecision = evaluateWrite({
+      actor: 'narrator',
+      kind: 'combat',
+      turnIndex: 0,
+      chapter: 1,
+      timestamp: 'replay',
+    })
+    if (!combatDecision.reason) failures.push('roleSchemaParity.narrator: stale combat kind is still firewall-allowed')
+  }
+
+  if (expected.assertFirewallDevAssertion) {
+    try {
+      recordObservation({
+        actor: 'narrator',
+        kind: 'create_entity',
+        turnIndex: 0,
+        chapter: 1,
+        timestamp: 'replay',
+      })
+      failures.push('roleSchemaParity.firewall: illegal write did not throw in dev/test mode')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (!message.includes('actor narrator is not permitted to emit create_entity')) {
+        failures.push(`roleSchemaParity.firewall: unexpected assertion message "${message}"`)
+      }
+    }
+  }
+
+  if (expected.assertAuthor) {
+    const tool = AUTHOR_TOOLS.find((t) => t.name === AUTHOR_TOOL_NAME)
+    const schema = tool?.input_schema as Record<string, unknown> | undefined
+    const properties = schema?.properties as Record<string, unknown> | undefined
+    const opening = (properties?.opening_scene_spec as Record<string, unknown> | undefined) ?? {}
+    const openingProps = (opening.properties as Record<string, unknown> | undefined) ?? {}
+    const openingRequired = getRequired(opening)
+    for (const field of ['visible_npc_ids', 'withheld_premise_facts']) {
+      if (!openingRequired.includes(field)) failures.push(`roleSchemaParity.author: opening_scene_spec required missing ${field}`)
+      if (!openingProps[field]) failures.push(`roleSchemaParity.author: opening_scene_spec schema missing ${field}`)
+    }
+    const visible = openingProps.visible_npc_ids as Record<string, unknown> | undefined
+    if (visible?.type !== 'array') failures.push('roleSchemaParity.author: visible_npc_ids must be an array')
+  }
+
+  if (expected.assertArcAuthor) {
+    const tool = ARC_AUTHOR_TOOLS.find((t) => t.name === ARC_AUTHOR_TOOL_NAME)
+    const schema = tool?.input_schema as Record<string, unknown> | undefined
+    const required = getRequired(schema ?? {})
+    for (const field of ['scenario_shape', 'durable_forces', 'durable_npc_seeds', 'pressure_engines', 'chapter_function_map']) {
+      if (!required.includes(field)) failures.push(`roleSchemaParity.arcAuthor: required missing ${field}`)
+    }
+  }
+
+  if (expected.assertChapterMeaning) {
+    const tool = CHAPTER_MEANING_TOOLS.find((t) => t.name === CHAPTER_MEANING_TOOL_NAME)
+    const schema = tool?.input_schema as Record<string, unknown> | undefined
+    const properties = schema?.properties as Record<string, unknown> | undefined
+    const required = getRequired(schema ?? {})
+    for (const field of ['situation', 'tension', 'ticking', 'question', 'closer', 'closingResolution', 'transition_seed']) {
+      if (!required.includes(field)) failures.push(`roleSchemaParity.chapterMeaning: required missing ${field}`)
+    }
+    const transitionSeed = (properties?.transition_seed as Record<string, unknown> | undefined) ?? {}
+    const residue = (((transitionSeed.properties as Record<string, unknown> | undefined)?.procedure_residue as Record<string, unknown> | undefined)?.properties as Record<string, unknown> | undefined) ?? {}
+    const keepAsEnum = ((residue.keep_as as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+    for (const value of ['constraint', 'leverage', 'background', 'discard']) {
+      if (!keepAsEnum.includes(value)) failures.push(`roleSchemaParity.chapterMeaning: procedure_residue.keep_as enum missing ${value}`)
+    }
+  }
+}
+
+function sameMembers(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value) => b.includes(value))
+}
+
+function assertArchivistSchemaParity(fixture: ReplayFixture, failures: string[]): void {
+  if (!fixture.expected?.archivistSchemaParity?.assertContract) return
+  const schema = extractTurnTool.input_schema as Record<string, unknown>
+  const topRequired = getRequired(schema)
+  for (const field of ARCHIVIST_PARITY_CONTRACT.requiredTopLevel) {
+    if (!topRequired.includes(field)) failures.push(`archivistSchemaParity: top-level required missing ${field}`)
+  }
+
+  const properties = schema.properties as Record<string, unknown> | undefined
+  const createsItems = ((properties?.creates as Record<string, unknown> | undefined)?.items as Record<string, unknown> | undefined) ?? {}
+  const updatesItems = ((properties?.updates as Record<string, unknown> | undefined)?.items as Record<string, unknown> | undefined) ?? {}
+  const createRequired = getRequired(createsItems)
+  const updateRequired = getRequired(updatesItems)
+  for (const field of ARCHIVIST_PARITY_CONTRACT.requiredCreateFields) {
+    if (!createRequired.includes(field)) failures.push(`archivistSchemaParity: creates[].required missing ${field}`)
+  }
+  for (const field of ARCHIVIST_PARITY_CONTRACT.requiredUpdateFields) {
+    if (!updateRequired.includes(field)) failures.push(`archivistSchemaParity: updates[].required missing ${field}`)
+  }
+
+  const findingTypeEnum = ((((((properties?.coherence_findings as Record<string, unknown> | undefined)?.items as Record<string, unknown> | undefined)?.properties as Record<string, unknown> | undefined)?.type as Record<string, unknown> | undefined)?.enum as unknown[]) ?? []).map(String)
+  for (const forbidden of ARCHIVIST_PARITY_CONTRACT.forbiddenCoherenceFindingTypes) {
+    if (findingTypeEnum.includes(forbidden)) failures.push(`archivistSchemaParity: forbidden coherence finding type still schema-emittable: ${forbidden}`)
+  }
+
+  const payloadProperties = (((createsItems.properties as Record<string, unknown> | undefined)?.payload as Record<string, unknown> | undefined)?.properties as Record<string, unknown> | undefined) ?? {}
+  const pronounEnum = ((payloadProperties.pronoun as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+  for (const pronoun of ['she/her', 'he/him', 'they/them', 'other']) {
+    if (!pronounEnum.includes(pronoun)) failures.push(`archivistSchemaParity: payload.pronoun enum missing ${pronoun}`)
+  }
+  const keyFactsMax = (payloadProperties.key_facts as Record<string, unknown> | undefined)?.maxItems
+  if (keyFactsMax !== 3) failures.push(`archivistSchemaParity: payload.key_facts maxItems expected 3, got ${String(keyFactsMax)}`)
+  const docTypeEnum = ((payloadProperties.type as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+  for (const type of ['authorization', 'directive', 'communication', 'record', 'petition', 'notation']) {
+    if (!docTypeEnum.includes(type)) failures.push(`archivistSchemaParity: payload document type enum missing ${type}`)
+  }
+  const subjectMin = (payloadProperties.subject_entity_ids as Record<string, unknown> | undefined)?.minItems
+  if (subjectMin !== 1) failures.push(`archivistSchemaParity: payload.subject_entity_ids minItems expected 1, got ${String(subjectMin)}`)
+  const temporalKindEnum = ((payloadProperties.kind as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+  for (const kind of ['deadline', 'timestamp', 'duration', 'sequence', 'recurrence']) {
+    if (!temporalKindEnum.includes(kind)) failures.push(`archivistSchemaParity: payload temporal kind enum missing ${kind}`)
+  }
+}
+
+function getRequired(schema: Record<string, unknown>): string[] {
+  return Array.isArray(schema.required) ? schema.required.map(String) : []
+}
+
+function assertChapterMeaningValidation(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.chapterMeaningValidation
+  if (!expected) return
+  const findings = validateChapterMeaningTransitionSeed(stateBefore, expected.meaning)
+  if (typeof expected.findingCount === 'number' && findings.length !== expected.findingCount) {
+    failures.push(`chapterMeaningValidation.findingCount expected ${expected.findingCount}, got ${findings.length}`)
+  }
+  for (const include of expected.findingsInclude ?? []) {
+    const match = findings.find((finding) => {
+      if (include.field && finding.field !== include.field) return false
+      if (include.severity && finding.severity !== include.severity) return false
+      if (include.messageIncludes && !finding.message.toLowerCase().includes(include.messageIncludes.toLowerCase())) return false
+      return true
+    })
+    if (!match) failures.push(`chapterMeaningValidation missing ${JSON.stringify(include)} in ${JSON.stringify(findings)}`)
+  }
 }
 
 function buildLocationContinuityText(state: Sf2State): string {
@@ -824,6 +1057,21 @@ function assertAuthorContract(
   })
   if (typeof expected.expect.validationErrorCount === 'number' && validationErrors.length !== expected.expect.validationErrorCount) {
     failures.push(`authorContract.validationErrors: expected ${expected.expect.validationErrorCount}, got ${validationErrors.length} [${validationErrors.join('; ') || 'none'}]`)
+  }
+  for (const fragment of expected.expect.validationErrorIncludesAll ?? []) {
+    if (!validationErrors.some((error) => error.includes(fragment))) {
+      failures.push(`authorContract.validationErrors: expected error containing "${fragment}", got [${validationErrors.join('; ') || 'none'}]`)
+    }
+  }
+
+  const combinedErrors = validateAuthorToolInput(expected.rawToolInput, ctx)
+  if (typeof expected.expect.combinedErrorCount === 'number' && combinedErrors.length !== expected.expect.combinedErrorCount) {
+    failures.push(`authorContract.combinedErrors: expected ${expected.expect.combinedErrorCount}, got ${combinedErrors.length} [${combinedErrors.join('; ') || 'none'}]`)
+  }
+  for (const fragment of expected.expect.combinedErrorIncludesAll ?? []) {
+    if (!combinedErrors.some((error) => error.includes(fragment))) {
+      failures.push(`authorContract.combinedErrors: expected error containing "${fragment}", got [${combinedErrors.join('; ') || 'none'}]`)
+    }
   }
 
   if (expected.expect.titleEquals !== undefined && authored.chapterFrame.title !== expected.expect.titleEquals) {
@@ -1455,6 +1703,13 @@ function assertExpected(
   for (const id of expected.presentNpcIdsExcludes ?? []) {
     if (state.world.sceneSnapshot.presentNpcIds.includes(id)) failures.push(`presentNpcIds unexpectedly includes ${id}`)
   }
+  if (expected.presentNpcIdsExact) {
+    const actual = [...state.world.sceneSnapshot.presentNpcIds].sort()
+    const wanted = [...expected.presentNpcIdsExact].sort()
+    if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
+      failures.push(`presentNpcIdsExact expected [${wanted.join(',')}], got [${actual.join(',')}]`)
+    }
+  }
   for (const id of expected.scenePacketCastIncludes ?? []) {
     if (!scenePacketCastIds.includes(id)) failures.push(`scene packet cast missing ${id}`)
   }
@@ -1862,6 +2117,8 @@ function assertExpected(
     const repaired = repairSuggestedActions(qr.inputActions, {
       state: stateBefore,
       failedSkill: qr.failedSkill,
+      playerInput: qr.playerInput,
+      visibleProse: qr.visibleProse,
     })
     if (qr.outputCount !== undefined && repaired.actions.length !== qr.outputCount) {
       failures.push(`quickActionRepair.outputCount expected ${qr.outputCount}, got ${repaired.actions.length}`)
@@ -2116,6 +2373,12 @@ function assertExpected(
       )
     }
   }
+  for (const fragment of expected.pendingCoherenceNotesInclude ?? []) {
+    const notes = state.campaign.pendingCoherenceNotes ?? []
+    if (!notes.some((note) => note.includes(fragment))) {
+      failures.push(`pendingCoherenceNotes missing "${fragment}"`)
+    }
+  }
   if (expected.displaySentinel) {
     const ds = expected.displaySentinel
     const sentinelEvents = invariantEvents.filter(
@@ -2137,6 +2400,29 @@ function assertExpected(
         .filter(Boolean)
         .join(', ')
       failures.push(`displaySentinel expected zero findings, got ${sentinelEvents.length} (${surfaces})`)
+    }
+    if (ds.repairsVisibleProse) {
+      const sentinelKernel = buildSceneKernel(stateBefore)
+      const findings = scanDisplayOutput(fixture.input.narrator.prose, {
+        campaign: stateBefore.campaign,
+        locationContinuity: {
+          recentSceneText: buildLocationContinuityText(stateBefore),
+        },
+        absentSpeakers: {
+          absentEntityIds: sentinelKernel.absentEntityIds,
+          aliasMap: sentinelKernel.aliasMap,
+        },
+      })
+      const repairedProse = repairVisibleLeaks(fixture.input.narrator.prose, findings)
+      const repaired = repairedProse !== fixture.input.narrator.prose
+      const clientVisibleProse = repaired ? repairedProse : fixture.input.narrator.prose
+      for (const text of ds.repairsVisibleProse.containsAll ?? []) {
+        if (!clientVisibleProse.includes(text)) failures.push(`displaySentinel repaired prose missing "${text}"`)
+      }
+      for (const text of ds.repairsVisibleProse.containsNone ?? []) {
+        if (clientVisibleProse.includes(text)) failures.push(`displaySentinel repaired prose still contains "${text}"`)
+      }
+      if (!repaired) failures.push('displaySentinel expected repaired prose to supersede streamed prose, but prose was unchanged')
     }
     for (const include of ds.findingsInclude ?? []) {
       const match = sentinelEvents.find((e) => {

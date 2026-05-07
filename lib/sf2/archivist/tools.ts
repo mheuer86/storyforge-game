@@ -9,6 +9,12 @@ import type Anthropic from '@anthropic-ai/sdk'
 import { SF2_EMOTIONAL_BEAT_TAGS, SF2_TEMP_LOAD_TAGS } from '../types'
 
 export const ARCHIVIST_TOOL_NAME = 'extract_turn' as const
+export const ARCHIVIST_PARITY_CONTRACT = {
+  requiredTopLevel: ['pacing_classification', 'coherence_findings'],
+  requiredCreateFields: ['kind', 'payload', 'confidence', 'source_quote'],
+  requiredUpdateFields: ['entity_kind', 'entity_id', 'changes', 'confidence', 'source_quote'],
+  forbiddenCoherenceFindingTypes: ['anchor_miss'],
+} as const
 
 export const extractTurnTool: Anthropic.Tool = {
   name: ARCHIVIST_TOOL_NAME,
@@ -30,7 +36,19 @@ export const extractTurnTool: Anthropic.Tool = {
             payload: {
               type: 'object',
               description:
-                'Flat fields for the entity. Shape depends on kind. NPCs: {name, affiliation, role, pronoun: "she/her"|"he/him"|"they/them"|"other", age, voice_note, voice_register, retrieval_cue, key_facts: string[], supersedes_id?: string}. The optional supersedes_id field directs an anonymous→named merge: when the prose names a previously-anonymous on-stage NPC (e.g. "the unknown young man" turns out to be "Sev\'s brother"), set supersedes_id to that existing anonymous NPC\'s id. Apply-patch will rename + enrich the existing entity rather than creating a parallel one. Threads: {title, owner: {kind: "npc"|"faction", name_or_id: string}, tension: number 0-10, resolution_criteria, failure_mode, retrieval_cue, resolution_gates?: [{id,label,condition,required?: boolean}], successor_to_thread_id?: thread id/title, arc_id?: existing arc id/title}. Use resolution_gates only when successful resolution requires distinct state facts; code blocks successful resolution until required gates are satisfied. Use successor_to_thread_id when a resolved thread opens a follow-up question; code automatically anchors the successor to the same arc as its predecessor. Decisions: {summary, anchored_to: [thread_title_or_id, ...]}. Promises: {obligation, owner: {kind, name_or_id}, anchored_to: [thread_title_or_id, ...]}. Clues: {content, anchored_to: [thread_title_or_id, ...] (may be empty for floating)}. Locations: {name, description, atmospheric_conditions: string[], locked?: boolean}. Temporal anchors: {title, kind: deadline|timestamp|duration|sequence|recurrence, label, anchor_text, anchored_to: [entity_id_or_title, ...], retrieval_cue}. Arcs: {title, thread_ids: [...], spans_chapters: number, stakes_definition: string}. Documents: {type: "authorization"|"directive"|"communication"|"record"|"petition"|"notation", kind_label: string (genre flavor noun, e.g. "writ", "transfer order", "court summons", "ship manifest"), title, authorizes (one-line: what it permits/commands/attests/requests), original_summary (canonical terms at issuance — locked, never overwritten by updates), filed_by (npc/faction id-or-name; who originated/registered it), signed_by (npc/faction id-or-name; who authorized it — distinct from filer), additional_parties: [{role: "counter-signer"|"witness"|"custodian"|..., entity_id: string}], subject_entity_ids: [npc/faction ids; whom the document concerns — REQUIRED, must be ≥1. Use canonical IDs from the cast roster (e.g. \\`npc_4\\`, \\`npc_kess_elder\\`). Do NOT synthesize role-descriptive IDs like \\`npc_fled_resonant\\` when an existing NPC matches that role — scan the cast roster and reference their canonical id. Synthesizing role-descriptive IDs causes the same person to be treated as multiple entities in downstream prose.], anchored_to: [thread ids; may be empty for floating], access_level?: "public"|"sealed"|"classified", retrieval_cue}.',
+                'Flat fields for the entity. Shape depends on kind. NPCs: {name, affiliation, role, pronoun: "she/her"|"he/him"|"they/them"|"other", age, voice_note, voice_register, retrieval_cue, key_facts: string[], supersedes_id?: string}. The optional supersedes_id field directs an anonymous→named merge: when the prose names a previously-anonymous on-stage NPC (e.g. "the unknown young man" turns out to be "Sev\'s brother"), set supersedes_id to that existing anonymous NPC\'s id. Apply-patch will rename + enrich the existing entity rather than creating a parallel one. Threads: {title, owner: {kind: "npc"|"faction", name_or_id: string}, tension: number 0-10, resolution_criteria, failure_mode, retrieval_cue, resolution_gates?: [{id,label,condition,required?: boolean}], successor_to_thread_id?: thread id/title, arc_id?: existing arc id/title}. Use resolution_gates only when successful resolution requires distinct state facts; code blocks successful resolution until required gates are satisfied. Use successor_to_thread_id when a resolved thread opens a follow-up question; code automatically anchors the successor to the same arc as its predecessor. Decisions: {summary, anchored_to: [thread_title_or_id, ...]}. Promises: {obligation, owner: {kind, name_or_id}, anchored_to: [thread_title_or_id, ...]}. Clues: {content, anchored_to: [thread_title_or_id, ...] (may be empty for floating)}. Locations: {name, description, atmospheric_conditions: string[], locked?: boolean}. Temporal anchors: {title, kind: deadline|timestamp|duration|sequence|recurrence, label, anchor_text, anchored_to: [entity_id_or_title, ...], retrieval_cue}. Arcs: {title, thread_ids: [...], spans_chapters: number, stakes_definition: string}. Documents: create only for named artifacts whose terms or attribution matter in future play: {type: "authorization"|"directive"|"communication"|"record"|"petition"|"notation", kind_label: string (genre flavor noun, e.g. "writ", "transfer order", "ship manifest"), title, authorizes (one-line: what it permits/commands/attests/requests), original_summary (canonical terms at issuance — locked, never overwritten by updates), filed_by (npc/faction id-or-name; who originated/registered it), signed_by (npc/faction id-or-name; who authorized it — distinct from filer), additional_parties: [{role: "counter-signer"|"witness"|"custodian"|..., entity_id: string}], subject_entity_ids: [npc/faction ids; whom the document concerns — REQUIRED, must be ≥1. Use canonical IDs from the cast roster (e.g. \\`npc_4\\`, \\`npc_kess_elder\\`). Do NOT synthesize role-descriptive IDs like \\`npc_fled_resonant\\` when an existing NPC matches that role — scan the cast roster and reference their canonical id. Synthesizing role-descriptive IDs causes the same person to be treated as multiple entities in downstream prose.], anchored_to: [thread ids; may be empty for floating], access_level?: "public"|"sealed"|"classified", retrieval_cue}.',
+              properties: {
+                name: { type: 'string' },
+                pronoun: { type: 'string', enum: ['she/her', 'he/him', 'they/them', 'other'] },
+                age: { type: 'string' },
+                key_facts: { type: 'array', items: { type: 'string' }, maxItems: 3 },
+                supersedes_id: { type: 'string' },
+                type: { type: 'string', enum: ['authorization', 'directive', 'communication', 'record', 'petition', 'notation'] },
+                subject_entity_ids: { type: 'array', items: { type: 'string' }, minItems: 1 },
+                filed_by: { type: 'string' },
+                signed_by: { type: 'string' },
+                kind: { type: 'string', enum: ['deadline', 'timestamp', 'duration', 'sequence', 'recurrence'] },
+              },
               additionalProperties: true,
             },
             confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
@@ -39,7 +57,7 @@ export const extractTurnTool: Anthropic.Tool = {
               description: 'Phrase from the narrator prose supporting this write.',
             },
           },
-          required: ['kind', 'payload', 'confidence'],
+          required: ['kind', 'payload', 'confidence', 'source_quote'],
         },
       },
       updates: {
@@ -74,7 +92,7 @@ export const extractTurnTool: Anthropic.Tool = {
             confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
             source_quote: { type: 'string' },
           },
-          required: ['entity_kind', 'entity_id', 'changes', 'confidence'],
+          required: ['entity_kind', 'entity_id', 'changes', 'confidence', 'source_quote'],
         },
       },
       transitions: {
@@ -171,6 +189,7 @@ export const extractTurnTool: Anthropic.Tool = {
               enum: [
                 'npc_teleport',
                 'anchor_reference_missing',
+                'entity_merged',
                 'identity_drift',
                 'protected_field_write',
                 'contradiction',
@@ -309,7 +328,6 @@ export const extractTurnTool: Anthropic.Tool = {
                 'npc_fabrication',
                 'pronoun_drift',
                 'age_drift',
-                'anchor_miss',
                 'revelation_premature_reveal',
                 'document_attribution_drift',
               ],
@@ -332,7 +350,7 @@ export const extractTurnTool: Anthropic.Tool = {
         },
       },
     },
-    required: ['pacing_classification'],
+    required: ['pacing_classification', 'coherence_findings'],
   },
 }
 

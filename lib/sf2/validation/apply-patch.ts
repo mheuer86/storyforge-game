@@ -157,6 +157,73 @@ function driftDedup(
   })
 }
 
+type NpcMergeMatcher =
+  | 'existingById'
+  | 'supersedeTarget'
+  | 'findMatchingAnonymousNpc'
+  | 'findMatchingNpc'
+  | 'findMatchingSnapshotPlaceholder'
+
+type NpcMergeCandidate = {
+  npc: Sf2Npc
+  matcher: NpcMergeMatcher
+  confidence: number
+  fuzzy: boolean
+}
+
+function findNpcMergeCandidate(
+  draft: Sf2State,
+  proposedName: string,
+  proposedCue: string
+): NpcMergeCandidate | null {
+  const anonymous = findMatchingAnonymousNpc(draft, proposedName, proposedCue)
+  if (anonymous) {
+    return { npc: anonymous, matcher: 'findMatchingAnonymousNpc', confidence: 0.82, fuzzy: true }
+  }
+  const named = findMatchingNpc(draft, proposedName)
+  if (named) {
+    return { npc: named, matcher: 'findMatchingNpc', confidence: 0.76, fuzzy: true }
+  }
+  const snapshot = findMatchingSnapshotPlaceholder(draft, proposedName, proposedCue)
+  if (snapshot) {
+    return { npc: snapshot, matcher: 'findMatchingSnapshotPlaceholder', confidence: 0.7, fuzzy: true }
+  }
+  return null
+}
+
+function mergeNpcCreatePayload(
+  npc: Sf2Npc,
+  payload: Record<string, unknown>,
+  proposedName: string,
+  proposedCue: string,
+  turnIndex: number,
+  genreId?: string | null
+): void {
+  npc.lastSeenTurn = turnIndex
+  if (proposedName && isAnonymousNpc(npc, genreId)) {
+    npc.name = proposedName
+  }
+  if (proposedCue && (
+    !npc.retrievalCue ||
+    npc.retrievalCue.includes('placeholder from scene snapshot') ||
+    isAnonymousNpc(npc, genreId)
+  )) {
+    npc.retrievalCue = proposedCue
+  }
+  if (payload.affiliation) npc.affiliation = String(payload.affiliation)
+  if (payload.role) npc.role = payload.role as Sf2Npc['role']
+  const keyFacts = Array.isArray(payload.key_facts) ? (payload.key_facts as string[]).slice(0, 3) : []
+  if (keyFacts.length > 0 && (npc.identity.keyFacts.length === 0 || isAnonymousNpc(npc, genreId))) {
+    npc.identity.keyFacts = keyFacts
+  }
+  const proposedPronoun = npcPronounFromPayload(payload)
+  if (proposedPronoun && !npc.identity.pronoun) npc.identity.pronoun = proposedPronoun
+  const proposedAge = npcAgeFromPayload(payload)
+  if (proposedAge && !npc.identity.age) npc.identity.age = proposedAge
+  if (payload.voice_note) npc.identity.voice.note = String(payload.voice_note)
+  if (payload.voice_register) npc.identity.voice.register = String(payload.voice_register)
+}
+
 function syncActiveThreadIntoChapterRuntime(
   draft: Sf2State,
   threadId: Sf2EntityId,
@@ -227,45 +294,33 @@ const CURRENT_FACT_PATTERNS = [
   /\brevealed\b/i,
   /\bconfirmed\b/i,
   /\bshows?\b/i,
-  /\b0217\b/i,
-  /\b0209\b/i,
-  /\bharrow spur commercial registry\b/i,
-  /\b40,?200\b/i,
-  /\blira voss\b/i,
 ]
+
+const OPERATIONAL_FACT_STOP_WORDS = new Set([
+  'about',
+  'after',
+  'also',
+  'before',
+  'clue',
+  'fact',
+  'from',
+  'have',
+  'into',
+  'that',
+  'their',
+  'there',
+  'this',
+  'turn',
+  'with',
+])
 
 function operationalFactTokens(content: string): string[] {
   const normalized = normalizedSemanticText(content)
-  const tokens = new Set<string>()
-  const phrases = [
-    'hold',
-    'filing',
-    'timestamp',
-    'jurisdiction',
-    'registry',
-    'commercial',
-    'message',
-    'sable',
-    'margin',
-    'broker',
-    'lira',
-    'voss',
-    'amount',
-    '40200',
-    'cargo',
-    'hatch',
-    'sealant',
-    'bypass',
-    'data',
-    'core',
-    'monitor',
-    'departure',
-    'veyne',
-  ]
-  for (const phrase of phrases) {
-    if (normalized.includes(phrase)) tokens.add(phrase)
-  }
-  return [...tokens]
+  return uniqueStrings(
+    normalized
+      .split(/\W+/)
+      .filter((token) => token.length >= 4 && !OPERATIONAL_FACT_STOP_WORDS.has(token))
+  )
 }
 
 function shouldSupersedeClue(existingContent: string, proposedContent: string): boolean {
@@ -571,37 +626,68 @@ function applyCreate(
         const supersedeTarget =
           supersedesId &&
           draft.campaign.npcs[supersedesId] &&
-          isAnonymousNpc(draft.campaign.npcs[supersedesId])
+          isAnonymousNpc(draft.campaign.npcs[supersedesId], draft.meta.genreId)
             ? draft.campaign.npcs[supersedesId]
             : null
         const existingById =
           typeof p.id === 'string' && draft.campaign.npcs[p.id]
             ? draft.campaign.npcs[p.id]
             : null
-        const existingMatch =
-          existingById ||
-          supersedeTarget ||
-          findMatchingAnonymousNpc(draft, proposedName, proposedCue) ||
-          findMatchingNpc(draft, proposedName) ||
-          findMatchingSnapshotPlaceholder(draft, proposedName, proposedCue)
-        if (existingMatch) {
+        const mergeCandidate: NpcMergeCandidate | null = existingById
+          ? { npc: existingById, matcher: 'existingById', confidence: 1, fuzzy: false }
+          : supersedeTarget
+            ? { npc: supersedeTarget, matcher: 'supersedeTarget', confidence: 1, fuzzy: false }
+            : findNpcMergeCandidate(draft, proposedName, proposedCue)
+        if (mergeCandidate) {
+          const existingMatch = mergeCandidate.npc
+          const prior = structuredClone(existingMatch)
+          const next = structuredClone(existingMatch)
+          const anonymousPrior = isAnonymousNpc(prior, draft.meta.genreId)
+          const proposedRenamesProtectedNpc =
+            proposedName.length > 0 &&
+            !anonymousPrior &&
+            prior.name.trim() !== proposedName.trim()
+          if (proposedRenamesProtectedNpc) {
+            const reason = `npc name is protected: ${prior.name} → ${proposedName} not allowed`
+            outcomes.push({
+              accepted: false,
+              deferred: true,
+              reason,
+              writeRef: ref,
+              confidenceTier: write.confidence,
+            })
+            deferred.push({ kind: 'create', payload: write, reason })
+            drift.push({
+              kind: 'identity_drift',
+              detail: reason,
+              entityId: existingMatch.id,
+            })
+            return
+          }
+          mergeNpcCreatePayload(next, p, proposedName, proposedCue, turnIndex, draft.meta.genreId)
+          const identityCheck = checkNpcIdentity(next, anonymousPrior ? undefined : prior)
+          if (!identityCheck.ok) {
+            outcomes.push({
+              accepted: false,
+              deferred: true,
+              reason: identityCheck.reason,
+              writeRef: ref,
+              confidenceTier: write.confidence,
+            })
+            deferred.push({ kind: 'create', payload: write, reason: identityCheck.reason })
+            drift.push({
+              kind: 'identity_drift',
+              detail: identityCheck.reason,
+              entityId: existingMatch.id,
+            })
+            return
+          }
+
           // Merge: bump lastSeenTurn, extend retrieval cue if shorter, capture
           // a drift flag so the behavior is visible in instrumentation.
-          existingMatch.lastSeenTurn = turnIndex
-          if (proposedName && isAnonymousNpc(existingMatch)) {
-            existingMatch.name = proposedName
-          }
-          if (proposedCue && (
-            !existingMatch.retrievalCue ||
-            existingMatch.retrievalCue.includes('placeholder from scene snapshot')
-            || isAnonymousNpc(existingMatch)
-          )) {
-            existingMatch.retrievalCue = proposedCue
-          }
-          if (p.affiliation) existingMatch.affiliation = String(p.affiliation)
-          if (p.role) existingMatch.role = p.role as Sf2Npc['role']
+          mergeNpcCreatePayload(existingMatch, p, proposedName, proposedCue, turnIndex, draft.meta.genreId)
           const keyFacts = Array.isArray(p.key_facts) ? (p.key_facts as string[]).slice(0, 3) : []
-          if (keyFacts.length > 0 && (existingMatch.identity.keyFacts.length === 0 || isAnonymousNpc(existingMatch))) {
+          if (keyFacts.length > 0 && (existingMatch.identity.keyFacts.length === 0 || isAnonymousNpc(existingMatch, draft.meta.genreId))) {
             existingMatch.identity.keyFacts = keyFacts
           } else if (
             keyFacts.length > 0 &&
@@ -636,8 +722,8 @@ function applyCreate(
           if (p.voice_note) existingMatch.identity.voice.note = String(p.voice_note)
           if (p.voice_register) existingMatch.identity.voice.register = String(p.voice_register)
           drift.push({
-            kind: 'identity_drift',
-            detail: `dedup: would-be-create "${proposedName}" merged into existing ${existingMatch.id} ("${existingMatch.name}")`,
+            kind: mergeCandidate.fuzzy ? 'entity_merged' : 'identity_drift',
+            detail: `npc merge: matcher=${mergeCandidate.matcher}, confidence=${mergeCandidate.confidence}, proposedName="${proposedName}", existingName="${prior.name}", existingId=${existingMatch.id}`,
             entityId: existingMatch.id,
           })
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })

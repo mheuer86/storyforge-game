@@ -47,5 +47,6 @@ export function buildChapterPacket(state: Sf2State): Sf2ChapterPacket {
         }
       : undefined,
     pacingContract: setup.pacingContract,
+    continuationDramaticTurn: setup.continuationDramaticTurn,
   }
 }

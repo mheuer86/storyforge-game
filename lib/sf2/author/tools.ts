@@ -20,6 +20,23 @@ const openingSceneSpecSchema = {
     initial_state: { type: 'string' as const },
     first_player_facing: { type: 'string' as const },
     immediate_choice: { type: 'string' as const },
+    dramatic_situation: {
+      type: 'string' as const,
+      description: 'Ch2+ required. The playable human/social/institutional situation, not a timer or task queue.',
+    },
+    first_visible_pressure: {
+      type: 'string' as const,
+      description: 'Ch2+ required. What pressure the player sees first in fiction.',
+    },
+    first_human_or_institutional_move: {
+      type: 'string' as const,
+      description: 'Ch2+ required. The first move made by a person, faction, or institution.',
+    },
+    do_not_restage: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'Ch2+ required. Prior chapter mechanisms/milestones that must not be replayed as pending.',
+    },
     no_starting_combat: { type: 'boolean' as const },
     no_exposition_dump: { type: 'boolean' as const },
     visible_npc_ids: {
@@ -340,6 +357,75 @@ const continuationMovesSchema = {
   ],
 }
 
+const continuationDramaticTurnSchema = {
+  type: 'object' as const,
+  description:
+    'Chapter 2+ required. Converts prior chapter continuity into a dramatic turn: who acts now, what leverage they hold, and how any procedure serves that pressure.',
+  properties: {
+    prior_chapter_meant: { type: 'string' as const },
+    larger_pattern_revealed: { type: 'string' as const },
+    pressure_owner: {
+      type: 'object' as const,
+      properties: {
+        id_or_new_bridge: {
+          type: 'string' as const,
+          description: 'Existing id, named new threat, or explicit bridge from prior chapter facts.',
+        },
+        why_they_now_act: { type: 'string' as const },
+      },
+      required: ['id_or_new_bridge', 'why_they_now_act'],
+    },
+    human_leverage: {
+      type: 'object' as const,
+      properties: {
+        what_they_can_take_or_offer: { type: 'string' as const },
+        what_they_need_from_pc: { type: 'string' as const },
+      },
+      required: ['what_they_can_take_or_offer', 'what_they_need_from_pc'],
+    },
+    worsened_detail: {
+      type: 'object' as const,
+      properties: {
+        prior_detail: { type: 'string' as const },
+        why_it_is_load_bearing_now: { type: 'string' as const },
+      },
+      required: ['prior_detail', 'why_it_is_load_bearing_now'],
+    },
+    offscreen_antagonist_presence: { type: 'string' as const },
+    procedure_budget: {
+      type: 'object' as const,
+      properties: {
+        mechanism: {
+          type: 'string' as const,
+          description: 'One allowed mechanism, or "none".',
+        },
+        owner_using_it: {
+          type: 'string' as const,
+          description: 'Person/faction/institution using the mechanism for leverage, or "none".',
+        },
+        dramatic_function: {
+          type: 'string' as const,
+          description: 'How the mechanism changes leverage or forces an irreversible choice.',
+        },
+        max_opening_beats: {
+          type: 'number' as const,
+          description: 'Maximum opening beats the mechanism may occupy. Use 0 or 1.',
+        },
+      },
+      required: ['mechanism', 'owner_using_it', 'dramatic_function', 'max_opening_beats'],
+    },
+  },
+  required: [
+    'prior_chapter_meant',
+    'larger_pattern_revealed',
+    'pressure_owner',
+    'human_leverage',
+    'worsened_detail',
+    'offscreen_antagonist_presence',
+    'procedure_budget',
+  ],
+}
+
 const pressureLadderSchema = {
   type: 'array' as const,
   description: 'Exactly 3 ordered pressure-tightening steps.',
@@ -583,6 +669,7 @@ export const authorChapterSetupTool: Anthropic.Tool = {
       arc_link: arcLinkSchema,
       pacing_contract: pacingContractSchema,
       continuation_moves: continuationMovesSchema,
+      continuation_dramatic_turn: continuationDramaticTurnSchema,
       pressure_ladder: pressureLadderSchema,
       tension_score: tensionScoreSchema,
       possible_revelations: possibleRevelationsSchema,

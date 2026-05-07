@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator coherence notes override bad prior prose",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 10: prior prose remains continuity context except where a prior coherence finding flags that prose as wrong."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "pendingCoherenceNotes": [
+          "[medium] npc_fabrication (npc_absent_guard): Prior prose placed an absent guard on-stage. Remove the guard from the active scene unless they visibly enter."
+        ]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "Who is in the room?",
+            "narratorProse": "The guard leans against the wall beside Moth, one hand on the baton.",
+            "narratorAnnotation": null,
+            "createdAt": "replay"
+          }
+        ]
+      }
+    },
+    "playerInput": "I ask Moth what the guard wants.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildNarratorTurnContext output)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "I ask Moth what the guard wants.",
+      "assistantMessageCountAtLeast": 1,
+      "includesAssistantProseMatching": ["The guard leans against the wall"],
+      "userMessageContainsAll": [
+        "Private continuity notes",
+        "the note overrides that conflicting prior prose",
+        "npc_fabrication",
+        "Prior prose placed an absent guard on-stage",
+        "Continuation turn"
+      ]
+    }
+  }
+}

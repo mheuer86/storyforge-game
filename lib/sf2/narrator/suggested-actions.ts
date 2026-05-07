@@ -5,6 +5,8 @@ export type QuickActionCategory = 'direct' | 'observe' | 'pivot_scene' | 'levera
 export interface QuickActionRepairContext {
   state: Sf2State
   failedSkill?: string
+  playerInput?: string
+  visibleProse?: string
 }
 
 export interface QuickActionRepairResult {
@@ -82,6 +84,27 @@ export function repairSuggestedActions(
     }
   }
 
+  if (context.playerInput?.trim()) {
+    for (let i = 0; i < actions.length; i++) {
+      if (!repeatsPlayerInput(actions[i], context.playerInput)) continue
+      const replacement = firstUnusedFallback(actions, new Set(categoriesFor(actions)))
+      if (replacement) {
+        actions[i] = replacement.action
+        notes.push('replaced quick action that repeated the player input')
+      }
+    }
+  }
+
+  const visibleProse = buildVisibleProse(context.state, context.visibleProse)
+  for (let i = 0; i < actions.length; i++) {
+    if (!mentionsUnseenNpc(actions[i], context.state, visibleProse)) continue
+    const replacement = firstUnusedFallback(actions, new Set(categoriesFor(actions)))
+    if (replacement) {
+      actions[i] = replacement.action
+      notes.push('replaced quick action naming an NPC not yet introduced in prose')
+    }
+  }
+
   while (actions.length < 3) {
     const replacement = firstUnusedFallback(actions, new Set(categoriesFor(actions)))
     if (!replacement) break
@@ -90,6 +113,46 @@ export function repairSuggestedActions(
   }
 
   return { actions: actions.slice(0, 4), notes }
+}
+
+function repeatsPlayerInput(action: string, playerInput: string): boolean {
+  const actionText = normalizeActionText(action)
+  const inputText = normalizeActionText(playerInput)
+  if (!actionText || !inputText) return false
+  if (actionText === inputText) return true
+  if (actionText.length >= 40 && inputText.includes(actionText)) return true
+  if (inputText.length >= 40 && actionText.includes(inputText)) return true
+  const actionHead = actionText.split(/\s+/).slice(0, 9).join(' ')
+  const inputHead = inputText.split(/\s+/).slice(0, 9).join(' ')
+  return actionHead.length >= 36 && inputText.includes(actionHead)
+    || inputHead.length >= 36 && actionText.includes(inputHead)
+}
+
+function normalizeActionText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildVisibleProse(state: Sf2State, visibleProse?: string): string {
+  return [
+    ...state.history.turns.map((turn) => turn.narratorProse),
+    visibleProse ?? '',
+  ].join('\n').toLowerCase()
+}
+
+function mentionsUnseenNpc(action: string, state: Sf2State, visibleProse: string): boolean {
+  const lowerAction = action.toLowerCase()
+  for (const npc of Object.values(state.campaign.npcs)) {
+    const name = npc.name?.trim()
+    if (!name || name.length < 3) continue
+    if (!lowerAction.includes(name.toLowerCase())) continue
+    if (!visibleProse.includes(name.toLowerCase())) return true
+  }
+  return false
 }
 
 export function classifyQuickAction(action: string): QuickActionCategory {
@@ -135,6 +198,8 @@ function firstUnusedFallback(
 }
 
 function hasDepartureContinuityLock(state: Sf2State): boolean {
+  if (state.meta.genreId !== 'space-opera') return false
+
   const recentSceneText = [
     state.world.currentLocation?.name,
     state.world.currentLocation?.description,

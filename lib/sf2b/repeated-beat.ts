@@ -17,7 +17,7 @@ export interface Sf2bRepeatedBeatEvidence {
 export interface Sf2bRepeatedBeatPredicate {
   key: string
   label: string
-  family: 'clamp' | 'hold' | 'release' | 'waiting' | 'thread_status'
+  family: 'constraint' | 'held_position' | 'withheld_release' | 'waiting' | 'unresolved_status'
   count: number
   distinctTurns: number[]
   threadIds: Sf2EntityId[]
@@ -56,11 +56,11 @@ const BEAT_PATTERNS: Array<{
   label: string
   regex: RegExp
 }> = [
-  { family: 'clamp', label: 'clamped pressure', regex: /\b(clamp(?:ed|s|ing)?|pin(?:ned|s|ning)?|lock(?:ed|s|ing)? down|hem(?:med|s|ming)? in)\b/i },
-  { family: 'hold', label: 'held position', regex: /\b(hold(?:s|ing)?|held|hold steady|stay(?:s|ing)? put|keeps? (?:still|position|watch))\b/i },
-  { family: 'release', label: 'withheld release', regex: /\b(release(?:d|s|ing)?|let(?:s|ting)? go|relent(?:s|ed|ing)?|stand(?:s|ing)? down|back(?:s|ed|ing)? off)\b/i },
+  { family: 'constraint', label: 'static constraint', regex: /\b(clamp(?:ed|s|ing)?|pin(?:ned|s|ning)?|lock(?:ed|s|ing)? down|hem(?:med|s|ming)? in|blocked|boxed in|contained)\b/i },
+  { family: 'held_position', label: 'held position', regex: /\b(hold(?:s|ing)?|held|hold steady|stay(?:s|ing)? put|keeps? (?:still|position|watch))\b/i },
+  { family: 'withheld_release', label: 'withheld release', regex: /\b(release(?:d|s|ing)?|let(?:s|ting)? go|relent(?:s|ed|ing)?|stand(?:s|ing)? down|back(?:s|ed|ing)? off)\b/i },
   { family: 'waiting', label: 'waiting beat', regex: /\b(wait(?:s|ed|ing)?|pause(?:s|d)?|still waiting|no one moves|nothing changes|silence stretches|holds? breath)\b/i },
-  { family: 'thread_status', label: 'unresolved status', regex: /\b(unresolved|still open|remains open|no closer|not yet settled|status quo|same question|same pressure)\b/i },
+  { family: 'unresolved_status', label: 'unresolved status', regex: /\b(unresolved|still open|remains open|no closer|not yet settled|status quo|same question|same pressure)\b/i },
 ]
 
 const SUBJECT_STOPWORDS = new Set([
@@ -310,10 +310,10 @@ function chooseActions(predicates: Sf2bRepeatedBeatPredicate[]): Sf2bRepeatedBea
   const families = new Set(predicates.map((predicate) => predicate.family))
   const actions: Sf2bRepeatedBeatAction[] = []
 
-  if (families.has('thread_status')) actions.push('close_vector')
-  if (families.has('clamp') || families.has('hold')) actions.push('escalate')
+  if (families.has('unresolved_status')) actions.push('close_vector')
+  if (families.has('constraint') || families.has('held_position')) actions.push('escalate')
   if (families.has('waiting')) actions.push('time_cut')
-  if (families.has('release')) actions.push('force_choice')
+  if (families.has('withheld_release')) actions.push('force_choice')
   actions.push('compress')
 
   return Array.from(new Set(actions))

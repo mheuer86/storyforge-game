@@ -1,0 +1,284 @@
+[
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 2,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 3,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Persuasion Ask Coll when the hold was filed — timestamp and jurisdiction.",
+    "note": "Follow up on missing timestamp and jurisdiction before accepting outside help.",
+    "rolls": [
+      "Persuasion Check Coll is neutral but low-investment; persuading her to read the timestamp aloud rather than deflect to t"
+    ],
+    "timedOut": true
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 3,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 4,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Investigation Ask Coll what a Veyne Logistics 'standing commercial recovery authority' actually lets them do next.",
+    "note": "Clarify immediate risks before engaging the broker.",
+    "rolls": [
+      "Investigation Check The player is pressing for what a standing commercial recovery authority actually enables as a next "
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 4,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 5,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Action Read the Sable Margin's message — the broker knew the number, and they knew it before the fee cycle opened.",
+    "note": "Open the broker message after establishing who filed the hold.",
+    "rolls": [],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 5,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 6,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Hacking Check the Sable Margin routing string before you move — see if the dead-end tells you anything about who's behind it.",
+    "note": "Check broker message provenance before walking into a corridor meet.",
+    "rolls": [
+      "Hacking Check The routing string is deliberately obscured; peeling back the relay layers to find something useful beneat"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 6,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 7,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Perception Check what just populated on Coll's second screen — her reaction was small but it wasn't nothing.",
+    "note": "Use Coll reaction to learn whether Veyne or port systems changed after the trace.",
+    "rolls": [
+      "Perception Check Reading a reflected screen at an oblique angle in low corridor light, while not making the attempt obvi"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 7,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 8,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Action Leave the kiosk now. Lira Voss is already watching — staying here is costing you more than the walk down the corridor.",
+    "note": "Stop digging at kiosk after Coll becomes wary and go to broker meeting.",
+    "rolls": [],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 8,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 9,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Perception Tell her exactly what you learned — Veyne Logistics, 0217 timestamp, her message at 0209 — and watch what she does with the fact that you've already",
+    "note": "Share mapped trap facts to test Voss reaction.",
+    "rolls": [
+      "Perception Check The Driftrunner is watching what Lira does with the fact that the trap has been mapped — reading involu"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 9,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 10,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Perception Ask what's in the hatch behind her — the cargo she's been standing next to since before you arrived.",
+    "note": "Ask for the cargo before negotiating price.",
+    "rolls": [
+      "Perception Check The Driftrunner is studying the hatch and Lira's positioning to read whatever the sealed unit's exterio"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 10,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 11,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Persuasion Request the transit manifest for the sealed unit before you agree to anything.",
+    "note": "Ask for manifest before accepting the sealed cargo job.",
+    "rolls": [
+      "Persuasion Check Pressing Lira to disclose cargo contents before commitment — she's favorable but protecting operational"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 11,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 12,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Persuasion Accept the job — tell Lira you're in, and hold her to the disclosure she just offered.",
+    "note": "Accept after failed manifest push, holding Lira to disclosure.",
+    "rolls": [
+      "Persuasion Check Lira is disclosing around the center — holding her to the specific promise of content disclosure requir"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 12,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 13,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Action Accept the terms as stated and ask how the clamps get cleared once you commit.",
+    "note": "After accepting, verify payment/lien mechanism.",
+    "rolls": [],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 13,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 14,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Persuasion Before you walk: ask Lira who the prior runner was, and why the slot was open again.",
+    "note": "Clarify the risk represented by the prior runner before taking the chip.",
+    "rolls": [
+      "Persuasion Check Lira is favorable but this question has real cost to answer — the prior runner's fate is operational ex"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 14,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 15,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Investigation Inspect the cargo hatch up close before you move — that sealant residue and the stress fracture want a second look.",
+    "note": "One final cargo inspection before moving the chip through port authority.",
+    "rolls": [
+      "Investigation Check The hatch has been deliberately prepared to look routine — finding what the prep work is hiding requ"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 15,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 16,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Stealth Walk the chip to Coll's kiosk and process the clamp release — get the Driftrunner free before the fee cycle moves.",
+    "note": "Return to kiosk and process release after accepting chip.",
+    "rolls": [
+      "Stealth Check Coll already logged the Driftrunner's presence and questions; presenting the chip without drawing scrutiny"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 16,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 17,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Perception Glance at Coll's second screen on your way past — see what she actually filed before you're out of range.",
+    "note": "Check whether Coll log creates departure risk.",
+    "rolls": [
+      "Perception Check Coll's second screen is visible only briefly at an oblique angle while the PC moves past — catching the"
+    ],
+    "timedOut": false
+  },
+  {
+    "before": {
+      "chapter": 1,
+      "turn": 17,
+      "title": "The Forty Thousand Ask"
+    },
+    "after": {
+      "chapter": 1,
+      "turn": 18,
+      "title": "The Forty Thousand Ask"
+    },
+    "option": "Stealth Stow the core somewhere Coll's departure monitor won't surface on a standard scan — if Veyne sends someone to the arm before you're clear.",
+    "note": "Try to hide the core from standard scan before departure.",
+    "rolls": [
+      "Stealth Check Concealing the core in a scan shadow before Veyne's departure monitor brings someone to the arm. DC 15 vs "
+    ],
+    "timedOut": false
+  }
+]

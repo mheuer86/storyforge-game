@@ -1,0 +1,104 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "anonymous placeholder: cyberpunk suit merges through shared genre marker",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 16: genre-specific anonymous markers must be shared by Archivist registry rendering and NPC merge policy."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "cyberpunk"
+      },
+      "campaign": {
+        "npcs": {
+          "npc_suit": {
+            "id": "npc_suit",
+            "name": "the suit",
+            "affiliation": "Unknown corporate actor",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": [],
+              "voice": {
+                "note": "Measured corporate calm.",
+                "register": "executive"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "anonymous suit from the chrome booth",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_suit"]
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_suit"],
+          "surfaceNpcIds": ["npc_suit"]
+        }
+      }
+    },
+    "playerInput": "I ask the suit who signed the kill order.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The suit smiles without warmth. \"Call me Veyra,\" she says, sliding the signed kill order across the table.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_suit", "Veyra"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": ["Veyra has access to the signed kill order."]
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "confidence": "high",
+            "payload": {
+              "name": "Veyra",
+              "affiliation": "Unknown corporate actor",
+              "role": "npc",
+              "disposition": "neutral",
+              "key_facts": ["Named herself after appearing as the anonymous suit."],
+              "voice_note": "Measured corporate calm.",
+              "voice_register": "executive",
+              "retrieval_cue": "Veyra, the anonymous suit from the chrome booth"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistTurnMessage": {
+      "containsAll": ["npc_suit · the suit", "ANONYMOUS-PLACEHOLDER"]
+    },
+    "archivistAcceptedRefs": ["creates[0]"],
+    "npcNamesInclude": ["Veyra"],
+    "npcNamesAbsent": ["the suit"],
+    "driftIncludes": [
+      {
+        "kind": "entity_merged",
+        "detailIncludes": "matcher=findMatchingAnonymousNpc"
+      }
+    ]
+  }
+}

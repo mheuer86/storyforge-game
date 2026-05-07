@@ -1,0 +1,379 @@
+SPACE OPERA
+HUMAN / DRIFTRUNNER
+CH.01
+The Forty Thousand Ask
+TURN 10
+MENU
+DRIFTRUNNER
+LV.1
+Codex
+Space Opera / Human
+9/9
+HP
+15
+SHLD
+120
+CRED
+0
+INSP
+GEAR
+01
+Pulse Pistol
+1D8 ENERGY
+Standard sidearm
+02
+Vibro-Knife
+1D4+DEX
+Compact blade with vibrating edge
+03
+Holo-Cloak
+CHARGES 1/1
+Advantage on Stealth checks
+04
+Lockbreaker Kit
+Electronic lock bypass tools
+PLAYBOOK SKILL
+1/1
+Smuggler's Luck
+Once per chapter, when caught, searched, or cornered, one contraband item or piece of evidence goes undetected. Luck has memory. Each use in the same port or with the same faction makes the next search more thorough.
+TURN 1
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+The strip-light above kiosk seven flickers twice, catches, holds. It's been doing that since you docked — three days ago, when the hold first appeared in your queue notification and you told yourself it was a processing error.
+
+It is not a processing error.
+
+The display reads 40,000 CR — ADMINISTRATIVE HOLD — DOCKING ARM 4 — CLAMP ACTIVE. Behind the scratched observation panel to your left, the Driftrunner sits exactly where you left her: sealed, grounded, going nowhere. The clamp housing on her forward strut has a green status light. Green means locked.
+
+Behind the kiosk window, Port Assessor Coll — Harrow Spur's procedural face for everything involving clamp authority on arm four — pulls up a second screen without looking at you. She's mid-fifties, uniform pressed out of habit rather than pride, and she has the particular stillness of someone who has explained fee codes to desperate people every day for twenty years and stopped feeling the weight of it around year three.
+
+"Hold reference four-dash-seven-nine-one." She reads it aloud even though you didn't ask. "Administrative. Forty thousand, two hundred credits. Fee cycle refreshes—" she checks the second screen— "in approximately four hours."
+
+Your comm has one unread message. Flagged urgent. Sender listed as The Sable Margin.
+
+You haven't opened it yet.
+TURN 1
+-
++2 INTEL
+/+HARROW SPUR — DOC...
+TURN 2
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+Ask Coll what 'administrative hold' actually means — who filed it and under what authority. [Investigation]
+Coll doesn't look up from the second screen right away. One finger moves across a physical keypad — a habit, not a need — and then she pulls the main display half-around so you can see it from your side of the counter.
+
+"Administrative hold." She reads it the way she'd read a transit manifest: flat, no inflection. "Filed under Port Authority Ordinance 7.2, sub-clause C. That's a general commercial lien. Means someone with filing standing submitted a claim against the vessel before departure clearance could process."
+
+Her finger taps the screen twice, scrolling to a sub-header. "Who filed it. That's in the originating-party line. Right here." She tilts the screen another ten degrees. "Name, filing timestamp, reference jurisdiction. All there."
+
+The text is dense — fee codes stacked on fee codes, the kind of document designed to be skimmed past. You're going to have to actually read it.
+Investigation Check
+Failure
+
+You clock the name but miss the filing timestamp — and Coll rotates the screen back before you can go deeper into the sub-clauses.
+
+DC 12
+VS
+10
+8 +2
+The text blurs together the way these documents always do — Ordinance 7.2, sub-clause C, reference jurisdiction Harrow Spur Commercial Registry, filing timestamp—
+
+Coll's hand comes back and rotates the screen before you've finished the line. Not hostile. Just the motion of someone who's shown you what you asked for and considers the transaction complete.
+
+"Originating party: Veyne Logistics Recovery Division." She says it the way she'd say a weather report. "That's in the file. If you need a printed summary, there's a two-credit documentation fee."
+
+She's already looking at the second screen again. The name landed; the rest of the entry — timestamp, reference jurisdiction, any sub-clause that might explain why Veyne Logistics has filing standing against your ship — is back behind the counter's angle.
+TURN 2
+-
++INTEL
+/WHO FILED THE HOL... +2
+TURN 3
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+Ask Coll when the hold was filed — timestamp and jurisdiction. [Persuasion]
+"The timestamp." You keep your voice easy, conversational — the kind of ask that sounds like paperwork rather than pressure. "And the jurisdiction. Just want to make sure I'm looking at the right file."
+
+Coll's eyes come up from the second screen for the first time. Not suspicion — more the look of someone recalibrating which queue you belong to.
+
+"That's all in the summary document," she says. "Two credits."
+
+"I'd rather hear it from you."
+
+She looks at you for a moment — one beat, two — the way a person decides whether a question is routine or the start of something they don't want to be part of.
+Persuasion Check
+Success
+DC 12
+VS
+13
+12 +1
+Something in her posture settles. She pulls the display back around — not all the way, but enough — and reads without being asked twice.
+
+"Filing timestamp: this shift. 0217 station time." She scrolls a line. "Jurisdiction: Harrow Spur Commercial Registry, under standing commercial recovery authority. That's a standard Veyne Logistics filing block — they pre-register the recovery authority at the station level. Means they don't need a judge. They just need a transit manifest and a vessel in dock."
+
+She lets the screen sit there a moment, then rotates it back.
+
+"All in the summary document," she adds — not unkindly. Just closing the loop.
+
+0217 this shift. The Driftrunner was clamped in the small hours, before the fee cycle even opened. Veyne Logistics filed the moment the ship touched the arm.
+TURN 3
+-
++2 INTEL
+/CLEAR THE FORTY-T... +1
+/THE BROKER'S SEAL... +1
+/WHO FILED THE HOL... +2
+TURN 4
+Ask Coll what a Veyne Logistics 'standing commercial recovery authority' actually lets them do next. [Investigation]
+"Standing commercial recovery authority." You keep it neutral — just repeating the phrase back, giving her room to fill it.
+
+Coll's eyes move to the second screen again, then back. Her finger doesn't go to the keypad this time.
+
+"It's a pre-registered filing block," she says. "Standard for Corporate Bloc recovery divisions operating across multiple stations. They lodge the authority block with the Commercial Registry in advance. When a vessel of interest docks, they file against it without needing a hearing."
+
+She stops there. The way someone stops when they've answered the question and are deciding whether the next part is their job to say.
+
+You watch her hands. She's not reaching for anything — just holding the edge of the counter. Something in the document is load-bearing, and she knows you're close to it.
+Investigation Check
+Failure
+
+Coll closes the topic with procedure: "Next steps are between you and Veyne Logistics." The full scope of what they can do remains unspoken — and Coll notes the inquiry in the file.
+
+DC 15
+VS
+8
+6 +2
+"Next steps are between you and Veyne Logistics." She says it cleanly, without apology. The screen rotates back — all the way this time, fully out of your sightline. "My authority ends at the clamp status. Theirs begins at the originating-party line."
+
+Her hand goes to the keypad. A small entry — two keystrokes. Her eyes are back on the second screen.
+
+The inquiry is in the file now. That much is readable in the small pause before she moved.
+
+Your comm is still in your pocket. The Sable Margin's message, still unread.
+TURN 4
+-
++2 INTEL
+TURN 5
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+Read the Sable Margin's message — the broker knew the number, and they knew it before the fee cycle opened.
+You turn away from the counter and pull out your comm.
+
+The message is from an address you don't recognize — a routing string that dead-ends if you try to trace it back. But the header reads The Sable Margin, and the timestamp reads 0209 this shift.
+
+Eight minutes before Veyne Logistics filed the clamp.
+
+The message itself is short:
+
+---
+
+Driftrunner — you have a hold problem. Forty thousand, two hundred. We have a solution. Cargo-side corridor, Arm 4, before the fee cycle refreshes. Come alone. — L.V.
+
+---
+
+The number is exact. Not forty thousand — forty thousand, two hundred. The same figure Coll read off the hold file without blinking.
+
+Lira Voss knew the number before the hold was public record. Before the fee cycle had even opened. Before, technically, you'd had any reason to stand at this kiosk reading Veyne Logistics filing codes at whatever hour this is.
+
+Behind you, Coll's keypad makes two soft clicks. Routine entry — her second screen, same as always. She hasn't moved.
+
+The cargo-side corridor is thirty meters down the arm. The fee cycle refresh is four hours out. And someone built this trap with enough precision to quote you the exact number before the jaws closed.
+TURN 5
+-
++3 INTEL
+/CLEAR THE FORTY-T... +1
+/THE BROKER'S SEAL... +2
+/WHO FILED THE HOL... +1
+TURN 6
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+Check the Sable Margin routing string before you move — see if the dead-end tells you anything about who's behind it. [Hacking]
+You angle your body away from the counter and pull up the routing string on your comm's trace utility.
+
+It dead-ends clean — a relay bounce off a Harrow Spur commercial node, then a second bounce through what looks like a freight-forwarding registration. Standard back-channel hygiene. But the freight-forwarding registration has a timestamp on it.
+Hacking Check
+Failure
+
+The trace utility triggers a dead-man flag in the routing string — the address burns, and whoever is watching the back-channel sees a trace attempt originate from Docking Arm 4.
+
+DC 15
+VS
+13
+9 +4
+The trace utility runs the second relay — and something in the freight-forwarding registration responds. Not data. A handshake ping, automated, the kind a live monitoring node sends when it detects an active probe.
+
+Your comm vibrates once. New message, same routing string — except the address is different now. Shorter. Direct.
+
+Stop digging. Come to the corridor. — L.V.
+
+Somewhere on the station, someone just watched you work.
+
+Behind you, Coll makes a small sound — not quite a word. You glance back. Her second screen has a new entry on it. Her eyes move from the screen to you, then back down. Her hands stay on the counter.
+
+She doesn't say anything. But the uneasy set of her shoulders from before has gone somewhere quieter and stiller.
+
+The cargo-side corridor is thirty meters away. Lira Voss is already there, or close enough to be watching a live feed. And now she knows you don't take traps at face value.
+TURN 6
+-
++3 INTEL
+/CLEAR THE FORTY-T... -1
+/WHO FILED THE HOL... -1
+TURN 7
+/
+HARROW SPUR — DOCKING ARM 4, CLAMP KIOSK
+Check what just populated on Coll's second screen — her reaction was small but it wasn't nothing. [Perception]
+Coll's hands are still on the counter. But her eyes have moved — just once, just briefly — to the second screen's lower panel, the one angled away from you.
+
+You shift your weight, a fraction of a step to the left, like you're just resettling while you think. The screen's reflection is in the observation panel glass behind her.
+Perception Check
+Failure
+
+Coll catches the angle of your gaze and shifts the second screen away — the entry is gone before you can read it, and she knows you were looking.
+
+DC 15
+VS
+10
+10 +0
+The angle is wrong. The reflection gives you smeared light and a column of text that could be anything — a docking queue, a fee log, a name.
+
+Coll moves.
+
+Not fast — just the small, practiced motion of someone tidying their workspace. The second screen rotates inward on its mount, panel now fully flush with the counter's back wall. Her hands come to rest on either side of it.
+
+"If you need the documentation summary," she says, "the fee is two credits." Her voice has the same flat cadence as before, but her eyes don't quite reach yours this time. They settle somewhere around your collar.
+
+She knows you were looking.
+
+The screen is closed off. Whatever populated on it — Lira Voss's ping reaching a Port Authority node, a flag on your vessel registration, something else entirely — is behind the counter's angle now and staying there.
+
+Your comm is in your hand. The cargo-side corridor is thirty meters away. And Coll has just become the kind of witness who will remember this conversation very precisely.
+TURN 7
+-
++INTEL
+/COLL -1
+/WHO FILED THE HOL... +1
+TURN 8
+/
+HARROW SPUR DOCKING ARM4 CORRIDOR
+Leave the kiosk now. Lira Voss is already watching — staying here is costing you more than the walk down the corridor.
+You pocket the comm and walk.
+
+Coll doesn't call after you. You hear the two soft clicks of her keypad — routine entry, or a flag on your departure, and the difference doesn't matter anymore. Either way, the kiosk is behind you.
+
+The cargo-side corridor is thirty meters of recycled air and flickering strip-light. The observation panel tracks the Driftrunner through the glass — clamped, grounded, the green status light steady. Your own ship, watching you walk toward whatever this is.
+
+Twenty meters. The corridor narrows where a coolant conduit runs exposed along the wall, and the light drops a register. Someone did maintenance here recently — fresh sealant on a pipe joint, still pale against the older work.
+
+Ten meters. A figure is standing at the corridor's far end, back against the wall beside a sealed cargo hatch. She's not trying to look casual. She's just still, in the way of someone who has been waiting and decided waiting was fine.
+
+She sees you come around the conduit. She doesn't move toward you.
+
+"You traced the routing string." Not an accusation. More like a box checked. "And then you stood at the kiosk another three minutes." Her eyes move to the observation panel, to the Driftrunner behind the glass, then back to you. "What did you learn?"
+TURN 8
+-
++INTEL
+/LIRA VOSS +1
+/+2 LOCATIONS
+TURN 9
+/
+HARROW SPUR DOCKING ARM4 CORRIDOR
+Tell her exactly what you learned — Veyne Logistics, 0217 timestamp, her message at 0209 — and watch what she does with the fact that you've already mapped the trap. [Perception]
+The facts land between you like cargo dropped from height. Veyne Logistics. 0217. Her message at 0209.
+
+Lira doesn't move. Doesn't look away from you.
+
+"All right," she says. One word, and then the silence she always seems to have in reserve.
+
+Her right hand stays relaxed against the cargo hatch frame. No twitch toward a comm, no inventory of her exits. She lets the numbers sit in the air between you — your numbers, your work — and her expression does something that isn't surprise. It might be assessment. It might be something closer to relief.
+
+She says, "You mapped it faster than the last one did."
+
+Then she waits, watching you absorb that. She doesn't explain what it means. She doesn't reach for it back.
+Perception Check
+Failure
+
+Lira's micro-tells stay invisible; you read composure as composure, and the slip about a prior runner lands as a power play rather than an admission.
+
+DC 14
+VS
+13
+13 +0
+Relaxed posture, relaxed hand. Whatever she gives you in her face, you take as deliberate — offered, not leaked. She is watching you read her, and she knows what you're looking for.
+
+The slip about the prior runner — last one — already given. Already real. And she's settled back into that unhurried stillness, letting you decide what weight to put on it.
+
+The corridor hum fills in the silence where her explanation would go.
+TURN 9
+-
++INTEL
+/LIRA VOSS +1
+TURN 10
+/
+HARROW SPUR DOCKING ARM4 CORRIDOR
+Ask what's in the hatch behind her — the cargo she's been standing next to since before you arrived. [Perception]
+"What's in the hatch."
+
+Not quite a question the way she hears it. Lira's chin lifts a degree — the first real movement she's made since you named Veyne Logistics — and her eyes track to the hatch behind her left shoulder, then back to you.
+
+"Sealed cargo," she says. "That's the job."
+
+She doesn't step aside. Doesn't touch the hatch. But she also doesn't close the distance between you and it, and that gap — maybe two meters of corridor — is doing something. The hatch is old station-standard, surface-mounted latches with a secondary pressure seal, and the inspection port is dark. No indicator light. No transit tag visible from here.
+
+What you can see: the cargo hatch is sealed and dark, but there's a faint asymmetry in the way she's standing — her weight slightly toward the bulkhead, not the hatch. Like something she's been told not to lean on.
+Perception Check
+Success
+DC 14
+VS
+19
+19 +0
+19. Clean.
+
+The asymmetry resolves into specifics. The pressure seal has a hairline stress fracture along its lower left edge — station-old, not transit damage, which means this hatch hasn't been cycled recently through normal port procedure. Someone used a side-access bypass, not the main latch sequence. And below the inspection port, barely visible: a smear of pale residue that matches the fresh sealant on the pipe joint you passed twenty meters back. Applied in the same shift window.
+
+The hatch wasn't here before tonight. Or rather — the cargo was put here, and then the corridor was made to look like it had been here longer.
+
+Lira watches you look. Lets you look.
+
+"The offer covers your hold," she says quietly. "Forty thousand, two hundred. Exact. You want to know what's inside before you decide."
+TURN 10
+-
++2 INTEL
+INTIMIDATION
+Tell her: the sealant is the same batch as the pipe joint. Someone placed this cargo here tonight, after you docked. She owes you a real answer, not a category.
+PERCEPTION
+Ask her directly what happened to the last runner — she already opened that door.
+PERSUASION
+Request the transit manifest for the sealed unit before you agree to anything.
+ACTION
+Stay quiet. Let her finish her pitch and see what else she volunteers without being pushed.
+>
+LOCATIONS
+harrow spur docking arm4 corridor
+HERE
+flickering strip-light
+Harrow Spur — Docking Arm 4, Cargo-Side Corridor
+flickering strip-light
+Harrow Spur — Docking Arm 4, Clamp Kiosk
+flickering strip-light
+Harrow Spur station concourse, docking arm four — cargo-side corridor outside the clamp authority kiosk.
+Recycled air, flickering strip-light, distant hull hum.
+PRESENT
+Lira Voss
+The Sable Margin (back-channel broker collective)
+FAVORABLE
+INTEL / CASE BOARD
+Clear the Forty-Thousand Hold
+SPINE
+3 CLUES
+Hold reference 4-791, 40,200 CR, filed as administrative hold on Docking Arm 4 under Port Authority Ordinance 7.2, sub-clause C (general commercial lien). Originating party: Veyne Logistics Recovery Division. Fee cycle refresh in approximately 4 hours. Filing timestamp and full sub-clause details remain unread.
+Hold was filed at 0217 this shift — the moment the Driftrunner docked. Filing timestamp establishes the hold was placed within the same operational window as the broker's offer arrived.
+Veyne Logistics uses a pre-registered standing commercial recovery authority at Harrow Spur — they do not need a judge to file a recovery hold. They only need a transit manifest and a vessel in dock.
+The Broker's Sealed Offer
+PRESSURE
+3 CLUES
+The Sable Margin sent an urgent message to the Driftrunner's comm. The message is unread.
+The Sable Margin's message arrived at 0209 station time — exactly eight minutes before Veyne Logistics filed the forty-thousand-two-hundred credit hold at 0217. The broker knew the hold number before it was filed.
+The Sable Margin message quoted the exact hold figure—forty thousand, two hundred credits—before Coll or the kiosk display had revealed that number to anyone outside the port authority.
+Who Filed the Hold?
+3 CLUES
+Hold reference 4-791, 40,200 CR, filed as administrative hold on Docking Arm 4 under Port Authority Ordinance 7.2, sub-clause C (general commercial lien). Originating party: Veyne Logistics Recovery Division. Fee cycle refresh in approximately 4 hours. Filing timestamp and full sub-clause details remain unread.
+Coll rotated the hold display screen away before the full originating-party line could be read — but revealed in conversation that the originating party is Veyne Logistics, operating under their pre-registered Commercial Registry authority. Filing timestamp and reference jurisdiction remain obscured, but Coll has now explicitly confirmed Veyne Logistics filed the hold.
+Hold was filed at 0217 this shift — the moment the Driftrunner docked. Filing timestamp establishes the hold was placed within the same operational window as the broker's offer arrived.

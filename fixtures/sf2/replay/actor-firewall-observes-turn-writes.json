@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "actor firewall observes turn-pipeline writes in observe mode",
+  "name": "actor firewall records legal turn-pipeline writes",
   "source": {
     "kind": "synthetic-regression",
-    "purpose": "Wires the actor firewall into the SF2 turn pipeline without enforcing yet. Legal Narrator and Archivist writes should be recorded, and an illegal Narrator create_entity write should be observed but allowed through for calibration."
+    "purpose": "Wires the actor firewall into the SF2 turn pipeline. Legal Narrator and Archivist writes are recorded; illegal writes are dev-only assertion failures and are covered by role parity."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -20,13 +20,6 @@
               "present_npc_ids": [],
               "time_label": "morning",
               "established": ["The seeker is alone beside the archive lock."]
-            }
-          },
-          {
-            "kind": "create_entity",
-            "payload": {
-              "id": "npc_prompt_drift",
-              "name": "Prompt Drift"
             }
           }
         ],
@@ -49,13 +42,6 @@
             "time_label": "morning",
             "established": ["The seeker is alone beside the archive lock."]
           }
-        },
-        {
-          "kind": "create_entity",
-          "payload": {
-            "id": "npc_prompt_drift",
-            "name": "Prompt Drift"
-          }
         }
       ]
     },
@@ -76,10 +62,6 @@
       {
         "type": "actor_firewall_observation",
         "detailIncludes": "narrator:set_scene_snapshot observed within ownership contract"
-      },
-      {
-        "type": "actor_firewall_observation",
-        "detailIncludes": "narrator:create_entity observed outside ownership contract"
       },
       {
         "type": "actor_firewall_observation",

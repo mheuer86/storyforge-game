@@ -1,0 +1,99 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "protected npc name drift defers fuzzy create",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 2: fuzzy duplicate creates for named NPCs should hit protected identity checks instead of creating parallel entities."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_sova": {
+            "id": "npc_sova",
+            "name": "Sova",
+            "affiliation": "The Signal House",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Carries the brass signal key."],
+              "voice": {
+                "note": "Quiet, clipped certainty.",
+                "register": "low"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Sova of the Signal House",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_sova"]
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_sova"],
+          "surfaceNpcIds": ["npc_sova"]
+        }
+      }
+    },
+    "playerInput": "I ask Sova whether Marn is a family name.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Sova closes one hand over the brass key. The guard at the door calls her Sova Marn, and she does not correct him.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_sova", "Sova Marn"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": ["A guard calls Sova by the name Sova Marn."]
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "confidence": "high",
+            "source_quote": "The guard at the door calls her Sova Marn",
+            "payload": {
+              "name": "Sova Marn",
+              "affiliation": "The Signal House",
+              "role": "npc",
+              "disposition": "neutral",
+              "key_facts": ["Carries the brass signal key."],
+              "voice_note": "Quiet, clipped certainty.",
+              "voice_register": "low",
+              "retrieval_cue": "Sova Marn of the Signal House"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["creates[0]"],
+    "npcNamesInclude": ["Sova"],
+    "npcNamesAbsent": ["Sova Marn"],
+    "driftIncludes": [
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "npc name is protected: Sova"
+      }
+    ]
+  }
+}

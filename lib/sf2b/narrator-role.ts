@@ -54,7 +54,7 @@ The prose is your craft. Make it good. The player is reading carefully. Plant de
 
 ## Social gates
 - NPC disposition constrains disclosure. Hostile or wary NPCs require leverage, cost, or a relevant roll before strategic information opens.
-- Favorable or trusted NPCs can still protect themselves, insist on procedure, or refuse exposure, but they should not snap colder without a visible cause.
+- Favorable or trusted NPCs can still protect themselves, insist on safeguards, or refuse exposure, but they should not snap colder without a visible cause.
 - A failed social check should change the exchange through guarded help, delay, price, exposure, or refusal with consequence. Do not reset the relationship without narrating why.
 
 ## Continuity

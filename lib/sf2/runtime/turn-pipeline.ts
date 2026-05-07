@@ -646,14 +646,12 @@ export function observeActorFirewallWrite(
   const decision = recordObservation(write)
   const permitted = decision.reason === undefined
   return makeInvariantEvent('actor_firewall_observation', {
-    mode: decision.mode,
     actor: input.actor,
     writeKind: input.writeKind,
     turnIndex: input.turnIndex,
     chapter: state.meta.currentChapter,
     entityId: input.entityId,
     permitted,
-    allowed: decision.allowed,
     reason: decision.reason,
     detail: decision.reason
       ? `${input.actor}:${input.writeKind} observed outside ownership contract: ${decision.reason}`

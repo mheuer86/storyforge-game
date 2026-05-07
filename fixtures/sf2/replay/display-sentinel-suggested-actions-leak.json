@@ -1,0 +1,44 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "display sentinel: suggested actions block in prose fires",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from New ch1: Narrator wrote a visible Suggested actions menu in the narrative body before also returning suggested_actions in the tool payload."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 2,
+    "playerInput": "Look for another way through.",
+    "narrator": {
+      "prose": "The bay goes quiet around your question.\n\n---\n**Suggested actions:**\n- Run a full diagnostic from the bridge. [Investigation]\n- Talk to Cray about the departure hold. [Persuasion]\n- Wait for the window to open.\n\nThe route display keeps blinking.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "displaySentinel": {
+      "findingsCount": 1,
+      "repairsVisibleProse": {
+        "containsAll": ["The bay goes quiet around your question."],
+        "containsNone": ["Suggested actions", "Run a full diagnostic", "The route display keeps blinking."]
+      },
+      "findingsInclude": [
+        {
+          "findingType": "suggested_action_leak",
+          "severity": "hard",
+          "surfaceEquals": "Suggested actions",
+          "recommendedAction": "allow_but_quarantine_writes"
+        }
+      ]
+    }
+  }
+}

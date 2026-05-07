@@ -74,10 +74,14 @@ export function compileAuthorInputSeed(
   const closingLocation = state.world.sceneSnapshot.location.name
   const lastSceneSummary = state.chapter.sceneSummaries.at(-1)?.summary
   const closingGeometry = ` Closing geometry: ${closingLocation}${lastSceneSummary ? ` — ${lastSceneSummary}` : ''}.`
+  const transitionSeed = priorChapterMeaning?.transitionSeed
+  const transitionContext = transitionSeed
+    ? ` Transition seed: prior chapter meant "${transitionSeed.priorChapterMeant}"; earned consequence "${transitionSeed.earnedConsequence}"; likely pressure owner "${transitionSeed.pressureOwnerCandidate}"; worsened detail "${transitionSeed.worsenedDetail}"; unresolved question "${transitionSeed.unresolvedQuestion}"; do not restage ${transitionSeed.doNotRestage.join(', ') || '(none)'}; procedure residue "${transitionSeed.procedureResidue.mechanism}" must be kept as ${transitionSeed.procedureResidue.keepAs}.`
+    : ''
 
   // Premise: carry-forward-focused, with explicit "new chapter" framing.
   const premise = priorChapterMeaning
-    ? `Chapter ${nextChapterNumber}. Prior chapter closed with: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.${closingGeometry} Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
+    ? `Chapter ${nextChapterNumber}. Prior chapter closed with: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.${closingGeometry}${transitionContext} Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
     : `Chapter ${nextChapterNumber}. Prior chapter ended with active pressure on: ${highPressureThreads || '(no high-tension threads — derive from state)'}.${closingGeometry} Open this chapter inside the consequences of where the player landed — this is NOT a reopening of the prior chapter's situation, it is the next beat of the campaign.`
 
   // Objective/crucible: derive from the highest-tension spine thread if one
@@ -92,7 +96,8 @@ export function compileAuthorInputSeed(
   // specific continuity signal (prior chapter meaning, or a spine thread to
   // advance). Otherwise let the Author choose the opening camera from the
   // premise alone — same discipline as Ch1.
-  const firstEpisode = priorChapterMeaning?.question
+  const firstEpisode = transitionSeed?.unresolvedQuestion
+    ?? priorChapterMeaning?.question
     ?? (spineCandidate
       ? `Advance "${spineCandidate.title}" from its current pressure state, or pivot to consequences from it.`
       : undefined)

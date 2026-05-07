@@ -193,6 +193,10 @@
           "initial_state": "Kira Maal has a new container already tagged to the PC's hull.",
           "first_player_facing": "Kira asks whether the PC wants speed or explanations.",
           "immediate_choice": "Accept Kira's terms or demand the manifest.",
+          "dramatic_situation": "A replacement broker uses public patrol pressure to turn the prior cargo success into a loyalty test.",
+          "first_visible_pressure": "Kira has already tagged the hull before she asks for consent.",
+          "first_human_or_institutional_move": "Kira uses the patrol tag to make refusal visible to the queue.",
+          "do_not_restage": ["Calla's original sealed-cargo negotiation", "Sable Notch departure", "the prior cutter watch"],
           "no_starting_combat": true,
           "no_exposition_dump": true,
           "visible_npc_ids": ["npc_kira_maal"],
@@ -335,6 +339,29 @@
             "recontextualizes": "Kira is a pressure face, not the full source."
           }
         },
+        "continuation_dramatic_turn": {
+          "prior_chapter_meant": "The PC proved they could move sealed freight under pressure.",
+          "larger_pattern_revealed": "Port systems convert successful cargo movement into public compliance leverage.",
+          "pressure_owner": {
+            "id_or_new_bridge": "npc_kira_maal",
+            "why_they_now_act": "She can exploit the PC's fresh cargo reputation before the patrol queue closes."
+          },
+          "human_leverage": {
+            "what_they_can_take_or_offer": "Kira can offer fast clearance or expose the hull to patrol attention.",
+            "what_they_need_from_pc": "She needs the PC to accept the tagged container without a manifest fight."
+          },
+          "worsened_detail": {
+            "prior_detail": "The first container was sealed and broker-controlled.",
+            "why_it_is_load_bearing_now": "A second seal makes the PC's willingness to move blind freight public."
+          },
+          "offscreen_antagonist_presence": "The prior cutter remains unresolved as a pressure shadow, not an opening confrontation.",
+          "procedure_budget": {
+            "mechanism": "patrol tag and manifest queue",
+            "owner_using_it": "Kira Maal through port patrol procedure",
+            "dramatic_function": "The tag turns refusal into evidence before the PC can question terms.",
+            "max_opening_beats": 1
+          }
+        },
         "pressure_ladder": [
           {
             "id": "ladder_queue_count",
@@ -463,7 +490,16 @@
       },
       "expect": {
         "rawErrorCount": 0,
-        "validationErrorCount": 9,
+        "validationErrorCount": 7,
+        "combinedErrorCount": 7,
+        "validationErrorIncludesAll": [
+          "tension_score[0] carried pressure must reference a locked existing entity/thread id; allowed carried source ids:",
+          "tension_score[0] source id thread_kira_container is not in the SF2B continuity lock"
+        ],
+        "combinedErrorIncludesAll": [
+          "tension_score[0] carried pressure must reference a locked existing entity/thread id; allowed carried source ids:",
+          "tension_score[0] source id thread_kira_container is not in the SF2B continuity lock"
+        ],
         "threadCountEquals": 4,
         "pacingTargetEquals": { "min": 18, "max": 25 }
       }

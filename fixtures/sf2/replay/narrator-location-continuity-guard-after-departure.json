@@ -9,6 +9,7 @@
     "stateBeforePreset": "minimal",
     "stateBeforePatch": {
       "meta": {
+        "genreId": "space-opera",
         "currentSceneId": "meridian_deep_passage",
         "currentTimeLabel": "Transit beyond Sable Reach"
       },

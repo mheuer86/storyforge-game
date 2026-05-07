@@ -1,0 +1,58 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter meaning transition seed validator surfaces invalid owner",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 15: invalid transition seeds should surface findings before the next Author run."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Close the chapter.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on chapter meaning transition seed validation)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "chapterMeaningValidation": {
+      "meaning": {
+        "chapter": 1,
+        "situation": "The chapter left the PC inside a procedural aftermath.",
+        "tension": "The pressure moved from access to consequence.",
+        "ticking": "The finished mechanism hardened into record.",
+        "question": "Who uses the record next?",
+        "closer": "The screen went dark but the ledger stayed awake.",
+        "closingResolution": "costly",
+        "synthesizedAtTurn": 3,
+        "transitionSeed": {
+          "priorChapterMeant": "The PC forced the system to answer.",
+          "earnedConsequence": "The world now reacts to that answer.",
+          "pressureOwnerCandidate": "Zqx Impossible",
+          "worsenedDetail": "The record is visible.",
+          "unresolvedQuestion": "Who weaponizes the record?",
+          "doNotRestage": ["the access scan"],
+          "procedureResidue": {
+            "mechanism": "none",
+            "keepAs": "leverage"
+          }
+        }
+      },
+      "findingsInclude": [
+        {
+          "field": "transition_seed.pressure_owner_candidate",
+          "messageIncludes": "does not match an existing NPC/faction",
+          "severity": "warning"
+        },
+        {
+          "field": "transition_seed.procedure_residue",
+          "messageIncludes": "cannot be leverage when mechanism is none",
+          "severity": "error"
+        }
+      ]
+    }
+  }
+}

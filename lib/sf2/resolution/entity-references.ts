@@ -3,6 +3,7 @@ import type {
   Sf2Npc,
   Sf2State,
 } from '../types'
+import { containsAnonymousMarker, getAnonymousMarkers } from '../anonymous-placeholders'
 
 // Low-level entity-reference helpers. The public policy boundary lives in
 // `lib/sf2/reference-policy`; keep call sites pointed there so mode choices
@@ -202,7 +203,8 @@ export function findMatchingNpc(state: Sf2State, proposedName: string): Sf2Npc |
     if (existingTokens.size === 0) continue
 
     const proposedInExisting = [...proposedTokens].every((t) => existingTokens.has(t))
-    if (!proposedInExisting) continue
+    const existingInProposed = [...existingTokens].every((t) => proposedTokens.has(t))
+    if (!proposedInExisting && !existingInProposed) continue
     if (
       proposedTokens.size === 1 &&
       [...existingTokens].some((t) => kinshipTokens.has(t))
@@ -240,19 +242,9 @@ export function findMatchingSnapshotPlaceholder(
   return null
 }
 
-export function isAnonymousNpc(npc: Sf2Npc): boolean {
+export function isAnonymousNpc(npc: Sf2Npc, genreId?: string | null): boolean {
   const haystack = normalizeEntityReferenceText(`${npc.id} ${npc.name} ${npc.role} ${npc.retrievalCue}`)
-  return [
-    'unknown',
-    'unnamed',
-    'unidentified',
-    'anonymous',
-    'younger man',
-    'young man',
-    'girl',
-    'boy',
-    'elder',
-  ].some((marker) => haystack.includes(marker))
+  return containsAnonymousMarker(haystack, genreId)
 }
 
 export function findMatchingAnonymousNpc(
@@ -262,14 +254,14 @@ export function findMatchingAnonymousNpc(
 ): Sf2Npc | null {
   const proposed = normalizeEntityReferenceText(`${proposedName} ${proposedCue}`)
   if (proposed.length < 3) return null
-  const anonymousMarkers = ['younger man', 'young man', 'girl', 'boy', 'elder']
+  const anonymousMarkers = getAnonymousMarkers(state.meta.genreId)
   const proposedMarker = anonymousMarkers.find((marker) => proposed.includes(marker))
   if (!proposedMarker) return null
   const proposedTokens = new Set(proposed.split(' ').filter((t) => t.length >= 3))
   if (proposedTokens.size === 0) return null
 
   for (const npc of Object.values(state.campaign.npcs)) {
-    if (!isAnonymousNpc(npc)) continue
+    if (!isAnonymousNpc(npc, state.meta.genreId)) continue
     const existing = normalizeEntityReferenceText(`${npc.name} ${npc.role} ${npc.retrievalCue}`)
     if (!existing.includes(proposedMarker)) continue
     const existingTokens = new Set(existing.split(' ').filter((t) => t.length >= 3))

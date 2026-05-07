@@ -1,0 +1,79 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions exclude current player action and unintroduced NPC",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Regression from New ch1: recovered quick actions repeated the player's just-submitted action and offered a move naming Tarvo before prose had introduced him."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_tavro_mesh": {
+            "id": "npc_tavro_mesh",
+            "name": "Tavro Mesh",
+            "affiliation": "Veridian",
+            "role": "Broker",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Veridian broker not yet introduced in prose"],
+              "voice": {
+                "note": "quietly urgent",
+                "register": "commercial"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Unintroduced Veridian pressure owner.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "And to whom within Veridian can I talk?",
+    "narrator": {
+      "prose": "Cray has stopped treating the conversation as a delay.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "playerInput": "And to whom within Veridian can I talk?",
+      "visibleProse": "Cray stands at the bay gate with the offer already in her posture.",
+      "inputActions": [
+        "And to whom within Veridian can I talk?",
+        "Ask Tavro Mesh why the window is eight minutes.",
+        "Run a passive sweep from the bridge. [Perception]",
+        "Wait, and let the silence work."
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Use the strongest fact already on the table.",
+        "Run a passive sweep from the bridge. [Perception]",
+        "Wait, and let the silence work."
+      ],
+      "outputActionsExclude": [
+        "And to whom within Veridian can I talk?",
+        "Ask Tavro Mesh why the window is eight minutes."
+      ],
+      "notesInclude": [
+        "replaced quick action that repeated the player input",
+        "replaced quick action naming an NPC not yet introduced in prose"
+      ]
+    }
+  }
+}

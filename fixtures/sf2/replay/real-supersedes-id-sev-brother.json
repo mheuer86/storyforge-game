@@ -2307,7 +2307,7 @@
     "driftIncludes": [
       {
         "kind": "identity_drift",
-        "detailIncludes": "dedup: would-be-create"
+        "detailIncludes": "matcher=supersedeTarget"
       }
     ]
   }

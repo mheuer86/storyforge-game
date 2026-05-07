@@ -1,0 +1,361 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Author continuation accepts owned procedural leverage",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Ensures Ch2+ Author validation accepts procedural material when a named actor uses it for human/institutional leverage."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 1,
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I take the cargo and leave the dock.",
+            "narratorProse": "The Driftrunner lifts with the sealed container aboard and the dockmaster watching the departure light.",
+            "timestamp": "2026-05-05T10:00:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      },
+      "chapter": {
+        "artifacts": {
+          "meaning": {
+            "chapter": 1,
+            "situation": "The PC accepted sealed cargo under private broker terms.",
+            "tension": "Private cargo trust survived only while clearance remained informal.",
+            "ticking": "The release log remained the institutional trace of the deal.",
+            "question": "Who can turn the private cargo promise into public record?",
+            "closer": "The bay cleared, but the log remembered the shape of the favor.",
+            "closingResolution": "unresolved",
+            "synthesizedAtTurn": 1,
+            "transitionSeed": {
+              "priorChapterMeant": "The PC's private cargo acceptance created a name authorities can now test.",
+              "earnedConsequence": "A clearance officer can ask for the broker's name as the cost of clean release.",
+              "pressureOwnerCandidate": "Inspector Hale",
+              "worsenedDetail": "The release log still has an owner field.",
+              "unresolvedQuestion": "Will the PC protect the broker when clean paperwork has a price?",
+              "doNotRestage": ["dock departure", "cargo acceptance"],
+              "procedureResidue": {
+                "mechanism": "release log",
+                "keepAs": "leverage"
+              }
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "space-opera",
+        "pcOriginId": "human",
+        "pcPlaybookId": "operative",
+        "isContinuation": true
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "Hale Holds Clearance",
+          "premise": "Inspector Hale turns the prior cargo lift into a clearance bargain: move cleanly by naming the broker, or stay unmarked and lose the lane.",
+          "active_pressure": "Hale controls the release log the PC needs to keep the cargo moving.",
+          "central_tension": "Name the broker for clean clearance, or protect the secret and lose time.",
+          "chapter_scope": "One cargo bay, one inspector, one release log.",
+          "objective": "Leave the bay without giving Hale the broker's name.",
+          "crucible": "The PC must decide whether clean paperwork is worth betraying a prior deal.",
+          "outcome_spectrum": {
+            "clean": "The cargo moves and Hale gets no broker name.",
+            "costly": "The cargo moves but Hale records a useful concession.",
+            "failure": "Hale pins the cargo until the broker is named.",
+            "catastrophic": "The broker name and cargo trace enter authority records."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Driftrunner cargo bay",
+          "atmospheric_condition": "amber clamp light",
+          "initial_state": "The sealed container is aboard, but Hale has paused the release log before the lane clears.",
+          "first_player_facing": "Hale offers clean clearance if the PC names the broker behind the sealed cargo.",
+          "immediate_choice": "Name the broker for clean release or refuse and risk a traceable hold.",
+          "dramatic_situation": "Hale uses clearance to make the prior cargo bargain cost something personal.",
+          "first_visible_pressure": "The inspector can release the cargo or turn the hold into a record.",
+          "first_human_or_institutional_move": "Hale offers clean clearance in exchange for the broker's name.",
+          "do_not_restage": ["Chapter 1 cargo acceptance", "dock departure"],
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_hale"],
+          "withheld_premise_facts": ["Hale already knows the broker's initials from a separate log."]
+        },
+        "antagonist_field": {
+          "source_system": "Dock Authority clearance records",
+          "core_pressure": "Clean release requires a betrayal-shaped concession.",
+          "default_face": { "name": "Inspector Hale", "role": "dock inspector", "pressure_style": "courtesy as leverage" },
+          "possible_faces": [
+            {
+              "id": "face_hale",
+              "name": "Inspector Hale",
+              "role": "dock inspector",
+              "becomes_primary_when": "The PC refuses to name the broker.",
+              "pressure_style": "courtesy as leverage"
+            }
+          ],
+          "escalation_logic": "Each refusal makes Hale's courtesy more official and harder to walk back."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_hale",
+            "name": "Inspector Hale",
+            "affiliation": "Dock Authority",
+            "role": "dock inspector",
+            "voice_register": "flat courteous",
+            "voice_note": "smiles only after naming a cost",
+            "dramatic_function": "Pressure owner",
+            "hidden_pressure": "Already has the broker's initials.",
+            "retrieval_cue": "Hale, clearance, broker name",
+            "initial_disposition": "wary",
+            "disposition_reason": "dock inspectors distrust sealed freight leaving on private terms"
+          },
+          {
+            "id": "npc_mira",
+            "name": "Mira Voss",
+            "affiliation": "Independent haulers",
+            "role": "bay witness",
+            "voice_register": "low practical",
+            "voice_note": "answers while counting exits",
+            "dramatic_function": "Witness",
+            "hidden_pressure": "Saw Hale pause the log.",
+            "retrieval_cue": "Mira, witness, paused log",
+            "initial_disposition": "neutral",
+            "disposition_reason": "she has no prior tie and wants to avoid dock heat"
+          },
+          {
+            "id": "npc_corro",
+            "name": "Corro Vale",
+            "affiliation": "Dock Authority",
+            "role": "release technician",
+            "voice_register": "rushed technical",
+            "voice_note": "speaks in fragments under supervision",
+            "dramatic_function": "Technical witness",
+            "hidden_pressure": "Can show who paused the log.",
+            "retrieval_cue": "Corro, release log, override",
+            "initial_disposition": "neutral",
+            "disposition_reason": "technicians avoid taking sides during inspections"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_spine",
+            "title": "The intake problem",
+            "question": "Can the immediate problem stay coherent?",
+            "owner_hint": "Registry",
+            "tension": 5,
+            "driver_kind": "carry_forward",
+            "resolution_criteria": "The immediate intake problem is resolved.",
+            "failure_mode": "The intake problem escalates.",
+            "retrieval_cue": "existing replay pressure"
+          },
+          {
+            "id": "thread_broker_name",
+            "title": "The broker name",
+            "question": "Will Hale get the broker name?",
+            "owner_hint": "Inspector Hale",
+            "tension": 7,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The PC protects, trades, or loses the broker name.",
+            "failure_mode": "The broker name enters clearance records.",
+            "retrieval_cue": "broker name, clean clearance"
+          },
+          {
+            "id": "thread_release_log",
+            "title": "The release log",
+            "question": "Can the log stay clean?",
+            "owner_hint": "Dock Authority",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The log clears, is spoofed, or records a trace.",
+            "failure_mode": "The log becomes durable evidence.",
+            "retrieval_cue": "release log, trace, clearance"
+          },
+          {
+            "id": "thread_witness_pause",
+            "title": "Witnessed pause",
+            "question": "Who paused the log?",
+            "owner_hint": "Mira Voss",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The pause is named or made irrelevant.",
+            "failure_mode": "Hale keeps the pause deniable.",
+            "retrieval_cue": "Mira, paused log, Hale"
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_cargo_pressure",
+          "chapter_function": "Test whether cargo movement compromises prior contacts.",
+          "player_stance_read": "The PC protects private terms under institutional pressure.",
+          "pressure_engine_ids": []
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 25 },
+          "chapter_question": "Can the PC leave without betraying the broker?",
+          "acceptable_resolutions": ["name protected", "name traded", "log spoofed"],
+          "early_pressure": "Hale offers clean clearance for a name.",
+          "middle_pressure": "The log makes refusal durable.",
+          "late_pressure": "The bay hold becomes authority record.",
+          "close_when_any": ["cargo leaves clean", "broker named", "hold formalized"],
+          "avoid_extending_for": ["extra clamp timing"]
+        },
+        "continuation_moves": {
+          "prior_chapter_meaning": "The PC accepted sealed cargo and made a private broker promise matter.",
+          "larger_pattern_revealed": "Dock authorities convert private cargo into public accountability.",
+          "institutional_scale_escalation": { "from": "private cargo acceptance", "to": "clearance authority leverage" },
+          "new_named_threat_from_prior_success": {
+            "name": "Inspector Hale",
+            "emerged_from": "the PC leaving with sealed freight",
+            "why_inevitable": "sealed freight needs clearance records"
+          },
+          "worsened_existing_thread": {
+            "thread_id": "thread_spine",
+            "prior_small_detail": "the cargo was brokered privately",
+            "why_load_bearing_now": "private terms can now be forced into public records"
+          },
+          "planted_midchapter_revelation": {
+            "hidden_statement": "Hale already had the broker's initials.",
+            "recontextualizes": "His request tests loyalty more than knowledge."
+          }
+        },
+        "continuation_dramatic_turn": {
+          "prior_chapter_meant": "The PC's private cargo acceptance created a name Hale can now try to extract.",
+          "larger_pattern_revealed": "Clearance systems make private cargo relationships institutionally visible.",
+          "pressure_owner": {
+            "id_or_new_bridge": "npc_hale",
+            "why_they_now_act": "He controls the release log before the cargo can leave cleanly."
+          },
+          "human_leverage": {
+            "what_they_can_take_or_offer": "Hale can offer clean clearance or create a traceable hold.",
+            "what_they_need_from_pc": "He needs the broker's name on record."
+          },
+          "worsened_detail": {
+            "prior_detail": "The cargo was accepted on private broker terms.",
+            "why_it_is_load_bearing_now": "The release log can turn that private promise into evidence."
+          },
+          "offscreen_antagonist_presence": "The broker is absent; Hale's request makes that absence dangerous.",
+          "procedure_budget": {
+            "mechanism": "release log and bay hold",
+            "owner_using_it": "Inspector Hale",
+            "dramatic_function": "The log turns clean departure into a loyalty test.",
+            "max_opening_beats": 1
+          }
+        },
+        "pressure_ladder": [
+          {
+            "id": "ladder_offer_record",
+            "pressure": "Hale makes the offer recordable.",
+            "trigger_condition": "The PC refuses to name the broker.",
+            "narrative_effect": "Courtesy becomes visible authority.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_witness_speaks",
+            "pressure": "Mira names the pause.",
+            "trigger_condition": "The PC protects Mira from Hale.",
+            "narrative_effect": "The log becomes contestable.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_hold_formal",
+            "pressure": "Hale formalizes the hold.",
+            "trigger_condition": "The broker name remains protected late.",
+            "narrative_effect": "The cargo becomes leverage.",
+            "severity": "hard"
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_initials_known",
+            "statement": "Hale already has the broker's initials.",
+            "held_by": "npc_corro",
+            "emergence_condition": "Corro is pressed on the pre-filled log.",
+            "recontextualizes": "Hale wants confirmation, not discovery.",
+            "hint_phrases": ["pre-filled field", "not blank", "initials already there"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["documentary_surface"]
+          },
+          {
+            "id": "rev_mira_saw_pause",
+            "statement": "Mira saw Hale pause the release log manually.",
+            "held_by": "npc_mira",
+            "emergence_condition": "Mira is given a way out of dock retaliation.",
+            "recontextualizes": "The hold is chosen pressure.",
+            "hint_phrases": ["his hand moved first", "manual pause", "not the system"],
+            "hints_required": 2,
+            "valid_reveal_contexts": ["private_pressure"]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_name_cargo",
+            "tension": "Name versus cargo",
+            "side_a": "Protect the broker.",
+            "side_b": "Move the cargo cleanly.",
+            "why_it_hurts": "Each protects one promise by endangering another."
+          },
+          {
+            "id": "fault_witness_safety",
+            "tension": "Witness versus safety",
+            "side_a": "Use Mira's account.",
+            "side_b": "Keep her out of it.",
+            "why_it_hurts": "Truth makes retaliation easier."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_log_stamp",
+            "type": "institutional",
+            "condition": "Hale stamps the log.",
+            "consequence": "The hold becomes official."
+          },
+          {
+            "id": "esc_mira_exposed",
+            "type": "social",
+            "condition": "Mira contradicts Hale publicly.",
+            "consequence": "Her witness becomes costly."
+          },
+          {
+            "id": "esc_bay_block",
+            "type": "physical",
+            "condition": "The PC moves cargo anyway.",
+            "consequence": "Hale blocks the bay."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Release logs turn favors into records.",
+            "relevance_now": "Hale needs a name on paper.",
+            "delivery_method": "He offers clearance before accusation."
+          },
+          {
+            "item": "Dock courtesy is often a bill.",
+            "relevance_now": "Clean release has a price.",
+            "delivery_method": "Hale calls the demand a courtesy."
+          }
+        ]
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 0,
+        "combinedErrorCount": 0,
+        "threadCountEquals": 4,
+        "pacingTargetEquals": { "min": 18, "max": 25 }
+      }
+    }
+  }
+}

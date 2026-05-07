@@ -1,0 +1,80 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions do not use shipboard fallback outside space opera",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "The stale-departure quick action repair is a Space Opera continuity adapter and must not inject shipboard fallback language into other genres."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "fantasy",
+        "currentSceneId": "old_archive_after_exit",
+        "currentTimeLabel": "after leaving the archive"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "old_archive_after_exit",
+          "name": "Old archive steps",
+          "description": "The Seeker has departed the old archive and crossed into the rain outside.",
+          "atmosphericConditions": ["cold rain"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "old_archive_after_exit",
+          "location": {
+            "id": "old_archive_after_exit",
+            "name": "Old archive steps",
+            "description": "The Seeker has departed the old archive and crossed into the rain outside.",
+            "atmosphericConditions": ["cold rain"]
+          },
+          "presentNpcIds": [],
+          "timeLabel": "after leaving the archive",
+          "established": [
+            "The Seeker has departed the old archive.",
+            "The archive door is behind them."
+          ],
+          "firstTurnIndex": 1
+        },
+        "currentTimeLabel": "after leaving the archive"
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "What now?",
+    "narrator": {
+      "prose": "Rain gathers on the archive steps.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "inputActions": [
+        "Return to the archive and inspect the sealed stacks. [Investigation]",
+        "Wait for the rain to thin.",
+        "Use the strongest fact already on the table.",
+        "Change the venue before pressing further."
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Return to the archive and inspect the sealed stacks. [Investigation]",
+        "Wait for the rain to thin.",
+        "Use the strongest fact already on the table."
+      ],
+      "outputActionsExclude": [
+        "Check the ship's current position and immediate options from the bridge.",
+        "Talk to the on-board crew about the next constraint.",
+        "Inspect the passenger and cargo situation from where you are. [Perception]"
+      ]
+    }
+  }
+}

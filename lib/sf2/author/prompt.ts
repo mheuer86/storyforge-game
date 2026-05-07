@@ -28,10 +28,10 @@ Primary goals:
 
 ## Authoring rules
 
-1. Honor the hook as the non-negotiable starting pressure.
+1. Honor the hook's invariant pressure, but honor the ArcPlan's selected scenario shape as the current run's playable form. If the ArcPlan says what this run is not, do not rebuild that rejected default from hook vocabulary.
 2. Keep the chapter narrow. Do not sprawl into every part of the setting.
 3. Use only institutions, pressures, and vocabulary licensed by the input seed.
-4. The opening should teach through conflict, bureaucracy, dialogue posture, and role behavior — not exposition.
+4. The opening should teach through conflict, leverage, dialogue posture, and role behavior — not exposition. Use bureaucracy only when the ArcPlan explicitly wants a procedural contest.
 5. Prefer institutional antagonism over immediate named-villain confrontation unless the seed strongly requires otherwise.
 6. The pressure should feel systemic even if one person is its initial face.
 7. Do not lock the chapter into one permanent antagonist identity if different player alignments could harden different pressure faces into primary opposition.
@@ -77,6 +77,8 @@ Make these five moves in \`continuation_moves\`:
 4. Plant one revelation the player could not predict. It should emerge mid-chapter, not in the opening.
 5. Deepen existing companion/contact/recurring relationships before introducing new NPCs.
 
+Then condense those moves into \`continuation_dramatic_turn\`. This field is the playable chapter turn the Narrator will receive: who now acts because of the prior chapter, what human/institutional leverage they hold, which prior detail got worse, how the antagonist is present through absence, and which single procedure (if any) is allowed to appear in the opening.
+
 Avoid picking up directly where the prior chapter paused, introducing disconnected factions, resolving unresolved items in the opening, or direct antagonist confrontation in the opening unless the prior chapter specifically forced it.
 
 ## Output requirements
@@ -90,6 +92,8 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`chapter_frame.{active_pressure, central_tension, chapter_scope, objective, crucible}\`: 1 sentence each (≤25 words)
   - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤18 words)
   - \`opening_scene_spec.{location, initial_state, first_player_facing, immediate_choice}\`: 1 sentence each (≤28 words). \`atmospheric_condition\`: short phrase (≤12 words).
+  - For Chapter 2+, \`opening_scene_spec.{dramatic_situation, first_visible_pressure, first_human_or_institutional_move}\`: 1 sentence each (≤24 words), and \`do_not_restage\`: 2-5 short prior mechanisms/milestones that must not become pending again.
+  - For Chapter 2+, \`continuation_dramatic_turn\`: compact phrases. \`procedure_budget.max_opening_beats\` must be 0 or 1. Use \`mechanism: "none"\` when no procedure is load-bearing.
   - \`antagonist_field.{source_system, core_pressure, escalation_logic}\`: 1 sentence each (≤25 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: ≤16 words.
   - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: compact phrase or sentence (≤16 words).
   - \`starting_npcs[].voice_note\`: 4-14 words. The PERSONAL flavor (not the formal register). Aim for distinctness — three NPCs of the same affiliation should read as three different people. Avoid generic adjectives like "professional", "competent", "experienced", "measured" — voices that lean on these collapse together. Examples: "precise and tired, never finishes a sentence", "drawls vowels under stress", "warm but never first to speak", "speaks in clipped fragments when watched".
@@ -107,6 +111,7 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 - Emit exactly 3 starting NPCs.
 - Emit exactly 3 active threads for Chapter 1.
 - For Chapter 2 and later, emit exactly 4 active threads. You may carry forward up to 3 old threads, but at least 1 active thread must be a new chapter driver: either \`driver_kind: "new_pressure"\` or \`driver_kind: "successor"\`.
+- For Chapter 2 and later, emit \`continuation_dramatic_turn\` and the continuation-only \`opening_scene_spec\` fields. These are not summaries; they are the contract that prevents the chapter from becoming a procedure queue.
 - For Chapter 2 and later, every \`active_threads[]\` entry must include \`driver_kind\`: \`carry_forward\`, \`successor\`, or \`new_pressure\`. Successor threads must also include \`successor_to_thread_id\`.
 - The new/successor driver must be load-bearing: give it tension ≥6, include it in pressure runtime through the selected pressure engines, and make it eligible to become spine.
 - If a prior objective was already satisfied, transition that old thread in \`thread_transitions\` and create a successor instead of reusing the answered question as this chapter's spine.
@@ -138,6 +143,7 @@ If someone read only your JSON, they should understand:
 
 import type { Sf2ChapterMeaning, Sf2State } from '../types'
 import { getEffectiveThreadPressure } from '../pressure/derive'
+import { renderStructuralBeatForChapter } from '../structural-beats'
 import { isSf2bState } from '../../sf2b/mode'
 import {
   deriveSf2bContinuityLock,
@@ -155,6 +161,7 @@ export function buildAuthorSituation(
     return `## Chapter setup context
 
 This is the opening chapter of a new campaign. No prior chapters exist. The ArcPlan below is the stable pressure field — derive Chapter 1 from it, not directly from the raw hook.
+The raw seed's concrete surfaces are palette, not a scene mandate. If the ArcPlan's "what this is not" or rejected default names a creditor negotiation, paper trail, mechanism-control problem, berth-lock standoff, or similar over-literal surface, do not make the chapter objective, opening scene, pressure ladder, or spine thread revolve around that surface. Treat the exit pressure as the inciting condition and move into the selected scenario shape.
 ${sf2bDirective}
 
 ### Stable ArcPlan
@@ -165,6 +172,9 @@ ${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2
   const arc = state.campaign.arcPlan
   const continuityLockBlock = isSf2bState(state)
     ? `\n${renderSf2bContinuityLock(deriveSf2bContinuityLock(state))}\n`
+    : ''
+  const transitionSeedBlock = priorChapterMeaning?.transitionSeed
+    ? `\n\n### Transition seed — concrete handoff to Chapter ${priorChapter + 1}\n${renderChapterTransitionSeed(priorChapterMeaning.transitionSeed)}`
     : ''
   const meaningBlock = priorChapterMeaning
     ? `
@@ -181,7 +191,7 @@ How this chapter should respond to the landing:
 - **costly**: the PC succeeded but paid. Open this chapter with the cost still warm — the relationship that cooled, the standing that shifted, the favor now owed.
 - **failure**: the PC missed. Open this chapter on what the world did in response — the seizure, the enforcement, the loss that now frames everything.
 - **catastrophic**: something broke open. Open this chapter inside the broken thing — an escalation the PC is now running from, toward, or inside.
-- **unresolved**: the chapter closed without decisive landing. Open this chapter with that unresolved pressure still live, reframed by whatever the player has turned toward.`
+- **unresolved**: the chapter closed without decisive landing. Open this chapter with that unresolved pressure still live, reframed by whatever the player has turned toward.${transitionSeedBlock}`
     : `
 ### Prior chapter (${priorChapter}) retrospective
 (not yet generated)`
@@ -312,7 +322,24 @@ Correct output:
 
 This is chapter ${priorChapter + 1}. You MUST emit a complete \`continuation_moves\` block per the Continuation Chapter Law in your role. All five moves are required: \`prior_chapter_meaning\`, \`larger_pattern_revealed\`, \`institutional_scale_escalation\` (from + to), \`new_named_threat_from_prior_success\` (name + emerged_from + why_inevitable), \`worsened_existing_thread\` (thread_id + prior_small_detail + why_load_bearing_now), \`planted_midchapter_revelation\` (hidden_statement + recontextualizes). \`relationship_deepening_target\` is optional but encouraged when a recurring NPC carries pressure forward. The validator rejects continuations that skip this — the five-move discipline is what keeps the chapter from being "the next scene of the prior chapter" or "a disconnected new scenario."
 
+You MUST also emit \`continuation_dramatic_turn\`. Treat mechanisms as props, not plot: a timer, readout, queue, warrant window, manifest query, route milestone, access gate, or decryption bar may appear only if \`procedure_budget\` names who uses it and what leverage or irreversible choice it creates. If the opening's immediate choice is just wait/read/answer/scan/clear/lock before a timer, the setup is invalid. The first visible move must be a human, social, factional, or institutional move that changes leverage.
+
+If a Transition seed is present above, use it as the source of truth for \`continuation_dramatic_turn\`, \`opening_scene_spec.do_not_restage\`, and \`procedure_budget\`. A \`procedure_residue\` marked \`constraint\`, \`background\`, or \`discard\` must not become the opening's main choice. A residue marked \`leverage\` may be foregrounded only through the named pressure owner using it.
+
 Derive the new chapter from the ArcPlan, prior chapter meaning, and carried state above. The AuthorInputSeed below is source context, not the chapter driver.`
+}
+
+function renderChapterTransitionSeed(seed: NonNullable<Sf2ChapterMeaning['transitionSeed']>): string {
+  const doNotRestage = seed.doNotRestage.length > 0 ? seed.doNotRestage.join(' | ') : '(none)'
+  return [
+    `- Prior chapter meant: ${seed.priorChapterMeant}`,
+    `- Earned consequence: ${seed.earnedConsequence}`,
+    `- Pressure owner candidate: ${seed.pressureOwnerCandidate}`,
+    `- Worsened detail: ${seed.worsenedDetail}`,
+    `- Unresolved question: ${seed.unresolvedQuestion}`,
+    `- Do not restage: ${doNotRestage}`,
+    `- Procedure residue: ${seed.procedureResidue.mechanism} → keep as ${seed.procedureResidue.keepAs}`,
+  ].join('\n')
 }
 
 function sf2bAuthorDirective(): string {
@@ -322,72 +349,14 @@ function sf2bAuthorDirective(): string {
 This run tests strict durable state with looser narration. Author a dramatic hook brief, not a procedural machine. Keep the chapter state valid, but make the opening playable as a living situation with pressure, voice, leverage, and choice.
 
 - Prefer one sharp dramatic problem over multiple visible gates.
-- Do not make the player wait on repeated procedural predicates; if clamps, holds, codes, queues, or releases matter, they must escalate, compress, force a choice, or become a chapter-close vector.
+- Do not make the player wait on repeated procedural predicates; if mechanisms, holds, codes, queues, or releases matter, they must escalate, compress, force a choice, or become a chapter-close vector.
 - The Narrator will receive a compact dramatic kernel, not the full graph. Put only load-bearing durable facts into chapter setup.
 - For Chapter 2+, open from what the prior chapter meant and who now cares, not from raw continuity pickup.
-- Treat the SF2B canon continuity lock as hard canon. New social/faction pressure must bridge from locked names, locations, route/cargo facts, contacts, promises, and thread ids.
+- Treat the SF2B canon continuity lock as hard canon. New social/faction pressure must bridge from locked names, locations, continuity facets, contacts, promises, and thread ids.
+- Preserve facet chronology. Milestones already marked crossed, cleared, completed, or spent stay crossed; do not reopen them as future choices.
 - Emit \`tension_score\` with exactly 3-4 lines. Use distinct roles: \`foreground_objective\`, \`relational_social_pressure\`, \`shadow_faction_pressure\`, and when relevant \`cargo_system_pressure\`.
 - Each \`tension_score\` line must name source entity/thread id, pressure, prose surface, what advances it, and what resolves or reframes it. For carried pressure, set \`carried: true\` and reference a locked existing id; do not create a parallel replacement.
 - Favor dramatic scene pressure over procedural task queues: social leverage, faction alternatives, withheld facts, and meaningful objective beats should carry the opening.`
-}
-
-// 7-point story arc compressed into 5 chapter slots. Each chapter has a
-// structural job; without naming it here, mid-arc chapters default to
-// uniform rising action and Ch3-Ch4 go flat (the bug-inventory's
-// thematic-grind / hollowed-middle failure modes). The Arc Author's
-// chapter_function_map authors the per-run specifics; this block names
-// the structural job the chapter must deliver regardless of run-specific
-// content.
-const CHAPTER_STRUCTURAL_BEATS: Record<
-  1 | 2 | 3 | 4 | 5,
-  { name: string; beat: string; directive: string }
-> = {
-  1: {
-    name: 'ESTABLISH',
-    beat: 'hook + setup',
-    directive:
-      'Surface the pressure source, make the PC\'s role load-bearing, plant the inciting threat. End the chapter with the line of tension the next four chapters will pull on. Do NOT start at maximum pressure — establish has runway. The chapter\'s pressure_question names what the PC is being asked to decide about, not what they\'ll do.',
-  },
-  2: {
-    name: 'COMPLICATE',
-    beat: 'plot turn 1 + pinch 1',
-    directive:
-      'PC commits to a path that can\'t be undone (the first turn). Antagonist or institution applies its first real pressure (the first pinch). End the chapter with the PC reactive, operating on someone else\'s clock. The pressure_question must SHARPEN — something is at stake now that wasn\'t before.',
-  },
-  3: {
-    name: 'PIVOT',
-    beat: 'midpoint flip',
-    directive:
-      '**LOAD-BEARING CHAPTER. This is the chapter that goes flat under uniform rising-action.** A revelation lands that recontextualizes prior chapters. The arc question shifts shape. The PC moves from reactive to proactive — they pick the next move, not someone else. Stakes invert, escalate, or both. Something the PC believed in Ch1-2 turns out to be wrong, costly, or insufficient. The pressure_question must be DIFFERENT from prior chapters; the chapter\'s answer changes how the rest of the arc reads. Name the flip explicitly — what reverses, what surfaces, what the PC realizes they\'ve been doing wrong. Do NOT write "Ch3 deepens the conflict" or "Ch3 raises the stakes" — that\'s the under-authoring that produces flat chapters.',
-  },
-  4: {
-    name: 'ESCALATE',
-    beat: 'pinch 2 + plot turn 2',
-    directive:
-      'The costliest pressure point. The antagonist\'s strongest move; the cost of the PC\'s Ch3 commitment surfaces. PC commits to the final approach — the only way out is through. End the chapter with all options narrowed to the resolution path. The pressure_question names the cost the PC is now visibly paying.',
-  },
-  5: {
-    name: 'RESOLVE',
-    beat: 'resolution sequence',
-    directive:
-      'Outcomes lock in. The arc question gets its answer. If the arc resolved in Ch4, this chapter is an epilogue or coda — outcome consequences without new pressure. The pressure_question is the explicit form of the arc-question for this run.',
-  },
-}
-
-function renderStructuralBeatForChapter(
-  chapter: number,
-  arc: Sf2State['campaign']['arcPlan']
-): string {
-  const beat = CHAPTER_STRUCTURAL_BEATS[chapter as 1 | 2 | 3 | 4 | 5]
-  if (!beat) return ''
-  const arcSpecific = arc?.chapterFunctionMap.find((c) => c.chapter === chapter)
-  const arcSpecificBlock = arcSpecific
-    ? `\n**Arc-author's authored function for this chapter:**\n- function: ${arcSpecific.function}\n- pressure_question: ${arcSpecific.pressureQuestion}\n- possible end states: ${arcSpecific.possibleEndStates.join(' | ')}\n\nYour chapter setup must honor BOTH the structural beat above AND the arc-specific authored function. The structural beat is the *shape* of the chapter; the authored function is the *content*. If they conflict, treat the structural beat as load-bearing — the arc-author may have under-authored the function (a common Ch3 failure mode is writing rising-action language for what should be a midpoint flip).`
-    : ''
-  return `### Chapter ${chapter} structural beat — ${beat.name} (${beat.beat})
-
-${beat.directive}
-${arcSpecificBlock}`
 }
 
 function renderArcPlan(arc: NonNullable<Sf2State['campaign']['arcPlan']>): string {
@@ -409,6 +378,7 @@ function renderArcPlan(arc: NonNullable<Sf2State['campaign']['arcPlan']>): strin
   return `- Arc: ${arc.title} (${arc.status})
 - Scenario: ${arc.scenarioShape.mode} — ${arc.scenarioShape.premise}
 - What this is not: ${arc.scenarioShape.whatThisIsNot}
+- Rejected default shape: ${arc.scenarioShape.rejectedDefaultShape}
 - Arc question: ${arc.arcQuestion}
 - Core crucible: ${arc.coreCrucible}
 

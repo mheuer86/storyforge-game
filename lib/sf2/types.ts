@@ -564,6 +564,7 @@ export type Sf2DisplaySentinelType =
   | 'narrator_reveal'
   | 'roll_value_leak'
   | 'stage_label_leak'
+  | 'suggested_action_leak'
   | 'disposition_label_leak'
   | 'retrieval_cue_leak'
   | 'npc_title_contamination'
@@ -824,6 +825,10 @@ export interface Sf2OpeningSceneSpec {
   initialState: string
   firstPlayerFacing: string
   immediateChoice: string
+  dramaticSituation?: string
+  firstVisiblePressure?: string
+  firstHumanOrInstitutionalMove?: string
+  doNotRestage?: string[]
   noStartingCombat: boolean
   noExpositionDump: boolean
   // NPCs visible in the opening prose. A subset of startingNPCs (1-2 is the
@@ -866,6 +871,7 @@ export interface Sf2ChapterSetupRuntimeState {
   openingSceneSpec: Sf2OpeningSceneSpec
   pressureLadder: Sf2PressureLadderStep[]
   tensionScore?: Sf2ChapterTensionScoreLine[]
+  continuationDramaticTurn?: Sf2ContinuationDramaticTurn
   threadPressure: Record<Sf2EntityId, Sf2ChapterThreadPressure>
   threadInitialTensions?: Record<Sf2EntityId, Sf2Tension>
   arcLink?: Sf2ChapterArcLink
@@ -896,6 +902,7 @@ export interface Sf2ChapterSetupScaffolding {
     usedAtTurn?: number
   }>
   continuationMoves?: Sf2ChapterContinuationMoves
+  continuationDramaticTurn?: Sf2ContinuationDramaticTurn
 }
 
 export interface Sf2RevelationHintEvidence {
@@ -935,6 +942,7 @@ export interface Sf2OpeningScenePacketSeed {
   visibleThreadIds: Sf2EntityId[]
   loreForOpening: Array<{ item: string; renderedHint: string }>
   sceneWarnings: string[]
+  continuationDramaticTurn?: Sf2ContinuationDramaticTurn
   // Canonical facts held off-page at opening — Narrator must not state them
   // in the first-turn prose.
   withheldPremiseFacts?: string[]
@@ -968,6 +976,45 @@ export interface Sf2ChapterContinuationMoves {
   relationshipDeepeningTarget?: { entityId: Sf2EntityId; pressure: string }
 }
 
+export type Sf2ProcedureResidueMode = 'constraint' | 'leverage' | 'background' | 'discard'
+
+export interface Sf2ChapterTransitionSeed {
+  priorChapterMeant: string
+  earnedConsequence: string
+  pressureOwnerCandidate: string
+  worsenedDetail: string
+  unresolvedQuestion: string
+  doNotRestage: string[]
+  procedureResidue: {
+    mechanism: string
+    keepAs: Sf2ProcedureResidueMode
+  }
+}
+
+export interface Sf2ContinuationDramaticTurn {
+  priorChapterMeant: string
+  largerPatternRevealed: string
+  pressureOwner: {
+    idOrNewBridge: string
+    whyTheyNowAct: string
+  }
+  humanLeverage: {
+    whatTheyCanTakeOrOffer: string
+    whatTheyNeedFromPc: string
+  }
+  worsenedDetail: {
+    priorDetail: string
+    whyItIsLoadBearingNow: string
+  }
+  offscreenAntagonistPresence: string
+  procedureBudget: {
+    mechanism: string
+    ownerUsingIt: string
+    dramaticFunction: string
+    maxOpeningBeats: number
+  }
+}
+
 // Per-chapter retrospective close artifact
 export interface Sf2ChapterMeaning {
   chapter: Sf2ChapterNumber
@@ -978,6 +1025,7 @@ export interface Sf2ChapterMeaning {
   closer: string
   closingResolution: 'clean' | 'costly' | 'failure' | 'catastrophic' | 'unresolved'
   synthesizedAtTurn: number
+  transitionSeed?: Sf2ChapterTransitionSeed
 }
 
 export interface Sf2ChapterArtifacts {
@@ -1130,6 +1178,7 @@ export interface AuthorChapterSetupV2 {
   arcLink: Sf2ChapterArcLink
   pacingContract: Sf2ChapterPacingContract
   continuationMoves?: Sf2ChapterContinuationMoves
+  continuationDramaticTurn?: Sf2ContinuationDramaticTurn
   // Optional: transitions to apply to existing campaign threads at chapter open.
   // Used by the Author to close stale threads whose resolutionCriteria was met
   // in the prior chapter's prose but wasn't transitioned by the Archivist.
@@ -1331,6 +1380,7 @@ export interface Sf2ArchivistFlag {
   kind:
     | 'npc_teleport'
     | 'anchor_reference_missing'
+    | 'entity_merged'
     | 'identity_drift'
     | 'protected_field_write'
     | 'contradiction'
@@ -1554,6 +1604,7 @@ export interface Sf2ChapterPacket {
     activePressureEngines: string[]
   }
   pacingContract?: Sf2ChapterPacingContract
+  continuationDramaticTurn?: Sf2ContinuationDramaticTurn
 }
 
 export interface Sf2TemporalAnchorPacket {

@@ -91,6 +91,7 @@ export function transformAuthorSetup(
     tensionScore: authored.tensionScore && authored.tensionScore.length > 0
       ? authored.tensionScore
       : undefined,
+    continuationDramaticTurn: authored.continuationDramaticTurn,
     threadPressure: {},
     threadInitialTensions: Object.fromEntries(
       authored.activeThreads
@@ -143,6 +144,7 @@ export function transformAuthorSetup(
       used: false,
     })),
     continuationMoves: authored.continuationMoves,
+    continuationDramaticTurn: authored.continuationDramaticTurn,
   }
 
   // Opening visibility: prefer the Author's explicit visibleNpcIds (new field)
@@ -164,10 +166,11 @@ export function transformAuthorSetup(
     .slice(0, 3) // keep the opening's visible thread list tight
 
   const openingSeed: Sf2OpeningScenePacketSeed = {
-    sceneIntent: authored.openingSceneSpec.immediateChoice,
-    openingPressure: authored.chapterFrame.activePressure,
+    sceneIntent: authored.openingSceneSpec.dramaticSituation ?? authored.openingSceneSpec.immediateChoice,
+    openingPressure: authored.openingSceneSpec.firstVisiblePressure ?? authored.chapterFrame.activePressure,
     chapterObjective: authored.chapterFrame.objective,
     chapterCrucible: authored.chapterFrame.crucible,
+    continuationDramaticTurn: authored.continuationDramaticTurn,
     visibleNpcIds,
     visibleThreadIds,
     loreForOpening: authored.editorializedLore.slice(0, 2).map((item) => ({

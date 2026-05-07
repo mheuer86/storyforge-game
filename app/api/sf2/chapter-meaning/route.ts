@@ -9,8 +9,10 @@ import {
 } from '@/lib/sf2/chapter-meaning/prompt'
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
-import type { Sf2ChapterMeaning, Sf2State } from '@/lib/sf2/types'
+import type { Sf2ChapterMeaning, Sf2ProcedureResidueMode, Sf2State } from '@/lib/sf2/types'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
+import { PROCEDURE_NONE } from '@/lib/sf2/procedure'
+import { validateChapterMeaningTransitionSeed } from '@/lib/sf2/chapter-meaning/validation'
 
 // Chapter-meaning synthesis defaults to Haiku for low-cost v2 test runs.
 // Override via SF2_CHAPTER_MEANING_MODEL when a higher-quality close read is needed.
@@ -134,7 +136,21 @@ export async function POST(req: NextRequest) {
           | 'failure'
           | 'catastrophic'
           | 'unresolved'
+        transition_seed?: {
+          prior_chapter_meant?: string
+          earned_consequence?: string
+          pressure_owner_candidate?: string
+          worsened_detail?: string
+          unresolved_question?: string
+          do_not_restage?: unknown[]
+          procedure_residue?: {
+            mechanism?: string
+            keep_as?: Sf2ProcedureResidueMode
+          }
+        }
       }
+      const transitionSeedInput = input.transition_seed
+      const procedureResidue = transitionSeedInput?.procedure_residue
 
       const meaning: Sf2ChapterMeaning = {
         chapter: state.meta.currentChapter,
@@ -145,11 +161,31 @@ export async function POST(req: NextRequest) {
         closer: String(input.closer ?? ''),
         closingResolution: input.closingResolution ?? 'unresolved',
         synthesizedAtTurn: state.history.turns.length,
+        transitionSeed: transitionSeedInput
+          ? {
+              priorChapterMeant: String(transitionSeedInput.prior_chapter_meant ?? ''),
+              earnedConsequence: String(transitionSeedInput.earned_consequence ?? ''),
+              pressureOwnerCandidate: String(transitionSeedInput.pressure_owner_candidate ?? ''),
+              worsenedDetail: String(transitionSeedInput.worsened_detail ?? ''),
+              unresolvedQuestion: String(transitionSeedInput.unresolved_question ?? ''),
+              doNotRestage: Array.isArray(transitionSeedInput.do_not_restage)
+                ? transitionSeedInput.do_not_restage.map(String).filter((value) => value.trim().length > 0)
+                : [],
+              procedureResidue: {
+                mechanism: String(procedureResidue?.mechanism ?? PROCEDURE_NONE),
+                keepAs: isProcedureResidueMode(procedureResidue?.keep_as)
+                  ? procedureResidue.keep_as
+                  : 'background',
+              },
+            }
+          : undefined,
       }
+      const validationFindings = validateChapterMeaningTransitionSeed(state, meaning)
 
       return new Response(
         JSON.stringify({
           meaning,
+          validationFindings,
           usage: {
             inputTokens: usage.input_tokens,
             outputTokens: usage.output_tokens,
@@ -184,4 +220,8 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
+}
+
+function isProcedureResidueMode(value: unknown): value is Sf2ProcedureResidueMode {
+  return value === 'constraint' || value === 'leverage' || value === 'background' || value === 'discard'
 }

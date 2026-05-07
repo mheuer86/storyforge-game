@@ -90,13 +90,28 @@
         "ticking": "The record keeps moving without Rue's answer.",
         "question": "What does Rue's refusal cost next?",
         "closer": "The secondary bolt landed.",
-        "closingResolution": "unresolved"
+        "closingResolution": "unresolved",
+        "transitionSeed": {
+          "priorChapterMeant": "Rue's refusal made silence a political actor.",
+          "earnedConsequence": "The next chapter must show who benefits from the closed door.",
+          "pressureOwnerCandidate": "npc_rue",
+          "worsenedDetail": "The secondary bolt made the refusal public.",
+          "unresolvedQuestion": "Who profits from Rue staying silent?",
+          "doNotRestage": ["knocking at Rue's closed door", "waiting for Rue to answer"],
+          "procedureResidue": {
+            "mechanism": "none",
+            "keepAs": "background"
+          }
+        }
       },
       "hookPremiseIncludes": [
         "Closing geometry: Rue's silent door",
-        "The chapter closed at Rue's silent door after the secondary bolt landed."
+        "The chapter closed at Rue's silent door after the secondary bolt landed.",
+        "Transition seed: prior chapter meant \"Rue's refusal made silence a political actor.\"",
+        "earned consequence \"The next chapter must show who benefits from the closed door.\"",
+        "do not restage knocking at Rue's closed door, waiting for Rue to answer"
       ],
-      "hookFirstEpisodeIncludes": ["What does Rue's refusal cost next?"]
+      "hookFirstEpisodeIncludes": ["Who profits from Rue staying silent?"]
     }
   }
 }

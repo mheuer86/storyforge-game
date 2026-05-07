@@ -122,7 +122,7 @@ export const arcAuthorTool: Anthropic.Tool = {
       },
       pressure_engines: {
         type: 'array' as const,
-        description: 'Exactly 3 durable clocks or systemic pressures that can answer player actions.',
+        description: 'Exactly 3 durable pressure engines that can answer player actions; use clocks only when time is genuinely load-bearing.',
         minItems: 3,
         maxItems: 3,
         items: {

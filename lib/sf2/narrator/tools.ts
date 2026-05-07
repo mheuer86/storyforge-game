@@ -7,6 +7,14 @@ import type Anthropic from '@anthropic-ai/sdk'
 
 export const NARRATOR_TOOL_NAME = 'narrate_turn' as const
 export const REQUEST_ROLL_TOOL_NAME = 'request_roll' as const
+export const NARRATOR_MECHANICAL_EFFECT_KINDS = [
+  'hp_delta',
+  'credits_delta',
+  'inventory_use',
+  'set_location',
+  'scene_end',
+  'set_scene_snapshot',
+] as const
 
 export const requestRollTool: Anthropic.Tool = {
   name: REQUEST_ROLL_TOOL_NAME,
@@ -42,14 +50,7 @@ export const narrateTurnTool: Anthropic.Tool = {
           properties: {
             kind: {
               type: 'string',
-              enum: [
-                'hp_delta',
-                'credits_delta',
-                'inventory_use',
-                'set_location',
-                'scene_end',
-                'set_scene_snapshot',
-              ],
+              enum: NARRATOR_MECHANICAL_EFFECT_KINDS,
             },
             value: { type: 'number', description: 'For hp_delta or credits_delta (signed).' },
             item: { type: 'string', description: 'Item name for inventory_use.' },
@@ -73,12 +74,15 @@ export const narrateTurnTool: Anthropic.Tool = {
               type: 'object',
               description: 'For set_scene_snapshot: what is currently true in scene.',
               properties: {
+                scene_id: { type: 'string' },
                 location_id: { type: 'string' },
                 present_npc_ids: { type: 'array', items: { type: 'string' } },
+                current_interlocutor_ids: { type: 'array', items: { type: 'string' } },
                 time_label: { type: 'string' },
                 established: { type: 'array', items: { type: 'string' } },
                 locked: { type: 'boolean' },
               },
+              additionalProperties: false,
             },
           },
           required: ['kind'],
