@@ -1453,11 +1453,6 @@ function StateDiffLine({
 
 type RollTone = 'idle' | 'success' | 'failure' | 'critical' | 'fumble'
 
-interface RollBreakdownView {
-  value: ReactNode
-  detail?: ReactNode
-}
-
 function rollToneForHistory(outcome: Sf2State['history']['rollLog'][number]['outcome']): RollTone {
   if (outcome === 'critical_success') return 'critical'
   if (outcome === 'critical_failure') return 'fumble'
@@ -1500,15 +1495,25 @@ function rollCardClassName(tone: RollTone, interactive = false) {
   )
 }
 
-function rollValueBoxClassName(tone: RollTone, rolling = false) {
+type DieState = 'kept' | 'discarded' | 'pending'
+
+function dieBoxClassName(tone: RollTone, dieState: DieState, rolling: boolean, twin: boolean) {
+  const sizeBase = twin
+    ? 'h-14 w-14 md:h-16 md:w-16 text-[20px] md:text-[22px]'
+    : 'h-20 w-20 md:h-24 md:w-24 text-[30px] md:text-[34px]'
+  const resolved = tone !== 'idle'
+  const showHalo = (tone === 'critical' || tone === 'fumble') && dieState === 'kept'
   return cn(
-    'flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg border font-mono tabular-nums transition-[background-color,border-color,color,opacity,transform] duration-200 md:h-[4.5rem] md:w-[4.5rem]',
-    tone === 'idle' && 'sf2-roll-idle-die',
-    tone === 'success' && 'border-success/60 bg-success/15 text-success',
-    tone === 'failure' && 'border-warning/60 bg-warning/15 text-warning',
-    tone === 'critical' && 'border-warning/70 bg-warning/20 text-warning',
-    tone === 'fumble' && 'border-severe/65 bg-severe/15 text-severe',
+    'flex shrink-0 flex-col items-center justify-center rounded-xl border font-mono font-bold tabular-nums leading-none transition-[background-color,border-color,color,opacity,box-shadow,transform] duration-200',
+    sizeBase,
+    !resolved && 'sf2-roll-idle-die',
+    dieState === 'kept' && tone === 'success' && 'border-success/65 bg-success/20 text-success',
+    dieState === 'kept' && tone === 'failure' && 'border-warning/65 bg-warning/20 text-warning',
+    dieState === 'kept' && tone === 'critical' && 'border-warning/80 bg-warning/25 text-warning',
+    dieState === 'kept' && tone === 'fumble' && 'border-severe/75 bg-severe/20 text-severe',
+    dieState === 'discarded' && 'border-border/30 bg-card/20 text-muted-foreground/40 line-through',
     rolling && 'shadow-[0_0_22px_-10px_currentColor]',
+    showHalo && 'shadow-[0_0_30px_-6px_currentColor]',
   )
 }
 
@@ -1523,12 +1528,29 @@ function rollToneTextClassName(tone: RollTone) {
   )
 }
 
+interface DieView {
+  value: number | string
+  state: DieState
+}
+
+interface OriginalRollView {
+  rollResult: number
+  modifier: number
+  total: number
+  outcome: 'success' | 'failure' | 'critical_success' | 'critical_failure'
+  dc: number
+}
+
 function RollCardView({
   tone,
   title,
   reason,
   dc,
-  roll,
+  modifier,
+  total,
+  dice,
+  modifierType,
+  originalRoll,
   actionLabel,
   rolling,
   disabled,
@@ -1538,29 +1560,63 @@ function RollCardView({
   title: string
   reason?: string
   dc: number | null
-  roll: RollBreakdownView
+  modifier?: number | null
+  total?: number | null
+  dice: DieView[]
+  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
+  originalRoll?: OriginalRollView
   actionLabel?: string
   rolling?: boolean
   disabled?: boolean
   onClick?: () => void
 }) {
   const resolved = tone !== 'idle'
+  const twin = dice.length > 1
+  const advantageLabel = modifierType === 'advantage'
+    ? 'advantage'
+    : modifierType === 'disadvantage'
+      ? 'disadvantage'
+      : modifierType === 'challenge'
+        ? 'challenge'
+        : null
+  const breakdown = resolved && total !== null && total !== undefined && modifier !== null && modifier !== undefined
+    ? formatRollMath(dice, modifier, total, dc)
+    : null
+
+  const advantageChip = advantageLabel ? (
+    <span className={cn(
+      'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em]',
+      modifierType === 'advantage' && 'border-success/40 bg-success/10 text-success',
+      modifierType === 'disadvantage' && 'border-warning/40 bg-warning/10 text-warning',
+      modifierType === 'challenge' && 'border-severe/40 bg-severe/10 text-severe',
+    )}>
+      {advantageLabel}
+    </span>
+  ) : null
+
   const content = (
-    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-4">
+    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5">
       <div className="min-w-0">
         {resolved && (
-          <div className="mb-1 font-mono text-[10px] tracking-[0.08em] text-foreground/65">
-            {title}
+          <div className="mb-1 flex flex-wrap items-baseline gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+            <span className="text-foreground/65">{title}</span>
+            {advantageChip}
           </div>
         )}
         <div className={cn(
-          'font-mono leading-none [text-wrap:balance]',
+          'flex flex-wrap items-baseline gap-2 font-mono leading-none [text-wrap:balance]',
           resolved
-            ? cn('text-[22px] font-semibold md:text-[25px]', rollToneTextClassName(tone))
-            : 'text-[20px] font-semibold text-primary md:text-[24px]',
+            ? cn('text-[26px] font-bold md:text-[30px]', rollToneTextClassName(tone))
+            : 'text-[18px] font-semibold text-primary md:text-[20px]',
         )}>
-          {resolved ? rollResultLabel(tone) : title}
+          <span>{resolved ? rollResultLabel(tone) : title}</span>
+          {!resolved && advantageChip}
         </div>
+        {breakdown && (
+          <div className="mt-2 font-mono text-[12px] tabular-nums text-foreground/75 md:text-[13px]">
+            {breakdown}
+          </div>
+        )}
         {reason && (
           <p className="mt-3 max-w-[32rem] text-sm font-normal leading-snug text-foreground/85 [text-wrap:pretty]" style={{ fontFamily: 'var(--font-narrative)' }}>
             {reason}
@@ -1568,10 +1624,20 @@ function RollCardView({
         )}
       </div>
 
-      <div className={cn('grid grid-cols-[auto_auto_auto] items-center justify-start gap-2.5 md:justify-end md:gap-3', rollToneTextClassName(tone))}>
-        <RollValueBox tone={tone} value={dc !== null ? `DC ${dc}` : 'DC -'} />
-        <div className="font-mono text-xl font-bold uppercase md:text-2xl">vs</div>
-        <RollValueBox tone={tone} value={roll.value} detail={roll.detail} rolling={rolling} />
+      <div className="flex shrink-0 flex-col items-center gap-2 md:items-end">
+        <div className="flex items-center gap-2 md:gap-2.5">
+          {dice.map((die, index) => (
+            <DieFace key={index} tone={tone} die={die} rolling={rolling} twin={twin} />
+          ))}
+        </div>
+        {dc !== null && (
+          <div className={cn(
+            'font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums',
+            resolved ? 'text-foreground/55' : 'text-foreground/70',
+          )}>
+            vs DC {dc}
+          </div>
+        )}
       </div>
 
       {actionLabel && (
@@ -1582,52 +1648,81 @@ function RollCardView({
     </div>
   )
 
-  if (onClick) {
+  const card = onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={rollCardClassName(tone, true)}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className={rollCardClassName(tone)}>{content}</div>
+  )
+
+  if (originalRoll) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={rollCardClassName(tone, true)}
-      >
-        {content}
-      </button>
+      <div className="space-y-2">
+        <OriginalRollStrip original={originalRoll} />
+        {card}
+      </div>
     )
   }
 
-  return <div className={rollCardClassName(tone)}>{content}</div>
+  return card
 }
 
-function RollValueBox({
+function DieFace({
   tone,
-  value,
-  detail,
+  die,
   rolling,
+  twin,
 }: {
   tone: RollTone
-  value: ReactNode
-  detail?: ReactNode
+  die: DieView
   rolling?: boolean
+  twin: boolean
 }) {
+  const isRollingFace = Boolean(rolling) && die.state !== 'discarded' && tone === 'idle'
   return (
-    <div className={rollValueBoxClassName(tone, rolling)}>
-      <div className="font-mono text-[18px] font-bold leading-none tabular-nums md:text-[20px]">
-        <span className={cn(rolling && 'animate-pulse')}>{value}</span>
-      </div>
-      {detail && (
-        <div className="mt-1.5 font-mono text-[11px] font-semibold leading-none opacity-85 tabular-nums md:text-[12px]">
-          {detail}
-        </div>
-      )}
+    <div className={dieBoxClassName(tone, die.state, isRollingFace, twin)}>
+      <span className={cn(isRollingFace && 'animate-pulse')}>{die.value}</span>
     </div>
   )
 }
 
-function rollBreakdownDetail(roll: number, modifier: number, rawRolls?: number[]) {
-  const raw = rawRolls && rawRolls.length > 1
-    ? rawRolls.join('/')
-    : String(roll)
-  return `${raw} ${formatSigned(modifier)}`
+function OriginalRollStrip({ original }: { original: OriginalRollView }) {
+  const failed = original.outcome === 'failure' || original.outcome === 'critical_failure'
+  const label = failed ? 'failed' : 'previous'
+  return (
+    <div className="flex items-baseline gap-2 rounded-md border border-border/30 bg-background/35 px-3 py-1.5 font-mono text-[11px] tabular-nums text-muted-foreground/70 opacity-65">
+      <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/55">Inspiration reroll</span>
+      <span className="line-through">
+        {original.rollResult}{original.modifier !== 0 ? ` ${formatSigned(original.modifier)}` : ''} = {original.total} vs DC {original.dc} — {label}
+      </span>
+    </div>
+  )
+}
+
+function formatRollMath(dice: DieView[], modifier: number, total: number, dc: number | null) {
+  const kept = dice.find((d) => d.state === 'kept') ?? dice[0]
+  const keptValue = typeof kept?.value === 'number' ? kept.value : null
+  if (keptValue === null) return null
+  const modText = modifier !== 0 ? ` ${formatSigned(modifier)}` : ''
+  const dcText = dc !== null ? ` vs DC ${dc}` : ''
+  return `${keptValue}${modText} = ${total}${dcText}`
+}
+
+function diceForResolved(d20: number, rawRolls: number[] | undefined, modifierType: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge' | undefined): DieView[] {
+  if (rawRolls && rawRolls.length > 1 && (modifierType === 'advantage' || modifierType === 'disadvantage')) {
+    const keptIndex = rawRolls.findIndex((r) => r === d20)
+    return rawRolls.map((r, i) => ({
+      value: r,
+      state: i === keptIndex ? 'kept' : 'discarded',
+    }))
+  }
+  return [{ value: d20, state: 'kept' }]
 }
 
 function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number] }) {
@@ -1638,6 +1733,16 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
     roll.outcome === 'failure' || roll.outcome === 'critical_failure'
       ? roll.consequenceSummary
       : undefined
+  const dice = diceForResolved(roll.rollResult, roll.rawRolls, roll.modifierType)
+  const originalRoll = roll.inspirationSpent && roll.originalRoll
+    ? {
+        rollResult: roll.originalRoll.rollResult,
+        modifier: roll.originalRoll.modifier,
+        total: roll.originalRoll.total,
+        outcome: roll.originalRoll.outcome,
+        dc,
+      }
+    : undefined
 
   return (
     <RollCardView
@@ -1645,7 +1750,11 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
       title={`${roll.skill} Check`}
       reason={failureReason}
       dc={dc}
-      roll={{ value: total, detail: rollBreakdownDetail(roll.rollResult, roll.modifier, roll.rawRolls) }}
+      modifier={roll.modifier}
+      total={total}
+      dice={dice}
+      modifierType={roll.modifierType}
+      originalRoll={originalRoll}
     />
   )
 }
@@ -1801,17 +1910,31 @@ function DiceTray({
   const tone = rollToneForResult(result?.result)
   const title = `${pendingCheck?.skill ?? result?.skill ?? 'Skill'} Check`
   const resolvedDc = result?.effectiveDc ?? result?.dc ?? effectiveDc ?? pendingCheck?.dc ?? null
-  const resolvedModifier = result?.modifier ?? modifier
-  const pendingUsesTwoDice = pendingCheck?.modifierType === 'advantage' || pendingCheck?.modifierType === 'disadvantage'
-  const pendingRollValue = pendingUsesTwoDice
-    ? (display !== null && display2 !== null ? `${display}/${display2}` : '2d20')
-    : (display ?? 'd20')
-  const rollValue = result
-    ? result.total
-    : pendingRollValue
-  const rollDetail = result
-    ? rollBreakdownDetail(result.d20, result.modifier, result.rawRolls)
-    : (resolvedModifier !== null ? formatSigned(resolvedModifier) : undefined)
+  const activeModifierType = result?.modifierType ?? pendingCheck?.modifierType
+  const usesTwoDice = activeModifierType === 'advantage' || activeModifierType === 'disadvantage'
+
+  const dice: DieView[] = result
+    ? diceForResolved(result.d20, result.rawRolls, result.modifierType)
+    : usesTwoDice
+      ? [
+          { value: display ?? 'd20', state: 'pending' },
+          { value: display2 ?? 'd20', state: 'pending' },
+        ]
+      : [{ value: display ?? 'd20', state: 'pending' }]
+
+  const originalRoll = result?.inspirationSpent && result?.originalRoll
+    ? {
+        rollResult: result.originalRoll.d20,
+        modifier: result.originalRoll.modifier,
+        total: result.originalRoll.total,
+        outcome: result.originalRoll.result === 'critical'
+          ? 'critical_success' as const
+          : result.originalRoll.result === 'fumble'
+            ? 'critical_failure' as const
+            : result.originalRoll.result,
+        dc: result.originalRoll.effectiveDc ?? result.originalRoll.dc,
+      }
+    : undefined
 
   useEffect(() => {
     setDisplay(result?.d20 ?? null)
@@ -1830,7 +1953,7 @@ function DiceTray({
     setIsRolling(true)
     const interval = window.setInterval(() => {
       setDisplay(1 + Math.floor(Math.random() * 20))
-      if (pendingUsesTwoDice) setDisplay2(1 + Math.floor(Math.random() * 20))
+      if (usesTwoDice) setDisplay2(1 + Math.floor(Math.random() * 20))
     }, 45)
     window.setTimeout(() => {
       window.clearInterval(interval)
@@ -1845,7 +1968,11 @@ function DiceTray({
         title={title}
         reason={pendingCheck?.why}
         dc={resolvedDc}
-        roll={{ value: rollValue, detail: rollDetail }}
+        modifier={result?.modifier ?? modifier}
+        total={result?.total}
+        dice={dice}
+        modifierType={activeModifierType}
+        originalRoll={originalRoll}
         actionLabel={!result ? (isRolling ? 'Rolling...' : 'Tap to roll') : undefined}
         rolling={isRolling}
         disabled={busy || isRolling}
