@@ -30,6 +30,11 @@ import { bindSf2bRollSkill, extractSf2bSkillTags } from '@/lib/sf2b/skill-tags'
 import { applyAuthoredToCampaign } from '@/lib/sf2/author/hydrate'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
+  diagnosticsStore,
+  type DebugEntry,
+  type TokenUsage,
+} from '@/lib/sf2/diagnostics-store'
+import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
 import {
@@ -81,44 +86,11 @@ const API_ENDPOINTS: Record<Sf2RuntimeMode, {
   },
 }
 
-interface TokenUsage {
-  inputTokens: number
-  outputTokens: number
-  cacheWriteTokens: number
-  cacheReadTokens: number
-}
-
 interface LatencyPayload {
   totalMs: number
   apiMs: number
   ttftMs?: number
   attempts?: number
-}
-
-interface DebugEntry {
-  kind:
-    | 'narrate_turn'
-    | 'archivist'
-    | 'token_usage'
-    | 'latency'
-    | 'roll'
-    | 'truncation'
-    | 'error'
-    | 'working_set'
-    | 'author'
-    | 'face_shift'
-    | 'ladder_fired'
-    | 'pacing_advisory'
-    | 'scene_bundle_built'
-    | 'sf2.coherence.finding'
-    | 'sf2.coherence.clean_turn'
-    | 'sf2.invariant'
-    | 'display_sentinel'
-    | 'narrator_meta_observed'
-    | 'narrator_output_recovered'
-    | 'experiment'
-  at: number
-  data: unknown
 }
 
 type ReplayFrame = Sf2TurnReplayFrame
@@ -261,17 +233,13 @@ export default function PlayV2Page() {
   const [inspirationOffer, setInspirationOffer] = useState<RollOutcome | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
-  const [debug, setDebug] = useState<DebugEntry[]>([])
-  const [replayFrames, setReplayFrames] = useState<ReplayFrame[]>([])
-  const [lastNarratorUsage, setLastNarratorUsage] = useState<TokenUsage | null>(null)
-  const [lastArchivistUsage, setLastArchivistUsage] = useState<TokenUsage | null>(null)
+  const replayFramesRef = useRef<ReplayFrame[]>([])
   const [turnIndex, setTurnIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [pivotSignaled, setPivotSignaled] = useState(false)
   const [isGeneratingChapter, setIsGeneratingChapter] = useState(false)
-  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null)
+  const generationStartTimeRef = useRef<number | null>(null)
   const [generationElapsed, setGenerationElapsed] = useState(0)
-  const [exportCopyStatus, setExportCopyStatus] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const persistenceRef = useRef<StoryforgePersistence2 | null>(null)
   const modeInvariantKeysRef = useRef<Set<string>>(new Set())
@@ -308,14 +276,11 @@ export default function PlayV2Page() {
     const key = `${type}:${JSON.stringify(data)}`
     if (modeInvariantKeysRef.current.has(key)) return
     modeInvariantKeysRef.current.add(key)
-    setDebug((d) => [
-      ...d,
-      {
-        kind: 'sf2.invariant',
-        at: Date.now(),
-        data: { type, ...data },
-      },
-    ])
+    diagnosticsStore.pushDebug({
+      kind: 'sf2.invariant',
+      at: Date.now(),
+      data: { type, ...data },
+    })
   }, [])
 
   const reconcileRuntimeModeForState = useCallback((nextState: Sf2State, source: string) => {
@@ -435,15 +400,17 @@ export default function PlayV2Page() {
 
   // Live timer while generating a chapter (Author call can take 30-90s).
   useEffect(() => {
-    if (!isGeneratingChapter || !generationStartTime) {
+    if (!isGeneratingChapter) {
       setGenerationElapsed(0)
       return
     }
     const interval = setInterval(() => {
-      setGenerationElapsed(Math.floor((Date.now() - generationStartTime) / 1000))
+      const start = generationStartTimeRef.current
+      if (start === null) return
+      setGenerationElapsed(Math.floor((Date.now() - start) / 1000))
     }, 500)
     return () => clearInterval(interval)
-  }, [isGeneratingChapter, generationStartTime])
+  }, [isGeneratingChapter])
 
   const persist = useCallback(async (s: Sf2State) => {
     const p = persistenceRef.current
@@ -464,13 +431,6 @@ export default function PlayV2Page() {
     }
   }, [])
 
-  // Session metrics — compute on demand. Must be declared here BEFORE any
-  // conditional early returns to satisfy Rules of Hooks.
-  const sessionSummary = useMemo(
-    () => (state ? computeSessionSummary(state, debug) : null),
-    [state, debug]
-  )
-
   function startCampaign() {
     const mode = urlRuntimeMode ?? runtimeMode ?? 'sf2'
     const seedId = mode === 'sf2b' ? SF2B_DEFAULT_SEED_ID : selectedSeedId
@@ -484,16 +444,14 @@ export default function PlayV2Page() {
     setProse('')
     setTurnCommitError(null)
     setSuggestedActions([])
-    setDebug([])
-    setReplayFrames([])
-    setLastNarratorUsage(null)
-    setLastArchivistUsage(null)
+    diagnosticsStore.resetAll()
+    replayFramesRef.current = []
     setPendingCheck(null)
     setRollResult(null)
     setTurnIndex(0)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
-    setDebug((d) => [...d, {
+    diagnosticsStore.pushDebug({
       kind: 'experiment',
       at: Date.now(),
       data: {
@@ -501,7 +459,7 @@ export default function PlayV2Page() {
         experimentMode: next.meta.experimentMode,
         seedId,
       },
-    }])
+    })
     setRuntimeMode(runtimeModeForState(next))
     persist(next)
   }
@@ -522,8 +480,8 @@ export default function PlayV2Page() {
     setActivePlayerInput('')
     setLiveRolls([])
     setSuggestedActions([])
-    setDebug([])
-    setReplayFrames([])
+    diagnosticsStore.resetDebug()
+    replayFramesRef.current = []
     setTurnIndex(0)
     setPendingCheck(null)
     setPivotSignaled(false)
@@ -635,10 +593,7 @@ export default function PlayV2Page() {
         try { errorBody = await res.json() } catch {
           try { errorBody = await res.text() } catch {}
         }
-        setDebug((d) => [
-          ...d,
-          { kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } },
-        ])
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } })
         setIsStreaming(false)
         return {
           completed: false,
@@ -709,9 +664,7 @@ export default function PlayV2Page() {
                 priorMessages: (event.priorMessages as unknown[]) ?? [],
               }
               if (binding.overridden) {
-                setDebug((d) => [
-                  ...d,
-                  {
+                diagnosticsStore.pushDebug({
                     kind: 'roll',
                     at: Date.now(),
                     data: {
@@ -722,18 +675,14 @@ export default function PlayV2Page() {
                       diagnostic: binding.diagnostic,
                       turnIndex,
                     },
-                  },
-                ])
+                  })
               }
               break
             }
             case 'narrate_turn': {
               annotation = event.input as Record<string, unknown>
               sawNarrateTurn = true
-              setDebug((d) => [
-                ...d,
-                { kind: 'narrate_turn', at: Date.now(), data: annotation },
-              ])
+              diagnosticsStore.pushDebug({ kind: 'narrate_turn', at: Date.now(), data: annotation })
               const actions = (annotation?.suggested_actions as string[] | undefined) ?? []
               setSuggestedActions(actions)
               if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
@@ -741,24 +690,21 @@ export default function PlayV2Page() {
             }
             case 'token_usage': {
               const usage = event.usage as TokenUsage
-              setLastNarratorUsage(usage)
-              setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'narrator', ...usage } }])
+              diagnosticsStore.setNarratorUsage(usage)
+              diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'narrator', ...usage } })
               break
             }
             case 'latency': {
-              setDebug((d) => [
-                ...d,
-                {
+              diagnosticsStore.pushDebug({
                   kind: 'latency',
                   at: Date.now(),
                   data: { role: event.role ?? 'narrator', ...(event.latency as Record<string, unknown>) },
-                },
-              ])
+                })
               break
             }
             case 'working_set':
               turnWorkingSet = (event.workingSet as Sf2WorkingSet | undefined) ?? null
-              setDebug((d) => [...d, { kind: 'working_set', at: Date.now(), data: event.summary }])
+              diagnosticsStore.pushDebug({ kind: 'working_set', at: Date.now(), data: event.summary })
               break
             case 'scene_bundle_built': {
               const built = {
@@ -767,7 +713,7 @@ export default function PlayV2Page() {
                 builtAtTurn: Number(event.builtAtTurn ?? 0),
               }
               bundleBuilt = built
-              setDebug((d) => [...d, {
+              diagnosticsStore.pushDebug({
                 kind: 'scene_bundle_built',
                 at: Date.now(),
                 data: {
@@ -775,14 +721,14 @@ export default function PlayV2Page() {
                   builtAtTurn: built.builtAtTurn,
                   bundleBytes: built.bundleText.length,
                 },
-              }])
+              })
               break
             }
             case 'pacing_advisory':
-              setDebug((d) => [...d, { kind: 'pacing_advisory', at: Date.now(), data: event }])
+              diagnosticsStore.pushDebug({ kind: 'pacing_advisory', at: Date.now(), data: event })
               break
             case 'narrator_meta_observed':
-              setDebug((d) => [...d, {
+              diagnosticsStore.pushDebug({
                 kind: 'narrator_meta_observed',
                 at: Date.now(),
                 data: {
@@ -790,20 +736,20 @@ export default function PlayV2Page() {
                   snippet: String(event.snippet ?? ''),
                   turnIndex: Number(event.turnIndex ?? 0),
                 },
-              }])
+              })
               break
             case 'narrator_output_recovered':
-              setDebug((d) => [...d, {
+              diagnosticsStore.pushDebug({
                 kind: 'narrator_output_recovered',
                 at: Date.now(),
                 data: {
                   recoveryNotes: Array.isArray(event.recoveryNotes) ? event.recoveryNotes.map(String) : [],
                   turnIndex: Number(event.turnIndex ?? 0),
                 },
-              }])
+              })
               break
             case 'truncation_warning':
-              setDebug((d) => [...d, { kind: 'truncation', at: Date.now(), data: event }])
+              diagnosticsStore.pushDebug({ kind: 'truncation', at: Date.now(), data: event })
               break
             case 'display_sentinel': {
               const findings = (event.findings as Array<Record<string, unknown>>) ?? []
@@ -823,13 +769,13 @@ export default function PlayV2Page() {
                 data: { mode, repaired, findings, findingCount: findings.length },
               }
               turnSentinelEvents.push(entry)
-              setDebug((d) => [...d, entry])
+              diagnosticsStore.pushDebug(entry)
               break
             }
             case 'error':
               sawStreamError = true
               streamErrorMessage = String(event.message ?? 'Narrator stream failed')
-              setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: streamErrorMessage }])
+              diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: streamErrorMessage })
               break
             case 'done':
               break
@@ -883,9 +829,7 @@ export default function PlayV2Page() {
           currentState = structuredClone(currentState)
           currentState.player.inspiration = Math.max(0, currentState.player.inspiration - 1)
         }
-        setDebug((d) => [
-          ...d,
-          {
+        diagnosticsStore.pushDebug({
             kind: 'roll',
             at: Date.now(),
             data: {
@@ -899,8 +843,7 @@ export default function PlayV2Page() {
               skillOverrideReason: sawRollPrompt?.skillOverrideReason,
               turnIndex,
             },
-          },
-        ])
+          })
         rollRecords.push({
           turn: turnIndex,
           proseOffset,
@@ -959,14 +902,14 @@ export default function PlayV2Page() {
 
       if (sawNarrateTurn) break
       // If neither fired, the stream ended prematurely; bail.
-      setDebug((d) => [...d, {
+      diagnosticsStore.pushDebug({
         kind: 'error',
         at: Date.now(),
         data: {
           source: 'narrator',
           message: 'stream ended before narrate_turn; turn was not committed',
         },
-      }])
+      })
       setIsStreaming(false)
       return {
         completed: false,
@@ -1016,14 +959,11 @@ export default function PlayV2Page() {
             errorBody = await res.text()
           } catch {}
         }
-        setDebug((d) => [
-          ...d,
-          {
+        diagnosticsStore.pushDebug({
             kind: 'error',
             at: Date.now(),
             data: { status: res.status, source: 'archivist', body: errorBody },
-          },
-        ])
+          })
         return { nextState: preTurnState, replay: null }
       }
       const data = (await res.json()) as {
@@ -1047,10 +987,8 @@ export default function PlayV2Page() {
         usage: TokenUsage
         latency?: LatencyPayload
       }
-      setLastArchivistUsage(data.usage)
-      setDebug((d) => [
-        ...d,
-        {
+      diagnosticsStore.setArchivistUsage(data.usage)
+      diagnosticsStore.pushDebug({
           kind: 'archivist',
           at: Date.now(),
           data: {
@@ -1060,14 +998,11 @@ export default function PlayV2Page() {
             deferred: data.deferredWrites,
             drift: data.drift,
           },
-        },
-      ])
+        })
       if (Array.isArray(data.drift)) {
         for (const drift of data.drift as Array<{ kind?: string; detail?: string; entityId?: string }>) {
           if (drift.kind === 'identity_drift' && drift.detail?.startsWith('dedup:')) {
-            setDebug((d) => [
-              ...d,
-              {
+            diagnosticsStore.pushDebug({
                 kind: 'sf2.invariant',
                 at: Date.now(),
                 data: {
@@ -1075,12 +1010,9 @@ export default function PlayV2Page() {
                   entityId: drift.entityId,
                   detail: drift.detail,
                 },
-              },
-            ])
+              })
           } else if (drift.kind === 'anchor_reference_missing') {
-            setDebug((d) => [
-              ...d,
-              {
+            diagnosticsStore.pushDebug({
                 kind: 'sf2.invariant',
                 at: Date.now(),
                 data: {
@@ -1088,16 +1020,15 @@ export default function PlayV2Page() {
                   entityId: drift.entityId,
                   detail: drift.detail,
                 },
-              },
-            ])
+              })
           }
         }
       }
       if (data.faceShift) {
-        setDebug((d) => [...d, { kind: 'face_shift', at: Date.now(), data: data.faceShift }])
+        diagnosticsStore.pushDebug({ kind: 'face_shift', at: Date.now(), data: data.faceShift })
       }
       if (Array.isArray(data.ladderFired) && data.ladderFired.length > 0) {
-        setDebug((d) => [...d, { kind: 'ladder_fired', at: Date.now(), data: data.ladderFired }])
+        diagnosticsStore.pushDebug({ kind: 'ladder_fired', at: Date.now(), data: data.ladderFired })
       }
       const pruneTotal =
         (data.pruneSummary?.demotedDecisions ?? 0) +
@@ -1105,13 +1036,13 @@ export default function PlayV2Page() {
         (data.pruneSummary?.consumedClues ?? 0) +
         (data.pruneSummary?.clearedFloatingClues ?? 0)
       if (pruneTotal > 0) {
-        setDebug((d) => [...d, { kind: 'archivist', at: Date.now(), data: { pruned: data.pruneSummary } }])
+        diagnosticsStore.pushDebug({ kind: 'archivist', at: Date.now(), data: { pruned: data.pruneSummary } })
       }
       // If the patch surfaced lexicon additions, log them — they're rare and
       // worth seeing.
       const lex = (data.patch as { lexiconAdditions?: unknown[] } | undefined)?.lexiconAdditions
       if (Array.isArray(lex) && lex.length > 0) {
-        setDebug((d) => [...d, { kind: 'archivist', at: Date.now(), data: { lexicon_additions: lex } }])
+        diagnosticsStore.pushDebug({ kind: 'archivist', at: Date.now(), data: { lexicon_additions: lex } })
       }
       // Coherence findings: push each as an event so rate + types are
       // inspectable in the debug stream and aggregatable in session summary.
@@ -1120,26 +1051,14 @@ export default function PlayV2Page() {
       const findings = data.coherenceFindings ?? []
       if (findings.length > 0) {
         for (const f of findings) {
-          setDebug((d) => [
-            ...d,
-            { kind: 'sf2.coherence.finding', at: Date.now(), data: f },
-          ])
+          diagnosticsStore.pushDebug({ kind: 'sf2.coherence.finding', at: Date.now(), data: f })
         }
       } else {
-        setDebug((d) => [
-          ...d,
-          { kind: 'sf2.coherence.clean_turn', at: Date.now(), data: null },
-        ])
+        diagnosticsStore.pushDebug({ kind: 'sf2.coherence.clean_turn', at: Date.now(), data: null })
       }
-      setDebug((d) => [
-        ...d,
-        { kind: 'token_usage', at: Date.now(), data: { role: 'archivist', ...data.usage } },
-      ])
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'archivist', ...data.usage } })
       if (data.latency) {
-        setDebug((d) => [
-          ...d,
-          { kind: 'latency', at: Date.now(), data: { role: 'archivist', ...data.latency } },
-        ])
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'archivist', ...data.latency } })
       }
       return {
         nextState: data.nextState,
@@ -1155,7 +1074,7 @@ export default function PlayV2Page() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'archivist_error'
-      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: message }])
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
       return { nextState: preTurnState, replay: null }
     } finally {
       setIsArchiving(false)
@@ -1166,16 +1085,16 @@ export default function PlayV2Page() {
     if (isArcAuthored(currentState)) return currentState
     const existingArcPlan = currentState.campaign.arcPlan
     if (existingArcPlan && existingArcPlan.status !== 'active') {
-      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
         source: 'arc-author',
         message: 'arc plan is no longer active; automatic next-arc generation is future work',
         arcStatus: existingArcPlan.status,
-      } }])
+      } })
       return null
     }
     setIsArchiving(true)
     setIsGeneratingChapter(true)
-    setGenerationStartTime(Date.now())
+    generationStartTimeRef.current = Date.now()
     try {
       const requestEndpoints = API_ENDPOINTS[runtimeModeForState(currentState)]
       const res = await fetch(requestEndpoints.arcAuthor, {
@@ -1188,7 +1107,7 @@ export default function PlayV2Page() {
         try { body = await res.json() } catch {
           try { body = await res.text() } catch {}
         }
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: { status: res.status, source: 'arc-author', body } }])
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'arc-author', body } })
         return null
       }
       const data = (await res.json()) as {
@@ -1202,7 +1121,7 @@ export default function PlayV2Page() {
       next.campaign.arcPlan = data.arcPlan
       next.campaign.arcs[data.arcEntity.id] = data.arcEntity
       next.meta.updatedAt = new Date().toISOString()
-      setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
         arc: data.arcPlan.title,
         scenario: data.arcPlan.scenarioShape.mode,
         variantSeed: data.selectedArcVariantSeed,
@@ -1211,22 +1130,22 @@ export default function PlayV2Page() {
         chapterFunctions: data.arcPlan.chapterFunctionMap.map((c) => `${c.chapter}: ${c.function}`),
         engines: data.arcPlan.pressureEngines.map((e) => e.id),
         stanceAxes: data.arcPlan.playerStanceAxes.map((a) => a.id),
-      } }])
-      setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } }])
+      } })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } })
       if (data.latency) {
-        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'arc-author', ...data.latency } }])
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'arc-author', ...data.latency } })
       }
       setState(next)
       persist(next)
       return next
     } catch (err) {
       const message = err instanceof Error ? err.message : 'arc_author_error'
-      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: message }])
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
       return null
     } finally {
       setIsArchiving(false)
       setIsGeneratingChapter(false)
-      setGenerationStartTime(null)
+      generationStartTimeRef.current = null
     }
   }
 
@@ -1241,17 +1160,14 @@ export default function PlayV2Page() {
       threadCount: Object.keys(currentState.campaign.threads).length,
     })
     if (authored) {
-      setDebug((d) => [
-        ...d,
-        {
+      diagnosticsStore.pushDebug({
           kind: 'author',
           at: Date.now(),
           data: {
             note: 'skipped — chapter already authored in state (loaded from IDB?)',
             chapterTitle: currentState.chapter.title,
           },
-        },
-      ])
+        })
       return currentState
     }
     const arced = await generateArcIfNeeded(currentState)
@@ -1259,17 +1175,17 @@ export default function PlayV2Page() {
     currentState = arced
     setIsArchiving(true)
     setIsGeneratingChapter(true)
-    setGenerationStartTime(Date.now())
+    generationStartTimeRef.current = Date.now()
     try {
       // eslint-disable-next-line no-console
       console.log('[sf2/client] generating chapter 1, fetching author endpoint...')
       const arcPlan = currentState.campaign.arcPlan
       if (arcPlan && arcPlan.status !== 'active') {
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
           source: 'author',
           message: 'arc plan is no longer active; automatic next-arc generation is future work',
           arcStatus: arcPlan.status,
-        } }])
+        } })
         return null
       }
 
@@ -1292,7 +1208,7 @@ export default function PlayV2Page() {
         }
         // eslint-disable-next-line no-console
         console.error('[sf2/client] author failed', res.status, body)
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: { status: res.status, source: 'author-ch1', body } }])
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'author-ch1', body } })
         return null
       }
       const data = (await res.json()) as {
@@ -1304,7 +1220,7 @@ export default function PlayV2Page() {
         usage: TokenUsage
         latency?: LatencyPayload
       }
-      setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
         chapter: data.chapter,
         title: data.runtimeState.title,
         npcCount: data.runtimeState.startingNpcIds.length,
@@ -1312,10 +1228,10 @@ export default function PlayV2Page() {
         ladderSteps: data.runtimeState.pressureLadder.length,
         chapterFunction: data.runtimeState.arcLink?.chapterFunction,
         pacing: data.runtimeState.pacingContract?.targetTurns,
-      } }])
-      setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
+      } })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
       if (data.latency) {
-        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } }])
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
       }
 
       // Apply Ch1 setup to state.
@@ -1365,7 +1281,7 @@ export default function PlayV2Page() {
       }
       next.meta.currentSceneId = `scene_${data.chapter}_1`
       next.meta.updatedAt = new Date().toISOString()
-      setDebug((d) => [...d, observeActorFirewallWrite(next, {
+      diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
         actor: 'author',
         writeKind: 'chapter_setup',
         turnIndex: firewallTurnIndexFor(next),
@@ -1375,7 +1291,7 @@ export default function PlayV2Page() {
           activeThreadCount: data.runtimeState.activeThreadIds.length,
           pressureLadderCount: data.runtimeState.pressureLadder.length,
         },
-      })])
+      }))
       setState(next)
       persist(next)
       return next
@@ -1383,12 +1299,12 @@ export default function PlayV2Page() {
       const message = err instanceof Error ? err.message : 'author_ch1_error'
       // eslint-disable-next-line no-console
       console.error('[sf2/client] author-ch1 threw', err)
-      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: message }])
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
       return null
     } finally {
       setIsArchiving(false)
       setIsGeneratingChapter(false)
-      setGenerationStartTime(null)
+      generationStartTimeRef.current = null
     }
   }
 
@@ -1479,9 +1395,9 @@ export default function PlayV2Page() {
     committedTurn.replayFrame.stateAfter = structuredClone(committedTurn.stateAfter)
 
     if (committedTurn.invariantEvents.length > 0) {
-      setDebug((d) => [...d, ...committedTurn.invariantEvents])
+      diagnosticsStore.pushDebugMany(committedTurn.invariantEvents)
     }
-    setReplayFrames((frames) => [...frames, committedTurn.replayFrame])
+    replayFramesRef.current = [...replayFramesRef.current, committedTurn.replayFrame]
     setState(committedTurn.stateAfter)
     setTurnIndex(committedTurn.nextTurnIndex)
     setPivotSignaled(chapterHasPivotSignal(committedTurn.stateAfter))
@@ -1519,17 +1435,17 @@ export default function PlayV2Page() {
           latency?: LatencyPayload
         }
         priorChapterMeaning = meaningData.meaning
-        setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: { chapter_meaning: meaningData.meaning } }])
-        setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.usage } }])
+        diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: { chapter_meaning: meaningData.meaning } })
+        diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.usage } })
         if (meaningData.latency) {
-          setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.latency } }])
+          diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.latency } })
         }
 
         // Persist meaning on the closing chapter's artifacts.
         authorBaseState = structuredClone(authorBaseState)
         authorBaseState.chapter.artifacts.meaning = meaningData.meaning
         authorBaseState.meta.updatedAt = new Date().toISOString()
-        setDebug((d) => [...d, observeActorFirewallWrite(authorBaseState, {
+        diagnosticsStore.pushDebug(observeActorFirewallWrite(authorBaseState, {
           actor: 'author',
           writeKind: 'chapter_meaning',
           turnIndex: firewallTurnIndexFor(authorBaseState),
@@ -1537,23 +1453,23 @@ export default function PlayV2Page() {
             chapter: authorBaseState.chapter.number,
             closingResolution: meaningData.meaning.closingResolution,
           },
-        })])
+        }))
         setState(authorBaseState)
         await persist(authorBaseState)
       } else {
         let body: unknown = null
         try { body = await meaningRes.json() } catch {}
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: { status: meaningRes.status, source: 'chapter-meaning', body } }])
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: meaningRes.status, source: 'chapter-meaning', body } })
         // Proceed without priorChapterMeaning — Author will fall back to state-derived hook.
       }
 
       const arcPlan = authorBaseState.campaign.arcPlan
       if (arcPlan && arcPlan.status !== 'active') {
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: {
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
           source: 'author',
           message: 'arc plan is no longer active; automatic next-arc generation is future work',
           arcStatus: arcPlan.status,
-        } }])
+        } })
         return
       }
 
@@ -1569,7 +1485,7 @@ export default function PlayV2Page() {
       if (!res.ok) {
         let body: unknown = null
         try { body = await res.json() } catch {}
-        setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: { status: res.status, source: 'author', body } }])
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'author', body } })
         return
       }
       const data = (await res.json()) as {
@@ -1587,7 +1503,7 @@ export default function PlayV2Page() {
         latency?: LatencyPayload
       }
 
-      setDebug((d) => [...d, { kind: 'author', at: Date.now(), data: {
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
         chapter: data.chapter,
         title: data.runtimeState.title,
         npcCount: data.runtimeState.startingNpcIds.length,
@@ -1596,10 +1512,10 @@ export default function PlayV2Page() {
         threadTransitions: data.threadTransitions ?? [],
         chapterFunction: data.runtimeState.arcLink?.chapterFunction,
         pacing: data.runtimeState.pacingContract?.targetTurns,
-      } }])
-      setDebug((d) => [...d, { kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } }])
+      } })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
       if (data.latency) {
-        setDebug((d) => [...d, { kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } }])
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
       }
 
       // Apply the new chapter: bump chapter counter, swap setup/scaffolding/opening,
@@ -1672,7 +1588,7 @@ export default function PlayV2Page() {
       // Narrator route will rebuild on the first turn of the new chapter.
       next.world.sceneBundleCache = undefined
       next.meta.updatedAt = new Date().toISOString()
-      setDebug((d) => [...d, observeActorFirewallWrite(next, {
+      diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
         actor: 'author',
         writeKind: 'chapter_setup',
         turnIndex: firewallTurnIndexFor(next),
@@ -1682,7 +1598,7 @@ export default function PlayV2Page() {
           activeThreadCount: data.runtimeState.activeThreadIds.length,
           pressureLadderCount: data.runtimeState.pressureLadder.length,
         },
-      })])
+      }))
       setState(next)
       await persist(next)
       // Reset scene view — but KEEP turnIndex monotonic across chapters so
@@ -1695,7 +1611,7 @@ export default function PlayV2Page() {
       setPivotSignaled(false)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'author_error'
-      setDebug((d) => [...d, { kind: 'error', at: Date.now(), data: message }])
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
     } finally {
       setIsArchiving(false)
     }
@@ -1916,9 +1832,10 @@ export default function PlayV2Page() {
 
   function buildSessionLogExport() {
     if (!state) return null
-    const summary = computeSessionSummary(state, debug)
+    const debugSnapshot = diagnosticsStore.getDebug()
+    const summary = computeSessionSummary(state, debugSnapshot)
     const exportRuntimeMode: Sf2RuntimeMode = isSf2bState(state) ? 'sf2b' : 'sf2'
-    let exportDebug = debug
+    let exportDebug: readonly DebugEntry[] = debugSnapshot
     if (runtimeMode && runtimeMode !== exportRuntimeMode) {
       const invariantData = {
         source: 'session-export',
@@ -1934,20 +1851,21 @@ export default function PlayV2Page() {
         at: Date.now(),
         data: { type: 'export_runtime_state_mode_mismatch', ...invariantData },
       }
-      exportDebug = [...debug, entry]
+      exportDebug = [...debugSnapshot, entry]
     }
     const prefix = exportRuntimeMode === 'sf2b' ? 'sf2b-session' : 'sf2-session'
     return {
       filename: `${prefix}-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
-      payload: { runtimeMode: exportRuntimeMode, summary, state, debug: exportDebug, replayFrames },
+      payload: { runtimeMode: exportRuntimeMode, summary, state, debug: exportDebug, replayFrames: replayFramesRef.current },
     }
   }
 
   function buildReplayFixtureExport() {
     if (!state) return null
-    const summary = computeSessionSummary(state, debug)
+    const debugSnapshot = diagnosticsStore.getDebug()
+    const summary = computeSessionSummary(state, debugSnapshot)
     const exportRuntimeMode: Sf2RuntimeMode = isSf2bState(state) ? 'sf2b' : 'sf2'
-    let exportDebug = debug
+    let exportDebug: readonly DebugEntry[] = debugSnapshot
     if (runtimeMode && runtimeMode !== exportRuntimeMode) {
       const invariantData = {
         source: 'replay-export',
@@ -1963,7 +1881,7 @@ export default function PlayV2Page() {
         at: Date.now(),
         data: { type: 'export_runtime_state_mode_mismatch', ...invariantData },
       }
-      exportDebug = [...debug, entry]
+      exportDebug = [...debugSnapshot, entry]
     }
     const prefix = exportRuntimeMode === 'sf2b' ? 'sf2b-replay' : 'sf2-replay'
     return {
@@ -1976,7 +1894,7 @@ export default function PlayV2Page() {
         summary,
         finalState: state,
         debug: exportDebug,
-        frames: replayFrames,
+        frames: replayFramesRef.current,
         note:
           'Replay frames are captured model outputs plus before/after states. They are intended for model-free testing of deterministic tool application, cache invalidation, scene packets, and invariants.',
       },
@@ -2021,11 +1939,11 @@ export default function PlayV2Page() {
         document.execCommand('copy')
         textarea.remove()
       }
-      setExportCopyStatus(`Copied ${label} JSON: ${exportData.filename}`)
+      diagnosticsStore.setExportCopyStatus(`Copied ${label} JSON: ${exportData.filename}`)
     } catch (error) {
-      setExportCopyStatus(`Copy failed: ${error instanceof Error ? error.message : 'unknown error'}`)
+      diagnosticsStore.setExportCopyStatus(`Copy failed: ${error instanceof Error ? error.message : 'unknown error'}`)
     }
-    window.setTimeout(() => setExportCopyStatus(null), 5000)
+    window.setTimeout(() => diagnosticsStore.setExportCopyStatus(null), 5000)
   }
 
   function copySessionLog() {
@@ -2088,10 +2006,6 @@ export default function PlayV2Page() {
       pressureProjection={pressureProjection}
       closeReadiness={closeReadiness}
       campaignStats={campaignStats}
-      sessionSummary={sessionSummary}
-      debug={debug}
-      lastNarratorUsage={lastNarratorUsage}
-      lastArchivistUsage={lastArchivistUsage}
       onPendingInputChange={setPendingInput}
       onSendTurn={sendTurn}
       onResolvePendingCheck={resolvePendingCheck}
@@ -2103,7 +2017,6 @@ export default function PlayV2Page() {
       onDownloadReplayFixture={downloadReplayFixture}
       onCopySessionLog={copySessionLog}
       onCopyReplayFixture={copyReplayFixture}
-      exportCopyStatus={exportCopyStatus}
     />
   )
 }

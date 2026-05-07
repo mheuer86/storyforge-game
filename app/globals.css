@@ -293,7 +293,7 @@
 /* Quick action button glow effect */
 .action-glow {
   box-shadow: var(--action-glow);
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 .action-glow:hover {
   box-shadow: var(--action-glow-hover);

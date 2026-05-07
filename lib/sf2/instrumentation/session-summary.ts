@@ -157,7 +157,7 @@ interface ChapterSnapshot {
 
 export function computeSessionSummary(
   state: Sf2State,
-  debug: DebugEvent[]
+  debug: readonly DebugEvent[]
 ): SessionSummaryMetrics {
   const turns = state.history.turns
   const chapters = new Set(turns.map((t) => t.chapter))
