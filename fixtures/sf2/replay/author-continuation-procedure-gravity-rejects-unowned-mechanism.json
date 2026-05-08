@@ -410,13 +410,12 @@
       },
       "expect": {
         "rawErrorCount": 0,
-        "validationErrorCount": 6,
-        "combinedErrorCount": 6,
+        "validationErrorCount": 5,
+        "combinedErrorCount": 5,
         "validationErrorIncludesAll": [
           "pressure_ladder[1].trigger_condition is scene-coupled",
           "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
           "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
-          "procedure_gravity: immediate procedural choice needs a first human/institutional move",
           "transition_seed.do_not_restage not reflected",
           "transition_seed.procedure_residue clamp release timer marked constraint but opening restages it as an immediate choice"
         ],
@@ -424,7 +423,6 @@
           "pressure_ladder[1].trigger_condition is scene-coupled",
           "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
           "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
-          "procedure_gravity: immediate procedural choice needs a first human/institutional move",
           "transition_seed.do_not_restage not reflected",
           "transition_seed.procedure_residue clamp release timer marked constraint but opening restages it as an immediate choice"
         ],

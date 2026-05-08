@@ -228,7 +228,6 @@ function buildSpaceOperaMockSf2State(): Sf2State {
         premise: 'HELIA has locked down Obelisk-9 while rescue windows collapse.',
         activePressure: 'HELIA hardens the station against rescue.',
         centralTension: 'Every access attempt teaches the station how to stop you.',
-        chapterScope: 'Reach Engineering before the sweep isolates the hostages.',
         objective: 'Breach Obelisk Core',
         crucible: 'Choose speed, stealth, or resource burn before the next sweep.',
         outcomeSpectrum: {
@@ -239,7 +238,7 @@ function buildSpaceOperaMockSf2State(): Sf2State {
         },
       },
       antagonistField: {
-        sourceSystem: 'HELIA',
+        sourceFactionLabel: 'HELIA',
         corePressure: 'The station AI adapts to rescue attempts.',
         defaultFace: { id: 'helia', name: 'HELIA', role: 'station intelligence', pressureStyle: 'predictive lockout' },
         currentPrimaryFace: { id: 'helia', name: 'HELIA', role: 'station intelligence', pressureStyle: 'predictive lockout' },
@@ -410,7 +409,6 @@ function buildEpicSciFiMockSf2State(): Sf2State {
         premise: 'The Synod sealed a frontier tithe hall after the Resonant count came up short.',
         activePressure: 'Prefect Ianthe converts every objection into compliance language.',
         centralTension: 'Every delay protects a child while making your authority easier to prosecute.',
-        chapterScope: 'Expose the missing names before the selection bell ends.',
         objective: 'Audit Tithe Ledger',
         crucible: 'Choose procedure, witness testimony, or open defiance before the ledger closes.',
         outcomeSpectrum: {
@@ -421,7 +419,7 @@ function buildEpicSciFiMockSf2State(): Sf2State {
         },
       },
       antagonistField: {
-        sourceSystem: 'The Synod',
+        sourceFactionLabel: 'The Synod',
         corePressure: 'Compliance procedures turn human exceptions into inventory gaps.',
         defaultFace: { id: 'prefect_ianthe', name: 'Prefect Ianthe', role: 'Synod prefect', pressureStyle: 'procedural sanctimony' },
         currentPrimaryFace: { id: 'prefect_ianthe', name: 'Prefect Ianthe', role: 'Synod prefect', pressureStyle: 'procedural sanctimony' },

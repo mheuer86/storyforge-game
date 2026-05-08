@@ -63,7 +63,8 @@ export function transformAuthorSetup(
     title: authored.chapterFrame.title,
     frame: authored.chapterFrame,
     antagonistField: {
-      sourceSystem: authored.antagonistField.sourceSystem,
+      sourceFactionId: authored.antagonistField.sourceFactionId,
+      sourceFactionLabel: authored.antagonistField.sourceFactionLabel,
       corePressure: authored.antagonistField.corePressure,
       defaultFace,
       currentPrimaryFace: { ...defaultFace },
@@ -167,7 +168,10 @@ export function transformAuthorSetup(
     .slice(0, 3) // keep the opening's visible thread list tight
 
   const openingSeed: Sf2OpeningScenePacketSeed = {
-    sceneIntent: authored.openingSceneSpec.dramaticSituation ?? authored.openingSceneSpec.immediateChoice,
+    sceneIntent:
+      authored.openingSceneSpec.dramaticSituation ??
+      authored.openingSceneSpec.firstPlayerFacing ??
+      authored.openingSceneSpec.firstHumanOrInstitutionalMove,
     openingPressure: authored.openingSceneSpec.firstVisiblePressure ?? authored.chapterFrame.activePressure,
     chapterObjective: authored.chapterFrame.objective,
     chapterCrucible: authored.chapterFrame.crucible,

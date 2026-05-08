@@ -484,7 +484,7 @@ export function buildArchivistSituation(state: Sf2State): string {
 - Catastrophic: ${frame.outcomeSpectrum.catastrophic}
 
 ### Chapter antagonist
-- Source system: ${antagonist.sourceSystem}
+- Source faction: ${antagonist.sourceFactionLabel ?? antagonist.sourceFactionId ?? '(none)'}
 - Core pressure: ${antagonist.corePressure}
 - Default face: ${antagonist.defaultFace.name} (${antagonist.defaultFace.role}) — ${antagonist.defaultFace.pressureStyle}
 - Escalation logic: ${antagonist.escalationLogic}

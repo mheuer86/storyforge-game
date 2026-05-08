@@ -36,6 +36,72 @@ function derivePcCapabilities(state: Sf2State): AuthorInputSeed['pcCapabilities'
   }
 }
 
+function looksProceduralSurface(text: string | undefined): boolean {
+  if (!text) return false
+  return /(?:route|window|clearance|timer|gate|corridor|door|log|permit|queue|scan|lock|checkpoint|lift|bay|record|file|audit|release|undock|loading|departure|inventory|access)/i.test(text)
+}
+
+function pickPressureOwnerLabel(state: Sf2State, transitionSeed: NonNullable<Sf2ChapterMeaning['transitionSeed']> | undefined): string {
+  if (transitionSeed?.pressureOwnerCandidate?.trim()) return transitionSeed.pressureOwnerCandidate.trim()
+
+  const activeThreads = Object.values(state.campaign.threads).filter((t) => t.status === 'active')
+  const spineCandidate = activeThreads
+    .sort((a, b) => b.tension - a.tension)[0]
+
+  if (spineCandidate?.owner?.id) return spineCandidate.owner.id
+
+  const hottestFaction = Object.values(state.campaign.factions).sort((a, b) => {
+    const heatRank = { none: 0, low: 1, medium: 2, high: 3, boiling: 4 }
+    return heatRank[b.heat] - heatRank[a.heat]
+  })[0]
+  if (hottestFaction) return hottestFaction.name
+
+  const liveNpc = Object.values(state.campaign.npcs).find((n) => n.status === 'alive')
+  return liveNpc?.name ?? state.meta.playbookId
+}
+
+function buildDramaticHandoff(
+  state: Sf2State,
+  priorChapterMeaning: Sf2ChapterMeaning,
+  pressureOwnerLabel: string
+): string {
+  const transitionSeed = priorChapterMeaning.transitionSeed
+  const activeThreads = Object.values(state.campaign.threads).filter((t) => t.status === 'active')
+  const topThread = activeThreads.sort((a, b) => b.tension - a.tension)[0]
+  const liveConstraint = transitionSeed?.procedureResidue.keepAs === 'leverage'
+    ? `${transitionSeed.procedureResidue.mechanism} stays in ${pressureOwnerLabel}'s hands.`
+    : transitionSeed?.procedureResidue.mechanism
+      ? `${transitionSeed.procedureResidue.mechanism} stays background.`
+      : (topThread ? `${topThread.title} still exerts pressure.` : 'No procedural surface should drive the opening.')
+
+  const whoPaysNow = topThread?.owner?.id
+    ? `${topThread.owner.id} pays first if ${pressureOwnerLabel} pushes too hard.`
+    : `The PC pays first if ${pressureOwnerLabel} turns leverage into a demand.`
+
+  const relationshipOrReputationCost = topThread
+    ? `The chapter should make ${topThread.title.toLowerCase()} cost standing or loyalty, not just time.`
+    : `The chapter should turn the old pressure into a relationship or reputation cost.`
+
+  const newHumanMove = transitionSeed?.unresolvedQuestion
+    ? `Someone now asks a person, not a system, to answer the question "${transitionSeed.unresolvedQuestion}".`
+    : `Someone now makes a human move against ${pressureOwnerLabel} before procedure can take over.`
+
+  const forbiddenRestages = transitionSeed?.doNotRestage?.length
+    ? transitionSeed.doNotRestage.slice(0, 4).join(', ')
+    : (topThread ? topThread.retrievalCue : 'the same procedural beat')
+
+  return [
+    `Prior meaning: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.`,
+    `Leverage shift: ${transitionSeed?.earnedConsequence ?? 'The chapter consequence now belongs to someone with leverage.'}`,
+    `Pressure owner: ${pressureOwnerLabel}.`,
+    `Who pays now: ${whoPaysNow}`,
+    `Relationship or reputation cost: ${relationshipOrReputationCost}`,
+    `New human move: ${newHumanMove}`,
+    `Live constraint: ${liveConstraint}`,
+    `Forbidden restages: ${forbiddenRestages}`,
+  ].join(' ')
+}
+
 export function compileAuthorInputSeed(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
@@ -75,13 +141,17 @@ export function compileAuthorInputSeed(
   const lastSceneSummary = state.chapter.sceneSummaries.at(-1)?.summary
   const closingGeometry = ` Closing geometry: ${closingLocation}${lastSceneSummary ? ` — ${lastSceneSummary}` : ''}.`
   const transitionSeed = priorChapterMeaning?.transitionSeed
+  const pressureOwnerLabel = transitionSeed ? pickPressureOwnerLabel(state, transitionSeed) : state.meta.playbookId
+  const dramaticFallback = priorChapterMeaning
+    ? buildDramaticHandoff(state, priorChapterMeaning, pressureOwnerLabel)
+    : ''
   const transitionContext = transitionSeed
-    ? ` Transition seed: prior chapter meant "${transitionSeed.priorChapterMeant}"; earned consequence "${transitionSeed.earnedConsequence}"; likely pressure owner "${transitionSeed.pressureOwnerCandidate}"; worsened detail "${transitionSeed.worsenedDetail}"; unresolved question "${transitionSeed.unresolvedQuestion}"; do not restage ${transitionSeed.doNotRestage.join(', ') || '(none)'}; procedure residue "${transitionSeed.procedureResidue.mechanism}" must be kept as ${transitionSeed.procedureResidue.keepAs}.`
+    ? ` Transition seed support: prior chapter meant "${transitionSeed.priorChapterMeant}"; earned consequence "${transitionSeed.earnedConsequence}"; likely pressure owner "${transitionSeed.pressureOwnerCandidate}"; unresolved question "${transitionSeed.unresolvedQuestion}"; do not restage ${transitionSeed.doNotRestage.join(', ') || '(none)'}.`
     : ''
 
   // Premise: carry-forward-focused, with explicit "new chapter" framing.
   const premise = priorChapterMeaning
-    ? `Chapter ${nextChapterNumber}. Prior chapter closed with: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.${closingGeometry}${transitionContext} Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
+    ? `Chapter ${nextChapterNumber}. ${dramaticFallback}${closingGeometry}${transitionContext} Open this chapter inside the consequences of that — do NOT reopen the prior chapter's frame.`
     : `Chapter ${nextChapterNumber}. Prior chapter ended with active pressure on: ${highPressureThreads || '(no high-tension threads — derive from state)'}.${closingGeometry} Open this chapter inside the consequences of where the player landed — this is NOT a reopening of the prior chapter's situation, it is the next beat of the campaign.`
 
   // Objective/crucible: derive from the highest-tension spine thread if one
@@ -89,8 +159,16 @@ export function compileAuthorInputSeed(
   // crucible only (the base no longer carries an objective — that's always
   // Author-derived now). Ch2+ without a spine is rare; if it happens, the
   // Author picks the objective from the premise.
-  const objective = spineCandidate?.resolutionCriteria
-  const crucible = spineCandidate?.failureMode ?? base.hook.crucible
+  const objective = spineCandidate && !looksProceduralSurface(spineCandidate.resolutionCriteria)
+    ? spineCandidate.resolutionCriteria
+    : priorChapterMeaning
+      ? `Make ${pressureOwnerLabel} spend leverage on a person, not a procedure.`
+      : spineCandidate?.resolutionCriteria
+  const crucible = spineCandidate && !looksProceduralSurface(spineCandidate.failureMode)
+    ? spineCandidate.failureMode
+    : priorChapterMeaning
+      ? `The next choice should turn consequence into a human cost, not a checkpoint.`
+      : base.hook.crucible
 
   // firstEpisode is optional on the seed. Only carry one when we have a
   // specific continuity signal (prior chapter meaning, or a spine thread to

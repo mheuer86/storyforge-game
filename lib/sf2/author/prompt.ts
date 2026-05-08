@@ -96,12 +96,13 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 - **Field length discipline (load-bearing for cost + readability).** Tight is better than thorough. Treat these as hard caps, not vibes:
   - \`chapter_frame.title\`: 2-6 words
   - \`chapter_frame.premise\`: 1-2 sentences (≤40 words)
-  - \`chapter_frame.{active_pressure, central_tension, chapter_scope, objective, crucible}\`: 1 sentence each (≤25 words)
+  - \`chapter_frame.{active_pressure, central_tension, objective, crucible}\`: 1 sentence each (≤25 words)
   - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤18 words), each naming who is kept, owed, exposed, hunted, cooled, or broken.
-  - \`opening_scene_spec.{location, initial_state, first_player_facing, immediate_choice}\`: 1 sentence each (≤28 words). \`atmospheric_condition\`: short phrase (≤12 words).
+  - \`opening_scene_spec.{location, initial_state, first_player_facing}\`: 1 sentence each (≤28 words). \`atmospheric_condition\`: short phrase (≤12 words).
   - For Chapter 2+, \`opening_scene_spec.{dramatic_situation, first_visible_pressure, first_human_or_institutional_move}\`: 1 sentence each (≤24 words), and \`do_not_restage\`: 2-5 short prior mechanisms/milestones that must not become pending again.
   - For Chapter 2+, \`continuation_dramatic_turn\`: compact phrases. \`procedure_budget.max_opening_beats\` must be 0 or 1. Use \`mechanism: "none"\` when no procedure is load-bearing.
-  - \`antagonist_field.{source_system, core_pressure, escalation_logic}\`: 1 sentence each (≤25 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: ≤16 words.
+  - \`antagonist_field.source_faction_id\`: exact existing faction id when available. If no canonical faction exists yet, omit it and provide \`source_faction_label\` as a short label. At least one source faction field must be present.
+  - \`antagonist_field.{source_faction_label, core_pressure, escalation_logic}\`: 1 sentence each (≤25 words). Each face's \`pressure_style\`, \`becomes_primary_when\`: ≤16 words.
   - \`starting_npcs[].{role, voice_register, dramatic_function, hidden_pressure, retrieval_cue, disposition_reason}\`: compact phrase or sentence (≤16 words).
   - \`starting_npcs[].voice_note\`: 4-14 words. The PERSONAL flavor (not the formal register). Aim for distinctness — three NPCs of the same affiliation should read as three different people. Avoid generic adjectives like "professional", "competent", "experienced", "measured" — voices that lean on these collapse together. Examples: "precise and tired, never finishes a sentence", "drawls vowels under stress", "warm but never first to speak", "speaks in clipped fragments when watched".
   - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤12 words). \`resolution_criteria\`, \`failure_mode\`: 1 sentence each (≤24 words).
@@ -189,7 +190,7 @@ ${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2
     ? `\n${renderSf2bContinuityLock(deriveSf2bContinuityLock(state))}\n`
     : ''
   const transitionSeedBlock = priorChapterMeaning?.transitionSeed
-    ? `\n\n### Transition seed — concrete handoff to Chapter ${priorChapter + 1}\n${renderChapterTransitionSeed(priorChapterMeaning.transitionSeed)}`
+    ? `\n\n### Supporting transition seed\n${renderChapterTransitionSeed(priorChapterMeaning.transitionSeed)}`
     : ''
   const meaningBlock = priorChapterMeaning
     ? `
@@ -206,10 +207,17 @@ How this chapter should respond to the landing:
 - **costly**: the PC succeeded but paid. Open this chapter with the cost still warm — the relationship that cooled, the standing that shifted, the favor now owed.
 - **failure**: the PC missed. Open this chapter on what the world did in response — the seizure, the enforcement, the loss that now frames everything.
 - **catastrophic**: something broke open. Open this chapter inside the broken thing — an escalation the PC is now running from, toward, or inside.
-- **unresolved**: the chapter closed without decisive landing. Open this chapter with that unresolved pressure still live, reframed by whatever the player has turned toward.${transitionSeedBlock}`
+- **unresolved**: the chapter closed without decisive landing. Open this chapter with that unresolved pressure still live, reframed by whatever the player has turned toward.`
     : `
 ### Prior chapter (${priorChapter}) retrospective
 (not yet generated)`
+  const dramaticHandoffBlock = priorChapterMeaning
+    ? renderDramaticHandoff(
+        state,
+        priorChapterMeaning,
+        priorChapterMeaning.transitionSeed?.pressureOwnerCandidate ?? '(derive from state)'
+      )
+    : ''
 
   const activeThreads = Object.values(state.campaign.threads)
     .filter((t) => t.status === 'active')
@@ -242,7 +250,6 @@ How this chapter should respond to the landing:
     })
     .join('\n')
 
-  const lastTurn = state.history.turns.at(-1)
   const lastSceneSummary = state.chapter.sceneSummaries.at(-1)
   const closingGeometry = [
     `- Current location: ${state.world.sceneSnapshot.location.name} (${state.world.sceneSnapshot.location.id})`,
@@ -253,9 +260,6 @@ How this chapter should respond to the landing:
       : null,
     lastSceneSummary
       ? `- Last scene summary: ${lastSceneSummary.summary}${lastSceneSummary.leadsTo ? ` (leads_to: ${lastSceneSummary.leadsTo})` : ''}`
-      : null,
-    lastTurn?.narratorProse
-      ? `- Last visible prose: ${lastTurn.narratorProse.slice(-700)}`
       : null,
   ].filter((line): line is string => Boolean(line))
 
@@ -273,6 +277,10 @@ ${structuralBeatBlock}
 
 ### Stable ArcPlan
 ${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}
+
+### Dramatic handoff
+${dramaticHandoffBlock || '_(none)_'}
+${transitionSeedBlock}
 
 ### Active carry-forward threads
 ${activeThreads || '_(none active)_'}
@@ -358,6 +366,47 @@ function renderChapterTransitionSeed(seed: NonNullable<Sf2ChapterMeaning['transi
   ].join('\n')
 }
 
+function renderDramaticHandoff(
+  state: Sf2State,
+  priorChapterMeaning: Sf2ChapterMeaning,
+  pressureOwnerLabel: string
+): string {
+  const transitionSeed = priorChapterMeaning.transitionSeed
+  const activeThreads = Object.values(state.campaign.threads).filter((t) => t.status === 'active')
+  const topThread = activeThreads.sort((a, b) => b.tension - a.tension)[0]
+  const leverageShift = transitionSeed?.earnedConsequence || priorChapterMeaning.situation
+  const whoPaysNow = topThread?.owner?.id
+    ? `${topThread.owner.id} pays first if ${pressureOwnerLabel} pushes this into public record.`
+    : `The PC pays first if ${pressureOwnerLabel} turns leverage into a demand.`
+  const relationshipOrReputationCost = topThread
+    ? `${topThread.title} now threatens standing or loyalty, not just timing.`
+    : `The chapter should turn the consequence into a relationship or reputation cost.`
+  const liveConstraint = transitionSeed?.procedureResidue.mechanism
+    ? transitionSeed.procedureResidue.keepAs === 'leverage'
+      ? `${transitionSeed.procedureResidue.mechanism} stays with ${pressureOwnerLabel} as leverage.`
+      : `${transitionSeed.procedureResidue.mechanism} stays background.`
+    : topThread
+      ? `${topThread.title} stays live as pressure.`
+      : 'No procedural surface should drive the opening.'
+  const newHumanMove = transitionSeed?.unresolvedQuestion
+    ? `Someone now asks a person, not a system, to answer "${transitionSeed.unresolvedQuestion}".`
+    : `Someone now makes a human move against ${pressureOwnerLabel} before procedure can take over.`
+  const forbiddenRestages = transitionSeed?.doNotRestage.length
+    ? transitionSeed.doNotRestage.slice(0, 4).join(', ')
+    : (topThread?.retrievalCue || 'the same procedural beat')
+
+  return [
+    `Prior meaning: ${priorChapterMeaning.situation} ${priorChapterMeaning.closer}.`,
+    `Leverage shift: ${leverageShift}.`,
+    `Pressure owner: ${pressureOwnerLabel}.`,
+    `Who pays now: ${whoPaysNow}`,
+    `Relationship or reputation cost: ${relationshipOrReputationCost}`,
+    `New human move: ${newHumanMove}`,
+    `Live constraint: ${liveConstraint}`,
+    `Forbidden restages: ${forbiddenRestages}`,
+  ].join(' ')
+}
+
 function sf2bAuthorDirective(): string {
   return `
 ### SF2B hook-driven experiment directive
@@ -396,7 +445,7 @@ function renderArcPlan(arc: NonNullable<Sf2State['campaign']['arcPlan']>): strin
 - What this is not: ${arc.scenarioShape.whatThisIsNot}
 - Rejected default shape: ${arc.scenarioShape.rejectedDefaultShape}
 - Arc question: ${arc.arcQuestion}
-- Core crucible: ${arc.coreCrucible}
+- Crucible: ${arc.coreCrucible}
 
 Durable forces (institutions/factions/networks active across the arc):
 ${forces || '_(none)_'}

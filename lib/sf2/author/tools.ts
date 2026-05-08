@@ -19,7 +19,6 @@ const openingSceneSpecSchema = {
     atmospheric_condition: { type: 'string' as const },
     initial_state: { type: 'string' as const },
     first_player_facing: { type: 'string' as const },
-    immediate_choice: { type: 'string' as const },
     dramatic_situation: {
       type: 'string' as const,
       description: 'Ch2+ required. The playable human/social/institutional situation, not a timer or task queue.',
@@ -55,7 +54,6 @@ const openingSceneSpecSchema = {
     'atmospheric_condition',
     'initial_state',
     'first_player_facing',
-    'immediate_choice',
     'no_starting_combat',
     'no_exposition_dump',
     'visible_npc_ids',
@@ -70,7 +68,6 @@ const chapterFrameSchema = {
     premise: { type: 'string' as const },
     active_pressure: { type: 'string' as const },
     central_tension: { type: 'string' as const },
-    chapter_scope: { type: 'string' as const },
     objective: { type: 'string' as const },
     crucible: { type: 'string' as const },
     outcome_spectrum: {
@@ -89,7 +86,6 @@ const chapterFrameSchema = {
     'premise',
     'active_pressure',
     'central_tension',
-    'chapter_scope',
     'objective',
     'crucible',
     'outcome_spectrum',
@@ -99,7 +95,8 @@ const chapterFrameSchema = {
 const antagonistFieldSchema = {
   type: 'object' as const,
   properties: {
-    source_system: { type: 'string' as const },
+    source_faction_id: { type: 'string' as const },
+    source_faction_label: { type: 'string' as const },
     core_pressure: { type: 'string' as const },
     default_face: {
       type: 'object' as const,
@@ -126,7 +123,7 @@ const antagonistFieldSchema = {
     },
     escalation_logic: { type: 'string' as const },
   },
-  required: ['source_system', 'core_pressure', 'default_face', 'possible_faces', 'escalation_logic'],
+  required: ['core_pressure', 'default_face', 'possible_faces', 'escalation_logic'],
 }
 
 const startingNpcsSchema = {

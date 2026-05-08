@@ -832,7 +832,6 @@ export interface Sf2ChapterFrame {
   premise: string
   activePressure: string
   centralTension: string
-  chapterScope: string
   objective: string
   crucible: string
   outcomeSpectrum: Sf2OutcomeSpectrum
@@ -870,7 +869,8 @@ export interface Sf2AntagonistPossibleFace extends Sf2AntagonistFace {
 }
 
 export interface Sf2AntagonistField {
-  sourceSystem: string
+  sourceFactionId?: string
+  sourceFactionLabel?: string
   corePressure: string
   defaultFace: Sf2AntagonistFace
   currentPrimaryFace: Sf2AntagonistFace
@@ -903,7 +903,6 @@ export interface Sf2OpeningSceneSpec {
   atmosphericCondition: string
   initialState: string
   firstPlayerFacing: string
-  immediateChoice: string
   dramaticSituation?: string
   firstVisiblePressure?: string
   firstHumanOrInstitutionalMove?: string
@@ -1183,7 +1182,8 @@ export interface AuthorInputSeed {
 export interface AuthorChapterSetupV2 {
   chapterFrame: Sf2ChapterFrame
   antagonistField: {
-    sourceSystem: string
+    sourceFactionId?: string
+    sourceFactionLabel?: string
     corePressure: string
     defaultFace: { name: string; role: string; pressureStyle: string }
     possibleFaces: Array<{

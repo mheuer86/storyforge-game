@@ -232,7 +232,6 @@ function createMinimalState(): Sf2State {
           premise: 'A contained replay fixture.',
           activePressure: 'Administrative pressure.',
           centralTension: 'Whether the scene remains coherent.',
-          chapterScope: 'One scene.',
           objective: 'Keep the local truth stable.',
           crucible: 'A continuity-sensitive exchange.',
           outcomeSpectrum: {
@@ -243,7 +242,7 @@ function createMinimalState(): Sf2State {
           },
         },
         antagonistField: {
-          sourceSystem: 'fixture',
+          sourceFactionLabel: 'fixture',
           corePressure: 'Local confusion',
           defaultFace: { id: 'faction_registry', name: 'Registry', role: 'Institution', pressureStyle: 'Procedural drag' },
           currentPrimaryFace: { id: 'faction_registry', name: 'Registry', role: 'Institution', pressureStyle: 'Procedural drag' },
@@ -260,7 +259,6 @@ function createMinimalState(): Sf2State {
           atmosphericCondition: 'stale air',
           initialState: 'The replay begins.',
           firstPlayerFacing: 'The scene waits.',
-          immediateChoice: 'Act.',
           noStartingCombat: true,
           noExpositionDump: true,
           visibleNpcIds: [],

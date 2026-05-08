@@ -175,6 +175,7 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
   state.chapter.number = positiveInt(state.chapter.number, state.meta.currentChapter) as Sf2ChapterNumber
   state.chapter.title = stringOr(state.chapter.title, state.chapter.setup.title)
   state.chapter.currentSceneId = stringOr(state.chapter.currentSceneId, state.meta.currentSceneId)
+  normalizeChapterSetupShape(state, repairs)
   state.chapter.sceneSummaries = Array.isArray(state.chapter.sceneSummaries)
     ? state.chapter.sceneSummaries
     : []
@@ -246,6 +247,32 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
     ? state.chapter.artifacts.opening.loreForOpening
     : []
   state.chapter.artifacts.opening.sceneWarnings = stringArray(state.chapter.artifacts.opening.sceneWarnings)
+}
+
+function normalizeChapterSetupShape(state: Sf2State, repairs: string[]): void {
+  const frame = state.chapter.setup.frame as Sf2State['chapter']['setup']['frame'] & { chapterScope?: unknown }
+  if (frame.chapterScope !== undefined) {
+    delete frame.chapterScope
+    repairs.push('chapter.setup.frame.chapterScope:removed')
+  }
+
+  const opening = state.chapter.setup.openingSceneSpec as Sf2State['chapter']['setup']['openingSceneSpec'] & { immediateChoice?: unknown }
+  if (opening.immediateChoice !== undefined) {
+    delete opening.immediateChoice
+    repairs.push('chapter.setup.openingSceneSpec.immediateChoice:removed')
+  }
+
+  const antag = state.chapter.setup.antagonistField as Sf2State['chapter']['setup']['antagonistField'] & {
+    sourceSystem?: unknown
+  }
+  const legacySourceSystem = stringOr(antag.sourceSystem, undefined)
+  if (!antag.sourceFactionId && !antag.sourceFactionLabel && legacySourceSystem) {
+    antag.sourceFactionLabel = legacySourceSystem
+    repairs.push('chapter.setup.antagonistField.sourceSystem→sourceFactionLabel')
+  }
+  if (antag.sourceSystem !== undefined) {
+    delete antag.sourceSystem
+  }
 }
 
 function normalizeWorld(state: Sf2State, repairs: string[]): void {

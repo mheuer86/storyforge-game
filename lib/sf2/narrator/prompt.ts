@@ -640,7 +640,7 @@ export function buildNarratorSituation(state: Sf2State): string {
 - Catastrophic: ${frame.outcomeSpectrum.catastrophic}
 
 ### Antagonist field
-- Source: ${setup.antagonistField.sourceSystem}
+- Source faction: ${setup.antagonistField.sourceFactionLabel ?? setup.antagonistField.sourceFactionId ?? '(none)'}
 - Core pressure: ${setup.antagonistField.corePressure}
 - Default face: ${setup.antagonistField.defaultFace.name} (${setup.antagonistField.defaultFace.role}) — ${setup.antagonistField.defaultFace.pressureStyle}
 - Escalation logic: ${setup.antagonistField.escalationLogic}

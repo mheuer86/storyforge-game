@@ -40,8 +40,6 @@ const PROCEDURE_GRAVITY_BY_GENRE: Record<string, RegExp> = {
   grimdark: /\b(edict|tithe|seal|writ|ration|muster|purge|inquest|confession)\b/i,
   noire: /\b(warrant|ledger|wire|tail|stakeout|alibi|booking|evidence|docket)\b/i,
 }
-const PROCEDURE_CHOICE_RE =
-  /\b(wait|read|answer|scan|clear|lock|unlock|decrypt|authorize|hold|release|route|reroute|file|confirm|query)\b/i
 const HUMAN_LEVERAGE_RE =
   /\b(threats?|offers?|takes?|withholds?|exposes?|leverage|pressure|forces?|demands?|bargains?|trades?|promises?|costs?|authority|warrant|blackmail|protects?|betrays?|needs?|wants?|asks?|uses?)\b/i
 export const OUTCOME_HUMAN_ANCHOR_WORDS = [
@@ -96,13 +94,21 @@ export function validateChapterRaw(
   }
 
   const antag = getObject(raw, 'antagonist_field', 'antagonistField')
-  if (!stringField(antag, 'source_system', 'sourceSystem').trim()) errors.push('antagonist_field.source_system is empty')
+  const sourceFactionId = stringField(antag, 'source_faction_id', 'sourceFactionId').trim()
+  const sourceFactionLabel = stringField(antag, 'source_faction_label', 'sourceFactionLabel').trim()
+  const legacySourceSystem = stringField(antag, 'source_system', 'sourceSystem').trim()
+  if (!sourceFactionId && !sourceFactionLabel && !legacySourceSystem) {
+    errors.push('antagonist_field must include source_faction_id or source_faction_label')
+  }
+  if (sourceFactionId && ctx.state && !ctx.state.campaign.factions[sourceFactionId]) {
+    errors.push(`antagonist_field.source_faction_id ${sourceFactionId} is not an existing faction`)
+  }
   if (!stringField(antag, 'core_pressure', 'corePressure').trim()) errors.push('antagonist_field.core_pressure is empty')
   const defaultFace = getObject(antag, 'default_face', 'defaultFace')
   if (!stringField(defaultFace, 'name').trim()) errors.push('antagonist_field.default_face.name is empty')
 
   const opening = getObject(raw, 'opening_scene_spec', 'openingSceneSpec')
-  for (const key of ['location', 'atmospheric_condition', 'initial_state', 'first_player_facing', 'immediate_choice']) {
+  for (const key of ['location', 'atmospheric_condition', 'initial_state', 'first_player_facing']) {
     const camel = key.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase())
     if (!stringField(opening, key, camel).trim()) errors.push(`opening_scene_spec.${key} is empty`)
   }
@@ -263,6 +269,9 @@ export function validateAuthorToolInput(
 export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapterSetupV2 {
   const frame = getObject(raw, 'chapter_frame', 'chapterFrame')
   const antag = getObject(raw, 'antagonist_field', 'antagonistField')
+  const sourceFactionId = stringField(antag, 'source_faction_id', 'sourceFactionId').trim()
+  const sourceFactionLabel = stringField(antag, 'source_faction_label', 'sourceFactionLabel').trim()
+  const legacySourceSystem = stringField(antag, 'source_system', 'sourceSystem').trim()
   const possibleFacesRaw = getArray(antag, 'possible_faces', 'possibleFaces')
   const defaultFace =
     getObject(antag, 'default_face', 'defaultFace') ??
@@ -340,13 +349,13 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       premise: stringField(frame, 'premise'),
       activePressure: stringField(frame, 'active_pressure', 'activePressure'),
       centralTension: stringField(frame, 'central_tension', 'centralTension'),
-      chapterScope: stringField(frame, 'chapter_scope', 'chapterScope'),
       objective: stringField(frame, 'objective'),
       crucible: stringField(frame, 'crucible'),
       outcomeSpectrum: valueField(frame, 'outcome_spectrum', 'outcomeSpectrum') as AuthorChapterSetupV2['chapterFrame']['outcomeSpectrum'],
     },
     antagonistField: {
-      sourceSystem: stringField(antag, 'source_system', 'sourceSystem'),
+      sourceFactionId: sourceFactionId || undefined,
+      sourceFactionLabel: sourceFactionLabel || legacySourceSystem || undefined,
       corePressure: stringField(antag, 'core_pressure', 'corePressure'),
       defaultFace: {
         name: stringField(defaultFace, 'name'),
@@ -475,7 +484,6 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       atmosphericCondition: stringField(opening, 'atmospheric_condition', 'atmosphericCondition'),
       initialState: stringField(opening, 'initial_state', 'initialState'),
       firstPlayerFacing: stringField(opening, 'first_player_facing', 'firstPlayerFacing'),
-      immediateChoice: stringField(opening, 'immediate_choice', 'immediateChoice'),
       dramaticSituation: stringField(opening, 'dramatic_situation', 'dramaticSituation') || undefined,
       firstVisiblePressure: stringField(opening, 'first_visible_pressure', 'firstVisiblePressure') || undefined,
       firstHumanOrInstitutionalMove: stringField(opening, 'first_human_or_institutional_move', 'firstHumanOrInstitutionalMove') || undefined,
@@ -503,7 +511,6 @@ export function validateAuthorSetup(
     'atmosphericCondition',
     'initialState',
     'firstPlayerFacing',
-    'immediateChoice',
   ]
   for (const key of requiredOpeningStrings) {
     const value = authored.openingSceneSpec[key]
@@ -529,7 +536,12 @@ export function validateAuthorSetup(
   }
 
   const antag = authored.antagonistField
-  if (!antag.sourceSystem.trim()) errors.push('antagonist_field.source_system is empty')
+  if (!antag.sourceFactionId?.trim() && !antag.sourceFactionLabel?.trim()) {
+    errors.push('antagonist_field must include source_faction_id or source_faction_label')
+  }
+  if (antag.sourceFactionId?.trim() && opts.state && !opts.state.campaign.factions[antag.sourceFactionId]) {
+    errors.push(`antagonist_field.source_faction_id ${antag.sourceFactionId} is not an existing faction`)
+  }
   if (!antag.corePressure.trim()) errors.push('antagonist_field.core_pressure is empty')
   if (!antag.defaultFace.name.trim()) errors.push('antagonist_field.default_face.name is empty')
 
@@ -851,7 +863,6 @@ function validateProcedureGravity(authored: AuthorChapterSetupV2, genreId?: stri
     opening.atmosphericCondition,
     opening.initialState,
     opening.firstPlayerFacing,
-    opening.immediateChoice,
     opening.dramaticSituation,
     opening.firstVisiblePressure,
     opening.firstHumanOrInstitutionalMove,
@@ -882,9 +893,6 @@ function validateProcedureGravity(authored: AuthorChapterSetupV2, genreId?: stri
   if (isInvalidMaxOpeningBeats(turn.procedureBudget.maxOpeningBeats)) {
     errors.push('procedure_gravity: procedural mechanism may occupy at most one opening beat')
   }
-  if (PROCEDURE_CHOICE_RE.test(opening.immediateChoice) && !HUMAN_LEVERAGE_RE.test(opening.firstHumanOrInstitutionalMove ?? '')) {
-    errors.push('procedure_gravity: immediate procedural choice needs a first human/institutional move that changes leverage')
-  }
   return errors
 }
 
@@ -906,7 +914,6 @@ function validateTransitionSeedHonored(
   if (!mechanism || mechanism.toLowerCase() === PROCEDURE_NONE) return errors
 
   const openingChoiceText = [
-    authored.openingSceneSpec.immediateChoice,
     authored.openingSceneSpec.firstPlayerFacing,
     authored.openingSceneSpec.firstVisiblePressure,
   ].filter(Boolean).join('\n')

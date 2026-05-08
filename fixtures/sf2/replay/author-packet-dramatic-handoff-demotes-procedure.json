@@ -1,0 +1,208 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author packet dramatic handoff demotes procedural residue",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for Ch2+ Author packet salience. Beacon/corridor residue should render as a background constraint in the dramatic handoff, not become the seed objective or crucible."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 1,
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I take the cargo and leave.",
+            "narratorProse": "The crew clears the berth hold and enters the beacon corridor approach.",
+            "timestamp": "2026-05-08T20:00:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      },
+      "world": {
+        "sceneSnapshot": {
+          "sceneId": "scene_corridor_approach",
+          "location": {
+            "id": "loc_driftrunner_helm",
+            "name": "Driftrunner helm",
+            "description": "The first beacon pulses ahead."
+          },
+          "presentNpcIds": ["npc_doss"],
+          "timeLabel": "13h to beacon window lock",
+          "established": [
+            "Undocking clearance granted",
+            "Route chit authenticated",
+            "Beacon corridor entry imminent"
+          ],
+          "firstTurnIndex": 1
+        }
+      },
+      "campaign": {
+        "factions": {
+          "faction_vantabloc": {
+            "id": "faction_vantabloc",
+            "name": "Vantabloc Freight",
+            "kind": "faction",
+            "description": "A Corporate Bloc freight office that prices route access as obligation.",
+            "stance": "extractive",
+            "heat": "high",
+            "agenda": "Turn emergency route access into leverage over independent crews.",
+            "leverage": "Controls buyer introductions and corridor paperwork.",
+            "fear": "Independent crews learn to bypass its freight desk.",
+            "lastSeenTurn": 1,
+            "firstSeenChapter": 1,
+            "threadIds": ["thread_beacon_window"],
+            "retrievalCue": "Vantabloc freight terms, buyer leverage, corridor paperwork"
+          }
+        },
+        "npcs": {
+          "npc_doss": {
+            "id": "npc_doss",
+            "name": "Yael Doss",
+            "role": "crew broker",
+            "affiliation": "independent crew",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": [
+                "Crew broker who knows the route buyer."
+              ],
+              "pronoun": "she/her",
+              "age": "adult",
+              "voice": {
+                "register": "low and exact",
+                "note": "counts exits before answering"
+              },
+              "relations": []
+            },
+            "agenda": {
+              "pursuing": "Keep the crew moving without revealing who can collect from her.",
+              "methods": [
+                "half-answers",
+                "route jargon"
+              ],
+              "currentMove": "Keep Vantabloc pressure pointed away from herself."
+            },
+            "ownedThreadIds": [],
+            "chapterCreated": 1,
+            "lastSeenTurn": 1,
+            "signatureLines": [],
+            "retrievalCue": "Doss, route buyer, Vantabloc pressure"
+          }
+        },
+        "threads": {
+          "thread_beacon_window": {
+            "id": "thread_beacon_window",
+            "title": "The Window That Won't Wait",
+            "question": "Who controls the route once the crew enters the corridor?",
+            "owner": {
+              "kind": "faction",
+              "id": "faction_vantabloc"
+            },
+            "stakeholders": [
+              {
+                "kind": "npc",
+                "id": "npc_doss"
+              }
+            ],
+            "status": "active",
+            "tension": 9,
+            "peakTension": 9,
+            "deterioration": 0,
+            "loadBearing": true,
+            "spineForChapter": 1,
+            "firstChapter": 1,
+            "lastUpdatedTurn": 1,
+            "resolutionCriteria": "The crew enters the corridor entry point while the first beacon window is still navigable.",
+            "failureMode": "Delay collapses the window; the corridor becomes unnavigable without override codes.",
+            "retrievalCue": "beacon window, corridor geometry, Vantabloc route leverage",
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": [
+              {
+                "chapter": 1,
+                "turn": 1,
+                "value": 9
+              }
+            ]
+          }
+        }
+      },
+      "chapter": {
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_corridor_approach",
+            "chapter": 1,
+            "summary": "The crew undocked and approached the beacon corridor entry with 13 hours left.",
+            "leadsTo": "route_leverage"
+          }
+        ]
+      }
+    },
+    "turnIndex": 1,
+    "playerInput": "Open the next chapter.",
+    "narrator": {
+      "prose": "The chapter has closed.",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "priorChapterMeaning": {
+        "chapter": 1,
+        "situation": "The crew got free by accepting Vantabloc corridor terms.",
+        "tension": "Freedom from the berth became obligation to the route owner.",
+        "ticking": "The beacon corridor window tightened while undocking finished.",
+        "question": "Who controls the route once the Driftrunner enters the corridor?",
+        "closer": "Ossuary falls behind while the first beacon blinks ahead.",
+        "closingResolution": "costly",
+        "synthesizedAtTurn": 1,
+        "transitionSeed": {
+          "priorChapterMeant": "The crew bought freedom from Ossuary by accepting Vantabloc's route terms.",
+          "earnedConsequence": "Vantabloc can shift pressure from station hold to corridor run.",
+          "pressureOwnerCandidate": "Vantabloc Freight",
+          "worsenedDetail": "Beacon window countdown and corridor geometry constraint",
+          "unresolvedQuestion": "Who controls the route once the Driftrunner enters the corridor?",
+          "doNotRestage": [
+            "berth hold clearing",
+            "loading sequence",
+            "undocking clearance"
+          ],
+          "procedureResidue": {
+            "mechanism": "Beacon window countdown and corridor geometry constraint",
+            "keepAs": "constraint"
+          }
+        }
+      },
+      "hookPremiseIncludes": [
+        "Pressure owner: Vantabloc Freight.",
+        "Who pays now: faction_vantabloc pays first",
+        "Live constraint: Beacon window countdown and corridor geometry constraint stays background.",
+        "Forbidden restages: berth hold clearing, loading sequence, undocking clearance"
+      ],
+      "hookCrucibleIncludes": [
+        "human cost"
+      ],
+      "hookCrucibleExcludes": [
+        "corridor becomes unnavigable",
+        "override codes"
+      ],
+      "authorSituationIncludes": [
+        "### Dramatic handoff",
+        "Pressure owner: Vantabloc Freight.",
+        "Live constraint: Beacon window countdown and corridor geometry constraint stays background.",
+        "### Active carry-forward threads"
+      ],
+      "authorSituationExcludes": [
+        "Last visible prose:"
+      ]
+    }
+  }
+}
