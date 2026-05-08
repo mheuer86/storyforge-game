@@ -66,12 +66,6 @@ const PROCEDURAL_ONLY_OUTCOME_RE =
   /\b(audit|warrant|cipher|file|record|ledger|form|queue|protocol|review|query|case|route|manifest)\b.*\b(closes?|releases?|fails?|clears?|updates?|resolves?|processes?|opens?)\b/i
 const SCENE_COUPLED_TRIGGER_RE =
   /\b(room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive|record room|control room)\b/i
-const PROCEDURAL_SURFACE_RE =
-  /\b(audit|filing|file|form|record|ledger|log|queue|permit|clearance|manifest|protocol|query|timestamp|route status|release|deadline|window)\b/i
-const PROCEDURAL_PRESSURE_HUMAN_CONSEQUENCE_RE =
-  /\b(pays?|costs?|loses?|loss|harder|risk|danger|endangers?|exposes?|exposed|leverage|blackmail|coerces?|coercion|forced|betrayal|relationship|safety|reputation|standing|freedom|loyalty|family|debt|obligation|vulnerab\w*|protection|choice|stakes)\b/i
-const HIDDEN_TRUTH_HUMAN_RE =
-  /\b(lied|betray|betrays|betrayal|coerce|coerces|coercion|forced|threatens?|protect|protects|protected|hunts?|exposes?|exposure|endangers?|leverage|blackmail|frames?|sacrifices?|uses?|withheld|colludes?|complicit|agency|obligation|power|owner|faction|family|settlement|resistance|pressure|controls?|urgency|loyalty|debt|promise|identity|relationship|choice|risk|danger)\b/i
 
 export function validateChapterRaw(
   raw: Record<string, unknown>,
@@ -100,7 +94,7 @@ export function validateChapterRaw(
   if (!sourceFactionId && !sourceFactionLabel && !legacySourceSystem) {
     errors.push('antagonist_field must include source_faction_id or source_faction_label')
   }
-  if (sourceFactionId && ctx.state && !ctx.state.campaign.factions[sourceFactionId]) {
+  if (sourceFactionId && ctx.state && !isKnownFactionSourceId(ctx.state, sourceFactionId)) {
     errors.push(`antagonist_field.source_faction_id ${sourceFactionId} is not an existing faction`)
   }
   if (!stringField(antag, 'core_pressure', 'corePressure').trim()) errors.push('antagonist_field.core_pressure is empty')
@@ -217,7 +211,6 @@ export function validateChapterRaw(
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
   if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
-  errors.push(...validatePressureLadderHumanConsequences(ladder))
   errors.push(...validateRawHumanStakes(raw, threads, npcs, ctx.state))
   const tensionScore = getArray(raw, 'tension_score', 'tensionScore')
   const requiresTensionScore = ctx.isContinuation && ctx.state && isSf2bState(ctx.state)
@@ -236,7 +229,6 @@ export function validateChapterRaw(
   })
   const revelations = getArray(raw, 'possible_revelations', 'possibleRevelations')
   if (revelations.length !== 2) errors.push(`possible_revelations must contain exactly 2 revelations (got ${revelations.length})`)
-  errors.push(...validateRawRevelations(revelations))
   const faultLines = getArray(raw, 'moral_fault_lines', 'moralFaultLines')
   if (faultLines.length !== 2) errors.push(`moral_fault_lines must contain exactly 2 fault lines (got ${faultLines.length})`)
   const escalations = getArray(raw, 'escalation_options', 'escalationOptions')
@@ -539,7 +531,7 @@ export function validateAuthorSetup(
   if (!antag.sourceFactionId?.trim() && !antag.sourceFactionLabel?.trim()) {
     errors.push('antagonist_field must include source_faction_id or source_faction_label')
   }
-  if (antag.sourceFactionId?.trim() && opts.state && !opts.state.campaign.factions[antag.sourceFactionId]) {
+  if (antag.sourceFactionId?.trim() && opts.state && !isKnownFactionSourceId(opts.state, antag.sourceFactionId)) {
     errors.push(`antagonist_field.source_faction_id ${antag.sourceFactionId} is not an existing faction`)
   }
   if (!antag.corePressure.trim()) errors.push('antagonist_field.core_pressure is empty')
@@ -684,38 +676,6 @@ function hasHumanOutcomeAnchor(value: string): boolean {
   return /\b[A-Z][a-z][A-Za-z'-]{2,}\b/.test(trimmed)
 }
 
-function validatePressureLadderHumanConsequences(
-  ladder: Record<string, unknown>[]
-): string[] {
-  const errors: string[] = []
-  ladder.forEach((step, i) => {
-    const pressure = stringField(step, 'pressure')
-    const effect = stringField(step, 'narrative_effect', 'narrativeEffect')
-    const combined = `${pressure} ${effect}`
-    if (PROCEDURAL_SURFACE_RE.test(combined) && !PROCEDURAL_PRESSURE_HUMAN_CONSEQUENCE_RE.test(combined)) {
-      errors.push(`pressure_ladder[${i}] procedural pressure must name who pays, gains leverage, is exposed, or loses a relationship/cost surface`)
-    }
-  })
-  return errors
-}
-
-function validateRawRevelations(revelations: Record<string, unknown>[]): string[] {
-  const errors: string[] = []
-  revelations.forEach((revelation, i) => {
-    const statement = stringField(revelation, 'statement')
-    const recontextualizes = stringField(revelation, 'recontextualizes')
-    const combined = `${statement} ${recontextualizes}`
-    if (PROCEDURAL_SURFACE_RE.test(combined) && !hasHiddenTruthHumanAnchor(combined)) {
-      errors.push(`possible_revelations[${i}] procedural surface must expose hidden agency, coercion, betrayal, danger, obligation, identity, power, or relationship stakes`)
-    }
-  })
-  return errors
-}
-
-function hasHiddenTruthHumanAnchor(value: string): boolean {
-  return HIDDEN_TRUTH_HUMAN_RE.test(value)
-}
-
 function validateRawHumanStakes(
   raw: Record<string, unknown>,
   threads: Record<string, unknown>[],
@@ -754,6 +714,11 @@ function validateRawHumanStakes(
   })
   if (externalStakeCount < 1) errors.push('human_stakes must include at least one starting_npcs id as who_pays')
   return errors
+}
+
+function isKnownFactionSourceId(state: Sf2State, id: string): boolean {
+  if (state.campaign.factions[id]) return true
+  return Boolean(state.campaign.arcPlan?.durableForces.some((force) => force.id === id))
 }
 
 function validateHumanStakes(authored: AuthorChapterSetupV2, state?: Sf2State): string[] {

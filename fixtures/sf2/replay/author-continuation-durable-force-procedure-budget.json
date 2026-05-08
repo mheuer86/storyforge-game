@@ -1,0 +1,481 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Author continuation accepts durable force source with owned procedure budget",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for Ch2 Author setup failures where an arc durable force is used as the antagonist source and procedural surfaces are already grounded by human_stakes plus continuation_dramatic_turn.procedure_budget."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 1,
+        "genreId": "space-opera",
+        "playbookId": "operative",
+        "originId": "human"
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I clear the hold and take the route chit.",
+            "narratorProse": "The ship leaves the berth with the route chit authenticated and the beacon corridor ahead.",
+            "timestamp": "2026-05-08T20:00:00.000Z"
+          }
+        ],
+        "recentTurns": []
+      },
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_forty_thousand_blockade_threading",
+          "status": "active",
+          "title": "Forty Thousand: Running Lane",
+          "sourceHook": {
+            "title": "Forty Thousand",
+            "premise": "The crew must move sealed cargo through contested beacon windows.",
+            "objective": "Thread the corridor without becoming owned.",
+            "crucible": "Every clean clearance creates a sharper future claim.",
+            "firstEpisode": "Leave the berth and enter the beacon corridor."
+          },
+          "scenarioShape": {
+            "mode": "pursuit",
+            "premise": "The crew runs sealed cargo through a collapsing beacon corridor.",
+            "whyThisRun": "The route itself is the trap.",
+            "whatThisIsNot": "Not a tablebound debt negotiation.",
+            "selectionRationale": "Pursuit keeps pressure kinetic.",
+            "rejectedDefaultShape": "A static creditor hearing."
+          },
+          "arcQuestion": "Can the crew thread the corridor without becoming owned?",
+          "coreCrucible": "The corridor can free the crew only by exposing them to new ownership.",
+          "invariantFacts": [
+            "The crew carries sealed cargo through contested beacon windows."
+          ],
+          "variableTruthsForThisRun": [
+            "Who priced the route chit before departure."
+          ],
+          "durableForces": [
+            {
+              "id": "force_kessler_toll",
+              "name": "Kessler Span Fleet",
+              "agenda": "Tax every ship crossing the middle beacon window.",
+              "leverage": "Controls the toll lane and route authorization.",
+              "fear": "A visible bypass makes the toll soft.",
+              "pressureStyle": "Casual toll demands that become exact under refusal."
+            }
+          ],
+          "durableNpcSeeds": [],
+          "pressureEngines": [
+            {
+              "id": "engine_window_decay",
+              "name": "Beacon Window Decay",
+              "aggregation": "max",
+              "advancesWhen": "The crew delays at corridor nodes.",
+              "slowsWhen": "The crew moves decisively through a window.",
+              "visibleSymptoms": "Route countdowns and beacon flicker warnings."
+            }
+          ],
+          "playerStanceAxes": [],
+          "chapterFunctionMap": [],
+          "possibleEndgames": []
+        }
+      },
+      "chapter": {
+        "artifacts": {
+          "meaning": {
+            "chapter": 1,
+            "situation": "The PC converted the berth hold into a corridor run.",
+            "tension": "Freedom from the berth became exposure to route owners.",
+            "ticking": "The route chit stayed active as passage authorization.",
+            "question": "Who controls the route after the ship leaves the berth?",
+            "closer": "The first beacon blinks ahead as Kessler traffic wakes.",
+            "closingResolution": "costly",
+            "synthesizedAtTurn": 1,
+            "transitionSeed": {
+              "priorChapterMeant": "The PC bought motion by accepting route terms.",
+              "earnedConsequence": "Kessler can price the next window before the crew arrives.",
+              "pressureOwnerCandidate": "Kessler Span Fleet",
+              "worsenedDetail": "The route chit names the corridor passage authorization.",
+              "unresolvedQuestion": "Who controls the route after the berth falls behind?",
+              "doNotRestage": [
+                "berth hold clearing",
+                "dock departure"
+              ],
+              "procedureResidue": {
+                "mechanism": "route_chit beacon corridor passage authorization",
+                "keepAs": "leverage"
+              }
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "authorContract": {
+      "ctx": {
+        "genreId": "space-opera",
+        "pcOriginId": "human",
+        "pcPlaybookId": "operative",
+        "isContinuation": true
+      },
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "Kessler Prices Passage",
+          "premise": "Kessler Span Fleet turns the authenticated route chit into a toll claim before the crew reaches the middle beacon.",
+          "active_pressure": "The toll captain can honor passage or make the crew visible to every lane hunter.",
+          "central_tension": "Pay Kessler's price, expose the cargo, or make the crew a public bypass example.",
+          "objective": "Cross Kessler's toll window without handing over cargo leverage or crew standing.",
+          "crucible": "The clean route chit now lets Kessler decide what clean passage costs.",
+          "outcome_spectrum": {
+            "clean": "Raffe still trusts the route plan, and Kessler loses the cleanest toll claim.",
+            "costly": "Maren lets the crew through, but the PC owes a favor.",
+            "failure": "Kessler exposes the cargo signature and hunters know the ship.",
+            "catastrophic": "Crew loyalty breaks as Kessler owns the next route choice."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Driftrunner helm at the corridor edge",
+          "atmospheric_condition": "beacon static over cold consoles",
+          "initial_state": "The first beacon is behind the ship, and Kessler traffic wakes ahead of the toll window.",
+          "first_player_facing": "Captain Maren offers to honor the route_chit if the PC lets her inspect one cargo seal.",
+          "dramatic_situation": "Kessler converts the prior clearance into a public toll demand with crew trust watching.",
+          "first_visible_pressure": "Maren can make passage look lawful or make refusal look like smuggling.",
+          "first_human_or_institutional_move": "Maren names Raffe on open comms before asking for the seal.",
+          "do_not_restage": [
+            "berth hold clearing",
+            "dock departure"
+          ],
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": [
+            "npc_maren"
+          ],
+          "withheld_premise_facts": [
+            "Maren already knows the route chit was prepriced."
+          ]
+        },
+        "antagonist_field": {
+          "source_faction_id": "force_kessler_toll",
+          "core_pressure": "Kessler prices passage through social exposure before violence.",
+          "default_face": {
+            "name": "Captain Maren",
+            "role": "toll captain",
+            "pressure_style": "friendly toll language sharpened by public names"
+          },
+          "possible_faces": [
+            {
+              "id": "face_maren",
+              "name": "Captain Maren",
+              "role": "toll captain",
+              "becomes_primary_when": "The PC refuses inspection or names a rival protection claim.",
+              "pressure_style": "friendly toll language sharpened by public names"
+            }
+          ],
+          "escalation_logic": "Each refusal lets Maren trade courtesy for exposure."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_maren",
+            "name": "Captain Maren",
+            "affiliation": "Kessler Span Fleet",
+            "role": "toll captain",
+            "voice_register": "warmly transactional",
+            "voice_note": "laughs before naming the price",
+            "dramatic_function": "Pressure owner",
+            "hidden_pressure": "Needs a visible toll win.",
+            "retrieval_cue": "Maren, Kessler toll, route chit",
+            "initial_disposition": "wary",
+            "disposition_reason": "toll captains distrust crews using prepriced passage"
+          },
+          {
+            "id": "npc_raffe",
+            "name": "Raffe",
+            "affiliation": "Independent ship crew",
+            "role": "first mate",
+            "voice_register": "dry practical",
+            "voice_note": "cuts jokes short under pressure",
+            "dramatic_function": "Crew trust",
+            "hidden_pressure": "Will remember if the PC hides terms.",
+            "retrieval_cue": "Raffe, crew trust, route risk",
+            "initial_disposition": "favorable",
+            "disposition_reason": "they have backed the PC through the prior exit"
+          },
+          {
+            "id": "npc_seln",
+            "name": "Seln Varo",
+            "affiliation": "Kessler Span Fleet",
+            "role": "signal officer",
+            "voice_register": "thin amused",
+            "voice_note": "repeats names like invoices",
+            "dramatic_function": "Exposure witness",
+            "hidden_pressure": "Can broadcast the cargo signature.",
+            "retrieval_cue": "Seln, toll broadcast, cargo signature",
+            "initial_disposition": "wary",
+            "disposition_reason": "signal officers treat unknown cargo as leverage"
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_spine",
+            "title": "The route ownership",
+            "question": "Who controls the route now?",
+            "owner_hint": "Kessler Span Fleet",
+            "tension": 7,
+            "driver_kind": "carry_forward",
+            "resolution_criteria": "The route owner is accepted, bypassed, or exposed.",
+            "failure_mode": "The crew crosses only on someone else's terms.",
+            "retrieval_cue": "route owner, toll passage"
+          },
+          {
+            "id": "thread_kessler_toll",
+            "title": "Kessler's toll price",
+            "question": "What does passage cost?",
+            "owner_hint": "Kessler Span Fleet",
+            "tension": 7,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The toll is paid, evaded, renegotiated, or turned against Maren.",
+            "failure_mode": "Kessler records the crew as toll property.",
+            "retrieval_cue": "Kessler toll, route chit"
+          },
+          {
+            "id": "thread_cargo_exposure",
+            "title": "Cargo exposure",
+            "question": "Can the seal stay private?",
+            "owner_hint": "Captain Maren",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The cargo seal is protected, traded, or exposed.",
+            "failure_mode": "The cargo signature becomes public leverage.",
+            "retrieval_cue": "cargo seal, inspection, exposure"
+          },
+          {
+            "id": "thread_crew_trust",
+            "title": "Crew trust",
+            "question": "Does Raffe still back the route?",
+            "owner_hint": "Raffe",
+            "tension": 6,
+            "driver_kind": "new_pressure",
+            "resolution_criteria": "The PC shares enough truth for Raffe to stay aligned.",
+            "failure_mode": "Raffe treats the route plan as another hidden debt.",
+            "retrieval_cue": "Raffe, trust, hidden terms"
+          }
+        ],
+        "arc_link": {
+          "arc_id": "arc_forty_thousand_blockade_threading",
+          "chapter_function": "Make the first corridor toll cost crew trust or cargo exposure.",
+          "player_stance_read": "Watch whether the PC protects speed, secrecy, or crew consent.",
+          "pressure_engine_ids": [
+            "engine_window_decay"
+          ]
+        },
+        "pacing_contract": {
+          "target_turns": {
+            "min": 18,
+            "max": 25
+          },
+          "chapter_question": "Can the crew cross without giving Kessler ownership?",
+          "acceptable_resolutions": [
+            "toll bypassed",
+            "toll paid",
+            "Maren exposed"
+          ],
+          "early_pressure": "Maren makes the route chit a public toll claim.",
+          "middle_pressure": "Cargo inspection becomes crew-trust pressure.",
+          "late_pressure": "Kessler threatens route ownership.",
+          "close_when_any": [
+            "the crew crosses",
+            "Kessler owns the toll",
+            "cargo exposure reframes the route"
+          ],
+          "avoid_extending_for": [
+            "extra beacon countdown talk"
+          ]
+        },
+        "continuation_moves": {
+          "prior_chapter_meaning": "The PC left the berth by accepting route terms.",
+          "larger_pattern_revealed": "Route authorities become people who can price crew loyalty.",
+          "institutional_scale_escalation": {
+            "from": "berth clearance",
+            "to": "toll ownership"
+          },
+          "new_named_threat_from_prior_success": {
+            "name": "Captain Maren",
+            "emerged_from": "the authenticated route chit",
+            "why_inevitable": "Kessler controls the next toll window"
+          },
+          "worsened_existing_thread": {
+            "thread_id": "thread_spine",
+            "prior_small_detail": "the route chit was authenticated",
+            "why_load_bearing_now": "authentication lets Kessler prove the crew needs passage"
+          },
+          "planted_midchapter_revelation": {
+            "hidden_statement": "Maren knew the toll price before departure.",
+            "recontextualizes": "The route chit was bait, not simple passage."
+          },
+          "relationship_deepening_target": {
+            "entity_id": "npc_raffe",
+            "pressure": "Raffe needs truth before backing another hidden term."
+          }
+        },
+        "continuation_dramatic_turn": {
+          "prior_chapter_meant": "The PC traded station freedom for corridor exposure.",
+          "larger_pattern_revealed": "The next route owner can price loyalty before firing a shot.",
+          "pressure_owner": {
+            "id_or_new_bridge": "force_kessler_toll",
+            "why_they_now_act": "Kessler controls the next toll window."
+          },
+          "human_leverage": {
+            "what_they_can_take_or_offer": "Maren can offer passage or expose the cargo signature.",
+            "what_they_need_from_pc": "She needs the PC to accept Kessler's price publicly."
+          },
+          "worsened_detail": {
+            "prior_detail": "The route chit was authenticated.",
+            "why_it_is_load_bearing_now": "It proves the crew is already inside Kessler's toll lane."
+          },
+          "offscreen_antagonist_presence": "Vantabloc is absent; Kessler makes its clearance look sellable.",
+          "procedure_budget": {
+            "mechanism": "route_chit beacon corridor passage authorization",
+            "owner_using_it": "Kessler Span Fleet",
+            "dramatic_function": "Maren uses authorization to make passage a loyalty test.",
+            "max_opening_beats": 1
+          }
+        },
+        "pressure_ladder": [
+          {
+            "id": "ladder_repriced_auth",
+            "pressure": "The route authorization is repriced.",
+            "trigger_condition": "Maren rebroadcasts the toll demand under the PC's name.",
+            "narrative_effect": "The toll window narrows.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_signature_ping",
+            "pressure": "Seln pings the cargo signature.",
+            "trigger_condition": "The PC refuses inspection without offering another proof.",
+            "narrative_effect": "The manifest becomes visible.",
+            "severity": "standard"
+          },
+          {
+            "id": "ladder_passage_lock",
+            "pressure": "Kessler locks passage authorization.",
+            "trigger_condition": "The crew keeps moving after Maren's final toll demand.",
+            "narrative_effect": "The route closes.",
+            "severity": "hard"
+          }
+        ],
+        "human_stakes": [
+          {
+            "who_pays": "npc_raffe",
+            "cost_surface": "loyalty",
+            "what_is_lost": "Raffe stops treating the route plan as a shared risk.",
+            "triggering_pressure": "thread_crew_trust"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as a crew leader Kessler can name publicly.",
+            "triggering_pressure": "thread_kessler_toll"
+          }
+        ],
+        "possible_revelations": [
+          {
+            "id": "rev_auth_prepriced",
+            "statement": "The route authorization was prepriced before departure.",
+            "held_by": "npc_seln",
+            "emergence_condition": "Seln's toll transcript is obtained.",
+            "recontextualizes": "The toll was waiting before the crew reached Kessler.",
+            "hint_phrases": [
+              "older timestamp",
+              "price before ping",
+              "already rated"
+            ],
+            "hints_required": 2,
+            "valid_reveal_contexts": [
+              "documentary_surface"
+            ]
+          },
+          {
+            "id": "rev_maren_needs_public_yes",
+            "statement": "Maren needs the PC's public yes more than the toll.",
+            "held_by": "npc_maren",
+            "emergence_condition": "Maren is pressed on why she names Raffe.",
+            "recontextualizes": "The toll demand is a loyalty trap.",
+            "hint_phrases": [
+              "say it open",
+              "crew hears",
+              "not just credits"
+            ],
+            "hints_required": 2,
+            "valid_reveal_contexts": [
+              "private_pressure"
+            ]
+          }
+        ],
+        "moral_fault_lines": [
+          {
+            "id": "fault_speed_truth",
+            "tension": "Speed versus truth",
+            "side_a": "Cross fast.",
+            "side_b": "Tell Raffe enough.",
+            "why_it_hurts": "Speed protects cargo while secrecy spends trust."
+          },
+          {
+            "id": "fault_toll_exposure",
+            "tension": "Pay versus expose",
+            "side_a": "Pay Kessler.",
+            "side_b": "Challenge Maren publicly.",
+            "why_it_hurts": "Either makes someone own the route."
+          }
+        ],
+        "escalation_options": [
+          {
+            "id": "esc_open_comm",
+            "type": "social",
+            "condition": "Maren opens crew comms.",
+            "consequence": "Raffe hears the hidden term."
+          },
+          {
+            "id": "esc_signature_sale",
+            "type": "institutional",
+            "condition": "Seln sells the ping.",
+            "consequence": "Cargo privacy thins."
+          },
+          {
+            "id": "esc_lane_close",
+            "type": "physical",
+            "condition": "Kessler blocks passage.",
+            "consequence": "The ship must choose risk."
+          }
+        ],
+        "editorialized_lore": [
+          {
+            "item": "Kessler tolls are performed in public.",
+            "relevance_now": "Maren wants crew witnesses.",
+            "delivery_method": "She names Raffe on comms."
+          },
+          {
+            "item": "Route chits can become claims.",
+            "relevance_now": "The passage proof now costs loyalty.",
+            "delivery_method": "Maren honors it conditionally."
+          }
+        ]
+      },
+      "expect": {
+        "rawErrorCount": 0,
+        "validationErrorCount": 0,
+        "combinedErrorCount": 0,
+        "threadCountEquals": 4,
+        "pacingTargetEquals": {
+          "min": 18,
+          "max": 25
+        }
+      }
+    }
+  }
+}

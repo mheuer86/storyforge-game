@@ -304,9 +304,7 @@
       },
       "expect": {
         "combinedErrorIncludesAll": [
-          "chapter_frame.outcome_spectrum.clean must name a human consequence",
-          "pressure_ladder[0] procedural pressure must name who pays",
-          "possible_revelations[0] procedural surface must expose hidden agency"
+          "chapter_frame.outcome_spectrum.clean must name a human consequence"
         ],
         "validationErrorIncludesAll": [
           "chapter_frame.outcome_spectrum.clean must name a human consequence"

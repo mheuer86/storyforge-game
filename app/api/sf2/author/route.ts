@@ -27,7 +27,17 @@ import type {
 } from '@/lib/sf2/types'
 
 const AUTHOR_MODEL = process.env.SF2_AUTHOR_MODEL || 'claude-sonnet-4-6'
-const AUTHOR_MAX_TOKENS = Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 6144)
+const AUTHOR_MAX_TOKENS: number = Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 10_000)
+const AUTHOR_RETRY_MAX_TOKENS: number = Number(
+  process.env.SF2_AUTHOR_RETRY_MAX_TOKENS ?? Math.max(AUTHOR_MAX_TOKENS, 12_000)
+)
+const AUTHOR_MAX_ATTEMPTS: number = positiveIntEnv(process.env.SF2_AUTHOR_MAX_ATTEMPTS, 1)
+
+function positiveIntEnv(value: string | undefined, fallback: number): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback
+  return Math.floor(parsed)
+}
 
 function resolveClient(req: NextRequest): Anthropic {
   const byokKey = req.headers.get('x-anthropic-key')?.trim()
@@ -134,10 +144,9 @@ type AuthorToolResult =
       apiMs: number
     }
 
-// Run a tool-forced call, retry once on validation failure or missing tool_use.
-// Haiku is reproducibly variable on structured output (output volume varies
-// 15× between runs on the same input). Single retry with explicit "you missed
-// these fields" nudge stabilizes the success rate at low cost.
+// Run a tool-forced call. Retries are opt-in because a failed Author setup is
+// usually another full structured generation; waiting through two large calls
+// is worse UX than surfacing the failure quickly.
 async function callAuthorToolWithRetry(args: {
   client: Anthropic
   system: Anthropic.TextBlockParam[]
@@ -149,7 +158,7 @@ async function callAuthorToolWithRetry(args: {
   maxAttempts?: number
 }): Promise<AuthorToolResult> {
   const { client, system, initialMessages, tool, toolName, validate, retryNudge } = args
-  const maxAttempts = args.maxAttempts ?? 2
+  const maxAttempts = Math.max(1, Math.floor(args.maxAttempts ?? 1))
 
   let messages: Anthropic.MessageParam[] = [...initialMessages]
   const aggregate: AnthropicUsage = {
@@ -161,15 +170,17 @@ async function callAuthorToolWithRetry(args: {
   let lastResponse: Anthropic.Message | null = null
   let lastErrors: string[] = []
   let lastTextPreview: string | undefined
+  let lastStopReason: string | null = null
   let attempt = 0
   let apiMsTotal = 0
 
   while (attempt < maxAttempts) {
     attempt += 1
+    const maxTokens: number = lastStopReason === 'max_tokens' ? AUTHOR_RETRY_MAX_TOKENS : AUTHOR_MAX_TOKENS
     const callStart = Date.now()
     const response = await client.messages.create({
       model: AUTHOR_MODEL,
-      max_tokens: AUTHOR_MAX_TOKENS,
+      max_tokens: maxTokens,
       system,
       tools: [tagTool(tool)],
       // disable_parallel_tool_use: with `type: 'tool'` this guarantees the
@@ -181,6 +192,7 @@ async function callAuthorToolWithRetry(args: {
     })
     apiMsTotal += Date.now() - callStart
     lastResponse = response
+    lastStopReason = response.stop_reason ?? null
     const usage = response.usage as AnthropicUsage
     aggregate.input_tokens += usage.input_tokens
     aggregate.output_tokens += usage.output_tokens
@@ -202,6 +214,7 @@ async function callAuthorToolWithRetry(args: {
       console.warn(`[sf2/author] no tool_use on attempt ${attempt}/${maxAttempts}`, {
         toolName,
         stopReason: response.stop_reason,
+        maxTokens,
         textPreview: lastTextPreview,
       })
       if (attempt < maxAttempts) {
@@ -238,7 +251,9 @@ async function callAuthorToolWithRetry(args: {
     lastErrors = errors
     console.warn(`[sf2/author] ${toolName} validation failed on attempt ${attempt}/${maxAttempts}`, {
       errors,
+      stopReason: response.stop_reason,
       outputTokens: usage.output_tokens,
+      maxTokens,
     })
 
     if (attempt < maxAttempts) {
@@ -301,6 +316,8 @@ export async function POST(req: NextRequest) {
       priorTurnsCount: state?.history?.turns?.length ?? 0,
       hasPriorMeaning: Boolean(priorMeaning),
       model: AUTHOR_MODEL,
+      maxTokens: AUTHOR_MAX_TOKENS,
+      maxAttempts: AUTHOR_MAX_ATTEMPTS,
     })
 
     const seed = compileAuthorInputSeed(state, priorMeaning)
@@ -347,6 +364,7 @@ export async function POST(req: NextRequest) {
           state: state ?? undefined,
         }),
         retryNudge: (errors) => buildAuthorRetryNudge(errors, state?.meta.genreId),
+        maxAttempts: AUTHOR_MAX_ATTEMPTS,
       })
     } catch (err) {
       return anthropicErrorResponse(err)
