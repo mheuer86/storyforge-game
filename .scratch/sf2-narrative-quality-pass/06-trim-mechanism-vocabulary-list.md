@@ -1,9 +1,15 @@
 # Trim mechanism-vocabulary list
 
-Status: ready-for-agent
+Status: complete
 Category: bug
 **Type:** AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 status pass: partial. Behavioral enforcement exists through procedure ownership validation and stakes-first prompt guidance, but the literal prompt-copy cleanup may still be worth a narrow pass.
+
+2026-05-08 completion pass: complete. `lib/sf2/author/prompt.ts` now keeps the continuation procedure rule but limits shared mechanism examples to four portable terms (`timer`, `queue`, `gate`, `readout`) and pairs them with four equal-prominence human-leverage examples. Genre-specific mechanism words were removed from the shared worked example; Narrator shared copy was reviewed without weakening procedure-gravity validation.
 
 ## What to build
 
@@ -27,10 +33,17 @@ If #01 (genre injection refactor) ships, the mechanism examples should also be s
 
 ## Acceptance criteria
 
-- [ ] Mechanism list at `author/prompt.ts:328` reduced to ≤4 examples.
-- [ ] A parallel dramatic-leverage list of ≥4 examples added, of equal length and prominence.
-- [ ] Genre-specific mechanism words (warrant, manifest, decryption bar, route milestone) removed from the main rule unless #01 has migrated them per-genre.
-- [ ] Replay fixtures updated if `procedure_budget` validation changes.
+- [x] Mechanism list at `author/prompt.ts:328` reduced to ≤4 examples.
+- [x] A parallel dramatic-leverage list of ≥4 examples added, of equal length and prominence.
+- [x] Genre-specific mechanism words (warrant, manifest, decryption bar, route milestone) removed from the main rule unless #01 has migrated them per-genre.
+- [x] Replay fixtures updated if `procedure_budget` validation changes. No fixture updates were needed because validation behavior did not change.
+
+## Evidence
+
+- `npm run sf2:replay -- fixtures/sf2/replay/author-continuation-procedure-gravity-rejects-unowned-mechanism.json` — pass, 1/1.
+- `npm run sf2:replay -- fixtures/sf2/replay/author-continuation-procedure-gravity-accepts-owned-leverage.json` — pass, 1/1.
+- `npm run sf2:replay -- fixtures/sf2/replay` — pass, 164/164.
+- `npm run build` — pass.
 
 ## Blocked by
 
