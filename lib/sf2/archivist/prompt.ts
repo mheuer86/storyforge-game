@@ -222,19 +222,27 @@ Redundancy rule: if a create has \`anchored_to\` set in its payload, do NOT also
 
 ## What is and is NOT a clue
 
-A **clue** is a *fact about the world* the PC could later act on or connect to other facts. Persists across scenes. Investigation material.
+A **clue** is investigation evidence: a durable claim that bears on a question the PC can investigate, prove, disprove, connect, or act on later. Every clue needs an \`evidence_question\` ("What does this help answer?") and an \`evidence_kind\` (document, testimony, trace, contradiction, diagnostic, circumstantial).
 
-A **clue is NOT** a present-moment sensory observation, body-language read, or atmospheric beat. Those are scene texture — capture as NPC \`tempLoad\` updates, not clues.
+A **clue is NOT** a present-moment sensory observation, body-language read, atmospheric beat, routine presence, or small operational state. Those are scene texture, scene state, NPC/faction updates, thread progress, temporal anchors, documents, or no durable write.
 
 | In prose | Correct write |
 |---|---|
-| "Sova's name was hidden under correction fluid" | clue (durable fact about who's involved) |
-| "Maret was last logged 43 days ago" | clue (durable fact, anchors to thread) |
+| "Sova's name was hidden under correction fluid" | clue (document/trace evidence toward who altered the file) |
+| "Maret was last logged 43 days ago" | clue (document/diagnostic evidence, anchors to investigation thread) |
 | "Pell stopped writing when you read the entry" | NPC update: tempLoad on npc_pell, not a clue |
 | "Three children are absent: Kael, Maret, Dav" | clue (durable, structural) |
+| "Maret Coll is present at the fuel desk" | no clue; location/scene state unless an investigation question makes presence evidentiary |
+| "The hatch is sealed right now" | no clue if it is only current blocking; thread progress/location state if future options changed |
 | "The morning light shifted" | NOT a write — atmosphere is the Narrator's |
 
 If prose produces both a tempLoad observation AND a structural fact, emit both.
+
+### Investigation thread marker
+
+When creating a thread whose resolution depends on evidence discovery, set \`resolution_mode: "investigation"\`. Examples: "Who altered the ledger?", "Why did Mareth stop filing reports?", "Where did the missing children go?" Do not set it for ordinary pressure, pursuit, extraction, debt, combat, or relationship threads.
+
+Clues should usually anchor to an investigation thread. A floating clue is allowed only when the evidence is concrete but the PC has not yet connected it to the right investigation. If you cannot write a clear \`evidence_question\`, do not create a clue.
 
 ### Continuity-critical operational facts
 
@@ -436,7 +444,9 @@ Capture:
 - durations that constrain future action ("six months before burnout")
 - ordered sequences later turns depend on ("intake before transport")
 
-Do NOT create temporal anchors for ambient time-of-day texture unless it affects a thread, clue, promise, decision, NPC, or deadline. Use \`anchored_to\` to link the anchor to relevant entity ids when possible.`
+Do NOT create temporal anchors for ambient time-of-day texture unless it affects a thread, clue, promise, decision, NPC, or deadline. Use \`anchored_to\` to link the anchor to relevant entity ids when possible.
+
+Deadline temporal anchors are the source of truth for thread timers. When a deadline pressures a thread, create one \`temporal_anchor\` anchored to that thread; code links the thread timer to the anchor.`
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SITUATION: chapter-scoped context. Cached at BP3.

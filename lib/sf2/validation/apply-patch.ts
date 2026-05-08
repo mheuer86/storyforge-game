@@ -67,6 +67,7 @@ import type {
   Sf2EmotionalBeat,
   Sf2EmotionalBeatTag,
   Sf2Clue,
+  Sf2ClueEvidenceKind,
   Sf2Decision,
   Sf2Document,
   Sf2DocumentParty,
@@ -91,6 +92,14 @@ const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
 ])
 
 const CHAPTER_PRESSURE_CAP = 10
+const CLUE_EVIDENCE_KINDS: Sf2ClueEvidenceKind[] = [
+  'document',
+  'testimony',
+  'trace',
+  'contradiction',
+  'diagnostic',
+  'circumstantial',
+]
 
 function clampPressure(value: number): number {
   if (!Number.isFinite(value)) return 0
@@ -142,6 +151,203 @@ function stringSetIntersects(a: string[], b: string[]): boolean {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((value) => value.length > 0)))
+}
+
+function coerceClueEvidenceKind(value: unknown): Sf2ClueEvidenceKind {
+  return CLUE_EVIDENCE_KINDS.includes(value as Sf2ClueEvidenceKind)
+    ? (value as Sf2ClueEvidenceKind)
+    : 'circumstantial'
+}
+
+function normalizedTermMatches(normalized: string, term: string): boolean {
+  const normalizedTerm = normalizedSemanticText(term)
+  if (!normalizedTerm) return false
+  if (normalizedTerm.includes(' ')) return normalized.includes(normalizedTerm)
+  return normalized.split(' ').includes(normalizedTerm)
+}
+
+function looksLikeAmbientClue(content: string): boolean {
+  const normalized = normalizedSemanticText(content)
+  if (!normalized) return true
+  const ambientTerms = [
+    'present',
+    'stands',
+    'standing',
+    'sits',
+    'sitting',
+    'waits',
+    'waiting',
+    'looks',
+    'looked',
+    'expression',
+    'face',
+    'voice',
+    'tone',
+    'gesture',
+    'gestures',
+    'body language',
+    'light',
+    'shadow',
+    'air',
+    'silence',
+    'atmosphere',
+    'desk',
+    'corridor',
+    'room',
+  ]
+  const evidenceTerms = [
+    'record',
+    'ledger',
+    'log',
+    'file',
+    'document',
+    'signed',
+    'stamp',
+    'seal',
+    'timestamp',
+    'classified',
+    'query',
+    'missing',
+    'contradict',
+    'contradicts',
+    'diagnostic',
+    'sensor',
+    'blood',
+    'trace',
+    'residue',
+    'hidden',
+    'erased',
+    'altered',
+    'forged',
+    'matches',
+    'message',
+    'amount',
+    'credits',
+    'unread',
+    'off-books',
+    'unregistered',
+    'shortfall',
+    'tithe',
+    'stalled',
+    'deliberate',
+    'custody',
+    'alerted',
+    'intent',
+    'protect',
+  ]
+  const hasAmbient = ambientTerms.some((term) => normalizedTermMatches(normalized, term))
+  const hasEvidence = evidenceTerms.some((term) => normalizedTermMatches(normalized, term))
+  return hasAmbient && !hasEvidence
+}
+
+function looksLikeConcreteEvidence(content: string): boolean {
+  const normalized = normalizedSemanticText(content)
+  return [
+    'record',
+    'ledger',
+    'log',
+    'file',
+    'document',
+    'signed',
+    'stamp',
+    'seal',
+    'timestamp',
+    'classified',
+    'query',
+    'missing',
+    'contradict',
+    'contradicts',
+    'diagnostic',
+    'sensor',
+    'blood',
+    'trace',
+    'residue',
+    'hidden',
+    'erased',
+    'altered',
+    'forged',
+    'matches',
+    'absent',
+    'staged',
+    'bypass',
+    'message',
+    'sent',
+    'amount',
+    'credits',
+    'unread',
+    'read:',
+    'off-books',
+    'unregistered',
+    'shortfall',
+    'tithe',
+    'classified',
+    'stalled',
+    'deliberate',
+    'significant',
+    'third option',
+    'custody',
+    'alerted',
+    'en route',
+    'intent',
+    'providing',
+    'protect',
+    'protected',
+    'plans',
+    'deadline',
+    'contacts',
+    'routes',
+    'escape',
+  ].some((term) => normalizedTermMatches(normalized, term))
+}
+
+function validateInvestigationClue(
+  draft: Sf2State,
+  content: string,
+  evidenceQuestion: string,
+  threadIds: string[]
+): InvariantResult {
+  if (looksLikeAmbientClue(content)) {
+    return {
+      ok: false,
+      field: 'content',
+      reason: 'ambient scene/body-language/operational texture is not investigation evidence',
+    }
+  }
+  const hasInvestigationThread = threadIds.some(
+    (threadId) => draft.campaign.threads[threadId]?.resolutionMode === 'investigation'
+  )
+  if (!hasInvestigationThread && !evidenceQuestion.trim() && !looksLikeConcreteEvidence(content)) {
+    return {
+      ok: false,
+      field: 'evidenceQuestion',
+      reason: 'clue requires an investigation thread or explicit evidence_question',
+    }
+  }
+  return { ok: true }
+}
+
+function linkDeadlineAnchorToThreadTimers(draft: Sf2State, anchor: Sf2TemporalAnchor): void {
+  if (anchor.kind !== 'deadline' || anchor.status !== 'active') return
+
+  for (const anchoredId of anchor.anchoredTo) {
+    const thread = draft.campaign.threads[anchoredId]
+    if (!thread) continue
+    if (thread.status !== 'active') continue
+    if (!thread.deterioration) {
+      thread.deterioration = {
+        kind: 'timer',
+        deadline: anchor.anchorText,
+        temporalAnchorId: anchor.id,
+      }
+      continue
+    }
+    if (thread.deterioration.kind !== 'timer') continue
+    thread.deterioration = {
+      ...thread.deterioration,
+      deadline: anchor.anchorText || thread.deterioration.deadline,
+      temporalAnchorId: anchor.id,
+    }
+  }
 }
 
 function driftDedup(
@@ -900,6 +1106,11 @@ function applyCreate(
             existing.successorToThreadId = predecessorThreadId
             existing.chapterDriverKind = 'successor'
           }
+          if (p.resolution_mode === 'investigation') {
+            existing.resolutionMode = 'investigation'
+          } else if (!existing.resolutionMode) {
+            existing.resolutionMode = 'pressure'
+          }
           syncActiveThreadIntoChapterRuntime(draft, existing.id, {
             loadBearing: existing.loadBearing,
             successor: Boolean(existing.successorToThreadId),
@@ -929,6 +1140,7 @@ function applyCreate(
           loadBearing: shouldLoadBear,
           successorToThreadId: predecessorThreadId ?? undefined,
           chapterDriverKind: predecessorThreadId ? 'successor' : undefined,
+          resolutionMode: p.resolution_mode === 'investigation' ? 'investigation' : 'pressure',
           resolutionGates: normalizeThreadResolutionGates(p.resolution_gates ?? p.resolutionGates),
           progressEvents: [],
           tensionHistory: [],
@@ -1127,6 +1339,25 @@ function applyCreate(
         }
         const id = (p.id as string | undefined) ?? nextEntityId('clue', draft)
         const proposedContent = String(p.content ?? '')
+        const evidenceKind = coerceClueEvidenceKind(p.evidence_kind ?? p.evidenceKind)
+        const explicitEvidenceQuestion = String(p.evidence_question ?? p.evidenceQuestion ?? '')
+        const inferredEvidenceQuestion = threadIds
+          .map((threadId) => draft.campaign.threads[threadId])
+          .find((thread) => thread?.resolutionMode === 'investigation')?.resolutionCriteria
+        const evidenceQuestion = explicitEvidenceQuestion || inferredEvidenceQuestion || ''
+        const storedEvidenceQuestion =
+          evidenceQuestion ||
+          (looksLikeConcreteEvidence(proposedContent) ? 'What does this evidence establish?' : '')
+        const clueContract = validateInvestigationClue(draft, proposedContent, storedEvidenceQuestion, threadIds)
+        if (!clueContract.ok) {
+          outcomes.push({
+            accepted: false,
+            reason: `clue.${clueContract.field}: ${clueContract.reason}`,
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
         const existing = draft.campaign.clues[id] ??
           Object.values(draft.campaign.clues).find((clue) => {
             const anchorCompatible =
@@ -1143,6 +1374,10 @@ function applyCreate(
           const proposedCue = String(p.retrieval_cue ?? p.content ?? '')
           if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
             existing.retrievalCue = proposedCue
+          }
+          existing.evidenceKind = existing.evidenceKind ?? evidenceKind
+          if (storedEvidenceQuestion && storedEvidenceQuestion.length > (existing.evidenceQuestion ?? '').length) {
+            existing.evidenceQuestion = storedEvidenceQuestion
           }
           existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...threadIds])
           if (existing.anchoredTo.length > 0) {
@@ -1162,6 +1397,8 @@ function applyCreate(
           retrievalCue: String(p.retrieval_cue ?? p.content ?? ''),
           status: threadIds.length > 0 ? 'attached' : 'floating',
           anchoredTo: threadIds,
+          evidenceKind,
+          evidenceQuestion: storedEvidenceQuestion,
           content: proposedContent,
           turn: turnIndex,
         }
@@ -1309,6 +1546,7 @@ function applyCreate(
             existing.retrievalCue = proposedCue
           }
           driftDedup(drift, 'temporal_anchor', id, existing.id)
+          linkDeadlineAnchorToThreadTimers(draft, existing)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
           return
         }
@@ -1336,6 +1574,7 @@ function applyCreate(
           return
         }
         draft.campaign.temporalAnchors[id] = anchor
+        linkDeadlineAnchorToThreadTimers(draft, anchor)
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
@@ -1775,12 +2014,20 @@ function applyUpdate(
       }
       const nextContent = write.changes.content as string | undefined
       const nextCue = write.changes.retrieval_cue as string | undefined
+      const nextEvidenceQuestion = write.changes.evidence_question as string | undefined
+      const nextEvidenceKind = write.changes.evidence_kind as string | undefined
       const anchoredAppend = write.changes.anchored_to as string[] | undefined
       if (nextContent !== undefined && nextContent.trim().length > 0) {
         clue.content = nextContent
       }
       if (nextCue !== undefined && nextCue.trim().length > 0) {
         clue.retrievalCue = nextCue
+      }
+      if (nextEvidenceQuestion !== undefined && nextEvidenceQuestion.trim().length > 0) {
+        clue.evidenceQuestion = nextEvidenceQuestion
+      }
+      if (nextEvidenceKind !== undefined) {
+        clue.evidenceKind = coerceClueEvidenceKind(nextEvidenceKind)
       }
       if (Array.isArray(anchoredAppend) && anchoredAppend.length > 0) {
         const resolved = anchoredAppend

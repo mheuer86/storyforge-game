@@ -1,5 +1,6 @@
 import type {
   Sf2DispositionTier,
+  Sf2Deterioration,
   Sf2HeatLevel,
   Sf2State,
   Sf2ThreadPacket,
@@ -58,7 +59,7 @@ export function buildThreadPackets(
       localWhyItMatters: t.retrievalCue,
       ownerSummary,
       stakeholderDispositions,
-      deterioration: renderDeterioration(t.deterioration),
+      deterioration: renderDeterioration(state, t.id, t.deterioration),
       anchoredDecisions: Object.values(campaign.decisions)
         .filter((d) => d.status === 'active' && d.anchoredTo.includes(t.id))
         .map((d) => ({ id: d.id, summary: d.summary })),
@@ -67,7 +68,10 @@ export function buildThreadPackets(
         .map((p) => ({ id: p.id, obligation: p.obligation })),
       anchoredClues: cluesForThread
         .filter((c) => c.status === 'attached')
-        .map((c) => ({ id: c.id, content: c.content })),
+        .map((c) => ({
+          id: c.id,
+          content: c.evidenceQuestion ? `${c.content} (bears on: ${c.evidenceQuestion})` : c.content,
+        })),
       resolutionGates: (t.resolutionGates ?? []).map((g) => ({
         id: g.id,
         label: g.label,
@@ -120,9 +124,31 @@ function buildStakeholderDisposition(
 }
 
 function renderDeterioration(
-  d: { kind: 'clock'; segments: number; filled: number } | { kind: 'timer'; deadline: string } | undefined
+  state: Sf2State,
+  threadId: string,
+  d: Sf2Deterioration | undefined
 ): string | undefined {
   if (!d) return undefined
   if (d.kind === 'clock') return `clock ${d.filled}/${d.segments}`
+  const anchor = findDeadlineAnchorForTimer(state, threadId, d.temporalAnchorId)
+  if (anchor?.kind === 'deadline') {
+    const label = anchor.label || anchor.title
+    const deadline = anchor.anchorText || d.deadline
+    return label ? `deadline: ${label}: ${deadline}` : `deadline: ${deadline}`
+  }
   return `deadline: ${d.deadline}`
+}
+
+function findDeadlineAnchorForTimer(
+  state: Sf2State,
+  threadId: string,
+  temporalAnchorId: string | undefined
+) {
+  if (temporalAnchorId) {
+    const anchor = state.campaign.temporalAnchors?.[temporalAnchorId]
+    if (anchor?.kind === 'deadline') return anchor
+  }
+  return Object.values(state.campaign.temporalAnchors ?? {}).find(
+    (anchor) => anchor.kind === 'deadline' && anchor.status === 'active' && anchor.anchoredTo.includes(threadId)
+  )
 }

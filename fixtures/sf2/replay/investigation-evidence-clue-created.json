@@ -1,0 +1,68 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "investigation evidence clue created",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A real evidentiary clue anchored to an investigation thread should still be created and retrievable."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 5,
+    "playerInput": "Check the query logs for Mareth's audit.",
+    "narrator": {
+      "prose": "The archive log shows Auditor Mareth stopped filing tithe reports four days ago, then opened a classified family-registry query under Elan Vos's name.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "thread",
+            "payload": {
+              "id": "thread_mareth_audit_investigation",
+              "title": "Mareth's true audit purpose",
+              "owner": { "kind": "faction", "name_or_id": "Registry" },
+              "tension": 5,
+              "resolution_criteria": "Establish why Mareth stopped filing reports and what the classified family-registry query targets.",
+              "failure_mode": "Mareth's parallel investigation reaches leverage before the PC can prove it.",
+              "retrieval_cue": "Mareth stopped filing reports and opened a classified family-registry query.",
+              "resolution_mode": "investigation",
+              "load_bearing": true
+            },
+            "confidence": "high"
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_mareth_classified_query",
+              "content": "Mareth stopped filing tithe reports four days ago and opened a classified family-registry query under Elan Vos's name.",
+              "evidence_question": "Why did Mareth stop filing reports, and what is his classified family-registry query targeting?",
+              "evidence_kind": "document",
+              "anchored_to": ["thread_mareth_audit_investigation"],
+              "retrieval_cue": "Archive query log linking Mareth's silence to Elan Vos's family registry."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]", "creates[1]"],
+    "threadsInclude": [
+      {
+        "threadId": "thread_mareth_audit_investigation",
+        "status": "active",
+        "loadBearing": true
+      }
+    ],
+    "cluesInclude": [
+      {
+        "clueId": "clue_mareth_classified_query",
+        "status": "attached",
+        "anchoredToIncludes": ["thread_mareth_audit_investigation"],
+        "contentIncludes": "classified family-registry query"
+      }
+    ]
+  }
+}

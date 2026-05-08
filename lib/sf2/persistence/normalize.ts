@@ -20,6 +20,9 @@ import {
   type Sf2NpcStatus,
   type Sf2State,
   type Sf2Thread,
+  type Sf2Clue,
+  type Sf2ClueEvidenceKind,
+  type Sf2ThreadResolutionMode,
   type Sf2ThreadStatus,
 } from '../types'
 import {
@@ -125,6 +128,10 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
 
   for (const [id, thread] of Object.entries(campaign.threads)) {
     campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter)
+  }
+
+  for (const [id, clue] of Object.entries(campaign.clues)) {
+    campaign.clues[id] = normalizeClue(id, clue, state.meta.currentChapter)
   }
 
   if (syncArcPlanStatusFromArcEntity(state)) {
@@ -382,10 +389,35 @@ function normalizeThread(
   thread.retrievalCue = stringOr(thread.retrievalCue, thread.title)
   thread.chapterCreated = positiveInt(thread.chapterCreated, currentChapter) as Sf2ChapterNumber
   thread.loadBearing = Boolean(thread.loadBearing)
+  thread.resolutionMode = oneOf<Sf2ThreadResolutionMode>(thread.resolutionMode, ['investigation', 'pressure'], 'pressure')
   thread.resolutionGates = normalizeThreadResolutionGates(thread.resolutionGates)
   thread.progressEvents = normalizeThreadProgressEvents(thread.progressEvents)
   thread.tensionHistory = Array.isArray(thread.tensionHistory) ? thread.tensionHistory : []
   return thread
+}
+
+function normalizeClue(
+  id: string,
+  raw: Sf2Clue,
+  currentChapter: Sf2ChapterNumber
+): Sf2Clue {
+  const clue = raw
+  clue.id = stringOr(clue.id, id)
+  clue.title = stringOr(clue.title, clue.id)
+  clue.category = 'clue'
+  clue.status = oneOf(clue.status, ['floating', 'attached', 'consumed'], 'floating')
+  clue.anchoredTo = stringArray(clue.anchoredTo)
+  clue.evidenceKind = oneOf<Sf2ClueEvidenceKind>(
+    clue.evidenceKind,
+    ['document', 'testimony', 'trace', 'contradiction', 'diagnostic', 'circumstantial'],
+    'circumstantial'
+  )
+  clue.content = stringOr(clue.content, clue.title)
+  clue.evidenceQuestion = stringOr(clue.evidenceQuestion, clue.retrievalCue || clue.content)
+  clue.retrievalCue = stringOr(clue.retrievalCue, clue.content)
+  clue.chapterCreated = positiveInt(clue.chapterCreated, currentChapter) as Sf2ChapterNumber
+  clue.turn = numberOr(clue.turn, 0)
+  return clue
 }
 
 function normalizeLocation(raw: unknown, fallback: Sf2State['world']['currentLocation']) {

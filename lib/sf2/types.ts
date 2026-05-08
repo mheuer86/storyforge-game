@@ -30,6 +30,14 @@ export type Sf2ThreadStatus =
 export type Sf2DecisionStatus = 'active' | 'paid' | 'invalidated'
 export type Sf2PromiseStatus = 'active' | 'kept' | 'broken' | 'released'
 export type Sf2ClueStatus = 'floating' | 'attached' | 'consumed'
+export type Sf2ThreadResolutionMode = 'investigation' | 'pressure'
+export type Sf2ClueEvidenceKind =
+  | 'document'
+  | 'testimony'
+  | 'trace'
+  | 'contradiction'
+  | 'diagnostic'
+  | 'circumstantial'
 export type Sf2ArcStatus = 'active' | 'resolved' | 'abandoned'
 // Single source of truth for the beat tag vocabulary. Used by the type
 // alias below AND by the archivist tool schema (lib/sf2/archivist/tools.ts)
@@ -220,6 +228,7 @@ export interface Sf2Clock {
 export interface Sf2Timer {
   kind: 'timer'
   deadline: string
+  temporalAnchorId?: Sf2EntityId
 }
 
 export type Sf2Deterioration = Sf2Clock | Sf2Timer
@@ -259,6 +268,7 @@ export interface Sf2Thread extends Sf2NarrativeEntityBase {
   spineForChapter?: Sf2ChapterNumber
   successorToThreadId?: Sf2EntityId
   chapterDriverKind?: Sf2ChapterThreadDriverKind
+  resolutionMode?: Sf2ThreadResolutionMode
   resolutionGates: Sf2ThreadResolutionGate[]
   progressEvents: Sf2ThreadProgressEvent[]
   tensionHistory: Array<{ chapter: Sf2ChapterNumber; turn: number; value: Sf2Tension }>
@@ -336,6 +346,8 @@ export interface Sf2Clue extends Sf2NarrativeEntityBase {
   category: 'clue'
   status: Sf2ClueStatus
   anchoredTo: Sf2EntityId[] // threads; may be empty (floating)
+  evidenceKind: Sf2ClueEvidenceKind
+  evidenceQuestion: string
   content: string
   discoveredInScene?: Sf2EntityId
   turn: number

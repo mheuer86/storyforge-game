@@ -618,6 +618,8 @@ function clue(
     retrievalCue: content,
     status: 'attached',
     anchoredTo,
+    evidenceKind: 'circumstantial',
+    evidenceQuestion: 'What does this evidence establish about the current pressure?',
     content,
     discoveredInScene: 'scene_2_1',
     turn,

@@ -76,6 +76,12 @@ export function checkPromise(promise: Sf2Promise, campaign: Sf2Campaign): Invari
 }
 
 export function checkClue(clue: Sf2Clue, campaign: Sf2Campaign): InvariantResult {
+  if (!clue.content?.trim()) {
+    return { ok: false, field: 'content', reason: 'clue must state the evidence claim' }
+  }
+  if (!clue.evidenceQuestion?.trim()) {
+    return { ok: false, field: 'evidenceQuestion', reason: 'clue must name the investigation question it bears on' }
+  }
   // Clues MAY have empty anchoredTo (floating). Validate referenced threads when present.
   for (const tid of clue.anchoredTo ?? []) {
     if (!campaign.threads[tid]) {

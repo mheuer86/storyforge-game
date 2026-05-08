@@ -1,0 +1,35 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "clue spam routine presence rejected",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Routine on-stage presence should not be accepted as investigation evidence."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "Look around the fuel desk.",
+    "narrator": {
+      "prose": "Maret Coll is present at the fuel desk, one hand resting near the intake stamp while the bay lights hum.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_maret_present_fuel_desk",
+              "content": "Maret Coll is present at the fuel desk.",
+              "anchored_to": []
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["creates[0]"]
+  }
+}
