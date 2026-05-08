@@ -2,19 +2,35 @@ import type { Sf2Location, Sf2State } from './types'
 
 type LocationLike = Partial<Pick<Sf2Location, 'id' | 'name' | 'description' | 'atmosphericConditions' | 'locked' | 'chapterCreated'>>
 
+const GENERIC_LOCATION_TOKENS = new Set([
+  'a',
+  'an',
+  'and',
+  'at',
+  'in',
+  'into',
+  'of',
+  'on',
+  's',
+  'the',
+  'to',
+])
+
 export function canonicalLocationNameKey(name: string): string {
   const normalized = name
     .normalize('NFKD')
     .toLocaleLowerCase()
+    .replace(/['’]s\b/g, ' ')
     .replace(/[()]/g, ' ')
     .replace(/[\u2013\u2014-]/g, ' ')
+    .replace(/\b(\d+)([a-z])\b/g, '$1 $2')
     .replace(/\b(arm|bay|berth|dock|pier|gate)\s*0*(\d+)/g, '$1 $2')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
-  const tokens = normalized.split(' ').filter(Boolean)
+  const tokens = normalized.split(' ').filter((token) => token && !GENERIC_LOCATION_TOKENS.has(token))
   const bayMatch = normalized.match(/\bbay\s*0*(\d+)\b/)
-  const berthMatch = normalized.match(/\b(arm|berth|dock|pier|gate)\s*0*(\d+)\s*([a-z])?\b/)
+  const berthMatch = normalized.match(/\b(arm|berth|dock|pier|gate)\s*0*(\d+)(?:\s+([a-z][a-z0-9]*))?\b/)
 
   if (bayMatch) {
     const bayNumber = bayMatch[1]
@@ -30,7 +46,8 @@ export function canonicalLocationNameKey(name: string): string {
   }
 
   if (berthMatch) {
-    const [, kind, number, suffix = ''] = berthMatch
+    const [, kind, number, rawSuffix = ''] = berthMatch
+    const suffix = rawSuffix.length === 1 ? rawSuffix : ''
     const compactNumber = `${number}${suffix}`
     const berthIndex = tokens.findIndex((token, index) => {
       const next = tokens[index + 1]?.replace(/^0+/, '')
@@ -72,14 +89,50 @@ export function findMatchingLocation(
   ].filter((location): location is Sf2Location => Boolean(location?.id))
 
   for (const location of currentCandidates) {
-    if (locationSemanticKey(location) === proposedKey) return location
+    if (locationsSemanticallyMatch(location, proposed, proposedKey)) return location
   }
 
   for (const location of Object.values(state.campaign.locations)) {
-    if (locationSemanticKey(location) === proposedKey) return location
+    if (locationsSemanticallyMatch(location, proposed, proposedKey)) return location
   }
 
   return null
+}
+
+function locationsSemanticallyMatch(
+  existing: Sf2Location,
+  proposed: LocationLike,
+  proposedKey = locationSemanticKey(proposed)
+): boolean {
+  if (locationSemanticKey(existing) === proposedKey) return true
+
+  const existingTokens = locationTokens(existing)
+  const proposedTokens = locationTokens(proposed)
+  if (existingTokens.length < 3 || proposedTokens.length < 3) return false
+
+  const shorter = existingTokens.length <= proposedTokens.length ? existingTokens : proposedTokens
+  const longer = existingTokens.length <= proposedTokens.length ? proposedTokens : existingTokens
+  const longerSet = new Set(longer)
+  const overlap = shorter.filter((token) => longerSet.has(token))
+
+  return overlap.length >= 3 && overlap.length / shorter.length >= 0.8
+}
+
+function locationTokens(location: LocationLike): string[] {
+  const text = [
+    location.name,
+    location.id?.replace(/_/g, ' '),
+  ].filter(Boolean).join(' ')
+
+  return Array.from(new Set(
+    text
+      .normalize('NFKD')
+      .toLocaleLowerCase()
+      .replace(/['’]s\b/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length > 1 && !GENERIC_LOCATION_TOKENS.has(token))
+  ))
 }
 
 export function mergeLocationIntoExisting(

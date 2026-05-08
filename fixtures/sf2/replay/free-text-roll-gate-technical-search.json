@@ -1,0 +1,26 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "free text roll gate technical search",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Untagged technical search action injects a private roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 3,
+    "playerInput": "I scan the cargo logs for a hidden route mismatch.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll gate (mandatory, never mention)",
+        "technical, magical, or system interaction with an uncertain result",
+        "`Investigation` or `Arcana`"
+      ]
+    }
+  }
+}

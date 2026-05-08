@@ -2,6 +2,7 @@ import type { Sf2State } from '../types'
 import {
   findMatchingLocation,
   mergeLocationIntoExisting,
+  replaceLocationReferences,
 } from '../locations'
 import {
   formatViolations,
@@ -64,7 +65,11 @@ export function applyMechanicalEffectLocally(
       })
     }
   } else if (kind === 'set_scene_snapshot') {
-    const snap = m.snapshot as Record<string, unknown> | undefined
+    const snap = isRecord(m.snapshot)
+      ? m.snapshot
+      : hasTopLevelSnapshotFields(m)
+        ? m
+        : undefined
     if (snap) {
       const priorCast = [...state.world.sceneSnapshot.presentNpcIds].sort().join(',')
       const priorOffstageRoster = offstageRosterSignature(state)
@@ -76,7 +81,9 @@ export function applyMechanicalEffectLocally(
       const requestedLocationId = String(snap.location_id ?? m.location_id ?? priorLocationId)
       const matchedLocation = findMatchingLocation(state, {
         id: requestedLocationId,
-        name: typeof snap.name === 'string' ? snap.name : requestedLocationId.replace(/_/g, ' '),
+        name: snapshotString(snap, m, 'name') ?? requestedLocationId.replace(/_/g, ' '),
+        description: snapshotString(snap, m, 'description') ?? '',
+        atmosphericConditions: snapshotStringArray(snap, m, 'atmospheric_conditions'),
       })
       const nextLocationId = matchedLocation?.id ?? requestedLocationId
       const explicitSceneId = typeof snap.scene_id === 'string'
@@ -151,25 +158,31 @@ export function applyMechanicalEffectLocally(
           ? m.locked
           : undefined
       if (locationChanged) {
+        const proposedLocation = {
+          id: requestedLocationId,
+          name: snapshotString(snap, m, 'name') ?? requestedLocationId.replace(/_/g, ' '),
+          description: snapshotString(snap, m, 'description') ??
+            (Array.isArray(snap.established)
+              ? (snap.established as string[]).join(' · ')
+              : state.world.currentLocation.description),
+          atmosphericConditions: snapshotStringArray(snap, m, 'atmospheric_conditions') ??
+            state.world.currentLocation.atmosphericConditions,
+          locked: nextLocked,
+          chapterCreated: state.meta.currentChapter,
+        }
         const registered = state.campaign.locations[nextLocationId]
         if (registered) {
-          nextLocation = mergeLocationIntoExisting(registered, {
-            locked: nextLocked,
-            chapterCreated: state.meta.currentChapter,
-          })
+          nextLocation = mergeLocationIntoExisting(registered, proposedLocation)
           state.campaign.locations[nextLocation.id] = nextLocation
         } else {
-          nextLocation = {
-            id: nextLocationId,
-            name: nextLocationId.replace(/_/g, ' '),
-            description: Array.isArray(snap.established)
-              ? (snap.established as string[]).join(' · ')
-              : state.world.currentLocation.description,
-            atmosphericConditions: state.world.currentLocation.atmosphericConditions,
-            locked: nextLocked,
-            chapterCreated: state.meta.currentChapter,
-          }
-          state.campaign.locations[nextLocationId] = nextLocation
+          nextLocation = { ...proposedLocation, id: nextLocationId }
+          state.campaign.locations[nextLocation.id] = nextLocation
+        }
+        if (requestedLocationId !== nextLocation.id && state.campaign.locations[requestedLocationId]) {
+          nextLocation = mergeLocationIntoExisting(nextLocation, state.campaign.locations[requestedLocationId])
+          state.campaign.locations[nextLocation.id] = nextLocation
+          delete state.campaign.locations[requestedLocationId]
+          replaceLocationReferences(state, requestedLocationId, nextLocation)
         }
       } else if (nextLocked !== undefined) {
         nextLocation = {
@@ -252,6 +265,12 @@ export function applyMechanicalEffectLocally(
     } else {
       loc = mergeLocationIntoExisting(loc, proposed)
       state.campaign.locations[loc.id] = loc
+      if (loc.id !== locId && state.campaign.locations[locId]) {
+        loc = mergeLocationIntoExisting(loc, state.campaign.locations[locId])
+        state.campaign.locations[loc.id] = loc
+        delete state.campaign.locations[locId]
+        replaceLocationReferences(state, locId, loc)
+      }
     }
     state.world.currentLocation = loc
     state.world.sceneSnapshot = {
@@ -289,6 +308,50 @@ export function applyMechanicalEffectLocally(
       reason: 'unknown mechanical effect kind',
     })
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function hasTopLevelSnapshotFields(value: Record<string, unknown>): boolean {
+  return [
+    'location_id',
+    'present_npc_ids',
+    'current_interlocutor_ids',
+    'time_label',
+    'established',
+    'locked',
+    'name',
+    'description',
+  ].some((key) => key in value)
+}
+
+function snapshotString(
+  snap: Record<string, unknown>,
+  raw: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const value = typeof snap[key] === 'string'
+    ? snap[key]
+    : typeof raw[key] === 'string'
+      ? raw[key]
+      : undefined
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function snapshotStringArray(
+  snap: Record<string, unknown>,
+  raw: Record<string, unknown>,
+  key: string
+): string[] | undefined {
+  const value = Array.isArray(snap[key])
+    ? snap[key]
+    : Array.isArray(raw[key])
+      ? raw[key]
+      : undefined
+  return value?.map(String).filter((entry) => entry.trim().length > 0)
 }
 
 function emitMechanicalNoOp(

@@ -437,6 +437,7 @@
             "kind": "clue",
             "payload": {
               "content": "Three Resonants missing from the settlement's tithe allocation: Kael Voss (attunement 4.2, discharge status pending), Mira Soresh (attunement 3.8, status unknown), Tam Orvath (attunement 2.1, last verified observation at site-gamma 34 days ago). Their absence creates a tithe shortfall of three units.",
+              "evidence_question": "Which Resonants are missing from the tithe allocation and what shortfall do they create?",
               "anchored_to": [
                 "The Shortfall: Find the Three Resonants"
               ]
@@ -448,6 +449,7 @@
             "kind": "clue",
             "payload": {
               "content": "The Synod's amendment process treats the registry as complete ground truth; Vael will file supplementary selection (conscription of untested children) if the three missing Resonants are not accounted for within 16 hours, regardless of whether the inspection uncovers legitimate transfers, reclassifications, or deceased records.",
+              "evidence_question": "What happens if the missing Resonants are not accounted for before the amendment deadline?",
               "anchored_to": [
                 "The Shortfall: Find the Three Resonants"
               ]

@@ -1328,6 +1328,7 @@
             "kind": "clue",
             "payload": {
               "content": "Elan Vos deliberately accepted arrest and custody to prevent Mareth from interrogating her directly and discovering that Kael's family is in flight. By removing herself from the settlement, she has bought the family the time window they need to escape jurisdiction. Vos understood that once she was detained, Ren—not Mareth—would be the one filing the report and controlling the initial narrative of why Vos was taken into custody.",
+              "evidence_question": "Why did Vos accept arrest and what did it protect?",
               "anchored_to": [
                 "thread_3",
                 "thread_0"
@@ -1438,12 +1439,13 @@
       "creates[0]",
       "creates[1]",
       "creates[2]",
-      "creates[3]",
       "updates[0]",
       "updates[1]",
       "updates[2]"
     ],
-    "archivistRejectedRefs": []
+    "archivistRejectedRefs": [
+      "creates[3]"
+    ]
   },
   "compaction": {
     "kind": "sf2-replay-compact/v1",

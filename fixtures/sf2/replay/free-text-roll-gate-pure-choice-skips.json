@@ -1,0 +1,24 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "free text roll gate pure choice skips",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure choices should not receive the heuristic free-text roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "I choose option B.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "userMessageContainsNone": [
+        "### Private roll gate (mandatory, never mention)"
+      ]
+    }
+  }
+}

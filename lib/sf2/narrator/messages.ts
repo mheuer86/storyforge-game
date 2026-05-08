@@ -61,6 +61,135 @@ function buildSkillTagBindingBlock(playerInput: string): string {
   return `\n\n---\n\n### Skill-tag binding (mandatory)\nThe player chose a quick action tagged with ${skillList}. That tag is a binding commitment, not advisory. **You MUST call \`request_roll\` with one of those skills this turn before resolving the action's outcome.** Pick the skill that best fits the moment, set an appropriate DC, and pause narration at the point of uncertainty per the standard roll-flow rules. The roll-frequency heuristic does not apply when a tag is present — surface the check even if you've already rolled this scene.`
 }
 
+type FreeTextRollGateKind =
+  | 'social_pressure'
+  | 'npc_information'
+  | 'technical_system'
+  | 'investigation_search'
+  | 'risky_movement'
+  | 'physical_contest'
+
+interface FreeTextRollGate {
+  kind: FreeTextRollGateKind
+  skills: string[]
+  reason: string
+}
+
+const FREE_TEXT_GATE_SKILLS: Record<FreeTextRollGateKind, string[]> = {
+  social_pressure: ['Intimidation', 'Persuasion', 'Deception'],
+  npc_information: ['Persuasion', 'Intimidation', 'Insight'],
+  technical_system: ['Investigation', 'Arcana'],
+  investigation_search: ['Perception', 'Investigation'],
+  risky_movement: ['Stealth', 'Acrobatics', 'Athletics'],
+  physical_contest: ['Athletics', 'Acrobatics'],
+}
+
+function buildFreeTextRollGateBlock(state: Sf2State, playerInput: string): string {
+  if (extractSkillTags(playerInput).length > 0) return ''
+  const gate = detectFreeTextRollGate(state, playerInput)
+  if (!gate) return ''
+  const skillList = gate.skills.map((skill) => `\`${skill}\``).join(' or ')
+  return `\n\n---\n\n### Private roll gate (mandatory, never mention)\nThe player's untagged action pushes against meaningful uncertainty: ${gate.reason}. **You MUST call \`request_roll\` before resolving the action's outcome.** Use ${skillList}, choosing the skill that best fits the fiction and PC approach. Pause at the uncertainty point; do not narrate success, failure, or the target's substantive answer until the roll result returns.`
+}
+
+function detectFreeTextRollGate(state: Sf2State, playerInput: string): FreeTextRollGate | null {
+  const input = normalizeRollGateText(playerInput)
+  if (!input || shouldSkipFreeTextRollGate(input)) return null
+
+  const npcGate = detectNpcInformationGate(state, input)
+  if (npcGate) return npcGate
+
+  if (matchesAny(input, [
+    /\b(compel|demand|threaten|intimidate|lean on|corner|confront|challenge|coerce|make (?:him|her|them|it) (?:talk|answer|move|stand down))\b/,
+    /\b(?:pressure|press|push|force)\b.{0,40}\b(?:him|her|them|someone|somebody|to|into|for|about)\b/,
+    /\b(?:speed up|hurry|expedite|accelerate|make sure|you better|need\b.{0,30}\bnow)\b/,
+    /\b(talk (?:him|her|them|it) (?:into|down|out of)|convince|persuade|bluff|lie to|deceive|fast[- ]talk|negotiate|bargain)\b/,
+  ])) {
+    return buildFreeTextGate('social_pressure', 'social pressure or leverage against another actor')
+  }
+
+  if (matchesAny(input, [
+    /\b(hack|slice|decrypt|crack|bypass|override|spoof|jam|scan|diagnose|calibrate|repair|reroute|patch|access|unlock|open|force open|disable|disarm)\b/,
+    /\b(console|terminal|system|network|camera|sensor|drone|door|lock|hatch|ward|rune|array|engine|reactor|beacon|manifest|database|archive|logs?)\b.*\b(check|search|scan|query|pull|access|review|compare)\b/,
+  ])) {
+    return buildFreeTextGate('technical_system', 'technical, magical, or system interaction with an uncertain result')
+  }
+
+  if (matchesAny(input, [
+    /\b(search|look for|inspect|examine|investigate|sweep|scan|study|analyze|analyse|track|trace|follow the trail|check (?:the )?(?:room|area|desk|body|logs?|records?|files?|manifest|cargo|hold))\b/,
+    /\b(find (?:a|the|any|where|who|what|why)|figure out|piece together|read the room|case the place)\b/,
+  ])) {
+    return buildFreeTextGate('investigation_search', 'investigation, search, scan, or non-trivial observation')
+  }
+
+  if (matchesAny(input, [
+    /\b(sneak|hide|slip past|creep|shadow|tail|evade|escape|flee|run past|dash through|cross|climb|jump|leap|crawl|squeeze|swim|balance|pickpocket|palm)\b/,
+    /\b(through|past|across|over|under)\b.*\b(guards?|patrol|fire|gap|chasm|crowd|checkpoint|blocked|locked|watched|danger|hazard)\b/,
+  ])) {
+    return buildFreeTextGate('risky_movement', 'risky stealth, escape, or movement under pressure')
+  }
+
+  if (matchesAny(input, [
+    /\b(grapple|shove|tackle|wrestle|force|break|bend|lift|drag|carry|hold (?:him|her|them|it|the)|restrain|block|slam|kick|smash|force (?:the )?(?:door|hatch|gate|lock))\b/,
+  ])) {
+    return buildFreeTextGate('physical_contest', 'physical contest or force against resistance')
+  }
+
+  return null
+}
+
+function detectNpcInformationGate(state: Sf2State, input: string): FreeTextRollGate | null {
+  const asksForInformation = matchesAny(input, [
+    /\b(ask|question|interrogate|press|grill|probe|draw out|get (?:him|her|them|it) to tell|make (?:him|her|them|it) tell)\b/,
+    /\b(what|why|who|where|when|how)\b.*\b(know|happened|saw|heard|hide|hiding|want|plan|means?|about)\b/,
+  ])
+  if (!asksForInformation) return null
+
+  const present = new Set(state.world.sceneSnapshot.presentNpcIds)
+  const hasWaryOrNeutralNpc = Object.values(state.campaign.npcs).some((npc) => {
+    if (!present.has(npc.id)) return false
+    return npc.disposition === 'wary' || npc.disposition === 'neutral'
+  })
+  if (!hasWaryOrNeutralNpc) return null
+  return buildFreeTextGate('npc_information', 'information extraction from a wary or neutral NPC')
+}
+
+function buildFreeTextGate(kind: FreeTextRollGateKind, reason: string): FreeTextRollGate {
+  return { kind, reason, skills: FREE_TEXT_GATE_SKILLS[kind] }
+}
+
+function normalizeRollGateText(value: string): string {
+  return value.toLocaleLowerCase().replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim()
+}
+
+function matchesAny(input: string, patterns: RegExp[]): boolean {
+  return patterns.some((pattern) => pattern.test(input))
+}
+
+function shouldSkipFreeTextRollGate(input: string): boolean {
+  if (input.length < 3) return true
+  if (/\b(no roll|do not roll|don't roll|pure choice|just narrate)\b/.test(input)) return true
+  if (/^\s*(yes|no|okay|ok|continue|go on|next|wait|listen|nod|shrug|smile|say nothing|stay quiet)\.?\s*$/.test(input)) return true
+  if (/^\s*(i\s+)?(?:choose|pick|select|take)\s+(?:option\s+)?[a-c1-3]\.?\s*$/.test(input)) return true
+  if (/^\s*(i\s+)?(?:go|walk|head|return|arrive|enter|leave|move)\s+(?:to|toward|into|back to|inside|outside|aboard|down|up)\b/.test(input) &&
+    !/\b(quietly|carefully|sneak|avoid|evade|past|guard|patrol|watched|locked|blocked|danger|under fire|chase)\b/.test(input)) {
+    return true
+  }
+  if (/\b(rest|sleep|eat|drink|wait|downtime|camp|shop|buy|sell|equip|inventory|save)\b/.test(input) &&
+    !/\b(haggle|steal|sneak|search|scan|hack|convince|pressure|threaten)\b/.test(input)) {
+    return true
+  }
+  if (/\b(observe|look around|glance|watch|listen)\b/.test(input) &&
+    !/\b(for|closely|carefully|hidden|secret|clue|trace|sign|tell|danger|threat|trap)\b/.test(input)) {
+    return true
+  }
+  if (/\b(use|take|follow|accept|open)\b.*\b(route|passage|door|access|permission|key|chip|badge|invitation|clearance)\b/.test(input) &&
+    /\b(already|cleared|earned|given|granted|unlocked|open)\b/.test(input)) {
+    return true
+  }
+  return false
+}
+
 // Playbook preference block — soft directive injecting the PC's strongest
 // applicable skills into the per-turn delta. When the Narrator has multiple
 // plausible checks to surface, prefer the PC's strengths. Player skill-tag
@@ -217,6 +346,7 @@ export function buildMessagesForNarrator(
     : ''
   const roleAliasBlock = buildRoleAliasBlock(state, playerInput)
   const skillTagBlock = buildSkillTagBindingBlock(playerInput)
+  const freeTextRollGateBlock = buildFreeTextRollGateBlock(state, playerInput)
   const playbookPrefBlock = buildPlaybookPreferenceBlock(state)
   const locationContinuityGuardBlock = buildLocationContinuityGuardBlock(state)
 
@@ -226,7 +356,7 @@ export function buildMessagesForNarrator(
     isInitial,
     playerInput,
     withheldPremiseFacts: isInitial ? openingSeed?.withheldPremiseFacts : undefined,
-  }) + roleAliasBlock + skillTagBlock + playbookPrefBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
+  }) + roleAliasBlock + skillTagBlock + freeTextRollGateBlock + playbookPrefBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
 
   // Cache marker strategy:
   //   Anthropic allows at most 4 cache_control markers per request. We already

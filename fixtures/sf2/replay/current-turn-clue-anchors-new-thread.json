@@ -22,6 +22,7 @@
               "id": "clue_hatch_staged",
               "title": "Hatch staged tonight",
               "content": "Fresh sealant around the hatch shows the cargo was staged tonight through a side-access bypass.",
+              "evidence_question": "What evidence shows the cargo trail can expose the ship?",
               "anchored_to": [],
               "retrieval_cue": "Cargo hatch staging evidence."
             },
@@ -35,6 +36,7 @@
               "question": "Can the data core leave before the cargo trail exposes the ship?",
               "owner": { "kind": "faction", "name_or_id": "Registry" },
               "tension": 7,
+              "resolution_mode": "investigation",
               "resolution_criteria": "The data core is delivered or safely abandoned.",
               "failure_mode": "The cargo trail exposes the ship.",
               "retrieval_cue": "Data core cargo pressure.",

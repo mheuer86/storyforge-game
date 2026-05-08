@@ -1,0 +1,102 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "operational hold cleared through thread progress",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A cleared operational hold persists through thread gates/progress while the same operational fact is rejected as a clue."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "id": "thread_spine",
+            "title": "Clear the Forty-Thousand Hold",
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_fixture" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "The hold is cleared when Voss processes the release and the clamp releases.",
+            "failureMode": "The ship remains clamped and misses the departure window.",
+            "retrievalCue": "Forty-thousand hold clamp clearance.",
+            "resolutionGates": [
+              {
+                "id": "gate_release_processed",
+                "label": "Release processed",
+                "condition": "Voss processes the release and the clamp visibly releases.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": [],
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 15,
+    "playerInput": "Watch Voss clear the hold.",
+    "narrator": {
+      "prose": "Voss slots the release chip. The port-fee hold clears, the clamp indicator flips green, and the docking arm unlocks from the hull.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "progress": {
+                "summary": "Voss processed the release chip; the port-fee hold cleared and the docking clamp unlocked.",
+                "satisfies_gate_ids": ["gate_release_processed"]
+              }
+            },
+            "confidence": "high",
+            "sourceQuote": "The port-fee hold clears, the clamp indicator flips green, and the docking arm unlocks from the hull."
+          }
+        ],
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_hold_cleared",
+              "content": "Voss cleared the port-fee hold and the docking clamp unlocked.",
+              "anchored_to": []
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["updates[0]"],
+    "archivistRejectedRefs": ["creates[0]"],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_release_processed",
+            "status": "satisfied",
+            "evidenceQuoteIncludes": "port-fee hold clears"
+          }
+        ],
+        "progressEventsInclude": [
+          {
+            "summaryIncludes": "port-fee hold cleared",
+            "gateIdsInclude": ["gate_release_processed"]
+          }
+        ]
+      }
+    ],
+    "entityIdsAbsent": ["clue_hold_cleared"]
+  }
+}

@@ -357,10 +357,12 @@
       "creates[1]",
       "creates[2]",
       "creates[3]",
-      "creates[4]",
       "creates[5]",
       "creates[6]",
       "creates[7]"
+    ],
+    "archivistRejectedRefs": [
+      "creates[4]"
     ],
     "driftIncludes": [
       {
@@ -378,10 +380,6 @@
       {
         "kind": "identity_drift",
         "detailIncludes": "promise create merged"
-      },
-      {
-        "kind": "identity_drift",
-        "detailIncludes": "clue create merged"
       },
       {
         "kind": "identity_drift",

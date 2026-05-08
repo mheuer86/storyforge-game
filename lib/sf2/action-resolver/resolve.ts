@@ -35,6 +35,9 @@ const PRESSURE_TERMS = [
   'confront',
   'force',
   'demand',
+  'speed up',
+  'make sure',
+  'you better',
 ]
 const QUESTION_TERMS = ['ask', 'question', 'where', 'why', 'what', 'when', 'who', 'how']
 const ADDRESS_TERMS = ['tell', 'say', 'answer', 'reply', 'speak', 'warn', 'order']
@@ -76,14 +79,16 @@ export function resolvePlayerAction(state: Sf2State, rawInput: string): Sf2Resol
 
 function inferActionType(input: string): Sf2ResolvedActionType {
   const lower = input.toLowerCase()
-  if (/\b(wait|pause|hold)\b/.test(lower)) return 'wait'
-  if (/\b(go|move|walk|run|follow|leave|enter|approach)\b/.test(lower)) return 'move'
-  if (/\b(search|inspect|investigate|look|read|examine|study)\b/.test(lower)) return 'investigate'
-  if (/\b(use|activate|draw|take|open)\b/.test(lower)) return 'use_item'
   if (/\b(attack|strike|shoot|stab|hit)\b/.test(lower)) return 'attack'
-  if (PRESSURE_TERMS.some((term) => new RegExp(`\\b${term}\\b`).test(lower))) return 'pressure_npc'
+  if (PRESSURE_TERMS.some((term) => new RegExp(`\\b${escapeRegExp(term)}\\b`).test(lower)) || /\bneed\b.+\bnow\b/.test(lower)) {
+    return 'pressure_npc'
+  }
   if (QUESTION_TERMS.some((term) => new RegExp(`\\b${term}\\b`).test(lower))) return 'question_npc'
   if (ADDRESS_TERMS.some((term) => new RegExp(`\\b${term}\\b`).test(lower))) return 'address_npc'
+  if (/\b(search|inspect|investigate|look|read|examine|study)\b/.test(lower)) return 'investigate'
+  if (/\b(use|activate|draw|take|open)\b/.test(lower)) return 'use_item'
+  if (/\b(wait|pause|hold)\b/.test(lower)) return 'wait'
+  if (/\b(go|move|walk|run|follow|leave|enter|approach)\b/.test(lower)) return 'move'
   return 'other'
 }
 

@@ -1170,6 +1170,7 @@
             "kind": "clue",
             "payload": {
               "content": "Cenn, Kael's father, was Imperial intelligence operative with severance discharge seventeen years ago. His discharge was not standard separation but institutional severance—classified protection that keeps him inaccessible to formal inquiry and explicitly off-limits to Synod hands.",
+              "evidence_question": "What is Cenn's hidden status and why does it make Kael's case dangerous?",
               "anchored_to": [
                 "thread_0",
                 "thread_2"
@@ -1183,6 +1184,7 @@
             "kind": "clue",
             "payload": {
               "content": "Elan Vos filed her classified query to Imperial garrison to prevent Synod escalation of Kael's case. She anticipated that a Resonant with genetic trace to an operationally-cleared severance would trigger security protocols and interrogation. Her query was a heads-up to Imperial administration, hoping someone with actual authority would intervene before Synod audit reached the settlement.",
+              "evidence_question": "Why did Vos file the classified query before Mareth arrived?",
               "anchored_to": [
                 "thread_1",
                 "thread_2"
@@ -1196,6 +1198,7 @@
             "kind": "clue",
             "payload": {
               "content": "Kael's family plans flight within two days, before the documentation deadline passes. Cenn has contacts and routes prepared. The family will disappear to escape both Synod escalation and the Imperial interests protecting Cenn's severance.",
+              "evidence_question": "What is Kael's family planning and what pressure is driving it?",
               "anchored_to": [
                 "thread_0",
                 "thread_1"

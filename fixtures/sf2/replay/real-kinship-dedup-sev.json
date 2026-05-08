@@ -880,6 +880,7 @@
             "kind": "clue",
             "payload": {
               "content": "Sev has been providing the settlement's off-books shield lattice power for two years as an unregistered, unmonitored Resonant. No attenuation markers; no formal array training. Fast-track conscription by the Synod would likely cause burnout within months.",
+              "evidence_question": "What evidence explains how the settlement covered the tithe shortfall outside the registry?",
               "anchored_to": [
                 "thread_0"
               ],
@@ -892,6 +893,7 @@
             "kind": "clue",
             "payload": {
               "content": "The settlement's three-person tithe shortfall was deliberately left unresolved for six months by coordinated action: Kess maintained an empty manifest while Thorne and settlement leadership protected an unregistered Resonant (Sev) whose existence outside the Synod's registry was the real solution to the shortfall.",
+              "evidence_question": "Who coordinated the unresolved tithe shortfall and why?",
               "anchored_to": [
                 "thread_0"
               ],

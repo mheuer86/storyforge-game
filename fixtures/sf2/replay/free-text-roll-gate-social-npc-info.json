@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "free text roll gate social NPC information",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Untagged pressure for information from a wary on-stage NPC injects a mandatory private roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_kess": {
+            "id": "npc_kess",
+            "name": "Kess",
+            "affiliation": "settlement",
+            "role": "manifest clerk",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Controls the current manifest desk"],
+              "voice": { "note": "procedural, clipped", "register": "defensive" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Wary manifest clerk at the fuel desk.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_kess"],
+          "currentInterlocutorIds": ["npc_kess"]
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "I press Kess on what she is hiding about the missing cargo.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll gate (mandatory, never mention)",
+        "information extraction from a wary or neutral NPC",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

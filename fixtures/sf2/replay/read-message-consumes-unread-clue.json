@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "read message consumes unread clue",
+  "name": "read message updates unread clue",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Reading a broker message must supersede stale unread-status clues while preserving message facts."
+    "purpose": "Reading a broker message updates the existing investigation clue in place instead of creating a parallel read-status clue."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -19,6 +19,7 @@
             "status": "attached",
             "anchoredTo": ["thread_spine"],
             "content": "The Sable Margin sent an urgent message to the comm. The message is unread.",
+            "evidenceQuestion": "What does the broker message establish about the hold?",
             "turn": 4
           }
         }
@@ -39,6 +40,7 @@
               "id": "clue_message_read",
               "title": "Broker message read",
               "content": "The Sable Margin message is read: Lira Voss sent it at 0209 and names 40,200 credits as the exact hold amount.",
+              "evidence_question": "What does the broker message establish about the hold?",
               "anchored_to": ["thread_spine"],
               "retrieval_cue": "Broker message read with timestamp, sender, and amount."
             },
@@ -52,13 +54,10 @@
     "cluesInclude": [
       {
         "clueId": "clue_message_unread",
-        "status": "consumed"
-      },
-      {
-        "clueId": "clue_message_read",
         "status": "attached",
         "contentIncludes": "40,200"
       }
-    ]
+    ],
+    "entityIdsAbsent": ["clue_message_read"]
   }
 }

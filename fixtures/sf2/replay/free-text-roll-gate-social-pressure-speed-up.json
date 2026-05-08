@@ -1,0 +1,55 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "free text roll gate social pressure speed up",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Untagged free text that pressures an NPC to speed up a process injects a mandatory private roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_voss": {
+            "id": "npc_voss",
+            "name": "Voss",
+            "affiliation": "station",
+            "role": "back-channel broker",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Can influence station clearance channels"],
+              "voice": { "note": "controlled", "register": "guarded" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Wary broker with access to station clearance channels.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_voss"],
+          "currentInterlocutorIds": ["npc_voss"]
+        }
+      }
+    },
+    "turnIndex": 9,
+    "playerInput": "I tell Voss he needs to use his channels to speed up the clearance now.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll gate (mandatory, never mention)",
+        "social pressure or leverage against another actor",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

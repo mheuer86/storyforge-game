@@ -152,6 +152,18 @@ function semanticTextOverlaps(a: unknown, b: unknown): boolean {
   return common >= 3 && common / smaller >= 0.75
 }
 
+function clueTextsOverlap(a: unknown, b: unknown): boolean {
+  if (semanticTextOverlaps(a, b)) return true
+  const leftTokens = operationalFactTokens(String(a ?? ''))
+  const rightTokens = operationalFactTokens(String(b ?? ''))
+  if (leftTokens.length < 4 || rightTokens.length < 4) return false
+
+  const rightSet = new Set(rightTokens)
+  const common = leftTokens.filter((token) => rightSet.has(token)).length
+  const smaller = Math.min(leftTokens.length, rightTokens.length)
+  return common >= 4 && common / smaller >= 0.45
+}
+
 function semanticContentTokens(normalized: string): string[] {
   return uniqueStrings(normalized.split(' ').filter((token) => token.length > 1))
 }
@@ -259,66 +271,6 @@ function looksLikeAmbientClue(content: string): boolean {
   return hasAmbient && !hasEvidence
 }
 
-function looksLikeConcreteEvidence(content: string): boolean {
-  const normalized = normalizedSemanticText(content)
-  return [
-    'record',
-    'ledger',
-    'log',
-    'file',
-    'document',
-    'signed',
-    'stamp',
-    'seal',
-    'timestamp',
-    'classified',
-    'query',
-    'missing',
-    'contradict',
-    'contradicts',
-    'diagnostic',
-    'sensor',
-    'blood',
-    'trace',
-    'residue',
-    'hidden',
-    'erased',
-    'altered',
-    'forged',
-    'matches',
-    'absent',
-    'staged',
-    'bypass',
-    'message',
-    'sent',
-    'amount',
-    'credits',
-    'unread',
-    'read:',
-    'off-books',
-    'unregistered',
-    'shortfall',
-    'tithe',
-    'classified',
-    'stalled',
-    'deliberate',
-    'significant',
-    'third option',
-    'custody',
-    'alerted',
-    'en route',
-    'intent',
-    'providing',
-    'protect',
-    'protected',
-    'plans',
-    'deadline',
-    'contacts',
-    'routes',
-    'escape',
-  ].some((term) => normalizedTermMatches(normalized, term))
-}
-
 function validateInvestigationClue(
   draft: Sf2State,
   content: string,
@@ -335,7 +287,7 @@ function validateInvestigationClue(
   const hasInvestigationThread = threadIds.some(
     (threadId) => draft.campaign.threads[threadId]?.resolutionMode === 'investigation'
   )
-  if (!hasInvestigationThread && !evidenceQuestion.trim() && !looksLikeConcreteEvidence(content)) {
+  if (!hasInvestigationThread && !evidenceQuestion.trim()) {
     return {
       ok: false,
       field: 'evidenceQuestion',
@@ -1376,9 +1328,7 @@ function applyCreate(
           .map((threadId) => draft.campaign.threads[threadId])
           .find((thread) => thread?.resolutionMode === 'investigation')?.resolutionCriteria
         const evidenceQuestion = explicitEvidenceQuestion || inferredEvidenceQuestion || ''
-        const storedEvidenceQuestion =
-          evidenceQuestion ||
-          (looksLikeConcreteEvidence(proposedContent) ? 'What does this evidence establish?' : '')
+        const storedEvidenceQuestion = evidenceQuestion
         const clueContract = validateInvestigationClue(draft, proposedContent, storedEvidenceQuestion, threadIds)
         if (!clueContract.ok) {
           outcomes.push({
@@ -1395,7 +1345,7 @@ function applyCreate(
               clue.anchoredTo.length === 0 ||
               threadIds.length === 0 ||
               stringSetIntersects(clue.anchoredTo, threadIds)
-            return anchorCompatible && semanticTextOverlaps(clue.content, proposedContent)
+            return anchorCompatible && clueTextsOverlap(clue.content, proposedContent)
           })
         if (existing) {
           if (proposedContent.length > existing.content.length) {

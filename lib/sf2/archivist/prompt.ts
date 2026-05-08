@@ -247,13 +247,16 @@ Clues should usually anchor to an investigation thread. A floating clue is allow
 
 ### Continuity-critical operational facts
 
-Some world facts are mechanically small but continuity-critical. Emit a high-confidence clue when prose states a concrete operational result that changes future options and no existing clue already preserves the same fact.
+Some world facts are mechanically small but continuity-critical. Preserve them through existing state lanes — not clues.
 
-- **Access or movement status** — a hold, lien, route, warrant, ward, lock, passage, or authorization changes state.
-- **Carried-object or custody status** — cargo, evidence, passenger, relic, cache, or record changes who controls it or what can happen to it.
-- **Concrete readouts or diagnostics** — a sensor, inspection, magical test, medical check, or ledger comparison returns an actionable result.
+- **Thread gates / progress_events** — access, movement, hold, lien, route, lock, passage, or authorization status that changes future options.
+- **Operation_plan updates** — active tactical plans, pauses, clearances, objectives, fallbacks, and resolved/abandoned operation states.
+- **Documents** — named artifacts whose terms, authorship, custody, or authority matter later.
+- **Temporal anchors** — deadlines, windows, timestamps, durations, and sequence facts.
+- **Scene state / location writes** — where the PC is, what location is current, who is present, and what immediate blocking state is visible.
+- **NPC/faction updates** — who controls cargo, evidence, passengers, relics, caches, or records when that ownership matters.
 
-These are not atmosphere when they change what later play can contradict. Do not turn ambient monitors, routine scan language, or present-moment color into clues just because they sound technical.
+Concrete diagnostics or readouts become clues only when they answer an investigation question. A clamp release, route clearance, custody handoff, or processed authorization is usually thread progress or operation/document state, not evidence. Do not create a clue to preserve operational continuity.
 
 **Cap: at most 2 new clues per turn under normal play.** A turn that genuinely surfaces 3+ structural facts is rare (revelation moment). 4+ clues means you're treating tempLoad as clues — demote.
 

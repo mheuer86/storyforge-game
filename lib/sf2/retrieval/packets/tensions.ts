@@ -9,6 +9,8 @@ import type {
 import { getEffectiveThreadPressure } from '../../pressure/derive'
 import { getRecentLadderPressureDeltas } from '../../pressure/deltas'
 
+const MAX_CLUES_PER_THREAD_PACKET = 5
+
 export function buildThreadPackets(
   state: Sf2State,
   workingSet: Sf2WorkingSet,
@@ -31,6 +33,7 @@ export function buildThreadPackets(
       .map((s) => buildStakeholderDisposition(state, s))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
     const cluesForThread = Object.values(campaign.clues).filter((c) => c.anchoredTo.includes(t.id))
+    const surfacedCluesForThread = selectCluesForThreadPacket(cluesForThread)
     // Δ surfaces pressure that just became narratively load-bearing: canonical
     // thread-tension writes stamped to this render turn, plus ladder fires from
     // the immediately previous committed turn.
@@ -66,8 +69,7 @@ export function buildThreadPackets(
       anchoredPromises: Object.values(campaign.promises)
         .filter((p) => p.status === 'active' && p.anchoredTo.includes(t.id))
         .map((p) => ({ id: p.id, obligation: p.obligation })),
-      anchoredClues: cluesForThread
-        .filter((c) => c.status === 'attached')
+      anchoredClues: surfacedCluesForThread
         .map((c) => ({
           id: c.id,
           content: c.evidenceQuestion ? `${c.content} (bears on: ${c.evidenceQuestion})` : c.content,
@@ -81,6 +83,29 @@ export function buildThreadPackets(
       clueTier: deriveClueTier(cluesForThread),
     }
   })
+}
+
+function selectCluesForThreadPacket<T extends {
+  id: string
+  status: 'floating' | 'attached' | 'consumed'
+  turn: number
+  evidenceQuestion?: string
+}>(clues: T[]): T[] {
+  const attached = clues
+    .filter((c) => c.status === 'attached')
+    .sort((a, b) => b.turn - a.turn || a.id.localeCompare(b.id))
+  const selected: T[] = []
+  const seenQuestions = new Set<string>()
+
+  for (const clue of attached) {
+    const questionKey = clue.evidenceQuestion?.trim().toLocaleLowerCase()
+    if (questionKey && seenQuestions.has(questionKey)) continue
+    if (questionKey) seenQuestions.add(questionKey)
+    selected.push(clue)
+    if (selected.length >= MAX_CLUES_PER_THREAD_PACKET) break
+  }
+
+  return selected.reverse()
 }
 
 function deriveClueTier(
