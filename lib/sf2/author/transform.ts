@@ -88,6 +88,7 @@ export function transformAuthorSetup(
       severity: step.severity ?? 'standard',
       fired: false,
     })),
+    humanStakes: authored.humanStakes,
     tensionScore: authored.tensionScore && authored.tensionScore.length > 0
       ? authored.tensionScore
       : undefined,
@@ -171,6 +172,7 @@ export function transformAuthorSetup(
     chapterObjective: authored.chapterFrame.objective,
     chapterCrucible: authored.chapterFrame.crucible,
     continuationDramaticTurn: authored.continuationDramaticTurn,
+    humanStakes: authored.humanStakes,
     visibleNpcIds,
     visibleThreadIds,
     loreForOpening: authored.editorializedLore.slice(0, 2).map((item) => ({

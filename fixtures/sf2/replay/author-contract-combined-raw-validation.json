@@ -8,7 +8,10 @@
   "input": {
     "stateBeforePreset": "minimal",
     "playerInput": "(unused - pure-function fixture, no model call)",
-    "narrator": { "prose": "(unused)", "annotation": null }
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
   },
   "expected": {
     "authorContract": {
@@ -27,10 +30,10 @@
           "objective": "Choose the next formal move.",
           "crucible": "Authority must name its cost.",
           "outcome_spectrum": {
-            "clean": "The room accepts the ruling.",
-            "costly": "The ruling stands with a visible cost.",
-            "failure": "The room rejects the frame.",
-            "catastrophic": "The ruling becomes open fracture."
+            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "costly": "Renn now treats you as an asset; Patel debt is owed.",
+            "failure": "Vasek now has your transponder ID; Sable contact is burned.",
+            "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
           }
         },
         "antagonist_field": {
@@ -45,13 +48,41 @@
           "escalation_logic": "Delay becomes breach language."
         },
         "starting_npcs": [
-          { "id": "npc_a", "name": "A", "affiliation": "The Synod", "role": "auditor" },
-          { "id": "npc_b", "name": "B", "affiliation": "Imperial Service", "role": "retainer" }
+          {
+            "id": "npc_a",
+            "name": "A",
+            "affiliation": "The Synod",
+            "role": "auditor"
+          },
+          {
+            "id": "npc_b",
+            "name": "B",
+            "affiliation": "Imperial Service",
+            "role": "retainer"
+          }
         ],
         "active_threads": [
-          { "id": "thread_a", "title": "A", "question": "A?", "owner_hint": "Auditor Hale", "tension": 6 },
-          { "id": "thread_b", "title": "B", "question": "B?", "owner_hint": "Auditor Hale", "tension": 5 },
-          { "id": "thread_c", "title": "C", "question": "C?", "owner_hint": "Auditor Hale", "tension": 4 }
+          {
+            "id": "thread_a",
+            "title": "A",
+            "question": "A?",
+            "owner_hint": "Auditor Hale",
+            "tension": 6
+          },
+          {
+            "id": "thread_b",
+            "title": "B",
+            "question": "B?",
+            "owner_hint": "Auditor Hale",
+            "tension": 5
+          },
+          {
+            "id": "thread_c",
+            "title": "C",
+            "question": "C?",
+            "owner_hint": "Auditor Hale",
+            "tension": 4
+          }
         ],
         "pressure_ladder": [
           {
@@ -70,17 +101,36 @@
           }
         ],
         "possible_revelations": [
-          { "id": "rev_a", "statement": "The audit was accelerated.", "held_by": "npc_a" }
+          {
+            "id": "rev_a",
+            "statement": "The audit was accelerated.",
+            "held_by": "npc_a"
+          }
         ],
         "moral_fault_lines": [
-          { "id": "fault_a", "tension": "Mercy versus compliance" }
+          {
+            "id": "fault_a",
+            "tension": "Mercy versus compliance"
+          }
         ],
         "escalation_options": [
-          { "id": "esc_a", "type": "institutional", "condition": "Delay", "consequence": "Notice" },
-          { "id": "esc_b", "type": "social", "condition": "Pressure", "consequence": "Refusal" }
+          {
+            "id": "esc_a",
+            "type": "institutional",
+            "condition": "Delay",
+            "consequence": "Notice"
+          },
+          {
+            "id": "esc_b",
+            "type": "social",
+            "condition": "Pressure",
+            "consequence": "Refusal"
+          }
         ],
         "editorialized_lore": [
-          { "item": "Synod seals make delay public." }
+          {
+            "item": "Synod seals make delay public."
+          }
         ],
         "arc_link": {
           "arc_id": "arc_tithe_revolt",
@@ -89,14 +139,23 @@
           "pressure_engine_ids": []
         },
         "pacing_contract": {
-          "target_turns": { "min": 18, "max": 22 },
+          "target_turns": {
+            "min": 18,
+            "max": 22
+          },
           "chapter_question": "Can authority act without fracture?",
-          "acceptable_resolutions": ["ruling"],
+          "acceptable_resolutions": [
+            "ruling"
+          ],
           "early_pressure": "Ask for a ruling.",
           "middle_pressure": "Make cost visible.",
           "late_pressure": "Force the breach question.",
-          "close_when_any": ["ruling named"],
-          "avoid_extending_for": ["extra interviews"]
+          "close_when_any": [
+            "ruling named"
+          ],
+          "avoid_extending_for": [
+            "extra interviews"
+          ]
         },
         "opening_scene_spec": {
           "location": "counting hall",
@@ -106,9 +165,27 @@
           "immediate_choice": "Recognize the seal or challenge it.",
           "no_starting_combat": true,
           "no_exposition_dump": true,
-          "visible_npc_ids": ["npc_a"],
-          "withheld_premise_facts": ["The audit was accelerated."]
-        }
+          "visible_npc_ids": [
+            "npc_a"
+          ],
+          "withheld_premise_facts": [
+            "The audit was accelerated."
+          ]
+        },
+        "human_stakes": [
+          {
+            "who_pays": "npc_a",
+            "cost_surface": "relationship",
+            "what_is_lost": "Their trust stops protecting the PC unless repaired.",
+            "triggering_pressure": "thread_a"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as too costly to help.",
+            "triggering_pressure": "thread_b"
+          }
+        ]
       },
       "expect": {
         "rawErrorCount": 6,

@@ -43,7 +43,10 @@
               "pressureOwnerCandidate": "Inspector Hale",
               "worsenedDetail": "The clamp release was logged.",
               "unresolvedQuestion": "Who controls the release record now?",
-              "doNotRestage": ["prior clamp release", "release code consumption"],
+              "doNotRestage": [
+                "prior clamp release",
+                "release code consumption"
+              ],
               "procedureResidue": {
                 "mechanism": "clamp release timer",
                 "keepAs": "constraint"
@@ -54,7 +57,10 @@
       }
     },
     "playerInput": "(unused - pure-function fixture, no model call)",
-    "narrator": { "prose": "(unused)", "annotation": null }
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
   },
   "expected": {
     "authorContract": {
@@ -74,10 +80,10 @@
           "objective": "Clear the clamp and move the sealed container.",
           "crucible": "The PC must clear a dock mechanism before the timer closes.",
           "outcome_spectrum": {
-            "clean": "The clamp releases and the cargo moves.",
-            "costly": "The clamp releases after a traceable scan.",
-            "failure": "The release window expires.",
-            "catastrophic": "The scan flags the container."
+            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "costly": "Renn now treats you as an asset; Patel debt is owed.",
+            "failure": "Vasek now has your transponder ID; Sable contact is burned.",
+            "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
           }
         },
         "opening_scene_spec": {
@@ -89,16 +95,27 @@
           "dramatic_situation": "The cargo cannot move until the clamp procedure resolves.",
           "first_visible_pressure": "A timer counts down beside the sealed container.",
           "first_human_or_institutional_move": "The clamp timer ticks down without anyone making a new move.",
-          "do_not_restage": ["Chapter 1 cargo acceptance", "dock departure"],
+          "do_not_restage": [
+            "Chapter 1 cargo acceptance",
+            "dock departure"
+          ],
           "no_starting_combat": true,
           "no_exposition_dump": true,
-          "visible_npc_ids": ["npc_hale"],
-          "withheld_premise_facts": ["Hale cares about the container because of its owner."]
+          "visible_npc_ids": [
+            "npc_hale"
+          ],
+          "withheld_premise_facts": [
+            "Hale cares about the container because of its owner."
+          ]
         },
         "antagonist_field": {
           "source_system": "Dock release procedure",
           "core_pressure": "The cargo cannot move until the clamp clears.",
-          "default_face": { "name": "Inspector Hale", "role": "dock inspector", "pressure_style": "timer pressure" },
+          "default_face": {
+            "name": "Inspector Hale",
+            "role": "dock inspector",
+            "pressure_style": "timer pressure"
+          },
           "possible_faces": [
             {
               "id": "face_hale",
@@ -204,19 +221,35 @@
           "pressure_engine_ids": []
         },
         "pacing_contract": {
-          "target_turns": { "min": 18, "max": 25 },
+          "target_turns": {
+            "min": 18,
+            "max": 25
+          },
           "chapter_question": "Can the PC clear the cargo before inspection hardens?",
-          "acceptable_resolutions": ["cargo moved", "inspection reframed", "clamp bypassed"],
+          "acceptable_resolutions": [
+            "cargo moved",
+            "inspection reframed",
+            "clamp bypassed"
+          ],
           "early_pressure": "The clamp timer counts down.",
           "middle_pressure": "The scan creates a record.",
           "late_pressure": "The release window expires.",
-          "close_when_any": ["cargo moved", "cargo marked", "clamp bypassed"],
-          "avoid_extending_for": ["extra timer ticks"]
+          "close_when_any": [
+            "cargo moved",
+            "cargo marked",
+            "clamp bypassed"
+          ],
+          "avoid_extending_for": [
+            "extra timer ticks"
+          ]
         },
         "continuation_moves": {
           "prior_chapter_meaning": "The PC accepted sealed cargo and left the dock.",
           "larger_pattern_revealed": "Dock procedure can still reach cargo after departure.",
-          "institutional_scale_escalation": { "from": "private cargo acceptance", "to": "dock release control" },
+          "institutional_scale_escalation": {
+            "from": "private cargo acceptance",
+            "to": "dock release control"
+          },
           "new_named_threat_from_prior_success": {
             "name": "Inspector Hale",
             "emerged_from": "the PC moving sealed freight",
@@ -285,9 +318,15 @@
             "held_by": "npc_corro",
             "emergence_condition": "Corro is pressed away from Hale.",
             "recontextualizes": "The timer is not neutral.",
-            "hint_phrases": ["manual pause", "not automatic", "Hale's override"],
+            "hint_phrases": [
+              "manual pause",
+              "not automatic",
+              "Hale's override"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["private_pressure"]
+            "valid_reveal_contexts": [
+              "private_pressure"
+            ]
           },
           {
             "id": "rev_owner_name",
@@ -295,9 +334,15 @@
             "held_by": "npc_hale",
             "emergence_condition": "The PC obtains the release log.",
             "recontextualizes": "The dock knew more than it asked.",
-            "hint_phrases": ["owner field", "pre-filled", "not your manifest"],
+            "hint_phrases": [
+              "owner field",
+              "pre-filled",
+              "not your manifest"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["documentary_surface"]
+            "valid_reveal_contexts": [
+              "documentary_surface"
+            ]
           }
         ],
         "moral_fault_lines": [
@@ -347,6 +392,20 @@
             "relevance_now": "A scan creates durable evidence.",
             "delivery_method": "Hale points to the log field."
           }
+        ],
+        "human_stakes": [
+          {
+            "who_pays": "npc_hale",
+            "cost_surface": "relationship",
+            "what_is_lost": "Their trust stops protecting the PC unless repaired.",
+            "triggering_pressure": "thread_spine"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as too costly to help.",
+            "triggering_pressure": "thread_clamp_release"
+          }
         ]
       },
       "expect": {
@@ -370,7 +429,10 @@
           "transition_seed.procedure_residue clamp release timer marked constraint but opening restages it as an immediate choice"
         ],
         "threadCountEquals": 4,
-        "pacingTargetEquals": { "min": 18, "max": 25 }
+        "pacingTargetEquals": {
+          "min": 18,
+          "max": 25
+        }
       }
     }
   }

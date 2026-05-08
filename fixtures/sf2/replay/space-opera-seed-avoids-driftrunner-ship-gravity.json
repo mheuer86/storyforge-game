@@ -1,0 +1,94 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "space opera seed avoids Driftrunner ship gravity",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for the shared SF2 Space Opera Ch1 setup path. The Driftrunner playbook should not be read as the ship name, and Forty Thousand should not collapse to the old clamp/berth/cargo-bay opening before the model sees it."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "seedId": "space-opera/human/operative/forty-thousand",
+        "genreId": "space-opera",
+        "originId": "human",
+        "playbookId": "operative",
+        "currentChapter": 1
+      },
+      "player": {
+        "name": "Replay Runner",
+        "species": "Human",
+        "origin": { "id": "human", "name": "Human" },
+        "class": { "id": "operative", "name": "Driftrunner" },
+        "level": 1,
+        "hp": { "current": 9, "max": 9 },
+        "ac": 15,
+        "credits": 120,
+        "stats": { "STR": 10, "DEX": 17, "CON": 12, "INT": 14, "WIS": 11, "CHA": 13 },
+        "proficiencies": ["Stealth", "Sleight of Hand", "Piloting", "Hacking"],
+        "inventory": [
+          { "name": "Pulse Pistol", "qty": 1, "tags": ["weapon"] },
+          { "name": "Holo-Cloak", "qty": 1, "tags": ["signature", "stealth"] },
+          { "name": "Lockbreaker Kit", "qty": 1, "tags": ["signature", "tool"] }
+        ],
+        "traits": [{ "name": "Smuggler's Luck", "uses": { "current": 1, "max": 1 } }],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      }
+    },
+    "playerInput": "(unused - seed/prompt fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "hookPremiseIncludes": [
+        "Your next route cannot open cleanly until forty thousand credits of leverage clears."
+      ],
+      "hookPremiseExcludes": [
+        "Your ship cannot leave cleanly",
+        "docking clamps",
+        "port fees",
+        "Maren Voss",
+        "same station",
+        "cantina"
+      ],
+      "hookCrucibleIncludes": [
+        "which exit the crew needs"
+      ],
+      "hookCrucibleExcludes": [
+        "the Driftrunner",
+        "Driftrunner needs"
+      ],
+      "worldVocabularyExcludes": [
+        "berth lock",
+        "cargo bay",
+        "station concourse"
+      ],
+      "seedJsonExcludes": [
+        "The Driftrunner",
+        "the Driftrunner",
+        "Driftrunner needs"
+      ],
+      "arcAuthorSituationIncludes": [
+        "Playbook names are role labels, not in-world entity names."
+      ],
+      "authorSituationIncludes": [
+        "Playbook names are role labels, not in-world entity names."
+      ]
+    }
+  }
+}

@@ -10,6 +10,9 @@ export const SF2_SCHEMA_VERSION = '3.1.0' as const
 export type Sf2EntityId = string
 export type Sf2ChapterNumber = number
 export type Sf2Tension = number // 0-10
+export type CanonicalThreadTension = number // durable thread.tension / thread.peakTension
+export type ChapterRuntimePressure = number // chapter.setup.threadPressure and engine runtime values
+export type PlanningTensionScore = number // Author/SF2B planning score, not durable state
 export type Sf2DispositionTier =
   | 'hostile'
   | 'wary'
@@ -595,6 +598,23 @@ export interface Sf2DisplaySentinelFinding {
   recommendedAction: Sf2DisplaySentinelAction
 }
 
+export interface Sf2EntityRef {
+  kind: 'npc' | 'faction' | 'thread' | 'clue' | 'decision' | 'promise' | 'location' | 'document' | 'unknown'
+  id: Sf2EntityId
+}
+
+export interface Sf2DiagnosticFinding {
+  id: string
+  source: 'archivist' | 'coherence' | 'sentinel' | 'replay' | 'pending'
+  kind: string
+  severity: 'info' | 'warn' | 'error'
+  entityRefs: Sf2EntityRef[]
+  turnId?: string
+  message: string
+  status: 'open' | 'acknowledged' | 'resolved' | 'ignored'
+  payload?: unknown
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Scene kernel — code-owned, derived projection of authoritative local scene
 // state. Built fresh each turn from canonical state via buildSceneKernel().
@@ -748,6 +768,23 @@ export interface Sf2OutcomeSpectrum {
   catastrophic: string
 }
 
+export const SF2_HUMAN_STAKE_COST_SURFACES = [
+  'standing',
+  'freedom',
+  'loyalty',
+  'relationship',
+  'safety',
+  'reputation',
+] as const
+export type Sf2HumanStakeCostSurface = (typeof SF2_HUMAN_STAKE_COST_SURFACES)[number]
+
+export interface Sf2HumanStake {
+  whoPays: Sf2EntityId | 'the PC'
+  costSurface: Sf2HumanStakeCostSurface
+  whatIsLost: string
+  triggeringPressure: Sf2EntityId
+}
+
 export interface Sf2ChapterFrame {
   title: string
   premise: string
@@ -871,6 +908,7 @@ export interface Sf2ChapterSetupRuntimeState {
   openingSceneSpec: Sf2OpeningSceneSpec
   pressureLadder: Sf2PressureLadderStep[]
   tensionScore?: Sf2ChapterTensionScoreLine[]
+  humanStakes?: Sf2HumanStake[]
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn
   threadPressure: Record<Sf2EntityId, Sf2ChapterThreadPressure>
   threadInitialTensions?: Record<Sf2EntityId, Sf2Tension>
@@ -943,6 +981,7 @@ export interface Sf2OpeningScenePacketSeed {
   loreForOpening: Array<{ item: string; renderedHint: string }>
   sceneWarnings: string[]
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn
+  humanStakes?: Sf2HumanStake[]
   // Canonical facts held off-page at opening — Narrator must not state them
   // in the first-turn prose.
   withheldPremiseFacts?: string[]
@@ -1148,6 +1187,7 @@ export interface AuthorChapterSetupV2 {
     narrativeEffect: string
     severity?: 'standard' | 'hard'
   }>
+  humanStakes: Sf2HumanStake[]
   tensionScore?: Sf2ChapterTensionScoreLine[]
   possibleRevelations: Array<{
     id: string
@@ -1605,6 +1645,7 @@ export interface Sf2ChapterPacket {
   }
   pacingContract?: Sf2ChapterPacingContract
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn
+  humanStakes: Sf2HumanStake[]
 }
 
 export interface Sf2TemporalAnchorPacket {

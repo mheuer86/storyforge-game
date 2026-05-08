@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import {
   SF2_CORE,
-  SF2_NARRATOR_ROLE,
+  buildNarratorRole,
   buildNarratorSituation,
   getSf2BibleForGenre,
 } from './prompt'
@@ -185,7 +185,8 @@ export function rollResultMessage(resolution: Omit<Sf2NarratorRollResolution, 'p
 function buildNarratorSystemBlocks(state: Sf2State): Anthropic.TextBlockParam[] {
   const situation = buildNarratorSituation(state)
   const bible = getSf2BibleForGenre(state.meta.genreId)
-  const role = isSf2bState(state) ? SF2B_NARRATOR_ROLE : SF2_NARRATOR_ROLE
+  const narratorRole = buildNarratorRole(state.meta.genreId)
+  const role = isSf2bState(state) ? SF2B_NARRATOR_ROLE : narratorRole
   assertNoDynamicLeak(SF2_CORE, 'CORE')
   assertNoDynamicLeak(bible, 'BIBLE')
   assertNoDynamicLeak(role, 'ROLE')

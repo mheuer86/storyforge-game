@@ -7,7 +7,7 @@ import {
 } from '@/lib/sf2/author/tools'
 import {
   SF2_AUTHOR_CORE,
-  SF2_AUTHOR_ROLE,
+  buildAuthorRole,
   buildAuthorSituation,
 } from '@/lib/sf2/author/prompt'
 import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
@@ -17,6 +17,7 @@ import {
   validateAuthorToolInput,
 } from '@/lib/sf2/author/contract'
 import { transformAuthorSetup } from '@/lib/sf2/author/transform'
+import { buildAuthorRetryNudge } from '@/lib/sf2/author/retry'
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
@@ -305,16 +306,17 @@ export async function POST(req: NextRequest) {
     const seed = compileAuthorInputSeed(state, priorMeaning)
     const situation = buildAuthorSituation(state, priorMeaning)
     const bible = getSf2BibleForGenre(state.meta.genreId)
+    const authorRole = buildAuthorRole(state.meta.genreId)
 
     assertNoDynamicLeak(SF2_AUTHOR_CORE, 'AUTHOR_CORE')
     assertNoDynamicLeak(bible, 'BIBLE')
-    assertNoDynamicLeak(SF2_AUTHOR_ROLE, 'AUTHOR_ROLE')
+    assertNoDynamicLeak(authorRole, 'AUTHOR_ROLE')
     assertNoDynamicLeak(situation, 'AUTHOR_SITUATION')
 
     const { blocks: system } = composeSystemBlocks({
       core: SF2_AUTHOR_CORE,
       bible,
-      role: SF2_AUTHOR_ROLE,
+      role: authorRole,
       situation,
     })
 
@@ -344,8 +346,7 @@ export async function POST(req: NextRequest) {
           isContinuation,
           state: state ?? undefined,
         }),
-        retryNudge: (errors) =>
-          `Your previous tool call was invalid. Repair these exact issues:\n${errors.map((e) => `  - ${e}`).join('\n')}\n\nRe-emit \`${AUTHOR_TOOL_NAME}\` now with EVERY required field filled with substantive, non-empty content. For continuation_dramatic_turn/procedure_gravity errors, make the next chapter's first pressure a person/faction/institution using leverage; any mechanism, timer, readout, query, route choice, or access gate must have an owner and occupy at most one opening beat. For SF2B continuity_lock errors, preserve the locked ids/facts exactly: bridge closing geometry in opening_scene_spec, mention locked continuity facets, and set carried tension_score lines only to source ids listed in the continuity lock. New NPCs or new pressures must use carried=false. Stay inside the field-length budgets; compact complete output is preferred over exhaustive prose. The full chapter setup must come back in this single tool call.`,
+        retryNudge: buildAuthorRetryNudge,
       })
     } catch (err) {
       return anthropicErrorResponse(err)

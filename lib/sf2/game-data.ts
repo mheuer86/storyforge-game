@@ -150,6 +150,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
         noExpositionDump: true,
       },
       pressureLadder: [],
+      humanStakes: [],
       threadPressure: {},
       arcLink: undefined,
       pacingContract: undefined,
@@ -359,9 +360,9 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'Forty Thousand',
     premise:
-      'Your ship cannot leave cleanly until forty thousand credits of leverage clears. The surface might be debt, lien, bounty, missing fee, crew obligation, bad paperwork, damaged reputation, or someone blocking the route; the person or faction holding it is not fixed. A back-channel offer arrives for exactly forty thousand credits and can get you moving tonight, but the job carries an undisclosed passenger, cargo, route, or faction claim. Keep the number fixed; author who is owed, why, who pays, what they want moved, and where the route leads differently for this run.',
+      'Your next route cannot open cleanly until forty thousand credits of leverage clears. The surface might be debt, lien, bounty, missing fee, crew obligation, bad paperwork, damaged reputation, or someone blocking access to a route, patron, market, crew, or future; the person or faction holding it is not fixed. A back-channel offer arrives for exactly forty thousand credits and can get the crew moving tonight, but the job carries an undisclosed passenger, freight, data, route, or faction claim. Keep the number fixed; author who is owed, why, who pays, what they want moved, and where the route leads differently for this run.',
     crucible:
-      'Forty thousand credits can buy immediate freedom only by creating a larger obligation to someone who knows exactly which exit the Driftrunner needs.',
+      'Forty thousand credits can buy immediate freedom only by creating a larger obligation to someone who knows exactly which exit the crew needs.',
   },
   worldRules: {
     settingSummary:
@@ -376,7 +377,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     socialPressures: [
       'A ship is a closed economy of fuel, parts, food, ammo, morale, and trust.',
       'Station politics are personal because information, route permission, fuel, favors, and reputation are local.',
-      'The thing holding a ship can be debt, lien, bounty, permit hold, crew obligation, or damaged reputation.',
+      'The thing blocking a route can be debt, lien, bounty, permit hold, crew obligation, or damaged reputation.',
       'Crew warmth matters most when scarcity makes every choice costly.',
       'Law is local, factional, and often less binding than reputation.',
     ],
@@ -386,8 +387,8 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'exposition-dump explanation of the Compact Collapse',
     ],
     vocabulary: [
-      'Compact', 'Fracture', 'beacon corridors', 'last beacon', 'berth lock',
-      'route chit', 'cargo bay', 'sealed cargo', 'shadow manifest', 'station concourse',
+      'Compact', 'Fracture', 'beacon corridors', 'last beacon', 'route pressure',
+      'route chit', 'sealed freight', 'sealed cargo', 'shadow manifest', 'portside rumor',
       'Corporate Bloc', 'Compact Remnant', 'Pirate Fleet', 'frontier settlement',
       'Rogue AI', 'fuel reserves', 'shipboard trust', 'passive sweep', 'back channel',
     ],
@@ -398,8 +399,8 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     narrativePrinciples: [
       'Show scale through human-sized details: one bored official, one bad route offer, one crew member watching the fuel gauge.',
       'Make ships and stations feel lived-in, worn, repaired, and socially dense.',
-      'Use competence as characterization: piloting, hacking, stealth, and back-channel navigation reveal who the Driftrunner is.',
-      'Keep politics personal; galactic instability matters because it decides whether the ship can leave tonight.',
+      'Use competence as characterization: piloting, hacking, stealth, and back-channel navigation reveal who the PC is.',
+      'Keep politics personal; galactic instability matters because it decides whether the crew can take the route tonight.',
       'Balance danger with crew warmth and practical wit.',
     ],
   },
@@ -433,7 +434,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'combat as the opening move',
       'direct exposition dump about the Compact Collapse',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
-      'opening away from ship, exit pressure, or job pressure',
+      'opening detached from route pressure, crew pressure, or job pressure',
     ],
   },
 }

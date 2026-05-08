@@ -29,7 +29,10 @@
             "chapterCreated": 1,
             "category": "thread",
             "status": "active",
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "stakeholders": [],
             "tension": 7,
             "peakTension": 7,
@@ -48,7 +51,10 @@
             "chapterCreated": 1,
             "category": "thread",
             "status": "active",
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "stakeholders": [],
             "tension": 6,
             "peakTension": 6,
@@ -70,11 +76,19 @@
             "status": "alive",
             "disposition": "wary",
             "identity": {
-              "keyFacts": ["Brokered the sealed Redline/Carrow cargo."],
-              "voice": { "note": "smiles only after the price lands", "register": "dry dockside" },
+              "keyFacts": [
+                "Brokered the sealed Redline/Carrow cargo."
+              ],
+              "voice": {
+                "note": "smiles only after the price lands",
+                "register": "dry dockside"
+              },
               "relations": []
             },
-            "ownedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+            "ownedThreadIds": [
+              "thread_tail_cutter",
+              "thread_redline_carrow_cargo"
+            ],
             "retrievalCue": "Calla Voss, broker, sealed Redline/Carrow cargo",
             "chapterCreated": 1,
             "lastSeenTurn": 18,
@@ -95,8 +109,13 @@
             "id": "promise_calla_delivery",
             "category": "promise",
             "status": "active",
-            "anchoredTo": ["thread_redline_carrow_cargo"],
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "anchoredTo": [
+              "thread_redline_carrow_cargo"
+            ],
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "obligation": "Do not open or reroute the sealed cargo before Calla names the buyer.",
             "turn": 1
           }
@@ -104,10 +123,19 @@
       },
       "chapter": {
         "setup": {
-          "activeThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "activeThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ],
           "spineThreadId": "thread_tail_cutter",
-          "loadBearingThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
-          "carriedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"]
+          "loadBearingThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ],
+          "carriedThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ]
         },
         "artifacts": {
           "meaning": {
@@ -181,7 +209,10 @@
       }
     },
     "playerInput": "(unused - pure-function fixture, no model call)",
-    "narrator": { "prose": "(unused)", "annotation": null }
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
   },
   "expected": {
     "authorContract": {
@@ -201,10 +232,10 @@
           "objective": "Decide how to handle Sollar while the chit decrypts.",
           "crucible": "The PC must choose between information control and legal exposure.",
           "outcome_spectrum": {
-            "clean": "The PC controls the hail and preserves the cargo secret.",
-            "costly": "The PC gains terms but confirms interest in the cargo.",
-            "failure": "Sollar pins the ship to a monitored route.",
-            "catastrophic": "The cutter and warrant become one enforcement action."
+            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "costly": "Renn now treats you as an asset; Patel debt is owed.",
+            "failure": "Vasek now has your transponder ID; Sable contact is burned.",
+            "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
           }
         },
         "opening_scene_spec": {
@@ -216,16 +247,28 @@
           "dramatic_situation": "Sollar times legal contact to Calla's cargo secret so silence and speech both become evidence.",
           "first_visible_pressure": "The Vethara hail arrives before the PC can control what the chit reveals.",
           "first_human_or_institutional_move": "Sollar uses the warrant hail to make the PC's next answer legally useful.",
-          "do_not_restage": ["Redline fork crossing", "Carrow cover leg", "dark-hold tail test"],
+          "do_not_restage": [
+            "Redline fork crossing",
+            "Carrow cover leg",
+            "dark-hold tail test"
+          ],
           "no_starting_combat": true,
           "no_exposition_dump": true,
-          "visible_npc_ids": ["npc_renn_sollar"],
-          "withheld_premise_facts": ["The cutter may be Vethara's collection shadow."]
+          "visible_npc_ids": [
+            "npc_renn_sollar"
+          ],
+          "withheld_premise_facts": [
+            "The cutter may be Vethara's collection shadow."
+          ]
         },
         "antagonist_field": {
           "source_system": "Vethara corporate warrants",
           "core_pressure": "Legal contact can become route control before the cargo destination is known.",
-          "default_face": { "name": "Renn Sollar", "role": "Vethara warrant officer", "pressure_style": "patient procedural leverage" },
+          "default_face": {
+            "name": "Renn Sollar",
+            "role": "Vethara warrant officer",
+            "pressure_style": "patient procedural leverage"
+          },
           "possible_faces": [
             {
               "id": "face_sollar",
@@ -331,19 +374,35 @@
           "pressure_engine_ids": []
         },
         "pacing_contract": {
-          "target_turns": { "min": 18, "max": 25 },
+          "target_turns": {
+            "min": 18,
+            "max": 25
+          },
           "chapter_question": "Can the PC control Sollar before the cargo terms become unavoidable?",
-          "acceptable_resolutions": ["terms controlled", "hail refused", "warrant reframed"],
+          "acceptable_resolutions": [
+            "terms controlled",
+            "hail refused",
+            "warrant reframed"
+          ],
           "early_pressure": "Sollar's hail makes silence meaningful.",
           "middle_pressure": "The chit gives a destination with strings.",
           "late_pressure": "The cutter's owner becomes actionable.",
-          "close_when_any": ["Sollar's authority is framed", "the destination is acted on", "the cutter declares itself"],
-          "avoid_extending_for": ["passive sweep repetition"]
+          "close_when_any": [
+            "Sollar's authority is framed",
+            "the destination is acted on",
+            "the cutter declares itself"
+          ],
+          "avoid_extending_for": [
+            "passive sweep repetition"
+          ]
         },
         "continuation_moves": {
           "prior_chapter_meaning": "The Driftrunner left Sable Notch with sealed cargo and an unresolved cutter tail.",
           "larger_pattern_revealed": "Vethara treats blind cargo routes as legal handles.",
-          "institutional_scale_escalation": { "from": "private broker cargo", "to": "corporate warrant contact" },
+          "institutional_scale_escalation": {
+            "from": "private broker cargo",
+            "to": "corporate warrant contact"
+          },
           "new_named_threat_from_prior_success": {
             "name": "Renn Sollar",
             "emerged_from": "the Driftrunner taking Calla's cargo",
@@ -444,9 +503,16 @@
             "held_by": "Lyra Keel",
             "emergence_condition": "Lyra compares the cutter's lane behavior to Vethara procedure.",
             "recontextualizes": "The hail and tail are overlapping pressures.",
-            "hint_phrases": ["wrong spacing", "no warrant flash", "too patient"],
+            "hint_phrases": [
+              "wrong spacing",
+              "no warrant flash",
+              "too patient"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["traffic_scan", "private_channel"]
+            "valid_reveal_contexts": [
+              "traffic_scan",
+              "private_channel"
+            ]
           },
           {
             "id": "rev_chit_legal_trap",
@@ -454,9 +520,16 @@
             "held_by": "Renn Sollar",
             "emergence_condition": "Sollar gets the PC to name destination knowledge.",
             "recontextualizes": "Reading first is useful but not free.",
-            "hint_phrases": ["knowledge matters", "declared route", "voluntary answer"],
+            "hint_phrases": [
+              "knowledge matters",
+              "declared route",
+              "voluntary answer"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["hail_exchange", "document_read"]
+            "valid_reveal_contexts": [
+              "hail_exchange",
+              "document_read"
+            ]
           }
         ],
         "moral_fault_lines": [
@@ -506,6 +579,20 @@
             "relevance_now": "Reading the chit changes legal posture.",
             "delivery_method": "The reader percentage interrupts the hail."
           }
+        ],
+        "human_stakes": [
+          {
+            "who_pays": "npc_calla_voss",
+            "cost_surface": "relationship",
+            "what_is_lost": "Their trust stops protecting the PC unless repaired.",
+            "triggering_pressure": "thread_tail_cutter"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as too costly to help.",
+            "triggering_pressure": "thread_redline_carrow_cargo"
+          }
         ]
       },
       "expect": {
@@ -519,7 +606,10 @@
           "continuity_lock.milestone regresses route_fork"
         ],
         "threadCountEquals": 4,
-        "pacingTargetEquals": { "min": 18, "max": 25 }
+        "pacingTargetEquals": {
+          "min": 18,
+          "max": 25
+        }
       }
     }
   }

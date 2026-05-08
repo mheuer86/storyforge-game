@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import { useDiagnosticsStore, type TokenUsage } from '@/lib/sf2/diagnostics-store'
+import { queryOpenErrorFindingsForEntity } from '@/lib/sf2/diagnostics'
 import type { Sf2State } from '@/lib/sf2/types'
 import {
   EmptyLine,
@@ -46,8 +47,12 @@ export default function DiagnosticsPanel(props: DiagnosticsPanelProps) {
     onCopySessionLog,
     onCopyReplayFixture,
   } = props
-  const { debug, lastNarratorUsage, lastArchivistUsage, exportCopyStatus } = useDiagnosticsStore()
+  const { debug, findings, lastNarratorUsage, lastArchivistUsage, exportCopyStatus } = useDiagnosticsStore()
   const sessionSummary = useMemo(() => computeSessionSummary(state, debug), [state, debug])
+  const selectedEntityErrors = useMemo(() => {
+    const entityId = state.chapter.setup.spineThreadId ?? state.chapter.setup.startingNpcIds[0] ?? ''
+    return entityId ? queryOpenErrorFindingsForEntity(findings, entityId) : []
+  }, [findings, state.chapter.setup.spineThreadId, state.chapter.setup.startingNpcIds])
 
   return (
     <div className="space-y-3">
@@ -92,6 +97,30 @@ export default function DiagnosticsPanel(props: DiagnosticsPanelProps) {
         <div className="space-y-2 text-[12px] text-muted-foreground">
           <UsageLine label="Narrator" usage={lastNarratorUsage} />
           <UsageLine label="Archivist" usage={lastArchivistUsage} />
+        </div>
+      </HudPanel>
+
+      <HudPanel title={`Diagnostic Findings / ${findings.length}`}>
+        <div className="space-y-2 text-[12px] text-muted-foreground">
+          {findings.length === 0 ? (
+            <EmptyLine text="No diagnostic findings yet." />
+          ) : (
+            <>
+              <div>
+                Open errors for current spine/lead entity: {selectedEntityErrors.length}
+              </div>
+              <div className="max-h-36 space-y-1 overflow-y-auto">
+                {findings.slice().reverse().slice(0, 8).map((finding) => (
+                  <div key={finding.id} className="border-t border-border/25 pt-1">
+                    <span className="font-mono uppercase tracking-[0.12em] text-primary">
+                      {finding.source}/{finding.kind}/{finding.severity}
+                    </span>
+                    <span> — {finding.message}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </HudPanel>
 

@@ -436,11 +436,45 @@ const pressureLadderSchema = {
     properties: {
       id: { type: 'string' as const },
       pressure: { type: 'string' as const, description: '≤18 words.' },
-      trigger_condition: { type: 'string' as const, description: 'Specific event, ≤22 words.' },
+      trigger_condition: {
+        type: 'string' as const,
+        description:
+          'Specific entity-level event, ≤22 words. Do not name locations, rooms, doors, bays, docks, gates, terminals, consoles, desks, thresholds, or other scene objects.',
+      },
       narrative_effect: { type: 'string' as const, description: '≤22 words.' },
       severity: { type: 'string' as const, enum: ['standard', 'hard'] },
     },
     required: ['id', 'pressure', 'trigger_condition', 'narrative_effect'],
+  },
+}
+
+const humanStakesSchema = {
+  type: 'array' as const,
+  description:
+    '2-3 human consequences this chapter can put at risk. At least one who_pays must be a starting_npcs id.',
+  minItems: 2,
+  maxItems: 3,
+  items: {
+    type: 'object' as const,
+    properties: {
+      who_pays: {
+        type: 'string' as const,
+        description: 'NPC id from starting_npcs preferred, or "the PC".',
+      },
+      cost_surface: {
+        type: 'string' as const,
+        enum: ['standing', 'freedom', 'loyalty', 'relationship', 'safety', 'reputation'],
+      },
+      what_is_lost: {
+        type: 'string' as const,
+        description: 'Human cost, 1 sentence, ≤24 words.',
+      },
+      triggering_pressure: {
+        type: 'string' as const,
+        description: 'active_threads id or pressure engine id that realizes/threatens this stake.',
+      },
+    },
+    required: ['who_pays', 'cost_surface', 'what_is_lost', 'triggering_pressure'],
   },
 }
 
@@ -671,6 +705,7 @@ export const authorChapterSetupTool: Anthropic.Tool = {
       continuation_moves: continuationMovesSchema,
       continuation_dramatic_turn: continuationDramaticTurnSchema,
       pressure_ladder: pressureLadderSchema,
+      human_stakes: humanStakesSchema,
       tension_score: tensionScoreSchema,
       possible_revelations: possibleRevelationsSchema,
       moral_fault_lines: moralFaultLinesSchema,
@@ -686,6 +721,7 @@ export const authorChapterSetupTool: Anthropic.Tool = {
       'arc_link',
       'pacing_contract',
       'pressure_ladder',
+      'human_stakes',
       'possible_revelations',
       'moral_fault_lines',
       'escalation_options',

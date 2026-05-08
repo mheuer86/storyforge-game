@@ -1,0 +1,56 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "diagnostic envelope adapts cross-source findings",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for the additive Sf2DiagnosticFinding envelope and cross-source open-error query."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "diagnosticEnvelope": {
+      "debugEntries": [
+        {
+          "kind": "display_sentinel",
+          "at": 1778239000000,
+          "data": {
+            "severity": "hard",
+            "type": "absent_speaker",
+            "entityId": "npc_vesh",
+            "evidence": "Vesh says something from offstage.",
+            "matchStart": 0,
+            "recommendedAction": "block_and_repair"
+          }
+        },
+        {
+          "kind": "sf2.coherence.finding",
+          "at": 1778239000001,
+          "data": {
+            "type": "anchor_miss",
+            "severity": "medium",
+            "evidenceQuote": "The clue points nowhere.",
+            "stateReference": "thread_missing_roster",
+            "suggestedNote": "Anchor the clue before reuse."
+          }
+        },
+        {
+          "kind": "sf2.invariant",
+          "at": 1778239000002,
+          "data": {
+            "type": "mechanical_noop",
+            "message": "Inventory use no-op for npc_vesh."
+          }
+        }
+      ],
+      "countEquals": 3,
+      "sourcesInclude": ["sentinel", "coherence", "replay"],
+      "openErrorQuery": {
+        "entityId": "npc_vesh",
+        "countEquals": 1
+      }
+    }
+  }
+}

@@ -54,14 +54,14 @@ const FORTY_THOUSAND_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'forty-thousand-smuggler-run',
     scenarioBias: 'extraction',
     creativeAngle:
-      'The back-channel offer is an off-book run through deniable brokers, blind route chits, patrol lanes, or blockade gaps; the forty thousand clears departure only if the Driftrunner keeps the cargo, passenger, or data protected until handoff.',
+      'The back-channel offer is an off-book run through deniable brokers, blind route chits, patrol lanes, or blockade gaps; the forty thousand opens the route only if the PC keeps the cargo, passenger, or data protected until handoff.',
     avoidModes: ['chamber_play', 'procedural_contest'],
   },
   {
     id: 'forty-thousand-hot-cargo',
     scenarioBias: 'protection',
     creativeAngle:
-      'The job turns out to be hot: the person, cargo, data, or ship component is already being hunted, and the forty-thousand-credit price forces the Driftrunner to protect it before knowing why.',
+      'The job turns out to be hot: the person, cargo, data, or ship component is already being hunted, and the forty-thousand-credit price forces the PC to protect it before knowing why.',
     avoidModes: ['procedural_contest'],
   },
   {
@@ -75,7 +75,7 @@ const FORTY_THOUSAND_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'forty-thousand-crew-collateral',
     scenarioBias: 'protection',
     creativeAngle:
-      'The debt, lien, or hold is tied to a crew member, ship system, license, or old favor; the paid route tests whether the Driftrunner protects shipboard trust or buys freedom by spending it.',
+      'The debt, lien, or hold is tied to a crew member, ship system, license, or old favor; the paid route tests whether the PC protects shipboard trust or buys freedom by spending it.',
     avoidModes: ['procedural_contest'],
   },
   {

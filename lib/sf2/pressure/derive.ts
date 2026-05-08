@@ -7,6 +7,7 @@ import {
 import type {
   Sf2ChapterSetupRuntimeState,
   Sf2ChapterThreadPressure,
+  ChapterRuntimePressure,
   Sf2EngineRuntime,
   Sf2EntityId,
   Sf2State,
@@ -116,7 +117,7 @@ export function initializeChapterPressure(
 export function getEffectiveThreadPressure(
   threadId: Sf2EntityId,
   chapterSetup: Sf2ChapterSetupRuntimeState
-): number {
+): ChapterRuntimePressure {
   const entry = chapterSetup.threadPressure[threadId]
   if (!entry) return 0
   return clampRange(entry.openingFloor + entry.localEscalation, 0, 10)

@@ -2,6 +2,8 @@
 // no longer re-render the play shell — only DiagnosticsPanel subscribes.
 
 import { useSyncExternalStore } from 'react'
+import type { Sf2DiagnosticFinding } from './types'
+import { debugEntriesToDiagnosticFindings } from './diagnostics'
 
 export const MAX_DEBUG_ENTRIES = 200
 
@@ -40,6 +42,7 @@ export interface DebugEntry {
 
 export interface DiagnosticsSnapshot {
   debug: readonly DebugEntry[]
+  findings: readonly Sf2DiagnosticFinding[]
   lastNarratorUsage: TokenUsage | null
   lastArchivistUsage: TokenUsage | null
   exportCopyStatus: string | null
@@ -49,6 +52,7 @@ const EMPTY_DEBUG: readonly DebugEntry[] = Object.freeze([])
 
 let snapshot: DiagnosticsSnapshot = {
   debug: EMPTY_DEBUG,
+  findings: [],
   lastNarratorUsage: null,
   lastArchivistUsage: null,
   exportCopyStatus: null,
@@ -56,6 +60,7 @@ let snapshot: DiagnosticsSnapshot = {
 
 const SERVER_SNAPSHOT: DiagnosticsSnapshot = {
   debug: EMPTY_DEBUG,
+  findings: [],
   lastNarratorUsage: null,
   lastArchivistUsage: null,
   exportCopyStatus: null,
@@ -68,6 +73,13 @@ function commit(next: DiagnosticsSnapshot) {
   for (const fn of listeners) fn()
 }
 
+function withFindings(next: Omit<DiagnosticsSnapshot, 'findings'>): DiagnosticsSnapshot {
+  return {
+    ...next,
+    findings: debugEntriesToDiagnosticFindings(next.debug),
+  }
+}
+
 function appendCapped(prev: readonly DebugEntry[], entries: DebugEntry[]): readonly DebugEntry[] {
   if (entries.length === 0) return prev
   const merged = prev.concat(entries)
@@ -78,15 +90,15 @@ function appendCapped(prev: readonly DebugEntry[], entries: DebugEntry[]): reado
 
 export const diagnosticsStore = {
   pushDebug(entry: DebugEntry) {
-    commit({ ...snapshot, debug: appendCapped(snapshot.debug, [entry]) })
+    commit(withFindings({ ...snapshot, debug: appendCapped(snapshot.debug, [entry]) }))
   },
   pushDebugMany(entries: DebugEntry[]) {
     if (entries.length === 0) return
-    commit({ ...snapshot, debug: appendCapped(snapshot.debug, entries) })
+    commit(withFindings({ ...snapshot, debug: appendCapped(snapshot.debug, entries) }))
   },
   resetDebug() {
     if (snapshot.debug.length === 0) return
-    commit({ ...snapshot, debug: EMPTY_DEBUG })
+    commit(withFindings({ ...snapshot, debug: EMPTY_DEBUG }))
   },
   setNarratorUsage(usage: TokenUsage | null) {
     commit({ ...snapshot, lastNarratorUsage: usage })
@@ -100,6 +112,7 @@ export const diagnosticsStore = {
   resetAll() {
     commit({
       debug: EMPTY_DEBUG,
+      findings: [],
       lastNarratorUsage: null,
       lastArchivistUsage: null,
       exportCopyStatus: null,

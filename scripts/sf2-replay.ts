@@ -15,6 +15,10 @@ import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
+import { buildAuthorSituation } from '../lib/sf2/author/prompt'
+import { buildArcAuthorSituation } from '../lib/sf2/arc-author/prompt'
+import { buildAuthorRetryNudge } from '../lib/sf2/author/retry'
+import { debugEntriesToDiagnosticFindings, queryOpenErrorFindingsForEntity } from '../lib/sf2/diagnostics'
 import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
 import { ARCHIVIST_PARITY_CONTRACT, extractTurnTool } from '../lib/sf2/archivist/tools'
 import { AUTHOR_TOOLS, AUTHOR_TOOL_NAME } from '../lib/sf2/author/tools'
@@ -185,7 +189,29 @@ interface ReplayFixture {
     authorInputSeed?: {
       priorChapterMeaning?: Record<string, unknown> | null
       hookPremiseIncludes?: string[]
+      hookPremiseExcludes?: string[]
+      hookCrucibleIncludes?: string[]
+      hookCrucibleExcludes?: string[]
       hookFirstEpisodeIncludes?: string[]
+      worldVocabularyIncludes?: string[]
+      worldVocabularyExcludes?: string[]
+      seedJsonIncludes?: string[]
+      seedJsonExcludes?: string[]
+      arcAuthorSituationIncludes?: string[]
+      arcAuthorSituationExcludes?: string[]
+      authorSituationIncludes?: string[]
+      authorSituationExcludes?: string[]
+    }
+    authorRetryNudge?: {
+      errors: string[]
+      containsAll?: string[]
+      containsNone?: string[]
+    }
+    diagnosticEnvelope?: {
+      debugEntries: Array<{ kind: string; at: number; data: unknown }>
+      countEquals?: number
+      sourcesInclude?: string[]
+      openErrorQuery?: { entityId: string; countEquals: number }
     }
     pressure?: {
       initializeChapterSetupPatch?: Record<string, unknown>
@@ -2146,18 +2172,112 @@ function assertExpected(
     }
   }
   if (expected.authorInputSeed) {
+    const priorChapterMeaning = (expected.authorInputSeed.priorChapterMeaning ?? null) as Sf2ChapterMeaning | null
     const seed = compileAuthorInputSeed(
       stateBefore,
-      (expected.authorInputSeed.priorChapterMeaning ?? null) as never
+      priorChapterMeaning
     )
+    const seedJson = JSON.stringify(seed, null, 2)
+    const vocabulary = seed.worldRules.vocabulary.join('\n')
+    const arcSituation = buildArcAuthorSituation(seed)
+    const authorSituation = buildAuthorSituation(stateBefore, priorChapterMeaning)
     for (const snippet of expected.authorInputSeed.hookPremiseIncludes ?? []) {
       if (!seed.hook.premise.includes(snippet)) {
         failures.push(`authorInputSeed.hook.premise missing "${snippet}"`)
       }
     }
+    for (const snippet of expected.authorInputSeed.hookPremiseExcludes ?? []) {
+      if (seed.hook.premise.includes(snippet)) {
+        failures.push(`authorInputSeed.hook.premise unexpectedly includes "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.hookCrucibleIncludes ?? []) {
+      if (!seed.hook.crucible.includes(snippet)) {
+        failures.push(`authorInputSeed.hook.crucible missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.hookCrucibleExcludes ?? []) {
+      if (seed.hook.crucible.includes(snippet)) {
+        failures.push(`authorInputSeed.hook.crucible unexpectedly includes "${snippet}"`)
+      }
+    }
     for (const snippet of expected.authorInputSeed.hookFirstEpisodeIncludes ?? []) {
       if (!seed.hook.firstEpisode?.includes(snippet)) {
         failures.push(`authorInputSeed.hook.firstEpisode missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.worldVocabularyIncludes ?? []) {
+      if (!vocabulary.includes(snippet)) {
+        failures.push(`authorInputSeed.worldRules.vocabulary missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.worldVocabularyExcludes ?? []) {
+      if (vocabulary.includes(snippet)) {
+        failures.push(`authorInputSeed.worldRules.vocabulary unexpectedly includes "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.seedJsonIncludes ?? []) {
+      if (!seedJson.includes(snippet)) {
+        failures.push(`authorInputSeed JSON missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.seedJsonExcludes ?? []) {
+      if (seedJson.includes(snippet)) {
+        failures.push(`authorInputSeed JSON unexpectedly includes "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.arcAuthorSituationIncludes ?? []) {
+      if (!arcSituation.includes(snippet)) {
+        failures.push(`arcAuthorSituation missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.arcAuthorSituationExcludes ?? []) {
+      if (arcSituation.includes(snippet)) {
+        failures.push(`arcAuthorSituation unexpectedly includes "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.authorSituationIncludes ?? []) {
+      if (!authorSituation.includes(snippet)) {
+        failures.push(`authorSituation missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.authorSituationExcludes ?? []) {
+      if (authorSituation.includes(snippet)) {
+        failures.push(`authorSituation unexpectedly includes "${snippet}"`)
+      }
+    }
+  }
+  if (expected.authorRetryNudge) {
+    const nudge = buildAuthorRetryNudge(expected.authorRetryNudge.errors)
+    for (const snippet of expected.authorRetryNudge.containsAll ?? []) {
+      if (!nudge.includes(snippet)) {
+        failures.push(`authorRetryNudge missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorRetryNudge.containsNone ?? []) {
+      if (nudge.includes(snippet)) {
+        failures.push(`authorRetryNudge unexpectedly includes "${snippet}"`)
+      }
+    }
+  }
+  if (expected.diagnosticEnvelope) {
+    const findings = debugEntriesToDiagnosticFindings(expected.diagnosticEnvelope.debugEntries as never)
+    if (
+      typeof expected.diagnosticEnvelope.countEquals === 'number' &&
+      findings.length !== expected.diagnosticEnvelope.countEquals
+    ) {
+      failures.push(`diagnosticEnvelope.count: expected ${expected.diagnosticEnvelope.countEquals}, got ${findings.length}`)
+    }
+    for (const source of expected.diagnosticEnvelope.sourcesInclude ?? []) {
+      if (!findings.some((finding) => finding.source === source)) {
+        failures.push(`diagnosticEnvelope.sources missing ${source}`)
+      }
+    }
+    if (expected.diagnosticEnvelope.openErrorQuery) {
+      const query = expected.diagnosticEnvelope.openErrorQuery
+      const got = queryOpenErrorFindingsForEntity(findings, query.entityId).length
+      if (got !== query.countEquals) {
+        failures.push(`diagnosticEnvelope.openErrorQuery: expected ${query.countEquals}, got ${got}`)
       }
     }
   }

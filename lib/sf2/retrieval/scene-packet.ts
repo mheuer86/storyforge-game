@@ -117,6 +117,14 @@ export function renderSceneBundle(
   if (packet.chapter.continuationDramaticTurn) {
     lines.push(renderContinuationDramaticTurn(packet.chapter.continuationDramaticTurn))
   }
+  if (packet.chapter.humanStakes.length > 0) {
+    lines.push(`\n### Human stakes (pressure targets)`)
+    for (const stake of packet.chapter.humanStakes) {
+      lines.push(
+        `- ${stake.triggeringPressure}: ${stake.whoPays} risks ${stake.costSurface} — ${stake.whatIsLost}`
+      )
+    }
+  }
 
   if (packet.cast.length > 0) {
     lines.push(`\n### Cast on-stage (identity — stable within scene)`)

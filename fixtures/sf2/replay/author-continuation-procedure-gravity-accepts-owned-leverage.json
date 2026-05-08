@@ -43,7 +43,10 @@
               "pressureOwnerCandidate": "Inspector Hale",
               "worsenedDetail": "The release log still has an owner field.",
               "unresolvedQuestion": "Will the PC protect the broker when clean paperwork has a price?",
-              "doNotRestage": ["dock departure", "cargo acceptance"],
+              "doNotRestage": [
+                "dock departure",
+                "cargo acceptance"
+              ],
               "procedureResidue": {
                 "mechanism": "release log",
                 "keepAs": "leverage"
@@ -54,7 +57,10 @@
       }
     },
     "playerInput": "(unused - pure-function fixture, no model call)",
-    "narrator": { "prose": "(unused)", "annotation": null }
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
   },
   "expected": {
     "authorContract": {
@@ -74,10 +80,10 @@
           "objective": "Leave the bay without giving Hale the broker's name.",
           "crucible": "The PC must decide whether clean paperwork is worth betraying a prior deal.",
           "outcome_spectrum": {
-            "clean": "The cargo moves and Hale gets no broker name.",
-            "costly": "The cargo moves but Hale records a useful concession.",
-            "failure": "Hale pins the cargo until the broker is named.",
-            "catastrophic": "The broker name and cargo trace enter authority records."
+            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "costly": "Renn now treats you as an asset; Patel debt is owed.",
+            "failure": "Vasek now has your transponder ID; Sable contact is burned.",
+            "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
           }
         },
         "opening_scene_spec": {
@@ -89,16 +95,27 @@
           "dramatic_situation": "Hale uses clearance to make the prior cargo bargain cost something personal.",
           "first_visible_pressure": "The inspector can release the cargo or turn the hold into a record.",
           "first_human_or_institutional_move": "Hale offers clean clearance in exchange for the broker's name.",
-          "do_not_restage": ["Chapter 1 cargo acceptance", "dock departure"],
+          "do_not_restage": [
+            "Chapter 1 cargo acceptance",
+            "dock departure"
+          ],
           "no_starting_combat": true,
           "no_exposition_dump": true,
-          "visible_npc_ids": ["npc_hale"],
-          "withheld_premise_facts": ["Hale already knows the broker's initials from a separate log."]
+          "visible_npc_ids": [
+            "npc_hale"
+          ],
+          "withheld_premise_facts": [
+            "Hale already knows the broker's initials from a separate log."
+          ]
         },
         "antagonist_field": {
           "source_system": "Dock Authority clearance records",
           "core_pressure": "Clean release requires a betrayal-shaped concession.",
-          "default_face": { "name": "Inspector Hale", "role": "dock inspector", "pressure_style": "courtesy as leverage" },
+          "default_face": {
+            "name": "Inspector Hale",
+            "role": "dock inspector",
+            "pressure_style": "courtesy as leverage"
+          },
           "possible_faces": [
             {
               "id": "face_hale",
@@ -204,19 +221,35 @@
           "pressure_engine_ids": []
         },
         "pacing_contract": {
-          "target_turns": { "min": 18, "max": 25 },
+          "target_turns": {
+            "min": 18,
+            "max": 25
+          },
           "chapter_question": "Can the PC leave without betraying the broker?",
-          "acceptable_resolutions": ["name protected", "name traded", "log spoofed"],
+          "acceptable_resolutions": [
+            "name protected",
+            "name traded",
+            "log spoofed"
+          ],
           "early_pressure": "Hale offers clean clearance for a name.",
           "middle_pressure": "The log makes refusal durable.",
           "late_pressure": "The bay hold becomes authority record.",
-          "close_when_any": ["cargo leaves clean", "broker named", "hold formalized"],
-          "avoid_extending_for": ["extra clamp timing"]
+          "close_when_any": [
+            "cargo leaves clean",
+            "broker named",
+            "hold formalized"
+          ],
+          "avoid_extending_for": [
+            "extra clamp timing"
+          ]
         },
         "continuation_moves": {
           "prior_chapter_meaning": "The PC accepted sealed cargo and made a private broker promise matter.",
           "larger_pattern_revealed": "Dock authorities convert private cargo into public accountability.",
-          "institutional_scale_escalation": { "from": "private cargo acceptance", "to": "clearance authority leverage" },
+          "institutional_scale_escalation": {
+            "from": "private cargo acceptance",
+            "to": "clearance authority leverage"
+          },
           "new_named_threat_from_prior_success": {
             "name": "Inspector Hale",
             "emerged_from": "the PC leaving with sealed freight",
@@ -285,9 +318,15 @@
             "held_by": "npc_corro",
             "emergence_condition": "Corro is pressed on the pre-filled log.",
             "recontextualizes": "Hale wants confirmation, not discovery.",
-            "hint_phrases": ["pre-filled field", "not blank", "initials already there"],
+            "hint_phrases": [
+              "pre-filled field",
+              "not blank",
+              "initials already there"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["documentary_surface"]
+            "valid_reveal_contexts": [
+              "documentary_surface"
+            ]
           },
           {
             "id": "rev_mira_saw_pause",
@@ -295,9 +334,15 @@
             "held_by": "npc_mira",
             "emergence_condition": "Mira is given a way out of dock retaliation.",
             "recontextualizes": "The hold is chosen pressure.",
-            "hint_phrases": ["his hand moved first", "manual pause", "not the system"],
+            "hint_phrases": [
+              "his hand moved first",
+              "manual pause",
+              "not the system"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["private_pressure"]
+            "valid_reveal_contexts": [
+              "private_pressure"
+            ]
           }
         ],
         "moral_fault_lines": [
@@ -347,6 +392,20 @@
             "relevance_now": "Clean release has a price.",
             "delivery_method": "Hale calls the demand a courtesy."
           }
+        ],
+        "human_stakes": [
+          {
+            "who_pays": "npc_hale",
+            "cost_surface": "relationship",
+            "what_is_lost": "Their trust stops protecting the PC unless repaired.",
+            "triggering_pressure": "thread_spine"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as too costly to help.",
+            "triggering_pressure": "thread_broker_name"
+          }
         ]
       },
       "expect": {
@@ -354,7 +413,10 @@
         "validationErrorCount": 0,
         "combinedErrorCount": 0,
         "threadCountEquals": 4,
-        "pacingTargetEquals": { "min": 18, "max": 25 }
+        "pacingTargetEquals": {
+          "min": 18,
+          "max": 25
+        }
       }
     }
   }

@@ -36,6 +36,7 @@ Primary goals:
 11. Durable NPC seeds are reusable roles; they are not automatically present at the opening.
 12. The selected playbook is an affordance lens. Design pressure the PC can act on because of their role, but do not make the arc require a single skill, morality, or loyalty.
 13. Emit exactly five \`chapter_function_map\` entries. Chapter 4 and Chapter 5 may both contain possible end states; the Chapter Author will decide later whether closure has landed.
+14. Playbook names are role labels, not in-world entity names. Do not reuse a playbook name as a ship, faction, location, or NPC name unless the player explicitly provided it.
 
 ## Chapter structural beats
 
@@ -90,6 +91,7 @@ ${seed.arcVariantSeed ? JSON.stringify(seed.arcVariantSeed, null, 2) : '(none su
 - Playbook: ${seed.playbookName} (${seed.playbookId})
 - Origin: ${seed.originName} (${seed.originId})
 - Use this as an affordance lens: the arc should give this PC leverage, responsibility, and temptations.
+- Playbook names are role labels, not in-world entity names. For Space Opera, Driftrunner means the PC's job, not a default vessel name.
 
 ### PC capability surface
 ${seed.pcCapabilities ? JSON.stringify(seed.pcCapabilities, null, 2) : '(none supplied)'}

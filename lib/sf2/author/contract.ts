@@ -12,11 +12,13 @@ import {
 } from '../../sf2b/continuity-lock'
 import type {
   AuthorChapterSetupV2,
+  Sf2HumanStakeCostSurface,
   Sf2ChapterTensionRole,
   Sf2RevealContext,
   Sf2State,
   Sf2ThreadStatus,
 } from '../types'
+import { SF2_HUMAN_STAKE_COST_SURFACES } from '../types'
 
 export type AuthorRawValidationContext = DispositionDerivationContext & {
   isContinuation?: boolean
@@ -49,6 +51,28 @@ const PROCEDURE_CHOICE_RE =
   /\b(wait|read|answer|scan|clear|lock|unlock|decrypt|authorize|hold|release|route|reroute|file|confirm|query)\b/i
 const HUMAN_LEVERAGE_RE =
   /\b(threats?|offers?|takes?|withholds?|exposes?|leverage|pressure|forces?|demands?|bargains?|trades?|promises?|costs?|authority|warrant|blackmail|protects?|betrays?|needs?|wants?|asks?|uses?)\b/i
+export const OUTCOME_HUMAN_ANCHOR_WORDS = [
+  'trust',
+  'cools',
+  'cooled',
+  'owed',
+  'burned',
+  'exposed',
+  'hunts',
+  'knows',
+  'promise',
+  'debt',
+  'cost',
+  'standing',
+  'freedom',
+  'loyalty',
+  'relationship',
+  'safety',
+  'reputation',
+] as const
+const OUTCOME_HUMAN_ANCHOR_RE = new RegExp(`\\b(${OUTCOME_HUMAN_ANCHOR_WORDS.join('|')})\\b`, 'i')
+const PROCEDURAL_ONLY_OUTCOME_RE =
+  /\b(audit|warrant|cipher|file|record|ledger|form|queue|protocol|review|query|case|route|manifest)\b.*\b(closes?|releases?|fails?|clears?|updates?|resolves?|processes?|opens?)\b/i
 const SCENE_COUPLED_TRIGGER_RE =
   /\b(room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive|record room|control room)\b/i
 
@@ -66,7 +90,9 @@ export function validateChapterRaw(
     errors.push('chapter_frame.outcome_spectrum is missing')
   } else {
     for (const key of ['clean', 'costly', 'failure', 'catastrophic']) {
-      if (!stringField(spectrum, key).trim()) errors.push(`chapter_frame.outcome_spectrum.${key} is empty`)
+      const value = stringField(spectrum, key).trim()
+      if (!value) errors.push(`chapter_frame.outcome_spectrum.${key} is empty`)
+      else if (!hasHumanOutcomeAnchor(value)) errors.push(`chapter_frame.outcome_spectrum.${key} must name a human consequence, named entity, or relationship/cost`)
     }
   }
 
@@ -186,6 +212,7 @@ export function validateChapterRaw(
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
   if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
+  errors.push(...validateRawHumanStakes(raw, threads, npcs, ctx.state))
   const tensionScore = getArray(raw, 'tension_score', 'tensionScore')
   const requiresTensionScore = ctx.isContinuation && ctx.state && isSf2bState(ctx.state)
   if (requiresTensionScore && (tensionScore.length < 3 || tensionScore.length > 4)) {
@@ -368,6 +395,12 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       narrativeEffect: stringField(s, 'narrative_effect', 'narrativeEffect'),
       severity: stringField(s, 'severity') === 'hard' ? 'hard' : 'standard',
     })),
+    humanStakes: getArray(raw, 'human_stakes', 'humanStakes').map((s) => ({
+      whoPays: stringField(s, 'who_pays', 'whoPays') as AuthorChapterSetupV2['humanStakes'][number]['whoPays'],
+      costSurface: stringField(s, 'cost_surface', 'costSurface') as Sf2HumanStakeCostSurface,
+      whatIsLost: stringField(s, 'what_is_lost', 'whatIsLost'),
+      triggeringPressure: stringField(s, 'triggering_pressure', 'triggeringPressure'),
+    })),
     tensionScore: getArray(raw, 'tension_score', 'tensionScore').map((line) => ({
       id: stringField(line, 'id'),
       role: normalizeTensionScoreRole(valueField(line, 'role')),
@@ -488,6 +521,8 @@ export function validateAuthorSetup(
       const value = spectrum[key]
       if (typeof value !== 'string' || value.trim().length === 0) {
         errors.push(`chapter_frame.outcome_spectrum.${key} is empty`)
+      } else if (!hasHumanOutcomeAnchor(value)) {
+        errors.push(`chapter_frame.outcome_spectrum.${key} must name a human consequence, named entity, or relationship/cost`)
       }
     }
   }
@@ -554,6 +589,7 @@ export function validateAuthorSetup(
     errors.push('pacing_contract.target_turns is invalid')
   }
   errors.push(...validatePressureLadderDiscipline(authored))
+  errors.push(...validateHumanStakes(authored, opts.state))
 
   const tensionScoreState = opts.isContinuation && opts.state && isSf2bState(opts.state)
     ? opts.state
@@ -624,6 +660,83 @@ function validatePressureLadderDiscipline(authored: AuthorChapterSetupV2): strin
       errors.push(`pressure_ladder[${i}].trigger_condition is scene-coupled; bind it to an entity-level action instead`)
     }
   })
+  return errors
+}
+
+function hasHumanOutcomeAnchor(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (OUTCOME_HUMAN_ANCHOR_RE.test(trimmed)) return true
+  if (PROCEDURAL_ONLY_OUTCOME_RE.test(trimmed)) return false
+  return /\b[A-Z][a-z][A-Za-z'-]{2,}\b/.test(trimmed)
+}
+
+function validateRawHumanStakes(
+  raw: Record<string, unknown>,
+  threads: Record<string, unknown>[],
+  npcs: Record<string, unknown>[],
+  state?: Sf2State
+): string[] {
+  const errors: string[] = []
+  const stakes = getArray(raw, 'human_stakes', 'humanStakes')
+  if (stakes.length < 2 || stakes.length > 3) {
+    errors.push(`human_stakes must contain 2-3 stakes (got ${stakes.length})`)
+    return errors
+  }
+  const startingNpcIds = new Set(npcs.map((n) => stringField(n, 'id')).filter(Boolean))
+  const pressureIds = new Set(threads.map((t) => stringField(t, 'id')).filter(Boolean))
+  const engineIds = new Set([
+    ...Object.keys(state?.campaign.engines ?? {}),
+    ...(state?.campaign.arcPlan?.pressureEngines ?? []).map((engine) => engine.id),
+  ])
+  let externalStakeCount = 0
+  stakes.forEach((stake, i) => {
+    const whoPays = stringField(stake, 'who_pays', 'whoPays')
+    const costSurface = stringField(stake, 'cost_surface', 'costSurface')
+    const whatIsLost = stringField(stake, 'what_is_lost', 'whatIsLost')
+    const triggeringPressure = stringField(stake, 'triggering_pressure', 'triggeringPressure')
+    if (startingNpcIds.has(whoPays)) externalStakeCount += 1
+    if (whoPays !== 'the PC' && !startingNpcIds.has(whoPays)) {
+      errors.push(`human_stakes[${i}].who_pays must be "the PC" or a starting_npcs id`)
+    }
+    if (!SF2_HUMAN_STAKE_COST_SURFACES.includes(costSurface as Sf2HumanStakeCostSurface)) {
+      errors.push(`human_stakes[${i}].cost_surface is invalid`)
+    }
+    if (!whatIsLost.trim()) errors.push(`human_stakes[${i}].what_is_lost is empty`)
+    if (!pressureIds.has(triggeringPressure) && !engineIds.has(triggeringPressure)) {
+      errors.push(`human_stakes[${i}].triggering_pressure must reference an active_threads id or pressure engine id`)
+    }
+  })
+  if (externalStakeCount < 1) errors.push('human_stakes must include at least one starting_npcs id as who_pays')
+  return errors
+}
+
+function validateHumanStakes(authored: AuthorChapterSetupV2, state?: Sf2State): string[] {
+  const errors: string[] = []
+  const stakes = authored.humanStakes ?? []
+  if (stakes.length < 2 || stakes.length > 3) {
+    errors.push(`human_stakes must contain 2-3 stakes (got ${stakes.length})`)
+    return errors
+  }
+  const startingNpcIds = new Set(authored.startingNPCs.map((n) => n.id))
+  const pressureIds = new Set(authored.activeThreads.map((t) => t.id))
+  for (const engineId of Object.keys(state?.campaign.engines ?? {})) pressureIds.add(engineId)
+  for (const engine of state?.campaign.arcPlan?.pressureEngines ?? []) pressureIds.add(engine.id)
+  let externalStakeCount = 0
+  stakes.forEach((stake, i) => {
+    if (startingNpcIds.has(stake.whoPays)) externalStakeCount += 1
+    if (stake.whoPays !== 'the PC' && !startingNpcIds.has(stake.whoPays)) {
+      errors.push(`human_stakes[${i}].who_pays must be "the PC" or a starting_npcs id`)
+    }
+    if (!SF2_HUMAN_STAKE_COST_SURFACES.includes(stake.costSurface)) {
+      errors.push(`human_stakes[${i}].cost_surface is invalid`)
+    }
+    if (!stake.whatIsLost.trim()) errors.push(`human_stakes[${i}].what_is_lost is empty`)
+    if (!pressureIds.has(stake.triggeringPressure)) {
+      errors.push(`human_stakes[${i}].triggering_pressure must reference an active thread or pressure engine`)
+    }
+  })
+  if (externalStakeCount < 1) errors.push('human_stakes must include at least one starting_npcs id as who_pays')
   return errors
 }
 

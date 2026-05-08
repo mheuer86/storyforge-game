@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "author contract normalizes raw tool input and validates chapter setup",
+  "name": "author contract rejects procedural-only outcome spectrum",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Pure-function check on lib/sf2/author/contract.ts. Verifies raw Author tool validation, snake_case to camelCase normalization, reveal context filtering, visible NPC parsing, and final normalized boundary validation."
+    "purpose": "Regression coverage for human-consequence outcome spectrum validation."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -30,7 +30,7 @@
           "objective": "Resolve the missing tithe roster before the Synod escalates.",
           "crucible": "The Warden must choose what kind of authority binds the room.",
           "outcome_spectrum": {
-            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "clean": "the audit closes without exposure",
             "costly": "Renn now treats you as an asset; Patel debt is owed.",
             "failure": "Vasek now has your transponder ID; Sable contact is burned.",
             "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
@@ -303,21 +303,12 @@
         ]
       },
       "expect": {
-        "rawErrorCount": 0,
-        "validationErrorCount": 0,
-        "titleEquals": "The Tithe Ledger",
-        "threadCountEquals": 3,
-        "firstThreadInitialTensionEquals": 4,
-        "visibleNpcIdsEquals": [
-          "npc_vesh"
+        "combinedErrorIncludesAll": [
+          "chapter_frame.outcome_spectrum.clean must name a human consequence"
         ],
-        "firstRevealValidContextsEquals": [
-          "confession"
-        ],
-        "pacingTargetEquals": {
-          "min": 18,
-          "max": 22
-        }
+        "validationErrorIncludesAll": [
+          "chapter_frame.outcome_spectrum.clean must name a human consequence"
+        ]
       }
     }
   }

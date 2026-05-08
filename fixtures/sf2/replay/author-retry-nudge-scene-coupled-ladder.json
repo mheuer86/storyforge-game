@@ -1,0 +1,41 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author retry nudge explains scene-coupled pressure ladder repair",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for live Author 502s where both attempts fail only because pressure_ladder[i].trigger_condition names a scene object or location instead of an entity-level action."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - retry nudge fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorRetryNudge": {
+      "errors": [
+        "pressure_ladder[2].trigger_condition is scene-coupled; bind it to an entity-level action instead"
+      ],
+      "containsAll": [
+        "For pressure_ladder scene-coupled trigger errors",
+        "rewrite the named rung's trigger_condition only",
+        "Do not mention places, rooms, doors, gates, bays, docks, terminals, consoles, desks, tables, thresholds, corridors, hangars, offices, booths, or other scene objects.",
+        "Bind the trigger to an entity-level action, choice, claim, refusal, disclosure, or faction move",
+        "Good: \"Sollar formally marks the PC's route evasive.\"",
+        "Bad: \"The route gate locks behind the PC.\""
+      ]
+    }
+  }
+}

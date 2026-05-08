@@ -29,7 +29,10 @@
             "chapterCreated": 1,
             "category": "thread",
             "status": "active",
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "stakeholders": [],
             "tension": 7,
             "peakTension": 7,
@@ -48,7 +51,10 @@
             "chapterCreated": 1,
             "category": "thread",
             "status": "active",
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "stakeholders": [],
             "tension": 6,
             "peakTension": 6,
@@ -70,11 +76,19 @@
             "status": "alive",
             "disposition": "wary",
             "identity": {
-              "keyFacts": ["Brokered the sealed Redline/Carrow cargo."],
-              "voice": { "note": "smiles only after the price lands", "register": "dry dockside" },
+              "keyFacts": [
+                "Brokered the sealed Redline/Carrow cargo."
+              ],
+              "voice": {
+                "note": "smiles only after the price lands",
+                "register": "dry dockside"
+              },
               "relations": []
             },
-            "ownedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+            "ownedThreadIds": [
+              "thread_tail_cutter",
+              "thread_redline_carrow_cargo"
+            ],
             "retrievalCue": "Calla Voss, broker, sealed Redline/Carrow cargo",
             "chapterCreated": 1,
             "lastSeenTurn": 1,
@@ -95,8 +109,13 @@
             "id": "promise_calla_delivery",
             "category": "promise",
             "status": "active",
-            "anchoredTo": ["thread_redline_carrow_cargo"],
-            "owner": { "kind": "npc", "id": "npc_calla_voss" },
+            "anchoredTo": [
+              "thread_redline_carrow_cargo"
+            ],
+            "owner": {
+              "kind": "npc",
+              "id": "npc_calla_voss"
+            },
             "obligation": "Do not open or reroute the sealed cargo before Calla names the buyer.",
             "turn": 1
           }
@@ -104,10 +123,19 @@
       },
       "chapter": {
         "setup": {
-          "activeThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
+          "activeThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ],
           "spineThreadId": "thread_tail_cutter",
-          "loadBearingThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"],
-          "carriedThreadIds": ["thread_tail_cutter", "thread_redline_carrow_cargo"]
+          "loadBearingThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ],
+          "carriedThreadIds": [
+            "thread_tail_cutter",
+            "thread_redline_carrow_cargo"
+          ]
         },
         "sceneSummaries": [
           {
@@ -135,8 +163,12 @@
             "locked": true,
             "chapterCreated": 1
           },
-          "presentNpcIds": ["npc_calla_voss"],
-          "currentInterlocutorIds": ["npc_calla_voss"],
+          "presentNpcIds": [
+            "npc_calla_voss"
+          ],
+          "currentInterlocutorIds": [
+            "npc_calla_voss"
+          ],
           "timeLabel": "night cycle",
           "established": [
             "Calla Voss brokered the sealed Redline/Carrow cargo.",
@@ -161,7 +193,10 @@
       }
     },
     "playerInput": "(unused - pure-function fixture, no model call)",
-    "narrator": { "prose": "(unused)", "annotation": null }
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
   },
   "expected": {
     "authorContract": {
@@ -181,10 +216,10 @@
           "objective": "Decide whether to accept Kira's new container job.",
           "crucible": "The PC must choose speed or scrutiny under patrol pressure.",
           "outcome_spectrum": {
-            "clean": "The container clears without exposing the PC.",
-            "costly": "The container clears but Kira claims leverage.",
-            "failure": "The patrol marks the PC as noncompliant.",
-            "catastrophic": "The container opens into a faction seizure."
+            "clean": "Kessrin still calls you back; Laine promise still feels reachable.",
+            "costly": "Renn now treats you as an asset; Patel debt is owed.",
+            "failure": "Vasek now has your transponder ID; Sable contact is burned.",
+            "catastrophic": "Solitaire knows your face; the corridor hunts your registry forever."
           }
         },
         "opening_scene_spec": {
@@ -196,16 +231,28 @@
           "dramatic_situation": "A replacement broker uses public patrol pressure to turn the prior cargo success into a loyalty test.",
           "first_visible_pressure": "Kira has already tagged the hull before she asks for consent.",
           "first_human_or_institutional_move": "Kira uses the patrol tag to make refusal visible to the queue.",
-          "do_not_restage": ["Calla's original sealed-cargo negotiation", "Sable Notch departure", "the prior cutter watch"],
+          "do_not_restage": [
+            "Calla's original sealed-cargo negotiation",
+            "Sable Notch departure",
+            "the prior cutter watch"
+          ],
           "no_starting_combat": true,
           "no_exposition_dump": true,
-          "visible_npc_ids": ["npc_kira_maal"],
-          "withheld_premise_facts": ["The patrol knows more than Kira admits."]
+          "visible_npc_ids": [
+            "npc_kira_maal"
+          ],
+          "withheld_premise_facts": [
+            "The patrol knows more than Kira admits."
+          ]
         },
         "antagonist_field": {
           "source_system": "Port patrol compliance",
           "core_pressure": "A sealed container cannot wait in the queue.",
-          "default_face": { "name": "Kira Maal", "role": "port broker", "pressure_style": "Charm as deadline" },
+          "default_face": {
+            "name": "Kira Maal",
+            "role": "port broker",
+            "pressure_style": "Charm as deadline"
+          },
           "possible_faces": [
             {
               "id": "face_kira",
@@ -311,19 +358,35 @@
           "pressure_engine_ids": []
         },
         "pacing_contract": {
-          "target_turns": { "min": 18, "max": 25 },
+          "target_turns": {
+            "min": 18,
+            "max": 25
+          },
           "chapter_question": "Will the PC accept the new container pressure?",
-          "acceptable_resolutions": ["accept", "reject", "expose"],
+          "acceptable_resolutions": [
+            "accept",
+            "reject",
+            "expose"
+          ],
           "early_pressure": "Kira frames speed as safety.",
           "middle_pressure": "The patrol makes delay visible.",
           "late_pressure": "The hull faces seizure.",
-          "close_when_any": ["container accepted", "container exposed", "hull seized"],
-          "avoid_extending_for": ["extra queue color"]
+          "close_when_any": [
+            "container accepted",
+            "container exposed",
+            "hull seized"
+          ],
+          "avoid_extending_for": [
+            "extra queue color"
+          ]
         },
         "continuation_moves": {
           "prior_chapter_meaning": "The PC became useful to cargo brokers.",
           "larger_pattern_revealed": "Ports use sealed freight as loyalty tests.",
-          "institutional_scale_escalation": { "from": "private cargo job", "to": "patrol-backed port pressure" },
+          "institutional_scale_escalation": {
+            "from": "private cargo job",
+            "to": "patrol-backed port pressure"
+          },
           "new_named_threat_from_prior_success": {
             "name": "Kira Maal",
             "emerged_from": "the PC taking cargo work",
@@ -424,9 +487,15 @@
             "held_by": "npc_jex_orro",
             "emergence_condition": "Jex is protected from Lio.",
             "recontextualizes": "Kira is not the full author of pressure.",
-            "hint_phrases": ["wrong tag", "too clean", "before she arrived"],
+            "hint_phrases": [
+              "wrong tag",
+              "too clean",
+              "before she arrived"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["private_pressure"]
+            "valid_reveal_contexts": [
+              "private_pressure"
+            ]
           },
           {
             "id": "rev_kira_debt",
@@ -434,9 +503,15 @@
             "held_by": "npc_kira_maal",
             "emergence_condition": "Kira loses control of the queue.",
             "recontextualizes": "Her urgency is debt, not only profit.",
-            "hint_phrases": ["old mark", "not my clock", "Lio's favor"],
+            "hint_phrases": [
+              "old mark",
+              "not my clock",
+              "Lio's favor"
+            ],
             "hints_required": 2,
-            "valid_reveal_contexts": ["accusation"]
+            "valid_reveal_contexts": [
+              "accusation"
+            ]
           }
         ],
         "moral_fault_lines": [
@@ -486,6 +561,20 @@
             "relevance_now": "Every refusal changes reputation.",
             "delivery_method": "Jex watches who hears each answer."
           }
+        ],
+        "human_stakes": [
+          {
+            "who_pays": "npc_kira_maal",
+            "cost_surface": "relationship",
+            "what_is_lost": "Their trust stops protecting the PC unless repaired.",
+            "triggering_pressure": "thread_kira_container"
+          },
+          {
+            "who_pays": "the PC",
+            "cost_surface": "reputation",
+            "what_is_lost": "The PC becomes known as too costly to help.",
+            "triggering_pressure": "thread_patrol_sweep"
+          }
         ]
       },
       "expect": {
@@ -501,7 +590,10 @@
           "tension_score[0] source id thread_kira_container is not in the SF2B continuity lock"
         ],
         "threadCountEquals": 4,
-        "pacingTargetEquals": { "min": 18, "max": 25 }
+        "pacingTargetEquals": {
+          "min": 18,
+          "max": 25
+        }
       }
     }
   }
