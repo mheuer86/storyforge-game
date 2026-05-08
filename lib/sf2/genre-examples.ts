@@ -90,23 +90,111 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
   },
   fantasy: {
     ...GENERIC_EXAMPLES,
+    entityBoundTriggers: [
+      'When a Collegium witness refuses a noble patron in front of an heir who can still choose sides.',
+      'When the recovered name is spoken where a rival scholar can claim it first.',
+      'When an old oath is called in by someone the PC needed to trust.',
+    ],
+    sceneCoupledTriggers: [
+      'When the Seeker reaches the sealed archive door.',
+      'When the PC opens the reliquary beside the map table.',
+    ],
     pcMisfitChapterRule:
       'A Seeker chapter is dangerous recovery, contested memory, and proof under pressure, not catalogue maintenance.',
+    npcWorkedExample: {
+      name: 'Elian Voss',
+      role: 'Collegium witness',
+      body: 'Elian keeps two fingers on the cracked folio and never looks at the page everyone wants named.',
+    },
+    quickActionExamples: [
+      '"Press Elian on who first owned the folio. [Persuasion]"',
+      '"Read which scholar avoids the inscription. [Perception]"',
+      '"Hold the bridge stones steady while the ward shakes. [Athletics]"',
+      '"Recall the treaty name hidden in the margin. [History]"',
+    ],
+    continuationEscalationExample:
+      'Ch1 recovered a fragment; Ch2 names the patron who buried it, strains a scholar who vouched for the PC, and wakes a rival claim to the ruin.',
   },
   cyberpunk: {
     ...GENERIC_EXAMPLES,
+    entityBoundTriggers: [
+      'When a clinic contact refuses a corp handler in front of a runner who can still sell the trace.',
+      'When the stolen biometric key is named where a security contractor can hear.',
+      'When a debt broker calls in a favor the crew thought was burned.',
+    ],
+    sceneCoupledTriggers: [
+      'When the runner reaches the service elevator.',
+      'When the PC clears the kiosk beside the clinic door.',
+    ],
     pcMisfitChapterRule:
       'A street-competent chapter is leverage, trace, debt, and bodily risk, not watching a progress bar finish.',
+    npcWorkedExample: {
+      name: 'Jax Rill',
+      role: 'clinic contact',
+      body: 'Jax keeps the med-scanner running loud enough to blur the room mics and answers with his eyes on the exit feed.',
+    },
+    quickActionExamples: [
+      '"Press Jax on who paid for the wipe. [Intimidation]"',
+      '"Read the security feed before the loop resets. [Perception]"',
+      '"Jam the closing lift doors with your shoulder. [Athletics]"',
+      '"Ghost the clinic terminal before the trace pings back. [Stealth]"',
+    ],
+    continuationEscalationExample:
+      'Ch1 exposed a dirty trace; Ch2 names the handler behind it, makes a clinic ally liable, and puts a bounty scanner on the PC.',
   },
   grimdark: {
     ...GENERIC_EXAMPLES,
+    entityBoundTriggers: [
+      'When a camp surgeon refuses a militia captain in front of a prisoner who can still recant.',
+      'When the hidden ration cache is named where a hungry squad can hear.',
+      'When a surviving relative demands repayment for a mercy the PC could not afford.',
+    ],
+    sceneCoupledTriggers: [
+      'When the survivor reaches the barricade gate.',
+      'When the PC opens the ration crate beside the trench.',
+    ],
     pcMisfitChapterRule:
       'A survivor chapter is hunger, blame, custody, and ugly choices, not a ration docket exercise.',
+    npcWorkedExample: {
+      name: 'Hale Marr',
+      role: 'camp surgeon',
+      body: 'Hale wipes the same knife clean twice and counts the bandages before he answers.',
+    },
+    quickActionExamples: [
+      '"Press Hale on who was denied treatment. [Intimidation]"',
+      '"Read which guard watches the food line too closely. [Perception]"',
+      '"Drag the barricade brace back into place. [Athletics]"',
+      '"Give up your share before anyone asks."',
+    ],
+    continuationEscalationExample:
+      'Ch1 saved one mouth; Ch2 names who lost rations for it, turns a medic into a liability, and puts a grieving accuser in reach.',
   },
   noire: {
     ...GENERIC_EXAMPLES,
+    entityBoundTriggers: [
+      'When a lounge singer refuses a precinct fixer in front of a witness who can still change her statement.',
+      'When the missing photograph is named where a blackmailer can hear.',
+      'When an old client calls in a favor the PC thought died with the case.',
+    ],
+    sceneCoupledTriggers: [
+      'When the detective reaches the back-office door.',
+      'When the PC opens the file box beside the bar.',
+    ],
     pcMisfitChapterRule:
       'A detective chapter is who lies, pays, threatens, or remembers, not a passive case-file review.',
+    npcWorkedExample: {
+      name: 'Lena Marr',
+      role: 'lounge witness',
+      body: 'Lena taps ash into an empty glass and smiles only after the piano stops covering the room.',
+    },
+    quickActionExamples: [
+      '"Press Lena on who paid for the alibi. [Persuasion]"',
+      '"Read which table stops talking when the photo appears. [Perception]"',
+      '"Force the office window before the siren turns the corner. [Athletics]"',
+      '"Let the lie hang until someone needs to fill it."',
+    ],
+    continuationEscalationExample:
+      'Ch1 found the lie; Ch2 names who bought it, turns a witness into a target, and gives the precinct a reason to bury the PC.',
   },
 }
 

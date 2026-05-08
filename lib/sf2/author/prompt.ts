@@ -321,16 +321,16 @@ Split each carry-forward thread into one of three buckets:
 
 **Worked example:**
 
-Prior chapter: the PC located Sev in the smugglers' quarter and extracted him ahead of Tithe's next sweep. Sev revealed his own classification value. Prior chapter landed on "clean."
+Prior chapter: the PC located a missing witness in a hostile quarter and extracted them ahead of the next sweep. The witness revealed why the pressure faction wants them. Prior chapter landed on "clean."
 
 Active carry-forward threads shown above:
-- \`thread_find_sev\` · Find Sev before Tithe does — resolution_criteria: "locate Sev and make contact before the next sweep"
+- \`thread_find_witness\` · Find the witness before the pressure faction does — resolution_criteria: "locate the witness and make contact before the next sweep"
 - \`thread_pc_exposure\` · The PC knows too much — resolution_criteria: "PC is either shielded or exposed before the pressure returns"
-- \`thread_district_ledger\` · The tithe ledger is incomplete — resolution_criteria: "reconcile or expose the shortfall"
+- \`thread_missing_record\` · The public record is incomplete — resolution_criteria: "reconcile or expose the shortfall"
 
 Correct output:
-- \`thread_transitions\`: [{id: "thread_find_sev", to_status: "resolved_clean", reason: "PC located and extracted Sev in Ch1's closing scene"}]
-- \`active_threads\`: include \`thread_warden_exposure\` (still alive), \`thread_district_ledger\` (still alive), and NEW \`thread_protect_sevs_classification\` as the successor to find_sev (PC now holds an asset Tithe will hunt).
+- \`thread_transitions\`: [{id: "thread_find_witness", to_status: "resolved_clean", reason: "PC located and extracted the witness in Ch1's closing scene"}]
+- \`active_threads\`: include \`thread_pc_exposure\` (still alive), \`thread_missing_record\` (still alive), and NEW \`thread_protect_witness_secret\` as the successor to find_witness (PC now holds a secret the pressure faction will hunt).
 
 **When uncertain, keep the thread active.** A thread still alive in Ch3 is less bad than one prematurely closed. Transition only when the prior chapter's prose shows the criteria crossing clearly.
 

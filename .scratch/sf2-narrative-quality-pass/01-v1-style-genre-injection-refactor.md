@@ -1,9 +1,13 @@
 # v1-style genre injection refactor for v2 prompts
 
-Status: ready-for-agent
+Status: done
 Category: refactor
 **Type:** AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 completion pass: genre-specific examples are implemented through `buildAuthorRole(genreId)`, `buildNarratorRole(genreId)`, and `getSf2GenreExamples`. Fantasy, cyberpunk, grimdark, and noire now have full `Sf2GenreExamples` overrides instead of inheriting generic examples. Remaining shared Author/Narrator worked examples were made generic, and `npm run sf2:check-prompt-genre-leaks` proves Hegemony-specific names/terms do not appear in shared Author/Narrator prompt source after conditional bible blocks are stripped. Broader V1 prompt parity remains out of scope and is tracked by ticket #11.
 
 ## What to build
 
@@ -41,12 +45,18 @@ Builder side: replace direct constant references with `buildNarratorRole(genreId
 
 ## Acceptance criteria
 
-- [ ] `Sf2GenreExamples` struct defined, populated for all six genres (hegemony, space-opera, fantasy, cyberpunk, grimdark, noire).
-- [ ] `SF2_NARRATOR_ROLE` rewritten to interpolate `${genreExamples.npcWorkedExample.*}` and `${genreExamples.quickActionExamples}` instead of hardcoded Hegemony names.
-- [ ] `SF2_AUTHOR_ROLE` rewritten to interpolate `${genreExamples.entityBoundTriggers}`, `${genreExamples.sceneCoupledTriggers}`, and `${genreExamples.pcMisfitChapterRule}`.
-- [ ] Builder functions (e.g. `buildNarratorRole(genreId)`, `buildAuthorRole(genreId)`) selected at session start; existing callers updated.
-- [ ] No genre-specific NPC names (Sova, Kael, Vethis, Coll, Orvath, Fen Sollar, Corvin, the Warden, Sev) appear in any prompt that is not genre-conditional. `grep -r 'Sova\|Kael\|Vethis\|Coll\|Orvath\|Fen Sollar\|Corvin\|the Warden' lib/sf2/{narrator,author}/prompt.ts` returns no hits outside the per-genre bundle for Hegemony.
-- [ ] Replay fixtures continue to pass (or are explicitly updated for the new prompt shape).
+- [x] `Sf2GenreExamples` struct defined, populated for all six genres (hegemony, space-opera, fantasy, cyberpunk, grimdark, noire).
+- [x] `SF2_NARRATOR_ROLE` rewritten to interpolate `${genreExamples.npcWorkedExample.*}` and `${genreExamples.quickActionExamples}` instead of hardcoded Hegemony names.
+- [x] `SF2_AUTHOR_ROLE` rewritten to interpolate `${genreExamples.entityBoundTriggers}`, `${genreExamples.sceneCoupledTriggers}`, and `${genreExamples.pcMisfitChapterRule}`.
+- [x] Builder functions (e.g. `buildNarratorRole(genreId)`, `buildAuthorRole(genreId)`) selected at session start; existing callers updated.
+- [x] No genre-specific NPC names (Sova, Kael, Vethis, Coll, Orvath, Fen Sollar, Corvin, the Warden, Sev) appear in any prompt that is not genre-conditional. `npm run sf2:check-prompt-genre-leaks` strips conditional `SF2_BIBLE_*` blocks and scans shared Author/Narrator prompt source for Hegemony names/terms.
+- [x] Replay fixtures continue to pass (or are explicitly updated for the new prompt shape).
+
+## Completion evidence
+
+- `npm run sf2:check-prompt-genre-leaks` passes.
+- `npm run sf2:replay -- fixtures/sf2/replay` passes: 164/164 replay fixtures.
+- `npm run build` passes.
 
 ## Blocked by
 

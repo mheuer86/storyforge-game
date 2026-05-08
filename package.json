@@ -17,6 +17,7 @@
     "sf2:author-probe": "node scripts/sf2-author-probe.cjs",
     "sf2:author-fixture": "node scripts/sf2-author-fixture.cjs",
     "sf2:probe": "node scripts/sf2-probe.cjs",
+    "sf2:check-prompt-genre-leaks": "node scripts/sf2-check-prompt-genre-leaks.cjs",
     "lint": "eslint ."
   },
   "dependencies": {
