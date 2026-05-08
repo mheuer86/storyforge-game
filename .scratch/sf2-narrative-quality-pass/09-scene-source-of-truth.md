@@ -1,6 +1,6 @@
 # Scene source of truth
 
-Status: proposed
+Status: ready-for-agent
 Category: refactor
 **Type:** HITL → AFK
 **Source:** narrative-quality pass + `sf2-domain-model-pruning.md` audit (2026-05-08, proposal #4)
@@ -43,14 +43,13 @@ Deletion test from the audit: *"no code should need to read both `sceneSnapshot`
 
 ## Blocked by
 
-**Post-pass A/B test (ticket #07).** This is a behavior-changing refactor with potential to introduce regressions. Running it before the post-pass A/B would mix variables — if narrative quality regresses, you wouldn't know if it was the narrative-quality pass tickets or this refactor. Defer until post-pass.
-
-If the post-pass call is to continue v2: this becomes the *second* slice (after audit #1 Thread lifecycle, possibly before).
-If the post-pass call is to cherry-pick to v1: this becomes a v1 cleanup principle, ported as the v1 scene model is built.
+HITL alignment on the canonical accessor signature and on whether `sceneSnapshot` is renamed (`currentSceneState`) or kept. After that, AFK.
 
 ## Comments
 
-> *Strategic value high regardless of v2/v1 direction. Ports cleanly. But behavior-changing during the A/B test window mixes variables. Tracked here so it doesn't get lost.*
+> *Initially staged post-pass to avoid behavior-changing refactor during the A/B test window. On reflection: the existing scene-state has known continuity bugs (memory note `state_architecture` 2026-04-18) — NPCs reappearing, locations going stale in scene packets, the `set_location` / `set_scene_snapshot` ambiguity. Those bugs already muddle the A/B more than a fresh, contained refactor would. Cleaning the scene model before the A/B yields a cleaner test signal — pre-pass v2 with stale-location bugs is not actually a fair baseline for "did the narrative pass work."*
+>
+> *Sequencing within pre-pass: ship after #08 (pressure glossary) and #10 (diagnostic envelope) so the new diagnostic envelope can catch any continuity regressions this refactor introduces. Author/Narrator prompt updates that depend on the new tool contract come last.*
 
 ## Agent Brief
 
@@ -60,4 +59,4 @@ If the post-pass call is to cherry-pick to v1: this becomes a v1 cleanup princip
 **Desired behavior:** Canonical / scene-fact / derived split; non-overlapping tool contract; `SceneKernel` always derived.
 **Key interfaces:** `lib/sf2/types.ts`, `lib/sf2/scene-kernel/build.ts`, `lib/sf2/retrieval/scene-packet.ts`, `lib/sf2/narrator/tools.ts`, `lib/sf2/narrator/prompt.ts`.
 **Acceptance criteria:** Issue checklist; replay fixtures pass; sf2b consistency verified.
-**Out of scope:** Pre-A/B implementation. This ticket is staged for post-pass execution only.
+**Out of scope:** The larger Thread lifecycle policy module (audit #1, post-pass-only); renaming `world.currentLocation` (preserve canonical name).

@@ -18,10 +18,10 @@ The narrator-prompt fix (pressure manifestation contract) shipped during the spa
 | 06 | Trim mechanism-vocabulary list | AFK | ready-for-agent | coordinates with 04 |
 | 07 | Decide v2 continuation vs cherry-pick into v1 | HITL | proposed | 01–06 (re-evaluate after) |
 | 08 | Pressure vocabulary glossary | AFK | ready-for-agent | — |
-| 09 | Scene source of truth | HITL→AFK | proposed | post-pass A/B (#07) — under review for pre-pass bump |
+| 09 | Scene source of truth | HITL→AFK | ready-for-agent | HITL on canonical accessor signature |
 | 10 | Diagnostic finding envelope | AFK | ready-for-agent | — |
 
-Tickets #08–#10 derive from the `sf2-domain-model-pruning.md` audit (2026-05-08). All three port cleanly to v1 if we cherry-pick. #08 (glossary + type aliases) and #10 (diagnostic envelope wrapper) are pre-pass: no/low regression risk, and #10 actively helps debug the A/B playthrough. #09 is a real refactor with behavior-changing potential; under discussion whether the existing scene-state continuity bugs make pre-pass the cleaner option anyway, or whether refactor-during-test-window risk wins. Default conservative for now; user call.
+Tickets #08–#10 derive from the `sf2-domain-model-pruning.md` audit (2026-05-08). All three port cleanly to v1 if we cherry-pick. All three are pre-pass on the same logic: their value is independent of the strategic decision, and the existing scene-state continuity bugs (#09) already muddle the A/B more than fresh refactor risk would. Suggested sequencing within pre-pass: #08 (glossary, no behavior change) → #10 (diagnostic envelope wrapper) → #09 (scene model refactor, with #10 already in place to catch regressions).
 
 ## Skipped intentionally
 
