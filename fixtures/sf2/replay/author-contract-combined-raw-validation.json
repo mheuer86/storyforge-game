@@ -188,13 +188,14 @@
         ]
       },
       "expect": {
-        "rawErrorCount": 6,
+        "rawErrorCount": 7,
         "validationErrorCount": 0,
-        "combinedErrorCount": 6,
+        "combinedErrorCount": 7,
         "combinedErrorIncludesAll": [
           "starting_npcs must contain exactly 3 NPCs",
           "pressure_ladder must contain exactly 3 steps",
           "possible_revelations must contain exactly 2 revelations",
+          "possible_revelations[0] procedural surface must expose hidden agency",
           "moral_fault_lines must contain exactly 2 fault lines",
           "escalation_options must contain exactly 3 options",
           "editorialized_lore must contain exactly 2 items"

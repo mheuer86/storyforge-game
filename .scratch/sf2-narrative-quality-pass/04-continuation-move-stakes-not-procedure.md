@@ -1,9 +1,13 @@
 # Continuation Move 1: stakes, not procedural surface
 
-Status: ready-for-agent
+Status: verified-built
 Category: bug
 **Type:** AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: continuation prompt guidance and validators enforce stakes-first continuation and procedure ownership; both procedure-gravity fixtures passed.
 
 ## What to build
 

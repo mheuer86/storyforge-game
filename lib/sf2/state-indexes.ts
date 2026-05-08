@@ -1,9 +1,5 @@
 import type { Sf2State, Sf2Thread } from './types'
-
-const THREAD_OWNER_BACKREF_STATUSES = new Set<Sf2Thread['status']>([
-  'active',
-  'deferred',
-])
+import { isThreadOwnerBackrefEligible } from './thread-lifecycle'
 
 export function rebuildOwnerThreadBackrefs(state: Sf2State): void {
   for (const npc of Object.values(state.campaign.npcs)) {
@@ -14,7 +10,7 @@ export function rebuildOwnerThreadBackrefs(state: Sf2State): void {
   }
 
   for (const thread of Object.values(state.campaign.threads)) {
-    if (!THREAD_OWNER_BACKREF_STATUSES.has(thread.status)) continue
+    if (!isThreadOwnerBackrefEligible(thread)) continue
     const owner =
       thread.owner.kind === 'npc'
         ? state.campaign.npcs[thread.owner.id]

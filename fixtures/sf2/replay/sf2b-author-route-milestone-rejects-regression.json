@@ -444,9 +444,9 @@
         "pressure_ladder": [
           {
             "id": "ladder_open_record",
-            "pressure": "Sollar opens a voluntary contact record.",
+            "pressure": "Sollar opens a contact record that gives Vethara leverage.",
             "trigger_condition": "Sollar names the Driftrunner and asks for confirmation.",
-            "narrative_effect": "Silence and speech both become evidence.",
+            "narrative_effect": "The PC risks making silence or speech evidence.",
             "severity": "standard"
           },
           {

@@ -15,6 +15,7 @@ import type {
   Sf2Tension,
   ThreadRole,
 } from '../types'
+import { isThreadResolved } from '../thread-lifecycle'
 
 // Contribution floors conservatively (D5: a half-resolved thread shouldn't
 // round up into the engine). Aggregation rounds (so averaged engines don't
@@ -95,7 +96,7 @@ export function initializeChapterPressure(
   for (const threadId of chapterSetup.activeThreadIds) {
     const thread = prevState.campaign.threads[threadId]
     if (!thread) continue
-    if (thread.status.startsWith('resolved_')) continue
+    if (isThreadResolved(thread)) continue
 
     const role = determineThreadRole(threadId, thread, chapterSetup, priorActiveSet)
     const { openingFloor, cooledAtOpen } = role === 'new'

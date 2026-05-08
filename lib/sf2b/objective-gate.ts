@@ -1,24 +1,5 @@
 import type { Sf2ChapterTensionScoreLine, Sf2State, Sf2Thread, Sf2ThreadStatus } from '../sf2/types'
-
-const TERMINAL_STATUSES = new Set<Sf2ThreadStatus>([
-  'resolved_clean',
-  'resolved_costly',
-  'resolved_failure',
-  'resolved_catastrophic',
-  'abandoned',
-  'deferred',
-])
-
-const SUCCESS_STATUSES = new Set<Sf2ThreadStatus>([
-  'resolved_clean',
-  'resolved_costly',
-])
-
-const FAILURE_STATUSES = new Set<Sf2ThreadStatus>([
-  'resolved_failure',
-  'resolved_catastrophic',
-  'abandoned',
-])
+import { isThreadResolved, isThreadTerminal } from '../sf2/thread-lifecycle'
 
 export interface Sf2bObjectiveGateRead {
   chapterTurnCount: number
@@ -42,7 +23,9 @@ export function readSf2bObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
   ).length
   const foregroundThread = selectForegroundThread(state)
   const foregroundStatus = foregroundThread?.status
-  const foregroundAnswered = Boolean(foregroundStatus && TERMINAL_STATUSES.has(foregroundStatus))
+  const foregroundAnswered = Boolean(
+    foregroundStatus && (isThreadTerminal(foregroundStatus) || foregroundStatus === 'deferred')
+  )
   const reframeCandidate = foregroundAnswered
     ? selectReframeCandidate(state, foregroundThread?.id, state.chapter.setup.tensionScore)
     : undefined
@@ -83,9 +66,9 @@ function selectForegroundThread(state: Sf2State): Sf2Thread | undefined {
 }
 
 function outcomeForStatus(status: Sf2ThreadStatus): Sf2bObjectiveGateRead['foregroundOutcome'] {
-  if (SUCCESS_STATUSES.has(status)) return 'resolved'
-  if (FAILURE_STATUSES.has(status)) return 'failed'
+  if (status === 'resolved_clean' || status === 'resolved_costly') return 'resolved'
   if (status === 'deferred') return 'deferred'
+  if (isThreadTerminal(status) || isThreadResolved(status)) return 'failed'
   return 'active'
 }
 

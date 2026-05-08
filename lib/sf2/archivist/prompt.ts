@@ -48,6 +48,7 @@ Optional fields, emitted as the prose calls for them:
 - **revelation_hints_delivered** — configured hint phrases for authored revelations that appeared in prose
 - **revelations_revealed** — authored revelations whose truth actually landed this turn
 - **ladder_fires** — pressure-ladder step ids whose triggerCondition was met THIS turn
+- **pressure_events** — human-consequence events explaining why pressure changed or ladder pressure landed
 
 Every \`creates\` and \`updates\` must include \`source_quote\` — the phrase from prose that supports it.
 
@@ -323,6 +324,8 @@ Tension is 0-10. **Default move per turn is 0 or ±1.**
 Tension tracks *progress toward resolution or failure*, not how kinetic the prose reads. A high-stakes conversation can produce ±0 if the underlying thread state is unchanged.
 
 \`pacingClassification.tensionDeltasByThreadId\` must match your thread updates. Resolved threads get a terminal delta and then stop receiving updates.
+
+When pressure changes for a human reason, also emit \`pressure_events\`. Keep \`tension_deltas\` for numeric compatibility; \`pressure_events\` explains the consequence: source, target thread ids, evidence quote, idempotency key, and who pays / what gets harder / what is at risk / what is visibly worse. A procedural surface like a filing, deadline, lockout, log entry, or audit only counts if the event names the human cost it creates.
 
 ## Agenda movement and chapter pressure
 
@@ -681,6 +684,8 @@ ${revelations || '_(none)_'}
 ${unfiredLadder || '_(all steps fired)_'}
 
 For each unfired step above: did the prose THIS turn + current state satisfy the triggerCondition? If yes, include the step's id in \`ladder_fires\`. Mechanical evaluation only — does the trigger text literally read as met?
+
+If a ladder fire or deadline creates concrete pressure, pair the mechanical \`ladder_fires\` / \`tension_deltas\` signal with a \`pressure_events\` entry that names the human consequence. Do not emit a pressure event for pure atmosphere or paperwork unless someone specific pays a cost, loses leverage, faces danger, or has a harder choice.
 
 **Fire skeptically.** A 3-step ladder is meant to pace an 18-25 turn chapter — that's roughly one fire every 6-8 turns on average. Most turns fire ZERO.
 

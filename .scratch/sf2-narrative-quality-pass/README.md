@@ -10,18 +10,23 @@ The narrator-prompt fix (pressure manifestation contract) shipped during the spa
 
 | # | Title | Type | Status | Blocked by |
 |---|---|---|---|---|
-| 01 | v1-style genre injection refactor for v2 prompts | AFK | ready-for-agent | — |
-| 02 | Reframe outcome spectrum to human consequences | AFK | ready-for-agent | — |
-| 03 | Genre-neutralize trigger-discipline examples | AFK | ready-for-agent | coordinates with 01 |
-| 04 | Continuation Move 1: stakes, not procedural surface | AFK | ready-for-agent | coordinates with 06 |
-| 05 | Add `human_stakes` block to chapter setup contract | HITL→AFK | ready-for-agent | — |
-| 06 | Trim mechanism-vocabulary list | AFK | ready-for-agent | coordinates with 04 |
+| 01 | v1-style genre injection refactor for v2 prompts | AFK | partial | — |
+| 02 | Reframe outcome spectrum to human consequences | AFK | verified-built | — |
+| 03 | Genre-neutralize trigger-discipline examples | AFK | verified-built | coordinates with 01 |
+| 04 | Continuation Move 1: stakes, not procedural surface | AFK | verified-built | coordinates with 06 |
+| 05 | Add `human_stakes` block to chapter setup contract | HITL→AFK | verified-built | — |
+| 06 | Trim mechanism-vocabulary list | AFK | partial | coordinates with 04 |
 | 07 | Decide v2 continuation vs cherry-pick into v1 | HITL | proposed | 01–06 (re-evaluate after) |
-| 08 | Pressure vocabulary glossary | AFK | ready-for-agent | — |
-| 09 | Scene source of truth | HITL→AFK | ready-for-agent | HITL on canonical accessor signature |
-| 10 | Diagnostic finding envelope | AFK | ready-for-agent | — |
+| 08 | Pressure vocabulary glossary | AFK | verified-built | — |
+| 09 | Scene source of truth | HITL→AFK | merge-into-domain-18 | HITL on canonical accessor signature |
+| 10 | Diagnostic finding envelope | AFK | verified-built | — |
+| 11 | Prompt surface compression audit | HITL→AFK | proposed | status reconciliation recommended |
+
+Status reconciliation lives in `STATUS-RECONCILIATION.md`. Verified fixtures passed on 2026-05-08, including the focused Author/diagnostic fixtures and the full SF2 replay suite (`164/164`).
 
 Tickets #08–#10 derive from the `sf2-domain-model-pruning.md` audit (2026-05-08). All three port cleanly to v1 if we cherry-pick. All three are pre-pass on the same logic: their value is independent of the strategic decision, and the existing scene-state continuity bugs (#09) already muddle the A/B more than fresh refactor risk would. Suggested sequencing within pre-pass: #08 (glossary, no behavior change) → #10 (diagnostic envelope wrapper) → #09 (scene model refactor, with #10 already in place to catch regressions).
+
+Ticket #11 is a cross-cutting prompt hygiene pass. It should not blindly compress personality out of SF2, but should identify duplicate instructions, stale bug patches, excessive examples, rules that now belong in validators, fixtures, tool schemas, or derived code-owned advisories, and load-bearing V1 prompt instructions that were lost during the SF2 rebuild.
 
 ## Skipped intentionally
 

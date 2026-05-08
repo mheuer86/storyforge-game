@@ -155,10 +155,10 @@
         "possible_revelations": [
           {
             "id": "rev_prior_delay",
-            "statement": "The settlement already delayed one tithe filing last quarter.",
+            "statement": "Corvin changed the filing timestamp.",
             "held_by": "npc_corvin",
             "emergence_condition": "Corvin is pressed on why he arrived early.",
-            "recontextualizes": "The audit is not routine.",
+            "recontextualizes": "The audit date changed.",
             "hint_phrases": [
               "last quarter's silence",
               "the earlier grace"
@@ -304,7 +304,9 @@
       },
       "expect": {
         "combinedErrorIncludesAll": [
-          "chapter_frame.outcome_spectrum.clean must name a human consequence"
+          "chapter_frame.outcome_spectrum.clean must name a human consequence",
+          "pressure_ladder[0] procedural pressure must name who pays",
+          "possible_revelations[0] procedural surface must expose hidden agency"
         ],
         "validationErrorIncludesAll": [
           "chapter_frame.outcome_spectrum.clean must name a human consequence"

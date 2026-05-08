@@ -1,0 +1,65 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread lifecycle abandoned transition clears chapter runtime pressure",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 5,
+              "localEscalation": 2,
+              "maxThisChapter": 7,
+              "cooledAtOpen": false
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "I walk away from the intake line.",
+    "narrator": {
+      "prose": "The Warden leaves the intake hall without filing, and the clerk marks the matter no longer pursued.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "abandoned",
+            "reason": "The PC walks away from the intake problem.",
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["transitions[0]"],
+    "activeThreadIdsExcludes": ["thread_spine"],
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_spine",
+        "absent": true
+      }
+    ],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "abandoned",
+        "tension": 5,
+        "peakTension": 5
+      }
+    ]
+  }
+}

@@ -132,33 +132,33 @@
         "pressure_ladder": [
           {
             "id": "ladder_deadline",
-            "pressure": "Corvin names the filing deadline aloud.",
+            "pressure": "Corvin uses the filing deadline to expose Vesh's prior delay.",
             "trigger_condition": "The Warden asks for more time.",
-            "narrative_effect": "The room hears delay as weakness.",
+            "narrative_effect": "Vesh's protection of the PC becomes leverage.",
             "severity": "standard"
           },
           {
             "id": "ladder_public_count",
-            "pressure": "The shortfall count becomes public.",
+            "pressure": "The ledger shortfall exposes Ash's hidden rooms.",
             "trigger_condition": "The crowd sees the ledger.",
-            "narrative_effect": "Private negotiation collapses.",
+            "narrative_effect": "Ash loses freedom to shelter families quietly.",
             "severity": "standard"
           },
           {
             "id": "ladder_breach",
             "pressure": "Corvin prepares breach language.",
             "trigger_condition": "The roster remains unresolved late.",
-            "narrative_effect": "The Synod clock becomes irreversible.",
+            "narrative_effect": "Vesh risks reputation if she blocks Synod wording.",
             "severity": "hard"
           }
         ],
         "possible_revelations": [
           {
             "id": "rev_prior_delay",
-            "statement": "The settlement already delayed one tithe filing last quarter.",
+            "statement": "Corvin protected last quarter's tithe delay to keep leverage over Vesh.",
             "held_by": "npc_corvin",
             "emergence_condition": "Corvin is pressed on why he arrived early.",
-            "recontextualizes": "The audit is not routine.",
+            "recontextualizes": "The audit exposes an old protection debt.",
             "hint_phrases": [
               "last quarter's silence",
               "the earlier grace"
@@ -166,6 +166,7 @@
             "hints_required": 2,
             "valid_reveal_contexts": [
               "confession",
+              "documentary_surface",
               "not_a_context"
             ],
             "invalid_reveal_contexts": [
@@ -312,7 +313,8 @@
           "npc_vesh"
         ],
         "firstRevealValidContextsEquals": [
-          "confession"
+          "confession",
+          "documentary_surface"
         ],
         "pacingTargetEquals": {
           "min": 18,

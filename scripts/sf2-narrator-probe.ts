@@ -186,6 +186,7 @@ function createMinimalState(): Sf2State {
       beats: {},
       temporalAnchors: {},
       documents: {},
+      pressureEvents: [],
       npcs: {},
       factions: {
         faction_registry: {

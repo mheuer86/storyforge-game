@@ -1,10 +1,14 @@
 # Clarify revelations as human hidden truths, not procedural twists
 
-Status: proposed
+Status: partial
 Labels: needs-triage
 Category: architecture
 **Type:** HITL -> AFK
 **Source:** SF2 domain model conversation, revelations review
+
+## Reconciliation
+
+2026-05-08 status pass: partial. Built: Author prompt/tool/schema language now frames `possible_revelations` as hidden truths about agency, coercion, betrayal, exposure, danger, obligation, identity, power, or relationship stakes, and Author validation rejects procedural surfaces that do not expose those human/faction stakes. Still open: durable naming remains `Sf2PossibleRevelation`, event fields remain `revelationHintsDelivered` / `revelationsRevealed`, failed-roll reveal seeds are not modeled as a separate contract, and retrieval wording/event naming has not been fully split into `hintDelivered` / `truthRevealed`.
 
 ## What to build
 

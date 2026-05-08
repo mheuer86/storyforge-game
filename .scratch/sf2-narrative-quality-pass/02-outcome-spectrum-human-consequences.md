@@ -1,9 +1,13 @@
 # Reframe outcome spectrum to human consequences
 
-Status: ready-for-agent
+Status: verified-built
 Category: feature
 **Type:** AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: Author prompt and validators require human outcome anchors; `author-outcome-spectrum-rejects-procedural-only.json` passed.
 
 ## What to build
 

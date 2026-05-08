@@ -116,6 +116,7 @@
         "currentInterlocutorIdsEquals": ["npc_kess"],
         "sceneSnapshotFirstTurnIndexEquals": 0,
         "sceneBundleCacheCleared": true,
+        "pressureEventsCount": 0,
         "hasCampaignBuckets": ["beats", "temporalAnchors", "documents"],
         "threadOwnerEquals": {
           "threadId": "thread_legacy",

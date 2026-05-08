@@ -529,17 +529,26 @@ const tensionScoreSchema = {
 
 const possibleRevelationsSchema = {
   type: 'array' as const,
-  description: 'Exactly 2 latent truths.',
+  description:
+    'Exactly 2 hidden truths that reframe human agency, coercion, betrayal, exposure, danger, obligation, identity, power, or relationship stakes. Not procedural facts with names attached.',
   minItems: 2,
   maxItems: 2,
   items: {
     type: 'object' as const,
     properties: {
       id: { type: 'string' as const },
-      statement: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
+      statement: {
+        type: 'string' as const,
+        description:
+          'One sentence, ≤24 words. Hidden human/faction truth, not a filing/log/timestamp unless it exposes who acted, benefits, pays, or is endangered.',
+      },
       held_by: { type: 'string' as const },
       emergence_condition: { type: 'string' as const, description: '≤22 words.' },
-      recontextualizes: { type: 'string' as const, description: '≤22 words.' },
+      recontextualizes: {
+        type: 'string' as const,
+        description:
+          '≤22 words. Name what relationship, pressure, decision, danger, or obligation changes meaning.',
+      },
       hint_phrases: {
         type: 'array' as const,
         description: '3 short substrings the Narrator can plant before this reveal fires.',

@@ -23,8 +23,8 @@ Whole-set reconciliation with `.scratch/sf2-narrative-quality-pass/` lives in `W
 
 | # | Title | Type | Status | Blocked by |
 |---|---|---|---|---|
-| 01 | Harden clues into investigation evidence | HITL -> AFK | proposed | None |
-| 02 | Add a thread lifecycle policy module | AFK | proposed | None |
+| 01 | Harden clues into investigation evidence | HITL -> AFK | verified-built | None |
+| 02 | Add a thread lifecycle policy module | AFK | verified-built | None |
 | 03 | Move chapter thread assignment out of durable Thread | HITL -> AFK | proposed | 02 |
 | 04 | Split NPC fiction role from dramatic role and faction refs | HITL -> AFK | proposed | None |
 | 05 | Give factions lifecycle, leadership, and membership refs | HITL -> AFK | proposed | 04 |
@@ -37,9 +37,9 @@ Whole-set reconciliation with `.scratch/sf2-narrative-quality-pass/` lives in `W
 | 12 | Close remaining Document contract gaps | HITL -> AFK | proposed | None |
 | 13 | Finish TemporalAnchor and Timer lifecycle boundary | AFK | proposed | 02 recommended |
 | 14 | Tighten EmotionalBeat trigger and retention policy | HITL -> AFK | proposed | 07 recommended |
-| 15 | Define pressure events with human consequences | HITL -> AFK | proposed | 02 and 03 recommended |
+| 15 | Define pressure events with human consequences | HITL -> AFK | verified-built | 02 and 03 recommended |
 | 16 | Separate Archivist patch lanes by semantic role | HITL -> AFK | proposed | 15 informs pressure-event lane |
-| 17 | Clarify revelations as human hidden truths, not procedural twists | HITL -> AFK | proposed | 15 recommended |
+| 17 | Clarify revelations as human hidden truths, not procedural twists | HITL -> AFK | partial | 15 recommended |
 | 18 | Clarify SceneSnapshot and SceneKernel contracts | HITL -> AFK | proposed | 08 recommended |
 | 19 | Harden Working Set as the retrieval selection contract | HITL -> AFK | proposed | 01, 12, 14, 18 recommended |
 
@@ -71,3 +71,4 @@ Do not add a broad `Fact` entity yet. The current discomfort with clues should f
 - Revelation cleanup should split the durable authored hidden truth from the turn events that advance or reveal it. Consider renaming `PossibleRevelation` to `AuthoredReveal` or `HiddenTruth`, with separate `hintDelivered` and `truthRevealed` events.
 - SceneSnapshot should be the mutable, current-scene truth: scene id, current location reference, on-stage cast, focused interlocutors, time label, visible established facts, and replay-window cursor. SceneKernel should remain a derived read/enforcement view, never a model-written object. The current weak spot is that `set_scene_snapshot` is a broad direct write surface doing location, cast, time, scene transition, and established-fact changes at once.
 - Working Set is the last major reviewed concept in this pass. It should be the deterministic retrieval selection contract: full/stub/excluded ids plus reasons and budget telemetry. Current code has the core scorer, but `stubEntityIds` barely feed Narrator context, documents/locations/temporal anchors are mostly outside the selector, and telemetry is not yet closing the loop into weight/budget calibration.
+- Prompt hygiene is a parallel narrative-quality concern, not another durable entity model. Track it in `.scratch/sf2-narrative-quality-pass/11-prompt-surface-compression-audit.md`: review duplicate instructions, excessive examples, stale bug-scar rules, and rules that now belong in validators, fixtures, tool schemas, or derived projections.

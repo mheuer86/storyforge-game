@@ -1,10 +1,14 @@
 # Add a thread lifecycle policy module
 
-Status: proposed
+Status: verified-built
 Labels: needs-triage
 Category: architecture
 **Type:** AFK
 **Source:** SF2 domain model pruning audit
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: `lib/sf2/thread-lifecycle.ts` now owns thread status vocabulary, transition validity, resolved/terminal/pressure/owner-backref predicates, and invalid-transition reasons. Patch application, pressure runtime/derive, author contract, state indexes, chapter meaning validation, and SF2B objective/meaning logic read from the lifecycle policy. New thread lifecycle fixtures passed in the full SF2 replay suite.
 
 ## What to build
 
@@ -41,4 +45,3 @@ This should be the first implementation slice for thread cleanup. It deletes dup
 **Key interfaces:** `Sf2ThreadStatus`, `apply-patch.ts`, `pressure/runtime.ts`, `pressure/derive.ts`, `author/contract.ts`, `state-indexes.ts`, `sf2b/objective-gate.ts`, `sf2b/meaning-digest.ts`.
 
 **Out of scope:** Moving chapter assignment fields off `Sf2Thread`.
-

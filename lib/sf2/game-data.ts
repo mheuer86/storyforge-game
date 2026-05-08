@@ -211,6 +211,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       factions: {},
       locations: {},
       documents: {},
+      pressureEvents: [],
       floatingClueIds: [],
       pivotalSceneIds: [],
       lexicon: [],

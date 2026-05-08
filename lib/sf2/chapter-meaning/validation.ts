@@ -1,5 +1,6 @@
 import { PROCEDURE_NONE } from '../procedure'
 import type { Sf2ChapterMeaning, Sf2State } from '../types'
+import { isThreadResolved } from '../thread-lifecycle'
 
 export type ChapterMeaningValidationFinding = {
   field: string
@@ -79,9 +80,8 @@ function matchesKnownPressureOwner(state: Sf2State, owner: string): boolean {
 }
 
 function chapterHasResolvedMilestones(state: Sf2State): boolean {
-  const terminal = new Set(['resolved_clean', 'resolved_costly', 'resolved_failure', 'resolved_catastrophic'])
   return Object.values(state.campaign.threads).some((thread) =>
-    terminal.has(thread.status) &&
+    isThreadResolved(thread) &&
     state.chapter.setup.activeThreadIds.includes(thread.id)
   )
 }

@@ -246,6 +246,14 @@ interface ReplayFixture {
       effectivePressure?: number
       absent?: boolean
     }>
+    pressureEventsCount?: number
+    pressureEventsInclude?: Array<{
+      idempotencyKey?: string
+      source?: string
+      targetThreadIdsInclude?: string[]
+      whoPays?: string
+      visiblePressureIncludes?: string
+    }>
     beatsCount?: number
     beatsInclude?: Array<{
       textIncludes?: string
@@ -385,6 +393,7 @@ interface ReplayFixture {
         sceneSnapshotFirstTurnIndexEquals?: number
         sceneBundleCacheCleared?: boolean
         hasCampaignBuckets?: string[]
+        pressureEventsCount?: number
         threadOwnerEquals?: { threadId: string; kind: string; id: string }
         npcRolesInclude?: Array<{ npcId: string; role: string }>
         ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
@@ -1217,6 +1226,9 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
       failures.push(`persistenceNormalize.campaign.${bucket}: expected object bucket`)
     }
   }
+  if (typeof e.pressureEventsCount === 'number' && state.campaign.pressureEvents.length !== e.pressureEventsCount) {
+    failures.push(`persistenceNormalize.pressureEvents: expected ${e.pressureEventsCount}, got ${state.campaign.pressureEvents.length}`)
+  }
   if (e.threadOwnerEquals) {
     const thread = state.campaign.threads[e.threadOwnerEquals.threadId]
     if (!thread) {
@@ -1705,6 +1717,7 @@ function normalizePatch(patch: Partial<Sf2ArchivistPatch> | null, turnIndex: num
     flags: patch?.flags ?? [],
     lexiconAdditions: patch?.lexiconAdditions ?? [],
     ladderFires: patch?.ladderFires ?? [],
+    pressureEvents: patch?.pressureEvents,
     coherenceFindings: patch?.coherenceFindings ?? [],
     emotionalBeats: patch?.emotionalBeats,
     revelationHintsDelivered: patch?.revelationHintsDelivered,
@@ -1812,6 +1825,27 @@ function assertExpected(
         failures.push(`threadPressure ${pressureExpected.threadId} effective expected ${pressureExpected.effectivePressure}, got ${effective}`)
       }
     }
+  }
+  const pressureEvents = state.campaign.pressureEvents ?? []
+  if (typeof expected.pressureEventsCount === 'number' && pressureEvents.length !== expected.pressureEventsCount) {
+    failures.push(`pressureEvents count expected ${expected.pressureEventsCount}, got ${pressureEvents.length}`)
+  }
+  for (const want of expected.pressureEventsInclude ?? []) {
+    const match = pressureEvents.find((event) => {
+      if (want.idempotencyKey !== undefined && event.idempotencyKey !== want.idempotencyKey) return false
+      if (want.source !== undefined && event.source !== want.source) return false
+      if (
+        want.targetThreadIdsInclude &&
+        !want.targetThreadIdsInclude.every((threadId) => event.targetThreadIds.includes(threadId))
+      ) return false
+      if (want.whoPays !== undefined && event.humanConsequence.whoPays !== want.whoPays) return false
+      if (
+        want.visiblePressureIncludes !== undefined &&
+        !event.humanConsequence.visiblePressure.toLowerCase().includes(want.visiblePressureIncludes.toLowerCase())
+      ) return false
+      return true
+    })
+    if (!match) failures.push(`missing pressureEvent matching ${JSON.stringify(want)}`)
   }
   for (const id of expected.npcIdsIncludes ?? []) {
     if (!state.campaign.npcs[id]) failures.push(`npc registry missing ${id}`)
@@ -2961,6 +2995,7 @@ function createMinimalState(): Sf2State {
         [location.id]: location,
       },
       documents: {},
+      pressureEvents: [],
       floatingClueIds: [],
       pivotalSceneIds: [],
       lexicon: [],

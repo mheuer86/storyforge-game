@@ -4,6 +4,7 @@ import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
 import { isSf2bState } from '../../sf2b/mode'
 import { readSf2bObjectiveGate } from '../../sf2b/objective-gate'
+import { isThreadTerminal } from '../thread-lifecycle'
 import type {
   Sf2ArchivistFlag,
   Sf2ChapterSetupRuntimeState,
@@ -16,14 +17,6 @@ import type {
 
 const MIN_CLOSE_TURN = 18
 const MAX_LADDER_FIRES_PER_TURN = 2
-
-const CLOSE_TERMINAL_THREAD_STATUSES = new Set<Sf2Thread['status']>([
-  'resolved_clean',
-  'resolved_costly',
-  'resolved_failure',
-  'resolved_catastrophic',
-  'abandoned',
-])
 
 export interface ChapterPressureCloseReadiness {
   closeReady: boolean
@@ -234,7 +227,7 @@ export function computeChapterCloseReadiness(
   const ladderSteps = state.chapter.setup.pressureLadder
   const ladderFiredCount = ladderSteps.filter((s) => s.fired).length
   const halfLadderFired = ladderSteps.length > 0 && ladderFiredCount >= Math.ceil(ladderSteps.length / 2)
-  const spineResolved = spineThread !== null && CLOSE_TERMINAL_THREAD_STATUSES.has(spineThread.status)
+  const spineResolved = spineThread !== null && isThreadTerminal(spineThread)
   const sf2bObjective = isSf2bState(state) ? readSf2bObjectiveGate(state) : null
   let promotedSpineThreadId: string | undefined
   let successorRequired = false
@@ -257,7 +250,7 @@ export function computeChapterCloseReadiness(
     ? state.campaign.threads[promotedSpineThreadId]
     : spineThread
   const spineResolvedAfterPromotion =
-    effectiveSpineThread !== null && CLOSE_TERMINAL_THREAD_STATUSES.has(effectiveSpineThread.status)
+    effectiveSpineThread !== null && isThreadTerminal(effectiveSpineThread)
   const stalledFallback =
     chapterTurnCount >= 25 && halfLadderFired && (effectiveSpineThread?.tension ?? 0) >= 8
   const closeReady =

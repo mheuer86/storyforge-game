@@ -298,9 +298,9 @@
           },
           {
             "id": "ladder_witness_speaks",
-            "pressure": "Mira names the pause.",
+            "pressure": "Mira risks exposure by naming the pause.",
             "trigger_condition": "The PC protects Mira from Hale.",
-            "narrative_effect": "The log becomes contestable.",
+            "narrative_effect": "Hale loses leverage over the cargo log.",
             "severity": "standard"
           },
           {

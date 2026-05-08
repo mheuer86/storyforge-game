@@ -1,9 +1,13 @@
 # Scene source of truth
 
-Status: ready-for-agent
+Status: merge-into-domain-18
 Category: refactor
 **Type:** HITL → AFK
 **Source:** narrative-quality pass + `sf2-domain-model-pruning.md` audit (2026-05-08, proposal #4)
+
+## Reconciliation
+
+2026-05-08 status pass: keep open as design/implementation work, but merge into the fuller Domain 18 SceneSnapshot/SceneKernel contract rather than executing as a separate narrative-quality ticket.
 
 ## What to build
 

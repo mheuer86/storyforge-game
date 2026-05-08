@@ -1,10 +1,14 @@
 # Define pressure events with human consequences
 
-Status: proposed
+Status: verified-built
 Labels: needs-triage
 Category: architecture
 **Type:** HITL -> AFK
 **Source:** SF2 domain model conversation, pressure review
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: `Sf2PressureEvent` is typed and persisted, Archivist schema/prompt can emit `pressure_events`, route normalization maps tool payloads, apply-patch validates target threads, idempotency, source/scope/severity, evidence, and required human consequence, and persistence normalization repairs/drops invalid legacy entries. Fixtures `pressure-event-missing-human-consequence-rejected.json` and `pressure-event-duplicate-idempotency-dedupes.json` passed in the full SF2 replay suite.
 
 ## What to build
 

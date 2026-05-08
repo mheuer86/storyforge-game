@@ -18,6 +18,7 @@ import {
   type Sf2Location,
   type Sf2Npc,
   type Sf2NpcStatus,
+  type Sf2PressureEvent,
   type Sf2State,
   type Sf2Thread,
   type Sf2Clue,
@@ -35,6 +36,25 @@ import {
 } from '../thread-resolution'
 
 const RECENT_TURNS_LIMIT = 6
+const PRESSURE_EVENT_LIMIT = 50
+const PRESSURE_EVENT_SOURCES: Sf2PressureEvent['source'][] = [
+  'failed_roll',
+  'npc_agenda',
+  'faction_move',
+  'deadline',
+  'decision',
+  'promise_neglected',
+  'clue_revealed',
+  'ladder_fire',
+]
+const PRESSURE_EVENT_SCOPES: Sf2PressureEvent['scope'][] = [
+  'canonical_thread',
+  'chapter_local',
+]
+const PRESSURE_EVENT_SEVERITIES: NonNullable<Sf2PressureEvent['severity']>[] = [
+  'standard',
+  'hard',
+]
 
 export interface Sf2PersistenceNormalizeReport {
   state: Sf2State
@@ -112,6 +132,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   campaign.factions = objectMap(campaign.factions, 'campaign.factions', repairs) as Sf2State['campaign']['factions']
   campaign.locations = objectMap(campaign.locations, 'campaign.locations', repairs) as Sf2State['campaign']['locations']
   campaign.documents = objectMap(campaign.documents, 'campaign.documents', repairs) as Sf2State['campaign']['documents']
+  campaign.pressureEvents = normalizePressureEvents(campaign.pressureEvents, state, repairs)
   campaign.floatingClueIds = stringArray(campaign.floatingClueIds)
   campaign.pivotalSceneIds = stringArray(campaign.pivotalSceneIds)
   campaign.lexicon = Array.isArray(campaign.lexicon) ? campaign.lexicon : []
@@ -418,6 +439,114 @@ function normalizeClue(
   clue.chapterCreated = positiveInt(clue.chapterCreated, currentChapter) as Sf2ChapterNumber
   clue.turn = numberOr(clue.turn, 0)
   return clue
+}
+
+function normalizePressureEvents(
+  raw: unknown,
+  state: Sf2State,
+  repairs: string[]
+): Sf2PressureEvent[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    repairs.push('campaign.pressureEvents:[]')
+    return []
+  }
+
+  const seen = new Set<string>()
+  const normalized: Sf2PressureEvent[] = []
+  for (const item of raw) {
+    const record = asRecord(item)
+    if (!record) {
+      repairs.push('campaign.pressureEvents:dropped-invalid')
+      continue
+    }
+    const idempotencyKey = stringOr(record.idempotencyKey ?? record.idempotency_key, '')
+    if (!idempotencyKey || seen.has(idempotencyKey)) {
+      repairs.push('campaign.pressureEvents:dropped-duplicate-or-keyless')
+      continue
+    }
+    const targetThreadIds = stringArray(record.targetThreadIds ?? record.target_thread_ids)
+      .filter((id) => Boolean(state.campaign.threads[id]))
+    if (targetThreadIds.length === 0) {
+      repairs.push(`campaign.pressureEvents:${idempotencyKey}:dropped-missing-thread`)
+      continue
+    }
+    const humanRaw = asRecord(record.humanConsequence ?? record.human_consequence)
+    if (!humanRaw) {
+      repairs.push(`campaign.pressureEvents:${idempotencyKey}:dropped-missing-human-consequence`)
+      continue
+    }
+    const whoPays = stringOr(humanRaw.whoPays ?? humanRaw.who_pays, '')
+    const whoGainsLeverage = stringOr(humanRaw.whoGainsLeverage ?? humanRaw.who_gains_leverage, '')
+    if (!isKnownPressureActor(state, whoPays)) {
+      repairs.push(`campaign.pressureEvents:${idempotencyKey}:dropped-unknown-who-pays`)
+      continue
+    }
+    const amountRaw = Number(record.amount)
+    const severityRaw = record.severity
+    const severity = PRESSURE_EVENT_SEVERITIES.includes(severityRaw as NonNullable<Sf2PressureEvent['severity']>)
+      ? severityRaw as NonNullable<Sf2PressureEvent['severity']>
+      : undefined
+    const event: Sf2PressureEvent = {
+      id: stringOr(record.id, `pressure_event_${normalized.length + 1}`),
+      turn: positiveInt(record.turn, 0),
+      source: oneOf<Sf2PressureEvent['source']>(
+        record.source,
+        PRESSURE_EVENT_SOURCES,
+        'decision'
+      ),
+      targetThreadIds,
+      scope: oneOf<Sf2PressureEvent['scope']>(
+        record.scope,
+        PRESSURE_EVENT_SCOPES,
+        'chapter_local'
+      ),
+      evidenceQuote: stringOr(record.evidenceQuote ?? record.evidence_quote, ''),
+      humanConsequence: {
+        whoPays: whoPays as Sf2PressureEvent['humanConsequence']['whoPays'],
+        whoGainsLeverage: isKnownPressureActor(state, whoGainsLeverage)
+          ? whoGainsLeverage
+          : undefined,
+        whatGetsHarder: stringOr(humanRaw.whatGetsHarder ?? humanRaw.what_gets_harder, ''),
+        whatIsAtRisk: stringOr(humanRaw.whatIsAtRisk ?? humanRaw.what_is_at_risk, ''),
+        visiblePressure: stringOr(humanRaw.visiblePressure ?? humanRaw.visible_pressure, ''),
+      },
+      idempotencyKey,
+    }
+    if (Number.isFinite(amountRaw)) event.amount = amountRaw
+    if (severity) event.severity = severity
+    if (
+      !event.evidenceQuote ||
+      !event.humanConsequence.whatGetsHarder ||
+      !event.humanConsequence.whatIsAtRisk ||
+      !event.humanConsequence.visiblePressure
+    ) {
+      repairs.push(`campaign.pressureEvents:${idempotencyKey}:dropped-incomplete`)
+      continue
+    }
+    seen.add(idempotencyKey)
+    normalized.push(event)
+  }
+
+  if (normalized.length > PRESSURE_EVENT_LIMIT) {
+    repairs.push(`campaign.pressureEvents:capped-${normalized.length}->${PRESSURE_EVENT_LIMIT}`)
+  }
+  return normalized.slice(-PRESSURE_EVENT_LIMIT)
+}
+
+function isKnownPressureActor(state: Sf2State, id: string): boolean {
+  if (id === 'the PC') return true
+  if (!id) return false
+  return Boolean(
+    state.campaign.npcs[id] ||
+      state.campaign.factions[id] ||
+      state.campaign.threads[id] ||
+      state.campaign.arcs[id] ||
+      state.campaign.documents?.[id] ||
+      state.campaign.clues[id] ||
+      state.campaign.decisions[id] ||
+      state.campaign.promises[id]
+  )
 }
 
 function normalizeLocation(raw: unknown, fallback: Sf2State['world']['currentLocation']) {

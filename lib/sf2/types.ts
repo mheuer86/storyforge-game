@@ -797,6 +797,36 @@ export interface Sf2HumanStake {
   triggeringPressure: Sf2EntityId
 }
 
+// Code-facing pressure event contract. Pressure can use procedural surfaces
+// (filings, clamps, logs), but the stored event must name the human consequence:
+// who pays, who gains leverage, what gets harder, and what becomes visible.
+export interface Sf2PressureEvent {
+  id: string
+  turn: number
+  source:
+    | 'failed_roll'
+    | 'npc_agenda'
+    | 'faction_move'
+    | 'deadline'
+    | 'decision'
+    | 'promise_neglected'
+    | 'clue_revealed'
+    | 'ladder_fire'
+  targetThreadIds: Sf2EntityId[]
+  scope: 'canonical_thread' | 'chapter_local'
+  amount?: number
+  severity?: 'standard' | 'hard'
+  evidenceQuote: string
+  humanConsequence: {
+    whoPays: Sf2EntityId | 'the PC'
+    whoGainsLeverage?: Sf2EntityId
+    whatGetsHarder: string
+    whatIsAtRisk: string
+    visiblePressure: string
+  }
+  idempotencyKey: string
+}
+
 export interface Sf2ChapterFrame {
   title: string
   premise: string
@@ -1512,6 +1542,7 @@ export interface Sf2ArchivistPatch {
   attachments: Sf2ArchivistAttachment[]
   sceneResult?: Sf2SceneSummary
   pacingClassification: Sf2PacingClassification
+  pressureEvents?: Sf2PressureEvent[]
   flags: Sf2ArchivistFlag[]
   lexiconAdditions?: Sf2LexiconAddition[]
   emotionalBeats?: Sf2EmotionalBeatAddition[]
@@ -1784,6 +1815,7 @@ export interface Sf2Campaign {
   factions: Record<Sf2EntityId, Sf2Faction>
   locations: Record<Sf2EntityId, Sf2Location>
   documents: Record<Sf2EntityId, Sf2Document>
+  pressureEvents: Sf2PressureEvent[]
   floatingClueIds: Sf2EntityId[]
   pivotalSceneIds: Sf2EntityId[]
   lexicon: Sf2LexiconEntry[]

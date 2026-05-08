@@ -1,0 +1,53 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread lifecycle rejects reopening terminal thread",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Thread lifecycle policy owns valid status transitions; Archivist cannot reopen a terminal thread by transition write."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "status": "resolved_costly",
+            "tension": 0,
+            "peakTension": 7
+          }
+        }
+      }
+    },
+    "turnIndex": 9,
+    "playerInput": "Pick up the old question again.",
+    "narrator": {
+      "prose": "The old settlement question is already answered; a new consequence would need a successor thread.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "active",
+            "reason": "The old pressure seems live again.",
+            "confidence": "high"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      { "threadId": "thread_spine", "status": "resolved_costly", "tension": 0, "peakTension": 7 }
+    ],
+    "archivistRejectedRefs": ["transitions[0]"]
+  }
+}

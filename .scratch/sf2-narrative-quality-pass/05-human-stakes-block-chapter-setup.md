@@ -1,9 +1,13 @@
 # Add `human_stakes` block to chapter setup contract
 
-Status: ready-for-agent
+Status: verified-built
 Category: feature (contract change)
 **Type:** HITL → AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: `human_stakes` exists in the Author tool schema, prompt, normalized setup, validators, and Narrator roll-continuation context; full SF2 replay passed.
 
 ## What to build
 

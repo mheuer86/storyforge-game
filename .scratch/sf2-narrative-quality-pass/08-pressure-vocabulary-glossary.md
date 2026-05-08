@@ -1,9 +1,13 @@
 # Pressure vocabulary glossary
 
-Status: ready-for-agent
+Status: verified-built
 Category: refactor (naming/glossary)
 **Type:** AFK
 **Source:** narrative-quality pass + `sf2-domain-model-pruning.md` audit (2026-05-08, proposal #6)
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: Narrator pressure-manifestation vocabulary and roll-continuation pressure injection are present and tied to `human_stakes`.
 
 ## What to build
 

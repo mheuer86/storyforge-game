@@ -1,0 +1,50 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread lifecycle rejects invalid update status",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I wait for the clerk to make the next move.",
+    "narrator": {
+      "prose": "The intake hall holds its breath while the Registry clerk watches the Warden for a decision.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "status": "paused_forever",
+              "tension": 8
+            },
+            "confidence": "high",
+            "sourceQuote": "holds its breath"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["updates[0]"],
+    "driftIncludes": [
+      {
+        "kind": "contradiction",
+        "detailIncludes": "invalid status"
+      }
+    ],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "tension": 5
+      }
+    ]
+  }
+}

@@ -305,9 +305,9 @@
           },
           {
             "id": "ladder_window_expires",
-            "pressure": "The release window expires.",
+            "pressure": "The release window exposes the PC's delay.",
             "trigger_condition": "The clamp remains unresolved late.",
-            "narrative_effect": "The cargo is stuck under authority.",
+            "narrative_effect": "The PC loses freedom to avoid the scan.",
             "severity": "hard"
           }
         ],

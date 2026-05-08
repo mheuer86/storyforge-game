@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure event missing human consequence is rejected",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I watch the queue board update.",
+    "narrator": {
+      "prose": "The queue board updates the Warden's case and the intake hall grows quiet.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "pressureEvents": [
+          {
+            "id": "pressure_queue_1",
+            "turn": 1,
+            "source": "deadline",
+            "targetThreadIds": ["thread_spine"],
+            "scope": "chapter_local",
+            "evidenceQuote": "The queue board updates the Warden's case",
+            "idempotencyKey": "turn_1:deadline:thread_spine:queue_board"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["pressureEvents[0]"],
+    "pressureEventsCount": 0,
+    "driftIncludes": [
+      {
+        "kind": "contradiction",
+        "detailIncludes": "humanConsequence"
+      }
+    ]
+  }
+}

@@ -435,9 +435,9 @@
           },
           {
             "id": "ladder_manifest_lock",
-            "pressure": "The manifest locks against edits.",
+            "pressure": "The manifest locks and exposes the PC's correction attempt.",
             "trigger_condition": "Lio rejects a correction request.",
-            "narrative_effect": "The PC must choose evidence or motion.",
+            "narrative_effect": "The PC risks evidence or motion.",
             "severity": "standard"
           },
           {

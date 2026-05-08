@@ -29,6 +29,7 @@ import type {
   Sf2EmotionalBeatAddition,
   Sf2EmotionalBeatTag,
   Sf2PatchConfidence,
+  Sf2PressureEvent,
   Sf2PronounAnchor,
   Sf2RevealContext,
   Sf2RevelationHintDelivered,
@@ -284,6 +285,13 @@ function normalizeArchivistPatch(raw: Record<string, unknown>, turnIndex: number
     tensionDeltasByThreadId: (pc?.tension_deltas as Record<string, number> | undefined) ?? {},
   }
 
+  const pressureEventsRaw = Array.isArray(raw.pressure_events)
+    ? (raw.pressure_events as Array<Record<string, unknown>>)
+    : []
+  const pressureEvents = pressureEventsRaw.map((event, index) =>
+    normalizePressureEvent(event, turnIndex, index)
+  )
+
   const lexiconAdditionsRaw = Array.isArray(raw.lexicon_additions)
     ? (raw.lexicon_additions as Array<Record<string, unknown>>)
     : []
@@ -333,6 +341,7 @@ function normalizeArchivistPatch(raw: Record<string, unknown>, turnIndex: number
     attachments,
     sceneResult: sceneResultNormalized,
     pacingClassification: pacing,
+    pressureEvents: pressureEvents.length > 0 ? pressureEvents : undefined,
     flags,
     lexiconAdditions: lexiconAdditions.length > 0 ? lexiconAdditions : undefined,
     emotionalBeats: emotionalBeats.length > 0 ? emotionalBeats : undefined,
@@ -524,6 +533,38 @@ function normalizeEmotionalBeatAddition(r: Record<string, unknown>): Sf2Emotiona
     emotionalTags: [...new Set(tags)],
     salience,
   }
+}
+
+function normalizePressureEvent(
+  r: Record<string, unknown>,
+  turnIndex: number,
+  index: number
+): Sf2PressureEvent {
+  const human = r.human_consequence as Record<string, unknown> | undefined
+  const amountRaw = Number(r.amount)
+  const event: Sf2PressureEvent = {
+    id: String(r.id ?? '').trim() || `pressure_event_${turnIndex}_${index + 1}`,
+    turn: turnIndex,
+    source: String(r.source ?? '') as Sf2PressureEvent['source'],
+    targetThreadIds: Array.isArray(r.target_thread_ids)
+      ? (r.target_thread_ids as unknown[]).map(String).filter(Boolean)
+      : [],
+    scope: String(r.scope ?? '') as Sf2PressureEvent['scope'],
+    evidenceQuote: String(r.evidence_quote ?? '').slice(0, 400),
+    humanConsequence: {
+      whoPays: String(human?.who_pays ?? '').trim() as Sf2PressureEvent['humanConsequence']['whoPays'],
+      whoGainsLeverage: human?.who_gains_leverage
+        ? String(human.who_gains_leverage).trim()
+        : undefined,
+      whatGetsHarder: String(human?.what_gets_harder ?? '').trim(),
+      whatIsAtRisk: String(human?.what_is_at_risk ?? '').trim(),
+      visiblePressure: String(human?.visible_pressure ?? '').trim(),
+    },
+    idempotencyKey: String(r.idempotency_key ?? '').trim(),
+  }
+  if (Number.isFinite(amountRaw)) event.amount = amountRaw
+  if (r.severity === 'standard' || r.severity === 'hard') event.severity = r.severity
+  return event
 }
 
 const COHERENCE_FINDING_TYPES: Sf2CoherenceFindingType[] = [

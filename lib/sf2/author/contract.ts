@@ -19,6 +19,7 @@ import type {
   Sf2ThreadStatus,
 } from '../types'
 import { SF2_HUMAN_STAKE_COST_SURFACES } from '../types'
+import { isThreadTerminal } from '../thread-lifecycle'
 
 export type AuthorRawValidationContext = DispositionDerivationContext & {
   isContinuation?: boolean
@@ -29,14 +30,6 @@ export type AuthorSetupValidationOptions = {
   isContinuation: boolean
   state?: Sf2State
 }
-
-const TERMINAL_THREAD_STATUSES = new Set<Sf2ThreadStatus>([
-  'resolved_clean',
-  'resolved_costly',
-  'resolved_failure',
-  'resolved_catastrophic',
-  'abandoned',
-])
 
 const BASE_PROCEDURE_GRAVITY_RE =
   /\b(countdown|timer|minutes?|seconds?|percent(?:age)?|decryption|decrypt|unlock|lock|scan|sweep|passive|audit|query|warrant|protocol|queue|window|threshold|code|authorization)\b/i
@@ -75,6 +68,12 @@ const PROCEDURAL_ONLY_OUTCOME_RE =
   /\b(audit|warrant|cipher|file|record|ledger|form|queue|protocol|review|query|case|route|manifest)\b.*\b(closes?|releases?|fails?|clears?|updates?|resolves?|processes?|opens?)\b/i
 const SCENE_COUPLED_TRIGGER_RE =
   /\b(room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive|record room|control room)\b/i
+const PROCEDURAL_SURFACE_RE =
+  /\b(audit|filing|file|form|record|ledger|log|queue|permit|clearance|manifest|protocol|query|timestamp|route status|release|deadline|window)\b/i
+const PROCEDURAL_PRESSURE_HUMAN_CONSEQUENCE_RE =
+  /\b(pays?|costs?|loses?|loss|harder|risk|danger|endangers?|exposes?|exposed|leverage|blackmail|coerces?|coercion|forced|betrayal|relationship|safety|reputation|standing|freedom|loyalty|family|debt|obligation|vulnerab\w*|protection|choice|stakes)\b/i
+const HIDDEN_TRUTH_HUMAN_RE =
+  /\b(lied|betray|betrays|betrayal|coerce|coerces|coercion|forced|threatens?|protect|protects|protected|hunts?|exposes?|exposure|endangers?|leverage|blackmail|frames?|sacrifices?|uses?|withheld|colludes?|complicit|agency|obligation|power|owner|faction|family|settlement|resistance|pressure|controls?|urgency|loyalty|debt|promise|identity|relationship|choice|risk|danger)\b/i
 
 export function validateChapterRaw(
   raw: Record<string, unknown>,
@@ -144,7 +143,7 @@ export function validateChapterRaw(
       const successorTo = stringField(t, 'successor_to_thread_id', 'successorToThreadId')
       const tension = Number(valueField(t, 'tension') ?? 0)
       const existing = ctx.state?.campaign?.threads?.[id]
-      if (existing && TERMINAL_THREAD_STATUSES.has(existing.status)) {
+      if (existing && isThreadTerminal(existing.status)) {
         errors.push(`active_threads[${i}].id ${id} is already terminal (${existing.status}); transition it and author a successor instead`)
       }
       if (!['carry_forward', 'successor', 'new_pressure'].includes(driverKind)) {
@@ -160,8 +159,8 @@ export function validateChapterRaw(
           errors.push(`active_threads[${i}].successor_to_thread_id cannot point to itself`)
         } else {
           const transitionStatus = transitionStatuses.get(successorTo)
-          const terminalByState = TERMINAL_THREAD_STATUSES.has(predecessor.status)
-          const terminalByTransition = transitionStatus ? TERMINAL_THREAD_STATUSES.has(transitionStatus) : false
+          const terminalByState = isThreadTerminal(predecessor.status)
+          const terminalByTransition = transitionStatus ? isThreadTerminal(transitionStatus) : false
           if (!terminalByState && !terminalByTransition) {
             errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} must be terminal already or terminal in thread_transitions`)
           }
@@ -212,6 +211,7 @@ export function validateChapterRaw(
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
   if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
+  errors.push(...validatePressureLadderHumanConsequences(ladder))
   errors.push(...validateRawHumanStakes(raw, threads, npcs, ctx.state))
   const tensionScore = getArray(raw, 'tension_score', 'tensionScore')
   const requiresTensionScore = ctx.isContinuation && ctx.state && isSf2bState(ctx.state)
@@ -230,6 +230,7 @@ export function validateChapterRaw(
   })
   const revelations = getArray(raw, 'possible_revelations', 'possibleRevelations')
   if (revelations.length !== 2) errors.push(`possible_revelations must contain exactly 2 revelations (got ${revelations.length})`)
+  errors.push(...validateRawRevelations(revelations))
   const faultLines = getArray(raw, 'moral_fault_lines', 'moralFaultLines')
   if (faultLines.length !== 2) errors.push(`moral_fault_lines must contain exactly 2 fault lines (got ${faultLines.length})`)
   const escalations = getArray(raw, 'escalation_options', 'escalationOptions')
@@ -547,7 +548,7 @@ export function validateAuthorSetup(
     }
     if (opts.isContinuation) {
       const existing = opts.state?.campaign?.threads?.[thread.id]
-      if (existing && TERMINAL_THREAD_STATUSES.has(existing.status)) {
+      if (existing && isThreadTerminal(existing.status)) {
         errors.push(`active_threads[${i}].id ${thread.id} is already terminal (${existing.status}); transition it and author a successor instead`)
       }
       if (!thread.driverKind) errors.push(`active_threads[${i}].driver_kind is required for chapter ≥ 2`)
@@ -562,8 +563,8 @@ export function validateAuthorSetup(
           errors.push(`active_threads[${i}].successor_to_thread_id cannot point to itself`)
         } else {
           const transitionStatus = transitionStatuses.get(successorTo)
-          const terminalByState = TERMINAL_THREAD_STATUSES.has(predecessor.status)
-          const terminalByTransition = transitionStatus ? TERMINAL_THREAD_STATUSES.has(transitionStatus) : false
+          const terminalByState = isThreadTerminal(predecessor.status)
+          const terminalByTransition = transitionStatus ? isThreadTerminal(transitionStatus) : false
           if (!terminalByState && !terminalByTransition) {
             errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} must be terminal already or terminal in thread_transitions`)
           }
@@ -669,6 +670,38 @@ function hasHumanOutcomeAnchor(value: string): boolean {
   if (OUTCOME_HUMAN_ANCHOR_RE.test(trimmed)) return true
   if (PROCEDURAL_ONLY_OUTCOME_RE.test(trimmed)) return false
   return /\b[A-Z][a-z][A-Za-z'-]{2,}\b/.test(trimmed)
+}
+
+function validatePressureLadderHumanConsequences(
+  ladder: Record<string, unknown>[]
+): string[] {
+  const errors: string[] = []
+  ladder.forEach((step, i) => {
+    const pressure = stringField(step, 'pressure')
+    const effect = stringField(step, 'narrative_effect', 'narrativeEffect')
+    const combined = `${pressure} ${effect}`
+    if (PROCEDURAL_SURFACE_RE.test(combined) && !PROCEDURAL_PRESSURE_HUMAN_CONSEQUENCE_RE.test(combined)) {
+      errors.push(`pressure_ladder[${i}] procedural pressure must name who pays, gains leverage, is exposed, or loses a relationship/cost surface`)
+    }
+  })
+  return errors
+}
+
+function validateRawRevelations(revelations: Record<string, unknown>[]): string[] {
+  const errors: string[] = []
+  revelations.forEach((revelation, i) => {
+    const statement = stringField(revelation, 'statement')
+    const recontextualizes = stringField(revelation, 'recontextualizes')
+    const combined = `${statement} ${recontextualizes}`
+    if (PROCEDURAL_SURFACE_RE.test(combined) && !hasHiddenTruthHumanAnchor(combined)) {
+      errors.push(`possible_revelations[${i}] procedural surface must expose hidden agency, coercion, betrayal, danger, obligation, identity, power, or relationship stakes`)
+    }
+  })
+  return errors
+}
+
+function hasHiddenTruthHumanAnchor(value: string): boolean {
+  return HIDDEN_TRUTH_HUMAN_RE.test(value)
 }
 
 function validateRawHumanStakes(

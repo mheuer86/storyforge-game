@@ -1,0 +1,67 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "thread lifecycle abandoned update clears chapter runtime pressure",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 5,
+              "localEscalation": 1,
+              "maxThisChapter": 6,
+              "cooledAtOpen": false
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "I tell them this matter is no longer mine.",
+    "narrator": {
+      "prose": "The Warden refuses to keep pursuing the intake dispute; even the Registry clerk accepts the thread is dropped.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "status": "abandoned"
+            },
+            "confidence": "high",
+            "sourceQuote": "the thread is dropped"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["updates[0]"],
+    "activeThreadIdsExcludes": ["thread_spine"],
+    "threadPressureIncludes": [
+      {
+        "threadId": "thread_spine",
+        "absent": true
+      }
+    ],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "abandoned",
+        "tension": 5,
+        "peakTension": 5
+      }
+    ]
+  }
+}

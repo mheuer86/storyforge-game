@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "pressure events duplicate idempotency key dedupes",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I ask what the posted deadline costs us.",
+    "narrator": {
+      "prose": "The clerk posts the deadline publicly; every helper now risks being named if the Warden misses it.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "pressureEvents": [
+          {
+            "id": "pressure_deadline_1",
+            "turn": 1,
+            "source": "deadline",
+            "targetThreadIds": ["thread_spine"],
+            "scope": "canonical_thread",
+            "amount": 1,
+            "severity": "standard",
+            "evidenceQuote": "every helper now risks being named",
+            "humanConsequence": {
+              "whoPays": "the PC",
+              "whatGetsHarder": "The PC must act without exposing helpers.",
+              "whatIsAtRisk": "The PC's reputation and local support.",
+              "visiblePressure": "The deadline is public and helpers can be named."
+            },
+            "idempotencyKey": "turn_1:deadline:thread_spine:helpers_named"
+          },
+          {
+            "id": "pressure_deadline_1_duplicate",
+            "turn": 1,
+            "source": "deadline",
+            "targetThreadIds": ["thread_spine"],
+            "scope": "canonical_thread",
+            "amount": 1,
+            "severity": "standard",
+            "evidenceQuote": "every helper now risks being named",
+            "humanConsequence": {
+              "whoPays": "the PC",
+              "whatGetsHarder": "The PC must act without exposing helpers.",
+              "whatIsAtRisk": "The PC's reputation and local support.",
+              "visiblePressure": "The deadline is public and helpers can be named."
+            },
+            "idempotencyKey": "turn_1:deadline:thread_spine:helpers_named"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {
+            "thread_spine": 1
+          }
+        },
+        "flags": []
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["pressureEvents[0]", "pressureEvents[1]"],
+    "pressureEventsCount": 1,
+    "pressureEventsInclude": [
+      {
+        "idempotencyKey": "turn_1:deadline:thread_spine:helpers_named",
+        "source": "deadline",
+        "targetThreadIdsInclude": ["thread_spine"],
+        "whoPays": "the PC",
+        "visiblePressureIncludes": "helpers can be named"
+      }
+    ]
+  }
+}

@@ -1,10 +1,14 @@
 # Harden clues into investigation evidence
 
-Status: proposed
+Status: verified-built
 Labels: needs-triage
 Category: architecture
 **Type:** HITL -> AFK
 **Source:** SF2 domain model conversation, clue spam examples
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: Archivist tool/prompt now define clues as investigation evidence with `evidence_question`, `evidence_kind`, and optional `resolution_mode: "investigation"` anchors; apply-patch rejects ambient scene/body-language/operational texture and requires an investigation thread or explicit evidence question. Fixtures `clue-spam-routine-presence-rejected.json` and `investigation-evidence-clue-created.json` passed in the full SF2 replay suite.
 
 ## What to build
 
@@ -41,4 +45,3 @@ Open design decision: whether to add `Thread.resolutionMode = "investigation"` i
 **Key interfaces:** `Sf2Clue`, `archivist/tools.ts`, `archivist/prompt.ts`, `apply-patch.ts`, `retrieval/working-set.ts`, `retrieval/packets/tensions.ts`.
 
 **Out of scope:** Adding a broad `Fact` entity.
-

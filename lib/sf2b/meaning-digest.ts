@@ -6,9 +6,9 @@ import type {
   Sf2Promise,
   Sf2State,
   Sf2Thread,
-  Sf2ThreadStatus,
   Sf2TurnRecord,
 } from '../sf2/types'
+import { isThreadTerminal } from '../sf2/thread-lifecycle'
 
 export interface Sf2bDigestItem {
   id: string
@@ -48,14 +48,6 @@ export interface Sf2bMeaningDigestOptions {
 
 const DEFAULT_MAX_ITEMS = 5
 
-const RESOLVED_THREAD_STATUSES = new Set<Sf2ThreadStatus>([
-  'resolved_clean',
-  'resolved_costly',
-  'resolved_failure',
-  'resolved_catastrophic',
-  'abandoned',
-])
-
 export function buildMeaningDigestCandidate(
   state: Sf2State,
   options: Sf2bMeaningDigestOptions = {}
@@ -71,7 +63,7 @@ export function buildMeaningDigestCandidate(
     .sort(sortThreadsByPressure)
     .slice(0, maxItems)
   const resolvedThreads = allThreads
-    .filter((thread) => RESOLVED_THREAD_STATUSES.has(thread.status))
+    .filter((thread) => isThreadTerminal(thread))
     .sort((a, b) => (b.lastAdvancedTurn ?? 0) - (a.lastAdvancedTurn ?? 0))
     .slice(0, maxItems)
   const promises = Object.values(state.campaign.promises)

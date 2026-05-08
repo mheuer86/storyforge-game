@@ -51,6 +51,12 @@ import {
   syncArcPlanStatusFromArcEntity,
 } from '../state-indexes'
 import {
+  invalidThreadTransitionReason,
+  isThreadResolved,
+  isThreadStatus,
+  isThreadTerminal,
+} from '../thread-lifecycle'
+import {
   applyThreadProgressChanges,
   normalizeThreadResolutionGates,
   successfulThreadResolutionBlocked,
@@ -77,6 +83,7 @@ import type {
   Sf2Faction,
   Sf2Npc,
   Sf2Promise,
+  Sf2PressureEvent,
   Sf2PronounAnchor,
   Sf2State,
   Sf2TemporalAnchor,
@@ -84,14 +91,26 @@ import type {
 } from '../types'
 import { DOCUMENT_VALID_TRANSITIONS } from '../types'
 
-const RESOLVED_THREAD_STATUSES = new Set<Sf2Thread['status']>([
-  'resolved_clean',
-  'resolved_costly',
-  'resolved_failure',
-  'resolved_catastrophic',
-])
-
 const CHAPTER_PRESSURE_CAP = 10
+const PRESSURE_EVENT_CAP = 50
+const PRESSURE_EVENT_SOURCES: Sf2PressureEvent['source'][] = [
+  'failed_roll',
+  'npc_agenda',
+  'faction_move',
+  'deadline',
+  'decision',
+  'promise_neglected',
+  'clue_revealed',
+  'ladder_fire',
+]
+const PRESSURE_EVENT_SCOPES: Sf2PressureEvent['scope'][] = [
+  'canonical_thread',
+  'chapter_local',
+]
+const PRESSURE_EVENT_SEVERITIES: NonNullable<Sf2PressureEvent['severity']>[] = [
+  'standard',
+  'hard',
+]
 const CLUE_EVIDENCE_KINDS: Sf2ClueEvidenceKind[] = [
   'document',
   'testimony',
@@ -483,6 +502,18 @@ function syncActiveThreadIntoChapterRuntime(
       cooledAtOpen: false,
     }
   }
+}
+
+function removeThreadFromChapterRuntime(draft: Sf2State, threadId: Sf2EntityId): void {
+  draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== threadId)
+  draft.chapter.setup.loadBearingThreadIds = draft.chapter.setup.loadBearingThreadIds.filter((tid) => tid !== threadId)
+  if (draft.chapter.setup.successorThreadIds) {
+    draft.chapter.setup.successorThreadIds = draft.chapter.setup.successorThreadIds.filter((tid) => tid !== threadId)
+  }
+  if (draft.chapter.setup.newPressureThreadIds) {
+    draft.chapter.setup.newPressureThreadIds = draft.chapter.setup.newPressureThreadIds.filter((tid) => tid !== threadId)
+  }
+  delete draft.chapter.setup.threadPressure?.[threadId]
 }
 
 const STALE_FACT_PATTERNS = [
@@ -1909,7 +1940,38 @@ function applyUpdate(
         ]
       }
       const explicitLastAdvanced = write.changes.last_advanced_turn as number | undefined
-      const nextStatus = (write.changes.status as Sf2Thread['status']) ?? prior.status
+      const statusChange = write.changes.status
+      if (statusChange !== undefined && !isThreadStatus(statusChange)) {
+        const reason = `thread.status: invalid status "${String(statusChange)}"`
+        drift.push({
+          kind: 'contradiction',
+          detail: `${id}: ${reason}`,
+          entityId: id,
+        })
+        outcomes.push({
+          accepted: false,
+          reason,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      const nextStatus = isThreadStatus(statusChange) ? statusChange : prior.status
+      const transitionReason = invalidThreadTransitionReason(prior.status, nextStatus)
+      if (transitionReason) {
+        drift.push({
+          kind: 'contradiction',
+          detail: `${id}: ${transitionReason}`,
+          entityId: id,
+        })
+        outcomes.push({
+          accepted: false,
+          reason: transitionReason,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
       const updatedThread: Sf2Thread = {
         ...prior,
         tension: nextTension,
@@ -1942,9 +2004,8 @@ function applyUpdate(
           loadBearing: prior.loadBearing,
           successor: Boolean(prior.successorToThreadId),
         })
-      } else if (RESOLVED_THREAD_STATUSES.has(nextStatus)) {
-        draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== id)
-        delete draft.chapter.setup.threadPressure?.[id]
+      } else if (isThreadTerminal(nextStatus)) {
+        removeThreadFromChapterRuntime(draft, id)
       }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
@@ -2161,8 +2222,27 @@ function applyTransition(
         outcomes.push({ accepted: false, reason: 'thread not found', writeRef: ref, confidenceTier: write.confidence })
         return
       }
-      const toStatus = write.toStatus as Sf2Thread['status']
+      const toStatus = write.toStatus
+      if (!isThreadStatus(toStatus)) {
+        outcomes.push({
+          accepted: false,
+          reason: `thread.toStatus: invalid status "${String(write.toStatus)}"`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
       const thread = draft.campaign.threads[id]
+      const transitionReason = invalidThreadTransitionReason(thread.status, toStatus)
+      if (transitionReason) {
+        outcomes.push({
+          accepted: false,
+          reason: transitionReason,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
       const resolutionBlock = successfulThreadResolutionBlocked(thread, toStatus, write.reason)
       if (resolutionBlock) {
         outcomes.push({
@@ -2174,10 +2254,11 @@ function applyTransition(
         return
       }
       thread.status = toStatus
-      if (RESOLVED_THREAD_STATUSES.has(toStatus)) {
+      if (isThreadResolved(toStatus)) {
         thread.tension = 0
-        draft.chapter.setup.activeThreadIds = draft.chapter.setup.activeThreadIds.filter((tid) => tid !== id)
-        delete draft.chapter.setup.threadPressure?.[id]
+      }
+      if (isThreadTerminal(toStatus)) {
+        removeThreadFromChapterRuntime(draft, id)
       }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
@@ -2351,6 +2432,193 @@ function applyAttachment(
   }
 }
 
+function isKnownCampaignEntityId(draft: Sf2State, id: string): boolean {
+  if (id === 'the PC') return true
+  return Boolean(
+    draft.campaign.npcs[id] ||
+      draft.campaign.factions[id] ||
+      draft.campaign.threads[id] ||
+      draft.campaign.arcs[id] ||
+      draft.campaign.documents?.[id] ||
+      draft.campaign.clues[id] ||
+      draft.campaign.decisions[id] ||
+      draft.campaign.promises[id]
+  )
+}
+
+function pressureEventRejection(
+  outcomes: SubWriteOutcome[],
+  drift: Sf2ArchivistFlag[],
+  ref: string,
+  reason: string,
+  entityId?: string
+): void {
+  outcomes.push({
+    accepted: false,
+    reason,
+    writeRef: ref,
+    confidenceTier: 'high',
+  })
+  drift.push({
+    kind: reason.includes('not in registry') || reason.includes('unknown')
+      ? 'anchor_reference_missing'
+      : 'contradiction',
+    detail: `pressure event rejected: ${reason}`,
+    entityId,
+  })
+}
+
+function normalizePressureEventTargetThreads(
+  draft: Sf2State,
+  event: Sf2PressureEvent
+): string[] | null {
+  if (!Array.isArray(event.targetThreadIds) || event.targetThreadIds.length === 0) {
+    return null
+  }
+  const resolved: string[] = []
+  for (const rawThreadId of event.targetThreadIds) {
+    const threadId = resolveThreadId(draft, rawThreadId)
+    if (!threadId) return null
+    resolved.push(threadId)
+  }
+  return uniqueStrings(resolved)
+}
+
+function applyPressureEvents(
+  draft: Sf2State,
+  events: Sf2PressureEvent[] | undefined,
+  outcomes: SubWriteOutcome[],
+  drift: Sf2ArchivistFlag[],
+  turnIndex: number
+): void {
+  if (!events || events.length === 0) return
+
+  draft.campaign.pressureEvents ??= []
+  const existingKeys = new Set(draft.campaign.pressureEvents.map((event) => event.idempotencyKey))
+  const acceptedKeys = new Set<string>()
+
+  events.forEach((event, index) => {
+    const ref = `pressureEvents[${index}]`
+    const idempotencyKey = String(event.idempotencyKey ?? '').trim()
+    if (!idempotencyKey) {
+      pressureEventRejection(outcomes, drift, ref, 'pressure_event.idempotencyKey: required')
+      return
+    }
+    if (existingKeys.has(idempotencyKey) || acceptedKeys.has(idempotencyKey)) {
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: 'high' })
+      return
+    }
+    if (!PRESSURE_EVENT_SOURCES.includes(event.source)) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        `pressure_event.source: invalid source "${String(event.source)}"`
+      )
+      return
+    }
+    if (!PRESSURE_EVENT_SCOPES.includes(event.scope)) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        `pressure_event.scope: invalid scope "${String(event.scope)}"`
+      )
+      return
+    }
+    if (event.severity !== undefined && !PRESSURE_EVENT_SEVERITIES.includes(event.severity)) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        `pressure_event.severity: invalid severity "${String(event.severity)}"`
+      )
+      return
+    }
+    if (event.amount !== undefined && !Number.isFinite(Number(event.amount))) {
+      pressureEventRejection(outcomes, drift, ref, 'pressure_event.amount: must be finite')
+      return
+    }
+    const targetThreadIds = normalizePressureEventTargetThreads(draft, event)
+    if (!targetThreadIds) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        'pressure_event.targetThreadIds: target thread not in registry'
+      )
+      return
+    }
+    const evidenceQuote = String(event.evidenceQuote ?? '').trim()
+    if (!evidenceQuote) {
+      pressureEventRejection(outcomes, drift, ref, 'pressure_event.evidenceQuote: required')
+      return
+    }
+    const consequence = event.humanConsequence
+    if (!consequence) {
+      pressureEventRejection(outcomes, drift, ref, 'pressure_event.humanConsequence: required')
+      return
+    }
+    const whoPays = String(consequence.whoPays ?? '').trim()
+    if (!isKnownCampaignEntityId(draft, whoPays)) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        `pressure_event.humanConsequence.whoPays: unknown id "${whoPays}"`
+      )
+      return
+    }
+    const whoGainsLeverage = String(consequence.whoGainsLeverage ?? '').trim()
+    if (whoGainsLeverage && !isKnownCampaignEntityId(draft, whoGainsLeverage)) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        `pressure_event.humanConsequence.whoGainsLeverage: unknown id "${whoGainsLeverage}"`
+      )
+      return
+    }
+    const whatGetsHarder = String(consequence.whatGetsHarder ?? '').trim()
+    const whatIsAtRisk = String(consequence.whatIsAtRisk ?? '').trim()
+    const visiblePressure = String(consequence.visiblePressure ?? '').trim()
+    if (!whatGetsHarder || !whatIsAtRisk || !visiblePressure) {
+      pressureEventRejection(
+        outcomes,
+        drift,
+        ref,
+        'pressure_event.humanConsequence: whoPays, whatGetsHarder, whatIsAtRisk, and visiblePressure are required',
+        whoPays
+      )
+      return
+    }
+
+    const accepted: Sf2PressureEvent = {
+      id: String(event.id ?? '').trim() || `pressure_event_${turnIndex}_${index + 1}`,
+      turn: Number.isFinite(Number(event.turn)) ? Math.max(0, Math.round(Number(event.turn))) : turnIndex,
+      source: event.source,
+      targetThreadIds,
+      scope: event.scope,
+      evidenceQuote,
+      humanConsequence: {
+        whoPays: whoPays as Sf2PressureEvent['humanConsequence']['whoPays'],
+        whoGainsLeverage: whoGainsLeverage || undefined,
+        whatGetsHarder,
+        whatIsAtRisk,
+        visiblePressure,
+      },
+      idempotencyKey,
+    }
+    if (event.amount !== undefined) accepted.amount = Number(event.amount)
+    if (event.severity !== undefined) accepted.severity = event.severity
+    draft.campaign.pressureEvents.push(accepted)
+    acceptedKeys.add(idempotencyKey)
+    outcomes.push({ accepted: true, writeRef: ref, confidenceTier: 'high' })
+  })
+
+  draft.campaign.pressureEvents = draft.campaign.pressureEvents.slice(-PRESSURE_EVENT_CAP)
+}
+
 function beatValidationFailureReason(
   add: { text?: string; salience: number; emotionalTags: Sf2EmotionalBeatTag[] }
 ): string | null {
@@ -2461,6 +2729,7 @@ export function applyArchivistPatch(
   patch.attachments.forEach((w, i) =>
     applyAttachment(draft, w, `attachments[${i}]`, outcomes, deferred, drift)
   )
+  applyPressureEvents(draft, patch.pressureEvents, outcomes, drift, patch.turnIndex)
 
   if (patch.sceneResult) {
     draft.chapter.sceneSummaries.push({

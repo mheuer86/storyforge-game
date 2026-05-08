@@ -1,9 +1,13 @@
 # Diagnostic finding envelope
 
-Status: ready-for-agent
+Status: verified-built
 Category: feature (engineering hygiene)
 **Type:** AFK
 **Source:** narrative-quality pass + `sf2-domain-model-pruning.md` audit (2026-05-08, proposal #7)
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: `Sf2DiagnosticFinding`, diagnostic adapters, open-error query, and diagnostics store are implemented; `diagnostic-envelope-adapts-cross-source-findings.json` passed.
 
 ## What to build
 

@@ -1,9 +1,13 @@
 # Genre-neutralize trigger-discipline examples
 
-Status: ready-for-agent
+Status: verified-built
 Category: bug
 **Type:** AFK
 **Source:** narrative-quality pass, sparring 2026-05-08
+
+## Reconciliation
+
+2026-05-08 status pass: verified built. Evidence: trigger examples are sourced from `getSf2GenreExamples` and interpolated by the Author prompt instead of hard-coded single-world examples.
 
 ## What to build
 

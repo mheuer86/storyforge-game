@@ -181,6 +181,86 @@ export const extractTurnTool: Anthropic.Tool = {
         },
         required: ['world_initiated', 'scene_end_leads_to', 'tension_deltas'],
       },
+      pressure_events: {
+        type: 'array',
+        description:
+          'Human-consequence pressure events. Emit when pressure changes, a ladder fires, an agenda move lands, a deadline bites, or a failed roll makes someone pay. This supplements tension_deltas: tension_deltas says how much; pressure_events says who pays and what gets harder.',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Optional stable id; code will fill if omitted.' },
+            source: {
+              type: 'string',
+              enum: [
+                'failed_roll',
+                'npc_agenda',
+                'faction_move',
+                'deadline',
+                'decision',
+                'promise_neglected',
+                'clue_revealed',
+                'ladder_fire',
+              ],
+            },
+            target_thread_ids: {
+              type: 'array',
+              description: 'Canonical thread ids receiving or explaining the pressure.',
+              items: { type: 'string' },
+              minItems: 1,
+            },
+            scope: {
+              type: 'string',
+              enum: ['canonical_thread', 'chapter_local'],
+              description:
+                'canonical_thread for durable thread pressure; chapter_local for temporary chapter runtime pressure.',
+            },
+            amount: {
+              type: 'number',
+              description: 'Optional numeric amount when this corresponds to a tension delta.',
+            },
+            severity: { type: 'string', enum: ['standard', 'hard'] },
+            evidence_quote: {
+              type: 'string',
+              description: 'Exact prose clause proving the pressure event.',
+            },
+            human_consequence: {
+              type: 'object',
+              description:
+                'Required human consequence. Procedural surfaces are allowed only when this names who pays and what becomes harder or riskier.',
+              properties: {
+                who_pays: {
+                  type: 'string',
+                  description: 'Canonical entity id or exactly "the PC".',
+                },
+                who_gains_leverage: {
+                  type: 'string',
+                  description: 'Optional canonical entity id that benefits.',
+                },
+                what_gets_harder: { type: 'string' },
+                what_is_at_risk: { type: 'string' },
+                visible_pressure: {
+                  type: 'string',
+                  description: 'What is now visible on stage or in the state of play.',
+                },
+              },
+              required: ['who_pays', 'what_gets_harder', 'what_is_at_risk', 'visible_pressure'],
+            },
+            idempotency_key: {
+              type: 'string',
+              description:
+                'Stable dedupe key from turn/source/thread/evidence, e.g. "turn_7:deadline:thread_audit:posted_notice".',
+            },
+          },
+          required: [
+            'source',
+            'target_thread_ids',
+            'scope',
+            'evidence_quote',
+            'human_consequence',
+            'idempotency_key',
+          ],
+        },
+      },
       flags: {
         type: 'array',
         description: 'Drift and contradiction flags. Non-fatal — logged for later review.',
