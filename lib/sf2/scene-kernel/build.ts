@@ -90,17 +90,7 @@ export function buildSceneKernel(
   if (state.world.operation) activeProcedureIds.push('operation')
   if (state.world.exploration) activeProcedureIds.push('exploration')
 
-  // Active countdowns: derive from temporal anchors with kind='deadline' and
-  // status='active'. Other kinds (timestamp, duration) aren't pressure clocks
-  // in the PRD's sense; they're timeline facts.
-  const activeCountdowns: Sf2SceneKernelCountdown[] = Object.values(state.campaign.temporalAnchors ?? {})
-    .filter((a) => a.status === 'active' && a.kind === 'deadline')
-    .map((a) => ({
-      id: a.id,
-      label: a.label,
-      deadlineLabel: a.anchorText,
-      stakes: a.title,
-    }))
+  const activeCountdowns = buildActiveCountdowns(state)
 
   // Last visible state: tail of the most recent narrator prose. Useful for the
   // sentinel to scan for absent-speaker mentions and for log-level inspection.
@@ -190,6 +180,77 @@ function deriveAbsentEntityIds(state: Sf2State, presentEntityIds: string[]): str
   }
 
   return [...absent]
+}
+
+function buildActiveCountdowns(state: Sf2State): Sf2SceneKernelCountdown[] {
+  const countdowns: Sf2SceneKernelCountdown[] = []
+  const seen = new Set<string>()
+
+  const addCountdown = (countdown: Sf2SceneKernelCountdown): void => {
+    if (seen.has(countdown.id)) return
+    seen.add(countdown.id)
+    countdowns.push(countdown)
+  }
+
+  for (const thread of Object.values(state.campaign.threads)) {
+    if (thread.status !== 'active') continue
+    const timer = thread.deterioration
+    if (timer?.kind !== 'timer') continue
+
+    const explicitAnchor = timer.temporalAnchorId ? state.campaign.temporalAnchors?.[timer.temporalAnchorId] : undefined
+    const anchor = findDeadlineAnchorForTimer(state, thread.id, timer.temporalAnchorId)
+    if (anchor?.kind === 'deadline') {
+      if (anchor.status === 'active') {
+        addCountdown({
+          id: anchor.id,
+          label: anchor.label || anchor.title,
+          deadlineLabel: anchor.anchorText || timer.deadline,
+          stakes: thread.title,
+        })
+      }
+      continue
+    }
+    if (explicitAnchor) {
+      continue
+    }
+
+    if (timer.deadline) {
+      addCountdown({
+        id: `timer:${thread.id}`,
+        label: thread.title,
+        deadlineLabel: timer.deadline,
+        stakes: thread.failureMode || thread.resolutionCriteria || thread.title,
+      })
+    }
+  }
+
+  // Unlinked deadline anchors still surface as timeline countdowns. Linked
+  // thread timers above claim the same anchor id first, so thread stakes win.
+  for (const anchor of Object.values(state.campaign.temporalAnchors ?? {})) {
+    if (anchor.status !== 'active' || anchor.kind !== 'deadline') continue
+    addCountdown({
+      id: anchor.id,
+      label: anchor.label,
+      deadlineLabel: anchor.anchorText,
+      stakes: anchor.title,
+    })
+  }
+
+  return countdowns
+}
+
+function findDeadlineAnchorForTimer(
+  state: Sf2State,
+  threadId: string,
+  temporalAnchorId: string | undefined
+) {
+  if (temporalAnchorId) {
+    const anchor = state.campaign.temporalAnchors?.[temporalAnchorId]
+    if (anchor?.kind === 'deadline') return anchor
+  }
+  return Object.values(state.campaign.temporalAnchors ?? {}).find(
+    (anchor) => anchor.kind === 'deadline' && anchor.status === 'active' && anchor.anchoredTo.includes(threadId)
+  )
 }
 
 function truncateTail(text: string, chars: number): string {

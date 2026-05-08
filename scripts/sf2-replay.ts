@@ -145,6 +145,7 @@ interface ReplayFixture {
       loadBearing?: boolean
       chapterDriverKind?: string
       successorToThreadId?: string
+      deterioration?: { kind?: string; deadline?: string; temporalAnchorId?: string }
       tensionHistoryIncludes?: Array<{ turn: number; value: number }>
       resolutionGatesInclude?: Array<{ gateId: string; status?: string; evidenceQuoteIncludes?: string }>
       progressEventsInclude?: Array<{ summaryIncludes: string; gateIdsInclude?: string[] }>
@@ -2004,6 +2005,28 @@ function assertExpected(
     }
     if (threadExpected.successorToThreadId !== undefined && thread.successorToThreadId !== threadExpected.successorToThreadId) {
       failures.push(`thread ${threadExpected.threadId} successorToThreadId expected ${threadExpected.successorToThreadId}, got ${thread.successorToThreadId ?? '(unset)'}`)
+    }
+    if (threadExpected.deterioration) {
+      const d = thread.deterioration
+      if (!d) {
+        failures.push(`thread ${threadExpected.threadId} deterioration missing`)
+      } else {
+        if (threadExpected.deterioration.kind !== undefined && d.kind !== threadExpected.deterioration.kind) {
+          failures.push(`thread ${threadExpected.threadId} deterioration.kind expected ${threadExpected.deterioration.kind}, got ${d.kind}`)
+        }
+        if ('deadline' in threadExpected.deterioration) {
+          const gotDeadline = d.kind === 'timer' ? d.deadline : undefined
+          if (gotDeadline !== threadExpected.deterioration.deadline) {
+            failures.push(`thread ${threadExpected.threadId} deterioration.deadline expected ${threadExpected.deterioration.deadline}, got ${gotDeadline ?? '(unset)'}`)
+          }
+        }
+        if ('temporalAnchorId' in threadExpected.deterioration) {
+          const gotAnchorId = d.kind === 'timer' ? d.temporalAnchorId : undefined
+          if (gotAnchorId !== threadExpected.deterioration.temporalAnchorId) {
+            failures.push(`thread ${threadExpected.threadId} deterioration.temporalAnchorId expected ${threadExpected.deterioration.temporalAnchorId}, got ${gotAnchorId ?? '(unset)'}`)
+          }
+        }
+      }
     }
     for (const wantEntry of threadExpected.tensionHistoryIncludes ?? []) {
       const found = thread.tensionHistory.some((e) => e.turn === wantEntry.turn && e.value === wantEntry.value)

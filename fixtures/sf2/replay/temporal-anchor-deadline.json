@@ -52,6 +52,19 @@
       }
     ],
     "scenePacketTemporalAnchorsInclude": ["temporal_manifest_closes_1600"],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "deterioration": {
+          "kind": "timer",
+          "deadline": "1600, tithe collection day",
+          "temporalAnchorId": "temporal_manifest_closes_1600"
+        }
+      }
+    ],
+    "sceneKernel": {
+      "activeCountdownIdsIncludes": ["temporal_manifest_closes_1600"]
+    },
     "archivistAcceptedRefs": ["creates[0]"]
   }
 }
