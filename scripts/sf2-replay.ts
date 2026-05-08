@@ -204,6 +204,7 @@ interface ReplayFixture {
     }
     authorRetryNudge?: {
       errors: string[]
+      genreId?: string
       containsAll?: string[]
       containsNone?: string[]
     }
@@ -2248,7 +2249,7 @@ function assertExpected(
     }
   }
   if (expected.authorRetryNudge) {
-    const nudge = buildAuthorRetryNudge(expected.authorRetryNudge.errors)
+    const nudge = buildAuthorRetryNudge(expected.authorRetryNudge.errors, expected.authorRetryNudge.genreId)
     for (const snippet of expected.authorRetryNudge.containsAll ?? []) {
       if (!nudge.includes(snippet)) {
         failures.push(`authorRetryNudge missing "${snippet}"`)

@@ -572,7 +572,7 @@ export default function PlayV2Page() {
       const body = rollResolution
         ? {
             state: currentState,
-            playerInput: '',
+            playerInput: isInitial ? '' : playerInput,
             isInitial: false,
             rollResolution,
           }
@@ -988,12 +988,16 @@ export default function PlayV2Page() {
         latency?: LatencyPayload
       }
       diagnosticsStore.setArchivistUsage(data.usage)
+      const archivistPatch = data.patch && typeof data.patch === 'object'
+        ? data.patch as { flags?: unknown[] }
+        : null
       diagnosticsStore.pushDebug({
           kind: 'archivist',
           at: Date.now(),
           data: {
             summary: data.summary,
             patch: data.patch,
+            flags: Array.isArray(archivistPatch?.flags) ? archivistPatch.flags : [],
             outcomes: data.outcomes,
             deferred: data.deferredWrites,
             drift: data.drift,

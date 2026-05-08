@@ -31,14 +31,17 @@ export function debugEntryToDiagnosticFinding(entry: DebugEntry, index = 0): Sf2
   }
   if (entry.kind === 'archivist') {
     const data = asRecord(entry.data)
-    const flags = Array.isArray(data.flags) ? data.flags : []
+    const patch = asRecord(data.patch)
+    const topLevelFlags = Array.isArray(data.flags) ? data.flags : []
+    const patchFlags = Array.isArray(patch.flags) ? patch.flags : []
+    const flags = topLevelFlags.length > 0 ? topLevelFlags : patchFlags
     if (flags.length === 0) return null
     return {
       id: `archivist:${entry.at}:${index}`,
       source: 'archivist',
       kind: 'flags',
       severity: 'warn',
-      entityRefs: refsFromPayload(data),
+      entityRefs: refsFromPayload(flags),
       turnId: turnIdFromPayload(data),
       message: `${flags.length} archivist flag${flags.length === 1 ? '' : 's'}`,
       status: 'open',

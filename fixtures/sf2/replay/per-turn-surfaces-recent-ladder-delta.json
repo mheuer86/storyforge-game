@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "per-turn surfaces recent ladder pressure delta",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A pressure ladder fired on the previous committed turn must appear as a just-charged thread delta on the next narrator turn."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "The clerk seals the intake ledger.",
+              "triggerCondition": "The player delays.",
+              "narrativeEffect": "Procedure narrows.",
+              "severity": "standard",
+              "fired": true,
+              "firedAtTurn": 0,
+              "threadIds": ["thread_spine"]
+            }
+          ],
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 3,
+              "localEscalation": 2,
+              "maxThisChapter": 5,
+              "cooledAtOpen": true
+            }
+          }
+        }
+      }
+    },
+    "playerInput": "Keep pressing the clerk.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "### Thread tensions (mutable)",
+      "- The intake problem (thread_spine): active · chapter pressure 5/10 (opening 3/10 +2 local; canonical 5/10; peak 5/10; role spine) · Δ +2"
+    ]
+  }
+}

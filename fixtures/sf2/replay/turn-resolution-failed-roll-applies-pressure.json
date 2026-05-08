@@ -48,6 +48,20 @@
       "chapter": {
         "setup": {
           "startingNpcIds": ["npc_osh"],
+          "humanStakes": [
+            {
+              "whoPays": "npc_osh",
+              "costSurface": "reputation",
+              "whatIsLost": "Osh becomes the clerk everyone blames for widening the intake fight.",
+              "triggeringPressure": "thread_spine"
+            },
+            {
+              "whoPays": "the PC",
+              "costSurface": "standing",
+              "whatIsLost": "The PC becomes known as someone who turns small writs into public confrontations.",
+              "triggeringPressure": "thread_spine"
+            }
+          ],
           "threadPressure": {
             "thread_spine": {
               "threadId": "thread_spine",
@@ -118,6 +132,29 @@
           "targetThreadIdsEquals": ["thread_spine"],
           "noteIncludes": "Failed Intimidation"
         }
+      ]
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Intimidate Osh into handing over the registry key.",
+      "rollResolution": {
+        "toolUseId": "roll_test",
+        "skill": "Intimidation",
+        "dc": 14,
+        "effectiveDc": 14,
+        "d20": 7,
+        "modifier": 1,
+        "total": 8,
+        "result": "failure",
+        "priorMessages": []
+      },
+      "userMessageContainsAll": [
+        "Private roll pressure manifestation",
+        "thread_spine",
+        "Δ +2",
+        "Osh (npc_osh) risks reputation",
+        "The failed roll will deterministically charge"
       ]
     },
     "invariantEventDetailIncludes": [

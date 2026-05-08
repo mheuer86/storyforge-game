@@ -56,6 +56,42 @@
         "setup": {
           "activeThreadIds": ["thread_spine", "thread_social", "thread_shadow"],
           "loadBearingThreadIds": ["thread_spine", "thread_social", "thread_shadow"],
+          "humanStakes": [
+            {
+              "whoPays": "the PC",
+              "costSurface": "reputation",
+              "whatIsLost": "The berth crew starts treating the PC as the captain who dragged them into a public clearance fight.",
+              "triggeringPressure": "thread_spine"
+            },
+            {
+              "whoPays": "npc_calla",
+              "costSurface": "relationship",
+              "whatIsLost": "Calla has to choose whether the old debt matters more than keeping the PC useful.",
+              "triggeringPressure": "thread_social"
+            }
+          ],
+          "threadPressure": {
+            "thread_spine": {
+              "threadId": "thread_spine",
+              "role": "spine",
+              "openingFloor": 4,
+              "localEscalation": 3,
+              "maxThisChapter": 7,
+              "cooledAtOpen": true
+            }
+          },
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "Clearance stamps turn into public leverage.",
+              "triggerCondition": "A port official makes the berth delay a public claim.",
+              "narrativeEffect": "The dock starts treating the PC as blameable.",
+              "severity": "standard",
+              "fired": true,
+              "firedAtTurn": 0,
+              "threadIds": ["thread_spine"]
+            }
+          ],
           "tensionScore": [
             {
               "id": "score_foreground",
@@ -112,14 +148,18 @@
   },
   "expected": {
     "narratorMessages": {
-      "stateBefore": "fixture-stateBefore",
+      "stateBefore": "fixture-stateAfter",
       "isInitial": false,
       "playerInput": "Watch Calla's leverage and the cutter at the same time.",
       "userMessageContainsAll": [
         "Tension surfaces (private)",
         "foreground_objective",
         "relational_social_pressure",
-        "shadow_faction_pressure"
+        "shadow_faction_pressure",
+        "Human stakes (pressure targets)",
+        "thread_spine: the PC risks reputation",
+        "chapter pressure 7/10",
+        "Δ +2"
       ],
       "userMessageContainsNone": [
         "cargo_system_pressure"

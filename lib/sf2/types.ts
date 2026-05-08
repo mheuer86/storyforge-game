@@ -1611,6 +1611,7 @@ export interface Sf2ThreadPacket {
   status: Sf2ThreadStatus
   /** Chapter-effective pressure after opening cooling + local escalation. */
   tension: Sf2Tension
+  /** Just-charged pressure visible to the Narrator this turn. */
   tensionDelta?: number
   canonicalTension: Sf2Tension
   peakTension?: Sf2Tension

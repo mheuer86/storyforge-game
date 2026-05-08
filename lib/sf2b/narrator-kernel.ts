@@ -3,10 +3,13 @@ import type {
   Sf2EngineRuntime,
   Sf2EntityId,
   Sf2Faction,
+  Sf2HumanStake,
   Sf2Npc,
   Sf2State,
   Sf2Thread,
 } from '../sf2/types'
+import { getRecentLadderPressureDeltas } from '../sf2/pressure/deltas'
+import { getEffectiveThreadPressure } from '../sf2/pressure/derive'
 import { readSf2bObjectiveGate } from './objective-gate'
 
 const MAX_RECENT_TURNS = 3
@@ -50,7 +53,7 @@ export interface Sf2bNarratorKernel {
 export function buildSf2bNarratorKernel(input: Sf2bNarratorKernelInput): Sf2bNarratorKernel {
   const { state, playerInput, isInitial, turnIndex } = input
   const liveNpcs = selectLiveNpcs(state)
-  const activePressures = selectActivePressures(state)
+  const activePressures = selectActivePressures(state, turnIndex)
   const tensionLines = selectTensionLines(state)
   const objectiveGate = readSf2bObjectiveGate(state)
   const hardFacts = selectHardFacts(state)
@@ -129,6 +132,12 @@ export function buildSf2bNarratorKernel(input: Sf2bNarratorKernelInput): Sf2bNar
   } else {
     for (const pressure of activePressures) lines.push(`- ${pressure}`)
   }
+  appendBounded(
+    lines,
+    (state.chapter.setup.humanStakes ?? []).map((stake) => renderHumanStake(stake, state)),
+    'Human stakes (pressure targets)',
+    3
+  )
 
   lines.push('\n### Continuity covenant (private)')
   for (const constraint of hardConstraints) lines.push(`- ${constraint}`)
@@ -174,12 +183,13 @@ function selectLiveNpcs(state: Sf2State): Sf2Npc[] {
     .slice(0, MAX_LIVE_NPCS)
 }
 
-function selectActivePressures(state: Sf2State): string[] {
+function selectActivePressures(state: Sf2State, turnIndex: number): string[] {
+  const ladderDeltas = getRecentLadderPressureDeltas(state, turnIndex)
   const threads = Object.values(state.campaign.threads)
     .filter((thread) => thread.status === 'active')
     .sort(compareThreadsForKernel)
     .slice(0, MAX_PRESSURES)
-    .map((thread) => renderThreadPressure(thread, state))
+    .map((thread) => renderThreadPressure(thread, state, ladderDeltas.get(thread.id)))
 
   const engines = Object.values(state.campaign.engines)
     .filter((engine) => engine.status === 'active')
@@ -235,14 +245,26 @@ function compareThreadsForKernel(a: Sf2Thread, b: Sf2Thread): number {
   return b.tension - a.tension
 }
 
-function renderThreadPressure(thread: Sf2Thread, state: Sf2State): string {
+function renderThreadPressure(thread: Sf2Thread, state: Sf2State, delta?: number): string {
   const owner = renderOwner(thread.owner, state)
   const deterioration = thread.deterioration ? `; deterioration ${renderDeterioration(thread.deterioration)}` : ''
-  return `${thread.title} (${thread.id}) ${thread.tension}/10; owner ${owner}; ${clip(thread.retrievalCue)}${deterioration}`
+  const chapterPressure = state.chapter.setup.threadPressure?.[thread.id]
+  const pressure = chapterPressure
+    ? `chapter pressure ${getEffectiveThreadPressure(thread.id, state.chapter.setup)}/10 (opening ${chapterPressure.openingFloor}/10${chapterPressure.localEscalation ? ` +${chapterPressure.localEscalation} local` : ''}; canonical ${thread.tension}/10${thread.peakTension !== undefined ? `; peak ${thread.peakTension}/10` : ''}${chapterPressure.role ? `; role ${chapterPressure.role}` : ''})`
+    : `${thread.tension}/10`
+  const deltaText = delta ? `; Δ +${delta}` : ''
+  return `${thread.title} (${thread.id}) ${pressure}${deltaText}; owner ${owner}; ${clip(thread.retrievalCue)}${deterioration}`
 }
 
 function renderEnginePressure(engine: Sf2EngineRuntime): string {
   return `${engine.name} (${engine.id}) ${engine.value}/10; symptom ${clip(engine.visibleSymptoms)}`
+}
+
+function renderHumanStake(stake: Sf2HumanStake, state: Sf2State): string {
+  const whoPays = stake.whoPays === 'the PC'
+    ? 'the PC'
+    : `${state.campaign.npcs[stake.whoPays]?.name ?? stake.whoPays} (${stake.whoPays})`
+  return `${stake.triggeringPressure}: ${whoPays} risks ${stake.costSurface} - ${clip(stake.whatIsLost, 140)}`
 }
 
 function selectHardFacts(state: Sf2State): string[] {

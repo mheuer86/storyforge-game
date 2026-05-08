@@ -35,6 +35,7 @@ const GENERIC_EXAMPLES: Sf2GenreExamples = {
 }
 
 const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
+  generic: GENERIC_EXAMPLES,
   hegemony: {
     ...GENERIC_EXAMPLES,
     entityBoundTriggers: [

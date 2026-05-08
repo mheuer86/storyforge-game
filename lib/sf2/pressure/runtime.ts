@@ -1,4 +1,5 @@
 import { ENGINE_AGGREGATION_DEFAULT } from './constants'
+import { getPressureLadderTargetThreadIds } from './deltas'
 import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
 import { isSf2bState } from '../../sf2b/mode'
@@ -175,14 +176,7 @@ function applyArchivistPressureEffects(
           step.fired = true
           step.firedAtTurn = input.turnIndex
           firedThisTurn.push(step)
-          const explicitThreadIds = (step.threadIds ?? []).filter(
-            (id) => Boolean(state.chapter.setup.threadPressure?.[id])
-          )
-          const ladderTargets = explicitThreadIds.length > 0
-            ? explicitThreadIds
-            : state.chapter.setup.spineThreadId
-              ? [state.chapter.setup.spineThreadId]
-              : []
+          const ladderTargets = getPressureLadderTargetThreadIds(state, step)
           if (ladderTargets.length > 0) {
             reheatLadderFire(state.chapter.setup, ladderTargets, step.severity)
           }

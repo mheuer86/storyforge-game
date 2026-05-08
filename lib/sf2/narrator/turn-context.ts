@@ -12,6 +12,7 @@ import { composeSystemBlocks, assertNoDynamicLeak } from '../prompt/compose'
 import { buildSceneKernel } from '../scene-kernel/build'
 import type { ScanDisplayOutputOptions } from '../sentinel/display'
 import type { Sf2State, Sf2WorkingSet } from '../types'
+import { resolvePlayerInputThreadTargets } from '../turn-resolution/targets'
 import { isSf2bState } from '../../sf2b/mode'
 import { buildSf2bNarratorKernel } from '../../sf2b/narrator-kernel'
 import { SF2B_NARRATOR_ROLE } from '../../sf2b/narrator-role'
@@ -96,7 +97,7 @@ export function buildNarratorTurnContext(input: {
       : undefined
 
   if (rollResolution) {
-    const messages = buildRollResumeMessages(rollResolution, isSf2bState(state))
+    const messages = buildRollResumeMessages(state, playerInput, rollResolution, isSf2bState(state))
     return {
       mode: 'roll_resume',
       system,
@@ -209,17 +210,20 @@ function buildCachedNarratorTools(): Anthropic.Tool[] {
 }
 
 function buildRollResumeMessages(
+  state: Sf2State,
+  playerInput: string,
   rollResolution: Sf2NarratorRollResolution,
   sf2bMode = false
 ): Anthropic.MessageParam[] {
+  const pressureInstruction = buildRollPressureManifestationInstruction(state, playerInput, rollResolution)
   const content = sf2bMode
     ? `${rollResultMessage(rollResolution)}\n\n${buildSf2bRollConsequenceInstruction({
         skill: rollResolution.skill,
         dc: rollResolution.dc,
         effectiveDc: rollResolution.effectiveDc,
         outcome: rollResolution.result,
-      })}`
-    : rollResultMessage(rollResolution)
+      })}${pressureInstruction}`
+    : `${rollResultMessage(rollResolution)}${pressureInstruction}`
 
   return [
     ...(rollResolution.priorMessages as Anthropic.MessageParam[]),
@@ -234,6 +238,35 @@ function buildRollResumeMessages(
       ],
     },
   ]
+}
+
+function buildRollPressureManifestationInstruction(
+  state: Sf2State,
+  playerInput: string,
+  rollResolution: Sf2NarratorRollResolution
+): string {
+  if (rollResolution.result !== 'failure' && rollResolution.result !== 'fumble') return ''
+  const trimmedInput = playerInput.trim()
+  if (!trimmedInput) return ''
+  const pressureDelta = rollResolution.result === 'fumble' ? 3 : 2
+  const { targetThreadIds } = resolvePlayerInputThreadTargets(state, trimmedInput)
+  if (targetThreadIds.length === 0) return ''
+  const humanStakes = state.chapter.setup.humanStakes ?? []
+  const lines = targetThreadIds.map((threadId) => {
+    const thread = state.campaign.threads[threadId]
+    const matchingStakes = humanStakes.filter((stake) => stake.triggeringPressure === threadId)
+    const stakeText = matchingStakes.length > 0
+      ? matchingStakes.map((stake) => {
+          const whoPays = stake.whoPays === 'the PC'
+            ? 'the PC'
+            : `${state.campaign.npcs[stake.whoPays]?.name ?? stake.whoPays} (${stake.whoPays})`
+          return `${whoPays} risks ${stake.costSurface}: ${stake.whatIsLost}`
+        }).join(' | ')
+      : 'no matching human_stakes entry'
+    return `- ${thread?.title ?? threadId} (${threadId}) · Δ +${pressureDelta} · human stake: ${stakeText}`
+  })
+
+  return `\n\n---\n\n### Private roll pressure manifestation (mandatory, never mention)\nThe failed roll will deterministically charge the targeted thread(s) when this turn commits. Treat the continuation as if the per-turn delta already showed:\n${lines.join('\n')}\nManifest this pressure in the continuation prose now. Do not say "delta", "thread", "human_stakes", or quote this instruction. Do not save or mutate state here; the commit pipeline applies the pressure after narration.`
 }
 
 function buildMessagesForSf2bNarrator(

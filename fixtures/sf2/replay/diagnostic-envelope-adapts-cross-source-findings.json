@@ -43,10 +43,26 @@
             "type": "mechanical_noop",
             "message": "Inventory use no-op for npc_vesh."
           }
+        },
+        {
+          "kind": "archivist",
+          "at": 1778239000003,
+          "data": {
+            "summary": "Archivist accepted a partial patch.",
+            "patch": {
+              "flags": [
+                {
+                  "severity": "warn",
+                  "entityId": "thread_missing_roster",
+                  "message": "thread_missing_roster still lacks an owner-facing stake."
+                }
+              ]
+            }
+          }
         }
       ],
-      "countEquals": 3,
-      "sourcesInclude": ["sentinel", "coherence", "replay"],
+      "countEquals": 4,
+      "sourcesInclude": ["sentinel", "coherence", "replay", "archivist"],
       "openErrorQuery": {
         "entityId": "npc_vesh",
         "countEquals": 1

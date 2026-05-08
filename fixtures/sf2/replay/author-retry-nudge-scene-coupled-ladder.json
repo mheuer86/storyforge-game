@@ -33,8 +33,13 @@
         "rewrite the named rung's trigger_condition only",
         "Do not mention places, rooms, doors, gates, bays, docks, terminals, consoles, desks, tables, thresholds, corridors, hangars, offices, booths, or other scene objects.",
         "Bind the trigger to an entity-level action, choice, claim, refusal, disclosure, or faction move",
-        "Good: \"Sollar formally marks the PC's route evasive.\"",
-        "Bad: \"The route gate locks behind the PC.\""
+        "Good: \"When a trusted NPC refuses another NPC in front of a witness who can still choose sides.\"",
+        "Bad: \"When the PC blocks an exit from the record room.\""
+      ],
+      "containsNone": [
+        "Sollar",
+        "route gate",
+        "route choice"
       ]
     }
   }

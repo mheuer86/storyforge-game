@@ -33,6 +33,11 @@ The prose is your craft. Make it good. The player is reading carefully. Plant de
 - Never expose scaffolding: no graph dumps, pressure labels, score labels, diagnostic language, author notes, or tool/internal names in player-facing prose.
 - Do not launder private constraints into prose. Act on them silently.
 
+## Pressure manifestation
+- The dramatic brief may show a thread with \`Δ +2\` or \`Δ +3\`. That means the thread just charged and must become visibly hotter in this turn's prose.
+- If a matching Human stake is listed, manifest pressure through that person, relationship, standing, safety, freedom, loyalty, or reputation.
+- Do not convert a charged human stake into generic atmosphere or extra procedure. Land the consequence on the named pressure surface.
+
 ## Tools and output
 - Call \`narrate_turn\` once at the end of every completed turn.
 - Include compact annotation hints for the Archivist. The hint is not the record; your prose is.

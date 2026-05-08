@@ -6,6 +6,7 @@ import type {
   Sf2WorkingSet,
 } from '../../types'
 import { getEffectiveThreadPressure } from '../../pressure/derive'
+import { getRecentLadderPressureDeltas } from '../../pressure/deltas'
 
 export function buildThreadPackets(
   state: Sf2State,
@@ -16,6 +17,7 @@ export function buildThreadPackets(
   const fullSet = new Set(workingSet.fullEntityIds)
 
   const threadIds = [...fullSet].filter((id) => Boolean(campaign.threads[id]))
+  const ladderDeltas = getRecentLadderPressureDeltas(state, turnIndex)
 
   return threadIds.map((id) => {
     const t = campaign.threads[id]
@@ -28,17 +30,19 @@ export function buildThreadPackets(
       .map((s) => buildStakeholderDisposition(state, s))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
     const cluesForThread = Object.values(campaign.clues).filter((c) => c.anchoredTo.includes(t.id))
-    // Δ surfaces only on the turn the change actually happened. lastAdvancedTurn
-    // is stamped to the patch's turnIndex (state pointer), which equals the next
-    // narrator render's turnIndex in both replay and production.
+    // Δ surfaces pressure that just became narratively load-bearing: canonical
+    // thread-tension writes stamped to this render turn, plus ladder fires from
+    // the immediately previous committed turn.
     const tensionJustAdvanced = t.lastAdvancedTurn === turnIndex
     const previousCanonical = tensionJustAdvanced
       ? [...t.tensionHistory]
           .filter((entry) => entry.turn < turnIndex)
           .sort((a, b) => b.turn - a.turn)[0]?.value
       : undefined
-    const rawDelta = previousCanonical === undefined ? undefined : t.tension - previousCanonical
-    const tensionDelta = rawDelta !== undefined && rawDelta !== 0 ? rawDelta : undefined
+    const rawCanonicalDelta = previousCanonical === undefined ? undefined : t.tension - previousCanonical
+    const canonicalDelta = rawCanonicalDelta !== undefined && rawCanonicalDelta !== 0 ? rawCanonicalDelta : 0
+    const pressureDelta = canonicalDelta + (ladderDeltas.get(id) ?? 0)
+    const tensionDelta = pressureDelta !== 0 ? pressureDelta : undefined
 
     return {
       threadId: t.id,

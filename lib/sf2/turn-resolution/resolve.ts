@@ -1,5 +1,5 @@
-import { resolvePlayerAction } from '../action-resolver/resolve'
 import { addLocalEscalation } from '../pressure/reheat'
+import { resolvePlayerInputThreadTargets } from './targets'
 import type {
   Sf2CoherenceFinding,
   Sf2EntityId,
@@ -42,11 +42,7 @@ export function buildTurnResolutionRecord(
 ): Sf2TurnResolutionRecord | null {
   if (input.isInitial || !input.playerInput.trim()) return null
 
-  const action = resolvePlayerAction(input.stateBefore, input.playerInput)
-  const targetThreadIds = resolveTargetThreadIds(input.stateBefore, [
-    ...action.targetEntityIds,
-    ...action.subjectEntityIds,
-  ])
+  const { action, targetThreadIds } = resolvePlayerInputThreadTargets(input.stateBefore, input.playerInput)
   const rollRecords = (input.rollRecords ?? [])
     .filter((roll) => roll.turn === input.turnIndex)
     .map((roll) => ({ ...roll }))
@@ -168,34 +164,6 @@ function plannedConsequences(input: {
   }
 
   return events
-}
-
-function resolveTargetThreadIds(state: Sf2State, entityIds: Sf2EntityId[]): Sf2EntityId[] {
-  const referenced = new Set(entityIds)
-  const threads = new Set<Sf2EntityId>()
-  const activeThreadIds = new Set(state.chapter.setup.activeThreadIds)
-
-  for (const entityId of referenced) {
-    for (const threadId of state.campaign.npcs[entityId]?.ownedThreadIds ?? []) {
-      if (activeThreadIds.has(threadId)) threads.add(threadId)
-    }
-    for (const threadId of state.campaign.factions[entityId]?.ownedThreadIds ?? []) {
-      if (activeThreadIds.has(threadId)) threads.add(threadId)
-    }
-  }
-
-  for (const threadId of state.chapter.setup.activeThreadIds) {
-    const thread = state.campaign.threads[threadId]
-    if (!thread) continue
-    if (referenced.has(thread.owner.id)) {
-      threads.add(threadId)
-      continue
-    }
-    if (thread.stakeholders.some((stakeholder) => referenced.has(stakeholder.id))) {
-      threads.add(threadId)
-    }
-  }
-  return [...threads]
 }
 
 function hasDurableTargetMutation(input: {

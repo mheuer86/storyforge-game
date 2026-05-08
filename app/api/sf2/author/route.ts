@@ -346,7 +346,7 @@ export async function POST(req: NextRequest) {
           isContinuation,
           state: state ?? undefined,
         }),
-        retryNudge: buildAuthorRetryNudge,
+        retryNudge: (errors) => buildAuthorRetryNudge(errors, state?.meta.genreId),
       })
     } catch (err) {
       return anthropicErrorResponse(err)
