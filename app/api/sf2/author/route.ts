@@ -12,6 +12,7 @@ import {
 } from '@/lib/sf2/author/prompt'
 import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
 import {
+  completeAuthorSetupForValidation,
   normalizeAuthorSetup,
   validateAuthorSetup,
   validateAuthorToolInput,
@@ -397,7 +398,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const authored = normalizeAuthorSetup(result.raw)
+    const authored = completeAuthorSetupForValidation(normalizeAuthorSetup(result.raw), {
+      isContinuation,
+      state: state ?? undefined,
+    })
     const validationErrors = validateAuthorSetup(authored, { isContinuation, state: state ?? undefined })
     if (validationErrors.length > 0) {
       console.error('[sf2/author] merged output failed validation', {

@@ -15,6 +15,10 @@ import type {
   Sf2State,
 } from './types'
 import { SF2_SCHEMA_VERSION } from './types'
+import {
+  FORTY_THOUSAND_STARTER_SEED_ID,
+  applyPreauthoredStarterSetup,
+} from './starter-setups'
 import { getGenreConfig, type CharacterClass, type Genre } from '../genre-config'
 
 export interface NewCampaignInputs {
@@ -31,7 +35,7 @@ const WARDEN_STARTING_AC = 14
 const STARTING_CREDITS = 200
 
 export const DEFAULT_SF2_SEED_ID = 'epic-scifi/warden/the-tithe'
-export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = 'space-opera/human/operative/forty-thousand'
+export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = FORTY_THOUSAND_STARTER_SEED_ID
 export const FANTASY_SEEKER_SEED_ID = 'fantasy/human/seeker/the-second-library'
 export const CYBERPUNK_NETRUNNER_SEED_ID = 'cyberpunk/operative/netrunner/blackout'
 export const GRIMDARK_SCAVENGER_SEED_ID = 'grimdark/oathless/scavenger/the-cache'
@@ -179,7 +183,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
     currentSceneId: 'scene_1_1',
   }
 
-  return {
+  const state: Sf2State = {
     meta: {
       campaignId: inputs.campaignId,
       createdAt: now,
@@ -239,6 +243,8 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
     history: { turns: [], rollLog: [], recentTurns: [] },
     derived: {},
   }
+  applyPreauthoredStarterSetup(state)
+  return state
 }
 
 // Predicate: has Chapter 1 been authored yet? Client gates the Narrator call

@@ -25,6 +25,7 @@ import { AUTHOR_TOOLS, AUTHOR_TOOL_NAME } from '../lib/sf2/author/tools'
 import { ARC_AUTHOR_TOOLS, ARC_AUTHOR_TOOL_NAME } from '../lib/sf2/arc-author/tools'
 import { CHAPTER_MEANING_TOOLS, CHAPTER_MEANING_TOOL_NAME } from '../lib/sf2/chapter-meaning/tools'
 import { NARRATOR_MECHANICAL_EFFECT_KINDS, NARRATOR_TOOL_NAME, NARRATOR_TOOLS } from '../lib/sf2/narrator/tools'
+import { createInitialSf2State, isArcAuthored, isChapterAuthored } from '../lib/sf2/game-data'
 import { evaluateWrite, recordObservation } from '../lib/sf2/firewall/actor'
 import { validateChapterMeaningTransitionSeed } from '../lib/sf2/chapter-meaning/validation'
 import { canonicalLocationNameKey } from '../lib/sf2/locations'
@@ -346,6 +347,22 @@ interface ReplayFixture {
         errorIncludesAll?: string[]
         errorIncludesNone?: string[]
       }
+    }
+    preauthoredStarterSetup?: {
+      seedId: string
+      experimentMode?: string
+      chapterAuthored?: boolean
+      arcAuthored?: boolean
+      chapterTitleEquals?: string
+      arcTitleEquals?: string
+      currentLocationNameIncludes?: string
+      presentNpcIdsEquals?: string[]
+      offstageNpcIdsInclude?: string[]
+      activeThreadIdsInclude?: string[]
+      loadBearingThreadIdsInclude?: string[]
+      threadPressureIncludes?: Array<{ threadId: string; openingFloor?: number; role?: string }>
+      openingWithheldFactsInclude?: string[]
+      scenePacketCastIdsEquals?: string[]
     }
     dispositionDerivation?: {
       // Standalone pure-function check on the disposition derivation logic.
@@ -774,6 +791,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertModeIdentity(fixture, stateBefore, stateAfter, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
+  assertPreauthoredStarterSetup(fixture, failures)
   assertChapterMeaningValidation(fixture, stateBefore, failures)
   assertArchivistSchemaParity(fixture, failures)
   assertRoleSchemaParity(fixture, failures)
@@ -1041,6 +1059,88 @@ function assertArcValidation(fixture: ReplayFixture, failures: string[]): void {
   for (const fragment of expected.expect.errorIncludesNone ?? []) {
     if (errors.some((e) => e.includes(fragment))) {
       failures.push(`arcValidation: did not expect error containing "${fragment}", got [${errors.join('; ')}]`)
+    }
+  }
+}
+
+function assertPreauthoredStarterSetup(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.preauthoredStarterSetup
+  if (!expected) return
+
+  const state = createInitialSf2State({
+    campaignId: expected.experimentMode ? 'sf2b_camp_replay_starter' : 'replay_starter',
+    playerName: 'Replay Runner',
+    seedId: expected.seedId,
+    experimentMode: expected.experimentMode as Sf2State['meta']['experimentMode'],
+  })
+
+  if (expected.chapterAuthored !== undefined && isChapterAuthored(state) !== expected.chapterAuthored) {
+    failures.push(`preauthoredStarterSetup.chapterAuthored: expected ${expected.chapterAuthored}, got ${isChapterAuthored(state)}`)
+  }
+  if (expected.arcAuthored !== undefined && isArcAuthored(state) !== expected.arcAuthored) {
+    failures.push(`preauthoredStarterSetup.arcAuthored: expected ${expected.arcAuthored}, got ${isArcAuthored(state)}`)
+  }
+  if (expected.chapterTitleEquals !== undefined && state.chapter.title !== expected.chapterTitleEquals) {
+    failures.push(`preauthoredStarterSetup.chapterTitle: expected "${expected.chapterTitleEquals}", got "${state.chapter.title}"`)
+  }
+  if (expected.arcTitleEquals !== undefined && state.campaign.arcPlan?.title !== expected.arcTitleEquals) {
+    failures.push(`preauthoredStarterSetup.arcTitle: expected "${expected.arcTitleEquals}", got "${state.campaign.arcPlan?.title ?? 'unset'}"`)
+  }
+  if (
+    expected.currentLocationNameIncludes !== undefined &&
+    !state.world.currentLocation.name.includes(expected.currentLocationNameIncludes)
+  ) {
+    failures.push(`preauthoredStarterSetup.currentLocation.name missing "${expected.currentLocationNameIncludes}"`)
+  }
+  if (
+    expected.presentNpcIdsEquals !== undefined &&
+    !sameMembers(state.world.sceneSnapshot.presentNpcIds, expected.presentNpcIdsEquals)
+  ) {
+    failures.push(
+      `preauthoredStarterSetup.presentNpcIds: expected ${expected.presentNpcIdsEquals.join(',')}, got ${state.world.sceneSnapshot.presentNpcIds.join(',')}`
+    )
+  }
+  for (const id of expected.offstageNpcIdsInclude ?? []) {
+    if (!state.campaign.npcs[id]) {
+      failures.push(`preauthoredStarterSetup.offstageNpc missing campaign NPC ${id}`)
+    } else if (state.world.sceneSnapshot.presentNpcIds.includes(id)) {
+      failures.push(`preauthoredStarterSetup.offstageNpc ${id} unexpectedly present at opening`)
+    }
+  }
+  for (const id of expected.activeThreadIdsInclude ?? []) {
+    if (!state.chapter.setup.activeThreadIds.includes(id)) {
+      failures.push(`preauthoredStarterSetup.activeThreadIds missing ${id}`)
+    }
+  }
+  for (const id of expected.loadBearingThreadIdsInclude ?? []) {
+    if (!state.chapter.setup.loadBearingThreadIds.includes(id)) {
+      failures.push(`preauthoredStarterSetup.loadBearingThreadIds missing ${id}`)
+    }
+  }
+  for (const want of expected.threadPressureIncludes ?? []) {
+    const pressure = state.chapter.setup.threadPressure[want.threadId]
+    if (!pressure) {
+      failures.push(`preauthoredStarterSetup.threadPressure missing ${want.threadId}`)
+      continue
+    }
+    if (want.openingFloor !== undefined && pressure.openingFloor !== want.openingFloor) {
+      failures.push(`preauthoredStarterSetup.threadPressure.${want.threadId}.openingFloor: expected ${want.openingFloor}, got ${pressure.openingFloor}`)
+    }
+    if (want.role !== undefined && pressure.role !== want.role) {
+      failures.push(`preauthoredStarterSetup.threadPressure.${want.threadId}.role: expected ${want.role}, got ${pressure.role}`)
+    }
+  }
+  for (const fragment of expected.openingWithheldFactsInclude ?? []) {
+    const facts = state.chapter.artifacts.opening.withheldPremiseFacts ?? []
+    if (!facts.some((fact) => fact.includes(fragment))) {
+      failures.push(`preauthoredStarterSetup.opening.withheldPremiseFacts missing "${fragment}"`)
+    }
+  }
+  if (expected.scenePacketCastIdsEquals !== undefined) {
+    const packet = buildScenePacket(state, '', 0).packet
+    const castIds = packet.cast.map((c) => c.npcId)
+    if (!sameMembers(castIds, expected.scenePacketCastIdsEquals)) {
+      failures.push(`preauthoredStarterSetup.scenePacket.cast: expected ${expected.scenePacketCastIdsEquals.join(',')}, got ${castIds.join(',')}`)
     }
   }
 }

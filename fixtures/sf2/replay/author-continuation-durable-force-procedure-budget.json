@@ -3,7 +3,7 @@
   "name": "Author continuation accepts durable force source with owned procedure budget",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Regression coverage for Ch2 Author setup failures where an arc durable force is used as the antagonist source and procedural surfaces are already grounded by human_stakes plus continuation_dramatic_turn.procedure_budget."
+    "purpose": "Regression coverage for Ch2 Author setup failures where an arc durable force is used as the antagonist source, a successor thread needs a deterministic predecessor transition, and procedural residue is owned but named differently in continuation_dramatic_turn.procedure_budget."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -102,7 +102,7 @@
                 "dock departure"
               ],
               "procedureResidue": {
-                "mechanism": "route_chit beacon corridor passage authorization",
+                "mechanism": "beacon_window_countdown (13 hours at undocking; 10 hours of navigable buffer; corridor geometry tightening past station two)",
                 "keepAs": "leverage"
               }
             }
@@ -222,15 +222,16 @@
         ],
         "active_threads": [
           {
-            "id": "thread_spine",
-            "title": "The route ownership",
-            "question": "Who controls the route now?",
+            "id": "thread_route_after_chit",
+            "title": "The route after the chit",
+            "question": "Who uses the prior clearance now?",
             "owner_hint": "Kessler Span Fleet",
             "tension": 7,
-            "driver_kind": "carry_forward",
-            "resolution_criteria": "The route owner is accepted, bypassed, or exposed.",
+            "driver_kind": "successor",
+            "successor_to_thread_id": "thread_spine",
+            "resolution_criteria": "The prior clearance is priced, bypassed, or turned against Kessler.",
             "failure_mode": "The crew crosses only on someone else's terms.",
-            "retrieval_cue": "route owner, toll passage"
+            "retrieval_cue": "route successor, toll passage"
           },
           {
             "id": "thread_kessler_toll",
@@ -264,6 +265,13 @@
             "resolution_criteria": "The PC shares enough truth for Raffe to stay aligned.",
             "failure_mode": "Raffe treats the route plan as another hidden debt.",
             "retrieval_cue": "Raffe, trust, hidden terms"
+          }
+        ],
+        "thread_transitions": [
+          {
+            "id": "thread_spine",
+            "to_status": "deferred",
+            "reason": "The route question carries forward unless a successor makes it terminal."
           }
         ],
         "arc_link": {
@@ -340,7 +348,7 @@
           },
           "offscreen_antagonist_presence": "Vantabloc is absent; Kessler makes its clearance look sellable.",
           "procedure_budget": {
-            "mechanism": "route_chit beacon corridor passage authorization",
+            "mechanism": "route chit",
             "owner_using_it": "Kessler Span Fleet",
             "dramatic_function": "Maren uses authorization to make passage a loyalty test.",
             "max_opening_beats": 1

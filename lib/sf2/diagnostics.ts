@@ -10,6 +10,12 @@ type DiagnosticSeverity = Sf2DiagnosticFinding['severity']
 
 export function debugEntryToDiagnosticFinding(entry: DebugEntry, index = 0): Sf2DiagnosticFinding | null {
   if (entry.kind === 'display_sentinel') {
+    const data = asRecord(entry.data)
+    const findings = Array.isArray(data.findings) ? data.findings : null
+    if (findings) {
+      if (findings.length === 0) return null
+      return sentinelToDiagnostic(findings[0] as Partial<Sf2DisplaySentinelFinding>, entry.at, index)
+    }
     return sentinelToDiagnostic(entry.data as Partial<Sf2DisplaySentinelFinding>, entry.at, index)
   }
   if (entry.kind === 'sf2.coherence.finding') {
@@ -17,11 +23,12 @@ export function debugEntryToDiagnosticFinding(entry: DebugEntry, index = 0): Sf2
   }
   if (entry.kind === 'sf2.invariant') {
     const data = asRecord(entry.data)
+    if (isBenignInvariant(data)) return null
     return {
       id: `replay:${entry.at}:${index}:${String(data.type ?? 'invariant')}`,
       source: 'replay',
       kind: String(data.type ?? 'invariant'),
-      severity: 'warn',
+      severity: invariantSeverity(data),
       entityRefs: refsFromPayload(data),
       turnId: turnIdFromPayload(data),
       message: String(data.message ?? data.reason ?? data.type ?? 'Replay invariant event'),
@@ -63,6 +70,18 @@ export function debugEntryToDiagnosticFinding(entry: DebugEntry, index = 0): Sf2
     }
   }
   return null
+}
+
+function isBenignInvariant(data: Record<string, unknown>): boolean {
+  const type = String(data.type ?? '')
+  if (type === 'actor_firewall_observation' && data.permitted === true) return true
+  if (type === 'scene_bundle_cache_cleared_after_mechanics') return true
+  return false
+}
+
+function invariantSeverity(data: Record<string, unknown>): DiagnosticSeverity {
+  if (data.permitted === false) return 'error'
+  return 'warn'
 }
 
 export function debugEntriesToDiagnosticFindings(entries: readonly DebugEntry[]): Sf2DiagnosticFinding[] {

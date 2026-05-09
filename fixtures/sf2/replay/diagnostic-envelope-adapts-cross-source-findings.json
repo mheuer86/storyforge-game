@@ -15,6 +15,38 @@
       "debugEntries": [
         {
           "kind": "display_sentinel",
+          "at": 1778238999997,
+          "data": {
+            "mode": "observe",
+            "repaired": false,
+            "findings": [],
+            "findingCount": 0
+          }
+        },
+        {
+          "kind": "sf2.invariant",
+          "at": 1778238999998,
+          "data": {
+            "type": "actor_firewall_observation",
+            "actor": "narrator",
+            "writeKind": "set_scene_snapshot",
+            "turnIndex": 0,
+            "chapter": 1,
+            "permitted": true,
+            "detail": "narrator:set_scene_snapshot observed within ownership contract"
+          }
+        },
+        {
+          "kind": "sf2.invariant",
+          "at": 1778238999999,
+          "data": {
+            "type": "scene_bundle_cache_cleared_after_mechanics",
+            "bundleSceneStale": true,
+            "offstageRosterStale": true
+          }
+        },
+        {
+          "kind": "display_sentinel",
           "at": 1778239000000,
           "data": {
             "severity": "hard",

@@ -161,7 +161,9 @@ export function validateChapterRaw(
           const transitionStatus = transitionStatuses.get(successorTo)
           const terminalByState = isThreadTerminal(predecessor.status)
           const terminalByTransition = transitionStatus ? isThreadTerminal(transitionStatus) : false
-          if (!terminalByState && !terminalByTransition) {
+          const terminalByCompletion =
+            !terminalByState && !terminalByTransition && canCompleteSuccessorTransition(ctx, successorTo)
+          if (!terminalByState && !terminalByTransition && !terminalByCompletion) {
             errors.push(`active_threads[${i}].successor_to_thread_id ${successorTo} must be terminal already or terminal in thread_transitions`)
           }
         }
@@ -244,7 +246,10 @@ export function validateAuthorToolInput(
 ): string[] {
   const rawErrors = validateChapterRaw(raw, ctx)
   try {
-    const authored = normalizeAuthorSetup(raw)
+    const authored = completeAuthorSetupForValidation(normalizeAuthorSetup(raw), {
+      isContinuation: Boolean(ctx.isContinuation),
+      state: ctx.state,
+    })
     const semanticErrors = validateAuthorSetup(authored, {
       isContinuation: Boolean(ctx.isContinuation),
       state: ctx.state,
@@ -492,11 +497,76 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
   }
 }
 
-// Final boundary validation on the normalized single-call AuthorChapterSetupV2.
-export function validateAuthorSetup(
+export function completeAuthorSetupForValidation(
   authored: AuthorChapterSetupV2,
   opts: AuthorSetupValidationOptions = { isContinuation: false }
+): AuthorChapterSetupV2 {
+  let completed = authored
+  const transitions = [...(authored.threadTransitions ?? [])]
+  let transitionsChanged = false
+
+  if (opts.isContinuation && opts.state) {
+    for (const thread of authored.activeThreads) {
+      if (thread.driverKind !== 'successor') continue
+      const predecessorId = thread.successorToThreadId?.trim()
+      if (!predecessorId) continue
+
+      const predecessor = opts.state.campaign.threads[predecessorId]
+      if (!predecessor || isThreadTerminal(predecessor.status)) continue
+
+      const existingIndex = transitions.findIndex((transition) => transition.id === predecessorId)
+      const existingStatus = existingIndex >= 0 ? transitions[existingIndex]?.toStatus : undefined
+      if (existingStatus && isThreadTerminal(existingStatus)) continue
+
+      const terminalTransition = {
+        id: predecessorId,
+        toStatus: terminalStatusForChapterClose(opts.state.chapter.artifacts.meaning?.closingResolution),
+        reason: `Chapter ${opts.state.meta.currentChapter + 1} opened ${thread.id} as successor to ${predecessorId}.`,
+      }
+      if (existingIndex >= 0) transitions[existingIndex] = terminalTransition
+      else transitions.push(terminalTransition)
+      transitionsChanged = true
+    }
+  }
+
+  if (transitionsChanged) {
+    completed = { ...completed, threadTransitions: transitions }
+  }
+
+  const residue = opts.state?.chapter.artifacts.meaning?.transitionSeed?.procedureResidue
+  const budget = completed.continuationDramaticTurn?.procedureBudget
+  if (
+    opts.isContinuation &&
+    residue?.keepAs === 'leverage' &&
+    residue.mechanism.trim() &&
+    budget &&
+    budget.ownerUsingIt.trim() &&
+    budget.ownerUsingIt.trim().toLowerCase() !== PROCEDURE_NONE
+  ) {
+    const budgetText = [budget.mechanism, budget.ownerUsingIt, budget.dramaticFunction].join('\n')
+    if (!hasMeaningfulOverlap(residue.mechanism, budgetText)) {
+      completed = {
+        ...completed,
+        continuationDramaticTurn: {
+          ...completed.continuationDramaticTurn!,
+          procedureBudget: {
+            ...budget,
+            mechanism: residue.mechanism,
+          },
+        },
+      }
+    }
+  }
+
+  return completed
+}
+
+// Final boundary validation on the normalized single-call AuthorChapterSetupV2.
+export function validateAuthorSetup(
+  authoredInput: AuthorChapterSetupV2,
+  opts: AuthorSetupValidationOptions = { isContinuation: false }
 ): string[] {
+  const authored = completeAuthorSetupForValidation(authoredInput, opts)
   const errors: string[] = []
   const requiredOpeningStrings: Array<keyof AuthorChapterSetupV2['openingSceneSpec']> = [
     'location',
@@ -546,6 +616,13 @@ export function validateAuthorSetup(
   const transitionStatuses = new Map(
     (authored.threadTransitions ?? []).map((t) => [t.id, t.toStatus])
   )
+  const transitionIds = new Set<string>()
+  authored.threadTransitions?.forEach((transition, i) => {
+    const id = transition.id.trim()
+    if (!id) return
+    if (transitionIds.has(id)) errors.push(`thread_transitions[${i}].id ${id} duplicates an earlier transition`)
+    transitionIds.add(id)
+  })
   authored.activeThreads.forEach((thread, i) => {
     if (thread.initialTension !== undefined && (thread.initialTension < 0 || thread.initialTension > CHAPTER_OPEN_CAP)) {
       errors.push(`active_threads[${i}].initial_tension must be between 0 and ${CHAPTER_OPEN_CAP}`)
@@ -650,6 +727,29 @@ export function validateAuthorSetup(
   }
 
   return errors
+}
+
+function canCompleteSuccessorTransition(ctx: AuthorRawValidationContext, predecessorId: string): boolean {
+  if (!ctx.isContinuation || !ctx.state) return false
+  const predecessor = ctx.state.campaign.threads[predecessorId]
+  return Boolean(predecessor && !isThreadTerminal(predecessor.status))
+}
+
+function terminalStatusForChapterClose(
+  closingResolution: NonNullable<Sf2State['chapter']['artifacts']['meaning']>['closingResolution'] | undefined
+): Sf2ThreadStatus {
+  switch (closingResolution) {
+    case 'clean':
+      return 'resolved_clean'
+    case 'failure':
+      return 'resolved_failure'
+    case 'catastrophic':
+      return 'resolved_catastrophic'
+    case 'costly':
+    case 'unresolved':
+    default:
+      return 'resolved_costly'
+  }
 }
 
 function validatePressureLadderDiscipline(authored: AuthorChapterSetupV2): string[] {
@@ -895,8 +995,6 @@ function validateTransitionSeedHonored(
     if (!budget || !hasMeaningfulOverlap(mechanism, budgetText) || budget.ownerUsingIt.trim().toLowerCase() === PROCEDURE_NONE) {
       errors.push(`transition_seed.procedure_residue ${mechanism} marked leverage but continuation_dramatic_turn.procedure_budget does not assign it to a pressure owner`)
     }
-  } else if (hasMeaningfulOverlap(mechanism, openingChoiceText)) {
-    errors.push(`transition_seed.procedure_residue ${mechanism} marked ${seed.procedureResidue.keepAs} but opening restages it as an immediate choice`)
   } else if (seed.procedureResidue.keepAs === 'discard' && hasMeaningfulOverlap(mechanism, openingFullText)) {
     errors.push(`transition_seed.procedure_residue ${mechanism} marked discard but opening still foregrounds it`)
   }
