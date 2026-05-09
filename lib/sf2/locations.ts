@@ -99,8 +99,15 @@ export function findMatchingLocation(
   return null
 }
 
+export function locationsSemanticallyEquivalent(
+  existing: LocationLike,
+  proposed: LocationLike
+): boolean {
+  return locationsSemanticallyMatch(existing, proposed)
+}
+
 function locationsSemanticallyMatch(
-  existing: Sf2Location,
+  existing: LocationLike,
   proposed: LocationLike,
   proposedKey = locationSemanticKey(proposed)
 ): boolean {

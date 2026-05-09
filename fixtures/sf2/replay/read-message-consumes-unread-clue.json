@@ -9,6 +9,11 @@
     "stateBeforePreset": "minimal",
     "stateBeforePatch": {
       "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionMode": "investigation"
+          }
+        },
         "clues": {
           "clue_message_unread": {
             "id": "clue_message_unread",

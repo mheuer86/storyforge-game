@@ -111,6 +111,7 @@
             },
             "stakeholders": [],
             "tension": 7,
+            "resolutionMode": "investigation",
             "resolutionCriteria": "Kael is found and brought into compliance, or Kael's status is definitively established (death, defection, or other terminal condition) and documented.",
             "failureMode": "Kael remains absent beyond the four-day tithe window, triggering supplementary selection from the child population.",
             "retrievalCue": "Kael, missing Resonant, eighteen days absent, family claims illness",
@@ -147,6 +148,7 @@
             },
             "stakeholders": [],
             "tension": 9,
+            "resolutionMode": "investigation",
             "resolutionCriteria": "Mareth's true mandate or leverage goal is identified and documented, or his objective is definitively blocked/revealed to counterparties.",
             "failureMode": "Mareth achieves his undisclosed objective without the PC understanding what he took from the settlement, enabling future exploitation.",
             "retrievalCue": "Mareth's hunting leverage, not a routine tithe audit; what does he actually want?",
@@ -1186,7 +1188,6 @@
               "content": "Elan Vos filed her classified query to Imperial garrison to prevent Synod escalation of Kael's case. She anticipated that a Resonant with genetic trace to an operationally-cleared severance would trigger security protocols and interrogation. Her query was a heads-up to Imperial administration, hoping someone with actual authority would intervene before Synod audit reached the settlement.",
               "evidence_question": "Why did Vos file the classified query before Mareth arrived?",
               "anchored_to": [
-                "thread_1",
                 "thread_2"
               ],
               "retrieval_cue": "Vos's classified query as pre-emptive escalation"
@@ -1200,8 +1201,7 @@
               "content": "Kael's family plans flight within two days, before the documentation deadline passes. Cenn has contacts and routes prepared. The family will disappear to escape both Synod escalation and the Imperial interests protecting Cenn's severance.",
               "evidence_question": "What is Kael's family planning and what pressure is driving it?",
               "anchored_to": [
-                "thread_0",
-                "thread_1"
+                "thread_0"
               ],
               "retrieval_cue": "family flight timeline and Cenn's operational exit network"
             },

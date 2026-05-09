@@ -1,0 +1,113 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer merges location aliases",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Legacy saves with duplicated location aliases should collapse to the current scene location on load."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_location_aliases",
+          "createdAt": "2026-05-08T00:00:00.000Z",
+          "updatedAt": "2026-05-08T00:05:00.000Z",
+          "schemaVersion": "3.1.0",
+          "genreId": "space-opera",
+          "playbookId": "operative",
+          "originId": "human",
+          "currentChapter": 1,
+          "currentSceneId": "loc_opening",
+          "currentTimeLabel": "evening"
+        },
+        "campaign": {
+          "locations": {
+            "loc_opening": {
+              "id": "loc_opening",
+              "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+              "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+              "atmosphericConditions": [
+                "Recycled air, distant hull-knock, low amber emergency lighting."
+              ],
+              "chapterCreated": 1
+            },
+            "berth_14_kess": {
+              "id": "berth_14_kess",
+              "name": "Berth 14-Kess, Ossuary Station",
+              "description": "Mid-tier docking arm, fuel-stained grating, one working pressure seal, flickering berth-status light - your ship locked to the arm, lien hold burning red on the docking console.",
+              "atmosphericConditions": [
+                "recycled air",
+                "hull-knock echoes",
+                "amber emergency lighting",
+                "fuel-stained grating"
+              ],
+              "chapterCreated": 1
+            }
+          }
+        },
+        "chapter": {
+          "number": 1,
+          "title": "The Hold",
+          "setup": {
+            "chapter": 1,
+            "title": "The Hold",
+            "activeThreadIds": [],
+            "loadBearingThreadIds": [],
+            "pressureLadder": []
+          },
+          "sceneSummaries": [],
+          "currentSceneId": "loc_opening"
+        },
+        "world": {
+          "currentLocation": {
+            "id": "loc_opening",
+            "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+            "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+            "atmosphericConditions": [
+              "Recycled air, distant hull-knock, low amber emergency lighting."
+            ],
+            "chapterCreated": 1
+          },
+          "sceneSnapshot": {
+            "sceneId": "loc_opening",
+            "location": {
+              "id": "loc_opening",
+              "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+              "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+              "atmosphericConditions": [
+                "Recycled air, distant hull-knock, low amber emergency lighting."
+              ],
+              "chapterCreated": 1
+            },
+            "presentNpcIds": [],
+            "timeLabel": "evening",
+            "established": [
+              "The berth is already established."
+            ],
+            "firstTurnIndex": 0
+          },
+          "currentTimeLabel": "evening"
+        },
+        "history": {
+          "turns": [],
+          "rollLog": []
+        }
+      },
+      "expect": {
+        "currentSceneIdEquals": "loc_opening",
+        "currentLocationIdEquals": "loc_opening",
+        "repairsInclude": [
+          "campaign.locations:berth_14_kess"
+        ]
+      }
+    }
+  }
+}

@@ -400,6 +400,7 @@
                 "name_or_id": "player_character"
               },
               "tension": 8,
+              "resolution_mode": "investigation",
               "resolution_criteria": "Locate and document the status of Kael Voss, Mira Soresh, and Tam Orvath (whether alive, transferred, classified, deceased); provide evidence sufficient to account for all three in the tithe record before the carrier departs in 16 hours.",
               "failure_mode": "If the three cannot be accounted for by procedural documentation, the Synod executes supplementary selection and conscripts untested children from the settlement.",
               "retrieval_cue": "the missing three Resonants whose absence opens the door to Synod conscription"

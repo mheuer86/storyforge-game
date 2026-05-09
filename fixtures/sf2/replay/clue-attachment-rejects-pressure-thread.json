@@ -1,0 +1,58 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "clue attachment rejects pressure thread",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A floating clue should not be attached to a pressure thread through a later attachment write."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "clues": {
+          "clue_registry_gap": {
+            "id": "clue_registry_gap",
+            "title": "Registry gap",
+            "chapterCreated": 1,
+            "category": "clue",
+            "retrievalCue": "Registry gap.",
+            "status": "floating",
+            "anchoredTo": [],
+            "content": "The registry record skips a signed transfer row.",
+            "evidenceQuestion": "Who altered the registry record?",
+            "evidenceKind": "document",
+            "turn": 3
+          }
+        },
+        "floatingClueIds": ["clue_registry_gap"]
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Pin the registry gap to the current problem.",
+    "narrator": {
+      "prose": "The missing row still matters, but the current intake problem is pressure rather than an investigation.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "attachments": [
+          {
+            "kind": "anchor_clue",
+            "entityId": "clue_registry_gap",
+            "threadIds": ["thread_spine"],
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["attachments[0]"],
+    "cluesInclude": [
+      {
+        "clueId": "clue_registry_gap",
+        "status": "floating"
+      }
+    ]
+  }
+}

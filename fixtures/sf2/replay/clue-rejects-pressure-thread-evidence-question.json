@@ -1,0 +1,39 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "clue rejects pressure thread evidence question",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A pressure-thread fact should not become a clue merely because the Archivist invented an evidence_question."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 1,
+    "playerInput": "Ask why the lien was filed before we docked.",
+    "narrator": {
+      "prose": "Voss says the lien was filed six months before the ship docked, then uses the timing to press the crew toward the cargo job.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_pressure_lien_timing",
+              "content": "The lien was filed six months before the ship docked, giving Voss leverage to push the crew toward the cargo job.",
+              "evidence_question": "Was the lien timed to force the Voss job offer?",
+              "evidence_kind": "testimony",
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Lien timing used as cargo-job leverage."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistRejectedRefs": ["creates[0]"],
+    "entityIdsAbsent": ["clue_pressure_lien_timing"]
+  }
+}

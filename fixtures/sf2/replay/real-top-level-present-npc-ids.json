@@ -130,6 +130,7 @@
             },
             "stakeholders": [],
             "tension": 8,
+            "resolutionMode": "investigation",
             "resolutionCriteria": "Decide which two children (or other eligible bodies) will be named to fill the final two slots in the corrected manifest before transport departure.",
             "failureMode": "The window closes without resolution. The Synod escalates enforcement beyond the Warden's procedural authority. The settlement faces correction under district mandate.",
             "retrievalCue": "Two blank slots remain on the corrected manifest. Thorne says the settlement is still choosing.",

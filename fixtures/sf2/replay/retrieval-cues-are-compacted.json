@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "retrieval cues are compacted",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Archivist retrieval cues should be compact handles, not sentence-length summaries."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionMode": "investigation"
+          }
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "Inspect the manifest footer for who filed the hold.",
+    "narrator": {
+      "prose": "The manifest footer shows Doss requested the quarantine hold before docking.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_manifest_footer_doss_hold",
+              "content": "The manifest footer shows Doss requested the quarantine hold before docking.",
+              "evidence_question": "Who filed the quarantine hold?",
+              "evidence_kind": "document",
+              "anchored_to": ["thread_spine"],
+              "retrieval_cue": "Manifest footer shows Doss requested the quarantine hold before docking, which means the crew's supposed compliance problem started as an internal betrayal rather than port procedure."
+            },
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "cluesInclude": [
+      {
+        "clueId": "clue_manifest_footer_doss_hold",
+        "status": "attached",
+        "anchoredToIncludes": ["thread_spine"],
+        "retrievalCueEquals": "Manifest footer shows Doss requested the quarantine hold before docking",
+        "retrievalCueMaxWords": 12,
+        "retrievalCueMaxChars": 96
+      }
+    ]
+  }
+}

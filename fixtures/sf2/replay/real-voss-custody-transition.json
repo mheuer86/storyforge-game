@@ -111,6 +111,7 @@
             },
             "stakeholders": [],
             "tension": 7,
+            "resolutionMode": "investigation",
             "resolutionCriteria": "Kael is found and brought into compliance, or Kael's status is definitively established (death, defection, or other terminal condition) and documented.",
             "failureMode": "Kael remains absent beyond the four-day tithe window, triggering supplementary selection from the child population.",
             "retrievalCue": "Kael, missing Resonant, eighteen days absent, family claims illness",
@@ -149,6 +150,7 @@
             },
             "stakeholders": [],
             "tension": 10,
+            "resolutionMode": "investigation",
             "resolutionCriteria": "Mareth's true mandate or leverage goal is identified and documented, or his objective is definitively blocked/revealed to counterparties.",
             "failureMode": "Mareth achieves his undisclosed objective without the PC understanding what he took from the settlement, enabling future exploitation.",
             "retrievalCue": "Mareth's hunting leverage, not a routine tithe audit; what does he actually want?",
@@ -1330,7 +1332,6 @@
               "content": "Elan Vos deliberately accepted arrest and custody to prevent Mareth from interrogating her directly and discovering that Kael's family is in flight. By removing herself from the settlement, she has bought the family the time window they need to escape jurisdiction. Vos understood that once she was detained, Ren—not Mareth—would be the one filing the report and controlling the initial narrative of why Vos was taken into custody.",
               "evidence_question": "Why did Vos accept arrest and what did it protect?",
               "anchored_to": [
-                "thread_3",
                 "thread_0"
               ]
             },

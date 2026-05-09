@@ -1,0 +1,108 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "opening location berth alias merges",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "The Narrator's first-turn set_location alias should merge into the Author-owned opening location instead of creating a duplicate berth."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": "evening"
+      },
+      "campaign": {
+        "locations": {
+          "loc_opening": {
+            "id": "loc_opening",
+            "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+            "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+            "atmosphericConditions": [
+              "Recycled air, distant hull-knock, low amber emergency lighting."
+            ],
+            "chapterCreated": 1
+          }
+        }
+      },
+      "chapter": {
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+          "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+          "atmosphericConditions": [
+            "Recycled air, distant hull-knock, low amber emergency lighting."
+          ],
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "Berth 14-Kess, a mid-tier docking arm on Ossuary Station - fuel-stained grating, one working pressure seal, flickering berth-status light overhead.",
+            "description": "The crew's ship sits locked to the berth arm; the lien hold burns red on the docking console - nothing leaves without clearance.",
+            "atmosphericConditions": [
+              "Recycled air, distant hull-knock, low amber emergency lighting."
+            ],
+            "chapterCreated": 1
+          },
+          "presentNpcIds": [],
+          "timeLabel": "evening",
+          "established": [
+            "The berth is already established."
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "evening"
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "",
+    "isInitial": true,
+    "narrator": {
+      "prose": "The red hold light bleeds across Berth 14-Kess while Voss waits by the gangway.",
+      "annotation": null,
+      "mechanicalEffects": [
+        {
+          "kind": "set_location",
+          "location_id": "berth_14_kess",
+          "name": "Berth 14-Kess, Ossuary Station",
+          "description": "Mid-tier docking arm, fuel-stained grating, one working pressure seal, flickering berth-status light - your ship locked to the arm, lien hold burning red on the docking console.",
+          "atmospheric_conditions": [
+            "recycled air",
+            "hull-knock echoes",
+            "amber emergency lighting",
+            "fuel-stained grating"
+          ]
+        },
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "scene_id": "scene_1_1",
+            "location_id": "berth_14_kess",
+            "time_label": "evening",
+            "present_npc_ids": [],
+            "current_interlocutor_ids": [],
+            "established": [
+              "Voss is offering a sealed-cargo run to clear a forty-thousand lien."
+            ],
+            "locked": false
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "creates": []
+      }
+    }
+  },
+  "expected": {
+    "currentLocationId": "loc_opening",
+    "locationIdsInclude": ["loc_opening"],
+    "locationIdsAbsent": ["berth_14_kess"]
+  }
+}

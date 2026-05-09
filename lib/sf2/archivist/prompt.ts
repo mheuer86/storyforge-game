@@ -87,6 +87,7 @@ If the Narrator's annotation hints an NPC id/name not yet in the registry AND th
 When creating from a hint:
 - Prefer the hinted id when it's a usable slug (e.g. \`npc_danniver\`).
 - Pull name, affiliation, role, voice, retrieval_cue, key_facts from prose.
+- Keep every retrieval_cue short and punchy: ≤12 words, a search handle, not a sentence summary.
 - If prose only gives a role ("the elder", "the aide"), create enough to preserve continuity; later turns sharpen.
 
 ### 2. Anonymous-on-stage placeholder gets named → MUST use \`supersedes_id\`
@@ -243,7 +244,7 @@ If prose produces both a tempLoad observation AND a structural fact, emit both.
 
 When creating a thread whose resolution depends on evidence discovery, set \`resolution_mode: "investigation"\`. Examples: "Who altered the ledger?", "Why did Mareth stop filing reports?", "Where did the missing children go?" Do not set it for ordinary pressure, pursuit, extraction, debt, combat, or relationship threads.
 
-Clues should usually anchor to an investigation thread. A floating clue is allowed only when the evidence is concrete but the PC has not yet connected it to the right investigation. If you cannot write a clear \`evidence_question\`, do not create a clue.
+Clues anchor only to investigation threads. Do not anchor clues to pressure, pursuit, extraction, debt, combat, relationship, or ordinary objective threads. A floating clue is allowed only when there is already an active investigation thread and the evidence is concrete but the PC has not yet connected it to the right investigation. Do not invent an \`evidence_question\` to promote pressure facts into clues. If you cannot write a clear \`evidence_question\`, do not create a clue.
 
 ### Continuity-critical operational facts
 

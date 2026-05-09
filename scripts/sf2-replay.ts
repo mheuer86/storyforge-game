@@ -28,6 +28,7 @@ import { NARRATOR_MECHANICAL_EFFECT_KINDS, NARRATOR_TOOL_NAME, NARRATOR_TOOLS } 
 import { evaluateWrite, recordObservation } from '../lib/sf2/firewall/actor'
 import { validateChapterMeaningTransitionSeed } from '../lib/sf2/chapter-meaning/validation'
 import { canonicalLocationNameKey } from '../lib/sf2/locations'
+import { countRetrievalCueWords } from '../lib/sf2/retrieval-cues'
 import {
   coolThreadForChapterOpen,
   deriveEngineValue,
@@ -155,6 +156,9 @@ interface ReplayFixture {
       status?: string
       anchoredToIncludes?: string[]
       contentIncludes?: string
+      retrievalCueEquals?: string
+      retrievalCueMaxWords?: number
+      retrievalCueMaxChars?: number
     }>
     chapterCloseReadiness?: {
       pivotSignaled?: boolean
@@ -2107,6 +2111,27 @@ function assertExpected(
     }
     if (clueExpected.contentIncludes !== undefined && !clue.content.includes(clueExpected.contentIncludes)) {
       failures.push(`clue ${clueExpected.clueId} content expected to include "${clueExpected.contentIncludes}", got "${clue.content}"`)
+    }
+    if (clueExpected.retrievalCueEquals !== undefined && clue.retrievalCue !== clueExpected.retrievalCueEquals) {
+      failures.push(
+        `clue ${clueExpected.clueId} retrievalCue expected "${clueExpected.retrievalCueEquals}", got "${clue.retrievalCue}"`
+      )
+    }
+    if (
+      clueExpected.retrievalCueMaxWords !== undefined &&
+      countRetrievalCueWords(clue.retrievalCue) > clueExpected.retrievalCueMaxWords
+    ) {
+      failures.push(
+        `clue ${clueExpected.clueId} retrievalCue expected ≤${clueExpected.retrievalCueMaxWords} words, got "${clue.retrievalCue}"`
+      )
+    }
+    if (
+      clueExpected.retrievalCueMaxChars !== undefined &&
+      clue.retrievalCue.length > clueExpected.retrievalCueMaxChars
+    ) {
+      failures.push(
+        `clue ${clueExpected.clueId} retrievalCue expected ≤${clueExpected.retrievalCueMaxChars} chars, got "${clue.retrievalCue}"`
+      )
     }
     for (const threadId of clueExpected.anchoredToIncludes ?? []) {
       if (!clue.anchoredTo.includes(threadId)) {

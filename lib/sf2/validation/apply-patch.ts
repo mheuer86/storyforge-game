@@ -47,6 +47,10 @@ import {
 } from '../reference-policy'
 import { normalizeEntityReferenceText } from '../resolution/entity-references'
 import {
+  compactRetrievalCue,
+  mergeRetrievalCue,
+} from '../retrieval-cues'
+import {
   rebuildOwnerThreadBackrefs,
   syncArcPlanStatusFromArcEntity,
 } from '../state-indexes'
@@ -275,7 +279,8 @@ function validateInvestigationClue(
   draft: Sf2State,
   content: string,
   evidenceQuestion: string,
-  threadIds: string[]
+  threadIds: string[],
+  hasPendingInvestigationThread = false
 ): InvariantResult {
   if (looksLikeAmbientClue(content)) {
     return {
@@ -284,17 +289,44 @@ function validateInvestigationClue(
       reason: 'ambient scene/body-language/operational texture is not investigation evidence',
     }
   }
-  const hasInvestigationThread = threadIds.some(
-    (threadId) => draft.campaign.threads[threadId]?.resolutionMode === 'investigation'
-  )
-  if (!hasInvestigationThread && !evidenceQuestion.trim()) {
+  const activeInvestigationThreadIds = Object.values(draft.campaign.threads)
+    .filter((thread) => thread.resolutionMode === 'investigation')
+    .filter((thread) => !isThreadTerminal(thread.status))
+    .map((thread) => thread.id)
+  const anchoredNonInvestigationThreadIds = nonInvestigationThreadIds(draft, threadIds)
+  if (anchoredNonInvestigationThreadIds.length > 0) {
+    return {
+      ok: false,
+      field: 'anchoredTo',
+      reason: 'clue anchors must be investigation threads',
+    }
+  }
+  if (
+    threadIds.length === 0 &&
+    activeInvestigationThreadIds.length === 0 &&
+    !hasPendingInvestigationThread
+  ) {
     return {
       ok: false,
       field: 'evidenceQuestion',
-      reason: 'clue requires an investigation thread or explicit evidence_question',
+      reason: 'floating clue requires an active investigation thread',
+    }
+  }
+  if (!evidenceQuestion.trim()) {
+    return {
+      ok: false,
+      field: 'evidenceQuestion',
+      reason: 'clue requires an evidence_question or investigation thread resolution criteria',
     }
   }
   return { ok: true }
+}
+
+function nonInvestigationThreadIds(draft: Sf2State, threadIds: string[]): string[] {
+  return threadIds.filter((threadId) => {
+    const thread = draft.campaign.threads[threadId]
+    return thread?.resolutionMode !== 'investigation' || isThreadTerminal(thread.status)
+  })
 }
 
 function linkDeadlineAnchorToThreadTimers(draft: Sf2State, anchor: Sf2TemporalAnchor): void {
@@ -385,7 +417,7 @@ function mergeNpcCreatePayload(
     npc.retrievalCue.includes('placeholder from scene snapshot') ||
     isAnonymousNpc(npc, genreId)
   )) {
-    npc.retrievalCue = proposedCue
+    npc.retrievalCue = mergeRetrievalCue(npc.retrievalCue, proposedCue, proposedName)
   }
   if (payload.affiliation) npc.affiliation = String(payload.affiliation)
   if (payload.role) npc.role = payload.role as Sf2Npc['role']
@@ -546,6 +578,8 @@ function consumeSupersededClues(
 function attachCurrentTurnCluesToThread(draft: Sf2State, threadId: string, turnIndex: number): void {
   const thread = draft.campaign.threads[threadId]
   if (!thread) return
+  if (thread.resolutionMode !== 'investigation') return
+  if (isThreadTerminal(thread.status)) return
   const threadText = `${thread.title} ${thread.retrievalCue} ${thread.resolutionCriteria}`
   const threadTokens = operationalFactTokens(threadText)
   if (threadTokens.length === 0) return
@@ -783,7 +817,8 @@ function applyCreate(
   deferred: DeferredWrite[],
   drift: Sf2ArchivistFlag[],
   turnIndex: number,
-  chapter: number
+  chapter: number,
+  hasPendingInvestigationThread = false
 ): void {
   if (write.confidence === 'low') {
     outcomes.push(deferOrReject(write.confidence, 'low-confidence create deferred', ref))
@@ -796,7 +831,7 @@ function applyCreate(
       case 'npc': {
         const p = write.payload as Record<string, unknown>
         const proposedName = String(p.name ?? '')
-        const proposedCue = String(p.retrieval_cue ?? '')
+        const proposedCue = compactRetrievalCue(p.retrieval_cue)
         // Dedup guard: before creating a new NPC, check whether one already
         // exists with a substantively-matching name. Catches Archivist drift
         // where Narrator hints "npc_granary_man" but no such id exists, and
@@ -945,7 +980,7 @@ function applyCreate(
             relations: [],
           },
           ownedThreadIds: [],
-          retrievalCue: String(p.retrieval_cue ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.name),
           chapterCreated: chapter,
           lastSeenTurn: turnIndex,
           signatureLines: [],
@@ -981,9 +1016,9 @@ function applyCreate(
             ...existing.heatReasons,
             ...(Array.isArray(p.heat_reasons) ? (p.heat_reasons as string[]) : []),
           ])
-          const proposedCue = String(p.retrieval_cue ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.name)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.name)
           }
           driftDedup(drift, 'faction', id, existing.id)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
@@ -996,7 +1031,7 @@ function applyCreate(
           heat: coerceHeat(p.heat, 'none').level,
           heatReasons: Array.isArray(p.heat_reasons) ? (p.heat_reasons as string[]) : [],
           ownedThreadIds: [],
-          retrievalCue: String(p.retrieval_cue ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.name),
         }
         const inv = checkFaction(faction)
         if (!inv.ok) {
@@ -1081,9 +1116,9 @@ function applyCreate(
           if (!existing.failureMode && p.failure_mode) {
             existing.failureMode = String(p.failure_mode)
           }
-          const proposedCue = String(p.retrieval_cue ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.title)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.title)
           }
           if (predecessorThreadId && !existing.successorToThreadId) {
             existing.successorToThreadId = predecessorThreadId
@@ -1119,7 +1154,7 @@ function applyCreate(
           peakTension: tension,
           resolutionCriteria: String(p.resolution_criteria ?? ''),
           failureMode: String(p.failure_mode ?? ''),
-          retrievalCue: String(p.retrieval_cue ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.title),
           loadBearing: shouldLoadBear,
           successorToThreadId: predecessorThreadId ?? undefined,
           chapterDriverKind: predecessorThreadId ? 'successor' : undefined,
@@ -1188,9 +1223,9 @@ function applyCreate(
             sameStringSet(decision.anchoredTo, threadIds)
           )
         if (existing) {
-          const proposedCue = String(p.retrieval_cue ?? p.summary ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.summary)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.summary)
           }
           driftDedup(drift, 'decision', id, existing.id)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
@@ -1201,7 +1236,7 @@ function applyCreate(
           title: String(p.title ?? p.summary ?? ''),
           chapterCreated: chapter,
           category: 'decision',
-          retrievalCue: String(p.retrieval_cue ?? p.summary ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.summary),
           status: 'active',
           anchoredTo: threadIds,
           summary: proposedSummary,
@@ -1277,9 +1312,9 @@ function applyCreate(
           )
         if (existing) {
           existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...threadIds])
-          const proposedCue = String(p.retrieval_cue ?? p.obligation ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.obligation)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.obligation)
           }
           driftDedup(drift, 'promise', id, existing.id)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
@@ -1290,7 +1325,7 @@ function applyCreate(
           title: String(p.title ?? p.obligation ?? ''),
           chapterCreated: chapter,
           category: 'promise',
-          retrievalCue: String(p.retrieval_cue ?? p.obligation ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.obligation),
           status: 'active',
           anchoredTo: threadIds,
           owner: { kind: ownerHint.kind, id: ownerId },
@@ -1329,7 +1364,13 @@ function applyCreate(
           .find((thread) => thread?.resolutionMode === 'investigation')?.resolutionCriteria
         const evidenceQuestion = explicitEvidenceQuestion || inferredEvidenceQuestion || ''
         const storedEvidenceQuestion = evidenceQuestion
-        const clueContract = validateInvestigationClue(draft, proposedContent, storedEvidenceQuestion, threadIds)
+        const clueContract = validateInvestigationClue(
+          draft,
+          proposedContent,
+          storedEvidenceQuestion,
+          threadIds,
+          hasPendingInvestigationThread
+        )
         if (!clueContract.ok) {
           outcomes.push({
             accepted: false,
@@ -1352,9 +1393,9 @@ function applyCreate(
             existing.content = proposedContent
             existing.title = String(p.title ?? p.content ?? existing.title).slice(0, 80)
           }
-          const proposedCue = String(p.retrieval_cue ?? p.content ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.content)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.content)
           }
           existing.evidenceKind = existing.evidenceKind ?? evidenceKind
           if (storedEvidenceQuestion && storedEvidenceQuestion.length > (existing.evidenceQuestion ?? '').length) {
@@ -1375,7 +1416,7 @@ function applyCreate(
           title: String(p.title ?? p.content ?? '').slice(0, 80),
           chapterCreated: chapter,
           category: 'clue',
-          retrievalCue: String(p.retrieval_cue ?? p.content ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.content),
           status: threadIds.length > 0 ? 'attached' : 'floating',
           anchoredTo: threadIds,
           evidenceKind,
@@ -1428,9 +1469,9 @@ function applyCreate(
           if (!existing.stakesDefinition && p.stakes_definition) {
             existing.stakesDefinition = String(p.stakes_definition)
           }
-          const proposedCue = String(p.retrieval_cue ?? '')
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.title)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.title)
           }
           for (const tid of resolvedThreadIds) {
             draft.campaign.threads[tid].anchoredArcId = existing.id
@@ -1444,7 +1485,7 @@ function applyCreate(
           title: String(p.title ?? ''),
           chapterCreated: chapter,
           category: 'arc',
-          retrievalCue: String(p.retrieval_cue ?? ''),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.title),
           status: 'active',
           threadIds: resolvedThreadIds,
           spansChapters: Number(p.spans_chapters ?? 3),
@@ -1522,9 +1563,9 @@ function applyCreate(
           )
         if (existing) {
           existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...anchoredTo])
-          const proposedCue = String(p.retrieval_cue ?? p.anchor_text ?? p.when ?? label)
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, p.anchor_text ?? p.when ?? label)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, p.anchor_text ?? p.when ?? label)
           }
           driftDedup(drift, 'temporal_anchor', id, existing.id)
           linkDeadlineAnchorToThreadTimers(draft, existing)
@@ -1541,7 +1582,7 @@ function applyCreate(
           label,
           anchorText,
           anchoredTo,
-          retrievalCue: String(p.retrieval_cue ?? p.anchor_text ?? p.when ?? label),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.anchor_text ?? p.when ?? label),
           turn: turnIndex,
         }
         const inv = checkTemporalAnchor(anchor, draft.campaign)
@@ -1659,7 +1700,7 @@ function applyCreate(
           id,
           title,
           chapterCreated: chapter,
-          retrievalCue: String(p.retrieval_cue ?? authorizes ?? title),
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, authorizes || title),
           category: 'document',
           type,
           kindLabel: kindLabel || type,
@@ -1706,9 +1747,9 @@ function applyCreate(
             partyKeys.add(key)
             existing.additionalParties.push(party)
           }
-          const proposedCue = String(p.retrieval_cue ?? authorizes ?? title)
-          if (proposedCue && (!existing.retrievalCue || proposedCue.length > existing.retrievalCue.length)) {
-            existing.retrievalCue = proposedCue
+          const proposedCue = compactRetrievalCue(p.retrieval_cue, authorizes || title)
+          if (proposedCue) {
+            existing.retrievalCue = mergeRetrievalCue(existing.retrievalCue, proposedCue, authorizes || title)
           }
           driftDedup(drift, 'document', id, existing.id)
           outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
@@ -2032,7 +2073,7 @@ function applyUpdate(
         clue.content = nextContent
       }
       if (nextCue !== undefined && nextCue.trim().length > 0) {
-        clue.retrievalCue = nextCue
+        clue.retrievalCue = compactRetrievalCue(nextCue, clue.content)
       }
       if (nextEvidenceQuestion !== undefined && nextEvidenceQuestion.trim().length > 0) {
         clue.evidenceQuestion = nextEvidenceQuestion
@@ -2045,6 +2086,16 @@ function applyUpdate(
           .map((r) => resolveThreadId(draft, r))
           .filter((x): x is string => Boolean(x))
         if (resolved.length > 0) {
+          const invalidAnchors = nonInvestigationThreadIds(draft, resolved)
+          if (invalidAnchors.length > 0) {
+            outcomes.push({
+              accepted: false,
+              reason: 'clue.anchoredTo: clue anchors must be investigation threads',
+              writeRef: ref,
+              confidenceTier: write.confidence,
+            })
+            return
+          }
           const merged = new Set([...clue.anchoredTo, ...resolved])
           clue.anchoredTo = [...merged]
           if (clue.status === 'floating' && clue.anchoredTo.length > 0) {
@@ -2373,6 +2424,16 @@ function applyAttachment(
         outcomes.push({ accepted: false, reason: 'clue not found', writeRef: ref, confidenceTier: write.confidence })
         return
       }
+      const invalidAnchors = nonInvestigationThreadIds(draft, resolved)
+      if (invalidAnchors.length > 0) {
+        outcomes.push({
+          accepted: false,
+          reason: 'clue.anchoredTo: clue anchors must be investigation threads',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
       c.anchoredTo = Array.from(new Set([...c.anchoredTo, ...resolved]))
       c.status = 'attached'
       draft.campaign.floatingClueIds = draft.campaign.floatingClueIds.filter((x) => x !== c.id)
@@ -2603,7 +2664,7 @@ function buildBeat(
     title: add.text.slice(0, 80),
     chapterCreated: chapter,
     category: 'emotional_beat',
-    retrievalCue: add.text,
+    retrievalCue: compactRetrievalCue(add.text),
     text: add.text,
     participants,
     anchoredTo,
@@ -2667,8 +2728,25 @@ export function applyArchivistPatch(
     }
   }
 
+  const hasPendingInvestigationThread = patch.creates.some((write) => {
+    if (write.kind !== 'thread') return false
+    if (write.confidence === 'low') return false
+    const payload = write.payload as Record<string, unknown>
+    return payload.resolution_mode === 'investigation' || payload.resolutionMode === 'investigation'
+  })
+
   patch.creates.forEach((w, i) =>
-    applyCreate(draft, w, `creates[${i}]`, outcomes, deferred, drift, patch.turnIndex, chapter)
+    applyCreate(
+      draft,
+      w,
+      `creates[${i}]`,
+      outcomes,
+      deferred,
+      drift,
+      patch.turnIndex,
+      chapter,
+      hasPendingInvestigationThread
+    )
   )
   patch.updates.forEach((w, i) =>
     applyUpdate(draft, w, `updates[${i}]`, outcomes, drift, patch.turnIndex)

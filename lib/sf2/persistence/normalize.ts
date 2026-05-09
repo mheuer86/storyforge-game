@@ -5,6 +5,7 @@ import {
 } from '../reference-policy'
 import {
   locationSemanticKey,
+  locationsSemanticallyEquivalent,
   mergeLocationIntoExisting,
   replaceLocationReferences,
 } from '../locations'
@@ -34,6 +35,7 @@ import {
   normalizeThreadProgressEvents,
   normalizeThreadResolutionGates,
 } from '../thread-resolution'
+import { compactRetrievalCue } from '../retrieval-cues'
 
 const RECENT_TURNS_LIMIT = 6
 const PRESSURE_EVENT_LIMIT = 50
@@ -140,20 +142,27 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   if (campaign.pendingCoherenceNotes !== undefined) campaign.pendingCoherenceNotes = stringArray(campaign.pendingCoherenceNotes)
 
   for (const [id, faction] of Object.entries(campaign.factions)) {
-    campaign.factions[id] = normalizeFaction(id, faction)
+    campaign.factions[id] = normalizeFaction(id, faction, repairs)
   }
 
   for (const [id, npc] of Object.entries(campaign.npcs)) {
-    campaign.npcs[id] = normalizeNpc(id, npc, state.meta.currentChapter)
+    campaign.npcs[id] = normalizeNpc(id, npc, state.meta.currentChapter, repairs)
   }
 
   for (const [id, thread] of Object.entries(campaign.threads)) {
-    campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter)
+    campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter, repairs)
   }
 
   for (const [id, clue] of Object.entries(campaign.clues)) {
-    campaign.clues[id] = normalizeClue(id, clue, state.meta.currentChapter)
+    campaign.clues[id] = normalizeClue(id, clue, state.meta.currentChapter, repairs)
   }
+
+  compactRetrievalCueBucket(campaign.arcs, 'campaign.arcs', repairs)
+  compactRetrievalCueBucket(campaign.decisions, 'campaign.decisions', repairs)
+  compactRetrievalCueBucket(campaign.promises, 'campaign.promises', repairs)
+  compactRetrievalCueBucket(campaign.beats, 'campaign.beats', repairs)
+  compactRetrievalCueBucket(campaign.temporalAnchors, 'campaign.temporalAnchors', repairs)
+  compactRetrievalCueBucket(campaign.documents, 'campaign.documents', repairs)
 
   if (syncArcPlanStatusFromArcEntity(state)) {
     repairs.push('campaign.arcPlan.status:synced-from-arc')
@@ -361,7 +370,8 @@ function normalizeDerived(state: Sf2State, repairs: string[]): void {
 function normalizeNpc(
   id: string,
   raw: Sf2Npc,
-  currentChapter: Sf2ChapterNumber
+  currentChapter: Sf2ChapterNumber,
+  repairs: string[]
 ): Sf2Npc {
   const npc = raw
   npc.id = stringOr(npc.id, id)
@@ -386,13 +396,13 @@ function normalizeNpc(
     vulnerability: npc.identity?.vulnerability,
   }
   npc.ownedThreadIds = stringArray(npc.ownedThreadIds)
-  npc.retrievalCue = stringOr(npc.retrievalCue, npc.name)
+  npc.retrievalCue = normalizeRetrievalCue(npc.retrievalCue, npc.name, `campaign.npcs.${id}.retrievalCue`, repairs)
   npc.chapterCreated = positiveInt(npc.chapterCreated, currentChapter) as Sf2ChapterNumber
   npc.signatureLines = stringArray(npc.signatureLines)
   return npc
 }
 
-function normalizeFaction(id: string, raw: Sf2Faction): Sf2Faction {
+function normalizeFaction(id: string, raw: Sf2Faction, repairs: string[]): Sf2Faction {
   const faction = raw
   faction.id = stringOr(faction.id, id)
   faction.name = stringOr(faction.name, faction.id)
@@ -408,14 +418,15 @@ function normalizeFaction(id: string, raw: Sf2Faction): Sf2Faction {
   )
   faction.heatReasons = stringArray(faction.heatReasons)
   faction.ownedThreadIds = stringArray(faction.ownedThreadIds)
-  faction.retrievalCue = stringOr(faction.retrievalCue, faction.name)
+  faction.retrievalCue = normalizeRetrievalCue(faction.retrievalCue, faction.name, `campaign.factions.${id}.retrievalCue`, repairs)
   return faction
 }
 
 function normalizeThread(
   id: string,
   raw: Sf2Thread,
-  currentChapter: Sf2ChapterNumber
+  currentChapter: Sf2ChapterNumber,
+  repairs: string[]
 ): Sf2Thread {
   const thread = raw
   thread.id = stringOr(thread.id, id)
@@ -434,7 +445,7 @@ function normalizeThread(
   thread.peakTension = Math.max(clamp(numberOr(thread.peakTension, thread.tension), 0, 10), thread.tension)
   thread.resolutionCriteria = stringOr(thread.resolutionCriteria, '')
   thread.failureMode = stringOr(thread.failureMode, '')
-  thread.retrievalCue = stringOr(thread.retrievalCue, thread.title)
+  thread.retrievalCue = normalizeRetrievalCue(thread.retrievalCue, thread.title, `campaign.threads.${id}.retrievalCue`, repairs)
   thread.chapterCreated = positiveInt(thread.chapterCreated, currentChapter) as Sf2ChapterNumber
   thread.loadBearing = Boolean(thread.loadBearing)
   thread.resolutionMode = oneOf<Sf2ThreadResolutionMode>(thread.resolutionMode, ['investigation', 'pressure'], 'pressure')
@@ -447,7 +458,8 @@ function normalizeThread(
 function normalizeClue(
   id: string,
   raw: Sf2Clue,
-  currentChapter: Sf2ChapterNumber
+  currentChapter: Sf2ChapterNumber,
+  repairs: string[]
 ): Sf2Clue {
   const clue = raw
   clue.id = stringOr(clue.id, id)
@@ -462,10 +474,39 @@ function normalizeClue(
   )
   clue.content = stringOr(clue.content, clue.title)
   clue.evidenceQuestion = stringOr(clue.evidenceQuestion, clue.retrievalCue || clue.content)
-  clue.retrievalCue = stringOr(clue.retrievalCue, clue.content)
+  clue.retrievalCue = normalizeRetrievalCue(clue.retrievalCue, clue.content, `campaign.clues.${id}.retrievalCue`, repairs)
   clue.chapterCreated = positiveInt(clue.chapterCreated, currentChapter) as Sf2ChapterNumber
   clue.turn = numberOr(clue.turn, 0)
   return clue
+}
+
+function compactRetrievalCueBucket(
+  bucket: Record<string, unknown>,
+  bucketPath: string,
+  repairs: string[]
+): void {
+  for (const [id, value] of Object.entries(bucket)) {
+    if (!isRecord(value) || !('retrievalCue' in value)) continue
+    const fallback = value.title ?? value.name ?? value.summary ?? value.text ?? value.content
+    value.retrievalCue = normalizeRetrievalCue(
+      value.retrievalCue,
+      fallback,
+      `${bucketPath}.${id}.retrievalCue`,
+      repairs
+    )
+  }
+}
+
+function normalizeRetrievalCue(
+  value: unknown,
+  fallback: unknown,
+  repairPath: string,
+  repairs: string[]
+): string {
+  const raw = stringOr(value, typeof fallback === 'string' ? fallback : '')
+  const compact = compactRetrievalCue(raw, fallback)
+  if (raw !== compact) repairs.push(`${repairPath}:compacted`)
+  return compact
 }
 
 function normalizePressureEvents(
@@ -608,16 +649,20 @@ function dedupeCampaignLocations(state: Sf2State, repairs: string[]): void {
       : state.world.sceneSnapshot.location
   }
 
-  const groups = new Map<string, Sf2Location[]>()
+  const groups: Sf2Location[][] = []
   for (const location of Object.values(locations)) {
-    const key = locationSemanticKey(location)
-    if (!key) continue
-    const group = groups.get(key) ?? []
-    group.push(location)
-    groups.set(key, group)
+    if (!locationSemanticKey(location)) continue
+    const group = groups.find((candidate) =>
+      candidate.some((existing) => locationsSemanticallyEquivalent(existing, location))
+    )
+    if (group) {
+      group.push(location)
+    } else {
+      groups.push([location])
+    }
   }
 
-  for (const group of groups.values()) {
+  for (const group of groups) {
     if (group.length < 2) continue
     const canonical = chooseCanonicalLocation(state, group)
     let merged = canonical
