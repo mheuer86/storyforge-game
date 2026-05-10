@@ -1,0 +1,130 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "space opera defector seed provides alternate Driftrunner hook",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for the alternate Space Opera Driftrunner bootstrap seed. The new seed should keep the playbook fantasy while replacing Forty Thousand's debt/job pressure with passenger-protection, compromised beacon data, and pursuit pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "seedId": "space-opera/human/operative/the-defector",
+        "genreId": "space-opera",
+        "originId": "human",
+        "playbookId": "operative",
+        "currentChapter": 1
+      },
+      "player": {
+        "name": "Replay Runner",
+        "species": "Human",
+        "origin": { "id": "human", "name": "Human" },
+        "class": { "id": "operative", "name": "Driftrunner" },
+        "level": 1,
+        "hp": { "current": 9, "max": 9 },
+        "ac": 15,
+        "credits": 120,
+        "stats": { "STR": 10, "DEX": 17, "CON": 12, "INT": 14, "WIS": 11, "CHA": 13 },
+        "proficiencies": ["Stealth", "Sleight of Hand", "Piloting", "Hacking"],
+        "inventory": [
+          { "name": "Pulse Pistol", "qty": 1, "tags": ["weapon"] },
+          { "name": "Holo-Cloak", "qty": 1, "tags": ["signature", "stealth"] },
+          { "name": "Lockbreaker Kit", "qty": 1, "tags": ["signature", "tool"] }
+        ],
+        "traits": [{ "name": "Smuggler's Luck", "uses": { "current": 1, "max": 1 } }],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      }
+    },
+    "playerInput": "(unused - seed/prompt fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "hookPremiseIncludes": [
+        "The passenger is a defector from a Compact Remnant intelligence bureau.",
+        "compromised beacon operators",
+        "A black-ops corvette has just dropped out of FTL behind the ship without hailing."
+      ],
+      "hookPremiseExcludes": [
+        "forty thousand credits",
+        "back-channel offer arrives for exactly forty thousand credits",
+        "debt, lien, bounty",
+        "docking clamps"
+      ],
+      "hookCrucibleIncludes": [
+        "A passenger who knows too much can buy passage"
+      ],
+      "hookFirstEpisodeIncludes": [
+        "Evade or answer the black-ops corvette"
+      ],
+      "worldVocabularyIncludes": [
+        "black-ops corvette",
+        "defector",
+        "compromised beacon operators",
+        "frontier asylum",
+        "pursuit vector"
+      ],
+      "worldVocabularyExcludes": [
+        "route chit",
+        "sealed cargo",
+        "shadow manifest"
+      ],
+      "seedJsonIncludes": [
+        "\"title\": \"The Defector\"",
+        "frontier asylum contact",
+        "passenger-protection pressure"
+      ],
+      "seedJsonExcludes": [
+        "\"title\": \"Forty Thousand\"",
+        "forty-thousand-credit",
+        "docking clamps"
+      ],
+      "arcAuthorSituationIncludes": [
+        "The Defector",
+        "compromised beacon operators"
+      ],
+      "arcVariantCandidateCount": 4,
+      "arcVariantCandidateIdsInclude": [
+        "defector-hot-pursuit",
+        "defector-safe-harbor",
+        "defector-compromised-beacons",
+        "defector-shipboard-trust"
+      ],
+      "arcVariantCandidateScenarioBiasesInclude": [
+        "pursuit",
+        "protection",
+        "investigation",
+        "chamber_play"
+      ],
+      "arcVariantCandidateJsonIncludes": [
+        "The corvette is close enough",
+        "safe harbor that is not already compromised",
+        "compromised beacon operators",
+        "whether the crew believes her"
+      ],
+      "arcVariantCandidateJsonExcludes": [
+        "forty thousand",
+        "forty-thousand",
+        "debt",
+        "lien",
+        "blockade",
+        "hot cargo"
+      ]
+    }
+  }
+}

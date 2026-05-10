@@ -1,0 +1,73 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator roll resume consumes single skill tag",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "After a tagged single-intent action has already requested and resolved its roll, roll resumption must narrate the result instead of requiring the same skill-tag roll again."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Press the elder for the truth [Insight]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on buildNarratorTurnContext output, not narrator response)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Press the elder for the truth [Insight]",
+      "rollResolution": {
+        "toolUseId": "toolu_single_skill_tag_roll",
+        "skill": "Insight",
+        "dc": 13,
+        "d20": 16,
+        "modifier": 2,
+        "total": 18,
+        "result": "success",
+        "originalInput": "Press the elder for the truth [Insight]",
+        "currentIntent": "Press the elder for the truth [Insight]",
+        "remainingIntents": [],
+        "priorMessages": [
+          {
+            "role": "user",
+            "content": "Pre-roll scene packet and current turn delta."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_single_skill_tag_roll",
+                "name": "request_roll",
+                "input": {
+                  "skill": "Insight",
+                  "dc": 13,
+                  "why": "Read whether the elder is withholding the truth.",
+                  "consequence_on_fail": "The elder closes ranks."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "requiredRollGateExists": false,
+      "messageCountEquals": 3,
+      "assistantMessageCountEquals": 1,
+      "workingSetEventAbsent": true,
+      "sceneBundleEventAbsent": true,
+      "pacingEventAbsent": true,
+      "userMessageContainsAll": [
+        "Roll result — Insight vs DC 13: rolled d20=16 + 2 = 18.",
+        "Success. Narrate the outcome."
+      ],
+      "userMessageContainsNone": [
+        "Private ordered intent continuation",
+        "Current requiredRollGate: skill_tag"
+      ]
+    }
+  }
+}

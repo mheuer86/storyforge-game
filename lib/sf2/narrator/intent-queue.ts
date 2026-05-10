@@ -31,10 +31,22 @@ export function parseSf2NarratorIntentQueue(
   resume?: Sf2NarratorQueuedIntentResume
 ): Sf2NarratorIntentQueue {
   const originalInput = (resume?.originalInput ?? playerInput).trim()
-  const intentTexts = resume?.remainingIntents && resume.remainingIntents.length > 0
-    ? resume.remainingIntents.map((intent) => intent.trim()).filter(Boolean)
-    : splitIntentTexts(playerInput)
+  if (resume) {
+    const remainingTexts = (resume.remainingIntents ?? [])
+      .map((intent) => intent.trim())
+      .filter(Boolean)
+    const all = remainingTexts.map((text, index) => buildIntent(state, text, index))
+    const completedText = (resume.currentIntent ?? playerInput).trim() || originalInput || playerInput
+    const current = all[0] ?? buildIntent(state, completedText, 0, null)
+    return {
+      originalInput,
+      current,
+      remaining: all.slice(1),
+      all,
+    }
+  }
 
+  const intentTexts = splitIntentTexts(playerInput)
   const texts = intentTexts.length > 0 ? intentTexts : [playerInput.trim()].filter(Boolean)
   const all = texts.map((text, index) => buildIntent(state, text, index))
   const current = all[0] ?? buildIntent(state, playerInput.trim() || playerInput, 0)
@@ -73,13 +85,18 @@ export function remainingIntentTexts(queue: Sf2NarratorIntentQueue): string[] {
   return queue.remaining.map((intent) => intent.text)
 }
 
-function buildIntent(state: Sf2State, text: string, index: number): Sf2NarratorIntent {
+function buildIntent(
+  state: Sf2State,
+  text: string,
+  index: number,
+  requiredRollGate: Sf2RequiredRollGate | null = computeRequiredRollGate(state, text)
+): Sf2NarratorIntent {
   return {
     index,
     text,
     dependency: index === 0 ? 'root' : 'after_previous',
     action: resolvePlayerAction(state, text),
-    requiredRollGate: computeRequiredRollGate(state, text),
+    requiredRollGate,
   }
 }
 

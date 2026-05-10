@@ -5,6 +5,7 @@ export type Sf2ArcVariantSeed = NonNullable<AuthorInputSeed['arcVariantSeed']>
 export function getArcVariantCandidates(seed: AuthorInputSeed): Sf2ArcVariantSeed[] {
   if (seed.hook.title === 'The Tithe') return TITHE_VARIANTS
   if (seed.hook.title === 'Forty Thousand') return FORTY_THOUSAND_VARIANTS
+  if (seed.hook.title === 'The Defector') return DEFECTOR_VARIANTS
   if (seed.hook.title === 'The Second Library') return SECOND_LIBRARY_VARIANTS
   if (seed.hook.title === 'Blackout') return BLACKOUT_VARIANTS
   if (seed.hook.title === 'The Cache') return CACHE_VARIANTS
@@ -84,6 +85,37 @@ const FORTY_THOUSAND_VARIANTS: Sf2ArcVariantSeed[] = [
     creativeAngle:
       'The job opens a black-channel courier route used by smugglers, refugees, salvage crews, or AI cutouts; it is not a resistance network by default, but a route economy that survives by staying deniable.',
     avoidModes: ['siege', 'procedural_contest'],
+  },
+]
+
+const DEFECTOR_VARIANTS: Sf2ArcVariantSeed[] = [
+  {
+    id: 'defector-hot-pursuit',
+    scenarioBias: 'pursuit',
+    creativeAngle:
+      'The corvette is close enough that every route choice creates wake, trace, or hostage pressure; the opening tests whether the PC runs, hides, or turns pursuit into leverage.',
+    avoidModes: ['chamber_play'],
+  },
+  {
+    id: 'defector-safe-harbor',
+    scenarioBias: 'protection',
+    creativeAngle:
+      'The playable pressure is finding a safe harbor that is not already compromised; every apparent sanctuary has a factional price.',
+    avoidModes: ['procedural_contest'],
+  },
+  {
+    id: 'defector-compromised-beacons',
+    scenarioBias: 'investigation',
+    creativeAngle:
+      'The data matters because it names compromised beacon operators; the first chapter should make route evidence, operator trust, and passenger testimony collide.',
+    avoidModes: ['siege'],
+  },
+  {
+    id: 'defector-shipboard-trust',
+    scenarioBias: 'chamber_play',
+    creativeAngle:
+      'The defector is already aboard or nearly aboard, and the sharpest pressure is whether the crew believes her before pursuit forces a decision.',
+    avoidModes: ['public_crisis'],
   },
 ]
 

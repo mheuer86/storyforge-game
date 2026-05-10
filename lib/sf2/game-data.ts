@@ -36,6 +36,7 @@ const STARTING_CREDITS = 200
 
 export const DEFAULT_SF2_SEED_ID = 'epic-scifi/warden/the-tithe'
 export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = FORTY_THOUSAND_STARTER_SEED_ID
+export const SPACE_OPERA_DEFECTOR_SEED_ID = 'space-opera/human/operative/the-defector'
 export const FANTASY_SEEKER_SEED_ID = 'fantasy/human/seeker/the-second-library'
 export const CYBERPUNK_NETRUNNER_SEED_ID = 'cyberpunk/operative/netrunner/blackout'
 export const GRIMDARK_SCAVENGER_SEED_ID = 'grimdark/oathless/scavenger/the-cache'
@@ -442,6 +443,70 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'direct exposition dump about the Compact Collapse',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
       'opening detached from route pressure, crew pressure, or job pressure',
+    ],
+  },
+}
+
+export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
+  ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED,
+  hook: {
+    title: 'The Defector',
+    premise:
+      'The passenger is a defector from a Compact Remnant intelligence bureau. She paid for passage, not protection, and the data she carries can expose a network of compromised beacon operators. A black-ops corvette has just dropped out of FTL behind the ship without hailing. Keep the defector, compromised beacon-operator data, pursuing corvette, and safe-harbor need fixed; author her bureau, what the data proves, who is compromised, and where safety might actually exist differently for this run.',
+    crucible:
+      'A passenger who knows too much can buy passage, but only trust, speed, and dangerous choices can keep her alive long enough for the data to matter.',
+    firstEpisode:
+      'Evade or answer the black-ops corvette while deciding whether the defector is passenger, client, liability, or protected witness.',
+  },
+  worldRules: {
+    ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.worldRules,
+    socialPressures: [
+      'A ship is a closed economy of fuel, parts, food, ammo, morale, and trust.',
+      'Passengers become crew pressure the moment someone starts shooting.',
+      'Intelligence data is only useful if someone trustworthy survives to interpret it.',
+      'Compromised beacon operators turn every route decision into a question of who owns the corridor.',
+      'Law is local, factional, and often less binding than reputation.',
+    ],
+    vocabulary: [
+      'Compact Remnant', 'black-ops corvette', 'defector', 'safe harbor',
+      'compromised beacon operators', 'beacon corridor', 'route trace',
+      'encrypted courier packet', 'passage contract', 'passive sweep',
+      'cold hail', 'spoofed transponder', 'frontier asylum', 'shipboard trust',
+      'data cache', 'intelligence bureau', 'FTL wake', 'pursuit vector',
+    ],
+  },
+  npcRules: {
+    ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.npcRules,
+    likelyAffiliations: [
+      'Compact Remnant intelligence bureau',
+      'black-ops pursuit crew',
+      'station-route authority',
+      'frontier asylum contact',
+      'independent ship crew',
+      'compromised beacon operator network',
+      'Corporate Bloc',
+      'Pirate Fleet',
+      'back-channel broker',
+    ],
+    factionVoiceRules: [
+      'Remnant intelligence voices speak in compartmentalized truth, legal cover, and operational necessity.',
+      'Pursuit crews speak minimally and turn every offer into containment.',
+      'Station officials speak in safety codes, berth priority, and liability if violence reaches their lanes.',
+      'Crew members use shorthand, practical worry, and warmth under pressure.',
+      'Defectors speak precisely, but their omissions are survival habits.',
+      'Back-channel brokers say less than they know and price information by urgency.',
+    ],
+    affiliationRequirement:
+      'Every starting NPC must carry an affiliation that explains their relationship to the defector, pursuit, compromised beacons, safe harbor, route control, or shipboard trust.',
+  },
+  onboardingRules: {
+    ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.onboardingRules,
+    avoidEarly: [
+      'combat as the opening move',
+      'direct exposition dump about the Compact Collapse',
+      'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
+      'turning the defector into generic cargo before the passenger-protection pressure lands',
+      'explaining the whole data conspiracy in the opening scene',
     ],
   },
 }
@@ -871,6 +936,14 @@ export const SF2_SEED_REGISTRY: Record<string, Sf2SeedRegistryEntry> = {
     seed: SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED,
     buildPlayer: buildDriftrunnerPlayer,
   },
+  [SPACE_OPERA_DEFECTOR_SEED_ID]: {
+    id: SPACE_OPERA_DEFECTOR_SEED_ID,
+    label: 'Space Opera · Driftrunner · The Defector',
+    description:
+      'Human Driftrunner carrying a Remnant defector, dangerous beacon data, and a black-ops corvette in pursuit.',
+    seed: SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED,
+    buildPlayer: buildDriftrunnerPlayer,
+  },
   [FANTASY_SEEKER_SEED_ID]: {
     id: FANTASY_SEEKER_SEED_ID,
     label: 'Fantasy · Seeker · The Second Library',
@@ -908,6 +981,7 @@ export const SF2_SEED_REGISTRY: Record<string, Sf2SeedRegistryEntry> = {
 export const SF2_BOOTSTRAP_SEED_OPTIONS = [
   SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID],
   SF2_SEED_REGISTRY[SPACE_OPERA_DRIFTRUNNER_SEED_ID],
+  SF2_SEED_REGISTRY[SPACE_OPERA_DEFECTOR_SEED_ID],
   SF2_SEED_REGISTRY[FANTASY_SEEKER_SEED_ID],
   SF2_SEED_REGISTRY[CYBERPUNK_NETRUNNER_SEED_ID],
   SF2_SEED_REGISTRY[GRIMDARK_SCAVENGER_SEED_ID],

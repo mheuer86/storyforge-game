@@ -4,6 +4,7 @@ import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorToolInput, val
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
+import { getArcVariantCandidates } from '../lib/sf2/arc-author/variants'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
 import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
 import {
@@ -239,6 +240,11 @@ interface ReplayFixture {
       arcAuthorSituationExcludes?: string[]
       authorSituationIncludes?: string[]
       authorSituationExcludes?: string[]
+      arcVariantCandidateCount?: number
+      arcVariantCandidateIdsInclude?: string[]
+      arcVariantCandidateScenarioBiasesInclude?: string[]
+      arcVariantCandidateJsonIncludes?: string[]
+      arcVariantCandidateJsonExcludes?: string[]
     }
     authorRetryNudge?: {
       errors: string[]
@@ -535,6 +541,7 @@ interface ReplayFixture {
       systemContainsNone?: string[]
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
+      requiredRollGateExists?: boolean
     }
     requiredRollGate?: {
       exists: boolean
@@ -2174,6 +2181,14 @@ function assertNarratorMessages(
   if (expected.pacingEventAbsent && context.diagnostics.pacingAdvisory !== null) {
     failures.push('narrator context: expected no pacing event payload')
   }
+  if (
+    expected.requiredRollGateExists !== undefined &&
+    Boolean(context.requiredRollGate) !== expected.requiredRollGateExists
+  ) {
+    failures.push(
+      `narrator context: expected requiredRollGateExists=${expected.requiredRollGateExists}, got ${context.requiredRollGate ? `${context.requiredRollGate.kind} from ${context.requiredRollGate.source}` : 'none'}`
+    )
+  }
 }
 
 function assertRequiredRollGate(
@@ -2920,6 +2935,8 @@ function assertExpected(
     const vocabulary = seed.worldRules.vocabulary.join('\n')
     const arcSituation = buildArcAuthorSituation(seed)
     const authorSituation = buildAuthorSituation(stateBefore, priorChapterMeaning)
+    const arcVariantCandidates = getArcVariantCandidates(seed)
+    const arcVariantCandidateJson = JSON.stringify(arcVariantCandidates, null, 2)
     for (const snippet of expected.authorInputSeed.hookPremiseIncludes ?? []) {
       if (!seed.hook.premise.includes(snippet)) {
         failures.push(`authorInputSeed.hook.premise missing "${snippet}"`)
@@ -2983,6 +3000,34 @@ function assertExpected(
     for (const snippet of expected.authorInputSeed.authorSituationExcludes ?? []) {
       if (authorSituation.includes(snippet)) {
         failures.push(`authorSituation unexpectedly includes "${snippet}"`)
+      }
+    }
+    if (
+      expected.authorInputSeed.arcVariantCandidateCount !== undefined &&
+      arcVariantCandidates.length !== expected.authorInputSeed.arcVariantCandidateCount
+    ) {
+      failures.push(
+        `authorInputSeed.arcVariantCandidates: expected ${expected.authorInputSeed.arcVariantCandidateCount}, got ${arcVariantCandidates.length}`
+      )
+    }
+    for (const id of expected.authorInputSeed.arcVariantCandidateIdsInclude ?? []) {
+      if (!arcVariantCandidates.some((candidate) => candidate.id === id)) {
+        failures.push(`authorInputSeed.arcVariantCandidates missing id "${id}"`)
+      }
+    }
+    for (const scenarioBias of expected.authorInputSeed.arcVariantCandidateScenarioBiasesInclude ?? []) {
+      if (!arcVariantCandidates.some((candidate) => candidate.scenarioBias === scenarioBias)) {
+        failures.push(`authorInputSeed.arcVariantCandidates missing scenarioBias "${scenarioBias}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.arcVariantCandidateJsonIncludes ?? []) {
+      if (!arcVariantCandidateJson.includes(snippet)) {
+        failures.push(`authorInputSeed.arcVariantCandidates JSON missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.arcVariantCandidateJsonExcludes ?? []) {
+      if (arcVariantCandidateJson.includes(snippet)) {
+        failures.push(`authorInputSeed.arcVariantCandidates JSON unexpectedly includes "${snippet}"`)
       }
     }
   }
