@@ -941,8 +941,14 @@ function LocationsPanel({ state }: { state: Sf2State }) {
         )}>
           {locations.map((location) => {
             const here = location.id === currentLocationId
-            const tag = location.atmosphericConditions?.[0]
-            const currentNode = location.areaNodes?.find((node) => node.id === currentAreaNodeId)
+            const currentNode = here
+              ? location.areaNodes?.find((node) => node.id === currentAreaNodeId)
+              : undefined
+            const display = formatLocationDisplay(location, currentNode, here)
+            const tag = display.currentNode?.atmosphericConditions?.[0] ?? location.atmosphericConditions?.[0]
+            const otherAreaNodes = here && display.currentNode
+              ? location.areaNodes?.filter((node) => node.id !== display.currentNode?.id) ?? []
+              : location.areaNodes ?? []
             return (
               <div key={location.id} className={cn(
                 'relative min-h-[72px] overflow-hidden rounded-lg border px-3 py-2.5',
@@ -953,19 +959,28 @@ function LocationsPanel({ state }: { state: Sf2State }) {
                 <div className="flex min-w-0 items-center gap-2">
                   {here && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_12px_-3px] shadow-primary" />}
                   <span className={cn('min-w-0 flex-1 truncate', sidebarTitleTextClassName)}>
-                    {location.name || location.id.replace(/_/g, ' ')}
+                    {display.title}
                   </span>
                   {here && <LocationChip tone="primary" label="HERE" />}
                   {location.locked && <LocationChip tone="muted" label="LOCKED" />}
                 </div>
+                {display.currentNode && (
+                  <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-primary/70" />
+                    <span className={cn('min-w-0 flex-1 truncate text-primary/90', sidebarBodyTextClassName)}>
+                      {display.currentNode.name}
+                    </span>
+                    {display.currentNode.locked && <LocationChip tone="muted" label="LOCKED" />}
+                  </div>
+                )}
                 {tag && (
                   <div className={cn('mt-1.5 line-clamp-1', sidebarBodyTextClassName)}>
                     {tag}
                   </div>
                 )}
-                {location.areaNodes?.length ? (
+                {otherAreaNodes.length ? (
                   <div className={cn('mt-1.5 line-clamp-2', sidebarBodyTextClassName)}>
-                    {location.areaNodes.map((node) => node.id === currentNode?.id ? `${node.name} (current)` : node.name).join(' / ')}
+                    {otherAreaNodes.map((node) => node.name).join(' / ')}
                   </div>
                 ) : null}
               </div>
@@ -981,6 +996,36 @@ function LocationsPanel({ state }: { state: Sf2State }) {
 
 function normalizedLocationDisplayKey(location: Sf2State['world']['currentLocation']) {
   return canonicalLocationNameKey(location.name || location.id)
+}
+
+type LocationDisplayNode = NonNullable<Sf2State['world']['currentLocation']['areaNodes']>[number]
+
+function formatLocationDisplay(
+  location: Sf2State['world']['currentLocation'],
+  currentNode: LocationDisplayNode | undefined,
+  here: boolean
+): { title: string; currentNode?: LocationDisplayNode } {
+  const rawTitle = location.name || location.id.replace(/_/g, ' ')
+  const flattened = splitFlattenedLocationName(rawTitle)
+  const fallbackNode: LocationDisplayNode | undefined = here && flattened
+    ? {
+        id: `${location.id}_current_area`,
+        name: flattened.childName,
+      }
+    : undefined
+  const node = currentNode ?? fallbackNode
+  return {
+    title: node ? flattened?.parentName ?? rawTitle : rawTitle,
+    currentNode: node,
+  }
+}
+
+function splitFlattenedLocationName(name: string): { childName: string; parentName: string } | null {
+  const [rawChild, ...rawParentParts] = name.split(',')
+  const childName = rawChild.trim()
+  const parentName = rawParentParts.join(',').trim()
+  if (!childName || !parentName) return null
+  return { childName, parentName }
 }
 
 function canonicalLocationNameKey(name: string) {

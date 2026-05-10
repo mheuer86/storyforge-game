@@ -91,3 +91,7 @@ Verified built as a deterministic per-turn beat-mode contract.
 - Verified with `npm run build` and:
   - `npm run sf2:replay -- fixtures/sf2/replay/beat-mode-meta-pauses-pacing.json`
   - `npm run sf2:replay -- fixtures/sf2/replay/procedure-operation-runtime-surfaces.json`
+
+## Follow-up - 2026-05-10 playthrough review
+
+Beat mode is wired, but it does not currently force the chapter to close or reframe when the foreground objective has landed. Treat this ticket as the tempo substrate. Follow-up ticket 14 owns the close/reframe enforcement gap, and ticket 17 owns route-level roll-gate enforcement.

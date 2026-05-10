@@ -61,3 +61,7 @@ Verified built as an access/infiltration packet derivation slice.
 - Review correction: replaced local drift vocab (`permitted`, `blocked`, `valid`, `strained`) with ticket vocabulary (`open`, `masked`, `authorized`, `covert`, `forced`, `remote`, `social`; `clean`, `flagged`, `compromised`, `burned`).
 - Runner now asserts `expected.procedureAccessExploration`.
 - Verified with `npm run build`, `npm run sf2:replay -- fixtures/sf2/replay/procedure-access-exploration-runtime.json`, and `npm run sf2:replay -- fixtures/sf2/replay/procedure-access-exploration-dedup-boundaries.json`.
+
+## Follow-up - 2026-05-10 playthrough review
+
+This verified the derivation helper, not that live play reliably creates access/infiltration state or feeds the specialized packet into the Narrator as the dominant procedure surface. Ticket 15 covers that activation/consumption gap.

@@ -63,3 +63,7 @@ Verified built as a forward-motion advisory helper.
 - The helper exempts `briefing`, `planning`, `montage`, `debrief`, `aftermath`, and `meta`; suppresses advisories when successor threads already exist; and nudges repeated non-exempt procedure beats without material change.
 - Runner now asserts `expected.forwardMotionAdvisories`.
 - Verified with `npm run build` and `npm run sf2:replay -- fixtures/sf2/replay/procedure-forward-motion-successor.json`.
+
+## Follow-up - 2026-05-10 playthrough review
+
+The 2026-05-10 Forty Thousand playthrough showed that this helper is not enough by itself. Core SF2 still has a hard close-readiness floor and can continue a resolved objective into repeated lien/clearance procedure. Follow-up ticket 14 moves objective-resolved close/reframe behavior into core SF2 and makes target turns advisory rather than close permission.

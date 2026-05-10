@@ -61,6 +61,12 @@ The larger narrative rule is forward motion. Failed rolls should create new cons
 29. As a player, I want planning to remember who or what contributed, so that earned advantages and objections come from actual support sources.
 30. As a developer, I want a shared genre-neutral procedure kernel, so that operation, access, exploration, investigation, combat, and montage state do not invent incompatible schema dialects.
 31. As a player, I want the same procedure rules to support a station insertion, castle infiltration, network hack, or ruin expedition, so that genre changes alter texture without breaking mechanics.
+32. As a player, I want a chapter to close, reframe, or promote a successor when its foreground objective lands, so that the game does not keep adding fees, reviews, locks, or gates because a target turn floor has not been reached.
+33. As a player, I want procedure state to activate only when it changes my future options, so that the game gains tactical depth without forcing every seed into an operation.
+34. As a player, I want multi-part inputs to resolve in order, including multiple rolls when needed, so that "do X, then Y" plays like an ordered plan instead of one blended outcome.
+35. As a player, I want roll gates to fire reliably before outcomes, so that meaningful uncertainty uses dice like V1 did.
+36. As a player, I want obligations, gates, and deadlines to be represented as hard state, so that debt, clearance, payment, and time pressure cannot contradict themselves in prose.
+37. As a player, I want NPC first observations to anchor identity and profile facts, so that later turns do not reintroduce the same person as if they just became legible.
 
 ## Implementation Decisions
 
@@ -85,6 +91,13 @@ The larger narrative rule is forward motion. Failed rolls should create new cons
 - Procedure state should feed the Narrator through bounded packets and the UI through compact player-facing surfaces.
 - Resolved, failed, or mutated beats should advance the dramatic question. Repeating the same obstacle is valid only when the available leverage, risk, or fictional position has changed.
 - Chapter target turns should behave as pacing guidance, not as permission to close. If the foreground objective lands early, chapter machinery should close, reframe, or promote a successor pressure instead of stretching the old question.
+- The shipped procedure kernel is necessary but not sufficient. Live play must activate procedure records when the fiction enters load-bearing procedure, and Narrator context must consume specialized packets rather than only generic procedure summaries.
+- Roll discipline should follow the V1 lesson: private roll-gate guidance is useful, but the route must enforce a required roll before outcome narration when code has detected meaningful uncertainty.
+- Multi-intent player inputs should become an ordered intent queue. The current intent resolves first; remaining intents survive roll pauses and can trigger additional rolls in the same player turn.
+- Debts, liens, tithes, fees, favors, and other owed balances are obligations, not player wallet deltas. Currency changes and obligation balance changes are separate state events.
+- Resolution gates must distinguish "this progress mentions a gate" from "this progress satisfies a gate." Gate satisfaction, failure, and waiver are explicit state transitions.
+- Temporal anchors are canonical timeline facts. Scene time labels and timer pressure should derive from anchors when a deadline is load-bearing.
+- First visible NPC introductions should anchor identity/profile facts when prose provides them, because later invariant protection only works after the first write exists.
 
 ## Testing Decisions
 
@@ -98,6 +111,12 @@ The larger narrative rule is forward motion. Failed rolls should create new cons
 - Montage tests should cover off-screen task creation, time advancement, partial results, final results, and procedure/thread/clue mutations from task outcomes.
 - Chapter transition tests should cover an active operation crossing from one chapter into the next without being restaged or replaced by unrelated pressure.
 - Forward-motion tests should cover a load-bearing obstacle that resolves or fails around turn 10 and verify that the next guidance closes, reframes, or surfaces new anchors rather than repeating the obstacle until the 18-25 target range.
+- Objective-gate tests should cover early legitimate resolution, false turn-1 close, and core SF2 parity with the SF2B objective gate.
+- Procedure activation tests should include a negative case where no procedure is created because the scene is social/relational, and a positive case where repeated clearance/access/departure pressure creates or uses owning state.
+- Roll tests should assert route-level enforcement, not only that the Narrator received advisory text.
+- Intent-queue tests should cover one input producing multiple roll prompts and ordered state commits.
+- Obligation/gate/timer tests should cover the Forty Thousand lien shape, a clearance gate that cannot be both satisfied and pending, and a deadline update that supersedes prior time truth.
+- Identity/profile tests should cover first-observation anchoring and same-day second-meeting reintroduction drift.
 - Arc Author calibration should include human review of generated pressure fields before enforcing quality with stricter checks.
 
 ## Out of Scope

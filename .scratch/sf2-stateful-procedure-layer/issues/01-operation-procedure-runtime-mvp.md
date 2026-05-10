@@ -70,3 +70,7 @@ Verified built on top of the shared procedure kernel.
 - Verified with `npm run build` and focused operation fixtures:
   - `npm run sf2:replay -- fixtures/sf2/replay/procedure-operation-runtime-surfaces.json`
   - `npm run sf2:replay -- fixtures/sf2/replay/procedure-archivist-create-operation-runtime.json`
+
+## Follow-up - 2026-05-10 playthrough review
+
+The runtime exists, but the Forty Thousand playthrough created zero procedure records across 14 turns despite repeated clearance/departure procedure in prose. Ticket 15 covers live activation and specialized packet consumption so this runtime affects actual play when load-bearing procedure appears.

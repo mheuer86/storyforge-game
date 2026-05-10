@@ -62,3 +62,7 @@ Verified built as an exploration packet derivation slice.
 - The derivation preserves dedup boundaries between location/topology, area nodes, routes, route constraints, hazards, and access-owned scrutiny/credential state.
 - Runner now asserts `expected.procedureAccessExploration`.
 - Verified with `npm run build`, `npm run sf2:replay -- fixtures/sf2/replay/procedure-access-exploration-runtime.json`, and `npm run sf2:replay -- fixtures/sf2/replay/procedure-access-exploration-dedup-boundaries.json`.
+
+## Follow-up - 2026-05-10 playthrough review
+
+The area/node derivation exists for active exploration procedures. Ticket 13 extends the location source of truth so parent location/topology and child area/node are represented separately outside exploration-only packets, and ticket 15 covers live activation/packet consumption.
