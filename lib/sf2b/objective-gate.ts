@@ -138,6 +138,7 @@ function tensionRoleScore(role: Sf2ChapterTensionScoreLine['role']): number {
 
 function driverScore(thread: Sf2Thread): number {
   if (thread.chapterDriverKind === 'successor') return 3
+  if (thread.chapterDriverKind === 'arc_promoted') return 3
   if (thread.chapterDriverKind === 'new_pressure') return 2
   return 1
 }

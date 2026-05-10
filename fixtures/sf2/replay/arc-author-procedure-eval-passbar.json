@@ -26,7 +26,7 @@
         "seed": "Iron Veil style annex insertion",
         "scenarioShape": "procedure-heavy pressure field, not fixed route",
         "durableForces": ["Registry authority", "dock labor network", "annex security command"],
-        "pressureEngines": [
+        "arcThreads": [
           "deadline window before the noon transfer clock closes",
           "surveillance exposure trace through badge scrutiny and watch logs",
           "military guard escalation if the annex alarm fills",
@@ -59,7 +59,7 @@
         "chapterFunctionsArePressureJobs": true,
         "alternateStanceValid": true,
         "nonOperationSeedNotForced": true,
-        "pressureEngineCoverage": true
+        "arcThreadCoverage": true
       }
     }
   }

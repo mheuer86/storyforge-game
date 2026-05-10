@@ -1,0 +1,71 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc validation rejects latent hidden answer",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Latent arc questions must store answer-impact shape, not pre-authored hidden truths."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "arcValidation": {
+      "arcPlan": {
+        "id": "arc_hidden_answer",
+        "status": "active",
+        "title": "Hidden Answer",
+        "sourceHook": {
+          "title": "The Defector",
+          "premise": "A defector needs protection.",
+          "crucible": "Trust costs someone safety."
+        },
+        "scenarioShape": {
+          "mode": "protection",
+          "premise": "A hunted witness changes who can be trusted.",
+          "whyThisRun": "Protection pressure makes every ally legible.",
+          "whatThisIsNot": "Not a route clearance puzzle.",
+          "selectionRationale": "Protection keeps danger human.",
+          "rejectedDefaultShape": "A checkpoint sequence."
+        },
+        "arcQuestion": "Who gets protected when trust becomes expensive?",
+        "coreCrucible": "Trust costs someone safety.",
+        "invariantFacts": [],
+        "variableTruthsForThisRun": [],
+        "durableForces": [],
+        "durableNpcSeeds": [],
+        "arcThreadIds": ["thread_defector_trust"],
+        "latentArcQuestions": [
+          {
+            "id": "latent_captain_complicity",
+            "question": "Why did the captain open the route?",
+            "whyItMatters": "The crew may re-read protection as complicity.",
+            "answerImpactAxis": "reveals the captain was in on it",
+            "activationTags": ["owner_exposure"],
+            "status": "open",
+            "createdChapter": 1
+          }
+        ],
+        "playerStanceAxes": [
+          { "id": "axis_trust", "axis": "Trust posture", "poleA": "Protect", "poleB": "Doubt", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" },
+          { "id": "axis_visibility", "axis": "Visibility", "poleA": "Open", "poleB": "Quiet", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" },
+          { "id": "axis_obligation", "axis": "Obligation", "poleA": "Crew", "poleB": "Witness", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" }
+        ],
+        "chapterFunctionMap": [
+          { "chapter": 1, "function": "Open protection pressure.", "pressureQuestion": "Who trusts the defector?", "possibleEndStates": [] },
+          { "chapter": 2, "function": "Make shelter costly.", "pressureQuestion": "Who pays for shelter?", "possibleEndStates": [] },
+          { "chapter": 3, "function": "Turn trust into reversal.", "pressureQuestion": "Whose standing flips?", "possibleEndStates": [] },
+          { "chapter": 4, "function": "Force visible choice.", "pressureQuestion": "Who remains protected?", "possibleEndStates": [] },
+          { "chapter": 5, "function": "Resolve protection aftermath.", "pressureQuestion": "What trust survives?", "possibleEndStates": [] }
+        ],
+        "possibleEndgames": []
+      },
+      "expect": {
+        "errorIncludesAll": [
+          "latent_arc_questions[0].answer_impact_axis must describe an impact axis, not a hidden answer"
+        ]
+      }
+    }
+  }
+}

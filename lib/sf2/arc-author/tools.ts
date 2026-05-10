@@ -120,22 +120,93 @@ export const arcAuthorTool: Anthropic.Tool = {
           required: ['id', 'role', 'affiliation', 'dramatic_function', 'private_pressure', 'reuse_guidance'],
         },
       },
-      pressure_engines: {
+      arc_threads: {
         type: 'array' as const,
-        description: 'Exactly 3 durable pressure engines that can answer player actions; use clocks only when time is genuinely load-bearing.',
-        minItems: 3,
-        maxItems: 3,
+        description:
+          '1-4 durable arc-scope threads. These become deferred Sf2Thread records, not procedure engines.',
+        minItems: 1,
+        maxItems: 4,
         items: {
           type: 'object' as const,
           properties: {
-            id: { type: 'string' as const },
-            name: { type: 'string' as const },
-            aggregation: { type: 'string' as const, enum: ['max', 'average', 'weighted'] },
-            advances_when: { type: 'string' as const, description: '≤14 words.' },
-            slows_when: { type: 'string' as const, description: '≤14 words.' },
-            visible_symptoms: { type: 'string' as const, description: '≤14 words.' },
+            id: { type: 'string' as const, description: 'thread_<snake_case_pressure>' },
+            title: {
+              type: 'string' as const,
+              description: 'Human/faction pressure title, not a mechanism label.',
+            },
+            question: {
+              type: 'string' as const,
+              description: '≤16 words. The unresolved question this thread can later activate.',
+            },
+            owner_force_id: {
+              type: 'string' as const,
+              description: 'One durable_forces[].id that owns or drives the thread.',
+            },
+            stakeholder_force_ids: {
+              type: 'array' as const,
+              description: 'Optional durable_forces ids affected by the thread.',
+              maxItems: 3,
+              items: { type: 'string' as const },
+            },
+            resolution_criteria: {
+              type: 'string' as const,
+              description: 'One sentence, ≤24 words. What would answer or settle the thread.',
+            },
+            failure_mode: {
+              type: 'string' as const,
+              description: 'One sentence, ≤24 words. The human/faction cost if it goes badly.',
+            },
+            retrieval_cue: {
+              type: 'string' as const,
+              description: '≤16 words. Human leverage cue, not a route/checklist cue.',
+            },
           },
-          required: ['id', 'name', 'advances_when', 'slows_when', 'visible_symptoms'],
+          required: ['id', 'title', 'question', 'owner_force_id', 'resolution_criteria', 'failure_mode', 'retrieval_cue'],
+        },
+      },
+      latent_arc_questions: {
+        type: 'array' as const,
+        description:
+          '0-4 late-game questions. Store question shapes only; do not smuggle hidden answers.',
+        minItems: 0,
+        maxItems: 4,
+        items: {
+          type: 'object' as const,
+          properties: {
+            id: { type: 'string' as const, description: 'latent_<snake_case_question>' },
+            question: { type: 'string' as const, description: '≤18 words.' },
+            why_it_matters: {
+              type: 'string' as const,
+              description: '≤18 words. Why answering later would matter to a person/faction.',
+            },
+            answer_impact_axis: {
+              type: 'string' as const,
+              description:
+                '≤18 words. Name what kind of standing, loyalty, danger, obligation, identity, or power would change. Do not state the answer.',
+            },
+            activation_tags: {
+              type: 'array' as const,
+              description: '1-3 state-derived tags that make this question eligible later.',
+              minItems: 1,
+              maxItems: 3,
+              items: {
+                type: 'string' as const,
+                enum: [
+                  'trust_break',
+                  'owner_exposure',
+                  'repeated_clue',
+                  'high_tension_thread',
+                  'failed_outcome',
+                  'catastrophic_outcome',
+                  'chapter_reversal',
+                  'identity_pressure',
+                  'obligation_due',
+                  'faction_heat',
+                ],
+              },
+            },
+          },
+          required: ['id', 'question', 'why_it_matters', 'answer_impact_axis', 'activation_tags'],
         },
       },
       player_stance_axes: {
@@ -173,18 +244,24 @@ export const arcAuthorTool: Anthropic.Tool = {
       chapter_function_map: {
         type: 'array' as const,
         description:
-          'Exactly 5 chapter function slots. These are purposes, not scene sequences. The arc may resolve in Chapter 4 or 5, but still emit all five slots.',
+          'Exactly 5 chapter function slots. These are human-pressure purposes, not scene sequences or procedural task completions.',
         minItems: 5,
         maxItems: 5,
         items: {
           type: 'object' as const,
           properties: {
             chapter: { type: 'number' as const },
-            function: { type: 'string' as const, description: 'One sentence, ≤20 words.' },
-            pressure_question: { type: 'string' as const, description: 'One question, ≤18 words.' },
+            function: {
+              type: 'string' as const,
+              description: 'One sentence, ≤20 words. Name the human stance or relationship change.',
+            },
+            pressure_question: {
+              type: 'string' as const,
+              description: 'One question, ≤18 words. Ask who trusts, pays, defects, protects, or breaks.',
+            },
             possible_end_states: {
               type: 'array' as const,
-              description: 'Exactly 3 short states.',
+              description: 'Exactly 3 short human/faction states.',
               minItems: 3,
               maxItems: 3,
               items: { type: 'string' as const },
@@ -212,7 +289,8 @@ export const arcAuthorTool: Anthropic.Tool = {
       'variable_truths_for_this_run',
       'durable_forces',
       'durable_npc_seeds',
-      'pressure_engines',
+      'arc_threads',
+      'latent_arc_questions',
       'player_stance_axes',
       'chapter_function_map',
       'possible_endgames',

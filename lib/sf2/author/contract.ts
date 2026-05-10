@@ -20,6 +20,7 @@ import type {
 } from '../types'
 import { SF2_HUMAN_STAKE_COST_SURFACES } from '../types'
 import { isThreadTerminal } from '../thread-lifecycle'
+import { selectLatentArcQuestionsForChapter } from '../arc-questions'
 
 export type AuthorRawValidationContext = DispositionDerivationContext & {
   isContinuation?: boolean
@@ -159,7 +160,7 @@ export function validateChapterRaw(
       if (existing && isThreadTerminal(existing.status)) {
         errors.push(`active_threads[${i}].id ${id} is already terminal (${existing.status}); transition it and author a successor instead`)
       }
-      if (!['carry_forward', 'successor', 'new_pressure'].includes(driverKind)) {
+      if (!['carry_forward', 'successor', 'new_pressure', 'arc_promoted'].includes(driverKind)) {
         errors.push(`active_threads[${i}].driver_kind is required for chapter ≥ 2`)
       }
       if (driverKind === 'successor' && !successorTo.trim()) {
@@ -181,16 +182,16 @@ export function validateChapterRaw(
           }
         }
       }
-      if (driverKind === 'successor' || driverKind === 'new_pressure') {
+      if (driverKind === 'successor' || driverKind === 'new_pressure' || driverKind === 'arc_promoted') {
         continuationDriverCount += 1
         if (!Number.isFinite(tension) || tension < 6) {
-          errors.push(`active_threads[${i}] new/successor driver must be load-bearing tension ≥6`)
+          errors.push(`active_threads[${i}] new/successor/arc_promoted driver must be load-bearing tension ≥6`)
         }
       }
     }
   })
   if (ctx.isContinuation && continuationDriverCount < 1) {
-    errors.push('active_threads must include at least 1 successor or new_pressure driver for chapter ≥ 2')
+    errors.push('active_threads must include at least 1 successor, new_pressure, or arc_promoted driver for chapter ≥ 2')
   }
 
   const arcLink = getObject(raw, 'arc_link', 'arcLink')
@@ -469,7 +470,10 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       arcId: stringField(arcLink, 'arc_id', 'arcId'),
       chapterFunction: stringField(arcLink, 'chapter_function', 'chapterFunction'),
       playerStanceRead: stringField(arcLink, 'player_stance_read', 'playerStanceRead'),
-      pressureEngineIds: stringArray(arcLink, 'pressure_engine_ids', 'pressureEngineIds'),
+      arcThreadIds: stringArray(arcLink, 'arc_thread_ids', 'arcThreadIds').length > 0
+        ? stringArray(arcLink, 'arc_thread_ids', 'arcThreadIds')
+        : stringArray(arcLink, 'pressure_engine_ids', 'pressureEngineIds'),
+      promotedLatentQuestionIds: stringArray(arcLink, 'promoted_latent_question_ids', 'promotedLatentQuestionIds'),
     },
     pacingContract: {
       targetTurns: {
@@ -668,17 +672,20 @@ export function validateAuthorSetup(
           }
         }
       }
-      if (thread.driverKind === 'successor' || thread.driverKind === 'new_pressure') {
+      if (thread.driverKind === 'successor' || thread.driverKind === 'new_pressure' || thread.driverKind === 'arc_promoted') {
         continuationDriverCount += 1
-        if (thread.tension < 6) errors.push(`active_threads[${i}] new/successor driver must be load-bearing tension ≥6`)
+        if (thread.tension < 6) errors.push(`active_threads[${i}] new/successor/arc_promoted driver must be load-bearing tension ≥6`)
       }
     }
   })
   if (opts.isContinuation && continuationDriverCount < 1) {
-    errors.push('active_threads must include at least 1 successor or new_pressure driver for chapter ≥ 2')
+    errors.push('active_threads must include at least 1 successor, new_pressure, or arc_promoted driver for chapter ≥ 2')
   }
   if (!authored.arcLink.arcId.trim()) errors.push('arc_link.arc_id is empty')
   if (!authored.arcLink.chapterFunction.trim()) errors.push('arc_link.chapter_function is empty')
+  if (opts.state) {
+    errors.push(...validateArcThreadAndLatentPromotion(authored, opts.state))
+  }
   if (!authored.pacingContract.chapterQuestion.trim()) errors.push('pacing_contract.chapter_question is empty')
   if (
     authored.pacingContract.targetTurns.min < 12 ||
@@ -945,10 +952,6 @@ function validateRawHumanStakes(
   }
   const startingNpcIds = new Set(npcs.map((n) => stringField(n, 'id')).filter(Boolean))
   const pressureIds = new Set(threads.map((t) => stringField(t, 'id')).filter(Boolean))
-  const engineIds = new Set([
-    ...Object.keys(state?.campaign.engines ?? {}),
-    ...(state?.campaign.arcPlan?.pressureEngines ?? []).map((engine) => engine.id),
-  ])
   let externalStakeCount = 0
   stakes.forEach((stake, i) => {
     const whoPays = stringField(stake, 'who_pays', 'whoPays')
@@ -963,8 +966,8 @@ function validateRawHumanStakes(
       errors.push(`human_stakes[${i}].cost_surface is invalid`)
     }
     if (!whatIsLost.trim()) errors.push(`human_stakes[${i}].what_is_lost is empty`)
-    if (!pressureIds.has(triggeringPressure) && !engineIds.has(triggeringPressure)) {
-      errors.push(`human_stakes[${i}].triggering_pressure must reference an active_threads id or pressure engine id`)
+    if (!pressureIds.has(triggeringPressure)) {
+      errors.push(`human_stakes[${i}].triggering_pressure must reference an active_threads id`)
     }
   })
   if (externalStakeCount < 1) errors.push('human_stakes must include at least one starting_npcs id as who_pays')
@@ -985,8 +988,6 @@ function validateHumanStakes(authored: AuthorChapterSetupV2, state?: Sf2State): 
   }
   const startingNpcIds = new Set(authored.startingNPCs.map((n) => n.id))
   const pressureIds = new Set(authored.activeThreads.map((t) => t.id))
-  for (const engineId of Object.keys(state?.campaign.engines ?? {})) pressureIds.add(engineId)
-  for (const engine of state?.campaign.arcPlan?.pressureEngines ?? []) pressureIds.add(engine.id)
   let externalStakeCount = 0
   stakes.forEach((stake, i) => {
     if (startingNpcIds.has(stake.whoPays)) externalStakeCount += 1
@@ -998,10 +999,57 @@ function validateHumanStakes(authored: AuthorChapterSetupV2, state?: Sf2State): 
     }
     if (!stake.whatIsLost.trim()) errors.push(`human_stakes[${i}].what_is_lost is empty`)
     if (!pressureIds.has(stake.triggeringPressure)) {
-      errors.push(`human_stakes[${i}].triggering_pressure must reference an active thread or pressure engine`)
+      errors.push(`human_stakes[${i}].triggering_pressure must reference an active thread`)
     }
   })
   if (externalStakeCount < 1) errors.push('human_stakes must include at least one starting_npcs id as who_pays')
+  return errors
+}
+
+function validateArcThreadAndLatentPromotion(
+  authored: AuthorChapterSetupV2,
+  state: Sf2State
+): string[] {
+  const errors: string[] = []
+  const arcPlan = state.campaign.arcPlan
+  if (!arcPlan || arcPlan.id !== authored.arcLink.arcId) return errors
+  const targetChapter = state.history.turns.length > 0 ? state.meta.currentChapter + 1 : 1
+  const activeThreadIds = new Set(authored.activeThreads.map((thread) => thread.id))
+  const arcThreadIds = new Set(arcPlan.arcThreadIds ?? [])
+  const openLatentIds = new Set(
+    (arcPlan.latentArcQuestions ?? [])
+      .filter((question) => question.status === 'open')
+      .map((question) => question.id) ?? []
+  )
+
+  authored.activeThreads.forEach((thread, index) => {
+    if (thread.driverKind !== 'arc_promoted') return
+    const existing = state.campaign.threads[thread.id]
+    if (!existing || !arcThreadIds.has(thread.id)) {
+      errors.push(`active_threads[${index}].driver_kind arc_promoted must reuse a deferred arc thread id`)
+    } else if (existing.status !== 'deferred' && existing.status !== 'active') {
+      errors.push(`active_threads[${index}].driver_kind arc_promoted cannot promote ${existing.status} thread ${thread.id}`)
+    }
+  })
+
+  authored.arcLink.arcThreadIds.forEach((id, index) => {
+    if (!arcThreadIds.has(id)) errors.push(`arc_link.arc_thread_ids[${index}] ${id} is not an arc thread id`)
+    if (!activeThreadIds.has(id)) errors.push(`arc_link.arc_thread_ids[${index}] ${id} must also be in active_threads`)
+  })
+
+  const selection = selectLatentArcQuestionsForChapter(state, targetChapter, null)
+  const selectedIds = new Set(selection.candidates.map((candidate) => candidate.id))
+  const promotedIds = authored.arcLink.promotedLatentQuestionIds
+  promotedIds.forEach((id, index) => {
+    if (!openLatentIds.has(id)) errors.push(`arc_link.promoted_latent_question_ids[${index}] ${id} is not an open latent arc question`)
+    if (!selectedIds.has(id)) errors.push(`arc_link.promoted_latent_question_ids[${index}] ${id} was not selected for this chapter`)
+  })
+  if (selection.promotionRequired && promotedIds.length !== 1) {
+    errors.push('arc_link.promoted_latent_question_ids must contain exactly 1 selected latent question when promotion is required')
+  }
+  if (!selection.promotionRequired && promotedIds.length > 1) {
+    errors.push('arc_link.promoted_latent_question_ids must contain at most 1 latent question')
+  }
   return errors
 }
 
@@ -1218,7 +1266,7 @@ function uniqueErrors(errors: string[]): string[] {
 }
 
 function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThreads'][number]['driverKind'] {
-  return value === 'carry_forward' || value === 'successor' || value === 'new_pressure'
+  return value === 'carry_forward' || value === 'successor' || value === 'new_pressure' || value === 'arc_promoted'
     ? value
     : undefined
 }

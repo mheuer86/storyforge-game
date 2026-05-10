@@ -54,7 +54,9 @@ export function transformAuthorSetup(
     .filter((t) => t.driverKind === 'new_pressure')
     .map((t) => t.id)
   const preferredDriver = authored.activeThreads.find(
-    (t) => (t.driverKind === 'successor' || t.driverKind === 'new_pressure') && t.tension >= 6
+    (t) =>
+      (t.driverKind === 'successor' || t.driverKind === 'new_pressure' || t.driverKind === 'arc_promoted') &&
+      t.tension >= 6
   )
   const preferredLoadBearing = authored.activeThreads.find((t) => t.tension >= 6)
 

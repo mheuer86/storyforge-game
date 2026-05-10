@@ -109,7 +109,7 @@
         }
       },
       "expect": {
-        "schemaVersionEquals": "3.1.0",
+        "schemaVersionEquals": "3.2.0",
         "recentTurnsCountEquals": 6,
         "currentSceneIdEquals": "scene_current",
         "currentLocationIdEquals": "loc_current",

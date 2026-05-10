@@ -1,0 +1,57 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author retry nudge repairs human outcome spectrum",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for live Author 502s where the first setup attempt emits procedural outcome-spectrum tiers instead of human consequences."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - retry nudge fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorRetryNudge": {
+      "genreId": "space-opera",
+      "hookTitle": "The Defector",
+      "errors": [
+        "chapter_frame.outcome_spectrum.clean must name a human consequence, named entity, or relationship/cost",
+        "chapter_frame.outcome_spectrum.failure must name a human consequence, named entity, or relationship/cost"
+      ],
+      "containsAll": [
+        "For outcome_spectrum human-anchor errors",
+        "Rewrite only the invalid outcome tiers",
+        "clean: who remains safe, trusted, loyal, free, or still willing to help",
+        "failure: who is exposed, hunted, burned, betrayed, or made unsafe",
+        "Defector example"
+      ],
+      "containsNone": [
+        "record room",
+        "Use kind \"entity_action\""
+      ]
+    },
+    "authorRetryPolicy": {
+      "defaultMaxAttemptsEquals": 2,
+      "retryableErrors": [
+        "chapter_frame.outcome_spectrum.clean must name a human consequence, named entity, or relationship/cost",
+        "chapter_frame.outcome_spectrum.failure must name a human consequence, named entity, or relationship/cost"
+      ],
+      "nonRetryableErrors": [
+        "chapter_frame.title is empty"
+      ]
+    }
+  }
+}

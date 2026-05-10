@@ -70,7 +70,8 @@
         "A passenger who knows too much can buy passage"
       ],
       "hookFirstEpisodeIncludes": [
-        "Evade or answer the black-ops corvette"
+        "Keep the defector alive",
+        "who can be trusted with her data"
       ],
       "worldVocabularyIncludes": [
         "black-ops corvette",
@@ -87,16 +88,25 @@
       "seedJsonIncludes": [
         "\"title\": \"The Defector\"",
         "frontier asylum contact",
-        "passenger-protection pressure"
+        "passenger-protection pressure",
+        "The player learns Space Opera through passenger protection",
+        "Every route fact should pressure a person"
       ],
       "seedJsonExcludes": [
         "\"title\": \"Forty Thousand\"",
         "forty-thousand-credit",
-        "docking clamps"
+        "docking clamps",
+        "route constraints, broker leverage, and the cost of taking the job",
+        "can take the route tonight"
       ],
       "arcAuthorSituationIncludes": [
         "The Defector",
         "compromised beacon operators"
+      ],
+      "arcAuthorRoleIncludes": [
+        "Human-pressure pass",
+        "Every arc thread must name who gains leverage, who pays, and what relationship, safety, freedom, standing, or reputation is at risk",
+        "Mechanisms are symptoms or leverage surfaces, not the pressure itself"
       ],
       "arcVariantCandidateCount": 4,
       "arcVariantCandidateIdsInclude": [
@@ -113,8 +123,8 @@
       ],
       "arcVariantCandidateJsonIncludes": [
         "The corvette is close enough",
-        "safe harbor that is not already compromised",
-        "compromised beacon operators",
+        "what relationship, favor, or reputation cost",
+        "testimony, trust, and survivor risk",
         "whether the crew believes her"
       ],
       "arcVariantCandidateJsonExcludes": [

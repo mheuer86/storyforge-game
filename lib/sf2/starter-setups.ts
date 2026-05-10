@@ -1,4 +1,4 @@
-import { arcPlanToArcEntity } from './arc-author/transform'
+import { arcPlanToArcEntity, durableForceFactionsFromArcPlan } from './arc-author/transform'
 import { applyAuthoredToCampaign } from './author/hydrate'
 import { transformAuthorSetup } from './author/transform'
 import { chapterPressureRuntime } from './pressure/runtime'
@@ -57,6 +57,7 @@ export const FORTY_THOUSAND_STARTER_ARC_PLAN: Sf2ArcPlan = {
   durableForces: [
     {
       id: 'force_voss_recovery',
+      factionId: 'faction_voss_recovery',
       name: 'Voss Recovery',
       agenda: 'Convert unpaid debt into control over routes, ship access, and reputation.',
       leverage: 'Liens, collector presence, dock holds, and violence priced as paperwork.',
@@ -65,6 +66,7 @@ export const FORTY_THOUSAND_STARTER_ARC_PLAN: Sf2ArcPlan = {
     },
     {
       id: 'force_back_channel_brokers',
+      factionId: 'faction_back_channel_brokers',
       name: 'Back-channel brokers',
       agenda: 'Move people and freight no legal route will touch.',
       leverage: 'Urgency, partial truths, route chits, and plausible deniability.',
@@ -73,6 +75,7 @@ export const FORTY_THOUSAND_STARTER_ARC_PLAN: Sf2ArcPlan = {
     },
     {
       id: 'force_station_route_authority',
+      factionId: 'faction_helix_route_authority',
       name: 'Helix route authority',
       agenda: 'Keep order on the berth ring while selling permission as compliance.',
       leverage: 'Docking clamps, fee ledgers, customs flags, and departure windows.',
@@ -106,30 +109,25 @@ export const FORTY_THOUSAND_STARTER_ARC_PLAN: Sf2ArcPlan = {
       reuseGuidance: 'Promote only after the crew has accepted, inspected, or confronted the job.',
     },
   ],
-  pressureEngines: [
+  arcThreadIds: ['thread_clear_forty_thousand', 'thread_move_sealed_job', 'thread_keep_crew_whole'],
+  latentArcQuestions: [
     {
-      id: 'engine_debt_net',
-      name: 'Debt net',
-      aggregation: 'max',
-      advancesWhen: 'Voss Recovery converts missed payment into route, dock, or reputation control.',
-      slowsWhen: 'The PC pays, exposes, or credibly threatens the collection mechanism.',
-      visibleSymptoms: 'holds, fee flags, collector sightings, and dock workers suddenly knowing the PC name',
+      id: 'latent_who_priced_the_job',
+      question: 'Who knew the exact debt before Juno made the offer?',
+      whyItMatters: 'The answer could turn help into entrapment.',
+      answerImpactAxis: 'whose loyalty and culpability the crew re-reads',
+      activationTags: ['owner_exposure', 'chapter_reversal', 'faction_heat'],
+      status: 'open',
+      createdChapter: 1,
     },
     {
-      id: 'engine_hot_freight',
-      name: 'Hot freight',
-      aggregation: 'max',
-      advancesWhen: 'The passenger or crate draws scans, pursuers, contradictions, or broker evasions.',
-      slowsWhen: 'The PC learns enough to choose protection, refusal, or renegotiated custody.',
-      visibleSymptoms: 'sealed-case protocols, nervous broker edits, passive sweeps, and route windows tightening',
-    },
-    {
-      id: 'engine_crew_trust',
-      name: 'Crew trust',
-      aggregation: 'average',
-      advancesWhen: 'The PC hides terms, risks the crew without consent, or lets debt choose for them.',
-      slowsWhen: 'The PC shares risk, draws boundaries, or turns desperation into an owned plan.',
-      visibleSymptoms: 'short comms, practical objections, favors withheld, and jokes getting thinner',
+      id: 'latent_why_the_passenger_runs',
+      question: 'Why can the passenger not use ordinary routes?',
+      whyItMatters: 'Protection only matters once the crew knows what hunts them.',
+      answerImpactAxis: 'whether the passenger reads as liability, witness, or obligation',
+      activationTags: ['identity_pressure', 'repeated_clue', 'high_tension_thread'],
+      status: 'open',
+      createdChapter: 1,
     },
   ],
   playerStanceAxes: [
@@ -581,7 +579,8 @@ export const FORTY_THOUSAND_STARTER_CHAPTER: AuthorChapterSetupV2 = {
       'Force the PC to choose whether the exact-price job becomes their exit vector.',
     playerStanceRead:
       'Read whether the PC grabs speed, demands terms, protects the passenger, or protects crew consent first.',
-    pressureEngineIds: ['engine_debt_net', 'engine_hot_freight', 'engine_crew_trust'],
+    arcThreadIds: ['thread_clear_forty_thousand', 'thread_move_sealed_job', 'thread_keep_crew_whole'],
+    promotedLatentQuestionIds: [],
   },
   pacingContract: {
     targetTurns: { min: 12, max: 18 },
@@ -627,6 +626,9 @@ export function applyPreauthoredStarterSetup(state: Sf2State): boolean {
 
   state.campaign.arcPlan = arcPlan
   state.campaign.arcs[arcEntity.id] = arcEntity
+  for (const faction of durableForceFactionsFromArcPlan(arcPlan)) {
+    state.campaign.factions[faction.id] = state.campaign.factions[faction.id] ?? faction
+  }
   state.meta.currentChapter = transformed.chapter
   state.meta.currentSceneId = `scene_${transformed.chapter}_1`
   state.chapter = {

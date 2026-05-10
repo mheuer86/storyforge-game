@@ -57,6 +57,7 @@
           "durableForces": [
             {
               "id": "force_kessler_toll",
+              "factionId": "faction_kessler_span_fleet",
               "name": "Kessler Span Fleet",
               "agenda": "Tax every ship crossing the middle beacon window.",
               "leverage": "Controls the toll lane and route authorization.",
@@ -65,16 +66,8 @@
             }
           ],
           "durableNpcSeeds": [],
-          "pressureEngines": [
-            {
-              "id": "engine_window_decay",
-              "name": "Beacon Window Decay",
-              "aggregation": "max",
-              "advancesWhen": "The crew delays at corridor nodes.",
-              "slowsWhen": "The crew moves decisively through a window.",
-              "visibleSymptoms": "Route countdowns and beacon flicker warnings."
-            }
-          ],
+          "arcThreadIds": ["thread_kessler_toll"],
+          "latentArcQuestions": [],
           "playerStanceAxes": [],
           "chapterFunctionMap": [],
           "possibleEndgames": []
@@ -278,9 +271,8 @@
           "arc_id": "arc_forty_thousand_blockade_threading",
           "chapter_function": "Make the first corridor toll cost crew trust or cargo exposure.",
           "player_stance_read": "Watch whether the PC protects speed, secrecy, or crew consent.",
-          "pressure_engine_ids": [
-            "engine_window_decay"
-          ]
+          "arc_thread_ids": ["thread_kessler_toll"],
+          "promoted_latent_question_ids": []
         },
         "pacing_contract": {
           "target_turns": {

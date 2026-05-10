@@ -1,4 +1,3 @@
-import { ENGINE_AGGREGATION_DEFAULT } from './constants'
 import { getPressureLadderTargetThreadIds } from './deltas'
 import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
@@ -7,7 +6,6 @@ import { isThreadTerminal } from '../thread-lifecycle'
 import type {
   Sf2ArchivistFlag,
   Sf2ChapterSetupRuntimeState,
-  Sf2EngineRuntime,
   Sf2EntityId,
   Sf2PressureLadderStep,
   Sf2State,
@@ -64,40 +62,9 @@ export interface ChapterPressureRecoveryResult {
   }>
 }
 
-function ensureRuntimeEnginesFromArcPlan(state: Sf2State): void {
-  const arc = state.campaign.arcPlan
-  if (!arc) return
-  state.campaign.engines ??= {}
-  for (const engine of arc.pressureEngines) {
-    const existing = state.campaign.engines[engine.id]
-    // Summary stays in sync with the arc-plan's visibleSymptoms while
-    // existing.summary still equals what we last seeded from it. Once Phase 6
-    // adds `update_engine` patches (archivist-driven summary writes), that
-    // overridden summary will diverge from visibleSymptoms and we stop
-    // refreshing. This keeps long-arc signal alive instead of frozen at first
-    // creation, without clobbering future explicit edits.
-    const summaryFromArc = engine.visibleSymptoms
-    const summary =
-      existing && existing.summary !== existing.visibleSymptoms
-        ? existing.summary
-        : summaryFromArc
-    const runtime: Sf2EngineRuntime = {
-      id: engine.id,
-      name: engine.name,
-      status: existing?.status ?? 'active',
-      summary,
-      aggregation: existing?.aggregation ?? engine.aggregation ?? ENGINE_AGGREGATION_DEFAULT,
-      anchorThreadIds: existing?.anchorThreadIds ?? [],
-      primaryThreadId: existing?.primaryThreadId,
-      value: existing?.value ?? 0,
-      advancesWhen: engine.advancesWhen,
-      slowsWhen: engine.slowsWhen,
-      visibleSymptoms: engine.visibleSymptoms,
-      lastUpdatedTurn: existing?.lastUpdatedTurn,
-      lastUpdatedChapter: existing?.lastUpdatedChapter,
-    }
-    state.campaign.engines[engine.id] = runtime
-  }
+function ensureRuntimeEnginesFromArcPlan(_state: Sf2State): void {
+  // New SF2 arc pressure is represented by anchored threads. Runtime engines
+  // remain in state only for legacy saves and SF2B read paths.
 }
 
 // `priorActiveThreadIds` is the previous chapter's activeThreadIds, captured
@@ -360,18 +327,10 @@ export const chapterPressureRuntime = {
 }
 
 function seedSelectedEngineAnchors(
-  state: Sf2State,
-  chapterSetup: Sf2ChapterSetupRuntimeState
+  _state: Sf2State,
+  _chapterSetup: Sf2ChapterSetupRuntimeState
 ): void {
-  const selectedIds = chapterSetup.arcLink?.pressureEngineIds ?? []
-  if (selectedIds.length === 0) return
-  const anchorIds = chapterSetup.activeThreadIds.filter((id) => Boolean(state.campaign.threads[id]))
-  if (anchorIds.length === 0) return
-  for (const engineId of selectedIds) {
-    const engine = state.campaign.engines[engineId]
-    if (!engine) continue
-    engine.anchorThreadIds = unionIds(engine.anchorThreadIds, anchorIds)
-  }
+  return
 }
 
 function findBestUnresolvedLoadBearingThread(
@@ -418,10 +377,7 @@ function findBestUnresolvedLoadBearingThread(
 
 function driverPriority(thread: Sf2Thread): number {
   if (thread.chapterDriverKind === 'successor') return 3
+  if (thread.chapterDriverKind === 'arc_promoted') return 3
   if (thread.chapterDriverKind === 'new_pressure') return 2
   return 1
-}
-
-function unionIds(a: Sf2EntityId[], b: Sf2EntityId[]): Sf2EntityId[] {
-  return Array.from(new Set([...a, ...b]))
 }

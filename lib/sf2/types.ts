@@ -7,7 +7,7 @@ import type { Sf2AccessExplorationPacket } from './procedure-access-exploration'
 import type { Sf2InvestigationSynthesisPacket } from './procedure-investigation'
 import type { Sf2ProcedurePacket, Sf2ProcedureRuntime } from './procedure'
 
-export const SF2_SCHEMA_VERSION = '3.1.0' as const
+export const SF2_SCHEMA_VERSION = '3.2.0' as const
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Primitive aliases
@@ -38,6 +38,7 @@ export type Sf2PromiseStatus = 'active' | 'kept' | 'broken' | 'released'
 export type Sf2ObligationStatus = 'active' | 'settled' | 'defaulted' | 'waived' | 'superseded'
 export type Sf2ClueStatus = 'floating' | 'attached' | 'consumed'
 export type Sf2ThreadResolutionMode = 'investigation' | 'pressure'
+export type Sf2LatentArcQuestionStatus = 'open' | 'promoted' | 'retired'
 export type Sf2ClueEvidenceKind =
   | 'document'
   | 'testimony'
@@ -176,6 +177,7 @@ export interface Sf2ArcPlan {
   variableTruthsForThisRun: string[]
   durableForces: Array<{
     id: string
+    factionId: string
     name: string
     agenda: string
     leverage: string
@@ -190,13 +192,19 @@ export interface Sf2ArcPlan {
     privatePressure: string
     reuseGuidance: string
   }>
-  pressureEngines: Array<{
+  arcThreadIds: Sf2EntityId[]
+  latentArcQuestions: Array<{
     id: string
-    name: string
-    aggregation?: Sf2EngineAggregation
-    advancesWhen: string
-    slowsWhen: string
-    visibleSymptoms: string
+    question: string
+    whyItMatters: string
+    answerImpactAxis: string
+    activationTags: string[]
+    status: Sf2LatentArcQuestionStatus
+    createdChapter: Sf2ChapterNumber
+    lastConsideredChapter?: Sf2ChapterNumber
+    consideredCount?: number
+    promotedChapter?: Sf2ChapterNumber
+    retiredChapter?: Sf2ChapterNumber
   }>
   playerStanceAxes: Array<{
     id: string
@@ -215,6 +223,8 @@ export interface Sf2ArcPlan {
     possibleEndStates: string[]
   }>
   possibleEndgames: string[]
+  needsReauthor?: boolean
+  reauthorReason?: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -319,7 +329,7 @@ export type ThreadRole =
   | 'background'
   | 'new'
 
-export type Sf2ChapterThreadDriverKind = 'carry_forward' | 'successor' | 'new_pressure'
+export type Sf2ChapterThreadDriverKind = 'carry_forward' | 'successor' | 'new_pressure' | 'arc_promoted'
 
 export interface Sf2ChapterThreadPressure {
   threadId: Sf2EntityId
@@ -1077,7 +1087,8 @@ export interface Sf2ChapterArcLink {
   arcId: Sf2EntityId
   chapterFunction: string
   playerStanceRead: string
-  pressureEngineIds: string[]
+  arcThreadIds: Sf2EntityId[]
+  promotedLatentQuestionIds: Sf2EntityId[]
 }
 
 export interface Sf2ChapterPacingContract {
@@ -1737,7 +1748,7 @@ export interface Sf2ChapterPacket {
     scenario: string
     question: string
     chapterFunction?: string
-    activePressureEngines: string[]
+    activeArcThreads: string[]
   }
   pacingContract?: Sf2ChapterPacingContract
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn

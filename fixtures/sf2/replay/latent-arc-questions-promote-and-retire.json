@@ -1,0 +1,96 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "latent arc questions promote one and retire stale candidates",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Latent questions are code-selected, bounded to top candidates, and retired after repeated eligible non-use."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 2
+      },
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_defector",
+          "status": "active",
+          "title": "The Defector",
+          "sourceHook": {
+            "title": "The Defector",
+            "premise": "A hunted defector needs shelter.",
+            "crucible": "Protection makes trust expensive."
+          },
+          "scenarioShape": {
+            "mode": "protection",
+            "premise": "A witness turns every ally into a risk.",
+            "whyThisRun": "Protection pressure gives the late turn weight.",
+            "whatThisIsNot": "Not a route clearance sequence.",
+            "selectionRationale": "Protection keeps the pressure human.",
+            "rejectedDefaultShape": "A checkpoint itinerary."
+          },
+          "arcQuestion": "Who gets protected when trust becomes expensive?",
+          "coreCrucible": "Protection makes trust expensive.",
+          "invariantFacts": [],
+          "variableTruthsForThisRun": [],
+          "durableForces": [],
+          "durableNpcSeeds": [],
+          "arcThreadIds": ["thread_defector_trust"],
+          "latentArcQuestions": [
+            {
+              "id": "latent_why_defect",
+              "question": "Why did the defector run now?",
+              "whyItMatters": "The answer could change who deserves protection.",
+              "answerImpactAxis": "whose obligation and danger the crew re-reads",
+              "activationTags": ["chapter_reversal"],
+              "status": "open",
+              "createdChapter": 1,
+              "consideredCount": 1,
+              "lastConsideredChapter": 2
+            },
+            {
+              "id": "latent_who_hunted",
+              "question": "Who benefits if the defector disappears?",
+              "whyItMatters": "The hunter's motive changes the price of shelter.",
+              "answerImpactAxis": "which faction's culpability and power become legible",
+              "activationTags": ["chapter_reversal"],
+              "status": "open",
+              "createdChapter": 1,
+              "consideredCount": 1,
+              "lastConsideredChapter": 2
+            },
+            {
+              "id": "latent_unused_third",
+              "question": "What name is missing from the route chit?",
+              "whyItMatters": "The missing name could point to obligation.",
+              "answerImpactAxis": "whose duty the route paperwork re-reads",
+              "activationTags": ["owner_exposure"],
+              "status": "open",
+              "createdChapter": 1
+            }
+          ],
+          "playerStanceAxes": [],
+          "chapterFunctionMap": [],
+          "possibleEndgames": []
+        }
+      }
+    },
+    "playerInput": "(unused - pure latent arc question fixture)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "latentArcQuestions": {
+      "targetChapter": 3,
+      "candidateIdsEquals": ["latent_why_defect", "latent_who_hunted"],
+      "promotionRequiredEquals": true,
+      "applyChapterOpen": {
+        "promotedIds": ["latent_why_defect"],
+        "statusesEqual": {
+          "latent_why_defect": "promoted",
+          "latent_who_hunted": "retired",
+          "latent_unused_third": "open"
+        }
+      }
+    }
+  }
+}

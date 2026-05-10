@@ -2,6 +2,7 @@
 // Source: /Users/martin.heuer/vaults/brainforest/storyforge/Storyforge v2 System Design Codex/storyforge-2-author-validation-example.md §4
 
 import { getSf2GenreExamples } from '../genre-examples'
+import { selectLatentArcQuestionsForChapter } from '../arc-questions'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE + ROLE: session-scoped. Cached.
@@ -113,7 +114,7 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`active_threads[].{title, question, retrieval_cue}\`: short phrase each (≤12 words). \`resolution_criteria\`, \`failure_mode\`: 1 sentence each (≤24 words).
   - Use \`resolution_gates\` only when a thread has distinct required steps before successful resolution (e.g. means obtained vs action processed). Gates are genre-neutral state facts, not prose beats.
   - \`pressure_ladder[].{pressure, trigger_event, narrative_effect}\`: 1 compact pressure, one structured trigger event, and one compact effect. \`trigger_event.kind\` is \`entity_action\`, \`location_objective\`, or \`late_unresolved\`. \`location_objective\` requires \`location_id\` and is only for true durable location anchors. \`trigger_event.stakes\` must name who pays, who gains leverage, who is exposed, or what relationship/cost surface worsens.
-  - \`human_stakes[]\`: exactly 2-3 entries. \`who_pays\`: a starting_npcs id or "the PC"; at least one must be a starting_npcs id. \`cost_surface\`: standing, freedom, loyalty, relationship, safety, or reputation. \`what_is_lost\`: 1 sentence (≤24 words). \`triggering_pressure\`: active thread id or pressure engine id.
+  - \`human_stakes[]\`: exactly 2-3 entries. \`who_pays\`: a starting_npcs id or "the PC"; at least one must be a starting_npcs id. \`cost_surface\`: standing, freedom, loyalty, relationship, safety, or reputation. \`what_is_lost\`: 1 sentence (≤24 words). \`triggering_pressure\`: active thread id.
   - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤24 words). These are hidden truths about agency, coercion, betrayal, exposure, danger, obligation, identity, power, or relationship stakes — not procedural facts with names attached. \`held_by\`: short phrase. Add exactly 3 \`hint_phrases\`, \`hints_required\`, and \`valid_reveal_contexts\`.
   - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: compact phrase or sentence (≤18 words).
   - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤18 words).
@@ -123,15 +124,16 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 
   Strip throat-clearing ("This thread represents…", "The intent here is…"). Lead with the noun or verb that carries the meaning. Tight prose at this layer reads better and costs less without sacrificing chapter quality — the Narrator inflates from these seeds during play, so over-elaboration here is wasted effort.
 - **Outcome spectrum names human consequences.** \`clean\` answers who you still have or what trust survives. \`costly\` answers who cooled or what is now owed. \`failure\` answers who is exposed or what hunts the PC. \`catastrophic\` answers what broke open that will not reseal. Good set: clean "Kessrin still calls you back; Laine's promise still feels reachable." costly "Renn now treats you as an asset to deploy; Patel's second bottle is owed." failure "Vasek now has your transponder ID; Sable's contact is burned." catastrophic "Solitaire knows your face; the beacon corridor is hostile to your registry forever." Bad: "the audit closes without exposure."
-- **Human stakes block.** Name the people who pay for pressure. Example: \`[{ who_pays: "npc_laine", cost_surface: "relationship", what_is_lost: "Laine stops risking their name for the PC unless trust is repaired.", triggering_pressure: "thread_broker_debt" }, { who_pays: "the PC", cost_surface: "reputation", what_is_lost: "The PC becomes the person local brokers cite as too expensive to help.", triggering_pressure: "engine_route_heat" }]\`.
+- **Human stakes block.** Name the people who pay for pressure. Example: \`[{ who_pays: "npc_laine", cost_surface: "relationship", what_is_lost: "Laine stops risking their name for the PC unless trust is repaired.", triggering_pressure: "thread_broker_debt" }, { who_pays: "the PC", cost_surface: "reputation", what_is_lost: "The PC becomes the person local brokers cite as too expensive to help.", triggering_pressure: "thread_route_heat" }]\`.
 - Emit exactly 3 starting NPCs.
 - Emit exactly 3 active threads for Chapter 1.
-- For Chapter 2 and later, emit exactly 4 active threads. You may carry forward up to 3 old threads, but at least 1 active thread must be a new chapter driver: either \`driver_kind: "new_pressure"\` or \`driver_kind: "successor"\`.
+- For Chapter 2 and later, emit exactly 4 active threads. You may carry forward up to 3 old threads, but at least 1 active thread must be a new chapter driver: \`driver_kind: "new_pressure"\`, \`"successor"\`, or \`"arc_promoted"\`.
 - For Chapter 2 and later, emit \`continuation_dramatic_turn\` and the continuation-only \`opening_scene_spec\` fields. These are not summaries; they are the contract that prevents the chapter from becoming a procedure queue.
-- For Chapter 2 and later, every \`active_threads[]\` entry must include \`driver_kind\`: \`carry_forward\`, \`successor\`, or \`new_pressure\`. Successor threads must also include \`successor_to_thread_id\`.
-- The new/successor driver must be load-bearing: give it tension ≥6, include it in pressure runtime through the selected pressure engines, and make it eligible to become spine.
+- For Chapter 2 and later, every \`active_threads[]\` entry must include \`driver_kind\`: \`carry_forward\`, \`successor\`, \`new_pressure\`, or \`arc_promoted\`. Successor threads must also include \`successor_to_thread_id\`.
+- An \`arc_promoted\` thread must reuse a deferred arc thread id shown below; do not invent a duplicate thread for the same arc pressure.
+- The new/successor/arc_promoted driver must be load-bearing: give it tension ≥6, include its id in \`arc_link.arc_thread_ids\` when it comes from the arc, and make it eligible to become spine.
 - If a prior objective was already satisfied, transition that old thread in \`thread_transitions\` and create a successor instead of reusing the answered question as this chapter's spine.
-- Prefer the new/successor load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
+- Prefer the new/successor/arc_promoted load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
 - Emit exactly 3 pressure ladder items.
 - Emit exactly 2-3 \`human_stakes\`. At least one must put a starting NPC, not only the PC, at risk. These are the chapter's roster of people who pay when pressure charges.
 - For SF2B continuation chapters, emit exactly 3-4 \`tension_score\` lines with distinct dramatic roles. Include \`foreground_objective\`, \`relational_social_pressure\`, and \`shadow_faction_pressure\`; add \`cargo_system_pressure\` or \`environmental_pressure\` only when it is load-bearing. Each carried line must set \`carried: true\` and cite a locked \`source_entity_id\` or \`source_thread_id\`.
@@ -186,7 +188,7 @@ Playbook names are role labels, not in-world entity names. For Space Opera, Drif
 ${sf2bDirective}
 
 ### Stable ArcPlan
-${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
+${arc && state ? renderArcPlan(state, 1, priorChapterMeaning) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
   }
 
   const priorChapter = state.meta.currentChapter
@@ -281,7 +283,7 @@ ${sf2bDirective}
 ${structuralBeatBlock}
 
 ### Stable ArcPlan
-${arc ? renderArcPlan(arc) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}
+${arc ? renderArcPlan(state, nextChapter, priorChapterMeaning) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}
 
 ### Dramatic handoff
 ${dramaticHandoffBlock || '_(none)_'}
@@ -290,7 +292,7 @@ ${transitionSeedBlock}
 ### Active carry-forward threads
 ${activeThreads || '_(none active)_'}
 
-### Runtime pressure engines
+### Legacy runtime engines
 ${runtimeEngines}
 
 ### Live NPCs
@@ -310,7 +312,11 @@ Use this as a binding continuity constraint for \`opening_scene_spec\`. A contin
 
 - **Threads**: carry-forward active threads by referencing their existing ids in \`active_threads\` (e.g. \`thread_shortfall\`). Re-state \`title\`, \`question\`, \`tension\` (which may have moved per the prior chapter's play), and the current \`resolution_criteria\` / \`failure_mode\` if those have evolved. Use \`initial_tension\` only for NEW threads that need a chapter-opening pressure override. Only create NEW threads when the chapter's pressure introduces a genuinely new line of tension.
 
-- **Continuation thread broadening**: Ch2+ must contain exactly 4 active threads. At most 3 may be \`driver_kind: "carry_forward"\`. At least 1 must be \`driver_kind: "new_pressure"\` or \`driver_kind: "successor"\`; that new/successor thread must be load-bearing (tension ≥6) and tied into the chapter's pressure runtime via the chosen pressure engines. If the prior chapter already satisfied an old thread's resolution criteria, do not reheat it as the spine. Transition it, then author a successor with \`successor_to_thread_id\`.
+- **Continuation thread broadening**: Ch2+ must contain exactly 4 active threads. At most 3 may be \`driver_kind: "carry_forward"\`. At least 1 must be \`driver_kind: "new_pressure"\`, \`"successor"\`, or \`"arc_promoted"\`; that new/successor/arc_promoted thread must be load-bearing (tension ≥6). If the prior chapter already satisfied an old thread's resolution criteria, do not reheat it as the spine. Transition it, then author a successor with \`successor_to_thread_id\`.
+
+- **Arc thread promotion**: Deferred arc threads are already real campaign threads anchored to the arc. To activate one, reuse its id in \`active_threads\` with \`driver_kind: "arc_promoted"\`, tension ≥6, and put the same id in \`arc_link.arc_thread_ids\`.
+
+- **Latent question promotion**: Only promote latent questions listed in the packet. If the packet says promotion is required, include exactly one selected id in \`arc_link.promoted_latent_question_ids\` and turn that question into either a \`possible_revelations\` entry or an active thread pressure. Do not state a hidden answer unless it appears as a normal chapter revelation with hints and reveal contexts.
 
 - **Mix is normal**: a typical Ch2 has 3-4 carried NPCs + 1-2 new ones, and 2-3 carried threads + 1-2 new ones. A chapter that invents an entirely new cast is almost always wrong — the campaign loses continuity, and the player loses investment.
 
@@ -429,16 +435,21 @@ This run tests strict durable state with looser narration. Author a dramatic hoo
 - Favor dramatic scene pressure over procedural task queues: social leverage, faction alternatives, withheld facts, and meaningful objective beats should carry the opening.`
 }
 
-function renderArcPlan(arc: NonNullable<Sf2State['campaign']['arcPlan']>): string {
+function renderArcPlan(
+  state: Sf2State,
+  targetChapter: number,
+  priorChapterMeaning: Sf2ChapterMeaning | null
+): string {
+  const arc = state.campaign.arcPlan
+  if (!arc) return '_(missing arc plan — this is invalid for new SF2 campaigns)_'
   const forces = arc.durableForces
-    .map((f) => `- ${f.id} · ${f.name}: ${f.agenda} (leverage: ${f.leverage}; fear: ${f.fear}; style: ${f.pressureStyle})`)
+    .map((f) => `- ${f.id} / ${f.factionId} · ${f.name}: ${f.agenda} (leverage: ${f.leverage}; fear: ${f.fear}; style: ${f.pressureStyle})`)
     .join('\n')
   const seeds = arc.durableNpcSeeds
     .map((n) => `- ${n.id} · ${n.role} (${n.affiliation}) — ${n.dramaticFunction}; private pressure: ${n.privatePressure}; reuse: ${n.reuseGuidance}`)
     .join('\n')
-  const engines = arc.pressureEngines
-    .map((e) => `- ${e.id} · ${e.name}: advances when ${e.advancesWhen}; slows when ${e.slowsWhen} (visible symptoms: ${e.visibleSymptoms})`)
-    .join('\n')
+  const arcThreads = renderArcThreads(state)
+  const latentQuestions = renderLatentQuestionPacket(state, targetChapter, priorChapterMeaning)
   const axes = arc.playerStanceAxes
     .map((a) => `- ${a.id} · ${a.axis}: ${a.poleA} ↔ ${a.poleB}`)
     .join('\n')
@@ -458,8 +469,11 @@ ${forces || '_(none)_'}
 Durable NPC seeds (reusable roles available for promotion to starting_npcs — these are catalog seeds with role-descriptive ids, NOT yet real entities. To use one, create a starting_npcs entry with a meaningful canonical id like \`npc_<snake_case_name>\` and a name; the seed id stays in the arc plan):
 ${seeds || '_(none)_'}
 
-Pressure engines:
-${engines || '_(none)_'}
+Arc threads (real campaign threads anchored to this arc; deferred ones may be promoted with driver_kind "arc_promoted"):
+${arcThreads}
+
+Latent question candidates (code-selected; question shape only, not hidden answers):
+${latentQuestions}
 
 Player stance axes:
 ${axes || '_(none)_'}
@@ -468,9 +482,43 @@ Chapter functions:
 ${functions || '_(none)_'}`
 }
 
+function renderArcThreads(state: Sf2State): string {
+  const arc = state.campaign.arcPlan
+  if (!arc || arc.arcThreadIds.length === 0) return '_(none)_'
+  return arc.arcThreadIds
+    .map((id) => {
+      const thread = state.campaign.threads[id]
+      if (!thread) return `- ${id} · (thread entity missing; do not use until repaired)`
+      return `- ${thread.id} · ${thread.title} (${thread.status}; tension ${thread.tension}/10; owner ${thread.owner.kind}:${thread.owner.id}) — ${thread.retrievalCue}\n    question: ${thread.title}\n    resolution_criteria: ${thread.resolutionCriteria}\n    failure_mode: ${thread.failureMode}`
+    })
+    .join('\n')
+}
+
+function renderLatentQuestionPacket(
+  state: Sf2State,
+  targetChapter: number,
+  priorChapterMeaning: Sf2ChapterMeaning | null
+): string {
+  const selection = selectLatentArcQuestionsForChapter(state, targetChapter, priorChapterMeaning)
+  if (selection.candidates.length === 0) {
+    return selection.signals.length > 0
+      ? `_(none eligible; signals: ${selection.signals.join(', ')})_`
+      : '_(none eligible)_'
+  }
+  const directive = selection.promotionRequired
+    ? 'PROMOTION REQUIRED: include exactly one selected id in arc_link.promoted_latent_question_ids.'
+    : 'Promotion optional: include ids only if this chapter genuinely pays them off or reframes them.'
+  const candidates = selection.candidates
+    .map((q) =>
+      `- ${q.id}: ${q.question} — matters because ${q.whyItMatters}; answer impact axis: ${q.answerImpactAxis}; tags: ${q.activationTags.join(', ')}`
+    )
+    .join('\n')
+  return `${directive}\nSignals: ${selection.signals.join(', ') || '(none)'}\n${candidates}`
+}
+
 function renderRuntimeEngines(state: Sf2State): string {
   const engines = Object.values(state.campaign.engines ?? {})
-  if (engines.length === 0) return '_(none instantiated yet)_'
+  if (engines.length === 0) return '_(none; new arc pressure is represented by threads)_'
   return engines
     .map((e) => {
       const anchors = e.anchorThreadIds.length > 0 ? e.anchorThreadIds.join(', ') : '(none)'

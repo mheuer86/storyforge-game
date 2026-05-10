@@ -3,7 +3,7 @@
   "name": "pressure runtime prepares chapter open",
   "source": {
     "kind": "synthetic",
-    "purpose": "Pressure Engines Phase 3. Runtime chapter preparation instantiates arc engines, seeds selected engine anchors from active threads, derives engine values, and initializes chapter-local thread pressure."
+    "purpose": "Thread-backed pressure runtime prepares chapter-local thread pressure without instantiating arc pressure engines."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -32,16 +32,8 @@
           "variableTruthsForThisRun": [],
           "durableForces": [],
           "durableNpcSeeds": [],
-          "pressureEngines": [
-            {
-              "id": "engine_writ",
-              "name": "Writ Weight",
-              "aggregation": "max",
-              "advancesWhen": "The writ absorbs new claims.",
-              "slowsWhen": "The record is narrowed.",
-              "visibleSymptoms": "Every argument becomes filing material."
-            }
-          ],
+          "arcThreadIds": ["thread_spine"],
+          "latentArcQuestions": [],
           "playerStanceAxes": [],
           "chapterFunctionMap": [],
           "possibleEndgames": []
@@ -64,7 +56,8 @@
             "arcId": "arc_tithe",
             "chapterFunction": "Make the writ's weight visible.",
             "playerStanceRead": "The Warden is still using procedure.",
-            "pressureEngineIds": ["engine_writ"]
+            "arcThreadIds": ["thread_spine"],
+            "promotedLatentQuestionIds": []
           },
           "threadPressure": {}
         }
@@ -85,12 +78,6 @@
   },
   "expected": {
     "preparedPressureRuntime": {
-      "engineAnchorsInclude": [
-        { "engineId": "engine_writ", "threadIds": ["thread_spine"] }
-      ],
-      "engineValues": [
-        { "engineId": "engine_writ", "value": 9 }
-      ],
       "threadPressureIncludes": [
         { "threadId": "thread_spine", "role": "new", "openingFloor": 6 }
       ]

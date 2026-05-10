@@ -14,18 +14,12 @@ export function buildChapterPacket(state: Sf2State): Sf2ChapterPacket {
       pressure: step.pressure,
     }))
   const arc = state.campaign.arcPlan
-  const pressureEngineIds = setup.arcLink?.pressureEngineIds ?? []
-  const runtimeEngines = Object.values(state.campaign.engines ?? {})
-  const activePressureEngines = (pressureEngineIds.length > 0
-    ? pressureEngineIds
-        .map((id) => state.campaign.engines?.[id])
-        .filter((e): e is NonNullable<typeof e> => Boolean(e))
-    : runtimeEngines.slice(0, 2)
-  ).map((e) => {
-    const anchors = e.anchorThreadIds.length > 0 ? `; anchors: ${e.anchorThreadIds.join(', ')}` : ''
-    const status = e.status !== 'active' ? `; status: ${e.status}` : ''
-    return `${e.name} ${e.value}/10: ${e.visibleSymptoms}${anchors}${status}`
-  })
+  const arcThreadIds = setup.arcLink?.arcThreadIds ?? []
+  const activeArcThreads = arcThreadIds
+    .map((id) => state.campaign.threads?.[id])
+    .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
+    .filter((thread) => thread.status === 'active')
+    .map((thread) => `${thread.title} ${thread.tension}/10: ${thread.retrievalCue}`)
 
   return {
     objective: setup.frame.objective,
@@ -43,7 +37,7 @@ export function buildChapterPacket(state: Sf2State): Sf2ChapterPacket {
           scenario: `${arc.scenarioShape.mode}: ${arc.scenarioShape.premise}`,
           question: arc.arcQuestion,
           chapterFunction: setup.arcLink?.chapterFunction,
-          activePressureEngines,
+          activeArcThreads,
         }
       : undefined,
     pacingContract: setup.pacingContract,

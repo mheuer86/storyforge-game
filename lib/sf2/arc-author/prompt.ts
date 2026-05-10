@@ -17,9 +17,10 @@ Primary goals:
 - Preserve the hook's invariant pressure and crucible.
 - Choose a specific scenario shape for THIS run.
 - Make the same seed replayable by avoiding the most obvious surface form unless you deliberately choose it.
-- Define durable forces, pressure engines, stance axes, and chapter functions that can sustain 4-5 chapters.
+- Define durable forces, arc threads, latent questions, stance axes, and chapter functions that can sustain 4-5 chapters.
 - Leave room for the PC to advocate, enforce, compromise, defect, flip stance, or go rogue.
 - Match the arc to the selected playbook's authority, skills, and temptations without scripting how the PC must act.
+- Convert every mechanism, route, record, lock, clock, data cache, or clue surface into human pressure before it becomes a thread.
 
 ## Authoring law
 
@@ -28,8 +29,8 @@ Primary goals:
 3. First decide what kind of arc this run is. Consider multiple scenario modes from the enum before choosing. Your output must explain the chosen mode in \`scenario_shape.selection_rationale\`.
 4. Do not turn \`arc.episode\` or hook wording into a mandatory first scene.
 5. Do not collapse to a hearing, audit, meeting room, paper trail, creditor confrontation, cantina booth, or mechanism-control scene unless \`scenario_shape.mode\` explicitly chooses that.
-6. Define forces and engines, not scene order.
-7. Every pressure engine must be able to answer player action in more than one way.
+6. Define forces and arc threads, not scene order.
+7. Every arc thread must be able to answer player action in more than one way.
 8. Every stance axis must support drift or reversal by Chapter 3.
 9. Chapter functions are purposes, not scenes. "The PC finds X" is too scripted; "the hidden pressure becomes costly to protect" is usable.
 10. Variable truths are true for this run, but not all should surface in Chapter 1.
@@ -37,6 +38,17 @@ Primary goals:
 12. The selected playbook is an affordance lens. Design pressure the PC can act on because of their role, but do not make the arc require a single skill, morality, or loyalty.
 13. Emit exactly five \`chapter_function_map\` entries. Chapter 4 and Chapter 5 may both contain possible end states; the Chapter Author will decide later whether closure has landed.
 14. Playbook names are role labels, not in-world entity names. Do not reuse a playbook name as a ship, faction, location, or NPC name unless the player explicitly provided it.
+
+## Human-pressure pass
+
+Before final output, audit every arc thread, latent question, durable force, and chapter function.
+
+- Every arc thread must name who gains leverage, who pays, and what relationship, safety, freedom, standing, or reputation is at risk.
+- Mechanisms are symptoms or leverage surfaces, not the pressure itself. A route, ledger, beacon, warrant, file, gate, timer, cache, ritual, or lock is only usable when a person/faction uses it against someone.
+- If a thread could be resolved by waiting, scanning, opening, clearing, decrypting, filing, routing, or reading without changing anyone's leverage, rewrite it.
+- Prefer thread titles like "Witness Exposure", "Crew Trust", "Asylum Price", "Source Loyalty", or "Faction Heat" over mechanism names like "Route Trace", "Audit Clock", "Beacon Access", or "Cache Decryption".
+- Latent questions store question shapes, not hidden answers. Write "whose moral standing would flip" rather than "reveals the captain was in on it."
+- Chapter functions should state what human stance or relationship changes, not which task completes.
 
 ## Chapter structural beats
 
@@ -52,7 +64,7 @@ For a given seed, the obvious default shape is often over-literal: a tithe becom
 
 Choose one concrete mode from the enum. In \`selection_rationale\`, state why this mode produces a stronger playable arc for this run than at least two other plausible modes. In \`rejected_default_shape\`, name the default shape you are refusing, or explain why you intentionally selected it despite the risk of sameness.
 
-The enum is structural, but the scenario must be genre-native. Let the \`creativeAngle\` read as a playable trope for the selected playbook, not as an abstract mode label. Use the selected playbook's own verbs and temptations; for example, a Driftrunner leans toward smuggler runs, hot cargo, blockade threading, black-channel routes, crew collateral, and jobs gone sideways. Do not turn a seed into a paperwork duel unless the variant explicitly asks for it.
+The enum is structural, but the scenario must be genre-native. Let the \`creativeAngle\` read as a playable trope for the selected playbook, not as an abstract mode label. Use the selected playbook's own verbs and temptations; for example, a Driftrunner leans toward smuggler runs, hot cargo, blockade threading, black-channel routes, crew collateral, and jobs gone sideways. These are danger surfaces, not default arc threads: every route, cargo, data, or blockade element must immediately name the passenger, crew member, contact, witness, debtor, or rival who pays for it. Do not turn a seed into a paperwork duel unless the variant explicitly asks for it.
 
 If \`arcVariantSeed.scenarioBias\` is present, strongly prefer that mode unless it contradicts the hook's core pressure. If \`arcVariantSeed.creativeAngle\` is present, use it as the variation lens. If \`arcVariantSeed.avoidModes\` is present, avoid those modes unless no other mode can preserve the hook.
 
@@ -63,7 +75,9 @@ Call \`author_arc_setup\` exactly once.
 Keep fields tight. The Chapter Author and Narrator will expand from these seeds.
 
 Hard caps:
-- Exactly 3 durable forces, 3 durable NPC seeds, 3 pressure engines, and 3 stance axes.
+- Exactly 3 durable forces, 3 durable NPC seeds, and 3 stance axes.
+- 1-4 arc threads. Use one strong thread for intimate hooks; do not pad to satisfy a genre formula.
+- 0-4 latent questions. Use them only when a later answer would re-read trust, culpability, danger, obligation, identity, or power.
 - Exactly 3 invariant facts and 2 variable truths.
 - Exactly 5 chapter function slots, but each \`function\` and \`pressure_question\` is one compact sentence.
 - Exactly 3 possible end states per chapter slot and 3 possible endgames.

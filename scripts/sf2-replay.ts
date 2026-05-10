@@ -3,8 +3,9 @@ import { resolve } from 'node:path'
 import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
-import { transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
+import { arcThreadsFromArcSetup, transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
 import { getArcVariantCandidates } from '../lib/sf2/arc-author/variants'
+import { applyLatentArcQuestionChapterOpen, selectLatentArcQuestionsForChapter } from '../lib/sf2/arc-questions'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
 import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
 import {
@@ -17,7 +18,7 @@ import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import { buildAuthorSituation } from '../lib/sf2/author/prompt'
-import { buildArcAuthorSituation } from '../lib/sf2/arc-author/prompt'
+import { buildArcAuthorSituation, SF2_ARC_AUTHOR_ROLE } from '../lib/sf2/arc-author/prompt'
 import {
   AUTHOR_DEFAULT_MAX_ATTEMPTS,
   buildAuthorRetryNudge,
@@ -137,6 +138,7 @@ interface ReplayFixture {
     procedureInvestigation?: Record<string, unknown>
     procedureActivationDiagnostics?: Record<string, unknown>
     arcAuthorProcedureEval?: Record<string, unknown>
+    latentArcQuestions?: Record<string, unknown>
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
@@ -238,6 +240,8 @@ interface ReplayFixture {
       seedJsonExcludes?: string[]
       arcAuthorSituationIncludes?: string[]
       arcAuthorSituationExcludes?: string[]
+      arcAuthorRoleIncludes?: string[]
+      arcAuthorRoleExcludes?: string[]
       authorSituationIncludes?: string[]
       authorSituationExcludes?: string[]
       arcVariantCandidateCount?: number
@@ -249,6 +253,7 @@ interface ReplayFixture {
     authorRetryNudge?: {
       errors: string[]
       genreId?: string
+      hookTitle?: string
       containsAll?: string[]
       containsNone?: string[]
     }
@@ -375,7 +380,10 @@ interface ReplayFixture {
         idEquals?: string
         titleEquals?: string
         scenarioModeEquals?: string
-        pressureEnginesCountAtLeast?: number
+        arcThreadIdsCountAtLeast?: number
+        arcThreadEntitiesCountAtLeast?: number
+        arcThreadEntitiesStatusEquals?: string
+        arcThreadEntitiesAnchoredArcIdEquals?: string
         playerStanceAxesCountAtLeast?: number
         chapterFunctionMapCountEquals?: number
         durableNpcSeedsCountAtLeast?: number
@@ -859,6 +867,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertModeIdentity(fixture, stateBefore, stateAfter, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
+  assertLatentArcQuestions(fixture, stateBefore, failures)
   assertPreauthoredStarterSetup(fixture, failures)
   assertChapterMeaningValidation(fixture, stateBefore, failures)
   assertArchivistSchemaParity(fixture, failures)
@@ -1294,7 +1303,7 @@ function assertRoleSchemaParity(fixture: ReplayFixture, failures: string[]): voi
     const tool = ARC_AUTHOR_TOOLS.find((t) => t.name === ARC_AUTHOR_TOOL_NAME)
     const schema = tool?.input_schema as Record<string, unknown> | undefined
     const required = getRequired(schema ?? {})
-    for (const field of ['scenario_shape', 'durable_forces', 'durable_npc_seeds', 'pressure_engines', 'chapter_function_map']) {
+    for (const field of ['scenario_shape', 'durable_forces', 'durable_npc_seeds', 'arc_threads', 'latent_arc_questions', 'chapter_function_map']) {
       if (!required.includes(field)) failures.push(`roleSchemaParity.arcAuthor: required missing ${field}`)
     }
   }
@@ -1423,14 +1432,32 @@ function assertArcTransform(fixture: ReplayFixture, failures: string[]): void {
   } as unknown as Parameters<typeof transformArcSetup>[1]
 
   const plan = transformArcSetup(expected.rawToolInput, seed)
+  const arcThreads = arcThreadsFromArcSetup(expected.rawToolInput, plan)
   const e = expected.expect
   if (e.idEquals !== undefined && plan.id !== e.idEquals) failures.push(`arcTransform.id: expected "${e.idEquals}", got "${plan.id}"`)
   if (e.titleEquals !== undefined && plan.title !== e.titleEquals) failures.push(`arcTransform.title: expected "${e.titleEquals}", got "${plan.title}"`)
   if (e.scenarioModeEquals !== undefined && plan.scenarioShape.mode !== e.scenarioModeEquals) {
     failures.push(`arcTransform.scenarioShape.mode: expected "${e.scenarioModeEquals}", got "${plan.scenarioShape.mode}"`)
   }
-  if (typeof e.pressureEnginesCountAtLeast === 'number' && plan.pressureEngines.length < e.pressureEnginesCountAtLeast) {
-    failures.push(`arcTransform.pressureEngines: expected ≥${e.pressureEnginesCountAtLeast}, got ${plan.pressureEngines.length}`)
+  if (typeof e.arcThreadIdsCountAtLeast === 'number' && plan.arcThreadIds.length < e.arcThreadIdsCountAtLeast) {
+    failures.push(`arcTransform.arcThreadIds: expected ≥${e.arcThreadIdsCountAtLeast}, got ${plan.arcThreadIds.length}`)
+  }
+  if (typeof e.arcThreadEntitiesCountAtLeast === 'number' && arcThreads.length < e.arcThreadEntitiesCountAtLeast) {
+    failures.push(`arcTransform.arcThreadEntities: expected ≥${e.arcThreadEntitiesCountAtLeast}, got ${arcThreads.length}`)
+  }
+  if (e.arcThreadEntitiesStatusEquals !== undefined) {
+    for (const thread of arcThreads) {
+      if (thread.status !== e.arcThreadEntitiesStatusEquals) {
+        failures.push(`arcTransform.arcThreadEntities.${thread.id}.status: expected ${e.arcThreadEntitiesStatusEquals}, got ${thread.status}`)
+      }
+    }
+  }
+  if (e.arcThreadEntitiesAnchoredArcIdEquals !== undefined) {
+    for (const thread of arcThreads) {
+      if (thread.anchoredArcId !== e.arcThreadEntitiesAnchoredArcIdEquals) {
+        failures.push(`arcTransform.arcThreadEntities.${thread.id}.anchoredArcId: expected ${e.arcThreadEntitiesAnchoredArcIdEquals}, got ${thread.anchoredArcId ?? '(unset)'}`)
+      }
+    }
   }
   if (typeof e.playerStanceAxesCountAtLeast === 'number' && plan.playerStanceAxes.length < e.playerStanceAxesCountAtLeast) {
     failures.push(`arcTransform.playerStanceAxes: expected ≥${e.playerStanceAxesCountAtLeast}, got ${plan.playerStanceAxes.length}`)
@@ -1459,6 +1486,43 @@ function assertArcValidation(fixture: ReplayFixture, failures: string[]): void {
   for (const fragment of expected.expect.errorIncludesNone ?? []) {
     if (errors.some((e) => e.includes(fragment))) {
       failures.push(`arcValidation: did not expect error containing "${fragment}", got [${errors.join('; ')}]`)
+    }
+  }
+}
+
+function assertLatentArcQuestions(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.latentArcQuestions
+  if (!expected) return
+
+  const targetChapter = Number(expected.targetChapter ?? stateBefore.meta.currentChapter)
+  const selection = selectLatentArcQuestionsForChapter(stateBefore, targetChapter)
+  const candidateIds = selection.candidates.map((candidate) => candidate.id)
+  const expectCandidateIds = Array.isArray(expected.candidateIdsEquals)
+    ? expected.candidateIdsEquals.map(String)
+    : undefined
+  if (expectCandidateIds && JSON.stringify(candidateIds) !== JSON.stringify(expectCandidateIds)) {
+    failures.push(`latentArcQuestions.candidateIds: expected ${JSON.stringify(expectCandidateIds)}, got ${JSON.stringify(candidateIds)}`)
+  }
+  if (expected.promotionRequiredEquals !== undefined && selection.promotionRequired !== Boolean(expected.promotionRequiredEquals)) {
+    failures.push(`latentArcQuestions.promotionRequired: expected ${String(expected.promotionRequiredEquals)}, got ${String(selection.promotionRequired)}`)
+  }
+  if (expected.applyChapterOpen) {
+    const next = structuredClone(stateBefore)
+    const apply = expected.applyChapterOpen as Record<string, unknown>
+    const promotedIds = Array.isArray(apply.promotedIds) ? apply.promotedIds.map(String) : []
+    applyLatentArcQuestionChapterOpen(next, targetChapter, promotedIds)
+    const statuses = Object.fromEntries(
+      (next.campaign.arcPlan?.latentArcQuestions ?? []).map((question) => [question.id, question.status])
+    )
+    const expectStatuses = replayRecord(apply.statusesEqual)
+    for (const [id, status] of Object.entries(expectStatuses)) {
+      if (statuses[id] !== status) {
+        failures.push(`latentArcQuestions.status.${id}: expected ${String(status)}, got ${String(statuses[id] ?? '(missing)')}`)
+      }
     }
   }
 }
@@ -2992,6 +3056,16 @@ function assertExpected(
         failures.push(`arcAuthorSituation unexpectedly includes "${snippet}"`)
       }
     }
+    for (const snippet of expected.authorInputSeed.arcAuthorRoleIncludes ?? []) {
+      if (!SF2_ARC_AUTHOR_ROLE.includes(snippet)) {
+        failures.push(`arcAuthorRole missing "${snippet}"`)
+      }
+    }
+    for (const snippet of expected.authorInputSeed.arcAuthorRoleExcludes ?? []) {
+      if (SF2_ARC_AUTHOR_ROLE.includes(snippet)) {
+        failures.push(`arcAuthorRole unexpectedly includes "${snippet}"`)
+      }
+    }
     for (const snippet of expected.authorInputSeed.authorSituationIncludes ?? []) {
       if (!authorSituation.includes(snippet)) {
         failures.push(`authorSituation missing "${snippet}"`)
@@ -3032,7 +3106,11 @@ function assertExpected(
     }
   }
   if (expected.authorRetryNudge) {
-    const nudge = buildAuthorRetryNudge(expected.authorRetryNudge.errors, expected.authorRetryNudge.genreId)
+    const nudge = buildAuthorRetryNudge(
+      expected.authorRetryNudge.errors,
+      expected.authorRetryNudge.genreId,
+      expected.authorRetryNudge.hookTitle
+    )
     for (const snippet of expected.authorRetryNudge.containsAll ?? []) {
       if (!nudge.includes(snippet)) {
         failures.push(`authorRetryNudge missing "${snippet}"`)

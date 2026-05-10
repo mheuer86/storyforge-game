@@ -123,6 +123,9 @@ export function applyAuthoredToCampaign(
       existing.loadBearing = loadBearing.has(t.id)
       existing.successorToThreadId = t.successorToThreadId
       existing.chapterDriverKind = t.driverKind
+      if (existing.status === 'deferred' || t.driverKind === 'arc_promoted') {
+        existing.status = 'active'
+      }
       // Re-resolve owner only if current owner is the placeholder
       // faction_unknown — don't stomp a meaningfully resolved one.
       if (

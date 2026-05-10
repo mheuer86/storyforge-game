@@ -144,6 +144,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   campaign.lexicon = Array.isArray(campaign.lexicon) ? campaign.lexicon : []
   if (campaign.pendingRecoveryNotes !== undefined) campaign.pendingRecoveryNotes = stringArray(campaign.pendingRecoveryNotes)
   if (campaign.pendingCoherenceNotes !== undefined) campaign.pendingCoherenceNotes = stringArray(campaign.pendingCoherenceNotes)
+  normalizeArcPlanShape(campaign.arcPlan, repairs)
 
   for (const [id, faction] of Object.entries(campaign.factions)) {
     campaign.factions[id] = normalizeFaction(id, faction, repairs)
@@ -191,6 +192,29 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
 
   ensureReferencedFallbackOwners(state)
   rebuildOwnerThreadBackrefs(state)
+}
+
+function normalizeArcPlanShape(arcPlan: unknown, repairs: string[]): void {
+  if (!isRecord(arcPlan)) return
+  const legacyPressureEngines = Array.isArray(arcPlan.pressureEngines) && arcPlan.pressureEngines.length > 0
+  if (!Array.isArray(arcPlan.arcThreadIds)) arcPlan.arcThreadIds = []
+  if (!Array.isArray(arcPlan.latentArcQuestions)) arcPlan.latentArcQuestions = []
+  const arcThreadIds = Array.isArray(arcPlan.arcThreadIds) ? arcPlan.arcThreadIds : []
+  if (Array.isArray(arcPlan.durableForces)) {
+    arcPlan.durableForces = arcPlan.durableForces.map((force) => {
+      if (!isRecord(force)) return force
+      if (typeof force.factionId !== 'string' || !force.factionId.trim()) {
+        force.factionId = `faction_${slug(String(force.name ?? force.id ?? 'force'))}`
+      }
+      return force
+    })
+  }
+  if (legacyPressureEngines && arcThreadIds.length === 0) {
+    arcPlan.needsReauthor = true
+    arcPlan.reauthorReason = 'legacy pressureEngines were dropped; arc pressure must be re-authored as anchored threads'
+    delete arcPlan.pressureEngines
+    repairs.push('campaign.arcPlan.pressureEngines:dropped-requires-arc-reauthor')
+  }
 }
 
 function normalizeChapter(state: Sf2State, repairs: string[]): void {
@@ -855,6 +879,14 @@ function stringOr(value: unknown, fallback: string | undefined): string {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter((s) => s.length > 0) : []
+}
+
+function slug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60) || 'force'
 }
 
 function numberOr(value: unknown, fallback: number): number {

@@ -46,6 +46,7 @@ import {
 import {
   chapterPressureRuntime,
 } from '@/lib/sf2/pressure/runtime'
+import { applyLatentArcQuestionChapterOpen } from '@/lib/sf2/arc-questions'
 import {
   Sf2PlayShell,
   type Sf2CloseReadinessView,
@@ -56,7 +57,9 @@ import type {
   AuthorChapterSetupV2,
   Sf2Arc,
   Sf2ArcPlan,
+  Sf2Faction,
   Sf2State,
+  Sf2Thread,
   Sf2TurnDiffEntry,
   Sf2WorkingSet,
 } from '@/lib/sf2/types'
@@ -1131,6 +1134,8 @@ export default function PlayV2Page() {
       const data = (await res.json()) as {
         arcPlan: Sf2ArcPlan
         arcEntity: Sf2Arc
+        arcThreads?: Sf2Thread[]
+        arcFactions?: Sf2Faction[]
         selectedArcVariantSeed?: Sf2ArcPlan['sourceHook'] & Record<string, unknown>
         usage: TokenUsage
         latency?: LatencyPayload
@@ -1138,6 +1143,14 @@ export default function PlayV2Page() {
       const next: Sf2State = structuredClone(currentState)
       next.campaign.arcPlan = data.arcPlan
       next.campaign.arcs[data.arcEntity.id] = data.arcEntity
+      for (const faction of data.arcFactions ?? []) {
+        next.campaign.factions[faction.id] = next.campaign.factions[faction.id] ?? faction
+      }
+      for (const thread of data.arcThreads ?? []) {
+        next.campaign.threads[thread.id] = next.campaign.threads[thread.id] ?? thread
+        const owner = thread.owner.kind === 'faction' ? next.campaign.factions[thread.owner.id] : undefined
+        if (owner && !owner.ownedThreadIds.includes(thread.id)) owner.ownedThreadIds.push(thread.id)
+      }
       next.meta.updatedAt = new Date().toISOString()
       diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
         arc: data.arcPlan.title,
@@ -1146,7 +1159,8 @@ export default function PlayV2Page() {
         selectionRationale: data.arcPlan.scenarioShape.selectionRationale,
         rejectedDefaultShape: data.arcPlan.scenarioShape.rejectedDefaultShape,
         chapterFunctions: data.arcPlan.chapterFunctionMap.map((c) => `${c.chapter}: ${c.function}`),
-        engines: data.arcPlan.pressureEngines.map((e) => e.id),
+        arcThreads: data.arcPlan.arcThreadIds,
+        latentQuestions: data.arcPlan.latentArcQuestions.map((q) => q.id),
         stanceAxes: data.arcPlan.playerStanceAxes.map((a) => a.id),
       } })
       diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } })
@@ -1278,6 +1292,11 @@ export default function PlayV2Page() {
         data.authored,
         data.chapter as Sf2State['chapter']['number'],
         data.runtimeState.loadBearingThreadIds
+      )
+      applyLatentArcQuestionChapterOpen(
+        next,
+        data.chapter,
+        data.runtimeState.arcLink?.promotedLatentQuestionIds ?? []
       )
       next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
       // Scene snapshot: opening-location name from the opening scene spec.
@@ -1572,6 +1591,11 @@ export default function PlayV2Page() {
         data.authored,
         data.chapter as Sf2State['chapter']['number'],
         data.runtimeState.loadBearingThreadIds
+      )
+      applyLatentArcQuestionChapterOpen(
+        next,
+        data.chapter,
+        data.runtimeState.arcLink?.promotedLatentQuestionIds ?? []
       )
       next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
       // Reset scene view at chapter transition. Derive a fresh timeLabel

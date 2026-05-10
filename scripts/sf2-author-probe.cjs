@@ -147,7 +147,7 @@ function assertFixture(fixture, results) {
     }
     for (const r of results) {
       if ((r.errors ?? []).length > 0) failures.push(`arc validation: ${r.errors.join(', ')}`)
-      if (expected.minPressureEngines && (r.arcPlan?.pressureEngines?.length ?? 0) < expected.minPressureEngines) failures.push('too few pressure engines')
+      if (expected.minArcThreads && (r.arcPlan?.arcThreadIds?.length ?? 0) < expected.minArcThreads) failures.push('too few arc threads')
       if (expected.minStanceAxes && (r.arcPlan?.playerStanceAxes?.length ?? 0) < expected.minStanceAxes) failures.push('too few stance axes')
       if (expected.chapterFunctionCount && (r.arcPlan?.chapterFunctionMap?.length ?? 0) !== expected.chapterFunctionCount) failures.push('wrong chapter function count')
     }

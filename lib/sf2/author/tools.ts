@@ -176,7 +176,7 @@ const startingNpcsSchema = {
 
 const activeThreadsSchema = {
   type: 'array' as const,
-  description: 'Ch1: exactly 3 chapter-usable threads. Ch2+: exactly 4, with at least 1 successor or new_pressure driver.',
+  description: 'Ch1: exactly 3 chapter-usable threads. Ch2+: exactly 4, with at least 1 successor, new_pressure, or arc_promoted driver.',
   minItems: 3,
   maxItems: 4,
   items: {
@@ -194,7 +194,7 @@ const activeThreadsSchema = {
       },
       driver_kind: {
         type: 'string' as const,
-        enum: ['carry_forward', 'successor', 'new_pressure'],
+        enum: ['carry_forward', 'successor', 'new_pressure', 'arc_promoted'],
         description: 'Required for Ch2+. How this thread drives the continuation chapter.',
       },
       resolution_criteria: { type: 'string' as const, description: 'One sentence, ≤24 words.' },
@@ -260,9 +260,10 @@ const arcLinkSchema = {
     arc_id: { type: 'string' as const },
     chapter_function: { type: 'string' as const },
     player_stance_read: { type: 'string' as const },
-    pressure_engine_ids: { type: 'array' as const, items: { type: 'string' as const } },
+    arc_thread_ids: { type: 'array' as const, items: { type: 'string' as const } },
+    promoted_latent_question_ids: { type: 'array' as const, items: { type: 'string' as const } },
   },
-  required: ['arc_id', 'chapter_function', 'player_stance_read', 'pressure_engine_ids'],
+  required: ['arc_id', 'chapter_function', 'player_stance_read', 'arc_thread_ids', 'promoted_latent_question_ids'],
 }
 
 const pacingContractSchema = {
@@ -522,7 +523,7 @@ const humanStakesSchema = {
       },
       triggering_pressure: {
         type: 'string' as const,
-        description: 'active_threads id or pressure engine id that realizes/threatens this stake.',
+        description: 'active_threads id that realizes/threatens this stake.',
       },
     },
     required: ['who_pays', 'cost_surface', 'what_is_lost', 'triggering_pressure'],

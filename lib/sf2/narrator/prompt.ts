@@ -467,7 +467,7 @@ The "Thread tensions" block in the per-turn delta is the stakes layer. It surfac
 
 \`Δ +N\` means that thread *just charged* this turn — typically from a failed roll the player just saw resolve, or from a pressure-ladder fire. The \`+N local\` figure is the same charge accumulating across the chapter on this thread. **Pressure is not flavor. When a thread shows Δ +2 or +3 this turn, that thread MUST visibly escalate inside this turn's prose.** Not somewhere else. Not "the world feels heavier." On the named thread, on its own stake.
 
-If the scene packet has a matching \`Human stakes\` entry for the charged thread or pressure engine, manifest that pressure through the listed stake: threaten or realize that specific person's standing, freedom, loyalty, relationship, safety, or reputation.
+If the scene packet has a matching \`Human stakes\` entry for the charged thread, manifest that pressure through the listed stake: threaten or realize that specific person's standing, freedom, loyalty, relationship, safety, or reputation.
 
 ### Manifesting pressure on the charged thread
 
@@ -661,7 +661,7 @@ ${arc ? `### Arc context
 - Arc question: ${arc.arcQuestion}
 - Chapter function: ${arcLink?.chapterFunction ?? '(not set)'}
 - Player stance read: ${arcLink?.playerStanceRead ?? '(not set)'}
-- Pressure engine plan: ${renderPressureEnginePlan(state, arcLink?.pressureEngineIds ?? [])}` : ''}
+- Active arc threads: ${renderActiveArcThreadPlan(state, arcLink?.arcThreadIds ?? [])}` : ''}
 
 ${pacing ? `### Chapter pacing contract
 - Target: ${pacing.targetTurns.min}-${pacing.targetTurns.max} turns
@@ -674,20 +674,17 @@ ${pacing ? `### Chapter pacing contract
 Do not open a new major branch unless it helps land the chapter question.` : ''}`
 }
 
-function renderPressureEnginePlan(
+function renderActiveArcThreadPlan(
   state: Sf2State,
   ids: string[]
 ): string {
-  const plannedEngines = state.campaign.arcPlan?.pressureEngines ?? []
   const selected = ids.length > 0
     ? ids
-        .map((id) => plannedEngines.find((engine) => engine.id === id))
-        .filter((e): e is NonNullable<typeof e> => Boolean(e))
-    : plannedEngines.slice(0, 2)
+        .map((id) => state.campaign.threads[id])
+        .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
+        .filter((thread) => thread.status === 'active')
+    : []
   return selected
-    .map((e) => {
-      const aggregation = e.aggregation ? `; aggregation ${e.aggregation}` : ''
-      return `${e.name} (${e.visibleSymptoms}; advances when ${e.advancesWhen}; slows when ${e.slowsWhen}${aggregation})`
-    })
+    .map((thread) => `${thread.title} (${thread.tension}/10; ${thread.retrievalCue})`)
     .join('; ') || '(none selected)'
 }

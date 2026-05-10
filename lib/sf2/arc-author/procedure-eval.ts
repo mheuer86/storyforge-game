@@ -2,7 +2,8 @@ export interface Sf2ArcProcedureEvalInput {
   seed: string
   scenarioShape: string
   durableForces: string[]
-  pressureEngines: string[]
+  arcThreads?: string[]
+  pressureEngines?: string[]
   stanceAxes: string[]
   chapterFunctions: string[]
   possibleEndgames: string[]
@@ -19,14 +20,15 @@ export interface Sf2ArcProcedureEvalResult {
 }
 
 export function evaluateProcedureArcPassBar(input: Sf2ArcProcedureEvalInput): Sf2ArcProcedureEvalResult {
+  const arcThreads = input.arcThreads ?? input.pressureEngines ?? []
   const checklist = {
-    durableForcesNamed: input.durableForces.length > 0 && input.pressureEngines.length > 0,
+    durableForcesNamed: input.durableForces.length > 0 && arcThreads.length > 0,
     stanceAxesSufficient: input.stanceAxes.length >= 2,
     endgamesSufficient: uniqueStrings(input.possibleEndgames).length >= 3,
     chapterFunctionsArePressureJobs: input.chapterFunctions.length > 0 && input.chapterFunctions.every(isPressureJob),
     alternateStanceValid: input.alternateStanceNotes.length > 0,
     nonOperationSeedNotForced: !input.nonOperationSeed || !input.operationForced,
-    pressureEngineCoverage: hasProcedurePressureCoverage(input.pressureEngines),
+    arcThreadCoverage: hasProcedurePressureCoverage(arcThreads),
   }
   const reauthorNotes = Object.entries(checklist)
     .filter(([, ok]) => !ok)
@@ -58,7 +60,7 @@ function hasProcedurePressureCoverage(engines: string[]): boolean {
 function reauthorNoteFor(key: string): string {
   switch (key) {
     case 'durableForcesNamed':
-      return 'Name durable forces and pressure engines instead of scene itinerary.'
+      return 'Name durable forces and arc threads instead of scene itinerary.'
     case 'stanceAxesSufficient':
       return 'Add at least two player stance axes.'
     case 'endgamesSufficient':
@@ -69,7 +71,7 @@ function reauthorNoteFor(key: string): string {
       return 'Show the arc remains valid under alternate player stances.'
     case 'nonOperationSeedNotForced':
       return 'Do not force non-operation seeds into mission planning.'
-    case 'pressureEngineCoverage':
+    case 'arcThreadCoverage':
       return 'Cover deadline, surveillance/exposure, military escalation, and trust/inclusion risk.'
     default:
       return `Re-author failed pass-bar item: ${key}.`

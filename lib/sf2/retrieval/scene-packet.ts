@@ -120,8 +120,8 @@ export function renderSceneBundle(
     if (packet.chapter.arc.chapterFunction) {
       lines.push(`- Chapter function: ${packet.chapter.arc.chapterFunction}`)
     }
-    if (packet.chapter.arc.activePressureEngines.length > 0) {
-      lines.push(`- Active pressure engines: ${packet.chapter.arc.activePressureEngines.join(' | ')}`)
+    if (packet.chapter.arc.activeArcThreads.length > 0) {
+      lines.push(`- Active arc threads: ${packet.chapter.arc.activeArcThreads.join(' | ')}`)
     }
   }
   if (packet.chapter.pacingContract) {

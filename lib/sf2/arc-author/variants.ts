@@ -93,21 +93,21 @@ const DEFECTOR_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'defector-hot-pursuit',
     scenarioBias: 'pursuit',
     creativeAngle:
-      'The corvette is close enough that every route choice creates wake, trace, or hostage pressure; the opening tests whether the PC runs, hides, or turns pursuit into leverage.',
+      'The corvette is close enough that every maneuver risks exposing the passenger, burning crew loyalty, or giving pursuit leverage over someone aboard.',
     avoidModes: ['chamber_play'],
   },
   {
     id: 'defector-safe-harbor',
     scenarioBias: 'protection',
     creativeAngle:
-      'The playable pressure is finding a safe harbor that is not already compromised; every apparent sanctuary has a factional price.',
+      'The playable pressure is who will shelter the defector and what relationship, favor, or reputation cost makes that sanctuary real.',
     avoidModes: ['procedural_contest'],
   },
   {
     id: 'defector-compromised-beacons',
     scenarioBias: 'investigation',
     creativeAngle:
-      'The data matters because it names compromised beacon operators; the first chapter should make route evidence, operator trust, and passenger testimony collide.',
+      'The data matters because it names people inside the beacon network; the first chapter makes testimony, trust, and survivor risk collide.',
     avoidModes: ['siege'],
   },
   {

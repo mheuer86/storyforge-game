@@ -257,7 +257,11 @@ export function isChapterAuthored(state: Sf2State): boolean {
 }
 
 export function isArcAuthored(state: Sf2State): boolean {
-  return Boolean(state.campaign.arcPlan?.id && state.campaign.arcPlan?.status === 'active')
+  return Boolean(
+    state.campaign.arcPlan?.id &&
+    state.campaign.arcPlan?.status === 'active' &&
+    !state.campaign.arcPlan.needsReauthor
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -456,16 +460,19 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     crucible:
       'A passenger who knows too much can buy passage, but only trust, speed, and dangerous choices can keep her alive long enough for the data to matter.',
     firstEpisode:
-      'Evade or answer the black-ops corvette while deciding whether the defector is passenger, client, liability, or protected witness.',
+      'Keep the defector alive and decide who can be trusted with her data while the corvette hunts the ship\'s wake.',
   },
   worldRules: {
     ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.worldRules,
+    settingSummary:
+      'The Compact of Two Hundred Systems collapsed through infrastructure rot: beacon corridors failed, communication protocols fragmented, and distant systems learned that law only reaches as far as fuel, ships, and enforcement. Remnant authorities, Corporate Blocs, Pirate Fleets, frontier settlements, and Rogue AIs now compete over the corridors, stations, and ships that still connect civilization. For this hook, infrastructure matters because it can expose or shelter a person: a human Driftrunner has taken aboard a defector whose testimony, safety, and trust may be worth more than the data she carries.',
     socialPressures: [
       'A ship is a closed economy of fuel, parts, food, ammo, morale, and trust.',
       'Passengers become crew pressure the moment someone starts shooting.',
       'Intelligence data is only useful if someone trustworthy survives to interpret it.',
       'Compromised beacon operators turn every route decision into a question of who owns the corridor.',
       'Law is local, factional, and often less binding than reputation.',
+      'Every route fact should pressure a person: the defector, a crew member, a safe-harbor contact, or someone named by the data.',
     ],
     vocabulary: [
       'Compact Remnant', 'black-ops corvette', 'defector', 'safe harbor',
@@ -473,6 +480,16 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'encrypted courier packet', 'passage contract', 'passive sweep',
       'cold hail', 'spoofed transponder', 'frontier asylum', 'shipboard trust',
       'data cache', 'intelligence bureau', 'FTL wake', 'pursuit vector',
+    ],
+  },
+  toneRules: {
+    ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.toneRules,
+    narrativePrinciples: [
+      'Show scale through human-sized details: one scared passenger, one crew member counting fuel, one pursuit voice staying polite.',
+      'Make ships and stations feel lived-in, worn, repaired, and socially dense.',
+      'Use competence as characterization: piloting, hacking, stealth, and back-channel navigation reveal who the PC protects under pressure.',
+      'Every route fact should pressure a person; passenger safety, crew trust, asylum contact risk, and pursuit leverage carry the scene.',
+      'Balance danger with crew warmth and practical wit.',
     ],
   },
   npcRules: {
@@ -501,12 +518,15 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.onboardingRules,
+    playerKnowledgeAssumption:
+      'The player learns Space Opera through passenger protection, shipboard trust, pursuit behavior, safe-harbor price, and the cost of sheltering someone hunted.',
     avoidEarly: [
       'combat as the opening move',
       'direct exposition dump about the Compact Collapse',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
       'turning the defector into generic cargo before the passenger-protection pressure lands',
       'explaining the whole data conspiracy in the opening scene',
+      'making route clearance, beacon access, or data processing the main chapter pressure without naming who pays',
     ],
   },
 }

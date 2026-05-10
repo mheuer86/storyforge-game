@@ -7,7 +7,14 @@ import {
   SF2_ARC_AUTHOR_ROLE,
   buildArcAuthorSituation,
 } from '@/lib/sf2/arc-author/prompt'
-import { arcPlanToArcEntity, transformArcSetup, validateArcPlan } from '@/lib/sf2/arc-author/transform'
+import {
+  arcPlanToArcEntity,
+  arcThreadsFromArcSetup,
+  durableForceFactionsFromArcPlan,
+  transformArcSetup,
+  validateArcThreads,
+  validateArcPlan,
+} from '@/lib/sf2/arc-author/transform'
 import { selectArcVariantSeed } from '@/lib/sf2/arc-author/variants'
 import { compileAuthorInputSeed } from '@/lib/sf2/author/payload'
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
@@ -122,7 +129,9 @@ export async function POST(req: NextRequest) {
     }
 
     const arcPlan = transformArcSetup(toolUse.input as Record<string, unknown>, seed)
-    const errors = validateArcPlan(arcPlan)
+    const arcThreads = arcThreadsFromArcSetup(toolUse.input as Record<string, unknown>, arcPlan)
+    const arcFactions = durableForceFactionsFromArcPlan(arcPlan)
+    const errors = [...validateArcPlan(arcPlan), ...validateArcThreads(arcThreads)]
     if (errors.length > 0) {
       return new Response(
         JSON.stringify({
@@ -140,6 +149,8 @@ export async function POST(req: NextRequest) {
       JSON.stringify({
         arcPlan,
         arcEntity: arcPlanToArcEntity(arcPlan),
+        arcThreads,
+        arcFactions,
         seed,
         selectedArcVariantSeed: seed.arcVariantSeed,
         authored: toolUse.input,

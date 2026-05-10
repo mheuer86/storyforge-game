@@ -3,7 +3,7 @@
   "name": "pressure read-side uses runtime values",
   "source": {
     "kind": "synthetic-regression",
-    "purpose": "Pressure Engines Phase 4. Narrator packets should read chapter-effective thread pressure and runtime engine values, while still exposing canonical tension as supporting context."
+    "purpose": "Narrator packets should read active arc threads and chapter-effective thread pressure, while still exposing canonical tension as supporting context."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -32,16 +32,8 @@
           "variableTruthsForThisRun": [],
           "durableForces": [],
           "durableNpcSeeds": [],
-          "pressureEngines": [
-            {
-              "id": "engine_writ",
-              "name": "Writ Weight",
-              "aggregation": "max",
-              "advancesWhen": "The writ absorbs new claims.",
-              "slowsWhen": "The record is narrowed.",
-              "visibleSymptoms": "Every argument becomes filing material."
-            }
-          ],
+          "arcThreadIds": ["thread_spine"],
+          "latentArcQuestions": [],
           "playerStanceAxes": [],
           "chapterFunctionMap": [],
           "possibleEndgames": []
@@ -84,7 +76,8 @@
             "arcId": "arc_tithe",
             "chapterFunction": "Make the writ's weight visible.",
             "playerStanceRead": "The Warden is still using procedure.",
-            "pressureEngineIds": ["engine_writ"]
+            "arcThreadIds": ["thread_spine"],
+            "promotedLatentQuestionIds": []
           },
           "threadPressure": {
             "thread_spine": {
@@ -121,8 +114,7 @@
       "isInitial": false,
       "playerInput": "Look at the writ before answering.",
       "userMessageContainsAll": [
-        "Active pressure engines: Writ Weight 9/10",
-        "anchors: thread_spine",
+        "Active arc threads: The shortfall writ 10/10",
         "chapter pressure 8/10",
         "canonical 10/10",
         "role spine"

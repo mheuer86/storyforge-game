@@ -374,7 +374,7 @@ export async function POST(req: NextRequest) {
           isContinuation,
           state: state ?? undefined,
         }),
-        retryNudge: (errors) => buildAuthorRetryNudge(errors, state?.meta.genreId),
+        retryNudge: (errors) => buildAuthorRetryNudge(errors, state?.meta.genreId, seed.hook.title),
         shouldRetryValidation: shouldRetryAuthorValidation,
         maxAttempts: AUTHOR_MAX_ATTEMPTS,
       })
