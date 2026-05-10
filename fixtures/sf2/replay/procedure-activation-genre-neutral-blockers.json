@@ -1,0 +1,150 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure activation genre neutral blockers",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Berth, castle, and subnet blockers share the same activation contract: repeated blockers need a procedure or hard-state owner."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_subnet_credential": {
+            "id": "procedure_subnet_credential",
+            "kind": "access",
+            "status": "active",
+            "label": "Subnet Credential Challenge",
+            "phase": "engagement",
+            "objective": "Use the credential before the subnet challenge escalates.",
+            "facts": [],
+            "constraints": [
+              {
+                "id": "constraint_subnet_watch",
+                "label": "Subnet credential challenge is watching the session",
+                "kind": "technical",
+                "status": "active",
+                "linkedRefs": [
+                  { "kind": "scrutiny_layer", "id": "scrutiny_subnet_watch" }
+                ]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_borrowed_token",
+                "label": "Borrowed token can mask one subnet request",
+                "kind": "credential",
+                "status": "available",
+                "linkedRefs": [
+                  { "kind": "credential_mask", "id": "credential_borrowed_token" }
+                ]
+              }
+            ],
+            "complications": [],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 4,
+            "updatedAtTurn": 4
+          }
+        },
+        "threads": {
+          "thread_castle_gate_writ": {
+            "id": "thread_castle_gate_writ",
+            "title": "Castle Gate Writ",
+            "category": "thread",
+            "summary": "The gate captain will not open the postern until the writ is witnessed.",
+            "status": "active",
+            "tension": 4,
+            "peakTension": 4,
+            "owner": { "kind": "faction", "id": "faction_gate_watch" },
+            "stakeholders": [],
+            "resolutionMode": "pressure",
+            "resolutionCriteria": "The postern opens when a recognized witness marks the writ.",
+            "failureMode": "The gate remains shut and the road detours through watched ground.",
+            "retrievalCue": "Castle gate writ witness.",
+            "resolutionGates": [
+              {
+                "id": "gate_writ_witnessed",
+                "label": "Writ witnessed",
+                "condition": "A recognized witness marks the writ.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": [],
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "tensionHistory": [],
+            "createdAtTurn": 2,
+            "updatedAtTurn": 3
+          }
+        },
+        "promises": {
+          "promise_berth_release": {
+            "id": "promise_berth_release",
+            "obligation": "Secure berth release before departure window closes.",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_port_authority" },
+            "anchoredTo": [],
+            "createdAtTurn": 1,
+            "updatedAtTurn": 2
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_subnet_credential"]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "playerInput": "Get the berth released.",
+            "narratorProse": "The berth release is still blocked by the port authority."
+          },
+          {
+            "index": 2,
+            "playerInput": "Show the writ at the castle gate.",
+            "narratorProse": "The castle gate stays shut until the writ is witnessed."
+          },
+          {
+            "index": 3,
+            "playerInput": "Try the subnet credential again.",
+            "narratorProse": "The subnet credential challenge watches the request and keeps access provisional."
+          }
+        ]
+      }
+    },
+    "playerInput": "Spend the borrowed token on the subnet request.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureAccessExploration": {
+      "packets": [
+        {
+          "procedureId": "procedure_subnet_credential",
+          "kind": "access",
+          "credentialMaskIds": ["credential_borrowed_token"],
+          "scrutinyLayerIds": ["scrutiny_subnet_watch"]
+        }
+      ]
+    },
+    "procedureActivationDiagnostics": {
+      "omissionEquals": null
+    },
+    "perTurnDeltaIncludes": [
+      "- Access · Subnet Credential Challenge",
+      "Borrowed token can mask one subnet request",
+      "Subnet credential challenge is watching the session"
+    ]
+  }
+}

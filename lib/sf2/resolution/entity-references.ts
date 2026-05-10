@@ -15,6 +15,7 @@ export type EntityPrefix =
   | 'thread'
   | 'decision'
   | 'promise'
+  | 'obligation'
   | 'clue'
   | 'arc'
   | 'location'
@@ -304,6 +305,8 @@ export function getEntityRegistry(
       return state.campaign.decisions as Record<string, { id: string }>
     case 'promise':
       return state.campaign.promises as Record<string, { id: string }>
+    case 'obligation':
+      return (state.campaign.obligations ?? {}) as Record<string, { id: string }>
     case 'clue':
       return state.campaign.clues as Record<string, { id: string }>
     case 'arc':

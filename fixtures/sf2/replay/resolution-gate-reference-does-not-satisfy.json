@@ -1,0 +1,75 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "resolution gate reference does not satisfy",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A progress event can reference a gate while the gate remains pending; only explicit satisfied/failed/waived fields move terminal state."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "resolutionGates": [
+              {
+                "id": "gate_wire_cleared",
+                "label": "Wire cleared",
+                "condition": "The transfer wire clears and the plate lights.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": []
+          }
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "Watch the plate.",
+    "narrator": {
+      "prose": "The lien is marked for payment, but the wire is still pending and the plate remains dark.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "changes": {
+              "progress_events": [
+                {
+                  "summary": "Payment is initiated, but the wire remains pending.",
+                  "gate_ids": ["gate_wire_cleared"]
+                }
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "the wire is still pending and the plate remains dark"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "status": "active",
+        "resolutionGatesInclude": [
+          {
+            "gateId": "gate_wire_cleared",
+            "status": "open"
+          }
+        ],
+        "progressEventsInclude": [
+          {
+            "summaryIncludes": "wire remains pending",
+            "gateIdsInclude": ["gate_wire_cleared"]
+          }
+        ]
+      }
+    ]
+  }
+}

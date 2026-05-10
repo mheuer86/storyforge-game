@@ -207,6 +207,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       engines: {},
       decisions: {},
       promises: {},
+      obligations: {},
       clues: {},
       beats: {},
       temporalAnchors: {},

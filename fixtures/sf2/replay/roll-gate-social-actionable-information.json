@@ -1,0 +1,63 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate social actionable information",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Asking or pressing an NPC for actionable information requires a roll before the substantive answer unless earned disclosure is explicit."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_mareth": {
+            "id": "npc_mareth",
+            "name": "Mareth",
+            "affiliation": "dock guild",
+            "role": "sealed-ledger custodian",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Knows which inspector altered the cargo ledger"],
+              "voice": { "note": "careful and literal", "register": "guarded" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Neutral custodian who knows the altered ledger source.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_mareth"],
+          "currentInterlocutorIds": ["npc_mareth"]
+        }
+      }
+    },
+    "turnIndex": 7,
+    "playerInput": "I press Mareth to tell me who altered the cargo ledger and where they went.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "npc_information",
+      "kind": "npc_information",
+      "sourceId": "npc_mareth",
+      "skillsInclude": ["Persuasion", "Insight"],
+      "reasonIncludes": "actionable information"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll gate (mandatory, never mention)",
+        "actionable information extraction",
+        "substantive answer until the roll result returns"
+      ]
+    }
+  }
+}

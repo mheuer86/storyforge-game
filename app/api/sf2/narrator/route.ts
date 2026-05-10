@@ -5,6 +5,7 @@ import { NARRATOR_TOOL_NAME, REQUEST_ROLL_TOOL_NAME } from '@/lib/sf2/narrator/t
 import { repairVisibleLeaks, scanDisplayOutput } from '@/lib/sf2/sentinel/display'
 import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
 import {
+  buildSf2RollPromptIntentResume,
   buildNarratorTurnContext,
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
@@ -36,6 +37,9 @@ const rollResolutionSchema = z.object({
   modifierType: z.enum(['advantage', 'disadvantage', 'inspiration', 'challenge']).optional(),
   modifierReason: z.string().optional(),
   priorMessages: z.array(z.unknown()),
+  originalInput: z.string().optional(),
+  currentIntent: z.string().optional(),
+  remainingIntents: z.array(z.string()).optional(),
 })
 
 const requestSchema = z.object({
@@ -58,6 +62,9 @@ type Sf2NarratorStreamEvent =
       modifierType?: 'advantage' | 'disadvantage' | 'challenge'
       modifierReason?: string
       priorMessages: unknown[]
+      originalInput?: string
+      currentIntent?: string
+      remainingIntents?: string[]
     }
   | {
       type: 'working_set'
@@ -69,6 +76,17 @@ type Sf2NarratorStreamEvent =
   | { type: 'token_usage'; usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
   | { type: 'latency'; role: 'narrator'; latency: Sf2LatencyPayload }
   | { type: 'truncation_warning'; outputTokens: number }
+  | {
+      type: 'roll_gate_diagnostic'
+      required: boolean
+      source?: string
+      kind?: string
+      skills?: string[]
+      reason?: string
+      sourceId?: string
+      action: 'none' | 'request_roll' | 'block_narrate_turn'
+      repair?: 'not_needed' | 'narrator_complied' | 'blocked_missing_request_roll'
+    }
   | {
       // Display sentinel — observe mode. Emitted after the Narrator finishes
       // producing prose. Findings are advisory only in this slice; the
@@ -366,8 +384,23 @@ export async function POST(req: NextRequest) {
         })
       }
 
+      if (turnContext.requiredRollGate) {
+        send({
+          type: 'roll_gate_diagnostic',
+          required: true,
+          source: turnContext.requiredRollGate.source,
+          kind: turnContext.requiredRollGate.kind,
+          skills: turnContext.requiredRollGate.skills,
+          reason: turnContext.requiredRollGate.reason,
+          sourceId: turnContext.requiredRollGate.sourceId,
+          action: 'none',
+          repair: 'not_needed',
+        })
+      }
+
       const apiTimer = startTimer()
       let ttftMs: number | undefined
+      let gatedTextBuffer = ''
       // Captured at finalMessage() resolve so the latency payload reports
       // pure SDK time, not SDK+post-processing.
       let apiMsForLatency: number | null = null
@@ -392,7 +425,11 @@ export async function POST(req: NextRequest) {
             const text = event.delta.text.replace(/<\/s>/g, '')
             if (text) {
               if (ttftMs === undefined) ttftMs = apiTimer.elapsed()
-              send({ type: 'text', content: text })
+              if (turnContext.requiredRollGate) {
+                gatedTextBuffer += text
+              } else {
+                send({ type: 'text', content: text })
+              }
             }
           }
         }
@@ -439,7 +476,7 @@ export async function POST(req: NextRequest) {
         // separate slice). Skip when this turn is interrupted by a roll
         // request — the prose is partial and the kernel doesn't reflect the
         // post-roll state.
-        if (!rollUse) {
+        if (!rollUse && !turnContext.requiredRollGate) {
           if (proseText.trim().length > 0) {
             const metaHit = detectNarratorMetaQuestion(proseText)
             if (metaHit) {
@@ -496,6 +533,22 @@ export async function POST(req: NextRequest) {
         }
 
         if (rollUse) {
+          if (turnContext.requiredRollGate) {
+            send({
+              type: 'roll_gate_diagnostic',
+              required: true,
+              source: turnContext.requiredRollGate.source,
+              kind: turnContext.requiredRollGate.kind,
+              skills: turnContext.requiredRollGate.skills,
+              reason: turnContext.requiredRollGate.reason,
+              sourceId: turnContext.requiredRollGate.sourceId,
+              action: 'request_roll',
+              repair: 'narrator_complied',
+            })
+            if (gatedTextBuffer) {
+              send({ type: 'text', content: gatedTextBuffer })
+            }
+          }
           // Mid-stream interrupt: emit roll_prompt with everything the client
           // needs to resume. priorMessages holds the full conversation up to
           // and including the assistant's tool_use content.
@@ -521,8 +574,31 @@ export async function POST(req: NextRequest) {
             modifierType: input.modifier_type,
             modifierReason: input.modifier_reason,
             priorMessages,
+            ...buildSf2RollPromptIntentResume(turnContext.intentQueue),
           })
         } else if (narrateUse) {
+          if (turnContext.requiredRollGate) {
+            console.warn('[sf2/narrator] blocked narrate_turn missing required request_roll', {
+              gate: turnContext.requiredRollGate,
+              turnIndex: state.history.turns.length,
+            })
+            send({
+              type: 'roll_gate_diagnostic',
+              required: true,
+              source: turnContext.requiredRollGate.source,
+              kind: turnContext.requiredRollGate.kind,
+              skills: turnContext.requiredRollGate.skills,
+              reason: turnContext.requiredRollGate.reason,
+              sourceId: turnContext.requiredRollGate.sourceId,
+              action: 'block_narrate_turn',
+              repair: 'blocked_missing_request_roll',
+            })
+            send({
+              type: 'error',
+              message: `required_roll_gate_missing_request_roll:${turnContext.requiredRollGate.kind}`,
+            })
+            return
+          }
           const recovered = recoverNarrateTurnInput(
             narrateUse.input as Record<string, unknown>,
             state,
@@ -543,6 +619,28 @@ export async function POST(req: NextRequest) {
           }
           send({ type: 'narrate_turn', input: recovered.input })
         } else if (completed.stop_reason !== 'max_tokens' && proseText.trim().length > 0) {
+          if (turnContext.requiredRollGate) {
+            console.warn('[sf2/narrator] blocked commit repair missing required request_roll', {
+              gate: turnContext.requiredRollGate,
+              turnIndex: state.history.turns.length,
+            })
+            send({
+              type: 'roll_gate_diagnostic',
+              required: true,
+              source: turnContext.requiredRollGate.source,
+              kind: turnContext.requiredRollGate.kind,
+              skills: turnContext.requiredRollGate.skills,
+              reason: turnContext.requiredRollGate.reason,
+              sourceId: turnContext.requiredRollGate.sourceId,
+              action: 'block_narrate_turn',
+              repair: 'blocked_missing_request_roll',
+            })
+            send({
+              type: 'error',
+              message: `required_roll_gate_missing_request_roll:${turnContext.requiredRollGate.kind}`,
+            })
+            return
+          }
           const repaired = await repairMissingNarrateTurn({
             client,
             turnContext,

@@ -44,6 +44,7 @@ import {
   buildInvestigationSynthesisPacket,
   classifyInvestigationDatum,
 } from '../lib/sf2/procedure-investigation'
+import { detectProcedureOmissionDrift } from '../lib/sf2/procedure-activation-diagnostics'
 import {
   chooseProcedureTransition,
   deriveForwardMotionAdvisory,
@@ -123,6 +124,7 @@ interface ReplayFixture {
       behavioralContractIncludes?: string[]
       prohibitionsInclude?: string[]
       prohibitionsExclude?: string[]
+      profileFactsInclude?: string[]
     }>
     perTurnDeltaIncludes?: string[]
     perTurnDeltaExcludes?: string[]
@@ -132,6 +134,7 @@ interface ReplayFixture {
     forwardMotionAdvisories?: Record<string, unknown>
     procedureAccessExploration?: Record<string, unknown>
     procedureInvestigation?: Record<string, unknown>
+    procedureActivationDiagnostics?: Record<string, unknown>
     arcAuthorProcedureEval?: Record<string, unknown>
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
@@ -139,9 +142,11 @@ interface ReplayFixture {
     npcRolesInclude?: Array<{ npcId: string; role: string }>
     ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
     arcStatusesInclude?: Array<{ arcId: string; status: string; arcPlanStatus?: string }>
-    npcIdentityIncludes?: Array<{ npcId: string; pronoun?: string; age?: string }>
+    npcIdentityIncludes?: Array<{ npcId: string; pronoun?: string; age?: string; profileFactsInclude?: string[] }>
     npcAgendasInclude?: Array<{ npcId: string; currentMove?: string; lastUpdatedTurn?: number }>
-    temporalAnchorsInclude?: Array<{ anchorId: string; kind?: string; label?: string; anchorText?: string }>
+    temporalAnchorsInclude?: Array<{ anchorId: string; kind?: string; label?: string; anchorText?: string; status?: string }>
+    obligationsInclude?: Array<{ obligationId: string; status?: string; balance?: number; unit?: string; claimantId?: string; debtorKind?: string; dueConditionIncludes?: string; clearanceConditionIncludes?: string }>
+    playerCreditsEquals?: number
     scenePacketTemporalAnchorsInclude?: string[]
     documentsInclude?: Array<{
       documentId: string
@@ -177,7 +182,7 @@ interface ReplayFixture {
       deterioration?: { kind?: string; deadline?: string; temporalAnchorId?: string }
       tensionHistoryIncludes?: Array<{ turn: number; value: number }>
       resolutionGatesInclude?: Array<{ gateId: string; status?: string; evidenceQuoteIncludes?: string }>
-      progressEventsInclude?: Array<{ summaryIncludes: string; gateIdsInclude?: string[] }>
+      progressEventsInclude?: Array<{ summaryIncludes: string; gateIdsInclude?: string[]; satisfiedGateIdsInclude?: string[] }>
     }>
     cluesInclude?: Array<{
       clueId: string
@@ -443,6 +448,13 @@ interface ReplayFixture {
         recentTurnsCountEquals?: number
         currentSceneIdEquals?: string
         currentLocationIdEquals?: string
+        currentAreaNodeIdEquals?: string
+        locationAreaNodes?: Array<{
+          locationId: string
+          idsInclude?: string[]
+          namesInclude?: string[]
+          count?: number
+        }>
         currentInterlocutorIdsEquals?: string[]
         sceneSnapshotFirstTurnIndexEquals?: number
         sceneBundleCacheCleared?: boolean
@@ -524,6 +536,14 @@ interface ReplayFixture {
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
     }
+    requiredRollGate?: {
+      exists: boolean
+      source?: string
+      kind?: string
+      sourceId?: string
+      skillsInclude?: string[]
+      reasonIncludes?: string
+    }
     narratorCommitRepair?: {
       completedAssistantProse: string
       toolNamesEquals?: string[]
@@ -555,6 +575,7 @@ interface ReplayFixture {
     currentSceneId?: string | null
     currentTimeLabel?: string | null
     currentLocationId?: string | null
+    currentAreaNodeId?: string | null
     entityIdsInclude?: string[]
     entityIdsAbsent?: string[]
     locationIdsInclude?: string[]
@@ -564,6 +585,12 @@ interface ReplayFixture {
       count?: number
       idsInclude?: string[]
       idsExclude?: string[]
+    }>
+    locationAreaNodes?: Array<{
+      locationId: string
+      idsInclude?: string[]
+      namesInclude?: string[]
+      count?: number
     }>
     sceneBundleCacheCleared?: boolean | null
     invariantEventsInclude?: string[]
@@ -814,6 +841,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
     failures
   )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
+  assertRequiredRollGate(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertNarratorCommitRepair(fixture, stateBefore, failures)
   assertDispositionDerivation(fixture, failures)
@@ -835,6 +863,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertForwardMotionAdvisories(fixture, failures)
   assertProcedureAccessExploration(fixture, stateAfter, failures)
   assertProcedureInvestigation(fixture, stateAfter, failures)
+  assertProcedureActivationDiagnostics(fixture, stateAfter, failures)
   assertArcAuthorProcedureEval(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
 }
@@ -1073,6 +1102,37 @@ function assertProcedureInvestigation(fixture: ReplayFixture, state: Sf2State, f
     const lane = classifyInvestigationDatum(replayRecord(testCase.input) as Parameters<typeof classifyInvestigationDatum>[0])
     if (testCase.laneEquals !== undefined && lane !== testCase.laneEquals) {
       failures.push(`procedureInvestigation.discriminator.${String(testCase.name)}: expected ${String(testCase.laneEquals)}, got ${lane}`)
+    }
+  }
+}
+
+function assertProcedureActivationDiagnostics(fixture: ReplayFixture, state: Sf2State, failures: string[]): void {
+  const expected = fixture.expected?.procedureActivationDiagnostics
+  if (!expected) return
+  const finding = detectProcedureOmissionDrift(state)
+  if (expected.omissionEquals === null) {
+    if (finding !== null) failures.push(`procedureActivationDiagnostics.omission: expected null, got ${finding.kind}`)
+    return
+  }
+  if (!finding) {
+    failures.push('procedureActivationDiagnostics.omission: expected procedure_omission_drift')
+    return
+  }
+  if (expected.severityEquals !== undefined && finding.severity !== expected.severityEquals) {
+    failures.push(`procedureActivationDiagnostics.severity: expected ${String(expected.severityEquals)}, got ${finding.severity}`)
+  }
+  if (Array.isArray(expected.repeatedTermsInclude)) {
+    for (const term of expected.repeatedTermsInclude.map(String)) {
+      if (!finding.repeatedTerms.includes(term)) {
+        failures.push(`procedureActivationDiagnostics.repeatedTerms missing ${term}`)
+      }
+    }
+  }
+  if (Array.isArray(expected.turnIndexesInclude)) {
+    for (const index of expected.turnIndexesInclude) {
+      if (!finding.turnIndexes.includes(Number(index))) {
+        failures.push(`procedureActivationDiagnostics.turnIndexes missing ${String(index)}`)
+      }
     }
   }
 }
@@ -1646,6 +1706,10 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
   if (e.currentLocationIdEquals !== undefined && state.world.currentLocation.id !== e.currentLocationIdEquals) {
     failures.push(`persistenceNormalize.world.currentLocation.id: expected ${e.currentLocationIdEquals}, got ${state.world.currentLocation.id}`)
   }
+  if (e.currentAreaNodeIdEquals !== undefined && state.world.currentPosition?.areaNodeId !== e.currentAreaNodeIdEquals) {
+    failures.push(`persistenceNormalize.world.currentPosition.areaNodeId: expected ${e.currentAreaNodeIdEquals}, got ${state.world.currentPosition?.areaNodeId ?? 'unset'}`)
+  }
+  assertLocationAreaNodes(state, e.locationAreaNodes, 'persistenceNormalize', failures)
   if (e.currentInterlocutorIdsEquals !== undefined) {
     const want = [...e.currentInterlocutorIdsEquals].sort().join(',')
     const got = [...(state.world.sceneSnapshot.currentInterlocutorIds ?? [])].sort().join(',')
@@ -1704,6 +1768,41 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
   for (const fragment of e.repairsInclude ?? []) {
     if (!normalized.repairs.some((repair) => repair.includes(fragment))) {
       failures.push(`persistenceNormalize.repairs: expected repair containing "${fragment}", got [${normalized.repairs.join('; ') || 'none'}]`)
+    }
+  }
+}
+
+function assertLocationAreaNodes(
+  state: Sf2State,
+  expectations: Array<{
+    locationId: string
+    idsInclude?: string[]
+    namesInclude?: string[]
+    count?: number
+  }> | undefined,
+  label: string,
+  failures: string[]
+): void {
+  for (const expected of expectations ?? []) {
+    const location = state.campaign.locations[expected.locationId]
+    if (!location) {
+      failures.push(`${label}.locationAreaNodes: missing location ${expected.locationId}`)
+      continue
+    }
+    const nodes = location.areaNodes ?? []
+    if (expected.count !== undefined && nodes.length !== expected.count) {
+      failures.push(`${label}.locationAreaNodes.${expected.locationId}: expected ${expected.count}, got ${nodes.length}`)
+    }
+    for (const id of expected.idsInclude ?? []) {
+      if (!nodes.some((node) => node.id === id)) {
+        failures.push(`${label}.locationAreaNodes.${expected.locationId}: missing node id ${id}`)
+      }
+    }
+    for (const name of expected.namesInclude ?? []) {
+      const key = canonicalLocationNameKey(name)
+      if (!nodes.some((node) => canonicalLocationNameKey(node.name || node.id) === key)) {
+        failures.push(`${label}.locationAreaNodes.${expected.locationId}: missing node name ${name}`)
+      }
     }
   }
 }
@@ -2077,6 +2176,49 @@ function assertNarratorMessages(
   }
 }
 
+function assertRequiredRollGate(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.requiredRollGate
+  if (!expected) return
+
+  const gate = buildNarratorTurnContext({
+    state: stateBefore,
+    playerInput: fixture.input.playerInput,
+    isInitial: Boolean(fixture.input.isInitial),
+    turnIndex: fixture.input.turnIndex ?? stateBefore.history.turns.length,
+  }).requiredRollGate
+  if (expected.exists && !gate) {
+    failures.push('requiredRollGate: expected gate, got none')
+    return
+  }
+  if (!expected.exists && gate) {
+    failures.push(`requiredRollGate: expected no gate, got ${gate.kind} from ${gate.source}`)
+    return
+  }
+  if (!gate) return
+
+  if (expected.source !== undefined && gate.source !== expected.source) {
+    failures.push(`requiredRollGate.source: expected ${expected.source}, got ${gate.source}`)
+  }
+  if (expected.kind !== undefined && gate.kind !== expected.kind) {
+    failures.push(`requiredRollGate.kind: expected ${expected.kind}, got ${gate.kind}`)
+  }
+  if (expected.sourceId !== undefined && gate.sourceId !== expected.sourceId) {
+    failures.push(`requiredRollGate.sourceId: expected ${expected.sourceId}, got ${gate.sourceId ?? 'unset'}`)
+  }
+  for (const skill of expected.skillsInclude ?? []) {
+    if (!gate.skills.includes(skill)) {
+      failures.push(`requiredRollGate.skills: missing ${skill}; got [${gate.skills.join(', ')}]`)
+    }
+  }
+  if (expected.reasonIncludes !== undefined && !gate.reason.includes(expected.reasonIncludes)) {
+    failures.push(`requiredRollGate.reason missing "${expected.reasonIncludes}"; got "${gate.reason}"`)
+  }
+}
+
 function messageContentText(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
@@ -2252,6 +2394,12 @@ function assertExpected(
         failures.push(`castPacket ${want.npcId} prohibitions unexpectedly includes "${fragment}" (got: ${c.prohibitions.join(', ')})`)
       }
     }
+    for (const fragment of want.profileFactsInclude ?? []) {
+      const found = (c.profileFacts ?? []).some((fact) => fact.toLowerCase().includes(fragment.toLowerCase()))
+      if (!found) {
+        failures.push(`castPacket ${want.npcId} profileFacts missing "${fragment}"`)
+      }
+    }
   }
   for (const fragment of expected.perTurnDeltaIncludes ?? []) {
     if (!perTurnDeltaText.toLowerCase().includes(fragment.toLowerCase())) {
@@ -2345,6 +2493,11 @@ function assertExpected(
     if (identity.age !== undefined && npc.identity.age !== identity.age) {
       failures.push(`npc ${identity.npcId} age expected ${identity.age}, got ${npc.identity.age ?? 'unset'}`)
     }
+    for (const fact of identity.profileFactsInclude ?? []) {
+      if (!(npc.identity.profileFacts ?? []).some((actual) => actual.toLowerCase().includes(fact.toLowerCase()))) {
+        failures.push(`npc ${identity.npcId} profileFacts missing "${fact}"`)
+      }
+    }
   }
   for (const agendaExpected of expected.npcAgendasInclude ?? []) {
     const npc = state.campaign.npcs[agendaExpected.npcId]
@@ -2382,6 +2535,46 @@ function assertExpected(
       failures.push(
         `temporal anchor ${anchorExpected.anchorId} anchorText expected ${anchorExpected.anchorText}, got ${anchor.anchorText}`
       )
+    }
+    if (anchorExpected.status !== undefined && anchor.status !== anchorExpected.status) {
+      failures.push(`temporal anchor ${anchorExpected.anchorId} status expected ${anchorExpected.status}, got ${anchor.status}`)
+    }
+  }
+  if (expected.playerCreditsEquals !== undefined && state.player.credits !== expected.playerCreditsEquals) {
+    failures.push(`player credits expected ${expected.playerCreditsEquals}, got ${state.player.credits}`)
+  }
+  for (const obligationExpected of expected.obligationsInclude ?? []) {
+    const obligation = state.campaign.obligations?.[obligationExpected.obligationId]
+    if (!obligation) {
+      failures.push(`obligation ${obligationExpected.obligationId} missing`)
+      continue
+    }
+    if (obligationExpected.status !== undefined && obligation.status !== obligationExpected.status) {
+      failures.push(`obligation ${obligationExpected.obligationId} status expected ${obligationExpected.status}, got ${obligation.status}`)
+    }
+    if (obligationExpected.balance !== undefined && obligation.balance !== obligationExpected.balance) {
+      failures.push(`obligation ${obligationExpected.obligationId} balance expected ${obligationExpected.balance}, got ${obligation.balance ?? 'unset'}`)
+    }
+    if (obligationExpected.unit !== undefined && obligation.unit !== obligationExpected.unit) {
+      failures.push(`obligation ${obligationExpected.obligationId} unit expected ${obligationExpected.unit}, got ${obligation.unit ?? 'unset'}`)
+    }
+    if (obligationExpected.claimantId !== undefined && obligation.claimant.id !== obligationExpected.claimantId) {
+      failures.push(`obligation ${obligationExpected.obligationId} claimant expected ${obligationExpected.claimantId}, got ${obligation.claimant.id}`)
+    }
+    if (obligationExpected.debtorKind !== undefined && obligation.debtor.kind !== obligationExpected.debtorKind) {
+      failures.push(`obligation ${obligationExpected.obligationId} debtor kind expected ${obligationExpected.debtorKind}, got ${obligation.debtor.kind}`)
+    }
+    if (
+      obligationExpected.dueConditionIncludes !== undefined &&
+      !obligation.dueCondition.includes(obligationExpected.dueConditionIncludes)
+    ) {
+      failures.push(`obligation ${obligationExpected.obligationId} due condition missing "${obligationExpected.dueConditionIncludes}"`)
+    }
+    if (
+      obligationExpected.clearanceConditionIncludes !== undefined &&
+      !obligation.clearanceCondition.includes(obligationExpected.clearanceConditionIncludes)
+    ) {
+      failures.push(`obligation ${obligationExpected.obligationId} clearance condition missing "${obligationExpected.clearanceConditionIncludes}"`)
     }
   }
   for (const id of expected.scenePacketTemporalAnchorsInclude ?? []) {
@@ -2555,7 +2748,8 @@ function assertExpected(
     for (const eventExpected of threadExpected.progressEventsInclude ?? []) {
       const event = (thread.progressEvents ?? []).find((e) =>
         e.summary.includes(eventExpected.summaryIncludes) &&
-        (eventExpected.gateIdsInclude ?? []).every((id) => (e.gateIds ?? []).includes(id))
+        (eventExpected.gateIdsInclude ?? []).every((id) => (e.gateIds ?? []).includes(id)) &&
+        (eventExpected.satisfiedGateIdsInclude ?? []).every((id) => (e.satisfiedGateIds ?? []).includes(id))
       )
       if (!event) {
         failures.push(`thread ${threadExpected.threadId} progress event missing ${JSON.stringify(eventExpected)}`)
@@ -2996,6 +3190,11 @@ function assertExpected(
       failures.push(`currentLocation.id expected ${expected.currentLocationId}, got ${state.world.currentLocation.id}`)
     }
   }
+  if (expected.currentAreaNodeId !== undefined && expected.currentAreaNodeId !== null) {
+    if (state.world.currentPosition?.areaNodeId !== expected.currentAreaNodeId) {
+      failures.push(`currentPosition.areaNodeId expected ${expected.currentAreaNodeId}, got ${state.world.currentPosition?.areaNodeId ?? 'unset'}`)
+    }
+  }
   for (const id of expected.entityIdsInclude ?? []) {
     if (!hasEntityId(state, id)) failures.push(`entity ${id} missing`)
   }
@@ -3026,6 +3225,7 @@ function assertExpected(
       }
     }
   }
+  assertLocationAreaNodes(state, expected.locationAreaNodes, 'expected', failures)
   for (const fragment of expected.archivistTurnMessage?.containsAll ?? []) {
     if (!archivistTurnMessage.includes(fragment)) {
       failures.push(`archivist turn message missing "${fragment.slice(0, 80)}"`)
@@ -3389,6 +3589,7 @@ function hasEntityId(state: Sf2State, id: string): boolean {
     state.campaign.threads[id] ||
     state.campaign.decisions[id] ||
     state.campaign.promises[id] ||
+    state.campaign.obligations?.[id] ||
     state.campaign.clues[id] ||
     state.campaign.beats[id] ||
     state.campaign.temporalAnchors[id] ||
@@ -3485,6 +3686,7 @@ function createMinimalState(): Sf2State {
       decisions: {},
       engines: {},
       promises: {},
+      obligations: {},
       clues: {},
       beats: {},
       temporalAnchors: {},

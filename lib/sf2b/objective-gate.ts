@@ -17,7 +17,17 @@ export interface Sf2bObjectiveGateRead {
   directive?: string
 }
 
+const MIN_OBJECTIVE_CLOSE_OR_REFRAME_TURNS = 5
+
+export function readSf2ObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
+  return readObjectiveGate(state)
+}
+
 export function readSf2bObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
+  return readObjectiveGate(state)
+}
+
+function readObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
   const chapterTurnCount = state.history.turns.filter(
     (turn) => turn.chapter === state.meta.currentChapter
   ).length
@@ -30,7 +40,8 @@ export function readSf2bObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
     ? selectReframeCandidate(state, foregroundThread?.id, state.chapter.setup.tensionScore)
     : undefined
   const foregroundOutcome = foregroundStatus ? outcomeForStatus(foregroundStatus) : 'active'
-  const shouldCloseOrReframe = foregroundAnswered && chapterTurnCount >= 10
+  const shouldCloseOrReframe =
+    foregroundAnswered && chapterTurnCount >= MIN_OBJECTIVE_CLOSE_OR_REFRAME_TURNS
 
   const directive = shouldCloseOrReframe
     ? reframeCandidate
@@ -38,6 +49,8 @@ export function readSf2bObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
       : `Foreground objective "${foregroundThread?.title ?? 'chapter objective'}" is ${foregroundOutcome}; move toward chapter close instead of adding runway.`
     : foregroundAnswered && reframeCandidate
       ? `Foreground objective "${foregroundThread?.title ?? 'chapter objective'}" resolved very early; make the new dominant pressure "${reframeCandidate.title}" explicit before close.`
+      : foregroundAnswered
+        ? `Foreground objective "${foregroundThread?.title ?? 'chapter objective'}" resolved very early; establish successor pressure or an explicit immediate-close reason before extending the old question.`
       : undefined
 
   return {

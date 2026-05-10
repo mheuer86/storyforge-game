@@ -1,0 +1,81 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate constrained departure forty thousand",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Forty Thousand departure under an unresolved seal/clearance constraint must compute a required roll gate before Narrator execution."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "grimdark"
+      },
+      "campaign": {
+        "procedures": {
+          "procedure_void_seal_departure": {
+            "id": "procedure_void_seal_departure",
+            "kind": "operation",
+            "status": "active",
+            "label": "Departure seal constraint",
+            "phase": "egress",
+            "objective": "Launch before the reliquary seal fully lifts and the dock guns reacquire the ship.",
+            "stakes": "A mistimed departure exposes the ship to sanction fire.",
+            "facts": [],
+            "constraints": [
+              {
+                "id": "constraint_reliquary_seal",
+                "label": "Reliquary seal is lifting but the departure corridor is not clear",
+                "kind": "access",
+                "status": "active",
+                "clearsWhen": "The cockpit burn is timed through the opening seal",
+                "linkedRefs": []
+              }
+            ],
+            "affordances": [],
+            "complications": [],
+            "contributions": [],
+            "assessments": [],
+            "abortConditions": [],
+            "signals": [],
+            "linkedRefs": [],
+            "createdAtTurn": 4,
+            "updatedAtTurn": 4
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_void_seal_departure"],
+        "sceneSnapshot": {
+          "established": [
+            "The ship is still in the launch cradle.",
+            "The reliquary seal has begun to lift but the corridor is not clear."
+          ]
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "I go to the cockpit and fly once the seal lifts.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "active_procedure_constraint",
+      "kind": "constrained_departure",
+      "sourceId": "procedure_void_seal_departure",
+      "skillsInclude": ["Piloting"],
+      "reasonIncludes": "departure"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll gate (mandatory, never mention)",
+        "Gate source: active_procedure_constraint",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

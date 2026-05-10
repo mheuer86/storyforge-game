@@ -26,6 +26,7 @@ import {
 import {
   findMatchingLocation,
   mergeLocationIntoExisting,
+  parseFlattenedLocationAlias,
   replaceLocationReferences,
 } from '../locations'
 import {
@@ -93,6 +94,7 @@ import type {
   Sf2EntityId,
   Sf2Faction,
   Sf2Npc,
+  Sf2Obligation,
   Sf2Promise,
   Sf2PressureEvent,
   Sf2PronounAnchor,
@@ -536,6 +538,10 @@ function mergeNpcCreatePayload(
   if (keyFacts.length > 0 && (npc.identity.keyFacts.length === 0 || isAnonymousNpc(npc, genreId))) {
     npc.identity.keyFacts = keyFacts
   }
+  const profileFacts = npcProfileFactsFromPayload(payload)
+  if (profileFacts.length > 0 && ((npc.identity.profileFacts ?? []).length === 0 || isAnonymousNpc(npc, genreId))) {
+    npc.identity.profileFacts = profileFacts
+  }
   const proposedPronoun = npcPronounFromPayload(payload)
   if (proposedPronoun && !npc.identity.pronoun) npc.identity.pronoun = proposedPronoun
   const proposedAge = npcAgeFromPayload(payload)
@@ -831,6 +837,16 @@ function npcAgeFromPayload(p: Record<string, unknown>): string | undefined {
   return normalizeAgeAnchor(p.age ?? p.age_band ?? p.ageBand)
 }
 
+function npcProfileFactsFromPayload(p: Record<string, unknown>): string[] {
+  const raw = p.profile_facts ?? p.profileFacts
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map(String)
+    .map((fact) => fact.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+}
+
 function normalizeTemporalAnchorKind(raw: unknown): Sf2TemporalAnchor['kind'] {
   if (
     raw === 'deadline' ||
@@ -849,6 +865,49 @@ function normalizeTemporalAnchorStatus(raw: unknown): Sf2TemporalAnchor['status'
     return raw
   }
   return 'active'
+}
+
+function normalizeObligationStatus(raw: unknown): Sf2Obligation['status'] | undefined {
+  if (
+    raw === 'active' ||
+    raw === 'settled' ||
+    raw === 'defaulted' ||
+    raw === 'waived' ||
+    raw === 'superseded'
+  ) {
+    return raw
+  }
+  return undefined
+}
+
+function resolveObligationParty(
+  draft: Sf2State,
+  raw: unknown,
+  allowPc = false
+): Sf2Obligation['claimant'] | Sf2Obligation['debtor'] | null {
+  if (typeof raw === 'string') {
+    if (allowPc && raw.toLowerCase() === 'pc') return { kind: 'pc', id: 'pc' }
+    const id = resolveAgentId(draft, raw)
+    if (!id) return null
+    if (draft.campaign.npcs[id]) return { kind: 'npc', id }
+    if (draft.campaign.factions[id]) return { kind: 'faction', id }
+    return null
+  }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const record = raw as Record<string, unknown>
+  const kind = String(record.kind ?? '')
+  const nameOrId = String(record.name_or_id ?? record.nameOrId ?? record.id ?? '')
+  if (allowPc && (kind === 'pc' || nameOrId.toLowerCase() === 'pc')) return { kind: 'pc', id: 'pc' }
+  if (kind !== 'npc' && kind !== 'faction') return null
+  const id = kind === 'npc' ? resolveNpcId(draft, nameOrId) : resolveFactionId(draft, nameOrId)
+  return id ? { kind, id } : null
+}
+
+function stringArray(value: unknown): string[] {
+  if (typeof value === 'string' && value.trim()) return [value.trim()]
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim())
 }
 
 function normalizeDocumentType(raw: unknown): Sf2DocumentType {
@@ -1034,6 +1093,19 @@ function applyCreate(
               entityId: existingMatch.id,
             })
           }
+          const proposedProfileFacts = npcProfileFactsFromPayload(p)
+          if (proposedProfileFacts.length > 0 && ((existingMatch.identity.profileFacts ?? []).length === 0 || isAnonymousNpc(existingMatch, draft.meta.genreId))) {
+            existingMatch.identity.profileFacts = proposedProfileFacts
+          } else if (
+            proposedProfileFacts.length > 0 &&
+            !sameStringSet(existingMatch.identity.profileFacts ?? [], proposedProfileFacts)
+          ) {
+            drift.push({
+              kind: 'identity_drift',
+              detail: `profileFacts anchor conflict on duplicate npc create: existing [${(existingMatch.identity.profileFacts ?? []).join('; ')}], proposed [${proposedProfileFacts.join('; ')}]`,
+              entityId: existingMatch.id,
+            })
+          }
           const proposedPronoun = npcPronounFromPayload(p)
           if (proposedPronoun && !existingMatch.identity.pronoun) {
             existingMatch.identity.pronoun = proposedPronoun
@@ -1082,6 +1154,7 @@ function applyCreate(
           disposition: dispCoerced.tier,
           identity: {
             keyFacts: Array.isArray(p.key_facts) ? (p.key_facts as string[]).slice(0, 3) : [],
+            profileFacts: npcProfileFactsFromPayload(p),
             pronoun: npcPronounFromPayload(p),
             age: npcAgeFromPayload(p),
             voice: {
@@ -1457,6 +1530,77 @@ function applyCreate(
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
+      case 'obligation': {
+        if (!draft.campaign.obligations) draft.campaign.obligations = {}
+        const p = write.payload as Record<string, unknown>
+        const claimant = resolveObligationParty(draft, p.claimant)
+        const debtor = resolveObligationParty(draft, p.debtor, true)
+        if (!claimant || claimant.kind === 'pc') {
+          outcomes.push({
+            accepted: false,
+            reason: 'obligation.claimant: npc/faction claimant required',
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        if (!debtor) {
+          outcomes.push({
+            accepted: false,
+            reason: 'obligation.debtor: debtor required',
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        const anchoredTo = stringArray(p.anchored_to ?? p.anchoredTo)
+          .map((r) => resolveTemporalAnchorTargetId(draft, r))
+          .filter((x): x is string => Boolean(x))
+        const id = (p.id as string | undefined) ?? nextEntityId('obligation', draft)
+        const balanceRaw = p.balance ?? p.amount
+        const balance = typeof balanceRaw === 'number' && Number.isFinite(balanceRaw)
+          ? Math.max(0, balanceRaw)
+          : undefined
+        const existing = draft.campaign.obligations[id]
+        const obligation: Sf2Obligation = {
+          id,
+          title: String(p.title ?? p.label ?? p.terms ?? 'Obligation'),
+          chapterCreated: existing?.chapterCreated ?? chapter,
+          category: 'obligation',
+          retrievalCue: compactRetrievalCue(p.retrieval_cue, p.title ?? p.terms ?? p.label),
+          status: normalizeObligationStatus(p.status) ?? existing?.status ?? 'active',
+          claimant,
+          debtor,
+          balance,
+          unit: String(p.unit ?? p.currency ?? existing?.unit ?? 'credits'),
+          terms: String(p.terms ?? p.description ?? existing?.terms ?? ''),
+          dueCondition: String(p.due_condition ?? p.dueCondition ?? existing?.dueCondition ?? ''),
+          clearanceCondition: String(p.clearance_condition ?? p.clearanceCondition ?? existing?.clearanceCondition ?? ''),
+          anchoredTo: uniqueStrings([...(existing?.anchoredTo ?? []), ...anchoredTo]),
+          turn: existing?.turn ?? turnIndex,
+        }
+        if (!obligation.terms && obligation.balance === undefined) {
+          outcomes.push({
+            accepted: false,
+            reason: 'obligation.balance: balance or terms required',
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        if (!obligation.dueCondition || !obligation.clearanceCondition) {
+          outcomes.push({
+            accepted: false,
+            reason: 'obligation.conditions: due_condition and clearance_condition required',
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        draft.campaign.obligations[id] = obligation
+        outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
       case 'clue': {
         const p = write.payload as Record<string, unknown>
         const anchoredRefs = Array.isArray(p.anchored_to) ? (p.anchored_to as string[]) : []
@@ -1665,6 +1809,27 @@ function applyCreate(
           locked: typeof p.locked === 'boolean' ? p.locked : undefined,
           chapterCreated: chapter,
         }
+        const flattened = parseFlattenedLocationAlias(draft, proposed)
+        if (flattened) {
+          const merged = mergeLocationIntoExisting(flattened.location, {
+            aliases: [flattened.alias],
+            areaNodes: [flattened.areaNode],
+          })
+          draft.campaign.locations[merged.id] = merged
+          draft.world.currentLocation = merged
+          draft.world.currentPosition = {
+            locationId: merged.id,
+            areaNodeId: flattened.areaNode.id,
+          }
+          replaceLocationReferences(draft, id, merged)
+          drift.push({
+            kind: 'identity_drift',
+            detail: `location create resolved flattened alias ${id} into ${merged.id}/${flattened.areaNode.id}`,
+            entityId: merged.id,
+          })
+          outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+          return
+        }
         const existing = findMatchingLocation(draft, proposed)
         if (existing) {
           const merged = mergeLocationIntoExisting(existing, proposed)
@@ -1699,12 +1864,19 @@ function applyCreate(
         const label = String(p.label ?? p.title ?? '')
         const kind = normalizeTemporalAnchorKind(p.kind)
         const anchorText = String(p.anchor_text ?? p.anchorText ?? p.when ?? '')
+        const supersedesId = String(p.supersedes_id ?? p.supersedesId ?? '').trim()
+        if (supersedesId && draft.campaign.temporalAnchors[supersedesId]) {
+          draft.campaign.temporalAnchors[supersedesId].status = 'superseded'
+        }
         const existing = draft.campaign.temporalAnchors[id] ??
           Object.values(draft.campaign.temporalAnchors).find((anchor) =>
             anchor.kind === kind &&
             (semanticTextOverlaps(anchor.anchorText, anchorText) || semanticTextMatches(anchor.label, label))
           )
         if (existing) {
+          if (p.status !== undefined) existing.status = normalizeTemporalAnchorStatus(p.status)
+          if (anchorText) existing.anchorText = anchorText
+          if (label) existing.label = label
           existing.anchoredTo = uniqueStrings([...existing.anchoredTo, ...anchoredTo])
           const proposedCue = compactRetrievalCue(p.retrieval_cue, p.anchor_text ?? p.when ?? label)
           if (proposedCue) {
@@ -1967,12 +2139,14 @@ function applyUpdate(
             : dispositionRestated
               ? undefined
             : prior.tempLoadTag
+      const proposedProfileFacts = npcProfileFactsFromPayload(write.changes)
       const next: Sf2Npc = {
         ...prior,
         identity: {
           ...prior.identity,
           pronoun: npcPronounFromPayload(write.changes) ?? prior.identity.pronoun,
           age: npcAgeFromPayload(write.changes) ?? prior.identity.age,
+          profileFacts: proposedProfileFacts.length > 0 ? proposedProfileFacts : prior.identity.profileFacts,
         },
         disposition: dispUpdate.tier,
         tempLoad: (write.changes.temp_load as number | undefined) ?? prior.tempLoad,
@@ -2277,6 +2451,63 @@ function applyUpdate(
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
+    case 'obligation': {
+      if (!draft.campaign.obligations) draft.campaign.obligations = {}
+      const obligation = draft.campaign.obligations[write.entityId]
+      if (!obligation) {
+        outcomes.push({
+          accepted: false,
+          reason: 'obligation.id: not in registry',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      const c = write.changes
+      const balanceRaw = c.balance ?? c.amount
+      if (typeof balanceRaw === 'number' && Number.isFinite(balanceRaw)) {
+        obligation.balance = Math.max(0, balanceRaw)
+      }
+      if (typeof c.balance_delta === 'number' && Number.isFinite(c.balance_delta)) {
+        obligation.balance = Math.max(0, (obligation.balance ?? 0) + c.balance_delta)
+      }
+      if (typeof c.terms === 'string' && c.terms.trim()) obligation.terms = c.terms.trim()
+      if (typeof c.due_condition === 'string' && c.due_condition.trim()) obligation.dueCondition = c.due_condition.trim()
+      if (typeof c.clearance_condition === 'string' && c.clearance_condition.trim()) obligation.clearanceCondition = c.clearance_condition.trim()
+      const nextStatus = normalizeObligationStatus(c.status)
+      if (nextStatus) obligation.status = nextStatus
+      const anchorsAdd = stringArray(c.anchored_to ?? c.anchoredTo)
+        .map((r) => resolveTemporalAnchorTargetId(draft, r))
+        .filter((x): x is string => Boolean(x))
+      obligation.anchoredTo = uniqueStrings([...obligation.anchoredTo, ...anchorsAdd])
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
+    case 'temporal_anchor': {
+      const anchor = draft.campaign.temporalAnchors?.[write.entityId]
+      if (!anchor) {
+        outcomes.push({
+          accepted: false,
+          reason: 'temporal_anchor.id: not in registry',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      const c = write.changes
+      const anchorText = String(c.anchor_text ?? c.anchorText ?? c.when ?? '').trim()
+      if (anchorText) anchor.anchorText = anchorText
+      const label = String(c.label ?? '').trim()
+      if (label) anchor.label = label
+      if (c.status !== undefined) anchor.status = normalizeTemporalAnchorStatus(c.status)
+      const anchorsAdd = stringArray(c.anchored_to ?? c.anchoredTo)
+        .map((r) => resolveTemporalAnchorTargetId(draft, r))
+        .filter((x): x is string => Boolean(x))
+      anchor.anchoredTo = uniqueStrings([...anchor.anchoredTo, ...anchorsAdd])
+      linkDeadlineAnchorToThreadTimers(draft, anchor)
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
     case 'document': {
       if (!draft.campaign.documents) draft.campaign.documents = {}
       const doc = draft.campaign.documents[write.entityId]
@@ -2449,6 +2680,21 @@ function applyTransition(
         return
       }
       promise.status = write.toStatus as Sf2Promise['status']
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
+    case 'obligation': {
+      const obligation = draft.campaign.obligations?.[write.entityId]
+      const nextStatus = normalizeObligationStatus(write.toStatus)
+      if (!obligation) {
+        outcomes.push({ accepted: false, reason: 'obligation not found', writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
+      if (!nextStatus) {
+        outcomes.push({ accepted: false, reason: `obligation.toStatus: invalid status "${String(write.toStatus)}"`, writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
+      obligation.status = nextStatus
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }

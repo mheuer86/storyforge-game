@@ -176,6 +176,7 @@ export function buildPresentCastPackets(
         affiliation: npc.affiliation,
         pronoun: npc.identity.pronoun,
         age: npc.identity.age,
+        profileFacts: npc.identity.profileFacts,
         disposition: npc.disposition,
         tempLoadTag: npc.tempLoadTag,
         voice: npc.identity.voice.note,

@@ -37,7 +37,7 @@ Required fields every turn:
 - coherence_findings (often empty; may contain multiple — see audit policy below)
 
 Optional fields, emitted as the prose calls for them:
-- **creates** — new entities: npc, faction, thread, decision, promise, clue, arc, location, temporal_anchor
+- **creates** — new entities: npc, faction, thread, decision, promise, clue, arc, location, temporal_anchor, document, procedure
 - **updates** — existing entities: dispositions, heat, tension, agenda, last-seen-turn, sharpened clues
 - **transitions** — status changes: thread resolved, decision paid, promise kept/broken, clue consumed, arc resolved
 - **attachments** — anchor decision/promise/clue to threads (post-create; do not double-anchor when create payload already has anchored_to)
@@ -77,6 +77,21 @@ Ignore \`suggested_actions\` for reconciliation. Suggested actions are forward-l
 - Do not make authorial decisions. Arc creation requires resolution-dependency analysis — if uncertain, emit the component threads and let the Author handle arc construction at chapter close.
 - Before emitting any \`creates\` entry, check the matching registry section below. If the prose sharpens or restates an existing entity, emit an \`updates\` entry or no write; do not create a parallel entity with a new id.
 
+## Procedure activation (optional, load-bearing only)
+
+Create or update a \`procedure\` when the prose makes future choices depend on a bounded activity with constraints, affordances, phase changes, or win/exit conditions. This is state ownership, not flavor capture.
+
+Use existing kinds only:
+- \`access\` — clearance, credential, authorization, release, checkpoint, writ, subnet, gate, berth clamp, lien hold, queue, or scrutiny state controls what actions are possible next.
+- \`exploration\` — the PC is navigating a bounded place with nodes, routes, hazards, blocked paths, or discovery by movement.
+- \`investigation\` — evidence discovery and open questions now drive resolution.
+- \`combat\` — active fight state exists or combat constraints/objectives are being established.
+- \`operation\` — a deliberate multi-step plan with phases, support, abort conditions, or extraction changes future options.
+
+Activation threshold: do NOT create a procedure just because the genre has procedure texture. Social pressure, crew-building, debt/fallout, relationship scenes, ordinary bureaucracy, and aftermath remain threads/promises/documents unless the mechanism itself changes what the player can do next.
+
+If a procedural blocker repeats across turns — clearance, release, route, credential, gate, lock, lien, authorization, subnet, berth, writ, departure — then either create/update an owning procedure OR anchor the pressure to hard state such as a thread resolution gate, promise/obligation, or document. Do not leave repeated blockers as free-floating prose.
+
 ## NPC identity preservation (load-bearing)
 
 Identity preservation prevents the most-observed failure mode: the Narrator inventing parallel characters for the same on-stage body. Three rules in priority order:
@@ -87,6 +102,7 @@ If the Narrator's annotation hints an NPC id/name not yet in the registry AND th
 When creating from a hint:
 - Prefer the hinted id when it's a usable slug (e.g. \`npc_danniver\`).
 - Pull name, affiliation, role, voice, retrieval_cue, key_facts from prose.
+- If prose provides pronoun, age/age-band, or a dossier/profile comparison, anchor it on the first create. Use \`profile_facts\` for load-bearing comparison baselines like "official profile says younger" or "dossier lists him as forty-two."
 - Keep every retrieval_cue short and punchy: ≤12 words, a search handle, not a sentence summary.
 - If prose only gives a role ("the elder", "the aide"), create enough to preserve continuity; later turns sharpen.
 
@@ -154,6 +170,8 @@ For each NPC whose registry row shows \`age: X\`, scan prose for explicit age cl
 Severity: medium by default; high when the gap is more than 10 years.
 Skip if the age claim is clearly historical ("she had been seven when…").
 
+Profile comparison facts are part of the same identity lock. If the registry says a profile/dossier baseline exists, later prose cannot present that baseline as newly noticed or contradict it unless the prose also supplies a state-visible explanation (newly opened dossier, bad profile, disguise, mistaken identity, corrected record). Emit \`identity_drift\` for profile baseline contradictions; if the contradiction is specifically age-based and the NPC has an age anchor, also emit \`age_drift\`.
+
 **identity_drift** — locked-field, fires on name/keyFacts mismatch.
 Prose contradicts an NPC's name or one of the immutable keyFacts captured at creation. Pronoun and age have their own types (above) — do NOT classify those as identity_drift. Also emit the existing \`identity_drift\` flag alongside the finding.
 Severity: always high.
@@ -212,6 +230,12 @@ Findings become a short "Coherence notes" section in the NEXT turn's delta for t
 ## Anchoring (decisions, promises, clues)
 
 Decisions and promises MUST anchor to at least one thread. Clues MAY float (empty \`anchored_to\`) until the player makes a connection.
+
+Obligations are hard owed-state, not player wallet state. If prose changes a lien, debt, tithe balance, ransom, retainer, favor owed, or service contract, create/update an \`obligation\` with claimant, debtor, balance or terms, due condition, and clearance condition. Emit \`credits_delta\` only when the PC's held credits actually change.
+
+For thread gates, \`gate_ids\` on a progress event means the event references those gates. It does NOT satisfy them. Use \`satisfied_resolution_gates\`, \`failed_resolution_gates\`, or \`waived_resolution_gates\` only when the prose explicitly makes that gate terminal.
+
+For changed deadlines, update the existing \`temporal_anchor\` or create a replacement with \`supersedes_id\`. Do not leave two active deadline anchors as parallel truth for the same load-bearing countdown.
 
 Anchor inference confidence:
 - **HIGH** — prose explicitly references the thread or its subject.
@@ -512,7 +536,7 @@ export function buildArchivistTurnMessage(
   const { campaign } = state
 
   // Surface fields the audit rules need to compare prose against:
-  // - pronoun + age: required for pronoun_drift / age_drift findings
+  // - pronoun + age + profileFacts: required for identity/pronoun/age drift findings
   // - on-stage marker: required for supersedes_id (anonymous-on-stage NPCs are
   //   the merge target candidates)
   // - anonymous marker: signals which on-stage NPCs are placeholders that
@@ -525,7 +549,8 @@ export function buildArchivistTurnMessage(
       const anonymous = isAnonymous ? ' · ANONYMOUS-PLACEHOLDER' : ''
       const pronoun = n.identity.pronoun ? ` · pronoun: ${n.identity.pronoun}` : ''
       const age = n.identity.age ? ` · age: ${n.identity.age}` : ''
-      return `- ${n.id} · ${n.name} (${n.affiliation}, ${n.status}, ${n.disposition}${pronoun}${age})${onStage}${anonymous} — ${n.retrievalCue}`
+      const profile = n.identity.profileFacts?.length ? ` · profile: ${n.identity.profileFacts.join('; ')}` : ''
+      return `- ${n.id} · ${n.name} (${n.affiliation}, ${n.status}, ${n.disposition}${pronoun}${age}${profile})${onStage}${anonymous} — ${n.retrievalCue}`
     })
     .join('\n')
   const factions = Object.values(campaign.factions)
@@ -553,6 +578,13 @@ export function buildArchivistTurnMessage(
   const openPromises = Object.values(campaign.promises)
     .filter((p) => p.status === 'active')
     .map((p) => `- ${p.id} · ${p.obligation} (anchors: ${p.anchoredTo.join(', ')})`)
+    .join('\n')
+  const activeObligations = Object.values(campaign.obligations ?? {})
+    .filter((o) => o.status === 'active')
+    .map((o) => {
+      const amount = o.balance !== undefined ? `${o.balance} ${o.unit ?? 'units'}` : o.terms
+      return `- ${o.id} · owed ${amount} · claimant ${o.claimant.kind}:${o.claimant.id} · debtor ${o.debtor.kind}:${o.debtor.id} · clears: ${o.clearanceCondition}`
+    })
     .join('\n')
 
   const recentClues = Object.values(campaign.clues)
@@ -670,6 +702,9 @@ ${openDecisions || '_(none)_'}
 
 #### Active promises
 ${openPromises || '_(none)_'}
+
+#### Active obligations
+${activeObligations || '_(none)_'}
 
 #### Recent clues (last 10; candidates for update-not-create if this turn sharpens)
 ${recentClues || '_(none)_'}

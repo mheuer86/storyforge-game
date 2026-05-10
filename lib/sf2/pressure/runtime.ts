@@ -2,8 +2,7 @@ import { ENGINE_AGGREGATION_DEFAULT } from './constants'
 import { getPressureLadderTargetThreadIds } from './deltas'
 import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
-import { isSf2bState } from '../../sf2b/mode'
-import { readSf2bObjectiveGate } from '../../sf2b/objective-gate'
+import { readSf2ObjectiveGate } from '../../sf2b/objective-gate'
 import { isThreadTerminal } from '../thread-lifecycle'
 import type {
   Sf2ArchivistFlag,
@@ -228,7 +227,7 @@ export function computeChapterCloseReadiness(
   const ladderFiredCount = ladderSteps.filter((s) => s.fired).length
   const halfLadderFired = ladderSteps.length > 0 && ladderFiredCount >= Math.ceil(ladderSteps.length / 2)
   const spineResolved = spineThread !== null && isThreadTerminal(spineThread)
-  const sf2bObjective = isSf2bState(state) ? readSf2bObjectiveGate(state) : null
+  const objectiveGate = readSf2ObjectiveGate(state)
   let promotedSpineThreadId: string | undefined
   let successorRequired = false
 
@@ -236,7 +235,7 @@ export function computeChapterCloseReadiness(
     spineThread &&
     spineResolved &&
     chapterTurnCount < MIN_CLOSE_TURN &&
-    !sf2bObjective?.shouldCloseOrReframe
+    !objectiveGate.shouldCloseOrReframe
   ) {
     const nextSpine = findBestUnresolvedLoadBearingThread(state, spineThread.id)
     if (nextSpine) {
@@ -254,7 +253,7 @@ export function computeChapterCloseReadiness(
   const stalledFallback =
     chapterTurnCount >= 25 && halfLadderFired && (effectiveSpineThread?.tension ?? 0) >= 8
   const closeReady =
-    sf2bObjective?.shouldCloseOrReframe ||
+    objectiveGate.shouldCloseOrReframe ||
     (
       chapterTurnCount >= MIN_CLOSE_TURN &&
       (pivotSignaled || spineResolvedAfterPromotion || stalledFallback)
@@ -271,10 +270,10 @@ export function computeChapterCloseReadiness(
     spineStatus: effectiveSpineThread?.status,
     spineTension: effectiveSpineThread?.tension,
     promotedSpineThreadId,
-    objectiveResolved: sf2bObjective?.foregroundAnswered,
-    objectiveOutcome: sf2bObjective?.foregroundOutcome,
-    reframeCandidateThreadId: sf2bObjective?.reframeCandidate?.threadId,
-    closeOrReframeDirective: sf2bObjective?.directive,
+    objectiveResolved: objectiveGate.foregroundAnswered,
+    objectiveOutcome: objectiveGate.foregroundOutcome,
+    reframeCandidateThreadId: objectiveGate.reframeCandidate?.threadId,
+    closeOrReframeDirective: objectiveGate.directive,
   }
 }
 

@@ -1,0 +1,119 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure activation forty thousand clearance",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Repeated lien clearance and departure blockers must have an owning access procedure instead of remaining free-floating prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_berth_lien_release": {
+            "id": "procedure_berth_lien_release",
+            "kind": "access",
+            "status": "active",
+            "label": "Berth Lien Release",
+            "phase": "engagement",
+            "objective": "Clear the lien hold so the ship can depart.",
+            "facts": [
+              {
+                "id": "fact_lien_hold",
+                "text": "The berth clamp remains locked until lien clearance posts.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 3
+              }
+            ],
+            "constraints": [
+              {
+                "id": "constraint_lien_wire",
+                "label": "Lien clearance wire must post before departure release",
+                "kind": "access",
+                "status": "active",
+                "current": 1,
+                "max": 2,
+                "clearsWhen": "collector confirms the wire and releases the berth clamp",
+                "linkedRefs": [
+                  { "kind": "scrutiny_layer", "id": "scrutiny_port_authority" }
+                ]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_queue_number",
+                "label": "Queue number can force a counter review",
+                "kind": "credential",
+                "status": "available",
+                "consumesConstraintId": "constraint_lien_wire",
+                "linkedRefs": [
+                  { "kind": "credential_mask", "id": "credential_queue_number" }
+                ]
+              }
+            ],
+            "complications": [],
+            "contributions": [],
+            "linkedRefs": [
+              { "kind": "location", "id": "location_port_berth" }
+            ],
+            "createdAtTurn": 2,
+            "updatedAtTurn": 3
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_berth_lien_release"]
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "playerInput": "Ask why the clearance still has not posted.",
+            "narratorProse": "The collector taps the lien clearance queue and says the berth clamp cannot release."
+          },
+          {
+            "index": 2,
+            "playerInput": "Push for departure anyway.",
+            "narratorProse": "Departure remains blocked until the authorization wire clears the clamp."
+          }
+        ]
+      }
+    },
+    "playerInput": "Use the queue number to force the lien review.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureAccessExploration": {
+      "packets": [
+        {
+          "procedureId": "procedure_berth_lien_release",
+          "kind": "access",
+          "posture": "masked",
+          "credentialMaskIds": ["credential_queue_number"],
+          "scrutinyLayerIds": ["scrutiny_port_authority"],
+          "facts": ["The berth clamp remains locked until lien clearance posts."]
+        }
+      ]
+    },
+    "procedureActivationDiagnostics": {
+      "omissionEquals": null
+    },
+    "perTurnDeltaIncludes": [
+      "### Specialized procedure packets",
+      "- Access · Berth Lien Release",
+      "credentials: Queue number can force a counter review (clean)",
+      "constraints: Lien clearance wire must post before departure release (active 1/2)"
+    ]
+  }
+}

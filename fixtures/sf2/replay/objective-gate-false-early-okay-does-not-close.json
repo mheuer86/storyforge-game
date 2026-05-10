@@ -1,0 +1,44 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "false early okay does not close foreground objective",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A first-turn acknowledgement should not close or reframe when the foreground objective has not produced a decision, consequence, or successor pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": []
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Okay.",
+    "narrator": {
+      "prose": "The offer sits on the table; no terms have been accepted, refused, or changed yet.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "objectiveResolved": false,
+      "objectiveOutcome": "active"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "isInitial": false,
+      "playerInput": "What are the actual terms?",
+      "userMessageContainsNone": [
+        "move toward chapter close"
+      ]
+    }
+  }
+}

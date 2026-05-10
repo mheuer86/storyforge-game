@@ -20,6 +20,15 @@ import { SF2B_NARRATOR_ROLE } from '../../sf2b/narrator-role'
 import { buildSf2bRollConsequenceInstruction } from '../../sf2b/roll-consequence'
 import { detectRepeatedBeatAdvisory } from '../../sf2b/repeated-beat'
 import { extractSf2bSkillTags } from '../../sf2b/skill-tags'
+import type { Sf2RequiredRollGate } from './roll-gates'
+import {
+  parseSf2NarratorIntentQueue,
+  remainingIntentTexts,
+  renderSf2IntentQueueBlock,
+  renderSf2RollResumeIntentQueueBlock,
+  type Sf2NarratorIntentQueue,
+  type Sf2NarratorQueuedIntentResume,
+} from './intent-queue'
 
 export interface Sf2NarratorRollResolution {
   toolUseId: string
@@ -33,6 +42,9 @@ export interface Sf2NarratorRollResolution {
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
   modifierReason?: string
   priorMessages: unknown[]
+  originalInput?: string
+  currentIntent?: string
+  remainingIntents?: string[]
 }
 
 export interface Sf2NarratorWorkingSetEventPayload {
@@ -72,6 +84,8 @@ export interface Sf2NarratorTurnContext {
   }
   sentinelContext: ScanDisplayOutputOptions
   failedRollSkill?: string
+  requiredRollGate: Sf2RequiredRollGate | null
+  intentQueue: Sf2NarratorIntentQueue
   replayMetadata: {
     turnIndex: number
     messageCount: number
@@ -89,6 +103,7 @@ export function buildNarratorTurnContext(input: {
   rollResolution?: Sf2NarratorRollResolution
 }): Sf2NarratorTurnContext {
   const { state, playerInput, isInitial, turnIndex, rollResolution } = input
+  const intentQueue = parseSf2NarratorIntentQueue(state, playerInput, rollResolution)
   const system = buildNarratorSystemBlocks(state)
   const cachedTools = buildCachedNarratorTools()
   const sentinelContext = buildNarratorSentinelContext(state)
@@ -96,9 +111,10 @@ export function buildNarratorTurnContext(input: {
     rollResolution && (rollResolution.result === 'failure' || rollResolution.result === 'fumble')
       ? rollResolution.skill
       : undefined
+  const requiredRollGate = isInitial ? null : intentQueue.current.requiredRollGate
 
   if (rollResolution) {
-    const messages = buildRollResumeMessages(state, playerInput, rollResolution, isSf2bState(state))
+    const messages = buildRollResumeMessages(state, intentQueue, rollResolution, isSf2bState(state))
     return {
       mode: 'roll_resume',
       system,
@@ -111,16 +127,20 @@ export function buildNarratorTurnContext(input: {
       },
       sentinelContext,
       failedRollSkill,
+      requiredRollGate,
+      intentQueue,
       replayMetadata: buildReplayMetadata('roll_resume', turnIndex, messages, null, null),
     }
   }
 
+  const currentPlayerInput = intentQueue.current.text || playerInput
   if (isSf2bState(state)) {
-    const built = buildMessagesForSf2bNarrator(state, playerInput, isInitial, turnIndex)
+    const built = buildMessagesForSf2bNarrator(state, currentPlayerInput, isInitial, turnIndex)
+    const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
     return {
       mode: 'normal',
       system,
-      messages: built.messages,
+      messages,
       cachedTools,
       diagnostics: {
         workingSet: null,
@@ -129,14 +149,16 @@ export function buildNarratorTurnContext(input: {
       },
       sentinelContext,
       failedRollSkill,
-      replayMetadata: buildReplayMetadata('normal', turnIndex, built.messages, null, null),
+      requiredRollGate,
+      intentQueue,
+      replayMetadata: buildReplayMetadata('normal', turnIndex, messages, null, null),
     }
   }
 
-  const built = buildMessagesForNarrator(state, playerInput, isInitial, turnIndex)
+  const built = buildMessagesForNarrator(state, currentPlayerInput, isInitial, turnIndex)
   const pacing = computePacingAdvisory(state)
   const beatMode = deriveSf2BeatMode(state, playerInput)
-  const messages = built.messages
+  const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
 
   return {
     mode: 'normal',
@@ -150,7 +172,17 @@ export function buildNarratorTurnContext(input: {
     },
     sentinelContext,
     failedRollSkill,
+    requiredRollGate,
+    intentQueue,
     replayMetadata: buildReplayMetadata('normal', turnIndex, messages, built.workingSet, built.bundleRebuilt),
+  }
+}
+
+export function buildSf2RollPromptIntentResume(queue: Sf2NarratorIntentQueue): Sf2NarratorQueuedIntentResume {
+  return {
+    originalInput: queue.originalInput,
+    currentIntent: queue.current.text,
+    remainingIntents: remainingIntentTexts(queue),
   }
 }
 
@@ -213,19 +245,24 @@ function buildCachedNarratorTools(): Anthropic.Tool[] {
 
 function buildRollResumeMessages(
   state: Sf2State,
-  playerInput: string,
+  intentQueue: Sf2NarratorIntentQueue,
   rollResolution: Sf2NarratorRollResolution,
   sf2bMode = false
 ): Anthropic.MessageParam[] {
-  const pressureInstruction = buildRollPressureManifestationInstruction(state, playerInput, rollResolution)
+  const pressureInstruction = buildRollPressureManifestationInstruction(
+    state,
+    rollResolution.currentIntent ?? intentQueue.originalInput,
+    rollResolution
+  )
+  const intentQueueInstruction = renderSf2RollResumeIntentQueueBlock(intentQueue)
   const content = sf2bMode
     ? `${rollResultMessage(rollResolution)}\n\n${buildSf2bRollConsequenceInstruction({
         skill: rollResolution.skill,
         dc: rollResolution.dc,
         effectiveDc: rollResolution.effectiveDc,
         outcome: rollResolution.result,
-      })}${pressureInstruction}`
-    : `${rollResultMessage(rollResolution)}${pressureInstruction}`
+      })}${pressureInstruction}${intentQueueInstruction}`
+    : `${rollResultMessage(rollResolution)}${pressureInstruction}${intentQueueInstruction}`
 
   return [
     ...(rollResolution.priorMessages as Anthropic.MessageParam[]),
@@ -240,6 +277,27 @@ function buildRollResumeMessages(
       ],
     },
   ]
+}
+
+function appendIntentQueueBlock(messages: Anthropic.MessageParam[], block: string): Anthropic.MessageParam[] {
+  if (!block) return messages
+  const next = [...messages]
+  const last = next[next.length - 1]
+  if (!last || last.role !== 'user') return messages
+  if (typeof last.content === 'string') {
+    next[next.length - 1] = { ...last, content: `${last.content}${block}` }
+    return next
+  }
+  if (Array.isArray(last.content)) {
+    next[next.length - 1] = {
+      ...last,
+      content: last.content.map((part, index) => {
+        if (index !== last.content.length - 1 || part.type !== 'text') return part
+        return { ...part, text: `${part.text}${block}` }
+      }),
+    }
+  }
+  return next
 }
 
 function buildRollPressureManifestationInstruction(

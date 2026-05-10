@@ -1,6 +1,6 @@
-import type { Sf2Location, Sf2State } from './types'
+import type { Sf2AreaNode, Sf2Location, Sf2State } from './types'
 
-type LocationLike = Partial<Pick<Sf2Location, 'id' | 'name' | 'description' | 'atmosphericConditions' | 'locked' | 'chapterCreated'>>
+type LocationLike = Partial<Pick<Sf2Location, 'id' | 'name' | 'description' | 'atmosphericConditions' | 'locked' | 'chapterCreated' | 'aliases' | 'areaNodes'>>
 
 const NUMBER_WORDS: Record<string, string> = {
   zero: '0',
@@ -107,6 +107,9 @@ export function findMatchingLocation(
   state: Sf2State,
   proposed: LocationLike
 ): Sf2Location | null {
+  const flattened = parseFlattenedLocationAlias(state, proposed)
+  if (flattened) return flattened.location
+
   const proposedKey = locationSemanticKey(proposed)
   if (!proposedKey) return null
 
@@ -124,6 +127,43 @@ export function findMatchingLocation(
   }
 
   return null
+}
+
+export function parseFlattenedLocationAlias(
+  state: Sf2State,
+  proposed: LocationLike
+): { location: Sf2Location; areaNode: Sf2AreaNode; alias: string } | null {
+  const alias = proposed.name?.trim()
+  if (!alias || !alias.includes(',')) return null
+  const [rawChild, ...rawParentParts] = alias.split(',')
+  const childName = rawChild.trim()
+  const parentName = rawParentParts.join(',').trim()
+  if (!childName || !parentName) return null
+
+  const candidates = [
+    state.world.currentLocation,
+    state.world.sceneSnapshot.location,
+    ...Object.values(state.campaign.locations),
+  ].filter((location): location is Sf2Location => Boolean(location?.id))
+
+  const parentKey = canonicalLocationNameKey(parentName)
+  const location = candidates.find((candidate) =>
+    canonicalLocationNameKey(candidate.name || candidate.id) === parentKey ||
+    (candidate.aliases ?? []).some((candidateAlias) => canonicalLocationNameKey(candidateAlias) === parentKey)
+  )
+  if (!location) return null
+
+  return {
+    location,
+    areaNode: ensureAreaNode(location, childName, {
+      alias,
+      proposedId: proposed.id,
+      description: proposed.description,
+      atmosphericConditions: proposed.atmosphericConditions,
+      locked: proposed.locked,
+    }),
+    alias,
+  }
 }
 
 export function locationsSemanticallyEquivalent(
@@ -293,11 +333,59 @@ export function mergeLocationIntoExisting(
       proposed.atmosphericConditions
     )
   }
+  if (proposed.aliases?.length) {
+    merged.aliases = mergeStringLists(merged.aliases ?? [], proposed.aliases)
+  }
+  if (proposed.areaNodes?.length) {
+    merged.areaNodes = mergeAreaNodes(merged.areaNodes ?? [], proposed.areaNodes)
+  }
   if (typeof proposed.locked === 'boolean') merged.locked = proposed.locked
   if (merged.chapterCreated === undefined && proposed.chapterCreated !== undefined) {
     merged.chapterCreated = proposed.chapterCreated
   }
   return merged
+}
+
+export function ensureAreaNode(
+  location: Sf2Location,
+  childName: string,
+  options: {
+    alias?: string
+    proposedId?: string
+    description?: string
+    atmosphericConditions?: string[]
+    locked?: boolean
+  } = {}
+): Sf2AreaNode {
+  const nodes = location.areaNodes ?? []
+  const childKey = canonicalLocationNameKey(childName)
+  const existing = nodes.find((node) =>
+    canonicalLocationNameKey(node.name || node.id) === childKey ||
+    (node.aliases ?? []).some((alias) => canonicalLocationNameKey(alias) === childKey)
+  )
+  const aliasList = [options.alias, childName].filter((value): value is string => Boolean(value?.trim()))
+  if (existing) {
+    existing.aliases = mergeStringLists(existing.aliases ?? [], aliasList)
+    if (!existing.description && options.description) existing.description = options.description
+    if (options.atmosphericConditions?.length) {
+      existing.atmosphericConditions = mergeStringLists(existing.atmosphericConditions ?? [], options.atmosphericConditions)
+    }
+    if (typeof options.locked === 'boolean') existing.locked = options.locked
+    return existing
+  }
+  const id = options.proposedId && !options.proposedId.startsWith(location.id)
+    ? options.proposedId
+    : `${location.id}_${slugifyLocationId(childName)}`
+  const node: Sf2AreaNode = {
+    id,
+    name: childName,
+    aliases: mergeStringLists([], aliasList),
+  }
+  if (options.description) node.description = options.description
+  if (options.atmosphericConditions?.length) node.atmosphericConditions = options.atmosphericConditions
+  if (typeof options.locked === 'boolean') node.locked = options.locked
+  location.areaNodes = [...nodes, node]
+  return node
 }
 
 export function replaceLocationReferences(
@@ -306,6 +394,9 @@ export function replaceLocationReferences(
   toLocation: Sf2Location
 ): void {
   if (state.world.currentLocation.id === fromId) state.world.currentLocation = toLocation
+  if (state.world.currentPosition?.locationId === fromId) {
+    state.world.currentPosition.locationId = toLocation.id
+  }
   if (state.world.sceneSnapshot.location.id === fromId) {
     state.world.sceneSnapshot.location = toLocation
   }
@@ -314,6 +405,31 @@ export function replaceLocationReferences(
   if (state.world.sceneSnapshot.sceneId === fromId) {
     state.world.sceneSnapshot.sceneId = toLocation.id
   }
+}
+
+function mergeAreaNodes(existing: Sf2AreaNode[], proposed: Sf2AreaNode[]): Sf2AreaNode[] {
+  const out = existing.map((node) => ({ ...node }))
+  for (const node of proposed) {
+    const key = canonicalLocationNameKey(node.name || node.id)
+    const match = out.find((candidate) => canonicalLocationNameKey(candidate.name || candidate.id) === key || candidate.id === node.id)
+    if (!match) {
+      out.push({ ...node })
+      continue
+    }
+    if (!match.description && node.description) match.description = node.description
+    match.aliases = mergeStringLists(match.aliases ?? [], node.aliases ?? [])
+    match.atmosphericConditions = mergeStringLists(match.atmosphericConditions ?? [], node.atmosphericConditions ?? [])
+    if (typeof node.locked === 'boolean') match.locked = node.locked
+    match.exitIds = mergeStringLists(match.exitIds ?? [], node.exitIds ?? [])
+    match.routeConstraints = mergeStringLists(match.routeConstraints ?? [], node.routeConstraints ?? [])
+    match.hazards = mergeStringLists(match.hazards ?? [], node.hazards ?? [])
+    if (!match.ambientAlertness && node.ambientAlertness) match.ambientAlertness = node.ambientAlertness
+  }
+  return out
+}
+
+function slugifyLocationId(value: string): string {
+  return normalizeLocationText(value).replace(/\s+/g, '_') || 'area'
 }
 
 function isGeneratedLocationName(location: Pick<Sf2Location, 'id' | 'name'>): boolean {

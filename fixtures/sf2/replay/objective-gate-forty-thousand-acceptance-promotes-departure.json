@@ -1,0 +1,117 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Forty Thousand acceptance promotes departure pressure",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Accepting the exact-price job early should answer the negotiation objective and promote/reframe into departure pressure instead of extending lien clearance until the old turn floor."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_spine", "thread_departure"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_spine", "thread_departure"],
+          "pacingContract": {
+            "targetTurns": { "min": 12, "max": 18 },
+            "chapterQuestion": "Will the crew accept, reshape, or refuse the exact-price offer before the debt closes?",
+            "acceptableResolutions": [
+              "The PC accepts the job with enough terms to leave.",
+              "The station-exit pressure changes from negotiation to action."
+            ],
+            "earlyPressure": "Make the exact number and Sable's visible approach impossible to treat as coincidence.",
+            "middlePressure": "Force one concrete term, route risk, or debt mechanism into the open.",
+            "latePressure": "Convert delay into a station hold, broker deadline, or passenger safety risk.",
+            "closeWhenAny": [
+              "The PC has chosen a concrete path for the offer and debt surface.",
+              "The station-exit pressure changes from negotiation to action."
+            ],
+            "avoidExtendingFor": [
+              "Extra haggling after the PC has taken a clear position.",
+              "Re-explaining the debt instead of changing who has leverage."
+            ]
+          }
+        }
+      },
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Decide whether to accept Sable's exact-price job",
+            "resolutionCriteria": "The PC accepts, refuses, or reshapes the offer into a concrete path.",
+            "failureMode": "The debt closes while the crew stays trapped in negotiation.",
+            "retrievalCue": "exact-price offer, Sable job, debt surface"
+          },
+          "thread_departure": {
+            "id": "thread_departure",
+            "title": "Leave station with the sealed freight",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_route_authority" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "The crew gets the freight, passenger, and ship clear of station authority.",
+            "failureMode": "Departure becomes a hold, search, or seizure.",
+            "retrievalCue": "departure clearance, sealed freight, station hold",
+            "loadBearing": true,
+            "chapterDriverKind": "successor",
+            "successorToThreadId": "thread_spine",
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "Hear Sable's offer.", "narratorProse": "Sable names the exact debt price.", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "Ask what the freight is.", "narratorProse": "The crate is sealed and the clock is short.", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "We take the job. Get the crate aboard and start departure clearance.",
+    "narrator": {
+      "prose": "Sable accepts the commitment. The old lien question collapses into a harder one: whether you can get the sealed freight and Maren Voss off-station before authority notices the route.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_costly",
+            "reason": "The PC accepted the exact-price job and converted the debt negotiation into departure action.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["transitions[0]"],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": false,
+      "spineResolved": false,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "promotedSpineThreadId": "thread_departure"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "isInitial": false,
+      "playerInput": "Push for launch clearance.",
+      "userMessageContainsAll": [
+        "resolved very early",
+        "Leave station with the sealed freight"
+      ],
+      "userMessageContainsNone": [
+        "turn 18"
+      ]
+    }
+  }
+}

@@ -901,6 +901,7 @@ function PlaybookSkillPanel({ state }: { state: Sf2State }) {
 function LocationsPanel({ state }: { state: Sf2State }) {
   const currentChapter = state.meta.currentChapter
   const currentLocationId = state.world.currentLocation.id || state.world.sceneSnapshot.location.id
+  const currentAreaNodeId = state.world.currentPosition?.areaNodeId
   const locations = useMemo(() => {
     const locationMap = new Map<string, Sf2State['world']['currentLocation']>()
     const addLocation = (location: Sf2State['world']['currentLocation']) => {
@@ -941,6 +942,7 @@ function LocationsPanel({ state }: { state: Sf2State }) {
           {locations.map((location) => {
             const here = location.id === currentLocationId
             const tag = location.atmosphericConditions?.[0]
+            const currentNode = location.areaNodes?.find((node) => node.id === currentAreaNodeId)
             return (
               <div key={location.id} className={cn(
                 'relative min-h-[72px] overflow-hidden rounded-lg border px-3 py-2.5',
@@ -961,6 +963,11 @@ function LocationsPanel({ state }: { state: Sf2State }) {
                     {tag}
                   </div>
                 )}
+                {location.areaNodes?.length ? (
+                  <div className={cn('mt-1.5 line-clamp-2', sidebarBodyTextClassName)}>
+                    {location.areaNodes.map((node) => node.id === currentNode?.id ? `${node.name} (current)` : node.name).join(' / ')}
+                  </div>
+                ) : null}
               </div>
             )
           })}

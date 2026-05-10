@@ -62,7 +62,7 @@
             "changes": {
               "progress": {
                 "summary": "The final action is processed and confirmed.",
-                "gate_id": "gate_final_action_processed"
+                "satisfied_gate_ids": ["gate_final_action_processed"]
               }
             },
             "confidence": "high",
@@ -97,7 +97,7 @@
         "progressEventsInclude": [
           {
             "summaryIncludes": "final action is processed",
-            "gateIdsInclude": ["gate_final_action_processed"]
+            "satisfiedGateIdsInclude": ["gate_final_action_processed"]
           }
         ]
       }

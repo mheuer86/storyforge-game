@@ -69,6 +69,14 @@ export function buildThreadPackets(
       anchoredPromises: Object.values(campaign.promises)
         .filter((p) => p.status === 'active' && p.anchoredTo.includes(t.id))
         .map((p) => ({ id: p.id, obligation: p.obligation })),
+      anchoredObligations: Object.values(campaign.obligations ?? {})
+        .filter((o) => o.status === 'active' && o.anchoredTo.includes(t.id))
+        .map((o) => ({
+          id: o.id,
+          summary: o.balance !== undefined
+            ? `${o.balance} ${o.unit ?? 'units'} owed; clears when ${o.clearanceCondition}`
+            : `${o.terms ?? 'obligation'}; clears when ${o.clearanceCondition}`,
+        })),
       anchoredClues: surfacedCluesForThread
         .map((c) => ({
           id: c.id,

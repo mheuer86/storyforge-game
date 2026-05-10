@@ -1,0 +1,99 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "intent queue two roll gated intents",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Two roll-gated intents can pause once, resume with the remaining queue, and enforce the second roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_sable": {
+            "id": "npc_sable",
+            "name": "Sable",
+            "affiliation": "dock guild",
+            "role": "broker",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Controls the berth clearance queue"],
+              "voice": { "note": "smooth and guarded", "register": "transactional" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Wary broker controlling clearance leverage.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_sable"],
+          "currentInterlocutorIds": ["npc_sable"]
+        }
+      }
+    },
+    "turnIndex": 7,
+    "playerInput": "Pressure Sable to release the berth clearance, then hack the sealed terminal for the departure logs.",
+    "narrator": { "prose": "", "annotation": null }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "social_pressure",
+      "skillsInclude": ["Intimidation", "Persuasion"]
+    },
+    "narratorMessages": {
+      "rollResolution": {
+        "toolUseId": "toolu_intent_queue_first_roll",
+        "skill": "Persuasion",
+        "dc": 14,
+        "d20": 12,
+        "modifier": 3,
+        "total": 15,
+        "result": "success",
+        "originalInput": "Pressure Sable to release the berth clearance, then hack the sealed terminal for the departure logs.",
+        "currentIntent": "Pressure Sable to release the berth clearance",
+        "remainingIntents": ["hack the sealed terminal for the departure logs"],
+        "priorMessages": [
+          {
+            "role": "user",
+            "content": "Pre-roll queue packet."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_intent_queue_first_roll",
+                "name": "request_roll",
+                "input": {
+                  "skill": "Persuasion",
+                  "dc": 14,
+                  "why": "Pressure Sable before touching the terminal.",
+                  "consequence_on_fail": "Sable stalls the clearance."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "messageCountEquals": 3,
+      "assistantMessageCountEquals": 1,
+      "workingSetEventAbsent": true,
+      "sceneBundleEventAbsent": true,
+      "pacingEventAbsent": true,
+      "userMessageContainsAll": [
+        "Roll result — Persuasion vs DC 14: rolled d20=12 + 3 = 15.",
+        "### Private ordered intent continuation (mandatory, never mention)",
+        "Current remaining intent: hack the sealed terminal for the departure logs",
+        "Current requiredRollGate: technical_system via Investigation/Arcana",
+        "call request_roll before resolving that intent's outcome"
+      ]
+    }
+  }
+}

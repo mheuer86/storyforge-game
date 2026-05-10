@@ -1,0 +1,27 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "intent queue non roll then roll",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A harmless first intent stays roll-free while the queued technical intent retains its required roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 6,
+    "playerInput": "Nod to the clerk, then hack the sealed terminal for the departure logs.",
+    "narrator": { "prose": "", "annotation": null }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": false
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private ordered intent queue (mandatory, never mention)",
+        "Current intent: Nod to the clerk",
+        "Remaining intents after current: hack the sealed terminal for the departure logs",
+        "2. [REMAINING] hack the sealed terminal for the departure logs — actionType=investigate; targetEntityIds=(unresolved); requiredRollGate=technical_system via Investigation/Arcana"
+      ]
+    }
+  }
+}

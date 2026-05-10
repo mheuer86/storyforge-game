@@ -182,6 +182,7 @@ function createMinimalState(): Sf2State {
       engines: {},
       decisions: {},
       promises: {},
+      obligations: {},
       clues: {},
       beats: {},
       temporalAnchors: {},

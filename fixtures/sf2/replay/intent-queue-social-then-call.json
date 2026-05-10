@@ -1,0 +1,77 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "intent queue social then call",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Multi-intent input resolves pressure against Sable before preserving the later call to Maret."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_sable": {
+            "id": "npc_sable",
+            "name": "Sable",
+            "affiliation": "dock guild",
+            "role": "broker",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Controls the berth clearance queue"],
+              "voice": { "note": "smooth and guarded", "register": "transactional" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Wary broker controlling clearance leverage.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_maret": {
+            "id": "npc_maret",
+            "name": "Maret",
+            "affiliation": "registry office",
+            "role": "compliance officer",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Can confirm whether the clearance code propagated"],
+              "voice": { "note": "formal", "register": "precise" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Off-stage compliance officer reachable by comm.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_sable"],
+          "currentInterlocutorIds": ["npc_sable"]
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "Pressure Sable to release the berth clearance, then call Maret to verify the code.",
+    "narrator": { "prose": "", "annotation": null }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "social_pressure",
+      "skillsInclude": ["Intimidation", "Persuasion"]
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private ordered intent queue (mandatory, never mention)",
+        "Current intent: Pressure Sable to release the berth clearance",
+        "Remaining intents after current: call Maret to verify the code",
+        "actionType=pressure_npc",
+        "targetEntityIds=npc_sable"
+      ]
+    }
+  }
+}

@@ -77,7 +77,9 @@ export function applyThreadProgressChanges(
     changes.progress
   for (const event of normalizeProgressInput(progressRaw, turnIndex, sourceQuote)) {
     thread.progressEvents = [...(thread.progressEvents ?? []), event]
-    satisfyGateIds(thread, event.gateIds ?? [], turnIndex, event.evidenceQuote)
+    satisfyGateIds(thread, event.satisfiedGateIds ?? [], turnIndex, event.evidenceQuote)
+    setGateStatuses(thread, event.failedGateIds ?? [], 'failed', turnIndex, event.evidenceQuote)
+    setGateStatuses(thread, event.waivedGateIds ?? [], 'waived', turnIndex, event.evidenceQuote)
   }
 
   satisfyGateIds(
@@ -150,15 +152,22 @@ function normalizeProgressInput(
     const gateIds = [
       ...stringArray(record?.gate_id ?? record?.gateId),
       ...stringArray(record?.gate_ids ?? record?.gateIds),
+    ]
+    const satisfiedGateIds = uniqueStrings([
       ...stringArray(record?.satisfies_gate_ids ?? record?.satisfiesGateIds),
       ...stringArray(record?.satisfied_gate_ids ?? record?.satisfiedGateIds),
-    ]
+    ])
+    const failedGateIds = uniqueStrings(stringArray(record?.failed_gate_ids ?? record?.failedGateIds))
+    const waivedGateIds = uniqueStrings(stringArray(record?.waived_gate_ids ?? record?.waivedGateIds))
     events.push({
       id: stringValue(record, 'id') || `progress_${turnIndex}_${index + 1}`,
       turn: numberValue(record, turnIndex, 'turn', 'turn_index', 'turnIndex') ?? turnIndex,
       summary,
       evidenceQuote: stringValue(record, 'evidence_quote', 'evidenceQuote') || sourceQuote,
       gateIds: uniqueStrings(gateIds),
+      satisfiedGateIds,
+      failedGateIds,
+      waivedGateIds,
     })
   }
   return events
@@ -178,6 +187,12 @@ function normalizeProgressEvent(raw: unknown, index: number): Sf2ThreadProgressE
       ...stringArray(record.gate_id ?? record.gateId),
       ...stringArray(record.gate_ids ?? record.gateIds),
     ]),
+    satisfiedGateIds: uniqueStrings([
+      ...stringArray(record.satisfies_gate_ids ?? record.satisfiesGateIds),
+      ...stringArray(record.satisfied_gate_ids ?? record.satisfiedGateIds),
+    ]),
+    failedGateIds: uniqueStrings(stringArray(record.failed_gate_ids ?? record.failedGateIds)),
+    waivedGateIds: uniqueStrings(stringArray(record.waived_gate_ids ?? record.waivedGateIds)),
   }
 }
 

@@ -207,6 +207,14 @@ export function checkNpcIdentity(npc: Sf2Npc, prior?: Sf2Npc): InvariantResult {
       reason: 'keyFacts must be an array of at most 3 immutable facts',
     }
   }
+  const profileFacts = npc.identity.profileFacts ?? []
+  if (!Array.isArray(profileFacts) || profileFacts.length > 3) {
+    return {
+      ok: false,
+      field: 'identity.profileFacts',
+      reason: 'profileFacts must be an array of at most 3 immutable facts',
+    }
+  }
   if (prior) {
     if (prior.name !== npc.name) {
       return {
@@ -217,6 +225,9 @@ export function checkNpcIdentity(npc: Sf2Npc, prior?: Sf2Npc): InvariantResult {
     }
     if (!arraysEqual(prior.identity.keyFacts, npc.identity.keyFacts)) {
       return { ok: false, field: 'identity.keyFacts', reason: 'keyFacts are immutable after creation' }
+    }
+    if ((prior.identity.profileFacts ?? []).length > 0 && !arraysEqual(prior.identity.profileFacts ?? [], npc.identity.profileFacts ?? [])) {
+      return { ok: false, field: 'identity.profileFacts', reason: 'profileFacts are immutable after creation' }
     }
     if (prior.identity.pronoun && npc.identity.pronoun !== prior.identity.pronoun) {
       return {

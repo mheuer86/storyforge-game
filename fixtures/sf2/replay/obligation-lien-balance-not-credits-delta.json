@@ -1,0 +1,79 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "obligation lien balance is not player credits",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Forty Thousand lien pressure updates obligation balance 40000->60000 without clamping player-held credits."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "credits": 120
+      },
+      "campaign": {
+        "obligations": {
+          "obligation_lien": {
+            "id": "obligation_lien",
+            "title": "Registry lien",
+            "chapterCreated": 1,
+            "category": "obligation",
+            "retrievalCue": "Registry lien balance",
+            "status": "active",
+            "claimant": { "kind": "faction", "id": "faction_registry" },
+            "debtor": { "kind": "pc", "id": "pc" },
+            "balance": 40000,
+            "unit": "credits",
+            "terms": "The PC owes the Registry lien balance.",
+            "dueCondition": "Due before registry clearance is restored.",
+            "clearanceCondition": "Paid down or legally waived by the Registry.",
+            "anchoredTo": ["thread_spine"],
+            "turn": 1
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "I ask what the lien now says.",
+    "narrator": {
+      "prose": "The clerk turns the plate around. The Forty Thousand lien has doubled: sixty thousand credits now stand against your registry, but the 120 credits in your pocket have not moved.",
+      "annotation": null,
+      "mechanicalEffects": [
+        {
+          "kind": "credits_delta",
+          "value": -20000,
+          "reason": "The lien balance increases by 20000 credits."
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "obligation",
+            "entityId": "obligation_lien",
+            "changes": {
+              "balance_delta": 20000
+            },
+            "confidence": "high",
+            "sourceQuote": "sixty thousand credits now stand against your registry"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "playerCreditsEquals": 120,
+    "obligationsInclude": [
+      {
+        "obligationId": "obligation_lien",
+        "status": "active",
+        "balance": 60000,
+        "unit": "credits",
+        "claimantId": "faction_registry",
+        "debtorKind": "pc",
+        "clearanceConditionIncludes": "Paid down"
+      }
+    ]
+  }
+}

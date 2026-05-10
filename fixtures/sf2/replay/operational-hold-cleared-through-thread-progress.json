@@ -92,7 +92,7 @@
         "progressEventsInclude": [
           {
             "summaryIncludes": "port-fee hold cleared",
-            "gateIdsInclude": ["gate_release_processed"]
+            "satisfiedGateIdsInclude": ["gate_release_processed"]
           }
         ]
       }

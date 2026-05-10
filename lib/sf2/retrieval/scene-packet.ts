@@ -32,6 +32,10 @@ export function buildScenePacket(
     name: state.world.currentLocation.name,
     description: state.world.currentLocation.description,
     atmosphericConditions: state.world.currentLocation.atmosphericConditions ?? [],
+    currentAreaNode: state.world.currentLocation.areaNodes?.find((node) =>
+      node.id === state.world.currentPosition?.areaNodeId
+    ),
+    areaNodes: state.world.currentLocation.areaNodes ?? [],
   }
 
   const packet: Sf2NarratorScenePacket = {
@@ -87,6 +91,13 @@ export function renderSceneBundle(
 
   lines.push(`\n### Scene`)
   lines.push(`- Location: ${packet.scene.location.name} — ${packet.scene.location.description}`)
+  if (packet.scene.location.currentAreaNode) {
+    const node = packet.scene.location.currentAreaNode
+    lines.push(`- Current area/node: ${node.name}${node.description ? ` — ${node.description}` : ''}`)
+  }
+  if ((packet.scene.location.areaNodes?.length ?? 0) > 0) {
+    lines.push(`- Known area/nodes: ${packet.scene.location.areaNodes?.map((node) => node.name).join(', ')}`)
+  }
   if (packet.scene.location.atmosphericConditions.length > 0) {
     lines.push(`- Atmosphere: ${packet.scene.location.atmosphericConditions.join(', ')}`)
   }
@@ -137,6 +148,12 @@ export function renderSceneBundle(
           ? ` · **dormant ${c.turnsAbsent} turns — re-establish on re-encounter**`
           : ''
       lines.push(`- **${c.name}** (${c.npcId}) — ${c.affiliation}${dormancy}`)
+      const identity = [
+        c.pronoun ? `pronoun: ${c.pronoun}` : '',
+        c.age ? `age: ${c.age}` : '',
+        ...(c.profileFacts ?? []).map((fact) => `profile: ${fact}`),
+      ].filter(Boolean)
+      if (identity.length > 0) lines.push(`  identity: ${identity.join(' · ')}`)
       lines.push(`  voice: ${c.voice}`)
       lines.push(`  relation: ${c.relationToPlayer}`)
     }
@@ -173,6 +190,9 @@ export function renderSceneBundle(
       }
       if (t.anchoredPromises.length > 0) {
         lines.push(`  promises: ${t.anchoredPromises.map((p) => p.obligation).join(' | ')}`)
+      }
+      if (t.anchoredObligations.length > 0) {
+        lines.push(`  obligations: ${t.anchoredObligations.map((o) => o.summary).join(' | ')}`)
       }
       if (t.anchoredClues.length > 0) {
         lines.push(`  clues: ${t.anchoredClues.map((c) => c.content.slice(0, 100)).join(' | ')}`)
@@ -371,6 +391,8 @@ export function renderPerTurnDelta(
     }
   }
 
+  lines.push(...renderSpecializedProcedurePackets(packet))
+
   if (opts.advisoryText) {
     lines.push(`\n---\n${opts.advisoryText}`)
   }
@@ -534,6 +556,12 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
           ? ` · **dormant ${c.turnsAbsent} turns — re-establish on re-encounter**`
           : ''
       lines.push(`- **${c.name}** (${c.npcId}) — ${c.affiliation}, ${c.disposition}${dormancy}`)
+      const identity = [
+        c.pronoun ? `pronoun: ${c.pronoun}` : '',
+        c.age ? `age: ${c.age}` : '',
+        ...(c.profileFacts ?? []).map((fact) => `profile: ${fact}`),
+      ].filter(Boolean)
+      if (identity.length > 0) lines.push(`  identity: ${identity.join(' · ')}`)
       lines.push(`  voice: ${c.voice}`)
       lines.push(`  read: ${c.currentRead}${pressure}`)
     }
@@ -560,6 +588,9 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
       }
       if (t.anchoredPromises.length > 0) {
         lines.push(`  promises: ${t.anchoredPromises.map((p) => p.obligation).join(' | ')}`)
+      }
+      if (t.anchoredObligations.length > 0) {
+        lines.push(`  obligations: ${t.anchoredObligations.map((o) => o.summary).join(' | ')}`)
       }
       if (t.anchoredClues.length > 0) {
         lines.push(`  clues: ${t.anchoredClues.map((c) => c.content.slice(0, 100)).join(' | ')}`)
@@ -652,6 +683,8 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     }
   }
 
+  lines.push(...renderSpecializedProcedurePackets(packet))
+
   if (packet.recentContext.lastThreeTurns.length > 0) {
     lines.push(`\n### Recent context (last ${packet.recentContext.lastThreeTurns.length} turns)`)
     for (const t of packet.recentContext.lastThreeTurns) {
@@ -681,6 +714,59 @@ function renderProcedureConstraint(
       ? ` ${constraint.current}/${constraint.max}`
       : ''
   return `${constraint.label} (${constraint.status}${amount})`
+}
+
+function renderSpecializedProcedurePackets(packet: Sf2NarratorScenePacket): string[] {
+  const lines: string[] = []
+  const accessExploration = packet.mechanics.accessExploration ?? []
+  const investigation = packet.mechanics.investigation
+
+  if (accessExploration.length > 0 || investigation) {
+    lines.push(`\n### Specialized procedure packets`)
+  }
+
+  for (const p of accessExploration) {
+    lines.push(`- ${p.kind === 'access' ? 'Access' : 'Exploration'} · ${p.label} (${p.procedureId}) · ${p.status}${p.phase ? ` · phase: ${p.phase}` : ''}`)
+    if (p.access) {
+      const clock = p.access.exposureClock
+        ? ` · exposure ${p.access.exposureClock.current}/${p.access.exposureClock.max}`
+        : ''
+      lines.push(`  posture: ${p.access.posture} · egress: ${p.access.egressPhase} · alertness: ${p.access.ambientAlertness}${clock}`)
+      if (p.access.credentialMasks.length > 0) {
+        lines.push(`  credentials: ${p.access.credentialMasks.map((mask) => `${mask.label} (${mask.status})`).join(' | ')}`)
+      }
+      if (p.access.scrutinyLayers.length > 0) {
+        lines.push(`  scrutiny: ${p.access.scrutinyLayers.map((layer) => `${layer.label} (${layer.status})`).join(' | ')}`)
+      }
+    }
+    if (p.exploration) {
+      if (p.exploration.currentNodeId) lines.push(`  current node: ${p.exploration.currentNodeId}`)
+      if (p.exploration.nodes.length > 0) {
+        lines.push(`  nodes: ${p.exploration.nodes.map((node) => `${node.label} (${node.status})`).join(' | ')}`)
+      }
+      if (p.exploration.routes.length > 0) {
+        lines.push(`  routes: ${p.exploration.routes.map((route) => `${route.label} (${route.status})`).join(' | ')}`)
+      }
+      if (p.exploration.hazards.length > 0) {
+        lines.push(`  hazards: ${p.exploration.hazards.map((hazard) => `${hazard.label} (${hazard.status})`).join(' | ')}`)
+      }
+    }
+    if (p.constraints.length > 0) lines.push(`  constraints: ${p.constraints.map(renderProcedureConstraint).join(' | ')}`)
+    if (p.affordances.length > 0) lines.push(`  affordances: ${p.affordances.map((a) => `${a.label} (${a.kind})`).join(' | ')}`)
+    if (p.complications.length > 0) lines.push(`  complications: ${p.complications.map((c) => `${c.label}: ${c.effectSummary}`).join(' | ')}`)
+    if (p.facts.length > 0) lines.push(`  facts: ${p.facts.map((fact) => fact.text).join(' | ')}`)
+  }
+
+  if (investigation) {
+    lines.push(`- Investigation synthesis · ${investigation.procedureId} · active: ${investigation.active}`)
+    if (investigation.openQuestions.length > 0) lines.push(`  questions: ${investigation.openQuestions.join(' | ')}`)
+    if (investigation.hypotheses.length > 0) lines.push(`  hypotheses: ${investigation.hypotheses.map((h) => h.claim).join(' | ')}`)
+    if (investigation.contradictions.length > 0) lines.push(`  contradictions: ${investigation.contradictions.map((c) => c.description).join(' | ')}`)
+    if (investigation.nextLeads.length > 0) lines.push(`  next leads: ${investigation.nextLeads.map((lead) => lead.text).join(' | ')}`)
+    if (investigation.knownFacts.length > 0) lines.push(`  known facts: ${investigation.knownFacts.map((fact) => fact.text).join(' | ')}`)
+  }
+
+  return lines
 }
 
 function renderContinuationDramaticTurn(turn: NonNullable<Sf2NarratorScenePacket['chapter']['continuationDramaticTurn']>): string {

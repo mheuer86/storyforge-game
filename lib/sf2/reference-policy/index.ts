@@ -41,6 +41,7 @@ export const CANONICAL_PREFIXES = new Set([
   'thread',
   'decision',
   'promise',
+  'obligation',
   'clue',
   'arc',
   'location',

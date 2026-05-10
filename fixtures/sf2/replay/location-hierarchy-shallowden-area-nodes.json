@@ -1,0 +1,69 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "location hierarchy shallowden area nodes",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Flattened current-position labels resolve to child area nodes under a canonical station container."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "locations": {
+          "loc_shallowden_station": {
+            "id": "loc_shallowden_station",
+            "name": "Shallowden Station",
+            "description": "A worn orbital station whose commerce deck is threaded through berths, cantinas, and customs choke-points.",
+            "chapterCreated": 1,
+            "areaNodes": [
+              { "id": "loc_shallowden_station_cantina", "name": "Cantina" },
+              { "id": "loc_shallowden_station_customs_gate", "name": "Customs Gate" }
+            ]
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_shallowden_station",
+          "name": "Shallowden Station",
+          "description": "A worn orbital station whose commerce deck is threaded through berths, cantinas, and customs choke-points.",
+          "chapterCreated": 1,
+          "areaNodes": [
+            { "id": "loc_shallowden_station_cantina", "name": "Cantina" },
+            { "id": "loc_shallowden_station_customs_gate", "name": "Customs Gate" }
+          ]
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Step down into berth fourteen.",
+    "narrator": {
+      "prose": "Berth 14 opens onto Shallowden Station's tired pressure spine.",
+      "annotation": null,
+      "mechanicalEffects": [
+        {
+          "kind": "set_location",
+          "location_id": "berth_14_shallowden",
+          "name": "Berth 14, Shallowden Station",
+          "description": "A pressure-scarred docking berth with yellow hazard striping.",
+          "atmospheric_conditions": ["hydraulic hiss", "tired amber lamps"]
+        }
+      ]
+    },
+    "archivist": { "patch": { "creates": [] } }
+  },
+  "expected": {
+    "currentLocationId": "loc_shallowden_station",
+    "currentAreaNodeId": "berth_14_shallowden",
+    "locationIdsInclude": ["loc_shallowden_station"],
+    "locationIdsAbsent": ["berth_14_shallowden"],
+    "locationAreaNodes": [
+      {
+        "locationId": "loc_shallowden_station",
+        "count": 3,
+        "idsInclude": ["berth_14_shallowden"],
+        "namesInclude": ["Berth 14", "Cantina", "Customs Gate"]
+      }
+    ]
+  }
+}

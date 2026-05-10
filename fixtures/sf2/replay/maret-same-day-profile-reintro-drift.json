@@ -1,0 +1,108 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Maret same-day profile reintroduction produces identity drift",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A same-day reintro cannot rewrite Maret's already-anchored age/profile baseline without a state-visible explanation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_maret_coll": {
+            "id": "npc_maret_coll",
+            "name": "Maret Coll",
+            "affiliation": "Synod Fuel Registry",
+            "role": "fuel desk registry contact",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Registry badge turned inward."],
+              "profileFacts": ["Synod profile suggested Maret Coll was younger than he appears."],
+              "pronoun": "he/him",
+              "age": "closer to fifty than forty",
+              "voice": {
+                "note": "",
+                "register": ""
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Maret Coll at the fuel desk",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_maret_coll"]
+        }
+      }
+    },
+    "turnIndex": 1,
+    "playerInput": "Circle back to Maret and compare him with the profile again.",
+    "narrator": {
+      "prose": "Maret Coll steps out from behind the fuel desk as if newly identified. He is older than the profile, not the younger man the first scan promised.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "payload": {
+              "name": "Maret Coll",
+              "affiliation": "Synod Fuel Registry",
+              "role": "fuel desk registry contact",
+              "pronoun": "he/him",
+              "age": "older than the profile",
+              "profile_facts": ["First scan promised Maret Coll was a younger man."],
+              "retrieval_cue": "Maret Coll reidentified at the fuel desk",
+              "key_facts": ["Registry badge turned inward."]
+            },
+            "confidence": "high",
+            "source_quote": "older than the profile"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "scenePacketCastIncludes": ["npc_maret_coll"],
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_maret_coll",
+        "profileFactsInclude": ["profile suggested Maret Coll was younger"]
+      }
+    ],
+    "npcIdsIncludes": ["npc_maret_coll"],
+    "npcIdentityIncludes": [
+      {
+        "npcId": "npc_maret_coll",
+        "pronoun": "he/him",
+        "age": "closer to fifty than forty",
+        "profileFactsInclude": ["profile suggested Maret Coll was younger"]
+      }
+    ],
+    "archivistAcceptedRefs": ["creates[0]"],
+    "driftIncludes": [
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "age anchor conflict"
+      },
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "profileFacts anchor conflict"
+      }
+    ]
+  }
+}

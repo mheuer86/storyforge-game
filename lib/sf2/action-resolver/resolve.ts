@@ -28,6 +28,7 @@ const PRONOUN_SURFACES: Record<string, Sf2Npc['identity']['pronoun']> = {
 
 const PRESSURE_TERMS = [
   'press',
+  'pressure',
   'push',
   'threaten',
   'intimidate',
@@ -85,7 +86,7 @@ function inferActionType(input: string): Sf2ResolvedActionType {
   }
   if (QUESTION_TERMS.some((term) => new RegExp(`\\b${term}\\b`).test(lower))) return 'question_npc'
   if (ADDRESS_TERMS.some((term) => new RegExp(`\\b${term}\\b`).test(lower))) return 'address_npc'
-  if (/\b(search|inspect|investigate|look|read|examine|study)\b/.test(lower)) return 'investigate'
+  if (/\b(search|inspect|investigate|look|read|examine|study|hack|slice|decrypt|scan|access|query)\b/.test(lower)) return 'investigate'
   if (/\b(use|activate|draw|take|open)\b/.test(lower)) return 'use_item'
   if (/\b(wait|pause|hold)\b/.test(lower)) return 'wait'
   if (/\b(go|move|walk|run|follow|leave|enter|approach)\b/.test(lower)) return 'move'

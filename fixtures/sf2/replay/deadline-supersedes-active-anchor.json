@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "deadline supersedes active anchor",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A 14-hour deadline changed to 10 hours updates canonical active deadline truth and thread timer projection."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "temporalAnchors": {
+          "anchor_manifest_deadline": {
+            "id": "anchor_manifest_deadline",
+            "title": "Manifest closes",
+            "chapterCreated": 1,
+            "category": "temporal_anchor",
+            "kind": "deadline",
+            "status": "active",
+            "label": "Manifest deadline",
+            "anchorText": "14 hours remain",
+            "anchoredTo": ["thread_spine"],
+            "retrievalCue": "Manifest deadline",
+            "turn": 2
+          }
+        },
+        "threads": {
+          "thread_spine": {
+            "deterioration": {
+              "kind": "timer",
+              "deadline": "14 hours remain",
+              "temporalAnchorId": "anchor_manifest_deadline"
+            }
+          }
+        }
+      }
+    },
+    "turnIndex": 7,
+    "playerInput": "Ask how much time is left.",
+    "narrator": {
+      "prose": "The clerk corrects the manifest board: the closure was advanced. Ten hours remain, not fourteen.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "updates": [
+          {
+            "entityKind": "temporal_anchor",
+            "entityId": "anchor_manifest_deadline",
+            "changes": {
+              "anchor_text": "10 hours remain"
+            },
+            "confidence": "high",
+            "sourceQuote": "Ten hours remain, not fourteen."
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "temporalAnchorsInclude": [
+      {
+        "anchorId": "anchor_manifest_deadline",
+        "kind": "deadline",
+        "status": "active",
+        "label": "Manifest deadline",
+        "anchorText": "10 hours remain"
+      }
+    ],
+    "threadsInclude": [
+      {
+        "threadId": "thread_spine",
+        "deterioration": {
+          "kind": "timer",
+          "deadline": "10 hours remain",
+          "temporalAnchorId": "anchor_manifest_deadline"
+        }
+      }
+    ],
+    "perTurnDeltaIncludes": ["10 hours remain"],
+    "perTurnDeltaExcludes": ["14 hours remain"]
+  }
+}

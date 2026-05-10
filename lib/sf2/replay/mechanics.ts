@@ -2,6 +2,7 @@ import type { Sf2State } from '../types'
 import {
   findMatchingLocation,
   mergeLocationIntoExisting,
+  parseFlattenedLocationAlias,
   replaceLocationReferences,
 } from '../locations'
 import {
@@ -51,7 +52,17 @@ export function applyMechanicalEffectLocally(
     const v = Number(m.value ?? 0)
     state.player.hp.current = Math.max(0, Math.min(state.player.hp.max, state.player.hp.current + v))
   } else if (kind === 'credits_delta') {
-    state.player.credits = Math.max(0, state.player.credits + Number(m.value ?? 0))
+    const reason = String(m.reason ?? '')
+    const value = Number(m.value ?? 0)
+    if (looksLikeObligationBalanceDelta(reason)) {
+      emitMechanicalNoOp(invariantEvents, {
+        kind,
+        reason: 'credits_delta cannot represent obligation balance',
+        attemptedValue: value,
+      })
+      return
+    }
+    state.player.credits = Math.max(0, state.player.credits + value)
   } else if (kind === 'inventory_use') {
     const itemName = String(m.item ?? '')
     const item = state.player.inventory.find((it) => it.name === itemName)
@@ -170,10 +181,22 @@ export function applyMechanicalEffectLocally(
           locked: nextLocked,
           chapterCreated: state.meta.currentChapter,
         }
-        const registered = state.campaign.locations[nextLocationId]
+        const flattened = parseFlattenedLocationAlias(state, proposedLocation)
+        const registered = flattened?.location ?? state.campaign.locations[nextLocationId]
         if (registered) {
-          nextLocation = mergeLocationIntoExisting(registered, proposedLocation)
+          nextLocation = mergeLocationIntoExisting(registered, flattened
+            ? {
+                aliases: [flattened.alias],
+                areaNodes: [flattened.areaNode],
+              }
+            : proposedLocation)
           state.campaign.locations[nextLocation.id] = nextLocation
+          if (flattened) {
+            state.world.currentPosition = {
+              locationId: nextLocation.id,
+              areaNodeId: flattened.areaNode.id,
+            }
+          }
         } else {
           nextLocation = { ...proposedLocation, id: nextLocationId }
           state.campaign.locations[nextLocation.id] = nextLocation
@@ -257,7 +280,8 @@ export function applyMechanicalEffectLocally(
       locked: typeof m.locked === 'boolean' ? m.locked : undefined,
       chapterCreated: state.meta.currentChapter,
     }
-    const matching = findMatchingLocation(state, proposed)
+    const flattened = parseFlattenedLocationAlias(state, proposed)
+    const matching = flattened?.location ?? findMatchingLocation(state, proposed)
     let loc = matching ?? state.campaign.locations[locId]
     if (!loc) {
       loc = proposed
@@ -273,6 +297,9 @@ export function applyMechanicalEffectLocally(
       }
     }
     state.world.currentLocation = loc
+    state.world.currentPosition = flattened
+      ? { locationId: loc.id, areaNodeId: flattened.areaNode.id }
+      : { locationId: loc.id }
     state.world.sceneSnapshot = {
       ...state.world.sceneSnapshot,
       sceneId: loc.id,
@@ -308,6 +335,11 @@ export function applyMechanicalEffectLocally(
       reason: 'unknown mechanical effect kind',
     })
   }
+}
+
+function looksLikeObligationBalanceDelta(reason: string): boolean {
+  return /\b(lien|debt|owed|obligation|tithe|ransom|bounty|retainer|balance|service contract|blood price)\b/i.test(reason) &&
+    /\b(balance|increas(?:e|es|ed)|decreas(?:e|es|ed)|doubles?|doubled|owed|stands against)\b/i.test(reason)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

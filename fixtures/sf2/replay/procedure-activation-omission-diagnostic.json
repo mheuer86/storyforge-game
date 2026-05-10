@@ -1,0 +1,46 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure activation omission diagnostic",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Repeated procedural blockers without a procedure, thread gate, promise, or obligation owner are observable as diagnostics."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          {
+            "index": 1,
+            "playerInput": "Ask for clearance.",
+            "narratorProse": "Clearance remains pending and the departure release is blocked."
+          },
+          {
+            "index": 2,
+            "playerInput": "Try another counter.",
+            "narratorProse": "The clerk says clearance has not posted; release is still denied."
+          }
+        ]
+      }
+    },
+    "playerInput": "Wait for the clearance again.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureActivationDiagnostics": {
+      "severityEquals": "high",
+      "repeatedTermsInclude": ["clearance", "release"],
+      "turnIndexesInclude": [1, 2]
+    }
+  }
+}

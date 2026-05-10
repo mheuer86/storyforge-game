@@ -7,6 +7,7 @@ import {
   locationSemanticKey,
   locationsSemanticallyEquivalent,
   mergeLocationIntoExisting,
+  parseFlattenedLocationAlias,
   replaceLocationReferences,
 } from '../locations'
 import {
@@ -129,6 +130,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   campaign.engines = objectMap(campaign.engines, 'campaign.engines', repairs) as Sf2State['campaign']['engines']
   campaign.decisions = objectMap(campaign.decisions, 'campaign.decisions', repairs) as Sf2State['campaign']['decisions']
   campaign.promises = objectMap(campaign.promises, 'campaign.promises', repairs) as Sf2State['campaign']['promises']
+  campaign.obligations = objectMap(campaign.obligations, 'campaign.obligations', repairs) as Sf2State['campaign']['obligations']
   campaign.clues = objectMap(campaign.clues, 'campaign.clues', repairs) as Sf2State['campaign']['clues']
   campaign.beats = objectMap(campaign.beats, 'campaign.beats', repairs) as Sf2State['campaign']['beats']
   campaign.temporalAnchors = objectMap(campaign.temporalAnchors, 'campaign.temporalAnchors', repairs) as Sf2State['campaign']['temporalAnchors']
@@ -170,6 +172,7 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   compactRetrievalCueBucket(campaign.arcs, 'campaign.arcs', repairs)
   compactRetrievalCueBucket(campaign.decisions, 'campaign.decisions', repairs)
   compactRetrievalCueBucket(campaign.promises, 'campaign.promises', repairs)
+  compactRetrievalCueBucket(campaign.obligations, 'campaign.obligations', repairs)
   compactRetrievalCueBucket(campaign.beats, 'campaign.beats', repairs)
   compactRetrievalCueBucket(campaign.temporalAnchors, 'campaign.temporalAnchors', repairs)
   compactRetrievalCueBucket(campaign.documents, 'campaign.documents', repairs)
@@ -455,6 +458,7 @@ function normalizeNpc(
   )
   npc.identity = {
     keyFacts: stringArray(npc.identity?.keyFacts).slice(0, 3),
+    profileFacts: stringArray(npc.identity?.profileFacts).slice(0, 3),
     pronoun: npc.identity?.pronoun,
     age: npc.identity?.age,
     voice: {
@@ -682,7 +686,8 @@ function isKnownPressureActor(state: Sf2State, id: string): boolean {
       state.campaign.documents?.[id] ||
       state.campaign.clues[id] ||
       state.campaign.decisions[id] ||
-      state.campaign.promises[id]
+      state.campaign.promises[id] ||
+      state.campaign.obligations?.[id]
   )
 }
 
@@ -700,6 +705,29 @@ function normalizeLocation(raw: unknown, fallback: Sf2State['world']['currentLoc
     chapterCreated: record.chapterCreated === undefined
       ? fallback.chapterCreated
       : positiveInt(record.chapterCreated, fallback.chapterCreated ?? 0) as Sf2ChapterNumber,
+    aliases: Array.isArray(record.aliases) ? stringArray(record.aliases) : fallback.aliases,
+    areaNodes: Array.isArray(record.areaNodes)
+      ? record.areaNodes.map((node, index) => normalizeAreaNode(node, `${stringOr(record.id, fallback.id)}_area_${index + 1}`))
+      : fallback.areaNodes,
+  }
+}
+
+function normalizeAreaNode(raw: unknown, fallbackId: string) {
+  const record = asRecord(raw)
+  if (!record) return { id: fallbackId, name: fallbackId.replace(/_/g, ' ') }
+  return {
+    id: stringOr(record.id, fallbackId),
+    name: stringOr(record.name, fallbackId.replace(/_/g, ' ')),
+    description: stringOr(record.description, undefined),
+    aliases: Array.isArray(record.aliases) ? stringArray(record.aliases) : undefined,
+    atmosphericConditions: Array.isArray(record.atmosphericConditions)
+      ? stringArray(record.atmosphericConditions)
+      : undefined,
+    locked: typeof record.locked === 'boolean' ? record.locked : undefined,
+    exitIds: Array.isArray(record.exitIds) ? stringArray(record.exitIds) : undefined,
+    routeConstraints: Array.isArray(record.routeConstraints) ? stringArray(record.routeConstraints) : undefined,
+    hazards: Array.isArray(record.hazards) ? stringArray(record.hazards) : undefined,
+    ambientAlertness: stringOr(record.ambientAlertness, undefined),
   }
 }
 
@@ -716,6 +744,23 @@ function dedupeCampaignLocations(state: Sf2State, repairs: string[]): void {
     locations[state.world.sceneSnapshot.location.id] = snapshot
       ? mergeLocationIntoExisting(snapshot, state.world.sceneSnapshot.location)
       : state.world.sceneSnapshot.location
+  }
+
+  for (const location of Object.values(locations)) {
+    const flattened = parseFlattenedLocationAlias(state, location)
+    if (!flattened || flattened.location.id === location.id) continue
+    const merged = mergeLocationIntoExisting(flattened.location, {
+      aliases: [flattened.alias],
+      areaNodes: [flattened.areaNode],
+    })
+    locations[merged.id] = merged
+    delete locations[location.id]
+    replaceLocationReferences(state, location.id, merged)
+    state.world.currentPosition = {
+      locationId: merged.id,
+      areaNodeId: flattened.areaNode.id,
+    }
+    repairs.push(`campaign.locations:${location.id}→${merged.id}/${flattened.areaNode.id}`)
   }
 
   const groups: Sf2Location[][] = []
@@ -752,6 +797,9 @@ function dedupeCampaignLocations(state: Sf2State, repairs: string[]): void {
   if (current) state.world.currentLocation = current
   const snapshot = locations[state.world.sceneSnapshot.location.id]
   if (snapshot) state.world.sceneSnapshot.location = snapshot
+  if (!state.world.currentPosition || !locations[state.world.currentPosition.locationId]) {
+    state.world.currentPosition = { locationId: state.world.currentLocation.id }
+  }
 }
 
 function chooseCanonicalLocation(state: Sf2State, locations: Sf2Location[]): Sf2Location {

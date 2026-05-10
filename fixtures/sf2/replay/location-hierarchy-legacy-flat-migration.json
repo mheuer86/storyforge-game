@@ -1,0 +1,83 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "location hierarchy legacy flat migration",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Legacy flat child-parent labels become a scoped area node alias instead of a duplicate canonical location."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_location_hierarchy_migration",
+          "createdAt": "2026-05-10T00:00:00.000Z",
+          "updatedAt": "2026-05-10T00:05:00.000Z",
+          "schemaVersion": "3.1.0",
+          "genreId": "space-opera",
+          "playbookId": "operative",
+          "originId": "human",
+          "currentChapter": 1,
+          "currentSceneId": "scene_1_1",
+          "currentTimeLabel": "evening"
+        },
+        "campaign": {
+          "locations": {
+            "loc_shallowden_station": {
+              "id": "loc_shallowden_station",
+              "name": "Shallowden Station",
+              "description": "A worn orbital station.",
+              "chapterCreated": 1
+            },
+            "legacy_berth_14_shallowden": {
+              "id": "legacy_berth_14_shallowden",
+              "name": "Berth 14, Shallowden Station",
+              "description": "A pressure-scarred docking berth.",
+              "chapterCreated": 1
+            }
+          }
+        },
+        "world": {
+          "currentLocation": {
+            "id": "legacy_berth_14_shallowden",
+            "name": "Berth 14, Shallowden Station",
+            "description": "A pressure-scarred docking berth.",
+            "chapterCreated": 1
+          },
+          "sceneSnapshot": {
+            "sceneId": "scene_1_1",
+            "location": {
+              "id": "legacy_berth_14_shallowden",
+              "name": "Berth 14, Shallowden Station",
+              "description": "A pressure-scarred docking berth.",
+              "chapterCreated": 1
+            },
+            "presentNpcIds": [],
+            "timeLabel": "evening",
+            "established": [],
+            "firstTurnIndex": 0
+          },
+          "currentTimeLabel": "evening"
+        },
+        "history": { "turns": [], "rollLog": [] }
+      },
+      "expect": {
+        "currentLocationIdEquals": "loc_shallowden_station",
+        "currentAreaNodeIdEquals": "legacy_berth_14_shallowden",
+        "repairsInclude": ["campaign.locations:legacy_berth_14_shallowden"],
+        "locationAreaNodes": [
+          {
+            "locationId": "loc_shallowden_station",
+            "count": 1,
+            "idsInclude": ["legacy_berth_14_shallowden"],
+            "namesInclude": ["Berth 14"]
+          }
+        ]
+      }
+    }
+  }
+}

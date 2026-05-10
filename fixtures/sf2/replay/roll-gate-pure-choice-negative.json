@@ -1,0 +1,29 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate pure choice negative",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A pure acceptance or choice remains roll-free and does not inject a private roll gate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 3,
+    "playerInput": "I accept the bargain and choose option B.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": false
+    },
+    "narratorMessages": {
+      "userMessageContainsNone": [
+        "### Private roll gate (mandatory, never mention)",
+        "### Skill-tag binding (mandatory)",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

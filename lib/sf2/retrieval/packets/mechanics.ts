@@ -2,6 +2,8 @@ import type { Sf2MechanicsPacket, Sf2State } from '../../types'
 import { buildProcedurePacket, isActiveSf2Procedure } from '../../procedure'
 import { deriveSf2BeatMode, getSf2BeatModeGuidance } from '../../beat-mode'
 import { buildCombatProcedurePacket } from '../../procedure-combat'
+import { buildAccessExplorationPacket } from '../../procedure-access-exploration'
+import { buildInvestigationSynthesisPacket } from '../../procedure-investigation'
 
 export function buildMechanicsPacket(state: Sf2State, playerInput = ''): Sf2MechanicsPacket {
   const beatMode = deriveSf2BeatMode(state, playerInput)
@@ -9,6 +11,11 @@ export function buildMechanicsPacket(state: Sf2State, playerInput = ''): Sf2Mech
   const procedurePackets = Object.values(state.campaign.procedures ?? {})
     .filter(isActiveSf2Procedure)
     .map((procedure) => buildProcedurePacket(procedure))
+  const accessExplorationPackets = Object.values(state.campaign.procedures ?? {})
+    .filter(isActiveSf2Procedure)
+    .map((procedure) => buildAccessExplorationPacket(procedure))
+    .filter((packet): packet is NonNullable<typeof packet> => Boolean(packet))
+  const investigationPacket = buildInvestigationSynthesisPacket(state) ?? undefined
   const combatRuntime = buildCombatProcedurePacket(state)
 
   if (state.world.combat?.active) {
@@ -68,5 +75,7 @@ export function buildMechanicsPacket(state: Sf2State, playerInput = ''): Sf2Mech
     },
     activeModules: modules,
     procedures: procedurePackets,
+    accessExploration: accessExplorationPackets,
+    investigation: investigationPacket,
   }
 }

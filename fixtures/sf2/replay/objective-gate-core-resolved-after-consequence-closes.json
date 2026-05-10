@@ -1,0 +1,71 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "core objective gate closes resolved foreground objective after consequence",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Core SF2 should use the objective close/reframe gate without SF2B experiment mode once the foreground objective has landed with enough chapter consequence."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "title": "Clear the checkpoint",
+            "resolutionCriteria": "Deliver the sealed cargo to the checkpoint clerk and receive clearance.",
+            "failureMode": "The checkpoint locks the corridor and marks the ship.",
+            "retrievalCue": "checkpoint clearance, sealed cargo, corridor gate"
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Set the cargo in the clerk's cradle and take the clearance.",
+    "narrator": {
+      "prose": "The clerk's cradle seals around the crate and the checkpoint light turns green.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "transitions": [
+          {
+            "entityKind": "thread",
+            "entityId": "thread_spine",
+            "toStatus": "resolved_clean",
+            "reason": "The sealed cargo was delivered to the checkpoint clerk and clearance was received.",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["transitions[0]"],
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": true,
+      "spineResolved": true,
+      "stalledFallback": false,
+      "successorRequired": false,
+      "objectiveResolved": true,
+      "objectiveOutcome": "resolved",
+      "closeOrReframeDirectiveIncludes": "move toward chapter close"
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "isInitial": false,
+      "playerInput": "What does the clearance cost now?",
+      "userMessageContainsAll": [
+        "move toward chapter close"
+      ]
+    }
+  }
+}

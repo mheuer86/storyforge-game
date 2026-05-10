@@ -3,6 +3,8 @@
 
 import type { Sf2BeatMode, Sf2BeatModeGuidance } from './beat-mode'
 import type { Sf2CombatProcedurePacket } from './procedure-combat'
+import type { Sf2AccessExplorationPacket } from './procedure-access-exploration'
+import type { Sf2InvestigationSynthesisPacket } from './procedure-investigation'
 import type { Sf2ProcedurePacket, Sf2ProcedureRuntime } from './procedure'
 
 export const SF2_SCHEMA_VERSION = '3.1.0' as const
@@ -33,6 +35,7 @@ export type Sf2ThreadStatus =
   | 'deferred'
 export type Sf2DecisionStatus = 'active' | 'paid' | 'invalidated'
 export type Sf2PromiseStatus = 'active' | 'kept' | 'broken' | 'released'
+export type Sf2ObligationStatus = 'active' | 'settled' | 'defaulted' | 'waived' | 'superseded'
 export type Sf2ClueStatus = 'floating' | 'attached' | 'consumed'
 export type Sf2ThreadResolutionMode = 'investigation' | 'pressure'
 export type Sf2ClueEvidenceKind =
@@ -255,6 +258,9 @@ export interface Sf2ThreadProgressEvent {
   summary: string
   evidenceQuote?: string
   gateIds?: Sf2EntityId[]
+  satisfiedGateIds?: Sf2EntityId[]
+  failedGateIds?: Sf2EntityId[]
+  waivedGateIds?: Sf2EntityId[]
 }
 
 export interface Sf2Thread extends Sf2NarrativeEntityBase {
@@ -343,6 +349,20 @@ export interface Sf2Promise extends Sf2NarrativeEntityBase {
   anchoredTo: Sf2EntityId[] // threads; required non-empty
   owner: Sf2OwnerRef // to whom the promise is made
   obligation: string
+  turn: number
+}
+
+export interface Sf2Obligation extends Sf2NarrativeEntityBase {
+  category: 'obligation'
+  status: Sf2ObligationStatus
+  claimant: Sf2OwnerRef
+  debtor: Sf2OwnerRef | { kind: 'pc'; id: 'pc' }
+  balance?: number
+  unit?: string
+  terms?: string
+  dueCondition: string
+  clearanceCondition: string
+  anchoredTo: Sf2EntityId[]
   turn: number
 }
 
@@ -455,6 +475,7 @@ export type Sf2PronounAnchor = 'she/her' | 'he/him' | 'they/them' | 'other'
 
 export interface Sf2NpcIdentity {
   keyFacts: string[] // immutable; max 3
+  profileFacts?: string[] // immutable dossier/profile comparison baselines; max 3
   pronoun?: Sf2PronounAnchor // anchored once established
   age?: string // anchored once established; exact age or compact age band
   voice: { note: string; register: string }
@@ -531,6 +552,26 @@ export interface Sf2Location {
   atmosphericConditions?: string[]
   locked?: boolean
   chapterCreated?: Sf2ChapterNumber
+  aliases?: string[]
+  areaNodes?: Sf2AreaNode[]
+}
+
+export interface Sf2AreaNode {
+  id: Sf2EntityId
+  name: string
+  description?: string
+  aliases?: string[]
+  atmosphericConditions?: string[]
+  locked?: boolean
+  exitIds?: Sf2EntityId[]
+  routeConstraints?: string[]
+  hazards?: string[]
+  ambientAlertness?: string
+}
+
+export interface Sf2CurrentPosition {
+  locationId: Sf2EntityId
+  areaNodeId?: Sf2EntityId
 }
 
 export interface Sf2SceneSnapshot {
@@ -1423,6 +1464,7 @@ export interface Sf2ArchivistCreate {
     | 'thread'
     | 'decision'
     | 'promise'
+    | 'obligation'
     | 'clue'
     | 'arc'
     | 'location'
@@ -1435,7 +1477,7 @@ export interface Sf2ArchivistCreate {
 }
 
 export interface Sf2ArchivistUpdate {
-  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document' | 'operation_plan' | 'procedure'
+  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document' | 'operation_plan' | 'procedure' | 'obligation' | 'temporal_anchor'
   entityId: Sf2EntityId
   changes: Record<string, unknown>
   confidence: Sf2PatchConfidence
@@ -1443,7 +1485,7 @@ export interface Sf2ArchivistUpdate {
 }
 
 export interface Sf2ArchivistTransition {
-  entityKind: 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'document' | 'procedure'
+  entityKind: 'thread' | 'decision' | 'promise' | 'obligation' | 'clue' | 'arc' | 'document' | 'procedure'
   entityId: Sf2EntityId
   toStatus: string
   reason: string
@@ -1623,6 +1665,8 @@ export interface Sf2SceneLocationPacket {
   name: string
   description: string
   atmosphericConditions: string[]
+  currentAreaNode?: Sf2AreaNode
+  areaNodes?: Sf2AreaNode[]
 }
 
 export interface Sf2PresentCastPacket {
@@ -1631,6 +1675,7 @@ export interface Sf2PresentCastPacket {
   affiliation: string
   pronoun?: Sf2PronounAnchor
   age?: string
+  profileFacts?: string[]
   disposition: Sf2DispositionTier
   tempLoadTag?: Sf2TempLoadTag
   voice: string
@@ -1673,6 +1718,7 @@ export interface Sf2ThreadPacket {
   deterioration?: string // rendered hint only
   anchoredDecisions: Array<{ id: Sf2EntityId; summary: string }>
   anchoredPromises: Array<{ id: Sf2EntityId; obligation: string }>
+  anchoredObligations: Array<{ id: Sf2EntityId; summary: string }>
   anchoredClues: Array<{ id: Sf2EntityId; content: string }>
   resolutionGates: Array<{ id: Sf2EntityId; label: string; condition: string; status: Sf2ThreadResolutionGateStatus }>
   clueTier?: 'lead' | 'evidenced' | 'load_bearing'
@@ -1719,6 +1765,8 @@ export interface Sf2MechanicsPacket {
     | { kind: 'investigation'; clueCount: number; openLeads: string[] }
   >
   procedures?: Sf2ProcedurePacket[]
+  accessExploration?: Sf2AccessExplorationPacket[]
+  investigation?: Sf2InvestigationSynthesisPacket
   pendingCheck?: Sf2PendingCheck
   rollGate?: { skill: string; dc: number }
 }
@@ -1820,6 +1868,7 @@ export interface Sf2Campaign {
   engines: Record<Sf2EntityId, Sf2EngineRuntime>
   decisions: Record<Sf2EntityId, Sf2Decision>
   promises: Record<Sf2EntityId, Sf2Promise>
+  obligations: Record<Sf2EntityId, Sf2Obligation>
   clues: Record<Sf2EntityId, Sf2Clue>
   beats: Record<Sf2EntityId, Sf2EmotionalBeat>
   temporalAnchors: Record<Sf2EntityId, Sf2TemporalAnchor>
@@ -1855,6 +1904,7 @@ export interface Sf2ChapterRuntime {
 
 export interface Sf2World {
   currentLocation: Sf2Location
+  currentPosition?: Sf2CurrentPosition
   sceneSnapshot: Sf2SceneSnapshot
   currentTimeLabel: string
   combat?: {

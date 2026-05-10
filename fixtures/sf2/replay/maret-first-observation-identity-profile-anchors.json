@@ -1,0 +1,68 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "Maret first observation anchors identity and profile facts",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "First visible introduction captures pronoun, age band, and load-bearing profile comparison facts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Approach the fuel desk and ask for Maret.",
+    "narrator": {
+      "prose": "Maret Coll looks up from the fuel desk. He is older than the Synod profile suggested, closer to fifty than forty, with a registry badge turned inward.",
+      "annotation": {
+        "mechanical_effects": [],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_maret_coll"],
+          "threads_touched": [],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "payload": {
+              "id": "npc_maret_coll",
+              "name": "Maret Coll",
+              "affiliation": "Synod Fuel Registry",
+              "role": "fuel desk registry contact",
+              "pronoun": "he/him",
+              "age": "closer to fifty than forty",
+              "profile_facts": ["Synod profile suggested Maret Coll was younger than he appears."],
+              "retrieval_cue": "Maret Coll at the fuel desk",
+              "key_facts": ["Registry badge turned inward."]
+            },
+            "confidence": "high",
+            "source_quote": "He is older than the Synod profile suggested"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "npcIdsIncludes": ["npc_maret_coll"],
+    "npcIdentityIncludes": [
+      {
+        "npcId": "npc_maret_coll",
+        "pronoun": "he/him",
+        "age": "closer to fifty than forty",
+        "profileFactsInclude": ["profile suggested Maret Coll was younger"]
+      }
+    ],
+    "archivistAcceptedRefs": ["creates[0]"]
+  }
+}

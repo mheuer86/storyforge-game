@@ -1,0 +1,64 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "location hierarchy genre neutral castle",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "The parent/area-node shape works for non-space topology containers."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "locations": {
+          "loc_blackstone_castle": {
+            "id": "loc_blackstone_castle",
+            "name": "Blackstone Castle",
+            "description": "A fortified hill keep with a gatehouse, bailey, and sealed crypt below.",
+            "chapterCreated": 1,
+            "areaNodes": [
+              { "id": "loc_blackstone_castle_gatehouse", "name": "Gatehouse", "routeConstraints": ["murder-hole approach"] },
+              { "id": "loc_blackstone_castle_bailey", "name": "Bailey", "ambientAlertness": "watchful" },
+              { "id": "loc_blackstone_castle_crypt", "name": "Crypt", "locked": true, "hazards": ["sealed air"] }
+            ]
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_blackstone_castle",
+          "name": "Blackstone Castle",
+          "description": "A fortified hill keep with a gatehouse, bailey, and sealed crypt below.",
+          "chapterCreated": 1,
+          "areaNodes": [
+            { "id": "loc_blackstone_castle_gatehouse", "name": "Gatehouse", "routeConstraints": ["murder-hole approach"] },
+            { "id": "loc_blackstone_castle_bailey", "name": "Bailey", "ambientAlertness": "watchful" },
+            { "id": "loc_blackstone_castle_crypt", "name": "Crypt", "locked": true, "hazards": ["sealed air"] }
+          ]
+        },
+        "currentPosition": {
+          "locationId": "loc_blackstone_castle",
+          "areaNodeId": "loc_blackstone_castle_gatehouse"
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Study the gatehouse.",
+    "narrator": {
+      "prose": "The gatehouse holds the road in a stone throat.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": { "creates": [] } }
+  },
+  "expected": {
+    "currentLocationId": "loc_blackstone_castle",
+    "currentAreaNodeId": "loc_blackstone_castle_gatehouse",
+    "locationAreaNodes": [
+      {
+        "locationId": "loc_blackstone_castle",
+        "count": 3,
+        "namesInclude": ["Gatehouse", "Bailey", "Crypt"]
+      }
+    ]
+  }
+}

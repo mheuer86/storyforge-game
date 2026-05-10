@@ -104,6 +104,9 @@ interface PendingCheck {
   modifierType?: 'advantage' | 'disadvantage' | 'challenge'
   modifierReason?: string
   priorMessages: unknown[]
+  originalInput?: string
+  currentIntent?: string
+  remainingIntents?: string[]
 }
 
 interface RollOutcome {
@@ -622,6 +625,9 @@ export default function PlayV2Page() {
         modifierType?: 'advantage' | 'disadvantage' | 'challenge'
         modifierReason?: string
         priorMessages: unknown[]
+        originalInput?: string
+        currentIntent?: string
+        remainingIntents?: string[]
       } | null = null
       let sawNarrateTurn = false
       let sawStreamError = false
@@ -662,6 +668,11 @@ export default function PlayV2Page() {
                     : undefined,
                 modifierReason: typeof event.modifierReason === 'string' ? event.modifierReason : undefined,
                 priorMessages: (event.priorMessages as unknown[]) ?? [],
+                originalInput: typeof event.originalInput === 'string' ? event.originalInput : undefined,
+                currentIntent: typeof event.currentIntent === 'string' ? event.currentIntent : undefined,
+                remainingIntents: Array.isArray(event.remainingIntents)
+                  ? event.remainingIntents.map(String)
+                  : undefined,
               }
               if (binding.overridden) {
                 diagnosticsStore.pushDebug({
@@ -894,6 +905,9 @@ export default function PlayV2Page() {
           modifierType: outcome.modifierType,
           modifierReason: outcome.modifierReason,
           priorMessages: sawRollPrompt.priorMessages,
+          originalInput: sawRollPrompt.originalInput,
+          currentIntent: sawRollPrompt.currentIntent,
+          remainingIntents: sawRollPrompt.remainingIntents,
         }
         // Chip persists for the rest of this turn. Cleared at next turn start
         // (runNarrator's initial setRollResult(null)) or when a new roll fires.
