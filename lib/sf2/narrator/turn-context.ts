@@ -8,6 +8,7 @@ import {
 import { buildMessagesForNarrator } from './messages'
 import { NARRATOR_TOOLS } from './tools'
 import { computePacingAdvisory } from '../pacing/signals'
+import { deriveSf2BeatMode } from '../beat-mode'
 import { composeSystemBlocks, assertNoDynamicLeak } from '../prompt/compose'
 import { buildSceneKernel } from '../scene-kernel/build'
 import type { ScanDisplayOutputOptions } from '../sentinel/display'
@@ -134,6 +135,7 @@ export function buildNarratorTurnContext(input: {
 
   const built = buildMessagesForNarrator(state, playerInput, isInitial, turnIndex)
   const pacing = computePacingAdvisory(state)
+  const beatMode = deriveSf2BeatMode(state, playerInput)
   const messages = built.messages
 
   return {
@@ -144,7 +146,7 @@ export function buildNarratorTurnContext(input: {
     diagnostics: {
       workingSet: buildWorkingSetEventPayload(built.workingSet),
       sceneBundleBuilt: built.bundleRebuilt,
-      pacingAdvisory: buildPacingEventPayload(pacing),
+      pacingAdvisory: beatMode === 'meta' ? null : buildPacingEventPayload(pacing),
     },
     sentinelContext,
     failedRollSkill,

@@ -1,0 +1,189 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure access exploration dedup boundaries",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Access/exploration packet builders should dedupe linked masks, scrutiny layers, nodes, routes, and hazards by stable id before applying packet limits."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_access_boundary": {
+            "id": "procedure_access_boundary",
+            "kind": "access",
+            "status": "active",
+            "label": "Outer Gate Cover",
+            "phase": "egress",
+            "facts": [
+              {
+                "id": "fact_latest",
+                "text": "The outer gate accepts the courier mask only once more.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 8
+              },
+              {
+                "id": "fact_old",
+                "text": "The watch captain dislikes unscheduled courier traffic.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 2
+              }
+            ],
+            "constraints": [
+              {
+                "id": "constraint_mask_same",
+                "label": "Courier mask has one remaining check",
+                "kind": "access",
+                "status": "active",
+                "current": 1,
+                "max": 2,
+                "linkedRefs": [{ "kind": "credential_mask", "id": "mask_courier" }]
+              },
+              {
+                "id": "constraint_scrutiny_same",
+                "label": "Gatehouse questions repeat scans",
+                "kind": "social",
+                "status": "active",
+                "current": 4,
+                "max": 4,
+                "linkedRefs": [{ "kind": "scrutiny_layer", "id": "scrutiny_gatehouse" }]
+              },
+              {
+                "id": "constraint_route_spent",
+                "label": "Loading exit has been used",
+                "kind": "route",
+                "status": "consumed",
+                "linkedRefs": [{ "kind": "route", "id": "route_loading_exit" }]
+              },
+              {
+                "id": "constraint_alarm",
+                "label": "Gate alarm is full",
+                "kind": "exposure",
+                "status": "active",
+                "current": 4,
+                "max": 4,
+                "linkedRefs": [{ "kind": "clock", "id": "clock_gate_alarm" }]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_mask_same",
+                "label": "Courier mask",
+                "kind": "credential",
+                "status": "available",
+                "linkedRefs": [{ "kind": "credential_mask", "id": "mask_courier" }]
+              }
+            ],
+            "complications": [
+              {
+                "id": "complication_scrutiny_same",
+                "label": "Gatehouse supervisor joins the desk",
+                "effectSummary": "The same scrutiny layer escalates instead of duplicating.",
+                "status": "active",
+                "linkedRefs": [{ "kind": "scrutiny_layer", "id": "scrutiny_gatehouse" }]
+              }
+            ],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 8,
+            "updatedAtTurn": 8
+          },
+          "procedure_exploration_boundary": {
+            "id": "procedure_exploration_boundary",
+            "kind": "exploration",
+            "status": "active",
+            "label": "Flooded Service Maze",
+            "phase": "engagement",
+            "facts": [],
+            "constraints": [
+              {
+                "id": "constraint_node_same",
+                "label": "Flooded pump room",
+                "kind": "physical",
+                "status": "active",
+                "current": 2,
+                "max": 4,
+                "linkedRefs": [{ "kind": "area_node", "id": "node_pump_room" }]
+              },
+              {
+                "id": "constraint_route_same",
+                "label": "Half-submerged service crawl",
+                "kind": "route",
+                "status": "active",
+                "linkedRefs": [{ "kind": "route", "id": "route_service_crawl" }]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_route_same",
+                "label": "Service crawl map",
+                "kind": "route",
+                "status": "available",
+                "linkedRefs": [{ "kind": "route", "id": "route_service_crawl" }]
+              }
+            ],
+            "complications": [
+              {
+                "id": "complication_waterline",
+                "label": "Waterline rises with every loud movement",
+                "effectSummary": "The route narrows if the team delays.",
+                "status": "active",
+                "linkedRefs": [{ "kind": "route", "id": "route_service_crawl" }]
+              }
+            ],
+            "contributions": [],
+            "linkedRefs": [
+              { "kind": "area_node", "id": "node_pump_room" },
+              { "kind": "route", "id": "route_service_crawl" }
+            ],
+            "createdAtTurn": 8,
+            "updatedAtTurn": 8
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_access_boundary", "procedure_exploration_boundary"]
+      }
+    },
+    "playerInput": "Get out before the cover collapses.",
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureAccessExploration": {
+      "packets": [
+        {
+          "procedureId": "procedure_access_boundary",
+          "kind": "access",
+          "posture": "forced",
+          "credentialMaskIds": ["mask_courier"],
+          "scrutinyLayerIds": ["scrutiny_gatehouse"],
+          "exposureClock": { "id": "clock_gate_alarm", "current": 4, "max": 4 },
+          "egressPhase": "departing",
+          "facts": [
+            "The outer gate accepts the courier mask only once more.",
+            "The watch captain dislikes unscheduled courier traffic."
+          ]
+        },
+        {
+          "procedureId": "procedure_exploration_boundary",
+          "kind": "exploration",
+          "nodeIds": ["node_pump_room"],
+          "routeIds": ["route_service_crawl"],
+          "hazardIds": ["constraint_node_same", "complication_waterline"]
+        }
+      ]
+    }
+  }
+}

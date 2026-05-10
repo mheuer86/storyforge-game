@@ -1,0 +1,68 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure forward motion successor",
+  "source": {
+    "kind": "synthetic-contract",
+    "purpose": "Documents the forward-motion advisory helper contract: briefing/planning/montage/debrief/aftermath/meta beat modes are exempt, successor threads suppress advisories, and repeated non-exempt procedure beats can produce a nudge."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure helper contract fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "forwardMotionAdvisories": {
+      "cases": [
+        {
+          "name": "planning is exempt",
+          "input": {
+            "beatMode": "planning",
+            "currentBeatKey": "operation:brief-plan",
+            "priorBeatKey": "operation:brief-plan",
+            "turnsSinceMaterialChange": 4,
+            "activeProcedureIds": ["procedure_annex"]
+          },
+          "advisoryEquals": null
+        },
+        {
+          "name": "successor thread already exists",
+          "input": {
+            "beatMode": "access_execution",
+            "currentBeatKey": "operation:annex-door",
+            "priorBeatKey": "operation:annex-door",
+            "turnsSinceMaterialChange": 3,
+            "activeProcedureIds": ["procedure_annex"],
+            "successorThreadIds": ["thread_annex_alarm_owner"]
+          },
+          "advisoryEquals": null
+        },
+        {
+          "name": "non-exempt repeated procedure needs forward motion",
+          "input": {
+            "beatMode": "access_execution",
+            "currentBeatKey": "operation:annex-door",
+            "priorBeatKey": "operation:annex-door",
+            "turnsSinceMaterialChange": 3,
+            "activeProcedureIds": ["procedure_annex"]
+          },
+          "advisoryKindEquals": "forward_motion",
+          "severityEquals": "nudge",
+          "instructionIncludes": "Resolve, escalate, or hand off"
+        }
+      ]
+    }
+  }
+}

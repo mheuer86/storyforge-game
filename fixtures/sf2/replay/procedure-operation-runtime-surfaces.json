@@ -1,0 +1,123 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure operation runtime surfaces",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Active operation procedure runtime should be durable state, appear in the scene kernel, and surface bounded operation facts/constraints/signals in the Narrator mutable block."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "operationPlan": {
+          "name": "Registry Annex Entry",
+          "target": "Reach the sealed freight bay under the registry annex.",
+          "approach": "Enter through the morning intake line, then split off at the service stair.",
+          "fallback": "If challenged, retreat to the loading yard.",
+          "status": "active",
+          "lastUpdatedTurn": 3
+        },
+        "procedures": {
+          "procedure_op_annex": {
+            "id": "procedure_op_annex",
+            "kind": "operation",
+            "status": "active",
+            "label": "Registry Annex Entry",
+            "phase": "preparation",
+            "objectives": [
+              "Reach the sealed freight bay.",
+              "Exit before the noon clerk rotation."
+            ],
+            "facts": [
+              {
+                "id": "fact_shift",
+                "text": "The west intake rotates clerks at noon.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 3
+              }
+            ],
+            "constraints": [
+              {
+                "id": "constraint_badge",
+                "label": "Visitor badge has one clean scan",
+                "kind": "resource",
+                "status": "active",
+                "current": 1,
+                "max": 1,
+                "linkedRefs": []
+              }
+            ],
+            "affordances": [],
+            "complications": [],
+            "contributions": [],
+            "assessments": [
+              {
+                "id": "assessment_stair",
+                "claim": "The service stair is clear after the clerk rotation.",
+                "status": "open",
+                "rolled": false,
+                "supportContributionIds": [],
+                "lastUpdatedTurn": 3
+              }
+            ],
+            "abortConditions": [
+              {
+                "id": "abort_lockdown",
+                "label": "Annex lockdown",
+                "trigger": "exposure clock fills",
+                "outcomeTier": "failure",
+                "status": "armed"
+              }
+            ],
+            "signals": [
+              {
+                "id": "signal_cough",
+                "name": "Cough twice",
+                "meaning": "abort the stair move",
+                "trigger": "guard turns toward the intake",
+                "consumed": false,
+                "status": "ready"
+              }
+            ],
+            "linkedRefs": [],
+            "createdAtTurn": 3,
+            "updatedAtTurn": 3
+          }
+        }
+      },
+      "world": {
+        "operationRuntimeId": "procedure_op_annex",
+        "activeProcedureIds": ["procedure_op_annex"]
+      }
+    },
+    "playerInput": "Review the plan before we move.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneKernel": {
+      "activeProcedureIdsIncludes": ["procedure_op_annex"]
+    },
+    "perTurnDeltaIncludes": [
+      "### Operation plan (mutable)",
+      "## Beat mode",
+      "- Mode: planning",
+      "- Operation · phase: preparation · active",
+      "objectives: Reach the sealed freight bay. | Exit before the noon clerk rotation.",
+      "facts: The west intake rotates clerks at noon.",
+      "open assessments: The service stair is clear after the clerk rotation.",
+      "constraints: Visitor badge has one clean scan (active 1/1)",
+      "signals: Cough twice = abort the stair move"
+    ]
+  }
+}

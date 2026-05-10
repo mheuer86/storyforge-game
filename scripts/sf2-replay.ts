@@ -22,6 +22,7 @@ import {
   buildAuthorRetryNudge,
   shouldRetryAuthorValidation,
 } from '../lib/sf2/author/retry'
+import { evaluateProcedureArcPassBar } from '../lib/sf2/arc-author/procedure-eval'
 import { debugEntriesToDiagnosticFindings, queryOpenErrorFindingsForEntity } from '../lib/sf2/diagnostics'
 import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
 import { ARCHIVIST_PARITY_CONTRACT, extractTurnTool } from '../lib/sf2/archivist/tools'
@@ -32,6 +33,21 @@ import { NARRATOR_MECHANICAL_EFFECT_KINDS, NARRATOR_TOOL_NAME, NARRATOR_TOOLS } 
 import { createInitialSf2State, isArcAuthored, isChapterAuthored } from '../lib/sf2/game-data'
 import { evaluateWrite, recordObservation } from '../lib/sf2/firewall/actor'
 import { validateChapterMeaningTransitionSeed } from '../lib/sf2/chapter-meaning/validation'
+import { buildAccessExplorationPacket } from '../lib/sf2/procedure-access-exploration'
+import {
+  derivePlanningRollSupport,
+  normalizeOffscreenTaskRecord,
+  normalizePlanningAssessment,
+  normalizePlanningSupportContributions,
+} from '../lib/sf2/procedure-planning'
+import {
+  buildInvestigationSynthesisPacket,
+  classifyInvestigationDatum,
+} from '../lib/sf2/procedure-investigation'
+import {
+  chooseProcedureTransition,
+  deriveForwardMotionAdvisory,
+} from '../lib/sf2/procedure-transitions'
 import { canonicalLocationNameKey } from '../lib/sf2/locations'
 import { countRetrievalCueWords } from '../lib/sf2/retrieval-cues'
 import {
@@ -110,6 +126,13 @@ interface ReplayFixture {
     }>
     perTurnDeltaIncludes?: string[]
     perTurnDeltaExcludes?: string[]
+    procedurePlanningSupport?: Record<string, unknown>
+    procedureOffscreenTask?: Record<string, unknown>
+    procedureTransitions?: Record<string, unknown>
+    forwardMotionAdvisories?: Record<string, unknown>
+    procedureAccessExploration?: Record<string, unknown>
+    procedureInvestigation?: Record<string, unknown>
+    arcAuthorProcedureEval?: Record<string, unknown>
     npcNamesInclude?: string[]
     npcNamesAbsent?: string[]
     npcIdsIncludes?: string[]
@@ -806,7 +829,274 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertArchivistSchemaParity(fixture, failures)
   assertRoleSchemaParity(fixture, failures)
   assertTurnResolutionStableJson(fixture, failures)
+  assertProcedurePlanningSupport(fixture, failures)
+  assertProcedureOffscreenTask(fixture, failures)
+  assertProcedureTransitions(fixture, failures)
+  assertForwardMotionAdvisories(fixture, failures)
+  assertProcedureAccessExploration(fixture, stateAfter, failures)
+  assertProcedureInvestigation(fixture, stateAfter, failures)
+  assertArcAuthorProcedureEval(fixture, failures)
   return { fixture, path, failures, workingSetTelemetry }
+}
+
+function assertProcedurePlanningSupport(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.procedurePlanningSupport
+  if (!expected) return
+  const contributions = normalizePlanningSupportContributions(expected.supportInputs)
+  const assessment = normalizePlanningAssessment(
+    expected.assessment,
+    fixture.input.turnIndex ?? 0,
+    contributions
+  )
+  const support = derivePlanningRollSupport(assessment, contributions)
+  const want = replayRecord(expected.expect)
+  if (Array.isArray(want.normalizedContributionIds)) {
+    assertStringSetEquals(
+      contributions.map((contribution) => contribution.id),
+      want.normalizedContributionIds.map(String),
+      'procedurePlanningSupport.normalizedContributionIds',
+      failures
+    )
+  }
+  const wantSupport = replayRecord(want.rollSupport)
+  for (const key of ['assessmentId', 'skill', 'baseDc', 'dc', 'dcShift', 'advantage', 'disadvantage'] as const) {
+    if (wantSupport[key] !== undefined && support[key] !== wantSupport[key]) {
+      failures.push(`procedurePlanningSupport.rollSupport.${key}: expected ${String(wantSupport[key])}, got ${String(support[key])}`)
+    }
+  }
+  if (Array.isArray(wantSupport.supportContributionIds)) {
+    assertStringSetEquals(support.supportContributionIds, wantSupport.supportContributionIds.map(String), 'procedurePlanningSupport.rollSupport.supportContributionIds', failures)
+  }
+  if (Array.isArray(wantSupport.adverseContributionIds)) {
+    assertStringSetEquals(support.adverseContributionIds, wantSupport.adverseContributionIds.map(String), 'procedurePlanningSupport.rollSupport.adverseContributionIds', failures)
+  }
+  for (const fragment of replayArray(wantSupport.rationaleIncludes).map(String)) {
+    if (!support.rationale.some((line) => line.includes(fragment))) {
+      failures.push(`procedurePlanningSupport.rollSupport.rationale missing "${fragment}"`)
+    }
+  }
+}
+
+function assertProcedureOffscreenTask(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.procedureOffscreenTask
+  if (!expected) return
+  const task = normalizeOffscreenTaskRecord(expected.task, fixture.input.turnIndex ?? 0)
+  const want = replayRecord(expected.expect)
+  for (const key of ['id', 'status', 'risk', 'procedureId'] as const) {
+    if (want[key] !== undefined && task[key] !== want[key]) {
+      failures.push(`procedureOffscreenTask.${key}: expected ${String(want[key])}, got ${String(task[key])}`)
+    }
+  }
+  const visibleTraceIncludes = typeof want.visibleTraceIncludes === 'string' ? want.visibleTraceIncludes : ''
+  if (visibleTraceIncludes && !task.visibleTrace.includes(visibleTraceIncludes)) {
+    failures.push(`procedureOffscreenTask.visibleTrace missing "${visibleTraceIncludes}"`)
+  }
+  const partialKinds = task.partialResults.map((result) => result.kind)
+  const finalKind = task.finalResult?.kind ?? null
+  const allResults = [...task.partialResults, ...(task.finalResult ? [task.finalResult] : [])]
+  if (Array.isArray(want.partialResultKinds)) {
+    assertOrderedStrings(partialKinds, want.partialResultKinds.map(String), 'procedureOffscreenTask.partialResultKinds', failures)
+  }
+  if (want.finalResultKind !== undefined && finalKind !== want.finalResultKind) {
+    failures.push(`procedureOffscreenTask.finalResultKind: expected ${String(want.finalResultKind)}, got ${String(finalKind)}`)
+  }
+  if (Array.isArray(want.resultKinds)) {
+    assertOrderedStrings(allResults.map((result) => result.kind), want.resultKinds.map(String), 'procedureOffscreenTask.resultKinds', failures)
+  }
+  if (want.firstResultFactId !== undefined) {
+    const first = allResults[0]
+    const factId = first?.kind === 'procedure_fact' ? first.fact.id : undefined
+    if (factId !== want.firstResultFactId) failures.push(`procedureOffscreenTask.firstResultFactId: expected ${String(want.firstResultFactId)}, got ${String(factId)}`)
+  }
+  if (want.secondResultClockDelta !== undefined) {
+    const second = allResults[1]
+    const delta = second?.kind === 'clock_tick' ? second.delta : undefined
+    if (delta !== want.secondResultClockDelta) failures.push(`procedureOffscreenTask.secondResultClockDelta: expected ${String(want.secondResultClockDelta)}, got ${String(delta)}`)
+  }
+  if (want.finalResultAffordanceKind !== undefined) {
+    const kind = task.finalResult?.kind === 'affordance_delta' ? task.finalResult.affordance.kind : undefined
+    if (kind !== want.finalResultAffordanceKind) failures.push(`procedureOffscreenTask.finalResultAffordanceKind: expected ${String(want.finalResultAffordanceKind)}, got ${String(kind)}`)
+  }
+}
+
+function assertProcedureTransitions(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.procedureTransitions
+  if (!expected) return
+  for (const rawCase of replayArray(expected.carryForwardCases)) {
+    const testCase = replayRecord(rawCase)
+    const decision = chooseProcedureTransition(replayRecord(testCase.input))
+    if (testCase.classEquals !== undefined && decision.residueClass !== testCase.classEquals) {
+      failures.push(`procedureTransitions.${String(testCase.input)}.class: expected ${String(testCase.classEquals)}, got ${decision.residueClass}`)
+    }
+    if (testCase.actionEquals !== undefined && decision.action !== testCase.actionEquals) {
+      failures.push(`procedureTransitions.action: expected ${String(testCase.actionEquals)}, got ${decision.action}`)
+    }
+    if (testCase.carryForwardAsEquals !== undefined && decision.carryForwardAs !== testCase.carryForwardAsEquals) {
+      failures.push(`procedureTransitions.carryForwardAs: expected ${String(testCase.carryForwardAsEquals)}, got ${String(decision.carryForwardAs)}`)
+    }
+    const fragment = typeof testCase.instructionIncludes === 'string' ? testCase.instructionIncludes : ''
+    if (fragment && !decision.instruction.includes(fragment)) {
+      failures.push(`procedureTransitions.instruction missing "${fragment}"`)
+    }
+  }
+}
+
+function assertForwardMotionAdvisories(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.forwardMotionAdvisories
+  if (!expected) return
+  for (const rawCase of replayArray(expected.cases)) {
+    const testCase = replayRecord(rawCase)
+    const advisory = deriveForwardMotionAdvisory(replayRecord(testCase.input) as unknown as Parameters<typeof deriveForwardMotionAdvisory>[0])
+    if (testCase.advisoryEquals === null && advisory !== null) {
+      failures.push(`forwardMotionAdvisories.${String(testCase.name)}: expected null, got ${advisory.kind}`)
+      continue
+    }
+    if (testCase.advisoryKindEquals !== undefined && advisory?.kind !== testCase.advisoryKindEquals) {
+      failures.push(`forwardMotionAdvisories.${String(testCase.name)}.kind: expected ${String(testCase.advisoryKindEquals)}, got ${String(advisory?.kind)}`)
+    }
+    if (testCase.severityEquals !== undefined && advisory?.severity !== testCase.severityEquals) {
+      failures.push(`forwardMotionAdvisories.${String(testCase.name)}.severity: expected ${String(testCase.severityEquals)}, got ${String(advisory?.severity)}`)
+    }
+    const fragment = typeof testCase.instructionIncludes === 'string' ? testCase.instructionIncludes : ''
+    if (fragment && !advisory?.instruction.includes(fragment)) {
+      failures.push(`forwardMotionAdvisories.${String(testCase.name)}.instruction missing "${fragment}"`)
+    }
+  }
+}
+
+function assertProcedureAccessExploration(fixture: ReplayFixture, state: Sf2State, failures: string[]): void {
+  const expected = fixture.expected?.procedureAccessExploration
+  if (!expected) return
+  for (const rawWant of replayArray(expected.packets)) {
+    const want = replayRecord(rawWant)
+    const procedureId = typeof want.procedureId === 'string' ? want.procedureId : ''
+    const runtime = state.campaign.procedures?.[procedureId]
+    if (!runtime) {
+      failures.push(`procedureAccessExploration: missing procedure ${procedureId}`)
+      continue
+    }
+    const packet = buildAccessExplorationPacket(runtime)
+    if (!packet) {
+      failures.push(`procedureAccessExploration: no packet for ${procedureId}`)
+      continue
+    }
+    if (want.kind !== undefined && packet.kind !== want.kind) {
+      failures.push(`procedureAccessExploration.${procedureId}.kind: expected ${String(want.kind)}, got ${packet.kind}`)
+    }
+    if (packet.access) {
+      if (want.posture !== undefined && packet.access.posture !== want.posture) {
+        failures.push(`procedureAccessExploration.${procedureId}.posture: expected ${String(want.posture)}, got ${packet.access.posture}`)
+      }
+      if (Array.isArray(want.credentialMaskIds)) {
+        assertStringSetEquals(packet.access.credentialMasks.map((mask) => mask.id), want.credentialMaskIds.map(String), `procedureAccessExploration.${procedureId}.credentialMaskIds`, failures)
+      }
+      if (Array.isArray(want.scrutinyLayerIds)) {
+        assertStringSetEquals(packet.access.scrutinyLayers.map((layer) => layer.id), want.scrutinyLayerIds.map(String), `procedureAccessExploration.${procedureId}.scrutinyLayerIds`, failures)
+      }
+      const clock = replayRecord(want.exposureClock)
+      if (clock.id !== undefined && packet.access.exposureClock?.id !== clock.id) {
+        failures.push(`procedureAccessExploration.${procedureId}.exposureClock.id: expected ${String(clock.id)}, got ${String(packet.access.exposureClock?.id)}`)
+      }
+      if (clock.current !== undefined && packet.access.exposureClock?.current !== clock.current) {
+        failures.push(`procedureAccessExploration.${procedureId}.exposureClock.current: expected ${String(clock.current)}, got ${String(packet.access.exposureClock?.current)}`)
+      }
+      if (clock.max !== undefined && packet.access.exposureClock?.max !== clock.max) {
+        failures.push(`procedureAccessExploration.${procedureId}.exposureClock.max: expected ${String(clock.max)}, got ${String(packet.access.exposureClock?.max)}`)
+      }
+      if (want.egressPhase !== undefined && packet.access.egressPhase !== want.egressPhase) {
+        failures.push(`procedureAccessExploration.${procedureId}.egressPhase: expected ${String(want.egressPhase)}, got ${packet.access.egressPhase}`)
+      }
+      if (want.ambientAlertness !== undefined && packet.access.ambientAlertness !== want.ambientAlertness) {
+        failures.push(`procedureAccessExploration.${procedureId}.ambientAlertness: expected ${String(want.ambientAlertness)}, got ${String(packet.access.ambientAlertness)}`)
+      }
+    }
+    if (packet.exploration) {
+      if (want.currentNodeId !== undefined && packet.exploration.currentNodeId !== want.currentNodeId) {
+        failures.push(`procedureAccessExploration.${procedureId}.currentNodeId: expected ${String(want.currentNodeId)}, got ${String(packet.exploration.currentNodeId)}`)
+      }
+      if (Array.isArray(want.nodeIds)) {
+        assertStringSetEquals(packet.exploration.nodes.map((node) => node.id), want.nodeIds.map(String), `procedureAccessExploration.${procedureId}.nodeIds`, failures)
+      }
+      if (Array.isArray(want.routeIds)) {
+        assertStringSetEquals(packet.exploration.routes.map((route) => route.id), want.routeIds.map(String), `procedureAccessExploration.${procedureId}.routeIds`, failures)
+      }
+      if (Array.isArray(want.hazardIds)) {
+        assertStringSetEquals(packet.exploration.hazards.map((hazard) => hazard.id), want.hazardIds.map(String), `procedureAccessExploration.${procedureId}.hazardIds`, failures)
+      }
+      if (want.ambientAlertness !== undefined && packet.exploration.ambientAlertness !== want.ambientAlertness) {
+        failures.push(`procedureAccessExploration.${procedureId}.ambientAlertness: expected ${String(want.ambientAlertness)}, got ${String(packet.exploration.ambientAlertness)}`)
+      }
+    }
+    if (Array.isArray(want.facts)) {
+      assertStringSetEquals(packet.facts.map((fact) => fact.text), want.facts.map(String), `procedureAccessExploration.${procedureId}.facts`, failures)
+    }
+  }
+}
+
+function assertProcedureInvestigation(fixture: ReplayFixture, state: Sf2State, failures: string[]): void {
+  const expected = fixture.expected?.procedureInvestigation
+  if (!expected) return
+  const packet = buildInvestigationSynthesisPacket(state)
+  if (expected.packetEquals === null) {
+    if (packet !== null) failures.push('procedureInvestigation: expected no packet')
+    return
+  }
+  if (!packet) {
+    failures.push('procedureInvestigation: expected synthesis packet')
+    return
+  }
+  if (expected.active !== undefined && packet.active !== expected.active) {
+    failures.push(`procedureInvestigation.active: expected ${String(expected.active)}, got ${String(packet.active)}`)
+  }
+  if (expected.procedureId !== undefined && packet.procedureId !== expected.procedureId) {
+    failures.push(`procedureInvestigation.procedureId: expected ${String(expected.procedureId)}, got ${packet.procedureId}`)
+  }
+  if (Array.isArray(expected.openQuestions)) {
+    assertStringSetEquals(packet.openQuestions, expected.openQuestions.map(String), 'procedureInvestigation.openQuestions', failures)
+  }
+  if (Array.isArray(expected.hypothesisClaims)) {
+    assertStringSetEquals(packet.hypotheses.map((hypothesis) => hypothesis.claim), expected.hypothesisClaims.map(String), 'procedureInvestigation.hypothesisClaims', failures)
+  }
+  if (Array.isArray(expected.contradictionIds)) {
+    assertStringSetEquals(packet.contradictions.map((contradiction) => contradiction.id), expected.contradictionIds.map(String), 'procedureInvestigation.contradictionIds', failures)
+  }
+  if (Array.isArray(expected.nextLeadTextsInclude)) {
+    for (const fragment of expected.nextLeadTextsInclude.map(String)) {
+      if (!packet.nextLeads.some((lead) => lead.text.includes(fragment))) {
+        failures.push(`procedureInvestigation.nextLeads missing "${fragment}"`)
+      }
+    }
+  }
+  const discriminator = replayRecord(expected.discriminator)
+  for (const rawCase of replayArray(discriminator.cases)) {
+    const testCase = replayRecord(rawCase)
+    const lane = classifyInvestigationDatum(replayRecord(testCase.input) as Parameters<typeof classifyInvestigationDatum>[0])
+    if (testCase.laneEquals !== undefined && lane !== testCase.laneEquals) {
+      failures.push(`procedureInvestigation.discriminator.${String(testCase.name)}: expected ${String(testCase.laneEquals)}, got ${lane}`)
+    }
+  }
+}
+
+function assertArcAuthorProcedureEval(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.arcAuthorProcedureEval
+  if (!expected) return
+  const result = evaluateProcedureArcPassBar(replayRecord(expected.input) as unknown as Parameters<typeof evaluateProcedureArcPassBar>[0])
+  if (expected.verdictEquals !== undefined && result.verdict !== expected.verdictEquals) {
+    failures.push(`arcAuthorProcedureEval.verdict: expected ${String(expected.verdictEquals)}, got ${result.verdict}`)
+  }
+  const checklist = replayRecord(expected.checklist)
+  for (const [key, want] of Object.entries(checklist)) {
+    if (result.checklist[key] !== want) {
+      failures.push(`arcAuthorProcedureEval.checklist.${key}: expected ${String(want)}, got ${String(result.checklist[key])}`)
+    }
+  }
+  if (Array.isArray(expected.reauthorNotesInclude)) {
+    for (const fragment of expected.reauthorNotesInclude.map(String)) {
+      if (!result.reauthorNotes.some((note) => note.includes(fragment))) {
+        failures.push(`arcAuthorProcedureEval.reauthorNotes missing "${fragment}"`)
+      }
+    }
+  }
 }
 
 function assertTurnResolutionStableJson(fixture: ReplayFixture, failures: string[]): void {
@@ -1598,6 +1888,27 @@ function assertStringSetEquals(
   if (gotSorted !== wantSorted) {
     failures.push(`${label}: expected [${wantSorted}], got [${gotSorted}]`)
   }
+}
+
+function assertOrderedStrings(
+  got: string[],
+  want: string[],
+  label: string,
+  failures: string[]
+): void {
+  const gotKey = got.join('|')
+  const wantKey = want.join('|')
+  if (gotKey !== wantKey) {
+    failures.push(`${label}: expected [${want.join(',')}], got [${got.join(',')}]`)
+  }
+}
+
+function replayRecord(value: unknown): JsonRecord {
+  return isRecord(value) ? value : {}
+}
+
+function replayArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
 }
 
 function assertNpcRoles(

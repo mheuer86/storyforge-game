@@ -51,6 +51,13 @@ import {
   mergeRetrievalCue,
 } from '../retrieval-cues'
 import {
+  coerceSf2ProcedureStatus,
+  isActiveSf2Procedure,
+  isSf2ProcedureStatus,
+  normalizeProcedureRuntime,
+  type Sf2ProcedureRuntime,
+} from '../procedure'
+import {
   rebuildOwnerThreadBackrefs,
   syncArcPlanStatusFromArcEntity,
 } from '../state-indexes'
@@ -186,6 +193,110 @@ function stringSetIntersects(a: string[], b: string[]): boolean {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((value) => value.length > 0)))
+}
+
+function snakeOrCamel(record: Record<string, unknown>, snake: string, camel: string): unknown {
+  return record[snake] ?? record[camel]
+}
+
+function procedurePayloadToRuntime(
+  payload: Record<string, unknown>,
+  id: string,
+  turnIndex: number,
+  prior?: Sf2ProcedureRuntime
+): Sf2ProcedureRuntime {
+  const runtime = normalizeProcedureRuntime({
+    id,
+    kind: (payload.kind ?? prior?.kind) as Sf2ProcedureRuntime['kind'],
+    status: (payload.status ?? prior?.status) as Sf2ProcedureRuntime['status'],
+    label: (payload.label ?? payload.name ?? prior?.label) as string | undefined,
+    genreSurface: snakeOrCamel(payload, 'genre_surface', 'genreSurface') as Sf2ProcedureRuntime['genreSurface'],
+    phase: (payload.phase ?? prior?.phase) as Sf2ProcedureRuntime['phase'],
+    objective: (payload.objective ?? prior?.objective) as string | undefined,
+    objectives: snakeOrCamel(payload, 'objectives', 'objectives') as Sf2ProcedureRuntime['objectives'],
+    stakes: (payload.stakes ?? prior?.stakes) as string | undefined,
+    facts: snakeOrCamel(payload, 'facts', 'facts') as Sf2ProcedureRuntime['facts'],
+    constraints: snakeOrCamel(payload, 'constraints', 'constraints') as Sf2ProcedureRuntime['constraints'],
+    affordances: snakeOrCamel(payload, 'affordances', 'affordances') as Sf2ProcedureRuntime['affordances'],
+    complications: snakeOrCamel(payload, 'complications', 'complications') as Sf2ProcedureRuntime['complications'],
+    contributions: snakeOrCamel(payload, 'contributions', 'contributions') as Sf2ProcedureRuntime['contributions'],
+    assessments: snakeOrCamel(payload, 'assessments', 'assessments') as Sf2ProcedureRuntime['assessments'],
+    abortConditions: snakeOrCamel(payload, 'abort_conditions', 'abortConditions') as Sf2ProcedureRuntime['abortConditions'],
+    signals: snakeOrCamel(payload, 'signals', 'signals') as Sf2ProcedureRuntime['signals'],
+    linkedRefs: snakeOrCamel(payload, 'linked_refs', 'linkedRefs') as Sf2ProcedureRuntime['linkedRefs'],
+    createdAtTurn: prior?.createdAtTurn ?? turnIndex,
+    updatedAtTurn: turnIndex,
+  }, turnIndex)
+  if (prior) {
+    return mergeProcedureRuntime(prior, runtime, payload, turnIndex)
+  }
+  return runtime
+}
+
+function mergeProcedureRuntime(
+  prior: Sf2ProcedureRuntime,
+  incoming: Sf2ProcedureRuntime,
+  payload: Record<string, unknown>,
+  turnIndex: number
+): Sf2ProcedureRuntime {
+  return normalizeProcedureRuntime({
+    ...prior,
+    kind: prior.kind,
+    status: payload.status !== undefined ? incoming.status : prior.status,
+    label: payload.label !== undefined || payload.name !== undefined ? incoming.label : prior.label,
+    genreSurface: incoming.genreSurface ?? prior.genreSurface,
+    phase: payload.phase !== undefined ? incoming.phase : prior.phase,
+    objective: payload.objective !== undefined ? incoming.objective : prior.objective,
+    objectives: payload.objectives !== undefined ? incoming.objectives : prior.objectives,
+    stakes: payload.stakes !== undefined ? incoming.stakes : prior.stakes,
+    facts: mergeById(prior.facts, incoming.facts),
+    constraints: mergeById(prior.constraints, incoming.constraints),
+    affordances: mergeById(prior.affordances, incoming.affordances),
+    complications: mergeById(prior.complications, incoming.complications),
+    contributions: mergeById(prior.contributions, incoming.contributions),
+    assessments: mergeById(prior.assessments ?? [], incoming.assessments ?? []),
+    abortConditions: mergeById(prior.abortConditions ?? [], incoming.abortConditions ?? []),
+    signals: mergeById(prior.signals ?? [], incoming.signals ?? []),
+    linkedRefs: mergeProcedureLinks(prior.linkedRefs, incoming.linkedRefs),
+    createdAtTurn: prior.createdAtTurn,
+    updatedAtTurn: turnIndex,
+  }, turnIndex)
+}
+
+function mergeById<T extends { id: string }>(prior: T[], incoming: T[]): T[] {
+  const merged = new Map<string, T>()
+  for (const item of prior) merged.set(item.id, item)
+  for (const item of incoming) merged.set(item.id, item)
+  return [...merged.values()]
+}
+
+function mergeProcedureLinks(
+  prior: Sf2ProcedureRuntime['linkedRefs'],
+  incoming: Sf2ProcedureRuntime['linkedRefs']
+): Sf2ProcedureRuntime['linkedRefs'] {
+  const seen = new Set<string>()
+  const merged: Sf2ProcedureRuntime['linkedRefs'] = []
+  for (const link of [...prior, ...incoming]) {
+    const key = `${link.kind}:${link.id}:${link.parentKind ?? ''}:${link.parentId ?? ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(link)
+  }
+  return merged
+}
+
+function resolveProcedureId(draft: Sf2State, idOrCurrent: string): string | null {
+  if (!draft.campaign.procedures) draft.campaign.procedures = {}
+  if (draft.campaign.procedures[idOrCurrent]) return idOrCurrent
+  if (idOrCurrent === 'current' && draft.world.operationRuntimeId) return draft.world.operationRuntimeId
+  if (idOrCurrent === 'current') {
+    return Object.values(draft.campaign.procedures).find((procedure) =>
+      procedure.kind === 'operation' && isActiveSf2Procedure(procedure)
+    )?.id ?? null
+  }
+  return Object.values(draft.campaign.procedures).find((procedure) =>
+    semanticTextMatches(procedure.label, idOrCurrent)
+  )?.id ?? null
 }
 
 function coerceClueEvidenceKind(value: unknown): Sf2ClueEvidenceKind {
@@ -1443,6 +1554,38 @@ function applyCreate(
         outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
         return
       }
+      case 'procedure': {
+        const p = write.payload as Record<string, unknown>
+        if (!draft.campaign.procedures) draft.campaign.procedures = {}
+        const proposedKind = String(p.kind ?? 'operation')
+        const existingOperation = proposedKind === 'operation'
+          ? Object.values(draft.campaign.procedures).find((procedure) =>
+              procedure.kind === 'operation' && isActiveSf2Procedure(procedure)
+            )
+          : undefined
+        const id = (p.id as string | undefined) ?? existingOperation?.id ?? nextEntityId('procedure', draft)
+        const prior = draft.campaign.procedures[id]
+        const runtime = procedurePayloadToRuntime(p, id, turnIndex, prior)
+        if (proposedKind && runtime.kind !== proposedKind) {
+          outcomes.push({
+            accepted: false,
+            reason: `procedure.kind: invalid value ${proposedKind}`,
+            writeRef: ref,
+            confidenceTier: write.confidence,
+          })
+          return
+        }
+        draft.campaign.procedures[id] = runtime
+        if (runtime.kind === 'operation') draft.world.operationRuntimeId = id
+        if (isActiveSf2Procedure(runtime)) {
+          draft.world.activeProcedureIds = uniqueStrings([...(draft.world.activeProcedureIds ?? []), id])
+        } else {
+          draft.world.activeProcedureIds = (draft.world.activeProcedureIds ?? []).filter((procedureId) => procedureId !== id)
+        }
+        if (prior || existingOperation) driftDedup(drift, 'procedure', id, (prior ?? existingOperation)?.id ?? id)
+        outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
       case 'arc': {
         const p = write.payload as Record<string, unknown>
         const threadRefs = Array.isArray(p.thread_ids) ? (p.thread_ids as string[]) : []
@@ -2033,6 +2176,31 @@ function applyUpdate(
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }
+    case 'procedure': {
+      const id = resolveProcedureId(draft, write.entityId)
+      if (!id) {
+        outcomes.push({
+          accepted: false,
+          reason: 'procedure.id: not in registry',
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      const procedures = draft.campaign.procedures ?? {}
+      draft.campaign.procedures = procedures
+      const prior = procedures[id]
+      const next = procedurePayloadToRuntime(write.changes, id, turnIndex, prior)
+      procedures[id] = next
+      if (next.kind === 'operation') draft.world.operationRuntimeId = id
+      if (isActiveSf2Procedure(next)) {
+        draft.world.activeProcedureIds = uniqueStrings([...(draft.world.activeProcedureIds ?? []), id])
+      } else {
+        draft.world.activeProcedureIds = (draft.world.activeProcedureIds ?? []).filter((procedureId) => procedureId !== id)
+      }
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
     case 'arc': {
       const id = write.entityId
       if (!draft.campaign.arcs[id]) {
@@ -2302,6 +2470,38 @@ function applyTransition(
       }
       arc.status = write.toStatus as Sf2Arc['status']
       syncArcPlanStatusFromArcEntity(draft)
+      outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
+      return
+    }
+    case 'procedure': {
+      const id = resolveProcedureId(draft, write.entityId)
+      if (!id) {
+        outcomes.push({ accepted: false, reason: 'procedure not found', writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
+      if (!isSf2ProcedureStatus(write.toStatus)) {
+        outcomes.push({
+          accepted: false,
+          reason: `procedure.status: invalid transition target ${write.toStatus}`,
+          writeRef: ref,
+          confidenceTier: write.confidence,
+        })
+        return
+      }
+      const procedures = draft.campaign.procedures ?? {}
+      draft.campaign.procedures = procedures
+      const procedure = procedures[id]
+      if (!procedure) {
+        outcomes.push({ accepted: false, reason: 'procedure not found', writeRef: ref, confidenceTier: write.confidence })
+        return
+      }
+      procedure.status = coerceSf2ProcedureStatus(write.toStatus, procedure.status)
+      procedure.updatedAtTurn = draft.history.turns.length
+      if (isActiveSf2Procedure(procedure)) {
+        draft.world.activeProcedureIds = uniqueStrings([...(draft.world.activeProcedureIds ?? []), id])
+      } else {
+        draft.world.activeProcedureIds = (draft.world.activeProcedureIds ?? []).filter((procedureId) => procedureId !== id)
+      }
       outcomes.push({ accepted: true, writeRef: ref, confidenceTier: write.confidence })
       return
     }

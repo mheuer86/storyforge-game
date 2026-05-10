@@ -1,0 +1,66 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc author procedure eval passbar",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Arc Author procedure-heavy outputs should be evaluated as flexible pressure fields rather than literal mission itineraries."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure Arc Author evaluation contract)",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "arcAuthorProcedureEval": {
+      "input": {
+        "seed": "Iron Veil style annex insertion",
+        "scenarioShape": "procedure-heavy pressure field, not fixed route",
+        "durableForces": ["Registry authority", "dock labor network", "annex security command"],
+        "pressureEngines": [
+          "deadline window before the noon transfer clock closes",
+          "surveillance exposure trace through badge scrutiny and watch logs",
+          "military guard escalation if the annex alarm fills",
+          "crew trust and inclusion risk if Ren treats support as disposable"
+        ],
+        "stanceAxes": [
+          "covert versus direct",
+          "alone versus coalition",
+          "technical exploit versus social leverage"
+        ],
+        "chapterFunctions": [
+          "introduce the deadline force and first support pressure",
+          "raise exposure while preserving alternate routes",
+          "test whether crew trust or institutional risk becomes the main cost"
+        ],
+        "possibleEndgames": [
+          "clean extraction with leverage",
+          "burned credential with political fallout",
+          "failed insertion that becomes an egress chapter"
+        ],
+        "alternateStanceNotes": [
+          "Direct assault hardens the guard engine but keeps the crew-trust axis live."
+        ]
+      },
+      "verdictEquals": "pass",
+      "checklist": {
+        "durableForcesNamed": true,
+        "stanceAxesSufficient": true,
+        "endgamesSufficient": true,
+        "chapterFunctionsArePressureJobs": true,
+        "alternateStanceValid": true,
+        "nonOperationSeedNotForced": true,
+        "pressureEngineCoverage": true
+      }
+    }
+  }
+}

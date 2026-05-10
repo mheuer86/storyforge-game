@@ -1,0 +1,156 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "iron veil 01 procedure contracts",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Iron Veil-shaped benchmark contracts should be covered without replaying a 50-turn chapter or requiring live model calls."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_access_iron_veil": {
+            "id": "procedure_access_iron_veil",
+            "kind": "access",
+            "status": "active",
+            "label": "Annex credential run",
+            "phase": "egress",
+            "facts": [
+              {
+                "id": "fact_support_window",
+                "text": "Support expertise identified the noon registry window.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 6
+              }
+            ],
+            "constraints": [
+              {
+                "id": "constraint_alert",
+                "label": "Annex alert exposure",
+                "kind": "exposure",
+                "status": "active",
+                "current": 3,
+                "max": 5,
+                "linkedRefs": [{ "kind": "clock", "id": "clock_annex_alert" }]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_mask",
+                "label": "Borrowed registry mask",
+                "kind": "credential",
+                "status": "available",
+                "linkedRefs": [{ "kind": "credential_mask", "id": "mask_registry" }]
+              }
+            ],
+            "complications": [
+              {
+                "id": "complication_leash",
+                "label": "Escort leash",
+                "effectSummary": "Movement is limited to visible registry lanes.",
+                "status": "active",
+                "linkedRefs": [{ "kind": "scrutiny_layer", "id": "scrutiny_registry_escort" }]
+              }
+            ],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 6,
+            "updatedAtTurn": 7
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_access_iron_veil"]
+      }
+    },
+    "playerInput": "Use the mask, accept the escort, and get out before the alert fills.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureAccessExploration": {
+      "packets": [
+        {
+          "procedureId": "procedure_access_iron_veil",
+          "kind": "access",
+          "posture": "masked",
+          "credentialMaskIds": ["mask_registry"],
+          "scrutinyLayerIds": ["scrutiny_registry_escort"],
+          "exposureClock": { "id": "clock_annex_alert", "current": 3, "max": 5 },
+          "egressPhase": "not_started",
+          "ambientAlertness": 0.75
+        }
+      ]
+    },
+    "procedureOffscreenTask": {
+      "task": {
+        "id": "task_decode_registry",
+        "owner": { "kind": "software", "id": "asset_daemon", "label": "Registry daemon" },
+        "goal": "Decode the annex routing digest during compressed prep time.",
+        "work_window": { "duration": 1, "units": "night" },
+        "status": "partial",
+        "risk": "high",
+        "visibleTrace": "The digest resolves one route and leaves a checksum scar.",
+        "links": { "procedure": "procedure_access_iron_veil", "asset": "asset_daemon" },
+        "partial_results": [
+          {
+            "kind": "procedure_fact",
+            "fact": {
+              "id": "fact_route_digest",
+              "text": "The annex routing digest names the registry-escort lane.",
+              "confidence": "confirmed",
+              "sourceRefs": [{ "kind": "asset", "id": "asset_daemon" }],
+              "lastUpdatedTurn": 6
+            }
+          }
+        ],
+        "final_result": {
+          "kind": "complication_delta",
+          "complication": {
+            "id": "complication_checksum_scar",
+            "label": "Checksum scar",
+            "effectSummary": "The route is known, but a later trace can connect the daemon to it.",
+            "status": "active",
+            "linkedRefs": [{ "kind": "procedure", "id": "procedure_access_iron_veil" }]
+          }
+        }
+      },
+      "expect": {
+        "id": "task_decode_registry",
+        "status": "partial",
+        "risk": "high",
+        "procedureId": "procedure_access_iron_veil",
+        "partialResultKinds": ["procedure_fact"],
+        "finalResultKind": "complication_delta",
+        "resultKinds": ["procedure_fact", "complication_delta"]
+      }
+    },
+    "forwardMotionAdvisories": {
+      "cases": [
+        {
+          "name": "successor pressure suppresses loop warning",
+          "input": {
+            "beatMode": "access_execution",
+            "currentBeatKey": "annex:credential-leash",
+            "priorBeatKey": "annex:credential-leash",
+            "turnsSinceMaterialChange": 3,
+            "activeProcedureIds": ["procedure_access_iron_veil"],
+            "successorThreadIds": ["thread_checksum_trace"]
+          },
+          "advisoryEquals": null
+        }
+      ]
+    }
+  }
+}

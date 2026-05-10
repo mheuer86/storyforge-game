@@ -252,6 +252,7 @@ Some world facts are mechanically small but continuity-critical. Preserve them t
 
 - **Thread gates / progress_events** — access, movement, hold, lien, route, lock, passage, or authorization status that changes future options.
 - **Operation_plan updates** — active tactical plans, pauses, clearances, objectives, fallbacks, and resolved/abandoned operation states.
+- **Procedure updates** — live runtime facts, constraints, affordances, complications, assessments, abort conditions, signals, and phase changes. Use this for what is happening during the operation; keep the operation_plan as the intended plan.
 - **Documents** — named artifacts whose terms, authorship, custody, or authority matter later.
 - **Temporal anchors** — deadlines, windows, timestamps, durations, and sequence facts.
 - **Scene state / location writes** — where the PC is, what location is current, who is present, and what immediate blocking state is visible.

@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "beat mode meta pauses pacing diagnostics",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Rules/meta negotiation should select meta beat mode and suppress the pacing advisory event for that Narrator context."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Wait, should I have rolled for that access check?",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "perTurnDeltaIncludes": [
+      "## Beat mode",
+      "- Mode: meta",
+      "- Close/reframe pressure: suspended",
+      "- Roll-drought: Generic roll-drought pressure is suspended"
+    ],
+    "perTurnDeltaExcludes": [
+      "## Pacing advisories"
+    ],
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "playerInput": "Wait, should I have rolled for that access check?",
+      "pacingEventAbsent": true,
+      "userMessageContainsAll": [
+        "## Beat mode",
+        "- Mode: meta"
+      ]
+    }
+  }
+}

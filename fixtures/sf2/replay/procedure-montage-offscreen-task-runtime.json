@@ -1,0 +1,86 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure montage offscreen task runtime",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Documents off-screen montage task normalization through Sf2ProcedureResult for procedure ticket 12."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Send Mara to spoof the rail manifest while I keep the clerk busy.",
+    "isInitial": false,
+    "narrator": { "prose": "(helper-only fixture)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureOffscreenTask": {
+      "helper": "lib/sf2/procedure-planning.ts",
+      "task": {
+        "id": "task_mara_manifest_spoof",
+        "label": "Mara spoofs the rail manifest",
+        "owner": { "kind": "npc", "id": "npc_mara", "label": "Mara" },
+        "goal": "Create a temporary freight transfer record for the annex exit.",
+        "work_window": { "duration": 2, "units": "hours" },
+        "status": "complete",
+        "risk": "medium",
+        "visibleTrace": "The clerk terminal flashes a new outgoing rail slot under Mara's borrowed seal.",
+        "links": { "procedure": "procedure_op_annex", "asset": "asset_borrowed_seal" },
+        "createdAtTurn": 6,
+        "updatedAtTurn": 7,
+        "partial_results": [
+          {
+            "kind": "procedure_fact",
+            "fact": {
+              "id": "fact_rail_slot",
+              "text": "A temporary freight transfer record now points to rail slot C-19.",
+              "confidence": "confirmed",
+              "sourceRefs": [{ "kind": "npc", "id": "npc_mara" }],
+              "lastUpdatedTurn": 7
+            }
+          },
+          {
+            "kind": "clock_tick",
+            "clockId": "clock_annex_scrutiny",
+            "delta": 1,
+            "reason": "The spoof leaves a reconciliation mismatch."
+          }
+        ],
+        "final_result": {
+          "kind": "affordance_delta",
+          "affordance": {
+            "id": "affordance_rail_exit",
+            "label": "Rail slot C-19 exit",
+            "kind": "route",
+            "status": "available",
+            "linkedRefs": [{ "kind": "procedure", "id": "procedure_op_annex" }]
+          }
+        }
+      },
+      "expect": {
+        "id": "task_mara_manifest_spoof",
+        "status": "complete",
+        "risk": "medium",
+        "procedureId": "procedure_op_annex",
+        "visibleTraceIncludes": "terminal flashes a new outgoing rail slot",
+        "partialResultKinds": ["procedure_fact", "clock_tick"],
+        "finalResultKind": "affordance_delta",
+        "resultKinds": [
+          "procedure_fact",
+          "clock_tick",
+          "affordance_delta"
+        ],
+        "firstResultFactId": "fact_rail_slot",
+        "secondResultClockDelta": 1,
+        "finalResultAffordanceKind": "route"
+      }
+    }
+  }
+}

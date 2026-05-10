@@ -1,0 +1,62 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure chapter transition carry forward",
+  "source": {
+    "kind": "synthetic-contract",
+    "purpose": "Documents the bounded procedure-transition helper contract: leverage residue should carry forward only through a pressure owner, while background constraints reframe and discarded mechanisms are left behind."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure helper contract fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureTransitions": {
+      "carryForwardCases": [
+        {
+          "input": {
+            "mechanism": "authenticated route chit",
+            "keepAs": "leverage"
+          },
+          "classEquals": "leverage",
+          "actionEquals": "carry_forward",
+          "carryForwardAsEquals": "leverage",
+          "instructionIncludes": "pressure owner actively using it"
+        },
+        {
+          "input": {
+            "mechanism": "berth departure clearance",
+            "keepAs": "constraint"
+          },
+          "classEquals": "background_constraint",
+          "actionEquals": "reframe",
+          "carryForwardAsEquals": "background",
+          "instructionIncludes": "not a fresh main choice"
+        },
+        {
+          "input": {
+            "mechanism": "dock queue ticket",
+            "keepAs": "discard"
+          },
+          "classEquals": "discarded_mechanism",
+          "actionEquals": "discard",
+          "carryForwardAsEquals": "discard",
+          "instructionIncludes": "do-not-restage"
+        }
+      ]
+    }
+  }
+}

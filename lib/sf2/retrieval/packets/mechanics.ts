@@ -1,7 +1,16 @@
 import type { Sf2MechanicsPacket, Sf2State } from '../../types'
+import { buildProcedurePacket, isActiveSf2Procedure } from '../../procedure'
+import { deriveSf2BeatMode, getSf2BeatModeGuidance } from '../../beat-mode'
+import { buildCombatProcedurePacket } from '../../procedure-combat'
 
-export function buildMechanicsPacket(state: Sf2State): Sf2MechanicsPacket {
+export function buildMechanicsPacket(state: Sf2State, playerInput = ''): Sf2MechanicsPacket {
+  const beatMode = deriveSf2BeatMode(state, playerInput)
   const modules: Sf2MechanicsPacket['activeModules'] = []
+  const procedurePackets = Object.values(state.campaign.procedures ?? {})
+    .filter(isActiveSf2Procedure)
+    .map((procedure) => buildProcedurePacket(procedure))
+  const combatRuntime = buildCombatProcedurePacket(state)
+
   if (state.world.combat?.active) {
     modules.push({
       kind: 'combat',
@@ -11,13 +20,23 @@ export function buildMechanicsPacket(state: Sf2State): Sf2MechanicsPacket {
         hp: e.hp,
         ac: e.ac,
       })),
+      runtime: combatRuntime,
     })
   }
+  const operationRuntime = procedurePackets.find((packet) => packet.kind === 'operation')
   if (state.world.operation) {
     modules.push({
       kind: 'operation',
       phase: state.world.operation.phase,
       status: state.world.operation.status,
+      runtime: operationRuntime,
+    })
+  } else if (operationRuntime) {
+    modules.push({
+      kind: 'operation',
+      phase: operationRuntime.phase ?? 'orientation',
+      status: operationRuntime.status,
+      runtime: operationRuntime,
     })
   }
   if (state.world.exploration) {
@@ -42,5 +61,12 @@ export function buildMechanicsPacket(state: Sf2State): Sf2MechanicsPacket {
     })
   }
 
-  return { activeModules: modules }
+  return {
+    beatMode: {
+      mode: beatMode,
+      guidance: getSf2BeatModeGuidance(beatMode),
+    },
+    activeModules: modules,
+    procedures: procedurePackets,
+  }
 }

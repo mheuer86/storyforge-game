@@ -1,0 +1,119 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure combat packet coexists with operation",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Combat beat mode should drive pacing while active operation procedure constraints remain visible in the same mechanics packet."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_op_annex": {
+            "id": "procedure_op_annex",
+            "kind": "operation",
+            "status": "active",
+            "label": "Registry Annex Entry",
+            "phase": "engagement",
+            "objectives": ["Reach the sealed freight bay."],
+            "facts": [],
+            "constraints": [
+              {
+                "id": "constraint_badge",
+                "label": "Visitor badge has one clean scan",
+                "kind": "resource",
+                "status": "active",
+                "current": 1,
+                "max": 1,
+                "linkedRefs": []
+              }
+            ],
+            "affordances": [],
+            "complications": [],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 3,
+            "updatedAtTurn": 3
+          },
+          "procedure_combat_dock": {
+            "id": "procedure_combat_dock",
+            "kind": "combat",
+            "status": "active",
+            "label": "Dockside Intercept",
+            "objectives": ["Reach the service stair before the patrol pins you."],
+            "facts": [
+              {
+                "id": "player_position",
+                "text": "behind the cargo sled",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 4
+              },
+              {
+                "id": "exit_objective_met",
+                "text": "service stair reached",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 4
+              }
+            ],
+            "constraints": [
+              {
+                "id": "hazard_open_lane",
+                "label": "Open fire lane across the dock",
+                "kind": "physical",
+                "status": "active",
+                "linkedRefs": []
+              }
+            ],
+            "affordances": [],
+            "complications": [],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 4,
+            "updatedAtTurn": 4
+          }
+        }
+      },
+      "world": {
+        "combat": {
+          "active": true,
+          "round": 2,
+          "enemies": [
+            { "name": "Annex guard", "hp": 8, "ac": 13, "abilities": ["status:pinned"] }
+          ]
+        },
+        "operationRuntimeId": "procedure_op_annex",
+        "activeProcedureIds": ["procedure_op_annex", "procedure_combat_dock"]
+      }
+    },
+    "playerInput": "I shove the sled into the guard and sprint for the stair.",
+    "isInitial": false,
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "sceneKernel": {
+      "activeProcedureIdsIncludes": ["procedure_op_annex", "procedure_combat_dock", "combat"]
+    },
+    "perTurnDeltaIncludes": [
+      "- Mode: combat",
+      "- Combat round 2",
+      "objectives: Reach the service stair before the patrol pins you.",
+      "position: behind the cargo sled",
+      "hazards: Open fire lane across the dock",
+      "exits: objective_met",
+      "- Operation · phase: engagement · active",
+      "constraints: Visitor badge has one clean scan (active 1/1)"
+    ]
+  }
+}

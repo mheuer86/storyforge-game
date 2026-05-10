@@ -1,0 +1,87 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure archivist creates operation runtime",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Archivist can create a live operation procedure runtime without mutating the intended operation plan lane."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "operationPlan": {
+          "name": "Intake Mask",
+          "target": "Enter the registry annex as intake workers.",
+          "approach": "Use the visitor badge and service stair.",
+          "fallback": "Leave through the loading yard.",
+          "status": "active",
+          "lastUpdatedTurn": 2
+        }
+      }
+    },
+    "playerInput": "Commit the intake mask and move to the service stair.",
+    "narrator": {
+      "prose": "You commit the intake mask. The visitor badge will survive one clean scan; after that, the annex systems will expect a worker record.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "procedure",
+            "payload": {
+              "kind": "operation",
+              "label": "Intake Mask",
+              "status": "active",
+              "phase": "engagement",
+              "objective": "Enter the registry annex as intake workers.",
+              "facts": [
+                {
+                  "id": "fact_badge_scan",
+                  "text": "The visitor badge will survive one clean scan.",
+                  "confidence": "confirmed",
+                  "sourceRefs": [],
+                  "lastUpdatedTurn": 2
+                }
+              ],
+              "constraints": [
+                {
+                  "id": "constraint_badge_scan",
+                  "label": "Visitor badge scan",
+                  "kind": "resource",
+                  "status": "active",
+                  "current": 1,
+                  "max": 1,
+                  "linkedRefs": []
+                }
+              ],
+              "affordances": [],
+              "complications": [],
+              "contributions": [],
+              "linkedRefs": []
+            },
+            "confidence": "high",
+            "sourceQuote": "The visitor badge will survive one clean scan"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistAcceptedRefs": ["creates[0]"],
+    "sceneKernel": {
+      "activeProcedureIdsIncludes": ["procedure_0"]
+    },
+    "perTurnDeltaIncludes": [
+      "- Operation · phase: engagement · active",
+      "objective: Enter the registry annex as intake workers.",
+      "facts: The visitor badge will survive one clean scan.",
+      "constraints: Visitor badge scan (active 1/1)"
+    ]
+  }
+}

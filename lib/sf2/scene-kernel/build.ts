@@ -15,6 +15,7 @@ import type {
   Sf2SceneKernelLegalTransition,
   Sf2State,
 } from '../types'
+import { isActiveSf2Procedure } from '../procedure'
 
 // Default forbidden-without-transition list — declarative for now, enforcement
 // arrives with the display sentinel (Phase C). Three rules cover the PRD's
@@ -83,9 +84,10 @@ export function buildSceneKernel(
   // not who can speak.
   const speakingAllowedEntityIds = [...presentEntityIds, 'pc']
 
-  // Procedures: project from existing world modules. Rich procedure state
-  // (surgery/hack phases per PRD) is deferred until a real scenario needs it.
   const activeProcedureIds: string[] = []
+  for (const procedure of Object.values(state.campaign.procedures ?? {})) {
+    if (isActiveSf2Procedure(procedure)) activeProcedureIds.push(procedure.id)
+  }
   if (state.world.combat?.active) activeProcedureIds.push('combat')
   if (state.world.operation) activeProcedureIds.push('operation')
   if (state.world.exploration) activeProcedureIds.push('exploration')

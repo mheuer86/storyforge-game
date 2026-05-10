@@ -201,6 +201,7 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
     player,
     campaign: {
       arcPlan: undefined,
+      procedures: {},
       arcs: {},
       threads: {},
       engines: {},

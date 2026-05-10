@@ -636,29 +636,82 @@ function Metric({ value, label, accent }: { value: string; label: string; accent
 
 function ObjectivePanel({ state }: { state: Sf2State }) {
   const plan = state.campaign.operationPlan
+  const runtime = Object.values(state.campaign.procedures ?? {}).find((procedure) =>
+    procedure.kind === 'operation' && (procedure.status === 'active' || procedure.status === 'paused')
+  )
+  const objectives = runtime
+    ? runtime.objectives && runtime.objectives.length > 0
+      ? runtime.objectives
+      : runtime.objective ? [runtime.objective] : []
+    : []
 
-  if (!plan) {
+  if (!plan && !runtime) {
     return null
   }
 
   return (
     <HudPanel
-      title="Ops Plan"
+      title={runtime ? 'Operation' : 'Ops Plan'}
       right={
         <span className="rounded-md border border-primary/70 bg-primary/10 px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.16em] text-primary">
-          {plan.status ?? 'active'}
+          {runtime?.status ?? plan?.status ?? 'active'}
         </span>
       }
     >
       <div className="space-y-3">
-        {plan.name && (
+        {(runtime?.label || plan?.name) && (
           <div className="text-sm font-medium tracking-normal text-foreground/90">
-            {plan.name}
+            {runtime?.label || plan?.name}
           </div>
         )}
-        <KeyValue label="Target" value={plan.target} />
-        <KeyValue label="Approach" value={plan.approach} />
-        <KeyValue label="Fallback" value={plan.fallback} muted />
+        {runtime?.phase && <KeyValue label="Phase" value={runtime.genreSurface?.phaseLabel ?? runtime.phase} />}
+        {objectives.length > 0 && <KeyValue label={objectives.length === 1 ? 'Objective' : 'Objectives'} value={objectives.join(' / ')} />}
+        {plan && (
+          <>
+            <KeyValue label="Target" value={plan.target} />
+            <KeyValue label="Approach" value={plan.approach} />
+            <KeyValue label="Fallback" value={plan.fallback} muted />
+          </>
+        )}
+        {runtime && runtime.constraints.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/75">Constraints</div>
+            {runtime.constraints.slice(0, 3).map((constraint) => (
+              <div key={constraint.id} className="flex items-center justify-between gap-3 rounded-md bg-background/40 px-2 py-1.5 text-xs">
+                <span className="min-w-0 truncate text-foreground/80">{constraint.label}</span>
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  {typeof constraint.current === 'number' && typeof constraint.max === 'number'
+                    ? `${constraint.current}/${constraint.max}`
+                    : constraint.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {runtime && runtime.facts.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/75">Facts</div>
+            {runtime.facts.slice(0, 3).map((fact) => (
+              <div key={fact.id} className="rounded-md bg-background/40 px-2 py-1.5 text-xs text-foreground/80">
+                {fact.text}
+              </div>
+            ))}
+          </div>
+        )}
+        {runtime && runtime.abortConditions && runtime.abortConditions.length > 0 && (
+          <KeyValue
+            label="Abort"
+            value={runtime.abortConditions.filter((condition) => condition.status === 'armed').map((condition) => condition.label).join(', ')}
+            muted
+          />
+        )}
+        {runtime && runtime.signals && runtime.signals.length > 0 && (
+          <KeyValue
+            label="Signals"
+            value={runtime.signals.filter((signal) => !signal.consumed && signal.status === 'ready').map((signal) => signal.name).join(', ')}
+            muted
+          />
+        )}
       </div>
     </HudPanel>
   )

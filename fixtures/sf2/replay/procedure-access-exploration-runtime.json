@@ -1,0 +1,150 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure access exploration runtime",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Access and exploration procedure records should derive bounded support packets for posture, masks, scrutiny, exposure, egress, nodes, routes, hazards, and ambient alertness."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "procedures": {
+          "procedure_access_annex": {
+            "id": "procedure_access_annex",
+            "kind": "access",
+            "status": "active",
+            "label": "Registry Annex Cover",
+            "phase": "engagement",
+            "facts": [
+              {
+                "id": "fact_badge_rotates",
+                "text": "The intake badge is accepted until the clerk rotation.",
+                "confidence": "confirmed",
+                "sourceRefs": [],
+                "lastUpdatedTurn": 4
+              }
+            ],
+            "constraints": [
+              {
+                "id": "constraint_exposure",
+                "label": "Annex exposure clock",
+                "kind": "exposure",
+                "status": "active",
+                "current": 2,
+                "max": 4,
+                "linkedRefs": [{ "kind": "clock", "id": "clock_annex_exposure" }]
+              },
+              {
+                "id": "constraint_scrutiny",
+                "label": "Desk clerk is watching the badge lane",
+                "kind": "social",
+                "status": "active",
+                "current": 2,
+                "max": 4,
+                "linkedRefs": [{ "kind": "scrutiny_layer", "id": "scrutiny_desk_clerk" }]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_badge",
+                "label": "Morning intake badge",
+                "kind": "credential",
+                "status": "available",
+                "linkedRefs": [{ "kind": "credential_mask", "id": "mask_morning_intake" }]
+              }
+            ],
+            "complications": [],
+            "contributions": [],
+            "linkedRefs": [],
+            "createdAtTurn": 4,
+            "updatedAtTurn": 4
+          },
+          "procedure_exploration_annex": {
+            "id": "procedure_exploration_annex",
+            "kind": "exploration",
+            "status": "active",
+            "label": "Registry Annex Interior",
+            "phase": "engagement",
+            "facts": [],
+            "constraints": [
+              {
+                "id": "constraint_laser_grid",
+                "label": "Old counting-house laser grid",
+                "kind": "technical",
+                "status": "active",
+                "current": 3,
+                "max": 4,
+                "linkedRefs": [{ "kind": "area_node", "id": "node_counting_house" }]
+              }
+            ],
+            "affordances": [
+              {
+                "id": "affordance_service_stair",
+                "label": "Service stair behind the intake wall",
+                "kind": "route",
+                "status": "available",
+                "linkedRefs": [{ "kind": "route", "id": "route_service_stair" }]
+              }
+            ],
+            "complications": [
+              {
+                "id": "complication_echo_alarm",
+                "label": "Echo alarm in the document vault",
+                "effectSummary": "Fast movement makes the vault listen.",
+                "status": "active",
+                "linkedRefs": [{ "kind": "area_node", "id": "node_document_vault" }]
+              }
+            ],
+            "contributions": [],
+            "linkedRefs": [
+              { "kind": "area_node", "id": "node_intake" },
+              { "kind": "route", "id": "route_service_stair" }
+            ],
+            "createdAtTurn": 4,
+            "updatedAtTurn": 4
+          }
+        }
+      },
+      "world": {
+        "activeProcedureIds": ["procedure_access_annex", "procedure_exploration_annex"]
+      }
+    },
+    "playerInput": "Keep the cover steady and map the next room.",
+    "narrator": { "prose": "(unused)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureAccessExploration": {
+      "packets": [
+        {
+          "procedureId": "procedure_access_annex",
+          "kind": "access",
+          "posture": "masked",
+          "credentialMaskIds": ["mask_morning_intake"],
+          "scrutinyLayerIds": ["scrutiny_desk_clerk"],
+          "exposureClock": { "id": "clock_annex_exposure", "current": 2, "max": 4 },
+          "egressPhase": "not_started",
+          "ambientAlertness": 0.5
+        },
+        {
+          "procedureId": "procedure_exploration_annex",
+          "kind": "exploration",
+          "currentNodeId": "node_intake",
+          "nodeIds": ["node_intake", "node_counting_house"],
+          "routeIds": ["route_service_stair"],
+          "hazardIds": ["constraint_laser_grid", "complication_echo_alarm"],
+          "ambientAlertness": 0.75
+        }
+      ]
+    }
+  }
+}

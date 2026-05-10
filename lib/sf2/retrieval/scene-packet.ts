@@ -17,6 +17,7 @@ import { DORMANT_TURN_THRESHOLD, buildPresentCastPackets } from './packets/cast'
 import { buildRecentContextPacket } from './packets/recent-context'
 import { buildThreadPackets } from './packets/tensions'
 import { buildWorkingSet } from './working-set'
+import { renderBeatModeBlock } from '../beat-mode'
 
 export function buildScenePacket(
   state: Sf2State,
@@ -49,14 +50,16 @@ export function buildScenePacket(
     revelationProgress: buildRevelationProgressPackets(state),
     temporalAnchors: buildTemporalAnchorPackets(state),
     chapter: buildChapterPacket(state),
-    mechanics: buildMechanicsPacket(state),
+    mechanics: buildMechanicsPacket(state, playerInput),
     operationPlan: state.campaign.operationPlan,
     recentContext: buildRecentContextPacket(state),
     pacing: computePacingAdvisory(state),
     playerInput: { text: playerInput, inferredIntent: '', resolvedAction },
   }
 
-  const advisoryText = renderPacingAdvisories(packet.pacing, state)
+  const advisoryText = packet.mechanics.beatMode?.mode === 'meta'
+    ? ''
+    : renderPacingAdvisories(packet.pacing, state)
 
   return { packet, workingSet, advisoryText }
 }
@@ -319,6 +322,10 @@ export function renderPerTurnDelta(
     }
   }
 
+  if (packet.mechanics.beatMode) {
+    lines.push(`\n${renderBeatModeBlock(packet.mechanics.beatMode.mode)}`)
+  }
+
   if (packet.mechanics.activeModules.length > 0) {
     lines.push(`\n### Mechanics active`)
     for (const m of packet.mechanics.activeModules) {
@@ -326,8 +333,36 @@ export function renderPerTurnDelta(
         lines.push(
           `- Combat round ${m.roundsElapsed}, enemies: ${m.enemies.map((e) => `${e.name} (${e.hp} HP, AC ${e.ac})`).join(', ')}`
         )
+        if (m.runtime) {
+          if (m.runtime.objectives.length > 0) lines.push(`  objectives: ${m.runtime.objectives.join(' | ')}`)
+          if (m.runtime.playerPosition) lines.push(`  position: ${m.runtime.playerPosition}`)
+          if (m.runtime.hazards.length > 0) lines.push(`  hazards: ${m.runtime.hazards.join(' | ')}`)
+          if (m.runtime.exitConditions.length > 0) lines.push(`  exits: ${m.runtime.exitConditions.join(' | ')}`)
+        }
       } else if (m.kind === 'operation') {
         lines.push(`- Operation · phase: ${m.phase} · ${m.status}`)
+        if (m.runtime) {
+          const objectives = m.runtime.objectives.length > 0
+            ? m.runtime.objectives
+            : m.runtime.objective ? [m.runtime.objective] : []
+          if (objectives.length === 1) lines.push(`  objective: ${objectives[0]}`)
+          if (objectives.length > 1) lines.push(`  objectives: ${objectives.join(' | ')}`)
+          if (m.runtime.facts.length > 0) {
+            lines.push(`  facts: ${m.runtime.facts.map((fact) => fact.text).join(' | ')}`)
+          }
+          if (m.runtime.assessments.length > 0) {
+            lines.push(`  open assessments: ${m.runtime.assessments.map((a) => a.claim).join(' | ')}`)
+          }
+          if (m.runtime.constraints.length > 0) {
+            lines.push(`  constraints: ${m.runtime.constraints.map(renderProcedureConstraint).join(' | ')}`)
+          }
+          if (m.runtime.abortConditions.length > 0) {
+            lines.push(`  abort: ${m.runtime.abortConditions.map((a) => `${a.label} if ${a.trigger}`).join(' | ')}`)
+          }
+          if (m.runtime.signals.length > 0) {
+            lines.push(`  signals: ${m.runtime.signals.map((s) => `${s.name} = ${s.meaning}`).join(' | ')}`)
+          }
+        }
       } else if (m.kind === 'exploration') {
         lines.push(`- Exploration · ${m.area} · ${m.progress}`)
       } else if (m.kind === 'investigation') {
@@ -568,6 +603,10 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
     lines.push(renderContinuationDramaticTurn(packet.chapter.continuationDramaticTurn))
   }
 
+  if (packet.mechanics.beatMode) {
+    lines.push(`\n${renderBeatModeBlock(packet.mechanics.beatMode.mode)}`)
+  }
+
   if (packet.mechanics.activeModules.length > 0) {
     lines.push(`\n### Mechanics active`)
     for (const m of packet.mechanics.activeModules) {
@@ -575,8 +614,36 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
         lines.push(
           `- Combat round ${m.roundsElapsed}, enemies: ${m.enemies.map((e) => `${e.name} (${e.hp} HP, AC ${e.ac})`).join(', ')}`
         )
+        if (m.runtime) {
+          if (m.runtime.objectives.length > 0) lines.push(`  objectives: ${m.runtime.objectives.join(' | ')}`)
+          if (m.runtime.playerPosition) lines.push(`  position: ${m.runtime.playerPosition}`)
+          if (m.runtime.hazards.length > 0) lines.push(`  hazards: ${m.runtime.hazards.join(' | ')}`)
+          if (m.runtime.exitConditions.length > 0) lines.push(`  exits: ${m.runtime.exitConditions.join(' | ')}`)
+        }
       } else if (m.kind === 'operation') {
         lines.push(`- Operation · phase: ${m.phase} · ${m.status}`)
+        if (m.runtime) {
+          const objectives = m.runtime.objectives.length > 0
+            ? m.runtime.objectives
+            : m.runtime.objective ? [m.runtime.objective] : []
+          if (objectives.length === 1) lines.push(`  objective: ${objectives[0]}`)
+          if (objectives.length > 1) lines.push(`  objectives: ${objectives.join(' | ')}`)
+          if (m.runtime.facts.length > 0) {
+            lines.push(`  facts: ${m.runtime.facts.map((fact) => fact.text).join(' | ')}`)
+          }
+          if (m.runtime.assessments.length > 0) {
+            lines.push(`  open assessments: ${m.runtime.assessments.map((a) => a.claim).join(' | ')}`)
+          }
+          if (m.runtime.constraints.length > 0) {
+            lines.push(`  constraints: ${m.runtime.constraints.map(renderProcedureConstraint).join(' | ')}`)
+          }
+          if (m.runtime.abortConditions.length > 0) {
+            lines.push(`  abort: ${m.runtime.abortConditions.map((a) => `${a.label} if ${a.trigger}`).join(' | ')}`)
+          }
+          if (m.runtime.signals.length > 0) {
+            lines.push(`  signals: ${m.runtime.signals.map((s) => `${s.name} = ${s.meaning}`).join(' | ')}`)
+          }
+        }
       } else if (m.kind === 'exploration') {
         lines.push(`- Exploration · ${m.area} · ${m.progress}`)
       } else if (m.kind === 'investigation') {
@@ -604,6 +671,16 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
   }
 
   return lines.join('\n')
+}
+
+function renderProcedureConstraint(
+  constraint: NonNullable<Sf2NarratorScenePacket['mechanics']['procedures']>[number]['constraints'][number]
+): string {
+  const amount =
+    typeof constraint.current === 'number' && typeof constraint.max === 'number'
+      ? ` ${constraint.current}/${constraint.max}`
+      : ''
+  return `${constraint.label} (${constraint.status}${amount})`
 }
 
 function renderContinuationDramaticTurn(turn: NonNullable<Sf2NarratorScenePacket['chapter']['continuationDramaticTurn']>): string {

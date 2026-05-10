@@ -36,6 +36,7 @@ import {
   normalizeThreadResolutionGates,
 } from '../thread-resolution'
 import { compactRetrievalCue } from '../retrieval-cues'
+import { isActiveSf2Procedure, normalizeProcedureRuntime } from '../procedure'
 
 const RECENT_TURNS_LIMIT = 6
 const PRESSURE_EVENT_LIMIT = 50
@@ -123,6 +124,7 @@ function normalizeMeta(
 function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   const campaign = state.campaign
   campaign.arcs = objectMap(campaign.arcs, 'campaign.arcs', repairs) as Sf2State['campaign']['arcs']
+  campaign.procedures = objectMap(campaign.procedures, 'campaign.procedures', repairs) as NonNullable<Sf2State['campaign']['procedures']>
   campaign.threads = objectMap(campaign.threads, 'campaign.threads', repairs) as Sf2State['campaign']['threads']
   campaign.engines = objectMap(campaign.engines, 'campaign.engines', repairs) as Sf2State['campaign']['engines']
   campaign.decisions = objectMap(campaign.decisions, 'campaign.decisions', repairs) as Sf2State['campaign']['decisions']
@@ -151,6 +153,14 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
 
   for (const [id, thread] of Object.entries(campaign.threads)) {
     campaign.threads[id] = normalizeThread(id, thread, state.meta.currentChapter, repairs)
+  }
+
+  const procedures = campaign.procedures
+  for (const [id, procedure] of Object.entries(procedures)) {
+    procedures[id] = normalizeProcedureRuntime(
+      { ...procedure, id },
+      state.history.turns.length
+    )
   }
 
   for (const [id, clue] of Object.entries(campaign.clues)) {
@@ -343,6 +353,17 @@ function normalizeWorld(state: Sf2State, repairs: string[]): void {
     repairs.push('world.sceneBundleCache:cleared')
     world.sceneBundleCache = undefined
   }
+
+  const procedures = state.campaign.procedures ?? {}
+  state.campaign.procedures = procedures
+  world.activeProcedureIds = stringArray(world.activeProcedureIds)
+    .filter((id) => Boolean(procedures[id]))
+  world.operationRuntimeId = stringOr(world.operationRuntimeId, undefined)
+  if (world.operationRuntimeId && !procedures[world.operationRuntimeId]) {
+    repairs.push(`world.operationRuntimeId:${world.operationRuntimeId}:cleared-missing`)
+    world.operationRuntimeId = undefined
+  }
+  migrateLegacyWorldOperation(state, repairs)
 }
 
 function normalizeHistory(state: Sf2State, repairs: string[]): void {
@@ -353,6 +374,54 @@ function normalizeHistory(state: Sf2State, repairs: string[]): void {
     repairs.push('history.recentTurns:recomputed')
   }
   state.history.recentTurns = recentTurns
+}
+
+function migrateLegacyWorldOperation(state: Sf2State, repairs: string[]): void {
+  const worldOperation = state.world.operation
+  const hasLegacyRuntime = Boolean(worldOperation?.phase || worldOperation?.status)
+  if (!hasLegacyRuntime || state.world.operationRuntimeId) return
+
+  const procedures = state.campaign.procedures ?? {}
+  state.campaign.procedures = procedures
+  const id = 'procedure_operation_current'
+  const existing = procedures[id]
+  if (existing) {
+    state.world.operationRuntimeId = id
+    if (!state.world.activeProcedureIds?.includes(id) && isActiveSf2Procedure(existing)) {
+      state.world.activeProcedureIds = [...(state.world.activeProcedureIds ?? []), id]
+    }
+    return
+  }
+
+  const plan = state.campaign.operationPlan
+  const runtime = normalizeProcedureRuntime({
+    id,
+    kind: 'operation',
+    label: plan?.name ?? (plan?.target ? `Operation: ${plan.target}` : 'Operation'),
+    status: worldOperation?.status === 'resolved' || plan?.status === 'resolved'
+      ? 'resolved'
+      : worldOperation?.status === 'abandoned' || plan?.status === 'abandoned'
+        ? 'abandoned'
+        : worldOperation?.status === 'paused' || plan?.status === 'paused'
+          ? 'paused'
+          : 'active',
+    phase: worldOperation?.phase as Parameters<typeof normalizeProcedureRuntime>[0]['phase'],
+    objective: plan?.target,
+    facts: [],
+    constraints: [],
+    affordances: [],
+    complications: [],
+    contributions: [],
+    linkedRefs: [],
+    createdAtTurn: plan?.lastUpdatedTurn ?? state.history.turns.length,
+    updatedAtTurn: state.history.turns.length,
+  }, state.history.turns.length)
+  procedures[id] = runtime
+  state.world.operationRuntimeId = id
+  if (isActiveSf2Procedure(runtime)) {
+    state.world.activeProcedureIds = [...new Set([...(state.world.activeProcedureIds ?? []), id])]
+  }
+  repairs.push('world.operation→campaign.procedures.procedure_operation_current')
 }
 
 function normalizeDerived(state: Sf2State, repairs: string[]): void {

@@ -21,6 +21,7 @@ export type EntityPrefix =
   | 'temporal_anchor'
   | 'doc'
   | 'beat'
+  | 'procedure'
 
 export function resolveAgentId(state: Sf2State, idOrName: string): Sf2EntityId | null {
   if (!idOrName) return null
@@ -315,6 +316,8 @@ export function getEntityRegistry(
       return (state.campaign.documents ?? {}) as Record<string, { id: string }>
     case 'beat':
       return (state.campaign.beats ?? {}) as Record<string, { id: string }>
+    case 'procedure':
+      return (state.campaign.procedures ?? {}) as Record<string, { id: string }>
   }
 }
 

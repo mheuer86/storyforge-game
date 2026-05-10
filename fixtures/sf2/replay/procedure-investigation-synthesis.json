@@ -1,0 +1,100 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure investigation synthesis",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Two durable clues should activate an investigation synthesis packet with live hypotheses, open questions, contradictions, and next leads."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Lay out the evidence before we move.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The manifest gap and the disabled user account point at the same tampered freight transfer.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "thread",
+            "payload": {
+              "id": "thread_manifest",
+              "title": "Who altered the freight manifest?",
+              "owner": { "kind": "faction", "name_or_id": "Registry" },
+              "tension": 4,
+              "resolution_criteria": "Identify who tampered with the freight transfer and why.",
+              "failure_mode": "The tampered transfer becomes actionable before Ren can expose it.",
+              "retrieval_cue": "Manifest gap and disabled user account point to altered freight transfer.",
+              "resolution_mode": "investigation"
+            },
+            "confidence": "high",
+            "source_quote": "manifest gap and the disabled user account"
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_manifest_gap",
+              "content": "The freight manifest has a missing transfer number in the annex window.",
+              "evidence_question": "Who altered the freight manifest?",
+              "evidence_kind": "document",
+              "anchored_to": ["thread_manifest"],
+              "retrieval_cue": "Freight manifest missing transfer number in annex window."
+            },
+            "confidence": "high",
+            "source_quote": "manifest gap"
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "id": "clue_impossible_user",
+              "content": "The access log names a user account that was disabled before the transfer.",
+              "evidence_question": "Who altered the freight manifest?",
+              "evidence_kind": "contradiction",
+              "anchored_to": [],
+              "retrieval_cue": "Disabled user account appears in freight access log."
+            },
+            "confidence": "high",
+            "source_quote": "disabled user account"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedureInvestigation": {
+      "active": true,
+      "procedureId": "procedure_investigation_auto",
+      "openQuestions": ["Who altered the freight manifest?"],
+      "hypothesisClaims": ["Who altered the freight manifest?"],
+      "contradictionIds": ["contradiction_0"],
+      "nextLeadTextsInclude": ["disabled before the transfer"],
+      "discriminator": {
+        "cases": [
+          {
+            "name": "live evidence question is clue",
+            "input": {
+              "text": "The access log names an impossible user.",
+              "evidenceQuestion": "Who altered the freight manifest?",
+              "supportsHypothesisId": "hypothesis_0"
+            },
+            "laneEquals": "clue"
+          },
+          {
+            "name": "guard rotation is procedure fact",
+            "input": {
+              "text": "The west stair is watched after vespers.",
+              "isProceduralTexture": true
+            },
+            "laneEquals": "procedure_fact"
+          }
+        ]
+      }
+    }
+  }
+}

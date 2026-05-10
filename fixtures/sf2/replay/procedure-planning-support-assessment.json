@@ -1,0 +1,101 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "procedure planning support assessment",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Documents bounded planning support normalization and roll-support derivation for procedure ticket 02."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Ask the team to pressure-test the annex entry plan.",
+    "isInitial": false,
+    "narrator": { "prose": "(helper-only fixture)", "annotation": null },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "procedurePlanningSupport": {
+      "helper": "lib/sf2/procedure-planning.ts",
+      "supportInputs": [
+        {
+          "contribution": {
+            "id": "support_kess_records",
+            "source": { "kind": "npc", "id": "npc_kess", "label": "Kess" },
+            "lane": "planning",
+            "kind": "expertise",
+            "summary": "Knows the clerk rotation and which desk leaves the intake stamp unattended.",
+            "effect": "advantage"
+          }
+        },
+        {
+          "contribution": {
+            "id": "support_badge_mask",
+            "source": { "kind": "asset", "id": "asset_badge_mask", "label": "Badge mask" },
+            "lane": "planning",
+            "kind": "cover",
+            "summary": "Can absorb one identity mismatch at the service stair.",
+            "effect": "dc_shift"
+          }
+        },
+        {
+          "contribution": {
+            "id": "support_locked_lift",
+            "source": { "kind": "location", "id": "loc_annex", "label": "Registry annex" },
+            "lane": "planning",
+            "kind": "constraint",
+            "summary": "The freight lift now asks for a live worker record.",
+            "effect": "new_constraint"
+          }
+        }
+      ],
+      "assessment": {
+        "id": "assessment_service_stair",
+        "claim": "The service stair is the clean entry route after the clerk rotation.",
+        "status": "open",
+        "rolled": false,
+        "check": { "skill": "Deception", "dc": 14 },
+        "supportContributionIds": [
+          "support_kess_records",
+          "support_badge_mask",
+          "support_locked_lift"
+        ],
+        "lastUpdatedTurn": 4
+      },
+      "expect": {
+        "normalizedContributionIds": [
+          "support_kess_records",
+          "support_badge_mask",
+          "support_locked_lift"
+        ],
+        "rollSupport": {
+          "assessmentId": "assessment_service_stair",
+          "skill": "Deception",
+          "baseDc": 14,
+          "dc": 12,
+          "dcShift": -2,
+          "advantage": true,
+          "disadvantage": false,
+          "supportContributionIds": [
+            "support_kess_records",
+            "support_badge_mask"
+          ],
+          "adverseContributionIds": [
+            "support_locked_lift"
+          ],
+          "rationaleIncludes": [
+            "Kess: Knows the clerk rotation",
+            "Badge mask: Can absorb one identity mismatch",
+            "Registry annex: The freight lift now asks"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,10 @@
 // Storyforge v2 — canonical state and runtime types.
 // Parallel track: zero imports from v1 lib/*.
 
+import type { Sf2BeatMode, Sf2BeatModeGuidance } from './beat-mode'
+import type { Sf2CombatProcedurePacket } from './procedure-combat'
+import type { Sf2ProcedurePacket, Sf2ProcedureRuntime } from './procedure'
+
 export const SF2_SCHEMA_VERSION = '3.1.0' as const
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1424,13 +1428,14 @@ export interface Sf2ArchivistCreate {
     | 'location'
     | 'temporal_anchor'
     | 'document'
+    | 'procedure'
   payload: Record<string, unknown> // flat semantic statement; server resolves to typed entity
   confidence: Sf2PatchConfidence
   sourceQuote?: string // phrase from prose supporting this write
 }
 
 export interface Sf2ArchivistUpdate {
-  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document' | 'operation_plan'
+  entityKind: 'npc' | 'faction' | 'thread' | 'arc' | 'clue' | 'document' | 'operation_plan' | 'procedure'
   entityId: Sf2EntityId
   changes: Record<string, unknown>
   confidence: Sf2PatchConfidence
@@ -1438,7 +1443,7 @@ export interface Sf2ArchivistUpdate {
 }
 
 export interface Sf2ArchivistTransition {
-  entityKind: 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'document'
+  entityKind: 'thread' | 'decision' | 'promise' | 'clue' | 'arc' | 'document' | 'procedure'
   entityId: Sf2EntityId
   toStatus: string
   reason: string
@@ -1703,12 +1708,17 @@ export interface Sf2TemporalAnchorPacket {
 }
 
 export interface Sf2MechanicsPacket {
+  beatMode?: {
+    mode: Sf2BeatMode
+    guidance: Sf2BeatModeGuidance
+  }
   activeModules: Array<
-    | { kind: 'combat'; roundsElapsed: number; enemies: Array<{ name: string; hp: number; ac: number }> }
-    | { kind: 'operation'; phase: string; status: string }
+    | { kind: 'combat'; roundsElapsed: number; enemies: Array<{ name: string; hp: number; ac: number }>; runtime?: Sf2CombatProcedurePacket }
+    | { kind: 'operation'; phase: string; status: string; runtime?: Sf2ProcedurePacket }
     | { kind: 'exploration'; area: string; progress: string }
     | { kind: 'investigation'; clueCount: number; openLeads: string[] }
   >
+  procedures?: Sf2ProcedurePacket[]
   pendingCheck?: Sf2PendingCheck
   rollGate?: { skill: string; dc: number }
 }
@@ -1803,6 +1813,7 @@ export interface Sf2LexiconEntry {
 
 export interface Sf2Campaign {
   operationPlan?: Sf2OperationPlan
+  procedures?: Record<Sf2EntityId, Sf2ProcedureRuntime>
   arcPlan?: Sf2ArcPlan
   arcs: Record<Sf2EntityId, Sf2Arc>
   threads: Record<Sf2EntityId, Sf2Thread>
@@ -1852,6 +1863,8 @@ export interface Sf2World {
     enemies: Array<{ name: string; hp: number; ac: number; abilities?: string[] }>
   }
   operation?: { phase: string; status: string }
+  operationRuntimeId?: Sf2EntityId
+  activeProcedureIds?: Sf2EntityId[]
   exploration?: { area: string; progress: string }
   // Scene-scoped pre-fetch: built once at scene open, carried in the message
   // chain with cache_control. Bundle text contains the off-stage cast roster,
