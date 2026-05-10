@@ -64,8 +64,21 @@ export const OUTCOME_HUMAN_ANCHOR_WORDS = [
 const OUTCOME_HUMAN_ANCHOR_RE = new RegExp(`\\b(${OUTCOME_HUMAN_ANCHOR_WORDS.join('|')})\\b`, 'i')
 const PROCEDURAL_ONLY_OUTCOME_RE =
   /\b(audit|warrant|cipher|file|record|ledger|form|queue|protocol|review|query|case|route|manifest)\b.*\b(closes?|releases?|fails?|clears?|updates?|resolves?|processes?|opens?)\b/i
-const SCENE_COUPLED_TRIGGER_RE =
-  /\b(room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive|record room|control room)\b/i
+const SCENE_ELEMENT_PATTERN =
+  '(?:record room|control room|room|door|hall|chamber|gate|terminal|station|berth|corridor|antechamber|annex|platform|dock|bay|lift|elevator|console|desk|table|threshold|airlock|hangar|office|booth|atrium|archive)'
+const SCENE_PREPOSITION_RE = new RegExp(
+  `\\b(?:in|inside|within|at|by|beside|near|from|through|toward|towards|into|onto|outside|behind|under|over|past)\\s+(?:the\\s+)?${SCENE_ELEMENT_PATTERN}\\b`,
+  'i'
+)
+const SCENE_OBJECT_ACTION_RE = new RegExp(
+  `\\b(?:reaches?|touch(?:es)?|opens?|uses?|enters?|exits?|leaves?|blocks?|clears?|unlocks?|locks?|crosses?|passes?|approaches?|activates?|deactivates?)\\s+(?:the\\s+)?${SCENE_ELEMENT_PATTERN}\\b`,
+  'i'
+)
+const EXPLICIT_SCENE_ELEMENT_RE = new RegExp(
+  `\\b(?:the\\s+)?${SCENE_ELEMENT_PATTERN}\\s+(?:opens?|closes?|locks?|unlocks?|seals?|unseals?|blocks?)\\b`,
+  'i'
+)
+const SCENE_ELEMENT_LABEL_RE = new RegExp(`^(?:the\\s+)?${SCENE_ELEMENT_PATTERN}$`, 'i')
 
 export function validateChapterRaw(
   raw: Record<string, unknown>,
@@ -213,6 +226,9 @@ export function validateChapterRaw(
 
   const ladder = getArray(raw, 'pressure_ladder', 'pressureLadder')
   if (ladder.length !== 3) errors.push(`pressure_ladder must contain exactly 3 steps (got ${ladder.length})`)
+  ladder.forEach((step, i) => {
+    errors.push(...validateRawPressureTriggerEvent(step, i))
+  })
   errors.push(...validateRawHumanStakes(raw, threads, npcs, ctx.state))
   const tensionScore = getArray(raw, 'tension_score', 'tensionScore')
   const requiresTensionScore = ctx.isContinuation && ctx.state && isSf2bState(ctx.state)
@@ -398,7 +414,8 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
     pressureLadder: getArray(raw, 'pressure_ladder', 'pressureLadder').map((s) => ({
       id: stringField(s, 'id'),
       pressure: stringField(s, 'pressure'),
-      triggerCondition: stringField(s, 'trigger_condition', 'triggerCondition'),
+      triggerKind: normalizePressureTriggerKind(getObject(s, 'trigger_event', 'triggerEvent')),
+      triggerCondition: canonicalPressureTriggerCondition(s),
       narrativeEffect: stringField(s, 'narrative_effect', 'narrativeEffect'),
       severity: stringField(s, 'severity') === 'hard' ? 'hard' : 'standard',
     })),
@@ -761,11 +778,149 @@ function validatePressureLadderDiscipline(authored: AuthorChapterSetupV2): strin
 
   ladder.forEach((step, i) => {
     const trigger = step.triggerCondition ?? ''
-    if (SCENE_COUPLED_TRIGGER_RE.test(trigger)) {
+    if (!trigger.trim()) {
+      errors.push(`pressure_ladder[${i}].trigger_condition is empty`)
+      return
+    }
+    if (step.triggerKind !== 'location_objective' && isSceneCoupledPressureTrigger(trigger)) {
       errors.push(`pressure_ladder[${i}].trigger_condition is scene-coupled; bind it to an entity-level action instead`)
     }
   })
   return errors
+}
+
+function validateRawPressureTriggerEvent(step: Record<string, unknown>, index: number): string[] {
+  const event = getObject(step, 'trigger_event', 'triggerEvent')
+  if (Object.keys(event).length === 0) return []
+
+  const errors: string[] = []
+  const kind = stringField(event, 'kind')
+  const actor = stringField(event, 'actor_id', 'actorId').trim()
+  const target = stringField(event, 'target_id', 'targetId').trim()
+  const action = stringField(event, 'action').trim()
+  const location = stringField(event, 'location_id', 'locationId').trim()
+  const stakes = stringField(event, 'stakes').trim()
+
+  if (!PRESSURE_TRIGGER_KINDS.has(kind as PressureTriggerKind)) {
+    errors.push(`pressure_ladder[${index}].trigger_event.kind is invalid`)
+  }
+  for (const [field, value] of [
+    ['actor_id', actor],
+    ['action', action],
+    ['target_id', target],
+    ['stakes', stakes],
+  ] as const) {
+    if (!value) errors.push(`pressure_ladder[${index}].trigger_event.${field} is empty`)
+  }
+  if (kind === 'location_objective') {
+    if (!location) errors.push(`pressure_ladder[${index}].trigger_event.location_id is required for location_objective`)
+  } else if (location) {
+    errors.push(`pressure_ladder[${index}].trigger_event.location_id is only valid for location_objective`)
+  }
+  if (kind === 'entity_action') {
+    for (const [field, value] of [
+      ['actor_id', actor],
+      ['target_id', target],
+      ['stakes', stakes],
+    ] as const) {
+      if (isSceneObjectLabel(value) || isSceneCoupledPressureTrigger(value)) {
+        errors.push(`pressure_ladder[${index}].trigger_event.${field} is scene-coupled; use location_objective only for durable location objectives`)
+      }
+    }
+  }
+  return errors
+}
+
+function canonicalPressureTriggerCondition(step: Record<string, unknown>): string {
+  const structured = renderPressureTriggerEventCondition(getObject(step, 'trigger_event', 'triggerEvent'))
+  return structured || stringField(step, 'trigger_condition', 'triggerCondition')
+}
+
+function renderPressureTriggerEventCondition(event: Record<string, unknown>): string {
+  if (Object.keys(event).length === 0) return ''
+
+  const kind = normalizePressureTriggerKind(event)
+  const actor = cleanTriggerLabel(stringField(event, 'actor_id', 'actorId'))
+  const target = cleanTriggerLabel(stringField(event, 'target_id', 'targetId'))
+  const action = stringField(event, 'action')
+  const stakes = cleanTriggerStakes(stringField(event, 'stakes'))
+
+  if (!actor || !target || !action) return ''
+
+  if (kind === 'late_unresolved' || action === 'late_chapter_unresolved') {
+    return `When ${target} remains unresolved late and ${actor} uses that delay to raise the cost.`
+  }
+
+  if (kind === 'location_objective') {
+    const location = cleanTriggerLabel(stringField(event, 'location_id', 'locationId'))
+    if (!location) return ''
+    const phrase = LOCATION_OBJECTIVE_ACTION_PHRASES[action] ?? action.replace(/_/g, ' ')
+    const consequence = stakes ? `, making ${stakes}` : ''
+    return `When ${actor} ${phrase} ${target} at ${location}${consequence}.`
+  }
+
+  const phrase = PRESSURE_TRIGGER_ACTION_PHRASES[action] ?? action.replace(/_/g, ' ')
+  const consequence = stakes ? `, making ${stakes}` : ''
+  return `When ${actor} ${phrase} ${target}${consequence}.`
+}
+
+type PressureTriggerKind = NonNullable<AuthorChapterSetupV2['pressureLadder'][number]['triggerKind']>
+
+const PRESSURE_TRIGGER_KINDS = new Set<PressureTriggerKind>([
+  'entity_action',
+  'location_objective',
+  'late_unresolved',
+])
+
+function normalizePressureTriggerKind(event: Record<string, unknown>): PressureTriggerKind | undefined {
+  const kind = stringField(event, 'kind')
+  return PRESSURE_TRIGGER_KINDS.has(kind as PressureTriggerKind)
+    ? (kind as PressureTriggerKind)
+    : undefined
+}
+
+const PRESSURE_TRIGGER_ACTION_PHRASES: Record<string, string> = {
+  refuses: 'refuses',
+  demands_cost_from: 'demands a cost from',
+  exposes: 'exposes',
+  betrays: 'betrays',
+  protects: 'protects',
+  threatens: 'threatens',
+  calls_in_debt_from: 'calls in a debt from',
+  withholds: 'withholds help from',
+  commits_against: 'commits against',
+  escalates_authority_over: 'escalates authority over',
+  forces_choice_on: 'forces an irreversible choice on',
+}
+
+const LOCATION_OBJECTIVE_ACTION_PHRASES: Record<string, string> = {
+  retrieves_from: 'retrieves',
+  secures_at: 'secures',
+  delivers_to: 'delivers',
+  removes_from: 'removes',
+}
+
+function cleanTriggerLabel(value: string): string {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
+function cleanTriggerStakes(value: string): string {
+  const cleaned = value.trim().replace(/\s+/g, ' ')
+  return cleaned && !isSceneCoupledPressureTrigger(cleaned)
+    ? cleaned
+    : 'the human cost visible'
+}
+
+function isSceneCoupledPressureTrigger(value: string): boolean {
+  return (
+    SCENE_PREPOSITION_RE.test(value) ||
+    SCENE_OBJECT_ACTION_RE.test(value) ||
+    EXPLICIT_SCENE_ELEMENT_RE.test(value)
+  )
+}
+
+function isSceneObjectLabel(value: string): boolean {
+  return SCENE_ELEMENT_LABEL_RE.test(value.trim())
 }
 
 function hasHumanOutcomeAnchor(value: string): boolean {

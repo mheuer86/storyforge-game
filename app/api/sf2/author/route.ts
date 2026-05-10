@@ -18,7 +18,11 @@ import {
   validateAuthorToolInput,
 } from '@/lib/sf2/author/contract'
 import { transformAuthorSetup } from '@/lib/sf2/author/transform'
-import { buildAuthorRetryNudge } from '@/lib/sf2/author/retry'
+import {
+  AUTHOR_DEFAULT_MAX_ATTEMPTS,
+  buildAuthorRetryNudge,
+  shouldRetryAuthorValidation,
+} from '@/lib/sf2/author/retry'
 import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
@@ -32,7 +36,10 @@ const AUTHOR_MAX_TOKENS: number = Number(process.env.SF2_AUTHOR_MAX_TOKENS ?? 10
 const AUTHOR_RETRY_MAX_TOKENS: number = Number(
   process.env.SF2_AUTHOR_RETRY_MAX_TOKENS ?? Math.max(AUTHOR_MAX_TOKENS, 12_000)
 )
-const AUTHOR_MAX_ATTEMPTS: number = positiveIntEnv(process.env.SF2_AUTHOR_MAX_ATTEMPTS, 1)
+const AUTHOR_MAX_ATTEMPTS: number = positiveIntEnv(
+  process.env.SF2_AUTHOR_MAX_ATTEMPTS,
+  AUTHOR_DEFAULT_MAX_ATTEMPTS
+)
 
 function positiveIntEnv(value: string | undefined, fallback: number): number {
   const parsed = Number(value)
@@ -145,9 +152,9 @@ type AuthorToolResult =
       apiMs: number
     }
 
-// Run a tool-forced call. Retries are opt-in because a failed Author setup is
-// usually another full structured generation; waiting through two large calls
-// is worse UX than surfacing the failure quickly.
+// Run a tool-forced call. Validation retries are gated by a policy function so
+// known high-signal repair cases can get one corrective pass without doubling
+// every malformed Author setup call.
 async function callAuthorToolWithRetry(args: {
   client: Anthropic
   system: Anthropic.TextBlockParam[]
@@ -156,9 +163,11 @@ async function callAuthorToolWithRetry(args: {
   toolName: string
   validate: (raw: Record<string, unknown>) => string[]
   retryNudge: (errors: string[]) => string
+  shouldRetryValidation?: (errors: string[]) => boolean
   maxAttempts?: number
 }): Promise<AuthorToolResult> {
   const { client, system, initialMessages, tool, toolName, validate, retryNudge } = args
+  const shouldRetryValidation = args.shouldRetryValidation ?? (() => true)
   const maxAttempts = Math.max(1, Math.floor(args.maxAttempts ?? 1))
 
   let messages: Anthropic.MessageParam[] = [...initialMessages]
@@ -257,7 +266,7 @@ async function callAuthorToolWithRetry(args: {
       maxTokens,
     })
 
-    if (attempt < maxAttempts) {
+    if (attempt < maxAttempts && shouldRetryValidation(errors)) {
       messages = [
         ...messages,
         { role: 'assistant', content: response.content },
@@ -267,7 +276,7 @@ async function callAuthorToolWithRetry(args: {
             {
               type: 'tool_result' as const,
               tool_use_id: toolUse.id,
-              content: `Validation failed. Required fields were missing or empty. Re-emit \`${toolName}\` with all required fields populated.`,
+              content: `Validation failed. Re-emit \`${toolName}\` with the reported issues repaired and all required fields populated.`,
             },
             { type: 'text' as const, text: retryNudge(errors) },
           ],
@@ -275,6 +284,7 @@ async function callAuthorToolWithRetry(args: {
       ]
       continue
     }
+    break
   }
 
   return {
@@ -365,6 +375,7 @@ export async function POST(req: NextRequest) {
           state: state ?? undefined,
         }),
         retryNudge: (errors) => buildAuthorRetryNudge(errors, state?.meta.genreId),
+        shouldRetryValidation: shouldRetryAuthorValidation,
         maxAttempts: AUTHOR_MAX_ATTEMPTS,
       })
     } catch (err) {

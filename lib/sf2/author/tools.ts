@@ -425,7 +425,8 @@ const continuationDramaticTurnSchema = {
 
 const pressureLadderSchema = {
   type: 'array' as const,
-  description: 'Exactly 3 ordered pressure-tightening steps.',
+  description:
+    'Exactly 3 ordered pressure-tightening steps. Use trigger_event for the canonical trigger; code derives the scene-invariant trigger condition from it.',
   minItems: 3,
   maxItems: 3,
   items: {
@@ -433,15 +434,68 @@ const pressureLadderSchema = {
     properties: {
       id: { type: 'string' as const },
       pressure: { type: 'string' as const, description: '≤18 words.' },
+      trigger_event: {
+        type: 'object' as const,
+        description:
+          'Structured crossing event. Use entity_action for people/faction choices, location_objective only when the location is a durable objective anchor, and late_unresolved for state-derived chapter pressure.',
+        properties: {
+          kind: {
+            type: 'string' as const,
+            enum: ['entity_action', 'location_objective', 'late_unresolved'],
+            description:
+              'entity_action rejects incidental scene coupling; location_objective allows a true durable location anchor; late_unresolved is state-derived.',
+          },
+          actor_id: {
+            type: 'string' as const,
+            description: 'Entity/person/faction id or "the PC" taking the pressure-crossing action.',
+          },
+          action: {
+            type: 'string' as const,
+            enum: [
+              'refuses',
+              'demands_cost_from',
+              'exposes',
+              'betrays',
+              'protects',
+              'threatens',
+              'calls_in_debt_from',
+              'withholds',
+              'commits_against',
+              'escalates_authority_over',
+              'forces_choice_on',
+              'retrieves_from',
+              'secures_at',
+              'delivers_to',
+              'removes_from',
+              'late_chapter_unresolved',
+            ],
+          },
+          target_id: {
+            type: 'string' as const,
+            description: 'Entity, object, thread, person, faction, or "the PC" affected by the action.',
+          },
+          location_id: {
+            type: 'string' as const,
+            description:
+              'Required for location_objective. Canonical durable location id/name, not incidental scene staging.',
+          },
+          stakes: {
+            type: 'string' as const,
+            description:
+              'Human, relational, reputation, safety, freedom, or loyalty cost made visible.',
+          },
+        },
+        required: ['kind', 'actor_id', 'action', 'target_id', 'stakes'],
+      },
       trigger_condition: {
         type: 'string' as const,
         description:
-          'Specific entity-level event, ≤22 words. Do not name locations, rooms, doors, bays, docks, gates, terminals, consoles, desks, thresholds, or other scene objects.',
+          'Legacy mirror only. If emitted, match trigger_event. The runtime uses the code-derived canonical condition from trigger_event.',
       },
       narrative_effect: { type: 'string' as const, description: '≤22 words.' },
       severity: { type: 'string' as const, enum: ['standard', 'hard'] },
     },
-    required: ['id', 'pressure', 'trigger_condition', 'narrative_effect'],
+    required: ['id', 'pressure', 'trigger_event', 'narrative_effect'],
   },
 }
 

@@ -287,6 +287,7 @@ When in doubt: create. Over-updating risks collapsing distinct facts; over-creat
 Locations can be authored by the Author as opening scene state, moved by the Narrator through \`set_location\` / \`set_scene_snapshot\`, and recorded by you only when the prose establishes a durable place. Before creating a \`location\`, check the Locations registry in the per-turn message.
 
 - If prose describes an existing location row, do NOT create a parallel location. The Narrator may have emitted a new slug in mechanical annotation (for example \`verath_berth_14c\`) for a place the Author already stored as \`loc_opening\`; treat the registry row as canonical.
+- If the current row has a broad station/ship/site name but its description or atmosphere already names the specific berth, bay, dock, gate, room, or terminal in the prose, treat that specific phrasing as the same location row.
 - Create a location only when the prose establishes a genuinely new durable place not already listed.
 - Do not treat present-moment atmosphere at the current location as a new location. Add no write unless a new place becomes durable memory.
 

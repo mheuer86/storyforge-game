@@ -2,6 +2,30 @@ import type { Sf2Location, Sf2State } from './types'
 
 type LocationLike = Partial<Pick<Sf2Location, 'id' | 'name' | 'description' | 'atmosphericConditions' | 'locked' | 'chapterCreated'>>
 
+const NUMBER_WORDS: Record<string, string> = {
+  zero: '0',
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  thirteen: '13',
+  fourteen: '14',
+  fifteen: '15',
+  sixteen: '16',
+  seventeen: '17',
+  eighteen: '18',
+  nineteen: '19',
+  twenty: '20',
+}
+
 const GENERIC_LOCATION_TOKENS = new Set([
   'a',
   'an',
@@ -16,18 +40,21 @@ const GENERIC_LOCATION_TOKENS = new Set([
   'to',
 ])
 
+const LOCATION_ANCHOR_KINDS = new Set([
+  'arm',
+  'bay',
+  'berth',
+  'dock',
+  'gate',
+  'hangar',
+  'pier',
+  'platform',
+  'slip',
+  'terminal',
+])
+
 export function canonicalLocationNameKey(name: string): string {
-  const normalized = name
-    .normalize('NFKD')
-    .toLocaleLowerCase()
-    .replace(/['’]s\b/g, ' ')
-    .replace(/[()]/g, ' ')
-    .replace(/[\u2013\u2014-]/g, ' ')
-    .replace(/\b(\d+)([a-z])\b/g, '$1 $2')
-    .replace(/\b(arm|bay|berth|dock|pier|gate)\s*0*(\d+)/g, '$1 $2')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ')
+  const normalized = normalizeLocationText(name)
   const tokens = normalized.split(' ').filter((token) => token && !GENERIC_LOCATION_TOKENS.has(token))
   const bayMatch = normalized.match(/\bbay\s*0*(\d+)\b/)
   const berthMatch = normalized.match(/\b(arm|berth|dock|pier|gate)\s*0*(\d+)(?:\s+([a-z][a-z0-9]*))?\b/)
@@ -112,6 +139,7 @@ function locationsSemanticallyMatch(
   proposedKey = locationSemanticKey(proposed)
 ): boolean {
   if (locationSemanticKey(existing) === proposedKey) return true
+  if (sameNumberedLocationAnchor(existing, proposed)) return true
 
   const existingTokens = locationTokens(existing)
   const proposedTokens = locationTokens(proposed)
@@ -132,14 +160,117 @@ function locationTokens(location: LocationLike): string[] {
   ].filter(Boolean).join(' ')
 
   return Array.from(new Set(
-    text
-      .normalize('NFKD')
-      .toLocaleLowerCase()
-      .replace(/['’]s\b/g, ' ')
-      .replace(/[^a-z0-9]+/g, ' ')
+    normalizeLooseLocationText(text)
       .split(/\s+/)
       .filter((token) => token.length > 1 && !GENERIC_LOCATION_TOKENS.has(token))
   ))
+}
+
+function normalizeLooseLocationText(text: string): string {
+  return text
+    .normalize('NFKD')
+    .toLocaleLowerCase()
+    .replace(/['’]s\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function normalizeLocationText(text: string): string {
+  let normalized = text
+    .normalize('NFKD')
+    .toLocaleLowerCase()
+    .replace(/['’]s\b/g, ' ')
+    .replace(/[()]/g, ' ')
+    .replace(/[\u2013\u2014-]/g, ' ')
+    .replace(/\b(\d+)([a-z])\b/g, '$1 $2')
+
+  for (const [word, digit] of Object.entries(NUMBER_WORDS)) {
+    normalized = normalized.replace(new RegExp(`\\b(${[...LOCATION_ANCHOR_KINDS].join('|')})\\s+${word}\\b`, 'g'), `$1 ${digit}`)
+  }
+
+  return normalized
+    .replace(/\b(arm|bay|berth|dock|gate|hangar|pier|platform|slip|terminal)\s*0*(\d+)/g, '$1 $2')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function sameNumberedLocationAnchor(existing: LocationLike, proposed: LocationLike): boolean {
+  const existingAnchors = extractNumberedLocationAnchors(existing)
+  if (existingAnchors.length === 0) return false
+  const proposedAnchors = extractNumberedLocationAnchors(proposed)
+  if (proposedAnchors.length === 0) return false
+  const sharedAnchors = proposedAnchors.filter((anchor) =>
+    existingAnchors.includes(anchor) && !anchor.startsWith('arm:')
+  )
+  if (sharedAnchors.length === 0) return false
+  const existingNameAnchors = extractNumberedLocationAnchorsFromText(existing.name || existing.id || '')
+  const proposedNameAnchors = extractNumberedLocationAnchorsFromText(proposed.name || proposed.id || '')
+  if (sharedAnchors.some((anchor) => existingNameAnchors.includes(anchor) && proposedNameAnchors.includes(anchor))) {
+    return false
+  }
+
+  const existingContext = locationContextTokens(existing)
+  const proposedContext = locationContextTokens(proposed)
+  const proposedContextSet = new Set(proposedContext)
+  const contextOverlap = existingContext.filter((token) => proposedContextSet.has(token))
+  if (contextOverlap.length >= 2) return true
+
+  const existingTokenSet = new Set(locationFullTokens(existing))
+  const fullOverlap = locationFullTokens(proposed).filter((token) => existingTokenSet.has(token))
+  return fullOverlap.length >= 6
+}
+
+function extractNumberedLocationAnchors(location: LocationLike): string[] {
+  return extractNumberedLocationAnchorsFromText(locationFullText(location))
+}
+
+function extractNumberedLocationAnchorsFromText(text: string): string[] {
+  const normalized = normalizeLocationText(text)
+  const anchors = new Set<string>()
+  const re = /\b(arm|bay|berth|dock|gate|hangar|pier|platform|slip|terminal)\s*0*(\d+)(?:\s+([a-z][a-z0-9]*))?\b/g
+  let match: RegExpExecArray | null
+  while ((match = re.exec(normalized)) !== null) {
+    const [, kind, number, rawSuffix = ''] = match
+    const suffix = rawSuffix.length === 1 ? rawSuffix : ''
+    anchors.add(`${kind}:${number}${suffix}`)
+  }
+  return [...anchors]
+}
+
+function locationContextTokens(location: LocationLike): string[] {
+  const anchors = new Set<string>()
+  for (const anchor of extractNumberedLocationAnchors(location)) {
+    const [kind, rawNumber] = anchor.split(':')
+    anchors.add(kind)
+    anchors.add(rawNumber)
+    const number = rawNumber.replace(/[a-z]$/, '')
+    const suffix = rawNumber.slice(number.length)
+    if (number) anchors.add(number)
+    if (suffix) anchors.add(suffix)
+  }
+  return locationFullTokens(location).filter((token) =>
+    !anchors.has(token) &&
+    !GENERIC_LOCATION_TOKENS.has(token)
+  )
+}
+
+function locationFullTokens(location: LocationLike): string[] {
+  return Array.from(new Set(
+    normalizeLocationText(locationFullText(location))
+      .split(/\s+/)
+      .filter((token) => token.length > 1 && !GENERIC_LOCATION_TOKENS.has(token))
+  ))
+}
+
+function locationFullText(location: LocationLike): string {
+  return [
+    location.id?.replace(/_/g, ' '),
+    location.name,
+    location.description,
+    ...(location.atmosphericConditions ?? []),
+  ].filter(Boolean).join(' ')
 }
 
 export function mergeLocationIntoExisting(

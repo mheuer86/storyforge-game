@@ -55,7 +55,7 @@ export const narrateTurnTool: Anthropic.Tool = {
             value: { type: 'number', description: 'For hp_delta or credits_delta (signed).' },
             item: { type: 'string', description: 'Item name for inventory_use.' },
             reason: { type: 'string', description: 'Why this happened (one clause).' },
-            location_id: { type: 'string', description: 'For set_location.' },
+            location_id: { type: 'string', description: 'For set_location: use an existing canonical id when refining the current place; mint a new id only for a genuinely new location.' },
             name: { type: 'string', description: 'For set_location: display name for a new location.' },
             description: { type: 'string', description: 'For set_location: one-line location description.' },
             atmospheric_conditions: {
@@ -75,7 +75,7 @@ export const narrateTurnTool: Anthropic.Tool = {
               description: 'For set_scene_snapshot: what is currently true in scene.',
               properties: {
                 scene_id: { type: 'string' },
-                location_id: { type: 'string' },
+                location_id: { type: 'string', description: 'Existing canonical id or new slug only when the scene moves to a genuinely new location.' },
                 present_npc_ids: { type: 'array', items: { type: 'string' } },
                 current_interlocutor_ids: { type: 'array', items: { type: 'string' } },
                 time_label: { type: 'string' },

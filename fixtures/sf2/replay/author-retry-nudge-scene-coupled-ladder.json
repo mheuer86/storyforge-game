@@ -30,9 +30,10 @@
       ],
       "containsAll": [
         "For pressure_ladder scene-coupled trigger errors",
-        "rewrite the named rung's trigger_condition only",
-        "Do not mention places, rooms, doors, gates, bays, docks, terminals, consoles, desks, tables, thresholds, corridors, hangars, offices, booths, or other scene objects.",
-        "Bind the trigger to an entity-level action, choice, claim, refusal, disclosure, or faction move",
+        "rewrite the named rung's trigger_event",
+        "Use kind \"entity_action\" for entity-to-entity pressure",
+        "Use kind \"location_objective\" only when the location is the durable objective anchor",
+        "Bind ordinary triggers to entity-level action, choice, claim, refusal, disclosure, or faction move",
         "Good: \"When a trusted NPC refuses another NPC in front of a witness who can still choose sides.\"",
         "Bad: \"When the PC blocks an exit from the record room.\""
       ],
@@ -40,6 +41,15 @@
         "Sollar",
         "route gate",
         "route choice"
+      ]
+    },
+    "authorRetryPolicy": {
+      "defaultMaxAttemptsEquals": 2,
+      "retryableErrors": [
+        "pressure_ladder[2].trigger_condition is scene-coupled; bind it to an entity-level action instead"
+      ],
+      "nonRetryableErrors": [
+        "chapter_frame.title is empty"
       ]
     }
   }

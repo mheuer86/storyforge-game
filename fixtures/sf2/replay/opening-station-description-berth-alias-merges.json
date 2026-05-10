@@ -1,0 +1,144 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "opening station description berth alias merges",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression for setup duplication where Author owns a broad station row but its description already anchors the specific berth later re-created by Narrator/Archivist."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": "midcycle"
+      },
+      "campaign": {
+        "locations": {
+          "loc_opening": {
+            "id": "loc_opening",
+            "name": "Sable Notch Station - a mid-corridor fueling stop where three beacon routes intersect and two of them are currently dark.",
+            "description": "The PC's ship sits in berth seven with an impound-pending flag on the registry terminal; the fuel account is frozen until the lien resolves.",
+            "atmosphericConditions": [
+              "Low-cycle lighting, recycled air carrying fuel residue, half the berth indicators blinking amber."
+            ],
+            "chapterCreated": 1
+          }
+        }
+      },
+      "chapter": {
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "Sable Notch Station - a mid-corridor fueling stop where three beacon routes intersect and two of them are currently dark.",
+          "description": "The PC's ship sits in berth seven with an impound-pending flag on the registry terminal; the fuel account is frozen until the lien resolves.",
+          "atmosphericConditions": [
+            "Low-cycle lighting, recycled air carrying fuel residue, half the berth indicators blinking amber."
+          ],
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "Sable Notch Station - a mid-corridor fueling stop where three beacon routes intersect and two of them are currently dark.",
+            "description": "The PC's ship sits in berth seven with an impound-pending flag on the registry terminal; the fuel account is frozen until the lien resolves.",
+            "atmosphericConditions": [
+              "Low-cycle lighting, recycled air carrying fuel residue, half the berth indicators blinking amber."
+            ],
+            "chapterCreated": 1
+          },
+          "presentNpcIds": [],
+          "timeLabel": "midcycle",
+          "established": [
+            "The ship is already at berth seven on Sable Notch Station."
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "midcycle"
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "",
+    "isInitial": true,
+    "narrator": {
+      "prose": "The amber impound flag on berth seven keeps blinking while Voss Idara waits outside the gate.",
+      "annotation": {
+        "suggested_actions": []
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_location",
+          "location_id": "sable_notch_berth_seven",
+          "name": "Berth Seven, Sable Notch Station",
+          "description": "A fueling bay on low-cycle lighting. Your ship occupies berth seven with an amber impound-pending flag. Voss Idara stands a few paces outside the gate.",
+          "atmospheric_conditions": [
+            "Low-cycle lighting",
+            "Fuel-residue air",
+            "Half-empty berth deck"
+          ]
+        },
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "location_id": "sable_notch_berth_seven",
+            "present_npc_ids": [],
+            "time_label": "midcycle",
+            "established": [
+              "The ship occupies berth seven with an amber impound-pending flag.",
+              "Voss Idara stands outside the gate."
+            ],
+            "locked": false
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "location",
+            "payload": {
+              "id": "sable_notch_berth_seven",
+              "name": "Berth Seven, Sable Notch Station",
+              "description": "A fueling bay on low-cycle lighting. Your ship occupies berth seven with an amber impound-pending flag. Voss Idara stands a few paces outside the gate.",
+              "atmospheric_conditions": [
+                "Low-cycle lighting",
+                "Fuel-residue air",
+                "Half-empty berth deck"
+              ],
+              "locked": false
+            },
+            "confidence": "high",
+            "sourceQuote": "The amber impound flag on berth seven keeps blinking while Voss Idara waits outside the gate."
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "currentLocationId": "loc_opening",
+    "currentTimeLabel": "midcycle",
+    "locationIdsInclude": [
+      "loc_opening"
+    ],
+    "locationIdsAbsent": [
+      "sable_notch_berth_seven"
+    ],
+    "archivistAcceptedRefs": [
+      "creates[0]"
+    ],
+    "driftIncludes": [
+      {
+        "kind": "identity_drift",
+        "detailIncludes": "location create merged"
+      }
+    ]
+  }
+}

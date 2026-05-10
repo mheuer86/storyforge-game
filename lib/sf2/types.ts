@@ -1225,6 +1225,7 @@ export interface AuthorChapterSetupV2 {
   pressureLadder: Array<{
     id: string
     pressure: string
+    triggerKind?: 'entity_action' | 'location_objective' | 'late_unresolved'
     triggerCondition: string
     narrativeEffect: string
     severity?: 'standard' | 'hard'

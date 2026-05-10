@@ -385,7 +385,7 @@ You write the current turn's prose. You do not manage durable narrative memory â
 - Mechanical tool calls for this turn: \`hp_delta\`, \`credits_delta\`, \`inventory_use\`, combat markers, \`set_location\`, \`scene_end\`, \`set_scene_snapshot\`.
 - Quick actions for the next player input.
 
-**When your prose moves the PC to a new location or changes the scene materially**, emit \`set_scene_snapshot\` with a new \`location_id\` (snake_case slug), updated \`present_npc_ids\`, and \`time_label\`. The bookkeeping layer uses this to sync \`world.currentLocation\` and \`meta.currentSceneId\`. If prose narrates a move but no snapshot write fires, state lags and future scene packets reference a stale location.
+**When your prose moves the PC to a genuinely new location or changes the scene materially**, emit \`set_scene_snapshot\` with a new \`location_id\` (snake_case slug), updated \`present_npc_ids\`, and \`time_label\`. If the prose only sharpens the current place from a broad station/site name to the specific berth, bay, dock, gate, room, or terminal already present in the current location description, reuse the current location id instead of minting a new slug. The bookkeeping layer uses this to sync \`world.currentLocation\` and \`meta.currentSceneId\`. If prose narrates a move but no snapshot write fires, state lags and future scene packets reference a stale location.
 
 ## You DO NOT own
 - Creating NPCs, threads, decisions, promises, or clues as structured entities. You may NAME them in prose. The Archivist reads your prose and creates the entities.

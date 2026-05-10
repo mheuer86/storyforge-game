@@ -17,7 +17,11 @@ import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import { buildAuthorSituation } from '../lib/sf2/author/prompt'
 import { buildArcAuthorSituation } from '../lib/sf2/arc-author/prompt'
-import { buildAuthorRetryNudge } from '../lib/sf2/author/retry'
+import {
+  AUTHOR_DEFAULT_MAX_ATTEMPTS,
+  buildAuthorRetryNudge,
+  shouldRetryAuthorValidation,
+} from '../lib/sf2/author/retry'
 import { debugEntriesToDiagnosticFindings, queryOpenErrorFindingsForEntity } from '../lib/sf2/diagnostics'
 import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
 import { ARCHIVIST_PARITY_CONTRACT, extractTurnTool } from '../lib/sf2/archivist/tools'
@@ -214,6 +218,11 @@ interface ReplayFixture {
       containsAll?: string[]
       containsNone?: string[]
     }
+    authorRetryPolicy?: {
+      defaultMaxAttemptsEquals?: number
+      retryableErrors?: string[]
+      nonRetryableErrors?: string[]
+    }
     diagnosticEnvelope?: {
       debugEntries: Array<{ kind: string; at: number; data: unknown }>
       countEquals?: number
@@ -398,6 +407,7 @@ interface ReplayFixture {
         visibleNpcIdsEquals?: string[]
         firstRevealValidContextsEquals?: string[]
         pacingTargetEquals?: { min: number; max: number }
+        pressureLadderTriggerConditionEquals?: Array<{ index: number; value: string }>
       }
     }
     persistenceNormalize?: {
@@ -888,6 +898,39 @@ function assertRoleSchemaParity(fixture: ReplayFixture, failures: string[]): voi
     }
     const visible = openingProps.visible_npc_ids as Record<string, unknown> | undefined
     if (visible?.type !== 'array') failures.push('roleSchemaParity.author: visible_npc_ids must be an array')
+    const pressureLadder = (properties?.pressure_ladder as Record<string, unknown> | undefined) ?? {}
+    const ladderItem = (pressureLadder.items as Record<string, unknown> | undefined) ?? {}
+    const ladderRequired = getRequired(ladderItem)
+    const ladderProps = (ladderItem.properties as Record<string, unknown> | undefined) ?? {}
+    if (!ladderRequired.includes('trigger_event')) {
+      failures.push('roleSchemaParity.author: pressure_ladder item required missing trigger_event')
+    }
+    if (ladderRequired.includes('trigger_condition')) {
+      failures.push('roleSchemaParity.author: pressure_ladder item should not require trigger_condition')
+    }
+    const triggerEvent = (ladderProps.trigger_event as Record<string, unknown> | undefined) ?? {}
+    const triggerEventRequired = getRequired(triggerEvent)
+    for (const field of ['kind', 'actor_id', 'action', 'target_id', 'stakes']) {
+      if (!triggerEventRequired.includes(field)) {
+        failures.push(`roleSchemaParity.author: pressure_ladder.trigger_event required missing ${field}`)
+      }
+    }
+    const triggerEventProps = (triggerEvent.properties as Record<string, unknown> | undefined) ?? {}
+    if (!triggerEventProps.location_id) {
+      failures.push('roleSchemaParity.author: pressure_ladder.trigger_event schema missing location_id')
+    }
+    const kindEnum = ((triggerEventProps.kind as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+    for (const kind of ['entity_action', 'location_objective', 'late_unresolved']) {
+      if (!kindEnum.includes(kind)) {
+        failures.push(`roleSchemaParity.author: pressure_ladder.trigger_event.kind enum missing ${kind}`)
+      }
+    }
+    const actionEnum = ((triggerEventProps.action as Record<string, unknown> | undefined)?.enum as unknown[] | undefined)?.map(String) ?? []
+    for (const action of ['retrieves_from', 'late_chapter_unresolved']) {
+      if (!actionEnum.includes(action)) {
+        failures.push(`roleSchemaParity.author: pressure_ladder.trigger_event.action enum missing ${action}`)
+      }
+    }
   }
 
   if (expected.assertArcAuthor) {
@@ -1244,6 +1287,14 @@ function assertAuthorContract(
     const want = expected.expect.pacingTargetEquals
     if (got.min !== want.min || got.max !== want.max) {
       failures.push(`authorContract.pacingContract.targetTurns: expected ${want.min}-${want.max}, got ${got.min}-${got.max}`)
+    }
+  }
+  for (const expectedTrigger of expected.expect.pressureLadderTriggerConditionEquals ?? []) {
+    const got = authored.pressureLadder[expectedTrigger.index]?.triggerCondition
+    if (got !== expectedTrigger.value) {
+      failures.push(
+        `authorContract.pressureLadder[${expectedTrigger.index}].triggerCondition: expected "${expectedTrigger.value}", got "${got}"`
+      )
     }
   }
 }
@@ -2441,6 +2492,28 @@ function assertExpected(
       if (nudge.includes(snippet)) {
         failures.push(`authorRetryNudge unexpectedly includes "${snippet}"`)
       }
+    }
+  }
+  if (expected.authorRetryPolicy) {
+    if (
+      typeof expected.authorRetryPolicy.defaultMaxAttemptsEquals === 'number' &&
+      AUTHOR_DEFAULT_MAX_ATTEMPTS !== expected.authorRetryPolicy.defaultMaxAttemptsEquals
+    ) {
+      failures.push(
+        `authorRetryPolicy.defaultMaxAttempts: expected ${expected.authorRetryPolicy.defaultMaxAttemptsEquals}, got ${AUTHOR_DEFAULT_MAX_ATTEMPTS}`
+      )
+    }
+    if (
+      expected.authorRetryPolicy.retryableErrors &&
+      !shouldRetryAuthorValidation(expected.authorRetryPolicy.retryableErrors)
+    ) {
+      failures.push('authorRetryPolicy.retryableErrors: expected validation retry')
+    }
+    if (
+      expected.authorRetryPolicy.nonRetryableErrors &&
+      shouldRetryAuthorValidation(expected.authorRetryPolicy.nonRetryableErrors)
+    ) {
+      failures.push('authorRetryPolicy.nonRetryableErrors: expected no validation retry')
     }
   }
   if (expected.diagnosticEnvelope) {

@@ -133,20 +133,42 @@
           {
             "id": "ladder_deadline",
             "pressure": "Corvin uses the filing deadline to expose Vesh's prior delay.",
+            "trigger_event": {
+              "kind": "entity_action",
+              "actor_id": "npc_corvin",
+              "action": "demands_cost_from",
+              "target_id": "npc_vesh",
+              "stakes": "Vesh protection leverage visible"
+            },
             "trigger_condition": "The Warden asks for more time.",
             "narrative_effect": "Vesh's protection of the PC becomes leverage.",
             "severity": "standard"
           },
           {
             "id": "ladder_public_count",
-            "pressure": "The ledger shortfall exposes Ash's hidden rooms.",
-            "trigger_condition": "The crowd sees the ledger.",
-            "narrative_effect": "Ash loses freedom to shelter families quietly.",
+            "pressure": "The station package becomes leverage before Ash can move it.",
+            "trigger_event": {
+              "kind": "location_objective",
+              "actor_id": "the PC",
+              "action": "retrieves_from",
+              "target_id": "package_black_case",
+              "location_id": "loc_station",
+              "stakes": "Ash shelter risk public"
+            },
+            "trigger_condition": "The PC retrieves the package from the station.",
+            "narrative_effect": "Ash loses freedom to move the package quietly.",
             "severity": "standard"
           },
           {
             "id": "ladder_breach",
             "pressure": "Corvin prepares breach language.",
+            "trigger_event": {
+              "kind": "late_unresolved",
+              "actor_id": "npc_corvin",
+              "action": "late_chapter_unresolved",
+              "target_id": "thread_missing_roster",
+              "stakes": "Vesh reputation vulnerable"
+            },
             "trigger_condition": "The roster remains unresolved late.",
             "narrative_effect": "Vesh risks reputation if she blocks Synod wording.",
             "severity": "hard"
@@ -319,7 +341,21 @@
         "pacingTargetEquals": {
           "min": 18,
           "max": 22
-        }
+        },
+        "pressureLadderTriggerConditionEquals": [
+          {
+            "index": 0,
+            "value": "When npc_corvin demands a cost from npc_vesh, making Vesh protection leverage visible."
+          },
+          {
+            "index": 1,
+            "value": "When the PC retrieves package_black_case at loc_station, making Ash shelter risk public."
+          },
+          {
+            "index": 2,
+            "value": "When thread_missing_roster remains unresolved late and npc_corvin uses that delay to raise the cost."
+          }
+        ]
       }
     }
   }
