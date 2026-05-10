@@ -1,0 +1,50 @@
+# Iron Veil Procedure Benchmark Fixtures
+
+Status: needs-triage
+Labels: needs-triage
+Type: AFK
+
+## Parent
+
+.scratch/sf2-stateful-procedure-layer/PRD.md
+
+## What to build
+
+Add a focused benchmark fixture suite modeled on the Iron Veil play pattern, plus genre-neutral equivalents. The fixtures should not replay the whole chapter or require SF2 to produce 50-turn chapters. They should capture the contracts that made the benchmark work: planning creates durable state, support expertise changes the plan, montage advances off-screen tasks, failed access mutates the plan, alert/exposure clocks rise without ending play, egress remains a phase, and the next chapter carries the operation's meaning forward.
+
+## Fixture conventions
+
+- Location: `fixtures/sf2/replay/*.json`, matching the repo SF2 replay harness.
+- Naming: `iron-veil-NN-short-name.json` for Iron Veil-shaped contracts, with companion genre-neutral fixtures named by scenario when useful.
+- Each fixture is self-contained: state-in, action input, synthetic role output where needed, assertions on state-out and packet contents.
+- No live Anthropic calls. Use synthetic Narrator/Author responses or skip the model layer where possible.
+- Each fixture should fail on current behavior and pass after its referenced ticket lands.
+
+## Source material
+
+Reference the Claude-web playthrough at `/Users/martin.heuer/vaults/brainforest/references/web-clipper/The Iron Veil chapter.md` for state shape and beat sequencing. Don't try to reproduce dialogue or narration — only the structural contracts.
+
+## Acceptance criteria
+
+- [ ] Fixture covers orientation/intelligence gathering becoming a committed operation with procedure facts and open assessments.
+- [ ] Fixture covers support contributions changing a planning assessment through expertise or objection.
+- [ ] Fixture covers a montage/off-screen task result becoming a procedure fact, clue, affordance, or constraint.
+- [ ] Fixture covers a failed credential/mask/access roll creating a flagged complication and revised plan state.
+- [ ] Fixture covers active access/infiltration with alert/exposure clock ticks and partial success.
+- [ ] Fixture covers egress resolving before full alert/exposure and preserving consequences.
+- [ ] Fixture covers debrief/reveal state creating successor pressure without restaging the mission.
+- [ ] Fixture covers the same operation spanning a chapter boundary without requiring the whole operation to remain one chapter.
+- [ ] Fixture covers beat tempo guidance for planning, montage, engagement, and reckoning/debrief without live model calls.
+- [ ] Companion fixtures prove the same kernel contracts work for a grimdark castle infiltration and cyberpunk network intrusion.
+- [ ] Fixture names expected state changes clearly enough to guide future implementation work.
+- [ ] Full SF2 replay suite can include these fixtures without live model calls.
+
+## Blocked by
+
+- .scratch/sf2-stateful-procedure-layer/issues/00-procedure-kernel-schema-and-role-contracts.md
+- .scratch/sf2-stateful-procedure-layer/issues/01-operation-procedure-runtime-mvp.md
+- .scratch/sf2-stateful-procedure-layer/issues/02-stateful-planning-assessments.md
+- .scratch/sf2-stateful-procedure-layer/issues/03-operation-linked-infiltration-runtime.md
+- .scratch/sf2-stateful-procedure-layer/issues/04-procedure-aware-chapter-transitions.md
+- .scratch/sf2-stateful-procedure-layer/issues/11-narrative-tempo-beat-mode-contract.md
+- .scratch/sf2-stateful-procedure-layer/issues/12-montage-and-offscreen-task-runtime.md
