@@ -1387,6 +1387,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
     // Three-phase Haiku close sequence
     const closeTurnIndex = preCloseState.history.messages.filter(m => m.role === 'player').length
+    let phase1CommitInput: Record<string, unknown> | undefined
 
     const runClosePhase = (phase: 1 | 2 | 3, currentState: GameState): Promise<GameState> => {
       return new Promise((resolve, reject) => {
@@ -1409,7 +1410,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           true,
           currentState,
           () => { /* no roll prompt in close */ },
-          (phaseState) => {
+          (phaseState, _statChanges, _gmText, lastCommitInput) => {
+            if (phase === 1) phase1CommitInput = lastCommitInput
             setGameState(phaseState)
             saveGameState(phaseState)
             resolve(phaseState)
@@ -1468,12 +1470,16 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       const newProfs = currentState.character.proficiencies.filter(
         p => !preCloseState.character.proficiencies.includes(p)
       )
+      const closeChapterInput = phase1CommitInput?.close_chapter as {
+        resolution_met?: string
+        forward_hook?: string
+      } | undefined
       const closeData: import('@/lib/types').CloseData = {
         completedChapterNumber: preCloseState.meta.chapterNumber,
         completedChapterTitle: preCloseState.meta.chapterTitle,
         nextChapterTitle: currentState.meta.chapterTitle,
-        resolutionMet: '',
-        forwardHook: '',
+        resolutionMet: closeChapterInput?.resolution_met ?? '',
+        forwardHook: closeChapterInput?.forward_hook ?? '',
         levelUp: {
           oldLevel: preCloseState.character.level,
           newLevel: currentState.character.level,
@@ -1525,7 +1531,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       )
       const newState: GameState = {
         ...gameState,
-        meta: { ...gameState.meta, chapterClosed: false, closeData: undefined },
+        meta: { ...gameState.meta, chapterClosed: false },
         history: {
           ...gameState.history,
           chapters: archivedChapters,
@@ -1561,6 +1567,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setSetupPhase(false)
         }
       }
+
+      nextState = {
+        ...nextState,
+        meta: { ...nextState.meta, closeData: undefined },
+      }
+      setGameState(nextState)
+      saveGameState(nextState)
 
       // Clear chat and show chapter header
       const subtitle = nextState.chapterFrame?.objective

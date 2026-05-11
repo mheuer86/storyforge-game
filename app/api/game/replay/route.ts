@@ -3,13 +3,14 @@ import { z } from 'zod'
 import { isAuthenticated } from '@/lib/auth'
 import { applyToolResults } from '@/lib/tool-processor'
 import { runRulesEngine } from '@/lib/rules-engine'
+import { normalizeV15SessionCamp } from '@/lib/v15-session-camp'
 import type { GameState, ReplayRequest, ReplayResult, ToolCallResult, TurnFrame } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
 const replaySchema = z.object({
   camp: z.object({
-    schema: z.literal('v15-session-camp/v1'),
+    schema: z.enum(['v15-session-camp/v1', 'v15-session-camp/v2']),
     turns: z.array(z.any()),
   }).passthrough(),
   mode: z.enum(['full', 'single-turn', 'forward-from']),
@@ -27,7 +28,10 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Invalid request', details: parsed.error.issues }, { status: 400 })
   }
 
-  const request = parsed.data as unknown as ReplayRequest
+  const request = {
+    ...(parsed.data as unknown as ReplayRequest),
+    camp: normalizeV15SessionCamp((parsed.data as unknown as ReplayRequest).camp),
+  }
   const selected = selectTurns(request)
   if ('error' in selected) {
     return Response.json({ error: selected.error }, { status: 400 })

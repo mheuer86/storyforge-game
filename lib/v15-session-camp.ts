@@ -17,7 +17,8 @@ const REQUEST_KINDS: V15RequestKind[] = [
   'chapter-close',
   'audit',
   'summarize',
-  'extractor',
+  'shadow-extractor',
+  'chapter-ledger',
 ]
 
 type TokenTotals = {
@@ -55,6 +56,7 @@ export interface BuildV15SessionCampInput {
 export function buildV15SessionCamp(input: BuildV15SessionCampInput): V15SessionCamp {
   const exportedAt = input.exportedAt ?? new Date().toISOString()
   const sessionId = input.sessionId ?? input.finalState._instrumentation?.sessionId ?? 'unknown-session'
+  const turns = normalizeV15TurnFrames(input.turns)
 
   const debug = [
     ...(input.debug ?? []),
@@ -62,7 +64,7 @@ export function buildV15SessionCamp(input: BuildV15SessionCampInput): V15Session
   ]
 
   return {
-    schema: 'v15-session-camp/v1',
+    schema: 'v15-session-camp/v2',
     exportedAt,
     sessionId,
     campaignSeed: {
@@ -77,9 +79,37 @@ export function buildV15SessionCamp(input: BuildV15SessionCampInput): V15Session
       createdAt: input.finalState.meta.createdAt,
     },
     finalState: input.finalState,
-    turns: [...input.turns],
+    turns,
     debug,
-    summary: computeV15SessionSummary(input.turns),
+    summary: computeV15SessionSummary(turns),
+  }
+}
+
+export function normalizeV15SessionCamp(camp: V15SessionCamp): V15SessionCamp {
+  const turns = normalizeV15TurnFrames(camp.turns)
+  return {
+    ...camp,
+    turns,
+    summary: computeV15SessionSummary(turns),
+  }
+}
+
+export function normalizeV15TurnFrames(turns: readonly TurnFrame[]): TurnFrame[] {
+  return turns.map(normalizeV15TurnFrame)
+}
+
+export function normalizeV15TurnFrame(turn: TurnFrame): TurnFrame {
+  const legacyKind = (turn as { requestKind: string }).requestKind
+  if (legacyKind !== 'extractor' && REQUEST_KINDS.includes(legacyKind as V15RequestKind)) return turn
+  if (legacyKind !== 'extractor') {
+    console.warn(`Unknown V1.5 session-camp requestKind "${legacyKind}" in turn ${turn.displayId}; treating it as shadow-extractor.`)
+  }
+
+  return {
+    ...turn,
+    requestKind: legacyKind === 'extractor' && turn.subIndex === 5 && turn.chapter > 1
+      ? 'chapter-ledger'
+      : 'shadow-extractor',
   }
 }
 
@@ -98,6 +128,7 @@ export function debugEntriesFromLines(lines: readonly string[], exportedAt?: str
 }
 
 export function computeV15SessionSummary(turns: readonly TurnFrame[]): SessionSummary {
+  const normalizedTurns = normalizeV15TurnFrames(turns)
   const totalTokens = emptyTotals()
   const tokensByRequestKind = REQUEST_KINDS.reduce(
     (acc, kind) => {
@@ -111,7 +142,7 @@ export function computeV15SessionSummary(turns: readonly TurnFrame[]): SessionSu
   const rollOutcomes = { success: 0, critical: 0, failure: 0, fumble: 0 }
   let estimatedCostUsd = 0
 
-  for (const turn of turns) {
+  for (const turn of normalizedTurns) {
     chapters.add(turn.chapter)
     addTotals(totalTokens, metricsToTotals(turn))
     addTotals(tokensByRequestKind[turn.requestKind], metricsToTotals(turn))
@@ -125,10 +156,10 @@ export function computeV15SessionSummary(turns: readonly TurnFrame[]): SessionSu
   }
 
   return {
-    totalTurns: turns.length,
-    totalPlayerTurns: turns.filter((turn) => turn.requestKind === 'initial' || turn.requestKind === 'normal').length,
+    totalTurns: normalizedTurns.length,
+    totalPlayerTurns: normalizedTurns.filter((turn) => turn.requestKind === 'initial' || turn.requestKind === 'normal').length,
     totalChapters: chapters.size,
-    totalRequests: turns.length,
+    totalRequests: normalizedTurns.length,
     totalTokens,
     tokensByRequestKind,
     estimatedCostUsd,

@@ -538,7 +538,8 @@ export type V15RequestKind =
   | 'chapter-close'
   | 'audit'
   | 'summarize'
-  | 'extractor'
+  | 'shadow-extractor'
+  | 'chapter-ledger'
 
 export type V15CacheClass = 'hit' | 'miss' | 'write' | 'unknown'
 
@@ -624,7 +625,7 @@ export interface SessionSummary {
 }
 
 export interface V15SessionCamp {
-  schema: 'v15-session-camp/v1'
+  schema: 'v15-session-camp/v1' | 'v15-session-camp/v2'
   exportedAt: string
   sessionId: string
   campaignSeed: {

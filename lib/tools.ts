@@ -1118,6 +1118,31 @@ const chapterSeedDefinition: Anthropic.Tool = {
         description: 'Thread IDs or exact titles that resolved, expired, or are no longer relevant after the prior close.',
         items: { type: 'string' },
       },
+      chapter_frame: {
+        type: 'object',
+        description: 'New chapter frame derived from the prior chapter ledger. Objective must require multiple motions to be considered resolved.',
+        properties: {
+          objective: {
+            type: 'string',
+            description: 'Multi-motion objective phrased so partial completion does NOT count as resolved. Synthesize from required_ch2_motions and escalation_vector. State explicitly what must ALL be true for the chapter to close.',
+          },
+          crucible: {
+            type: 'string',
+            description: 'The pressure that makes the objective costly. Reference the escalation vector concretely (which of stakes/scale/cost/intimacy/knowledge is increasing and why).',
+          },
+          outcome_spectrum: {
+            type: 'object',
+            properties: {
+              clean: { type: 'string' },
+              costly: { type: 'string' },
+              failure: { type: 'string' },
+              catastrophic: { type: 'string' },
+            },
+            required: ['clean', 'costly', 'failure', 'catastrophic'],
+          },
+        },
+        required: ['objective', 'crucible', 'outcome_spectrum'],
+      },
       opening_seed: {
         type: 'string',
         description: '3-5 lines the narrator can use as the opening orientation. Concrete situation, pressure, first image, and immediate motion; no prose scene draft.',
@@ -1128,7 +1153,7 @@ const chapterSeedDefinition: Anthropic.Tool = {
         items: { type: 'string' },
       },
     },
-    required: ['opening_seed', 'forbidden_ch2_shapes'],
+    required: ['chapter_frame', 'opening_seed', 'forbidden_ch2_shapes'],
   },
 }
 

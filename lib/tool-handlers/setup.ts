@@ -23,6 +23,16 @@ export interface ChapterSeedInput extends ChapterSetupInput {
   npcs_to_retire?: string[]
   npcs_to_promote?: string[]
   threads_to_close?: string[]
+  chapter_frame?: {
+    objective: string
+    crucible: string
+    outcome_spectrum: {
+      clean: string
+      costly: string
+      failure: string
+      catastrophic: string
+    }
+  }
   opening_seed?: string
   forbidden_ch2_shapes?: string[]
 }
@@ -183,6 +193,18 @@ export function applyChapterSeedChanges(
   }
 
   next = { ...next, world }
+
+  if (input.chapter_frame) {
+    next = {
+      ...next,
+      chapterFrame: {
+        objective: input.chapter_frame.objective,
+        crucible: input.chapter_frame.crucible,
+        outcomeSpectrum: input.chapter_frame.outcome_spectrum,
+      },
+    }
+    dbg(`CHAPTER_SEED chapter_frame rewritten: ${input.chapter_frame.objective.slice(0, 80)}...`)
+  }
 
   if (input.opening_seed || input.forbidden_ch2_shapes) {
     const meta = {

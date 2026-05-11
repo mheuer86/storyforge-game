@@ -895,7 +895,7 @@ export function buildClosePhasePrompt(gameState: GameState, phase: 1 | 2 | 3): [
    - new_level: ${newLevel}
    - hp_increase: ${hpIncrease} (hit die avg ${hitDie} + CON mod ${conMod >= 0 ? '+' : ''}${conMod}, min 1)${profBonusNote}${asiNote}
 
-4. NEXT FRAME: Include chapter_frame for next chapter with outcome_spectrum. The objective should be the next episode's milestone if an arc is active. Derive the next chapter's frame from the arc map based on the tier reached: clean/costly → advance to next planned episode. Failure → pivot the next episode's milestone based on what went wrong. Catastrophic → restructure remaining episodes.
+4. NEXT FRAME: Include chapter_frame for next chapter with outcome_spectrum. Note: this frame is a placeholder. The V1.5 seed builder overwrites it after the ledger fires. The objective should be the next episode's milestone if an arc is active. Derive the next chapter's frame from the arc map based on the tier reached: clean/costly → advance to next planned episode. Failure → pivot the next episode's milestone based on what went wrong. Catastrophic → restructure remaining episodes.
 
 5. ARC ADVANCEMENT: If story arcs exist, include arc_updates.advance_episode for the current arc with a 1-2 sentence summary of what this episode achieved. If the arc's final episode just completed, use arc_updates.resolve_arc instead. The next chapter's frame objective should match the next episode's milestone.
 
@@ -2292,6 +2292,14 @@ export function buildChapterSeedPrompt(gameState: GameState): [string, string] {
   const ledgers = gameState.chapterLedgers ?? {}
   const ledger = ledgers[previousChapterNumber]
   const frame = gameState.chapterFrame
+  const previousChapter = gameState.history.chapters.find(ch => ch.number === previousChapterNumber)
+  const closeData = gameState.meta.closeData
+  const priorForwardHook = closeData?.completedChapterNumber === previousChapterNumber
+    ? closeData.forwardHook
+    : undefined
+  const priorOutcomeSpectrum = closeData?.completedChapterNumber === previousChapterNumber
+    ? closeData.nextFrame?.outcomeSpectrum ?? frame?.outcomeSpectrum
+    : frame?.outcomeSpectrum
   const compressedState = compressGameState(gameState)
 
   const instructions = `You are the V1.5 Ch2+ chapter seed builder for a ${config.name} RPG. Your job is to transition existing state from the prior chapter's forward ledger. Output ONLY a chapter_seed tool call. No narration, no prose, no commentary.
@@ -2304,6 +2312,13 @@ This is a transition, not a new campaign setup:
 - Promote required_ch2_motions into active threads.
 - Close threads that the prior resolution made irrelevant.
 - Preserve existing world identity. Do not restage events listed in do_not_restage.
+
+chapter_frame is the close-trigger surface. Its objective controls when V1's chapter-close logic fires.
+- The objective MUST require multiple ledger motions to be considered resolved. Phrase it as a conjunction: "X AND Y AND Z" or "all three of A, B, C must happen."
+- Do NOT phrase the objective as a single beat that one disclosure or one decision could satisfy. Examples to avoid: "Survive the transit", "Reach the drop point", "Cade breaks her silence". Each of those falsely resolves on a single beat.
+- Examples to emulate: "Reach the drop point past Beacon Eleven with the job's integrity intact - silence broken on Flinch's terms, at least one transit pressure paid in cost, and a decision made about what Soraya gets told at delivery." That objective explicitly demands three things, none of which is single-beat satisfiable.
+- The crucible names the escalation vector concretely. If escalation_vector is [stakes, knowledge], the crucible must surface what's at stake AND what the player knowing-or-not-knowing costs.
+- outcome_spectrum's "clean" tier must require ALL required_ch2_motions to be satisfied. "costly" allows partial. "failure" is one or more motion failing. "catastrophic" is the planted_bomb detonating.
 
 opening_seed must be 3-5 short lines for the narrator's first Ch${chapterNumber} briefing: concrete opening situation, immediate pressure, first image, and what motion is already underway. It is not a prose draft and must not decide the player's action.`
 
@@ -2318,6 +2333,12 @@ Outcome spectrum: ${frame?.outcomeSpectrum ? JSON.stringify(frame.outcomeSpectru
 
 PRIOR CHAPTER LEDGER:
 ${ledgerBlock}
+
+PRIOR CLOSE CONTINUITY:
+Outcome tier: ${previousChapter?.outcomeTier ?? 'unknown'}
+Prior debrief: ${previousChapter?.debrief ? JSON.stringify(previousChapter.debrief, null, 2) : 'None recorded.'}
+Prior forward_hook: ${priorForwardHook ?? 'None recorded.'}
+Prior placeholder outcome_spectrum: ${priorOutcomeSpectrum ? JSON.stringify(priorOutcomeSpectrum, null, 2) : 'None recorded.'}
 
 CURRENT STATE:
 ${compressedState}

@@ -164,7 +164,8 @@ function requestKindFromFlags(flags: {
 }): V15RequestKind {
   if (flags.isChapterClose) return 'chapter-close'
   if (flags.isChapter1Setup || flags.isChapterSeed) return 'chapter-setup'
-  if (flags.isChapterLedgerExtraction || flags.isShadowExtraction) return 'extractor'
+  if (flags.isChapterLedgerExtraction) return 'chapter-ledger'
+  if (flags.isShadowExtraction) return 'shadow-extractor'
   if (flags.isAudit) return 'audit'
   if (flags.isSummarize) return 'summarize'
   if (flags.isConsistencyCheck) return 'consistency-check'
@@ -178,7 +179,8 @@ function defaultSubIndex(kind: V15RequestKind, closePhase?: 1 | 2 | 3): number {
   // Side-call slots are intentionally sparse and assume at most one audit or
   // summarize call per player turn; explicit turnFrameHint overrides these.
   if (kind === 'chapter-close') return (closePhase ?? 1) + 1
-  if (kind === 'extractor') return 5
+  if (kind === 'chapter-ledger') return 5
+  if (kind === 'shadow-extractor') return 7
   if (kind === 'audit') return 8
   if (kind === 'summarize') return 9
   return 1
