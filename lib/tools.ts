@@ -921,83 +921,214 @@ const metaResponseDefinition: Anthropic.Tool = {
 // chapter_setup — batch initialization for Chapter 1
 // ============================================================
 
+const chapterSetupNpcSchema = {
+  type: 'array',
+  description: 'NPCs to create or enrich. Existing NPCs (matched by name) are updated; new names are created.',
+  items: {
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      description: { type: 'string', description: 'Who they are + one personality detail.' },
+      last_seen: { type: 'string' },
+      disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
+      voice_note: { type: 'string' },
+      role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
+      affiliation: { type: 'string' },
+      key_facts: {
+        type: 'array',
+        description: 'Identity anchors (max 3). Physical traits, defining events, or key roles.',
+        items: { type: 'string' },
+      },
+      relations: {
+        type: 'array',
+        description: 'Structured relationships to other characters.',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Name of the related character' },
+            type: { type: 'string', description: 'Relationship type (e.g. relies on, rival of, hunted by)' },
+          },
+          required: ['name', 'type'],
+        },
+      },
+    },
+    required: ['name'],
+  },
+} as const
+
+const chapterSetupLocationSchema = {
+  type: 'object',
+  description: 'Starting location for the chapter.',
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+  },
+  required: ['name', 'description'],
+} as const
+
+const chapterSetupFactionsSchema = {
+  type: 'array',
+  description: 'Factions relevant to the opening situation.',
+  items: {
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      stance: { type: 'string' },
+    },
+    required: ['name', 'stance'],
+  },
+} as const
+
+const chapterSetupThreadsSchema = {
+  type: 'array',
+  description: 'Narrative threads from the hook.',
+  items: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      title: { type: 'string' },
+      status: { type: 'string' },
+      deteriorating: { type: 'boolean' },
+    },
+    required: ['id', 'title', 'status', 'deteriorating'],
+  },
+} as const
+
 const chapterSetupDefinition: Anthropic.Tool = {
   name: 'chapter_setup',
   description: 'Batch-initialize NPCs, location, factions, and threads for Chapter 1. Called once before the GM narrates. No prose output.',
   input_schema: {
     type: 'object',
     properties: {
-      npcs: {
-        type: 'array',
-        description: 'NPCs to create or enrich. Existing NPCs (matched by name) are updated; new names are created.',
-        items: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            description: { type: 'string', description: 'Who they are + one personality detail.' },
-            last_seen: { type: 'string' },
-            disposition: { type: 'string', enum: [...DISPOSITION_TIERS] },
-            voice_note: { type: 'string' },
-            role: { type: 'string', enum: ['crew', 'contact', 'npc'] },
-            affiliation: { type: 'string' },
-            key_facts: {
-              type: 'array',
-              description: 'Identity anchors (max 3). Physical traits, defining events, or key roles.',
-              items: { type: 'string' },
-            },
-            relations: {
-              type: 'array',
-              description: 'Structured relationships to other characters.',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string', description: 'Name of the related character' },
-                  type: { type: 'string', description: 'Relationship type (e.g. relies on, rival of, hunted by)' },
-                },
-                required: ['name', 'type'],
-              },
-            },
-          },
-          required: ['name'],
-        },
-      },
-      location: {
-        type: 'object',
-        description: 'Starting location for the chapter.',
-        properties: {
-          name: { type: 'string' },
-          description: { type: 'string' },
-        },
-        required: ['name', 'description'],
-      },
-      factions: {
-        type: 'array',
-        description: 'Factions relevant to the opening situation.',
-        items: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            stance: { type: 'string' },
-          },
-          required: ['name', 'stance'],
-        },
-      },
-      threads: {
-        type: 'array',
-        description: 'Narrative threads from the hook.',
-        items: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            title: { type: 'string' },
-            status: { type: 'string' },
-            deteriorating: { type: 'boolean' },
-          },
-          required: ['id', 'title', 'status', 'deteriorating'],
-        },
-      },
+      npcs: chapterSetupNpcSchema,
+      location: chapterSetupLocationSchema,
+      factions: chapterSetupFactionsSchema,
+      threads: chapterSetupThreadsSchema,
     },
     required: ['npcs', 'location'],
+  },
+}
+
+// ============================================================
+// chapter_ledger — V1.5 forward-ledger extractor output
+// ============================================================
+
+const chapterLedgerDefinition: Anthropic.Tool = {
+  name: 'chapter_ledger',
+  description: 'Persist the forward-looking meaning ledger for the completed chapter. Called by the dedicated extractor only; no prose output.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      chapter: { type: 'number', description: 'The completed chapter number this ledger describes.' },
+      closing_resolution: { type: 'string', description: 'What became narratively true because of the chapter ending. Derive from story reality, not desired sequel setup.' },
+      planted_bomb: { type: 'string', description: 'Optional unresolved pressure already planted on-screen that can detonate later.' },
+      off_screen_actors: {
+        type: 'array',
+        description: '3-5 actors not currently centered who now have position and motion because of the ending.',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            position: { type: 'string', description: 'Where/what leverage they hold at chapter end.' },
+            vector: { type: 'string', description: 'What they are likely to do next.' },
+          },
+          required: ['name', 'position', 'vector'],
+        },
+      },
+      relationships_in_motion: {
+        type: 'array',
+        description: '1-3 relationships whose direction changed or now matters.',
+        items: {
+          type: 'object',
+          properties: {
+            parties: { type: 'array', items: { type: 'string' } },
+            direction: { type: 'string', description: 'How the relationship is moving: trust, fracture, debt, rivalry, suspicion, etc.' },
+          },
+          required: ['parties', 'direction'],
+        },
+      },
+      escalation_vector: {
+        type: 'array',
+        description: '1-2 dimensions the next chapter should escalate on.',
+        items: { type: 'string', enum: ['stakes', 'scale', 'cost', 'intimacy', 'knowledge'] },
+      },
+      mid_chapter_reveal_seed: { type: 'string', description: 'Optional reveal seed for the middle of the next chapter. Use only if already earned.' },
+      required_ch2_motions: {
+        type: 'array',
+        description: '2-3 required motions for Chapter 2, including any at-least-N-of-M bundle as text.',
+        items: {
+          type: 'object',
+          properties: {
+            motion: { type: 'string' },
+            success_condition: { type: 'string', description: 'Optional acceptance rule, e.g. "at least 2 of these 3 pressures must surface".' },
+          },
+          required: ['motion'],
+        },
+      },
+      forbidden_ch2_shapes: {
+        type: 'array',
+        description: '2-4 sequel shapes that would flatten or repeat the completed chapter.',
+        items: { type: 'string' },
+      },
+      do_not_restage: {
+        type: 'array',
+        description: 'Specific completed events, set pieces, reveals, or dilemmas the next chapter must not replay.',
+        items: { type: 'string' },
+      },
+    },
+    required: [
+      'chapter',
+      'closing_resolution',
+      'off_screen_actors',
+      'relationships_in_motion',
+      'escalation_vector',
+      'required_ch2_motions',
+      'forbidden_ch2_shapes',
+      'do_not_restage',
+    ],
+  },
+}
+
+// ============================================================
+// chapter_seed — Ch2+ transition setup
+// ============================================================
+
+const chapterSeedDefinition: Anthropic.Tool = {
+  name: 'chapter_seed',
+  description: 'Transition existing state for Chapter 2+ from the prior chapter ledger. Upserts NPCs, location, factions, and threads; can retire NPCs and close stale threads. No narration output.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      npcs_to_retire: {
+        type: 'array',
+        description: 'Existing NPC names no longer load-bearing for the opening chapter state.',
+        items: { type: 'string' },
+      },
+      npcs_to_promote: {
+        type: 'array',
+        description: 'Off-screen actor names from the ledger that should become active pressure in the new chapter.',
+        items: { type: 'string' },
+      },
+      npcs: chapterSetupNpcSchema,
+      location: chapterSetupLocationSchema,
+      factions: chapterSetupFactionsSchema,
+      threads: chapterSetupThreadsSchema,
+      threads_to_close: {
+        type: 'array',
+        description: 'Thread IDs or exact titles that resolved, expired, or are no longer relevant after the prior close.',
+        items: { type: 'string' },
+      },
+      opening_seed: {
+        type: 'string',
+        description: '3-5 lines the narrator can use as the opening orientation. Concrete situation, pressure, first image, and immediate motion; no prose scene draft.',
+      },
+      forbidden_ch2_shapes: {
+        type: 'array',
+        description: 'Forbidden shapes copied or refined from the ledger, stored for narrator briefing.',
+        items: { type: 'string' },
+      },
+    },
+    required: ['opening_seed', 'forbidden_ch2_shapes'],
   },
 }
 
@@ -1015,3 +1146,9 @@ export const metaTools: Anthropic.Tool[] = [metaResponseDefinition]
 
 /** Setup tools for Chapter 1 initialization — chapter_setup only. */
 export const setupTools: Anthropic.Tool[] = [chapterSetupDefinition]
+
+/** V1.5 forward-ledger extractor tools — chapter_ledger only. */
+export const chapterLedgerTools: Anthropic.Tool[] = [chapterLedgerDefinition]
+
+/** V1.5 Ch2+ transition setup tools — chapter_seed only. */
+export const chapterSeedTools: Anthropic.Tool[] = [chapterSeedDefinition]

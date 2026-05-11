@@ -1,11 +1,11 @@
-import type { GameState, ToolCallResult, InventoryItem, TempModifier, DispositionTier, RollRecord, RollBreakdown, ChapterDebrief } from './types'
+import type { ChapterLedger, GameState, ToolCallResult, InventoryItem, TempModifier, DispositionTier, RollRecord, RollBreakdown, ChapterDebrief } from './types'
 import { getGenreConfig } from './genres'
 import type { Genre } from './genres'
 import { applyCharacterChanges } from './tool-handlers/character'
 import { applyWorldChanges } from './tool-handlers/world'
 import { applyCombatChanges } from './tool-handlers/combat'
 import { applyNarrativeChanges } from './tool-handlers/narrative'
-import { applySetupChanges, type ChapterSetupInput } from './tool-handlers/setup'
+import { applyChapterSeedChanges, applySetupChanges, type ChapterSeedInput, type ChapterSetupInput } from './tool-handlers/setup'
 
 export interface StatChange {
   type: 'gain' | 'loss' | 'new' | 'neutral'
@@ -107,6 +107,45 @@ export interface CommitTurnInput {
     resolve_arc?: { arc_id: string }
     abandon_arc?: { arc_id: string; reason: string }
     add_episode?: { arc_id: string; milestone: string }
+  }
+}
+
+export interface ChapterLedgerInput {
+  chapter: number
+  closing_resolution: string
+  planted_bomb?: string
+  off_screen_actors: { name: string; position: string; vector: string }[]
+  relationships_in_motion: { parties: string[]; direction: string }[]
+  escalation_vector: ('stakes' | 'scale' | 'cost' | 'intimacy' | 'knowledge')[]
+  mid_chapter_reveal_seed?: string
+  required_ch2_motions: { motion: string; success_condition?: string }[]
+  forbidden_ch2_shapes: string[]
+  do_not_restage: string[]
+}
+
+function normalizeChapterLedger(input: ChapterLedgerInput, chapter: number): ChapterLedger {
+  return {
+    chapterNumber: chapter,
+    closingResolution: input.closing_resolution,
+    ...(input.planted_bomb && { plantedBomb: input.planted_bomb }),
+    offScreenActors: input.off_screen_actors.map(actor => ({
+      name: actor.name,
+      position: actor.position,
+      vector: actor.vector,
+    })),
+    relationshipsInMotion: input.relationships_in_motion.map(rel => ({
+      participants: rel.parties,
+      direction: rel.direction,
+    })),
+    escalationVector: input.escalation_vector,
+    ...(input.mid_chapter_reveal_seed && { midChapterRevealSeed: input.mid_chapter_reveal_seed }),
+    requiredCh2Motions: input.required_ch2_motions.map(motion => ({
+      motion: motion.motion,
+      ...(motion.success_condition && { successCondition: motion.success_condition }),
+    })),
+    forbiddenCh2Shapes: input.forbidden_ch2_shapes,
+    doNotRestage: input.do_not_restage,
+    extractedAt: new Date().toISOString(),
   }
 }
 
@@ -238,6 +277,27 @@ export function applyToolResults(
     if (result.tool === 'chapter_setup') {
       const input = result.input as unknown as ChapterSetupInput
       updated = applySetupChanges(input, updated, statChanges)
+    }
+
+    // ── chapter_ledger: V1.5 forward-ledger extractor output ──
+    if (result.tool === 'chapter_ledger') {
+      const input = result.input as unknown as ChapterLedgerInput
+      const chapter = Number.isFinite(input.chapter) ? input.chapter : Math.max(1, updated.meta.chapterNumber - 1)
+      updated = {
+        ...updated,
+        chapterLedgers: {
+          ...(updated.chapterLedgers ?? {}),
+          [chapter]: normalizeChapterLedger(input, chapter),
+        },
+      }
+      dbg(`CHAPTER_LEDGER stored for Chapter ${chapter}`)
+    }
+
+    // ── chapter_seed: Ch2+ transition setup from prior chapter ledger ──
+    if (result.tool === 'chapter_seed') {
+      const input = result.input as unknown as ChapterSeedInput
+      updated = applyChapterSeedChanges(input, updated, statChanges)
+      statChanges.push({ type: 'neutral', label: `Chapter ${updated.meta.chapterNumber} seeded` })
     }
 
     // ── _story_summary: internal, from summarize flow ──

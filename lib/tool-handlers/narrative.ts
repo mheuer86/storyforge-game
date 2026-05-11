@@ -237,10 +237,13 @@ export function applyNarrativeChanges(
   if (input.pivotal_scenes) {
     const scenes = input.pivotal_scenes
     const existing = updated.pivotalScenes ?? []
+    const sceneChapter = updated.meta.chapterClosed
+      ? Math.max(1, updated.meta.chapterNumber - 1)
+      : updated.meta.chapterNumber
     const newScenes = scenes.map(s => ({
       title: s.title,
       text: s.text,
-      chapter: updated.meta.chapterNumber,
+      chapter: sceneChapter,
     }))
     // Cap at 8 total, keep newest
     updated = {

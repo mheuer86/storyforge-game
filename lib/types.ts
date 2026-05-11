@@ -1,5 +1,7 @@
 // Full game state types for Storyforge V1
 
+import type Anthropic from '@anthropic-ai/sdk'
+
 export interface StatBlock {
   STR: number
   DEX: number
@@ -415,6 +417,37 @@ export interface ChapterFrameHistoryEntry {
   replacedAtTurn: number    // player turn count when the reframe fired
 }
 
+export interface ChapterLedger {
+  chapterNumber: number
+  closingResolution: string
+  plantedBomb?: string
+  offScreenActors: Array<{
+    name: string
+    position: string
+    vector: string
+  }>
+  relationshipsInMotion: Array<{
+    participants: string[]
+    direction: string
+  }>
+  escalationVector: Array<'stakes' | 'scale' | 'cost' | 'intimacy' | 'knowledge'>
+  midChapterRevealSeed?: string
+  requiredCh2Motions: Array<{
+    motion: string
+    successCondition?: string
+  }>
+  forbiddenCh2Shapes: string[]
+  doNotRestage: string[]
+  extractedAt: string
+  extractorModel?: string
+}
+
+export interface ChapterSeedBriefing {
+  openingSeed?: string
+  forbiddenShapes?: string[]
+  createdAt: string
+}
+
 export interface CloseData {
   completedChapterNumber: number
   completedChapterTitle: string
@@ -470,6 +503,7 @@ export interface MetaState {
   selfAssessment?: string
   chapterClosed?: boolean
   closeData?: CloseData
+  chapterSeed?: ChapterSeedBriefing
 }
 
 export interface GameState {
@@ -490,7 +524,141 @@ export interface GameState {
   _pendingSceneSummary?: boolean    // true when set_location fired without scene_end — reminds Claude next turn
   _objectiveResolvedAtTurn?: number  // turn number when objective_status flipped to resolved/failed — drives close timing
   arcs: StoryArc[]                 // multi-chapter narrative arcs with episode milestones
+  chapterLedgers: Record<number, ChapterLedger> // V1.5 forward-ledger outputs, keyed by completed chapter number
   _instrumentation?: Instrumentation   // Batch 1 diagnostic instrumentation (additive, non-behavioral)
+}
+
+export type V15RequestKind =
+  | 'initial'
+  | 'normal'
+  | 'meta-question'
+  | 'consistency-check'
+  | 'roll-resolution'
+  | 'chapter-setup'
+  | 'chapter-close'
+  | 'audit'
+  | 'summarize'
+  | 'extractor'
+
+export type V15CacheClass = 'hit' | 'miss' | 'write' | 'unknown'
+
+export interface ApiRound {
+  roundIndex: number
+  model: string
+  startedAt: string
+  endedAt: string
+  firstTokenMs: number
+  finalMessage: Anthropic.Message
+  usage: Anthropic.Usage
+  followUpReason?: 'tool_use' | 'roll_pending' | null
+}
+
+export interface TurnFrame {
+  turnIndex: number
+  subIndex: number
+  displayId: string
+  chapter: number
+  startedAt: string
+  endedAt: string
+  playerInput: string
+  requestKind: V15RequestKind
+  closePhase?: 1 | 2 | 3
+  stateBefore: GameState
+  stateAfter: GameState
+  systemBlocks: Array<{
+    label: string
+    tokenEstimate: number
+    preview: string
+  }>
+  systemBlocksFull?: string
+  conversationMessages: Anthropic.MessageParam[]
+  toolsAvailable: string[]
+  rounds: ApiRound[]
+  rolls: RollRecord[]
+  toolEffects: ToolCallResult[]
+  streamEvents: StreamEvent[]
+  metrics: {
+    totalMs: number
+    firstTokenMs: number
+    inputTokens: number
+    outputTokens: number
+    cacheReadTokens: number
+    cacheWriteTokens: number
+    cacheClass: V15CacheClass
+    rounds: number
+  }
+}
+
+export interface DebugEntry {
+  at: string
+  kind: 'instrument' | 'error' | 'retry' | 'truncation' | 'invariant' | 'debug_context'
+  channel?: string
+  line?: string
+  payload?: unknown
+  turnDisplayId?: string
+}
+
+export interface SessionSummary {
+  totalTurns: number
+  totalPlayerTurns: number
+  totalChapters: number
+  totalRequests: number
+  totalTokens: {
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+  }
+  tokensByRequestKind: Record<V15RequestKind, { input: number; output: number; cacheRead: number; cacheWrite: number }>
+  estimatedCostUsd: number
+  ttftMs: {
+    p50: number
+    p95: number
+  }
+  rollOutcomes: {
+    success: number
+    critical: number
+    failure: number
+    fumble: number
+  }
+}
+
+export interface V15SessionCamp {
+  schema: 'v15-session-camp/v1'
+  exportedAt: string
+  sessionId: string
+  campaignSeed: {
+    genre: string
+    character: {
+      name: string
+      species: string
+      class: string
+      stats: StatBlock
+    }
+    selectedHook: string
+    createdAt: string
+  }
+  finalState: GameState
+  turns: TurnFrame[]
+  debug: DebugEntry[]
+  summary: SessionSummary
+}
+
+export interface ReplayRequest {
+  camp: V15SessionCamp
+  mode: 'full' | 'single-turn' | 'forward-from'
+  turnDisplayId?: string
+}
+
+export interface ReplayResult {
+  mode: ReplayRequest['mode']
+  turnsReplayed: number
+  divergences: Array<{
+    turnDisplayId: string
+    pathInState: string
+    expected: unknown
+    actual: unknown
+  }>
 }
 
 // ============================================================
@@ -640,6 +808,7 @@ export type StreamEvent =
   | { type: 'error'; message: string }
   | { type: 'token_usage'; usage: TokenUsage }
   | { type: 'debug_context'; label: string; content: string; tokenEstimate: number }
+  | { type: 'turn_frame'; frame: TurnFrame }
   | {
       type: 'truncation_warning'
       outputTokens: number

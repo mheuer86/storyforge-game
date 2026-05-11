@@ -276,6 +276,7 @@ export function createInitialGameState(
     pivotalScenes: [],
     rollSequences: [],
     arcs: initialArcs,
+    chapterLedgers: {},
   }
 }
 
@@ -303,6 +304,9 @@ function deduplicateNpcs(state: GameState): GameState {
  */
 export function ensureSchemaVersionAndMigrate(input: GameState): GameState {
   let state = input
+  if (!state.chapterLedgers) {
+    state.chapterLedgers = {}
+  }
   if (state.meta && typeof state.meta.schemaVersion !== 'number') {
     state.meta.schemaVersion = 1
   }
@@ -351,6 +355,10 @@ export function loadGameState(): GameState | null {
     // Migrate saves that predate chapterFrame
     if (state.chapterFrame === undefined) {
       state.chapterFrame = null
+    }
+    // Migrate saves that predate V1.5 forward-ledger storage
+    if (!state.chapterLedgers) {
+      state.chapterLedgers = {}
     }
     // Migrate saves that predate operationState
     if (state.world.operationState === undefined) {

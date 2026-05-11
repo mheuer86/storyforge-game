@@ -101,6 +101,7 @@ interface BurgerMenuProps {
   initialTab?: string
   tokenLog?: Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>
   debugLog?: string[]
+  onDownloadSessionCamp?: () => void
   onExportSessionStats?: () => void
 }
 
@@ -131,6 +132,7 @@ export function BurgerMenu({
   initialTab,
   tokenLog,
   debugLog,
+  onDownloadSessionCamp,
   onExportSessionStats,
 }: BurgerMenuProps) {
   const genreConfig = getGenreConfig(genre)
@@ -296,6 +298,14 @@ export function BurgerMenu({
                           className="mt-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors ml-4"
                         >
                           Export Debug Log
+                        </button>
+                      )}
+                      {onDownloadSessionCamp && (
+                        <button
+                          onClick={onDownloadSessionCamp}
+                          className="mt-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors ml-4"
+                        >
+                          Download Session Camp
                         </button>
                       )}
                       {onExportSessionStats && (

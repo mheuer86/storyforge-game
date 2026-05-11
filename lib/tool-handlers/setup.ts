@@ -19,6 +19,14 @@ export interface ChapterSetupInput {
   threads?: { id: string; title: string; status: string; deteriorating: boolean }[]
 }
 
+export interface ChapterSeedInput extends ChapterSetupInput {
+  npcs_to_retire?: string[]
+  npcs_to_promote?: string[]
+  threads_to_close?: string[]
+  opening_seed?: string
+  forbidden_ch2_shapes?: string[]
+}
+
 export function applySetupChanges(
   input: ChapterSetupInput,
   updated: GameState,
@@ -104,4 +112,91 @@ export function applySetupChanges(
   }
 
   return { ...updated, world }
+}
+
+export function applyChapterSeedChanges(
+  input: ChapterSeedInput,
+  updated: GameState,
+  statChanges: StatChange[],
+): GameState {
+  const { threads, ...setupInput } = input
+  let next = applySetupChanges(setupInput, updated, statChanges)
+  let world = { ...next.world }
+
+  if (input.npcs_to_promote) {
+    const promoteNames = new Set(input.npcs_to_promote.map(name => name.toLowerCase()))
+    world.npcs = world.npcs.map(npc =>
+      promoteNames.has(npc.name.toLowerCase())
+        ? {
+            ...npc,
+            role: npc.role ?? 'npc',
+            status: npc.status === 'gone' ? 'active' : npc.status,
+            lastSeen: input.location?.name ?? npc.lastSeen,
+          }
+        : npc
+    )
+    for (const name of input.npcs_to_promote) dbg(`CHAPTER_SEED promote NPC: ${name}`)
+  }
+
+  if (input.npcs_to_retire) {
+    const retireNames = new Set(input.npcs_to_retire.map(name => name.toLowerCase()))
+    world.npcs = world.npcs.map(npc =>
+      retireNames.has(npc.name.toLowerCase())
+        ? {
+            ...npc,
+            status: 'gone',
+            lastSeen: `Retired before Chapter ${next.meta.chapterNumber}`,
+          }
+        : npc
+    )
+    for (const name of input.npcs_to_retire) dbg(`CHAPTER_SEED retire NPC: ${name}`)
+  }
+
+  if (input.threads_to_close) {
+    const closeIds = new Set(input.threads_to_close.map(id => id.toLowerCase()))
+    world.threads = world.threads.map(thread =>
+      closeIds.has(thread.id.toLowerCase()) || closeIds.has(thread.title.toLowerCase())
+        ? { ...thread, status: 'closed', deteriorating: false }
+        : thread
+    )
+    for (const id of input.threads_to_close) dbg(`CHAPTER_SEED close thread: ${id}`)
+  }
+
+  if (threads) {
+    for (const t of threads) {
+      const existingIdx = world.threads.findIndex(thread =>
+        thread.id.toLowerCase() === t.id.toLowerCase() ||
+        thread.title.toLowerCase() === t.title.toLowerCase()
+      )
+      if (existingIdx >= 0) {
+        world.threads = world.threads.map((thread, idx) =>
+          idx === existingIdx
+            ? { ...thread, title: t.title, status: t.status, deteriorating: t.deteriorating }
+            : thread
+        )
+        dbg(`CHAPTER_SEED update thread: ${t.title}`)
+      } else {
+        world.threads = [...world.threads, t]
+        dbg(`CHAPTER_SEED new thread: ${t.title} [${t.deteriorating ? 'WORSENING' : 'STABLE'}]`)
+      }
+    }
+  }
+
+  next = { ...next, world }
+
+  if (input.opening_seed || input.forbidden_ch2_shapes) {
+    const meta = {
+      ...next.meta,
+      chapterSeed: {
+        ...(input.opening_seed && { openingSeed: input.opening_seed }),
+        ...(input.forbidden_ch2_shapes && { forbiddenShapes: input.forbidden_ch2_shapes }),
+        createdAt: new Date().toISOString(),
+      },
+    }
+    next = { ...next, meta }
+    if (input.opening_seed) dbg('CHAPTER_SEED opening seed stored')
+    if (input.forbidden_ch2_shapes?.length) dbg(`CHAPTER_SEED forbidden shapes: ${input.forbidden_ch2_shapes.length}`)
+  }
+
+  return next
 }

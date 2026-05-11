@@ -948,8 +948,11 @@ Include suggested_actions: ["Continue"].`
     return [instructions, compressedState]
   }
 
-  // Phase 3: Narrative curation — needs actual messages for finding quotes
-  const msgs = gameState.history.messages
+  // Phase 3: Narrative curation — after Phase 1 the active message list is
+  // cleared, so read the archived completed chapter transcript when present.
+  const completedChapterNum = gameState.meta.chapterNumber - 1
+  const completedChapter = gameState.history.chapters.find(ch => ch.number === completedChapterNum)
+  const msgs = completedChapter?.messages?.length ? completedChapter.messages : gameState.history.messages
   const messageBlock = msgs
     .map((m) => `[${m.role}] ${m.content.slice(0, 300)}`)
     .join('\n')
@@ -2110,6 +2113,11 @@ ${contactsBlock}${crewBlock}`
       ? `\n\nNo chapter frame established yet. Establish one with commit_turn with chapter_frame within the first 2-3 turns, based on the player's direction.`
       : ''
 
+  const seed = gameState.meta.chapterSeed
+  const seedOrientation = seed?.openingSeed
+    ? `\n\nChapter seed briefing:\n${seed.openingSeed}${seed.forbiddenShapes?.length ? `\n\nAvoid these sequel shapes: ${seed.forbiddenShapes.join('; ')}.` : ''}`
+    : ''
+
   const op = gameState.world.operationState
   const opContext = op
     ? `\n\nActive operation: ${op.name}, phase: ${op.phase}. Primary objective: ${op.objectives[0]?.text || 'see state'}.`
@@ -2117,7 +2125,7 @@ ${contactsBlock}${crewBlock}`
 
   return `Continue the campaign. The player is resuming at Chapter ${chapterNumber}: ${chapterTitle}.
 
-Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}${opContext}`
+Current location: ${location}. Do not restart the story, do not retread completed chapter events, and do not use tutorial-as-narrative structure.${narrativeAnchor}${frameOrientation}${seedOrientation}${opContext}`
 }
 
 // ============================================================
@@ -2203,6 +2211,125 @@ Location: ${gameState.world?.currentLocation?.name ?? 'Not set'}
 NPCs in state: ${gameState.world?.npcs?.map(n => `${n.name} [${n.role}]`).join(', ') ?? 'None'}
 Factions: ${gameState.world?.factions?.map(f => f.name).join(', ') ?? 'None'}
 Threads: ${gameState.world?.threads?.length ?? 0}`
+
+  return [instructions, stateSnapshot]
+}
+
+// ============================================================
+// V1.5 Continuation Prompts — forward ledger + Ch2+ seed
+// ============================================================
+
+export function buildChapterLedgerPrompt(gameState: GameState, completedChapterNumber?: number): [string, string] {
+  const genre = (gameState.meta?.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+  const chapterNumber = completedChapterNumber ?? Math.max(1, gameState.meta.chapterNumber - 1)
+  const completedChapter = gameState.history.chapters.find(ch => ch.number === chapterNumber)
+  const chapterMessages = completedChapter?.messages ?? gameState.history.messages
+  const transcript = chapterMessages.length > 0
+    ? chapterMessages.map(m => `[${m.role}] ${m.content}`).join('\n\n')
+    : 'No chapter transcript available.'
+  const rollLog = gameState.history.rollLog?.length
+    ? gameState.history.rollLog.map(r => `- ${r.check} (${r.stat}) ${r.roll}${r.modifier >= 0 ? '+' : ''}${r.modifier}=${r.total} vs DC ${r.dc}: ${r.result}${r.reason ? ` — ${r.reason}` : ''}`).join('\n')
+    : 'No rolls recorded.'
+  const scenes = completedChapter?.sceneSummaries?.length
+    ? completedChapter.sceneSummaries.map(s => `- Scene ${s.sceneNumber}: ${s.text}${s.toneSignature ? ` (${s.toneSignature})` : ''}`).join('\n')
+    : gameState.sceneSummaries?.length
+      ? gameState.sceneSummaries.map(s => `- Scene ${s.sceneNumber}: ${s.text}${s.toneSignature ? ` (${s.toneSignature})` : ''}`).join('\n')
+      : 'No scene summaries recorded.'
+  const frame = gameState.chapterFrame
+    ? `Next frame now in state: ${gameState.chapterFrame.objective} / ${gameState.chapterFrame.crucible}`
+    : 'No next chapter frame is present.'
+  const compressedState = compressGameState(gameState)
+
+  const instructions = `You are the V1.5 forward-ledger extractor for a ${config.name} RPG. Read the completed chapter as evidence and output ONLY a chapter_ledger tool call. No narration, no prose, no commentary.
+
+Your job is not to summarize the chapter. Your job is to preserve forward motion that the next chapter seed builder can use.
+
+Produce exactly these ledger fields:
+1. closing_resolution: what became narratively true because of the chapter ending.
+2. planted_bomb: optional unresolved pressure already planted on-screen.
+3. off_screen_actors: 3-5 actors with position and vector.
+4. relationships_in_motion: 1-3 relationship changes with direction.
+5. escalation_vector: 1-2 of stakes, scale, cost, intimacy, knowledge.
+6. mid_chapter_reveal_seed: 0-1 reveal seed, only if earned by the chapter.
+7. required_ch2_motions: 2-3 motions; include "at least N of M" in success_condition when appropriate.
+8. forbidden_ch2_shapes: 2-4 sequel shapes that would repeat or flatten the chapter.
+9. do_not_restage: specific events, reveals, choices, or set pieces that are complete.
+
+Rules:
+- Use only chapter evidence, roll outcomes, entity records, scene summaries, and the close result.
+- Prefer named actors already in state; create an off-screen actor only if the chapter clearly implies them.
+- Do not write a scene. Do not give the narrator instructions in prose. The tool call is the artifact.
+- chapter must be ${chapterNumber}.`
+
+  const stateSnapshot = `COMPLETED CHAPTER:
+Chapter ${chapterNumber}: ${completedChapter?.title ?? 'Unknown'}
+Summary: ${completedChapter?.summary ?? 'No summary recorded.'}
+Key events: ${completedChapter?.keyEvents?.join('; ') || 'None recorded.'}
+Outcome tier: ${completedChapter?.outcomeTier ?? 'unknown'}
+${frame}
+
+CURRENT STATE:
+${compressedState}
+
+SCENE SUMMARIES:
+${scenes}
+
+ROLL LOG:
+${rollLog}
+
+CHAPTER TRANSCRIPT:
+${transcript}`
+
+  return [instructions, stateSnapshot]
+}
+
+export function buildChapterSeedPrompt(gameState: GameState): [string, string] {
+  const genre = (gameState.meta?.genre || 'space-opera') as Genre
+  const config = getGenreConfig(genre)
+  const chapterNumber = gameState.meta.chapterNumber
+  const previousChapterNumber = Math.max(1, chapterNumber - 1)
+  const ledgers = gameState.chapterLedgers ?? {}
+  const ledger = ledgers[previousChapterNumber]
+  const frame = gameState.chapterFrame
+  const compressedState = compressGameState(gameState)
+
+  const instructions = `You are the V1.5 Ch2+ chapter seed builder for a ${config.name} RPG. Your job is to transition existing state from the prior chapter's forward ledger. Output ONLY a chapter_seed tool call. No narration, no prose, no commentary.
+
+This is a transition, not a new campaign setup:
+- Promote off-screen actors from the ledger when they should pressure the opening chapter.
+- Retire NPCs only when they are no longer load-bearing for the opening state.
+- Create at most one new NPC unless the ledger explicitly requires more.
+- Set the opening location if the escalation vector or closing resolution demands a shift.
+- Promote required_ch2_motions into active threads.
+- Close threads that the prior resolution made irrelevant.
+- Preserve existing world identity. Do not restage events listed in do_not_restage.
+
+opening_seed must be 3-5 short lines for the narrator's first Ch${chapterNumber} briefing: concrete opening situation, immediate pressure, first image, and what motion is already underway. It is not a prose draft and must not decide the player's action.`
+
+  const ledgerBlock = ledger
+    ? JSON.stringify(ledger, null, 2)
+    : `No chapter ledger found for Chapter ${previousChapterNumber}. Use the completed chapter summary and current frame conservatively.`
+
+  const stateSnapshot = `TARGET CHAPTER:
+Chapter ${chapterNumber}: ${gameState.meta.chapterTitle}
+Frame: ${frame ? `${frame.objective} / ${frame.crucible}` : 'No frame set'}
+Outcome spectrum: ${frame?.outcomeSpectrum ? JSON.stringify(frame.outcomeSpectrum) : 'None'}
+
+PRIOR CHAPTER LEDGER:
+${ledgerBlock}
+
+CURRENT STATE:
+${compressedState}
+
+EXISTING NPCS:
+${gameState.world.npcs.map(n => `- ${n.name} [${n.role ?? 'npc'}${n.status ? `/${n.status}` : ''}] ${n.description}${n.affiliation ? ` (${n.affiliation})` : ''}`).join('\n') || 'None'}
+
+EXISTING THREADS:
+${gameState.world.threads.map(t => `- ${t.id}: ${t.title} [${t.status}]${t.deteriorating ? ' deteriorating' : ''}`).join('\n') || 'None'}
+
+NAME POOL:
+${config.npcNames?.join(', ') ?? 'Use genre-appropriate names.'}`
 
   return [instructions, stateSnapshot]
 }

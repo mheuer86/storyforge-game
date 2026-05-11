@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildExtractionPrompt, buildMessagesForClaude, buildInitialMessage, buildChapter1SetupPrompt } from '@/lib/system-prompt'
-import { gameTools, auditTools, metaTools, setupTools } from '@/lib/tools'
+import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditPrompt, buildExtractionPrompt, buildMessagesForClaude, buildInitialMessage, buildChapter1SetupPrompt, buildChapterLedgerPrompt, buildChapterSeedPrompt } from '@/lib/system-prompt'
+import { gameTools, auditTools, metaTools, setupTools, chapterLedgerTools, chapterSeedTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
-import type { GameState, StreamEvent, RollRecord, ToolCallResult } from '@/lib/types'
+import type { ApiRound, GameState, StreamEvent, RollRecord, ToolCallResult, TurnFrame, V15CacheClass, V15RequestKind } from '@/lib/types'
 import { TurnTimer, ChapterTimer, contextFromState, ensureInstrumentation, emitLine } from '@/lib/instrumentation'
 import { emitWriteLines } from '@/lib/instrumentation/write-attribution'
 import { emitChapterStats } from '@/lib/instrumentation/counters'
@@ -33,6 +33,8 @@ const requestSchema = z.object({
   isChapterClose: z.boolean().optional(),
   closePhase: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   isChapter1Setup: z.boolean().optional(),
+  isChapterLedgerExtraction: z.boolean().optional(),
+  isChapterSeed: z.boolean().optional(),
   isAudit: z.boolean().optional(),
   isSummarize: z.boolean().optional(),
   isShadowExtraction: z.boolean().optional(),
@@ -74,6 +76,11 @@ const requestSchema = z.object({
     contested: z.object({ npcName: z.string(), npcSkill: z.string(), npcModifier: z.number() }).optional(),
     npcRoll: z.number().min(1).max(20).optional(),
     npcTotal: z.number().optional(),
+  }).optional(),
+  turnFrameHint: z.object({
+    turnIndex: z.number().optional(),
+    subIndex: z.number().optional(),
+    playerInput: z.string().optional(),
   }).optional(),
 })
 
@@ -130,6 +137,78 @@ interface ToolLoopResult {
   hitRoll: boolean
 }
 
+type RoundUsage = {
+  input_tokens: number
+  output_tokens: number
+  cache_creation_input_tokens?: number
+  cache_read_input_tokens?: number
+}
+
+function cloneGameState(state: GameState): GameState {
+  return JSON.parse(JSON.stringify(state)) as GameState
+}
+
+function requestKindFromFlags(flags: {
+  isInitial: boolean
+  isMetaQuestion: boolean
+  isConsistencyCheck?: boolean
+  isChapterClose?: boolean
+  isChapter1Setup?: boolean
+  isChapterSeed?: boolean
+  isAudit?: boolean
+  isSummarize?: boolean
+  isShadowExtraction?: boolean
+  isChapterLedgerExtraction?: boolean
+  rollResolution?: unknown
+  rollFirstResult?: unknown
+}): V15RequestKind {
+  if (flags.isChapterClose) return 'chapter-close'
+  if (flags.isChapter1Setup || flags.isChapterSeed) return 'chapter-setup'
+  if (flags.isChapterLedgerExtraction || flags.isShadowExtraction) return 'extractor'
+  if (flags.isAudit) return 'audit'
+  if (flags.isSummarize) return 'summarize'
+  if (flags.isConsistencyCheck) return 'consistency-check'
+  if (flags.rollResolution || flags.rollFirstResult) return 'roll-resolution'
+  if (flags.isMetaQuestion) return 'meta-question'
+  if (flags.isInitial) return 'initial'
+  return 'normal'
+}
+
+function defaultSubIndex(kind: V15RequestKind, closePhase?: 1 | 2 | 3): number {
+  // Side-call slots are intentionally sparse and assume at most one audit or
+  // summarize call per player turn; explicit turnFrameHint overrides these.
+  if (kind === 'chapter-close') return (closePhase ?? 1) + 1
+  if (kind === 'extractor') return 5
+  if (kind === 'audit') return 8
+  if (kind === 'summarize') return 9
+  return 1
+}
+
+function cacheClassFromTotals(cacheReadTokens: number, cacheWriteTokens: number): V15CacheClass {
+  if (cacheReadTokens > 100) return 'hit'
+  if (cacheWriteTokens > 500) return 'miss'
+  if (cacheReadTokens > 0 || cacheWriteTokens > 0) return 'write'
+  return 'unknown'
+}
+
+function toolNames(tools: Anthropic.Tool[]): string[] {
+  return tools.map(tool => tool.name)
+}
+
+function systemBlockSummaries(blocks: Anthropic.TextBlockParam[]): TurnFrame['systemBlocks'] {
+  return blocks.map((block, i) => ({
+    label: `SYSTEM_${i + 1}`,
+    tokenEstimate: Math.ceil(block.text.length / 4),
+    preview: block.text.slice(0, 220),
+  }))
+}
+
+function rollsFromToolResults(toolResults: ToolCallResult[]): RollRecord[] {
+  return toolResults
+    .filter((result) => result.tool === '_roll_record')
+    .map((result) => result.input as unknown as RollRecord)
+}
+
 /**
  * Run the Claude streaming + tool loop.
  *
@@ -150,7 +229,8 @@ async function runToolLoop(
   options?: {
     model?: string; tools?: Anthropic.Tool[]; maxRounds?: number; maxTokens?: number; thinkingBudget?: number
     onFirstToken?: () => void
-    onRoundUsage?: (usage: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }) => void
+    onRoundUsage?: (usage: RoundUsage) => void
+    onRoundComplete?: (round: ApiRound) => void
   },
 ): Promise<ToolLoopResult> {
   const toolResults: ToolCallResult[] = []
@@ -166,8 +246,12 @@ async function runToolLoop(
   const rounds = options?.maxRounds ?? 2
   for (let round = 0; round < rounds; round++) {
     const thinkingBudget = options?.thinkingBudget || 0
+    const roundModel = options?.model || MODEL
+    const roundStartedAt = new Date()
+    const roundStartMs = performance.now()
+    let firstTokenMs = -1
     const stream = await client.messages.stream({
-      model: options?.model || MODEL,
+      model: roundModel,
       max_tokens: options?.maxTokens ?? 6144,
       system: systemPrompt,
       tools: cachedTools,
@@ -183,6 +267,7 @@ async function runToolLoop(
         // Strip model artifacts that can leak through streaming
         const text = event.delta.text.replace(/<\/s>/g, '')
         if (text) {
+          if (firstTokenMs < 0) firstTokenMs = Math.round(performance.now() - roundStartMs)
           options?.onFirstToken?.()
           send({ type: 'text', content: text })
         }
@@ -191,7 +276,7 @@ async function runToolLoop(
 
     const completed = await stream.finalMessage()
 
-    const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+    const usage = completed.usage as RoundUsage
     options?.onRoundUsage?.(usage)
     send({ type: 'token_usage', usage: {
       inputTokens: usage.input_tokens,
@@ -242,7 +327,7 @@ async function runToolLoop(
           }
         }
         const retryCompleted = await retryStream.finalMessage()
-        const retryUsage = retryCompleted.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+        const retryUsage = retryCompleted.usage as RoundUsage
         options?.onRoundUsage?.(retryUsage)
         send({ type: 'token_usage', usage: {
           inputTokens: retryUsage.input_tokens,
@@ -267,6 +352,17 @@ async function runToolLoop(
         }
       }
     }
+
+    options?.onRoundComplete?.({
+      roundIndex: round,
+      model: roundModel,
+      startedAt: roundStartedAt.toISOString(),
+      endedAt: new Date().toISOString(),
+      firstTokenMs,
+      finalMessage: completed,
+      usage: completed.usage,
+      followUpReason: completed.stop_reason === 'tool_use' && toolCalls.length > 0 ? 'tool_use' : null,
+    })
 
     if (completed.stop_reason !== 'tool_use' || toolCalls.length === 0) break
 
@@ -400,27 +496,116 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const { message, isMetaQuestion, isInitial, rollResolution, rollFirstResult, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage } = parsed.data
+  const { message, isMetaQuestion, isInitial, rollResolution, rollFirstResult, isConsistencyCheck, isChapterClose, closePhase, isChapter1Setup, isChapterLedgerExtraction, isChapterSeed, isAudit, isSummarize, isShadowExtraction, narrativeText, flaggedMessage, turnFrameHint } = parsed.data
   const gameState = parsed.data.gameState as unknown as GameState
 
   // Ensure instrumentation scaffold exists before we emit anything
   ensureInstrumentation(gameState)
   const instrCtx = contextFromState(gameState)
   // Normal player turns get a TurnTimer; meta, close, setup, summarize, extract, audit skip it.
-  const isNormalTurn = !isMetaQuestion && !isChapterClose && !isChapter1Setup && !isSummarize && !isShadowExtraction && !isAudit && !isConsistencyCheck
+  const isNormalTurn = !isMetaQuestion && !isChapterClose && !isChapter1Setup && !isChapterLedgerExtraction && !isChapterSeed && !isSummarize && !isShadowExtraction && !isAudit && !isConsistencyCheck
   const turnTimer: TurnTimer | null = isNormalTurn ? new TurnTimer(instrCtx) : null
   // One request = one actor for WRITE attribution
   const requestActor: InstrumentActor =
     isShadowExtraction ? 'extractor' :
     isChapterClose ? 'close_phase' :
-    isChapter1Setup ? 'setup' :
+    isChapter1Setup || isChapterSeed ? 'setup' :
+    isChapterLedgerExtraction ? 'extractor' :
     isAudit ? 'audit' : 'gm'
 
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
     async start(controller) {
+      const frameStartedAt = new Date()
+      const frameStartMs = performance.now()
+      const requestKind = requestKindFromFlags({
+        isInitial,
+        isMetaQuestion,
+        isConsistencyCheck,
+        isChapterClose,
+        isChapter1Setup,
+        isChapterSeed,
+        isAudit,
+        isSummarize,
+        isShadowExtraction,
+        isChapterLedgerExtraction,
+        rollResolution,
+        rollFirstResult,
+      })
+      const playerTurnCount = gameState.history.messages.filter(m => m.role === 'player').length
+      const turnIndex = turnFrameHint?.turnIndex ?? (isChapter1Setup ? 0 : Math.max(1, playerTurnCount))
+      const subIndex = turnFrameHint?.subIndex ?? defaultSubIndex(requestKind, closePhase)
+      const displayId = `${turnIndex}.${subIndex}`
+      const stateBefore = cloneGameState(gameState)
+      const frameRounds: ApiRound[] = []
+      const streamEvents: StreamEvent[] = []
+      let frameSystemBlocks: TurnFrame['systemBlocks'] = []
+      let frameSystemBlocksFull: string | undefined
+      let frameMessages: Anthropic.MessageParam[] = []
+      let frameTools: string[] = []
+
+      function setFrameContext(
+        blocks: Anthropic.TextBlockParam[],
+        messages: Anthropic.MessageParam[],
+        tools: Anthropic.Tool[],
+        extraBlocks: TurnFrame['systemBlocks'] = [],
+      ) {
+        frameSystemBlocks = [...systemBlockSummaries(blocks), ...extraBlocks]
+        if (process.env.STORYFORGE_V15_FULL_PROMPT === '1') {
+          frameSystemBlocksFull = blocks.map(block => block.text).join('\n\n')
+        }
+        frameMessages = messages
+        frameTools = toolNames(tools)
+      }
+
+      const captureRound = (round: ApiRound) => {
+        frameRounds.push(round)
+      }
+
+      function emitTurnFrame(toolResults: ToolCallResult[]) {
+        const endedAt = new Date()
+        const inputTokens = frameRounds.reduce((sum, round) => sum + (round.usage.input_tokens ?? 0), 0)
+        const outputTokens = frameRounds.reduce((sum, round) => sum + (round.usage.output_tokens ?? 0), 0)
+        const cacheReadTokens = frameRounds.reduce((sum, round) => sum + (round.usage.cache_read_input_tokens ?? 0), 0)
+        const cacheWriteTokens = frameRounds.reduce((sum, round) => sum + (round.usage.cache_creation_input_tokens ?? 0), 0)
+        const firstTokenMs = frameRounds.find(round => round.firstTokenMs >= 0)?.firstTokenMs ?? -1
+        const frame: TurnFrame = {
+          turnIndex,
+          subIndex,
+          displayId,
+          chapter: gameState.meta.chapterNumber,
+          startedAt: frameStartedAt.toISOString(),
+          endedAt: endedAt.toISOString(),
+          playerInput: turnFrameHint?.playerInput ?? (rollResolution ? `__ROLL_RESULT__:${rollResolution.toolUseId}` : rollFirstResult ? '__ROLL_FIRST__' : message || (isChapter1Setup ? '__SETUP__' : '')),
+          requestKind,
+          ...(closePhase && { closePhase }),
+          stateBefore,
+          stateAfter: stateBefore,
+          systemBlocks: frameSystemBlocks,
+          ...(frameSystemBlocksFull && { systemBlocksFull: frameSystemBlocksFull }),
+          conversationMessages: frameMessages,
+          toolsAvailable: frameTools,
+          rounds: frameRounds,
+          rolls: rollsFromToolResults(toolResults),
+          toolEffects: toolResults,
+          streamEvents: [...streamEvents],
+          metrics: {
+            totalMs: Math.max(0, Math.round(performance.now() - frameStartMs)),
+            firstTokenMs,
+            inputTokens,
+            outputTokens,
+            cacheReadTokens,
+            cacheWriteTokens,
+            cacheClass: cacheClassFromTotals(cacheReadTokens, cacheWriteTokens),
+            rounds: frameRounds.length,
+          },
+        }
+        send({ type: 'turn_frame', frame })
+      }
+
       function send(event: StreamEvent) {
+        if (event.type !== 'turn_frame') streamEvents.push(event)
         controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
       }
 
@@ -434,6 +619,7 @@ export async function POST(req: NextRequest) {
           turnTimer.mark('writeEnd')
           turnTimer.emitTurnTiming(send)
         }
+        emitTurnFrame(toolResults)
         send({ type: 'done' })
         controller.close()
       }
@@ -455,7 +641,7 @@ export async function POST(req: NextRequest) {
           { role: 'user', content: 'You did not include suggested_actions in your commit_turn. Call commit_turn now with ONLY suggested_actions (3-4 options takeable from the PC\'s current position in the current scene — check SCENE and LOCATION in game state; do not suggest calling NPCs the PC is already with, or going to locations not yet introduced). No other fields needed.' },
         ]
         const noop = () => {}  // suppress text streaming — this is a tool-only follow-up
-        const followUp = await runToolLoop(systemPrompt, followUpMessages, noop, false, { tools, maxRounds: 1 })
+        const followUp = await runToolLoop(systemPrompt, followUpMessages, noop, false, { tools, maxRounds: 1, onRoundComplete: captureRound })
         const followUpCommit = followUp.toolResults.find(r => r.tool === 'commit_turn')
         const followUpActions = (followUpCommit?.input as { suggested_actions?: string[] } | undefined)?.suggested_actions
         if (followUpActions && followUpActions.length > 0) {
@@ -560,6 +746,7 @@ export async function POST(req: NextRequest) {
                   damageType: dmgType,
                 })
 
+                emitTurnFrame(hitRollResults)
                 send({ type: 'done' })
                 controller.close()
                 return
@@ -613,7 +800,8 @@ export async function POST(req: NextRequest) {
             { role: 'user', content: resultContent },
           ]
 
-          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { thinkingBudget: THINKING_BUDGET })
+          setFrameContext(systemPrompt, continuationMessages, contextTools)
+          const loopResult = await runToolLoop(systemPrompt, continuationMessages, send, true, { thinkingBudget: THINKING_BUDGET, onRoundComplete: captureRound })
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
           await ensureActions(loopResult, systemPrompt, contextTools)
           finish(loopResult.toolResults)
@@ -656,11 +844,13 @@ export async function POST(req: NextRequest) {
             content: `${playerMsg}\n\n[ROLL RESULT: ${check} (${stat}) — ${resultText}${reminder}]\n\nNarrate the full scene including the attempt and its outcome in one continuous narrative.`,
           }
 
-          const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, thinkingBudget: THINKING_BUDGET })
+          setFrameContext(systemPrompt, conversationMessages, contextTools)
+          const loopResult = await runToolLoop(systemPrompt, conversationMessages, send, true, { tools: contextTools, thinkingBudget: THINKING_BUDGET, onRoundComplete: captureRound })
           loopResult.toolResults.push({ tool: '_roll_record', input: rollRecord as unknown as Record<string, unknown> })
 
           // Handle chained rolls (e.g. damage after a combat hit)
           if (loopResult.hitRoll) {
+            emitTurnFrame(loopResult.toolResults)
             send({ type: 'done' })
             controller.close()
             return
@@ -704,7 +894,8 @@ export async function POST(req: NextRequest) {
           const auditMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: 'Audit the current game state now.' },
           ]
-          const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1 })
+          setFrameContext(auditSystem, auditMessages, auditTools)
+          const loopResult = await runToolLoop(auditSystem, auditMessages, send, false, { model: AUDIT_MODEL, tools: auditTools, maxRounds: 1, onRoundComplete: captureRound })
 
           // Emit audit result summary for the debug log.
           const toolNames = loopResult.toolResults.map(r => r.tool)
@@ -809,6 +1000,7 @@ export async function POST(req: NextRequest) {
           let extractFirstToken = 0
           let extractCacheRead = 0
           let extractCacheWrite = 0
+          setFrameContext(extractSystem, extractMessages, auditTools)
           const loopResult = await runToolLoop(extractSystem, extractMessages, send, false, {
             model: MODEL, tools: auditTools, maxRounds: 1, maxTokens: 8192,
             onFirstToken: () => { if (!extractFirstToken) extractFirstToken = performance.now() },
@@ -816,6 +1008,7 @@ export async function POST(req: NextRequest) {
               extractCacheRead = u.cache_read_input_tokens ?? 0
               extractCacheWrite = u.cache_creation_input_tokens ?? 0
             },
+            onRoundComplete: captureRound,
           })
           const extractEnd = performance.now()
           const ttft = extractFirstToken ? Math.round(extractFirstToken - extractStart) : -1
@@ -840,6 +1033,10 @@ export async function POST(req: NextRequest) {
           const summarizeMessages: Anthropic.MessageParam[] = [
             { role: 'user', content: `Summarize this chapter so far:\n\n${messageBlock}` },
           ]
+          setFrameContext(summarizeSystem, summarizeMessages, [])
+          const summarizeStartedAt = new Date()
+          const summarizeStartMs = performance.now()
+          let summarizeFirstTokenMs = -1
           const summarizeStream = await client.messages.stream({
             model: SUMMARIZE_MODEL,
             max_tokens: 512,
@@ -849,20 +1046,29 @@ export async function POST(req: NextRequest) {
           let summaryText = ''
           for await (const event of summarizeStream) {
             if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+              if (summarizeFirstTokenMs < 0) summarizeFirstTokenMs = Math.round(performance.now() - summarizeStartMs)
               summaryText += event.delta.text
             }
           }
           const completed = await summarizeStream.finalMessage()
-          const usage = completed.usage as { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
+          const usage = completed.usage as RoundUsage
+          frameRounds.push({
+            roundIndex: 0,
+            model: SUMMARIZE_MODEL,
+            startedAt: summarizeStartedAt.toISOString(),
+            endedAt: new Date().toISOString(),
+            firstTokenMs: summarizeFirstTokenMs,
+            finalMessage: completed,
+            usage: completed.usage,
+            followUpReason: null,
+          })
           send({ type: 'token_usage', usage: {
             inputTokens: usage.input_tokens,
             outputTokens: usage.output_tokens,
             cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
             cacheReadTokens: usage.cache_read_input_tokens ?? 0,
           }})
-          send({ type: 'tools', results: [{ tool: '_story_summary', input: { text: summaryText, upToMessageIndex: msgs.length - 1, turn: msgs.filter(m => m.role === 'player').length } }] })
-          send({ type: 'done' })
-          controller.close()
+          finish([{ tool: '_story_summary', input: { text: summaryText, upToMessageIndex: msgs.length - 1, turn: msgs.filter(m => m.role === 'player').length } }])
           return
         }
 
@@ -880,7 +1086,8 @@ export async function POST(req: NextRequest) {
           ]
 
           const closeTimer = new ChapterTimer(instrCtx, 'CHAPTER_CLOSE_TIMING')
-          const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2 })
+          setFrameContext(phaseSystem, phaseMessages, gameTools)
+          const loopResult = await runToolLoop(phaseSystem, phaseMessages, send, false, { model: CLOSE_MODEL, maxRounds: 2, onRoundComplete: captureRound })
           closeTimer.mark('callEnd')
           closeTimer.mark('summaryEnd')
           closeTimer.emit(send)
@@ -892,6 +1099,54 @@ export async function POST(req: NextRequest) {
           if (phase === 3) {
             emitChapterStats(send, gameState, gameState.meta.chapterNumber)
           }
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── V1.5 forward ledger: extract sequel pressure after Chapter close phase 1 ──
+        if (isChapterLedgerExtraction) {
+          const [ledgerInstructions, ledgerState] = buildChapterLedgerPrompt(gameState)
+          const ledgerSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: ledgerInstructions },
+            { type: 'text', text: ledgerState },
+          ]
+          const ledgerMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Extract the forward ledger now.' },
+          ]
+          setFrameContext(ledgerSystem, ledgerMessages, chapterLedgerTools)
+          const ledgerStart = performance.now()
+          const loopResult = await runToolLoop(ledgerSystem, ledgerMessages, send, false, {
+            model: MODEL,
+            tools: chapterLedgerTools,
+            maxRounds: 1,
+            maxTokens: 4096,
+            onRoundComplete: captureRound,
+          })
+          emitLine(send, 'CHAPTER_LEDGER_TIMING', instrCtx, `total=${Math.round(performance.now() - ledgerStart)}ms tool_results=${loopResult.toolResults.length}`)
+          finish(loopResult.toolResults)
+          return
+        }
+
+        // ── V1.5 Ch2+ seed: transition existing world state before next narrator turn ──
+        if (isChapterSeed) {
+          const [seedInstructions, seedState] = buildChapterSeedPrompt(gameState)
+          const seedSystem: Anthropic.TextBlockParam[] = [
+            { type: 'text', text: seedInstructions },
+            { type: 'text', text: seedState },
+          ]
+          const seedMessages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'Build the chapter seed now.' },
+          ]
+          setFrameContext(seedSystem, seedMessages, chapterSeedTools)
+          const seedStart = performance.now()
+          const loopResult = await runToolLoop(seedSystem, seedMessages, send, false, {
+            model: MODEL,
+            tools: chapterSeedTools,
+            maxRounds: 1,
+            maxTokens: 4096,
+            onRoundComplete: captureRound,
+          })
+          emitLine(send, 'CHAPTER_SEED_TIMING', instrCtx, `total=${Math.round(performance.now() - seedStart)}ms tool_results=${loopResult.toolResults.length}`)
           finish(loopResult.toolResults)
           return
         }
@@ -908,7 +1163,8 @@ export async function POST(req: NextRequest) {
           ]
 
           const setupTimer = new ChapterTimer(instrCtx, 'CHAPTER_SETUP_TIMING')
-          const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1, maxTokens: 4096 })
+          setFrameContext(setupSystem, setupMessages, setupTools)
+          const loopResult = await runToolLoop(setupSystem, setupMessages, send, false, { model: MODEL, tools: setupTools, maxRounds: 1, maxTokens: 4096, onRoundComplete: captureRound })
           setupTimer.mark('callEnd')
           setupTimer.emit(send)
           finish(loopResult.toolResults)
@@ -927,6 +1183,11 @@ export async function POST(req: NextRequest) {
           }
         }
         const conversationMessages = buildMessagesForClaude(gameState, actualMessage, isMetaQuestion, stateContext)
+        setFrameContext(systemPrompt, conversationMessages, contextTools, [{
+          label: 'STATE_CONTEXT',
+          tokenEstimate: stateTokenEstimate,
+          preview: stateContext.slice(0, 220),
+        }])
 
         // Normal turns: 2 rounds max. Narrative + commit_turn should be 1 round.
         // 2 gives headroom if Claude doesn't include everything in one call.
@@ -936,9 +1197,11 @@ export async function POST(req: NextRequest) {
           thinkingBudget: THINKING_BUDGET,
           onFirstToken: turnTimer ? () => turnTimer.markFirstToken() : undefined,
           onRoundUsage: turnTimer ? (u) => { turnTimer.markGenerationEnd(); turnTimer.setCacheFromUsage(u) } : undefined,
+          onRoundComplete: captureRound,
         })
 
         if (loopResult.hitRoll) {
+          emitTurnFrame(loopResult.toolResults)
           send({ type: 'done' })
           controller.close()
           return
@@ -974,14 +1237,17 @@ export async function POST(req: NextRequest) {
 
             const retryTools = isMetaQuestion ? metaTools : gameTools
             if (turnTimer) turnTimer.mark('apiCallStart')
+            setFrameContext(retrySystem, retryMessages, retryTools)
             const loopResult = await runToolLoop(retrySystem, retryMessages, send, true, {
               tools: retryTools,
               thinkingBudget: THINKING_BUDGET,
               onFirstToken: turnTimer ? () => turnTimer.markFirstToken() : undefined,
               onRoundUsage: turnTimer ? (u) => { turnTimer.markGenerationEnd(); turnTimer.setCacheFromUsage(u) } : undefined,
+              onRoundComplete: captureRound,
             })
 
             if (loopResult.hitRoll) {
+              emitTurnFrame(loopResult.toolResults)
               send({ type: 'done' })
               controller.close()
               return

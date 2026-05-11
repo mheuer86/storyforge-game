@@ -14,7 +14,7 @@ import { diffCommitTurns, formatShadowDiffs } from '@/lib/shadow-diff'
 import { buildSupplementalCommit } from '@/lib/extraction-merge'
 import { runRulesEngine, detectRollGateStructured, deriveCheckParameters } from '@/lib/rules-engine'
 import { processStreamEvent, createParserState, type StreamParserCallbacks } from '@/lib/stream-parser'
-import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock } from '@/lib/types'
+import type { GameState, StreamEvent, ToolCallResult, RollRecord, RollResolution, RollDisplayData, RollBreakdown, TensionClock, TurnFrame } from '@/lib/types'
 import { type Genre, applyGenreTheme, getGenreConfig } from '@/lib/genre-config'
 import { apiHeaders, isByok, trackDemoUsage, isDemoBudgetExhausted, setApiKey } from '@/lib/api-key'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -40,6 +40,15 @@ interface GameScreenProps {
   onNewGame?: () => void
 }
 
+type V15TurnFrameEvent = {
+  type: 'turn_frame'
+  frame: TurnFrame
+}
+
+function isTurnFrameEvent(event: StreamEvent | V15TurnFrameEvent): event is V15TurnFrameEvent {
+  return event.type === 'turn_frame'
+}
+
 export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -50,6 +59,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   }, [])
   const [tokenLog, setTokenLog] = useState<Array<{ input: number; output: number; cacheWrite: number; cacheRead: number; timestamp: string }>>([])
   const debugLogRef = useRef<string[]>([])
+  const turnFramesRef = useRef<TurnFrame[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [setupPhase, setSetupPhase] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -80,6 +90,40 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
 
   // Keep gameStateRef in sync for async callbacks that need fresh state
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
+
+  const recordTurnFrame = useCallback((frame: TurnFrame): number => {
+    turnFramesRef.current.push(frame)
+    return turnFramesRef.current.length - 1
+  }, [])
+
+  const finalizeTurnFrame = useCallback((index: number | null, stateAfter: GameState) => {
+    if (index === null) return
+    const pendingFrame = turnFramesRef.current[index]
+    if (!pendingFrame) return
+    turnFramesRef.current[index] = {
+      ...pendingFrame,
+      stateAfter,
+      endedAt: typeof pendingFrame.endedAt === 'string' ? pendingFrame.endedAt : new Date().toISOString(),
+    }
+  }, [])
+
+  const handleDownloadSessionCamp = useCallback(async () => {
+    const state = gameStateRef.current
+    if (!state) return
+    const camp = await import('@/lib/v15-session-camp')
+    const exportData = camp.buildV15SessionCamp({
+      finalState: state,
+      turns: turnFramesRef.current,
+      debugLines: debugLogRef.current,
+    })
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `v15-session-${exportData.sessionId}-${exportData.exportedAt.replace(/[:.]/g, '-')}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [])
 
   // Trace close-state transitions to find what unmounts the overlay
   const prevCloseStateRef = useRef<{ chapterClosed: boolean; hasCloseData: boolean; closeInProgress: boolean } | null>(null)
@@ -167,6 +211,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
     auditInFlightRef.current = true
     debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_FIRED chapter=${state.meta.chapterNumber} player_turn=${playerTurns}`)
+    let pendingFrameIndex: number | null = null
     try {
       const response = await fetch('/api/game', {
         method: 'POST',
@@ -197,7 +242,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         for (const line of lines) {
           if (!line.trim()) continue
           try {
-            const event = JSON.parse(line) as StreamEvent
+            const event = JSON.parse(line) as StreamEvent | V15TurnFrameEvent
+            if (isTurnFrameEvent(event)) {
+              pendingFrameIndex = recordTurnFrame(event.frame)
+              continue
+            }
             if (event.type === 'tools') {
               const corrections = event.results.filter(
                 (r) => r.tool !== 'meta_response'
@@ -232,12 +281,13 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       } else {
         debugLogRef.current.push(`[${new Date().toISOString()}] 🔍 AUDIT_CLEAN no corrections applied`)
       }
+      finalizeTurnFrame(pendingFrameIndex, auditedState)
     } catch (e) {
       debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ AUDIT_FAILED ${e instanceof Error ? e.message : 'unknown'}`)
     } finally {
       auditInFlightRef.current = false
     }
-  }, [])
+  }, [finalizeTurnFrame, recordTurnFrame])
 
   /** Shadow extraction: background extraction model produces its own commit_turn.
    *  Results are diffed for debug logging AND applied as supplemental state merge. */
@@ -257,6 +307,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     }
     shadowInFlightRef.current++
     const extractStart = Date.now()
+    let pendingFrameIndex: number | null = null
     try {
       const response = await fetch('/api/game', {
         method: 'POST',
@@ -284,7 +335,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         for (const line of lines) {
           if (!line.trim()) continue
           try {
-            const event = JSON.parse(line)
+            const event = JSON.parse(line) as StreamEvent | V15TurnFrameEvent
+            if (isTurnFrameEvent(event)) {
+              pendingFrameIndex = recordTurnFrame(event.frame)
+              continue
+            }
             if (event.type === 'tools') {
               const commit = (event.results as Array<{ tool: string; input: unknown }>)
                 .find(r => r.tool === 'commit_turn')
@@ -328,13 +383,14 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     } catch {
       debugLogRef.current.push(`[${new Date().toISOString()}] SHADOW_EXTRACTION T${turnNum} FAILED`)
     } finally {
+      finalizeTurnFrame(pendingFrameIndex, preState)
       shadowInFlightRef.current--
       // Signal completion to any waiting gaters
       extractionDoneRef.current = true
       extractionResolversRef.current.forEach(r => r())
       extractionResolversRef.current = []
     }
-  }, [])
+  }, [finalizeTurnFrame, recordTurnFrame])
 
   // Scene summaries are now generated inline by Claude (scene_end + scene_summary in commit_turn).
   // The old fixed-interval Haiku summarizer has been removed.
@@ -350,6 +406,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
   ) => {
     let gmText = ''
     let stateWithChanges = currentState
+    let pendingFrameIndex: number | null = null
 
     try {
       // Check demo budget before sending
@@ -429,7 +486,10 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           setRetryCountdown(null)
           onError(message)
         },
-        onDone: (finalState, statChanges, gmText, lastCommitInput) => onDone(finalState, statChanges, gmText, lastCommitInput),
+        onDone: (finalState, statChanges, gmText, lastCommitInput) => {
+          finalizeTurnFrame(pendingFrameIndex, finalState)
+          onDone(finalState, statChanges, gmText, lastCommitInput)
+        },
         onDebug: (message) => {
           debugLogRef.current.push(`[${new Date().toISOString()}] ${message}`)
         },
@@ -458,7 +518,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         for (const line of lines) {
           if (!line.trim()) continue
           try {
-            const event = JSON.parse(line) as StreamEvent
+            const event = JSON.parse(line) as StreamEvent | V15TurnFrameEvent
+            if (isTurnFrameEvent(event)) {
+              pendingFrameIndex = recordTurnFrame(event.frame)
+              continue
+            }
             // Use meta callbacks for tools events (meta_response fallback needs type update)
             const cb = event.type === 'tools' ? metaCallbacks : callbacks
             parserState = processStreamEvent(event, parserState, gmMsgId, isMetaQuestion, cb)
@@ -471,7 +535,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       console.error('[SF] streamRequest caught', error)
       onError(error instanceof Error ? error.message : 'Something went wrong')
     }
-  }, [applyTools, setQuickActions])
+  }, [applyTools, finalizeTurnFrame, recordTurnFrame, setQuickActions])
 
   const sendToGM = useCallback(
     async (
@@ -557,6 +621,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       debugLogRef.current.push(`[${new Date().toISOString()}] SETUP_CHECK isInitial=${isInitial} npcsForSetup=${startingNpcs.length} hasKeyFacts=${hasKeyFacts} npcs=${(stateWithPlayerMessage.world?.npcs ?? []).map(n => `${n.name}[${n.role}]`).join(',')}`)
       if (isInitial && startingNpcs.length > 0 && !hasKeyFacts) {
         setSetupPhase(true)
+        let pendingSetupFrameIndex: number | null = null
         try {
           const setupResponse = await fetch('/api/game', {
             method: 'POST',
@@ -583,7 +648,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               for (const line of lines) {
                 if (!line.trim()) continue
                 try {
-                  const event = JSON.parse(line) as StreamEvent
+                  const event = JSON.parse(line) as StreamEvent | V15TurnFrameEvent
+                  if (isTurnFrameEvent(event)) {
+                    pendingSetupFrameIndex = recordTurnFrame(event.frame)
+                    continue
+                  }
                   if (event.type === 'tools') {
                     // Log raw setup output for debugging
                     for (const r of event.results) {
@@ -611,6 +680,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               }
             }
             if (setupChanges.length > 0) {
+              finalizeTurnFrame(pendingSetupFrameIndex, stateWithPlayerMessage)
               setGameState(stateWithPlayerMessage)
               saveGameState(stateWithPlayerMessage)
               // Log what actually made it into state
@@ -618,6 +688,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
               const threads = stateWithPlayerMessage.world?.threads?.length ?? 0
               const factions = stateWithPlayerMessage.world?.factions?.length ?? 0
               debugLogRef.current.push(`[${new Date().toISOString()}] ✓ CHAPTER_SETUP applied: ${setupChanges.length} changes, location=${loc}, threads=${threads}, factions=${factions}`)
+            } else {
+              finalizeTurnFrame(pendingSetupFrameIndex, stateWithPlayerMessage)
             }
           }
         } catch (e) {
@@ -769,7 +841,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         },
       )
     },
-    [streamRequest, runAudit, runShadowExtraction]
+    [streamRequest, runAudit, runShadowExtraction, finalizeTurnFrame, recordTurnFrame]
   )
 
   const handleRetry = useCallback(() => {
@@ -1215,6 +1287,76 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     saveGameState(dismissedState)
   }, [gameState])
 
+  const runToolOnlyStateRequest = useCallback(async (
+    body: Record<string, unknown>,
+    currentState: GameState,
+    label: string,
+  ): Promise<GameState> => {
+    const response = await fetch('/api/game', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify(body),
+    })
+    if (!response.ok || !response.body) {
+      throw new Error(`${label} failed: HTTP ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    let nextState = currentState
+    let pendingFrameIndex: number | null = null
+    const statChanges: StatChange[] = []
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      const lines = buf.split('\n')
+      buf = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.trim()) continue
+        let event: StreamEvent | V15TurnFrameEvent
+        try {
+          event = JSON.parse(line) as StreamEvent | V15TurnFrameEvent
+        } catch {
+          continue
+        }
+        if (isTurnFrameEvent(event)) {
+          pendingFrameIndex = recordTurnFrame(event.frame)
+        } else if (event.type === 'tools') {
+          const stateResults = event.results.filter((r) => r.tool !== 'meta_response')
+          if (stateResults.length > 0) {
+            nextState = applyToolResults(stateResults, nextState, statChanges, track)
+            for (const m of drainDbg()) debugLogRef.current.push(`[${new Date().toISOString()}] ${label}_${m}`)
+          }
+        } else if (event.type === 'token_usage') {
+          const u = event.usage
+          setTokenLog(prev => [...prev, {
+            input: u.inputTokens,
+            output: u.outputTokens,
+            cacheWrite: u.cacheWriteTokens,
+            cacheRead: u.cacheReadTokens,
+            timestamp: new Date().toISOString(),
+          }])
+          debugLogRef.current.push(`[${new Date().toISOString()}] ${label}_TOKENS input=${u.inputTokens} output=${u.outputTokens} cache_read=${u.cacheReadTokens} cache_write=${u.cacheWriteTokens}`)
+        } else if (event.type === 'instrument') {
+          debugLogRef.current.push(`[${new Date().toISOString()}] ${event.line}`)
+        } else if (event.type === 'debug_context') {
+          debugLogRef.current.push(`[${new Date().toISOString()}] ${label}_${event.label} ~${event.tokenEstimate} tokens`)
+        } else if (event.type === 'error') {
+          throw new Error(event.message)
+        }
+      }
+    }
+
+    delete (nextState as GameState & { _sceneBreaks?: string[] })._sceneBreaks
+    finalizeTurnFrame(pendingFrameIndex, nextState)
+    debugLogRef.current.push(`[${new Date().toISOString()}] ${label}_APPLIED changes=${statChanges.length}`)
+    return nextState
+  }, [finalizeTurnFrame, recordTurnFrame])
+
   const handleCloseChapter = useCallback(async () => {
     console.log('[SF CLOSE] handleCloseChapter ENTRY gameState=', !!gameState, 'isLoading=', isLoadingRef.current)
     if (!gameState) { console.log('[SF CLOSE] bail: no gameState'); return }
@@ -1244,6 +1386,8 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     // streamRequest will try to update a message with this ID but find nothing, which is fine.
 
     // Three-phase Haiku close sequence
+    const closeTurnIndex = preCloseState.history.messages.filter(m => m.role === 'player').length
+
     const runClosePhase = (phase: 1 | 2 | 3, currentState: GameState): Promise<GameState> => {
       return new Promise((resolve, reject) => {
         const phaseGmMsgId = crypto.randomUUID()
@@ -1255,6 +1399,11 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
             isInitial: false,
             isChapterClose: true,
             closePhase: phase,
+            turnFrameHint: {
+              turnIndex: closeTurnIndex,
+              subIndex: phase + 1,
+              playerInput: `__CLOSE_PHASE_${phase}__`,
+            },
           },
           phaseGmMsgId,
           true,
@@ -1285,41 +1434,32 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       debugLogRef.current.push(`[${new Date().toISOString()}] ${p2}`)
       console.log('[SF CLOSE]', p2)
 
-      // Phase 3: Narrative Curation (pivotal scenes + signature lines)
-      // Deferred to background — player sees overlay immediately after phase 1+2.
-      // Phase 3 output (pivotal scenes, signature lines) is memory for future chapters,
-      // not displayed in the close overlay. Completes silently.
-      // Phase 3 runs in background — but runClosePhase's internal callback calls
-      // setGameState(phaseState) which would overwrite closeData. Use a custom flow
-      // that skips the internal state set and only merges the results.
-      const phase3GmMsgId = crypto.randomUUID()
-      streamRequest(
-        { message: '', gameState: currentState, isMetaQuestion: false, isInitial: false, isChapterClose: true, closePhase: 3 },
-        phase3GmMsgId,
-        true,
-        currentState,
-        () => { /* no roll prompt in close */ },
-        (phase3Result) => {
-          // Merge only phase 3 outputs into current state — don't touch meta/closeData
-          setGameState(prev => {
-            if (!prev) return prev
-            const merged = {
-              ...prev,
-              pivotalScenes: phase3Result.pivotalScenes ?? prev.pivotalScenes,
-              world: {
-                ...prev.world,
-                npcs: prev.world.npcs.map(n => {
-                  const updated = phase3Result.world.npcs.find(u => u.name === n.name)
-                  return updated?.signatureLines ? { ...n, signatureLines: updated.signatureLines } : n
-                }),
-              },
-            }
-            saveGameState(merged)
-            return merged
-          })
-        },
-        () => { /* non-critical: pivotal scenes missing for one chapter transition */ },
-      )
+      console.log('[SF CLOSE] starting phase 3')
+      // Phase 3: Narrative curation. Ledger runs after this so it can use
+      // pivotal scenes and NPC signature lines as moment-grain evidence.
+      currentState = await runClosePhase(3, currentState)
+      const p3 = `CLOSE_PHASE3_DONE chapter=${currentState.meta.chapterNumber} pivotalScenes=${currentState.pivotalScenes?.length ?? 0}`
+      debugLogRef.current.push(`[${new Date().toISOString()}] ${p3}`)
+      console.log('[SF CLOSE]', p3)
+
+      try {
+        currentState = await runToolOnlyStateRequest({
+          message: '',
+          gameState: currentState,
+          isMetaQuestion: false,
+          isInitial: false,
+          isChapterLedgerExtraction: true,
+          turnFrameHint: {
+            turnIndex: closeTurnIndex,
+            subIndex: 5,
+            playerInput: '__FORWARD_LEDGER__',
+          },
+        }, currentState, 'CHAPTER_LEDGER')
+        setGameState(currentState)
+        saveGameState(currentState)
+      } catch (ledgerError) {
+        debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CHAPTER_LEDGER_FAILED ${ledgerError instanceof Error ? ledgerError.message : 'unknown'}`)
+      }
 
       // Build close overlay data from pre/post state comparison
       const completedChapter = currentState.history.chapters.find(
@@ -1370,9 +1510,9 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
       isLoadingRef.current = false
       setIsLoading(false)
     }
-  }, [gameState, streamRequest])
+  }, [gameState, runToolOnlyStateRequest, streamRequest])
 
-  const handleStartNextChapter = useCallback(() => {
+  const handleStartNextChapter = useCallback(async () => {
     if (!gameState) return
     // Archive current messages to the most recently completed chapter
     const completedChapters = gameState.history.chapters.filter(ch => ch.status === 'complete')
@@ -1393,24 +1533,50 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
           rollLog: [],
         },
       }
-      setGameState(newState)
-      saveGameState(newState)
+      let nextState = newState
+      setGameState(nextState)
+      saveGameState(nextState)
+
+      if (nextState.meta.chapterNumber > 1) {
+        setSetupPhase(true)
+        try {
+          const completedTurnCount = lastCompleted.messages?.filter(m => m.role === 'player').length ?? 0
+          nextState = await runToolOnlyStateRequest({
+            message: '',
+            gameState: nextState,
+            isMetaQuestion: false,
+            isInitial: false,
+            isChapterSeed: true,
+            turnFrameHint: {
+              turnIndex: completedTurnCount,
+              subIndex: 6,
+              playerInput: '__CHAPTER_SEED__',
+            },
+          }, nextState, 'CHAPTER_SEED')
+          setGameState(nextState)
+          saveGameState(nextState)
+        } catch (seedError) {
+          debugLogRef.current.push(`[${new Date().toISOString()}] ⚠ CHAPTER_SEED_FAILED ${seedError instanceof Error ? seedError.message : 'unknown'}`)
+        } finally {
+          setSetupPhase(false)
+        }
+      }
 
       // Clear chat and show chapter header
-      const subtitle = newState.chapterFrame?.objective
+      const subtitle = nextState.chapterFrame?.objective
       const headerMsg: DisplayMessage = {
         id: crypto.randomUUID(),
         type: 'chapter-header',
-        content: `Chapter ${newState.meta.chapterNumber}: ${newState.meta.chapterTitle}`,
+        content: `Chapter ${nextState.meta.chapterNumber}: ${nextState.meta.chapterTitle}`,
         sceneBreak: subtitle, // reuse sceneBreak field for the objective subtitle
       }
       setMessages([headerMsg])
       setQuickActions([])
 
       // Send initial message for the new chapter
-      sendToGM('', newState, false, true)
+      sendToGM('', nextState, false, true)
     }
-  }, [gameState, sendToGM, setQuickActions])
+  }, [gameState, runToolOnlyStateRequest, sendToGM, setQuickActions])
 
   if (!gameState) {
     return (
@@ -1853,6 +2019,7 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
         onNewGame={onNewGame}
         tokenLog={tokenLog}
         debugLog={debugLogRef.current}
+        onDownloadSessionCamp={handleDownloadSessionCamp}
         onExportSessionStats={() => {
           import('@/lib/instrumentation/counters').then(({ buildSessionStatsLines }) => {
             for (const block of buildSessionStatsLines(gameState)) {
@@ -1988,4 +2155,3 @@ export function GameScreen({ initialGameState, onNewGame }: GameScreenProps) {
     </div>
   )
 }
-
