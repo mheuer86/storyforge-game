@@ -1021,7 +1021,7 @@ const chapterLedgerDefinition: Anthropic.Tool = {
     properties: {
       chapter: { type: 'number', description: 'The completed chapter number this ledger describes.' },
       closing_resolution: { type: 'string', description: 'What became narratively true because of the chapter ending. Derive from story reality, not desired sequel setup.' },
-      planted_bomb: { type: 'string', description: 'Optional unresolved pressure already planted on-screen that can detonate later.' },
+      planted_bomb: { type: 'string', description: 'Unresolved pressure seeded in the chapter. Priority: scan the roll log for fumbles (result="fumble") — each is a wrong PC belief or missed threat that can detonate in Ch2. Also covers partially-completed actions and information the narrator explicitly hedged. Combine multiple bombs into one description.' },
       off_screen_actors: {
         type: 'array',
         description: '3-5 actors not currently centered who now have position and motion because of the ending.',
@@ -1037,7 +1037,7 @@ const chapterLedgerDefinition: Anthropic.Tool = {
       },
       relationships_in_motion: {
         type: 'array',
-        description: '1-3 relationships whose direction changed or now matters.',
+        description: '1-3 relationships that are active, load-bearing, or about to become so. Include relationships that did not visibly move during the chapter but are now structurally set — a latent threat established this chapter is as load-bearing as one that changed.',
         items: {
           type: 'object',
           properties: {

@@ -2260,7 +2260,8 @@ Rules:
 - Use only chapter evidence, roll outcomes, entity records, scene summaries, and the close result.
 - Prefer named actors already in state; create an off-screen actor only if the chapter clearly implies them.
 - Do not write a scene. Do not give the narrator instructions in prose. The tool call is the artifact.
-- chapter must be ${chapterNumber}.`
+- chapter must be ${chapterNumber}.
+- Fumble scan (required): check the roll log for entries with result="fumble". For each fumble, identify what the PC concluded or believed immediately after. That conclusion is a structural planted bomb — the narrator confirmed the PC reached a wrong answer or missed a live threat. Include all fumble-induced wrong beliefs in planted_bomb, prioritized by how much Ch2 depends on the PC not knowing the truth.`
 
   const stateSnapshot = `COMPLETED CHAPTER:
 Chapter ${chapterNumber}: ${completedChapter?.title ?? 'Unknown'}

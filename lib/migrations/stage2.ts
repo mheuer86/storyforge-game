@@ -94,13 +94,14 @@ function backfillThread(thread: Thread & Record<string, unknown>, state: GameSta
 
   // OWNER
   const currentOwner = typeof thread.owner === 'string' ? thread.owner.trim() : ''
+  const statusStr = thread.status ?? ''
   if (!currentOwner || currentOwner.toLowerCase() === 'unknown') {
     // Try exact NPC/faction name in title or status
     const candidate =
       npcNames.find(n => thread.title.toLowerCase().includes(n.toLowerCase())) ||
       factionNames.find(f => thread.title.toLowerCase().includes(f.toLowerCase())) ||
-      npcNames.find(n => thread.status.toLowerCase().includes(n.toLowerCase())) ||
-      factionNames.find(f => thread.status.toLowerCase().includes(f.toLowerCase()))
+      npcNames.find(n => statusStr.toLowerCase().includes(n.toLowerCase())) ||
+      factionNames.find(f => statusStr.toLowerCase().includes(f.toLowerCase()))
     if (candidate) {
       actions.push({
         kind: 'thread', id: thread.id, label, field: 'owner',
@@ -115,7 +116,7 @@ function backfillThread(thread: Thread & Record<string, unknown>, state: GameSta
   // RESOLUTION_CRITERIA — semantic, punt to review
   if (!(typeof thread.resolution_criteria === 'string' && thread.resolution_criteria.trim().length > 0)) {
     // Try: if status contains "until"/"before"/"unless", take clause
-    const match = thread.status.match(/\b(until|before|unless)\b\s+(.+?)(?:\.|$)/i)
+    const match = statusStr.match(/\b(until|before|unless)\b\s+(.+?)(?:\.|$)/i)
     if (match) {
       actions.push({
         kind: 'thread', id: thread.id, label, field: 'resolution_criteria',
