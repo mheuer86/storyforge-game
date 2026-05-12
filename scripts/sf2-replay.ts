@@ -92,7 +92,6 @@ import {
   type Sf2TurnPipelineEvent,
 } from '../lib/sf2/runtime/turn-pipeline'
 import { applyArchivistPatch, summarizePatchOutcome, type ApplyPatchResult } from '../lib/sf2/validation/apply-patch'
-import { isSf2bState, runtimeModeForState, type Sf2RuntimeMode } from '../lib/sf2b/mode'
 import { __sf2TurnResolutionTestHooks } from '../lib/sf2/turn-resolution/resolve'
 
 interface ReplayFixture {
@@ -227,14 +226,6 @@ interface ReplayFixture {
       objectiveOutcome?: string
       reframeCandidateThreadId?: string
       closeOrReframeDirectiveIncludes?: string
-    }
-    modeIdentity?: {
-      state?: 'fixture-stateBefore' | 'fixture-stateAfter'
-      runtimeModeForStateEquals?: Sf2RuntimeMode
-      isSf2bStateEquals?: boolean
-      campaignIdPrefix?: string
-      experimentModeEquals?: string
-      seedIdEquals?: string
     }
     quickActionRepair?: {
       failedSkill?: string
@@ -418,22 +409,6 @@ interface ReplayFixture {
         errorIncludesAll?: string[]
         errorIncludesNone?: string[]
       }
-    }
-    preauthoredStarterSetup?: {
-      seedId: string
-      experimentMode?: string
-      chapterAuthored?: boolean
-      arcAuthored?: boolean
-      chapterTitleEquals?: string
-      arcTitleEquals?: string
-      currentLocationNameIncludes?: string
-      presentNpcIdsEquals?: string[]
-      offstageNpcIdsInclude?: string[]
-      activeThreadIdsInclude?: string[]
-      loadBearingThreadIdsInclude?: string[]
-      threadPressureIncludes?: Array<{ threadId: string; openingFloor?: number; role?: string }>
-      openingWithheldFactsInclude?: string[]
-      scenePacketCastIdsEquals?: string[]
     }
     dispositionDerivation?: {
       // Standalone pure-function check on the disposition derivation logic.
@@ -915,11 +890,9 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertAuthorHydration(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
   assertReferencePolicy(fixture, stateBefore, failures)
-  assertModeIdentity(fixture, stateBefore, stateAfter, failures)
   assertArcTransform(fixture, failures)
   assertArcValidation(fixture, failures)
   assertLatentArcQuestions(fixture, stateBefore, failures)
-  assertPreauthoredStarterSetup(fixture, failures)
   assertChapterMeaningValidation(fixture, stateBefore, failures)
   assertArchivistSchemaParity(fixture, failures)
   assertRoleSchemaParity(fixture, failures)
@@ -1648,88 +1621,6 @@ function assertLatentArcQuestions(
   }
 }
 
-function assertPreauthoredStarterSetup(fixture: ReplayFixture, failures: string[]): void {
-  const expected = fixture.expected?.preauthoredStarterSetup
-  if (!expected) return
-
-  const state = createInitialSf2State({
-    campaignId: expected.experimentMode ? 'sf2b_camp_replay_starter' : 'replay_starter',
-    playerName: 'Replay Runner',
-    seedId: expected.seedId,
-    experimentMode: expected.experimentMode as Sf2State['meta']['experimentMode'],
-  })
-
-  if (expected.chapterAuthored !== undefined && isChapterAuthored(state) !== expected.chapterAuthored) {
-    failures.push(`preauthoredStarterSetup.chapterAuthored: expected ${expected.chapterAuthored}, got ${isChapterAuthored(state)}`)
-  }
-  if (expected.arcAuthored !== undefined && isArcAuthored(state) !== expected.arcAuthored) {
-    failures.push(`preauthoredStarterSetup.arcAuthored: expected ${expected.arcAuthored}, got ${isArcAuthored(state)}`)
-  }
-  if (expected.chapterTitleEquals !== undefined && state.chapter.title !== expected.chapterTitleEquals) {
-    failures.push(`preauthoredStarterSetup.chapterTitle: expected "${expected.chapterTitleEquals}", got "${state.chapter.title}"`)
-  }
-  if (expected.arcTitleEquals !== undefined && state.campaign.arcPlan?.title !== expected.arcTitleEquals) {
-    failures.push(`preauthoredStarterSetup.arcTitle: expected "${expected.arcTitleEquals}", got "${state.campaign.arcPlan?.title ?? 'unset'}"`)
-  }
-  if (
-    expected.currentLocationNameIncludes !== undefined &&
-    !state.world.currentLocation.name.includes(expected.currentLocationNameIncludes)
-  ) {
-    failures.push(`preauthoredStarterSetup.currentLocation.name missing "${expected.currentLocationNameIncludes}"`)
-  }
-  if (
-    expected.presentNpcIdsEquals !== undefined &&
-    !sameMembers(state.world.sceneSnapshot.presentNpcIds, expected.presentNpcIdsEquals)
-  ) {
-    failures.push(
-      `preauthoredStarterSetup.presentNpcIds: expected ${expected.presentNpcIdsEquals.join(',')}, got ${state.world.sceneSnapshot.presentNpcIds.join(',')}`
-    )
-  }
-  for (const id of expected.offstageNpcIdsInclude ?? []) {
-    if (!state.campaign.npcs[id]) {
-      failures.push(`preauthoredStarterSetup.offstageNpc missing campaign NPC ${id}`)
-    } else if (state.world.sceneSnapshot.presentNpcIds.includes(id)) {
-      failures.push(`preauthoredStarterSetup.offstageNpc ${id} unexpectedly present at opening`)
-    }
-  }
-  for (const id of expected.activeThreadIdsInclude ?? []) {
-    if (!state.chapter.setup.activeThreadIds.includes(id)) {
-      failures.push(`preauthoredStarterSetup.activeThreadIds missing ${id}`)
-    }
-  }
-  for (const id of expected.loadBearingThreadIdsInclude ?? []) {
-    if (!state.chapter.setup.loadBearingThreadIds.includes(id)) {
-      failures.push(`preauthoredStarterSetup.loadBearingThreadIds missing ${id}`)
-    }
-  }
-  for (const want of expected.threadPressureIncludes ?? []) {
-    const pressure = state.chapter.setup.threadPressure[want.threadId]
-    if (!pressure) {
-      failures.push(`preauthoredStarterSetup.threadPressure missing ${want.threadId}`)
-      continue
-    }
-    if (want.openingFloor !== undefined && pressure.openingFloor !== want.openingFloor) {
-      failures.push(`preauthoredStarterSetup.threadPressure.${want.threadId}.openingFloor: expected ${want.openingFloor}, got ${pressure.openingFloor}`)
-    }
-    if (want.role !== undefined && pressure.role !== want.role) {
-      failures.push(`preauthoredStarterSetup.threadPressure.${want.threadId}.role: expected ${want.role}, got ${pressure.role}`)
-    }
-  }
-  for (const fragment of expected.openingWithheldFactsInclude ?? []) {
-    const facts = state.chapter.artifacts.opening.withheldPremiseFacts ?? []
-    if (!facts.some((fact) => fact.includes(fragment))) {
-      failures.push(`preauthoredStarterSetup.opening.withheldPremiseFacts missing "${fragment}"`)
-    }
-  }
-  if (expected.scenePacketCastIdsEquals !== undefined) {
-    const packet = buildScenePacket(state, '', 0).packet
-    const castIds = packet.cast.map((c) => c.npcId)
-    if (!sameMembers(castIds, expected.scenePacketCastIdsEquals)) {
-      failures.push(`preauthoredStarterSetup.scenePacket.cast: expected ${expected.scenePacketCastIdsEquals.join(',')}, got ${castIds.join(',')}`)
-    }
-  }
-}
-
 function assertDispositionDerivation(fixture: ReplayFixture, failures: string[]): void {
   const expected = fixture.expected?.dispositionDerivation
   if (!expected) return
@@ -2020,51 +1911,6 @@ function assertLocationAreaNodes(
         failures.push(`${label}.locationAreaNodes.${expected.locationId}: missing node name ${name}`)
       }
     }
-  }
-}
-
-function assertModeIdentity(
-  fixture: ReplayFixture,
-  stateBefore: Sf2State,
-  stateAfter: Sf2State,
-  failures: string[]
-): void {
-  const expected = fixture.expected?.modeIdentity
-  if (!expected) return
-
-  const state = expected.state === 'fixture-stateAfter' ? stateAfter : stateBefore
-  if (
-    expected.runtimeModeForStateEquals !== undefined &&
-    runtimeModeForState(state) !== expected.runtimeModeForStateEquals
-  ) {
-    failures.push(
-      `modeIdentity.runtimeModeForState: expected ${expected.runtimeModeForStateEquals}, got ${runtimeModeForState(state)}`
-    )
-  }
-  if (
-    expected.isSf2bStateEquals !== undefined &&
-    isSf2bState(state) !== expected.isSf2bStateEquals
-  ) {
-    failures.push(`modeIdentity.isSf2bState: expected ${expected.isSf2bStateEquals}, got ${isSf2bState(state)}`)
-  }
-  if (
-    expected.campaignIdPrefix !== undefined &&
-    !state.meta.campaignId.startsWith(expected.campaignIdPrefix)
-  ) {
-    failures.push(
-      `modeIdentity.meta.campaignId: expected prefix ${expected.campaignIdPrefix}, got ${state.meta.campaignId}`
-    )
-  }
-  if (
-    expected.experimentModeEquals !== undefined &&
-    state.meta.experimentMode !== expected.experimentModeEquals
-  ) {
-    failures.push(
-      `modeIdentity.meta.experimentMode: expected ${expected.experimentModeEquals}, got ${state.meta.experimentMode ?? 'unset'}`
-    )
-  }
-  if (expected.seedIdEquals !== undefined && state.meta.seedId !== expected.seedIdEquals) {
-    failures.push(`modeIdentity.meta.seedId: expected ${expected.seedIdEquals}, got ${state.meta.seedId ?? 'unset'}`)
   }
 }
 

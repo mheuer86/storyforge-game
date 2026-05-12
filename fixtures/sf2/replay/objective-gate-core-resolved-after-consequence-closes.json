@@ -3,7 +3,7 @@
   "name": "core objective gate closes resolved foreground objective after consequence",
   "source": {
     "kind": "synthetic-regression",
-    "purpose": "Core SF2 should use the objective close/reframe gate without SF2B experiment mode once the foreground objective has landed with enough chapter consequence."
+    "purpose": "Core SF2 should use the objective close/reframe gate once the foreground objective has landed with enough chapter consequence."
   },
   "input": {
     "stateBeforePreset": "minimal",

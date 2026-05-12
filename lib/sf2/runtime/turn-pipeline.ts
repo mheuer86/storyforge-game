@@ -28,8 +28,6 @@ import {
 import { evaluateRevelationDue, normalizeRevelationTopic } from '../retrieval/revelation-due'
 import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
-import { isSf2bState } from '../../sf2b/mode'
-import { detectRepeatedBeatAdvisory } from '../../sf2b/repeated-beat'
 
 export type Sf2TurnPipelineEvent =
   | Sf2ReplayInvariantEvent
@@ -598,29 +596,6 @@ function applyPostArchivistTurnEffects(input: {
         payload: finding as unknown as Record<string, unknown>,
         timestamp,
       }))
-    }
-  }
-
-  if (isSf2bState(stateAfter)) {
-    const repeated = detectRepeatedBeatAdvisory(stateAfter)
-    if (repeated.triggered) {
-      invariantEvents.push(makeInvariantEvent('sf2b_repeated_beat_advisory', {
-        severity: repeated.severity,
-        reason: repeated.reason,
-        recommendedAction: repeated.recommendedAction,
-        actionOptions: repeated.actionOptions,
-        predicates: repeated.predicates.map((predicate) => ({
-          key: predicate.key,
-          family: predicate.family,
-          distinctTurns: predicate.distinctTurns,
-          threadIds: predicate.threadIds,
-        })),
-        detail: repeated.reason,
-      }))
-      stateAfter.campaign.pendingCoherenceNotes = [
-        ...(stateAfter.campaign.pendingCoherenceNotes ?? []),
-        `SF2B turn-density: ${repeated.reason} Use ${repeated.recommendedAction ?? 'compression'} instead of repeating the same unresolved beat.`,
-      ].slice(-6)
     }
   }
 

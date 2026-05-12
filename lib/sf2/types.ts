@@ -18,7 +18,6 @@ export type Sf2ChapterNumber = number
 export type Sf2Tension = number // 0-10
 export type CanonicalThreadTension = number // durable thread.tension / thread.peakTension
 export type ChapterRuntimePressure = number // chapter.setup.threadPressure and engine runtime values
-export type PlanningTensionScore = number // Author/SF2B planning score, not durable state
 export type Sf2DispositionTier =
   | 'hostile'
   | 'wary'
@@ -110,8 +109,6 @@ export interface Sf2RevelationCashConditions {
   minTension?: { threadId: Sf2EntityId; value: number }
   requiresContext?: Sf2RevealContext[]
 }
-export type Sf2ExperimentMode = 'sf2b-hook'
-
 // Document lifecycle. Closed enum + per-type transition map (DOCUMENT_VALID_TRANSITIONS)
 // constrains which statuses are reachable for each Sf2DocumentType.
 export type Sf2DocumentStatus =
@@ -898,25 +895,6 @@ export interface Sf2ChapterFrame {
   outcomeSpectrum: Sf2OutcomeSpectrum
 }
 
-export type Sf2ChapterTensionRole =
-  | 'foreground_objective'
-  | 'relational_social_pressure'
-  | 'shadow_faction_pressure'
-  | 'cargo_system_pressure'
-  | 'environmental_pressure'
-
-export interface Sf2ChapterTensionScoreLine {
-  id: Sf2EntityId
-  role: Sf2ChapterTensionRole
-  sourceEntityId?: Sf2EntityId
-  sourceThreadId?: Sf2EntityId
-  pressure: string
-  proseSurface: string
-  advancesWhen: string
-  resolvesOrReframesWhen: string
-  carried?: boolean
-}
-
 export interface Sf2AntagonistFace {
   id: string
   name: string
@@ -1009,7 +987,6 @@ export interface Sf2ChapterSetupRuntimeState {
   editorializedLore: Sf2EditorializedLoreItem[]
   openingSceneSpec: Sf2OpeningSceneSpec
   pressureLadder: Sf2PressureLadderStep[]
-  tensionScore?: Sf2ChapterTensionScoreLine[]
   humanStakes?: Sf2HumanStake[]
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn
   threadPressure: Record<Sf2EntityId, Sf2ChapterThreadPressure>
@@ -1297,7 +1274,6 @@ export interface AuthorChapterSetupV2 {
     severity?: 'standard' | 'hard'
   }>
   humanStakes: Sf2HumanStake[]
-  tensionScore?: Sf2ChapterTensionScoreLine[]
   possibleRevelations: Array<{
     id: string
     statement: string
@@ -1865,7 +1841,6 @@ export interface Sf2CampaignMeta {
   updatedAt: string
   schemaVersion: typeof SF2_SCHEMA_VERSION
   seedId?: string
-  experimentMode?: Sf2ExperimentMode
   genreId: string
   playbookId: string
   originId: string

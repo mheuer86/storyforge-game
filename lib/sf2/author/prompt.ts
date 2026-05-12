@@ -139,7 +139,6 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 - Prefer the new/successor/arc_promoted load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
 - Emit exactly 3 pressure ladder items.
 - Emit exactly 2-3 \`human_stakes\`. At least one must put a starting NPC, not only the PC, at risk. These are the chapter's roster of people who pay when pressure charges.
-- For SF2B continuation chapters, emit exactly 3-4 \`tension_score\` lines with distinct dramatic roles. Include \`foreground_objective\`, \`relational_social_pressure\`, and \`shadow_faction_pressure\`; add \`cargo_system_pressure\` or \`environmental_pressure\` only when it is load-bearing. Each carried line must set \`carried: true\` and cite a locked \`source_entity_id\` or \`source_thread_id\`.
 - Emit exactly 2 possible revelations.
 - Emit exactly 2 moral fault lines.
 - Emit exactly 3 escalation options.
@@ -173,18 +172,11 @@ import {
   deriveChapterOpeningContinuity,
   renderChapterOpeningContinuity,
 } from './payload'
-import { isSf2bState } from '../../sf2b/mode'
-import {
-  deriveSf2bContinuityLock,
-  renderSf2bContinuityLock,
-} from '../../sf2b/continuity-lock'
 
 export function buildAuthorSituation(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): string {
-  const sf2bDirective = state && isSf2bState(state) ? sf2bAuthorDirective() : ''
-
   if (!state || state.history.turns.length === 0) {
     const arc = state?.campaign?.arcPlan
     return `## Chapter setup context
@@ -192,7 +184,6 @@ export function buildAuthorSituation(
 This is the opening chapter of a new campaign. No prior chapters exist. The ArcPlan below is the stable pressure field — derive Chapter 1 from it, not directly from the raw hook.
 The raw seed's concrete surfaces are palette, not a scene mandate. If the ArcPlan's "what this is not" or rejected default names a creditor negotiation, paper trail, mechanism-control problem, berth-lock standoff, or similar over-literal surface, do not make the chapter objective, opening scene, pressure ladder, or spine thread revolve around that surface. Treat the exit pressure as the inciting condition and move into the selected scenario shape.
 Playbook names are role labels, not in-world entity names. For Space Opera, Driftrunner means the PC's job, not the ship's default name; if a vessel needs a name, author a fresh variable truth or leave it unnamed.
-${sf2bDirective}
 
 ### Stable ArcPlan
 ${arc && state ? renderArcPlan(state, 1, priorChapterMeaning) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
@@ -201,9 +192,6 @@ ${arc && state ? renderArcPlan(state, 1, priorChapterMeaning) : '_(missing arc p
   const priorChapter = state.meta.currentChapter
   const arc = state.campaign.arcPlan
   const openingContinuity = deriveChapterOpeningContinuity(state)
-  const continuityLockBlock = isSf2bState(state)
-    ? `\n${renderSf2bContinuityLock(deriveSf2bContinuityLock(state))}\n`
-    : ''
   const transitionSeedBlock = priorChapterMeaning?.transitionSeed
     ? `\n\n### Supporting transition seed\n${renderChapterTransitionSeed(priorChapterMeaning.transitionSeed)}`
     : ''
@@ -273,7 +261,6 @@ How this chapter should respond to the landing:
 This is the setup for chapter ${nextChapter}. The campaign has ${priorChapter} prior chapter(s) of play.
 Playbook names are role labels, not in-world entity names. For Space Opera, Driftrunner means the PC's job, not the ship's default name; if a vessel needs a name, preserve the established one or author a fresh variable truth.
 ${meaningBlock}
-${sf2bDirective}
 
 ${structuralBeatBlock}
 
@@ -295,7 +282,6 @@ ${activeNpcs || '_(none)_'}
 
 ### Chapter opening continuity
 ${renderChapterOpeningContinuity(openingContinuity)}
-${continuityLockBlock}
 
 Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the continuity above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there, open at a place explicitly traveled to from there, or encode the justified jump in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
 
@@ -411,23 +397,6 @@ function renderDramaticHandoff(
     `Live constraint: ${liveConstraint}`,
     `Forbidden restages: ${forbiddenRestages}`,
   ].join(' ')
-}
-
-function sf2bAuthorDirective(): string {
-  return `
-### SF2B hook-driven experiment directive
-
-This run tests strict durable state with looser narration. Author a dramatic hook brief, not a procedural machine. Keep the chapter state valid, but make the opening playable as a living situation with pressure, voice, leverage, and choice.
-
-- Prefer one sharp dramatic problem over multiple visible gates.
-- Do not make the player wait on repeated procedural predicates; if mechanisms, holds, codes, queues, or releases matter, they must escalate, compress, force a choice, or become a chapter-close vector.
-- The Narrator will receive a compact dramatic kernel, not the full graph. Put only load-bearing durable facts into chapter setup.
-- For Chapter 2+, open from what the prior chapter meant and who now cares, not from raw continuity pickup.
-- Treat the SF2B canon continuity lock as hard canon. New social/faction pressure must bridge from locked names, locations, continuity facets, contacts, promises, and thread ids.
-- Preserve facet chronology. Milestones already marked crossed, cleared, completed, or spent stay crossed; do not reopen them as future choices.
-- Emit \`tension_score\` with exactly 3-4 lines. Use distinct roles: \`foreground_objective\`, \`relational_social_pressure\`, \`shadow_faction_pressure\`, and when relevant \`cargo_system_pressure\`.
-- Each \`tension_score\` line must name source entity/thread id, pressure, prose surface, what advances it, and what resolves or reframes it. For carried pressure, set \`carried: true\` and reference a locked existing id; do not create a parallel replacement.
-- Favor dramatic scene pressure over procedural task queues: social leverage, faction alternatives, withheld facts, and meaningful objective beats should carry the opening.`
 }
 
 function renderArcPlan(

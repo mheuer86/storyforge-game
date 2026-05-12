@@ -1,7 +1,7 @@
 import { getPressureLadderTargetThreadIds } from './deltas'
 import { deriveEngineValue, initializeChapterPressure } from './derive'
 import { reheatLadderFire } from './reheat'
-import { readSf2ObjectiveGate } from '../../sf2b/objective-gate'
+import { readSf2ObjectiveGate } from './objective-gate'
 import { isThreadTerminal } from '../thread-lifecycle'
 import type {
   Sf2ArchivistFlag,
@@ -57,14 +57,14 @@ export interface ChapterPressureRecoveryResult {
     type:
       | 'early_spine_resolved_promoted_successor'
       | 'early_spine_resolved_successor_required'
-      | 'sf2b_objective_close_or_reframe'
+      | 'objective_close_or_reframe'
     data: Record<string, unknown>
   }>
 }
 
 function ensureRuntimeEnginesFromArcPlan(_state: Sf2State): void {
   // New SF2 arc pressure is represented by anchored threads. Runtime engines
-  // remain in state only for legacy saves and SF2B read paths.
+  // remain in state only for legacy saves.
 }
 
 // `priorActiveThreadIds` is the previous chapter's activeThreadIds, captured
@@ -253,7 +253,7 @@ function applyPostTurnPressureRecovery(state: Sf2State): ChapterPressureRecovery
       closeRecovery.closeOrReframeDirective,
     ])).slice(-6)
     events.push({
-      type: 'sf2b_objective_close_or_reframe',
+      type: 'objective_close_or_reframe',
       data: {
         chapterTurnCount: closeRecovery.chapterTurnCount,
         objectiveOutcome: closeRecovery.objectiveOutcome,

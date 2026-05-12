@@ -14,12 +14,6 @@ import { buildSceneKernel } from '../scene-kernel/build'
 import type { ScanDisplayOutputOptions } from '../sentinel/display'
 import type { Sf2State, Sf2WorkingSet } from '../types'
 import { resolvePlayerInputThreadTargets } from '../turn-resolution/targets'
-import { isSf2bState } from '../../sf2b/mode'
-import { buildSf2bNarratorKernel } from '../../sf2b/narrator-kernel'
-import { SF2B_NARRATOR_ROLE } from '../../sf2b/narrator-role'
-import { buildSf2bRollConsequenceInstruction } from '../../sf2b/roll-consequence'
-import { detectRepeatedBeatAdvisory } from '../../sf2b/repeated-beat'
-import { extractSf2bSkillTags } from '../../sf2b/skill-tags'
 import type { Sf2RequiredRollGate } from './roll-gates'
 import {
   parseSf2NarratorIntentQueue,
@@ -114,7 +108,7 @@ export function buildNarratorTurnContext(input: {
   const requiredRollGate = isInitial ? null : intentQueue.current.requiredRollGate
 
   if (rollResolution) {
-    const messages = buildRollResumeMessages(state, intentQueue, rollResolution, isSf2bState(state))
+    const messages = buildRollResumeMessages(state, intentQueue, rollResolution)
     return {
       mode: 'roll_resume',
       system,
@@ -134,27 +128,6 @@ export function buildNarratorTurnContext(input: {
   }
 
   const currentPlayerInput = intentQueue.current.text || playerInput
-  if (isSf2bState(state)) {
-    const built = buildMessagesForSf2bNarrator(state, currentPlayerInput, isInitial, turnIndex)
-    const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
-    return {
-      mode: 'normal',
-      system,
-      messages,
-      cachedTools,
-      diagnostics: {
-        workingSet: null,
-        sceneBundleBuilt: null,
-        pacingAdvisory: null,
-      },
-      sentinelContext,
-      failedRollSkill,
-      requiredRollGate,
-      intentQueue,
-      replayMetadata: buildReplayMetadata('normal', turnIndex, messages, null, null),
-    }
-  }
-
   const built = buildMessagesForNarrator(state, currentPlayerInput, isInitial, turnIndex)
   const pacing = computePacingAdvisory(state)
   const beatMode = deriveSf2BeatMode(state, playerInput)
@@ -220,8 +193,7 @@ export function rollResultMessage(resolution: Omit<Sf2NarratorRollResolution, 'p
 function buildNarratorSystemBlocks(state: Sf2State): Anthropic.TextBlockParam[] {
   const situation = buildNarratorSituation(state)
   const bible = getSf2BibleForGenre(state.meta.genreId)
-  const narratorRole = buildNarratorRole(state.meta.genreId)
-  const role = isSf2bState(state) ? SF2B_NARRATOR_ROLE : narratorRole
+  const role = buildNarratorRole(state.meta.genreId)
   assertNoDynamicLeak(SF2_CORE, 'CORE')
   assertNoDynamicLeak(bible, 'BIBLE')
   assertNoDynamicLeak(role, 'ROLE')
@@ -246,8 +218,7 @@ function buildCachedNarratorTools(): Anthropic.Tool[] {
 function buildRollResumeMessages(
   state: Sf2State,
   intentQueue: Sf2NarratorIntentQueue,
-  rollResolution: Sf2NarratorRollResolution,
-  sf2bMode = false
+  rollResolution: Sf2NarratorRollResolution
 ): Anthropic.MessageParam[] {
   const pressureInstruction = buildRollPressureManifestationInstruction(
     state,
@@ -255,14 +226,7 @@ function buildRollResumeMessages(
     rollResolution
   )
   const intentQueueInstruction = renderSf2RollResumeIntentQueueBlock(intentQueue)
-  const content = sf2bMode
-    ? `${rollResultMessage(rollResolution)}\n\n${buildSf2bRollConsequenceInstruction({
-        skill: rollResolution.skill,
-        dc: rollResolution.dc,
-        effectiveDc: rollResolution.effectiveDc,
-        outcome: rollResolution.result,
-      })}${pressureInstruction}${intentQueueInstruction}`
-    : `${rollResultMessage(rollResolution)}${pressureInstruction}${intentQueueInstruction}`
+  const content = `${rollResultMessage(rollResolution)}${pressureInstruction}${intentQueueInstruction}`
 
   return [
     ...(rollResolution.priorMessages as Anthropic.MessageParam[]),
@@ -327,46 +291,6 @@ function buildRollPressureManifestationInstruction(
   })
 
   return `\n\n---\n\n### Private roll pressure manifestation (mandatory, never mention)\nThe failed roll will deterministically charge the targeted thread(s) when this turn commits. Treat the continuation as if the per-turn delta already showed:\n${lines.join('\n')}\nManifest this pressure in the continuation prose now. Do not say "delta", "thread", "human_stakes", or quote this instruction. Do not save or mutate state here; the commit pipeline applies the pressure after narration.`
-}
-
-function buildMessagesForSf2bNarrator(
-  state: Sf2State,
-  playerInput: string,
-  isInitial: boolean,
-  turnIndex: number
-): { messages: Anthropic.MessageParam[] } {
-  const kernel = buildSf2bNarratorKernel({ state, playerInput, isInitial, turnIndex })
-  const repeated = detectRepeatedBeatAdvisory(state)
-  const skillTagBlock = buildSf2bSkillTagBindingBlock(playerInput)
-  const repeatedBlock = repeated.triggered
-    ? `\n\n---\n\n### Private turn-density advisory (mandatory, never mention)\n${repeated.reason}\nRecommended action: ${repeated.recommendedAction ?? 'compress'}.\nDo not repeat the same unresolved beat as another static obstacle. Escalate, compress, force a choice, time-cut, or point toward a close vector.\nEvidence:\n${repeated.predicates.slice(0, 2).flatMap((predicate) =>
-      predicate.evidence.slice(0, 2).map((evidence) => `- T${evidence.turn}: ${evidence.excerpt}`)
-    ).join('\n')}`
-    : ''
-  const text = `${kernel.text}${skillTagBlock}${repeatedBlock}`
-  return {
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text' as const,
-            text,
-            cache_control: { type: 'ephemeral' as const },
-          },
-        ],
-      },
-    ],
-  }
-}
-
-function buildSf2bSkillTagBindingBlock(playerInput: string): string {
-  const skills = extractSf2bSkillTags(playerInput)
-  if (skills.length === 0) return ''
-  const skillList = skills.length === 1
-    ? `\`${skills[0]}\``
-    : skills.map((skill) => `\`${skill}\``).join(' or ')
-  return `\n\n---\n\n### Private skill-tag binding (mandatory, never mention)\nThe player chose a quick action tagged with ${skillList}. Call \`request_roll\` with one of those skills before resolving the action outcome. The roll-frequency heuristic does not apply when a tag is present.`
 }
 
 function buildWorkingSetEventPayload(workingSet: Sf2WorkingSet): Sf2NarratorWorkingSetEventPayload | null {

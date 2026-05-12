@@ -92,9 +92,6 @@ export function transformAuthorSetup(
       fired: false,
     })),
     humanStakes: authored.humanStakes,
-    tensionScore: authored.tensionScore && authored.tensionScore.length > 0
-      ? authored.tensionScore
-      : undefined,
     continuationDramaticTurn: authored.continuationDramaticTurn,
     threadPressure: {},
     threadInitialTensions: Object.fromEntries(

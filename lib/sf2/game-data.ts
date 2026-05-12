@@ -9,23 +9,17 @@
 
 import type {
   AuthorInputSeed,
-  Sf2ExperimentMode,
   Sf2ChapterRuntime,
   Sf2Player,
   Sf2State,
 } from './types'
 import { SF2_SCHEMA_VERSION } from './types'
-import {
-  FORTY_THOUSAND_STARTER_SEED_ID,
-  applyPreauthoredStarterSetup,
-} from './starter-setups'
 import { getGenreConfig, type CharacterClass, type Genre } from '../genre-config'
 
 export interface NewCampaignInputs {
   campaignId: string
   playerName: string
   seedId?: string
-  experimentMode?: Sf2ExperimentMode
 }
 
 // Warden / Imperial Service base stats per lib/genres/epic-scifi.ts.
@@ -35,7 +29,7 @@ const WARDEN_STARTING_AC = 14
 const STARTING_CREDITS = 200
 
 export const DEFAULT_SF2_SEED_ID = 'epic-scifi/warden/the-tithe'
-export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = FORTY_THOUSAND_STARTER_SEED_ID
+export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = 'space-opera/human/operative/forty-thousand'
 export const SPACE_OPERA_DEFECTOR_SEED_ID = 'space-opera/human/operative/the-defector'
 export const FANTASY_SEEKER_SEED_ID = 'fantasy/human/seeker/the-second-library'
 export const CYBERPUNK_NETRUNNER_SEED_ID = 'cyberpunk/operative/netrunner/blackout'
@@ -191,7 +185,6 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       updatedAt: now,
       schemaVersion: SF2_SCHEMA_VERSION,
       seedId: seedEntry.id,
-      experimentMode: inputs.experimentMode,
       genreId: seed.genreId,
       playbookId: seed.playbookId,
       originId: seed.originId,
@@ -246,7 +239,6 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
     history: { turns: [], rollLog: [], recentTurns: [] },
     derived: {},
   }
-  applyPreauthoredStarterSetup(state)
   return state
 }
 

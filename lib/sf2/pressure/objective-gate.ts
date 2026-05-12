@@ -1,7 +1,7 @@
-import type { Sf2ChapterTensionScoreLine, Sf2State, Sf2Thread, Sf2ThreadStatus } from '../sf2/types'
-import { isThreadResolved, isThreadTerminal } from '../sf2/thread-lifecycle'
+import { isThreadResolved, isThreadTerminal } from '../thread-lifecycle'
+import type { Sf2State, Sf2Thread, Sf2ThreadStatus } from '../types'
 
-export interface Sf2bObjectiveGateRead {
+export interface Sf2ObjectiveGateRead {
   chapterTurnCount: number
   foregroundThreadId?: string
   foregroundThreadTitle?: string
@@ -19,15 +19,7 @@ export interface Sf2bObjectiveGateRead {
 
 const MIN_OBJECTIVE_CLOSE_OR_REFRAME_TURNS = 5
 
-export function readSf2ObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
-  return readObjectiveGate(state)
-}
-
-export function readSf2bObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
-  return readObjectiveGate(state)
-}
-
-function readObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
+export function readSf2ObjectiveGate(state: Sf2State): Sf2ObjectiveGateRead {
   const chapterTurnCount = state.history.turns.filter(
     (turn) => turn.chapter === state.meta.currentChapter
   ).length
@@ -37,7 +29,7 @@ function readObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
     foregroundStatus && (isThreadTerminal(foregroundStatus) || foregroundStatus === 'deferred')
   )
   const reframeCandidate = foregroundAnswered
-    ? selectReframeCandidate(state, foregroundThread?.id, state.chapter.setup.tensionScore)
+    ? selectReframeCandidate(state, foregroundThread?.id)
     : undefined
   const foregroundOutcome = foregroundStatus ? outcomeForStatus(foregroundStatus) : 'active'
   const shouldCloseOrReframe =
@@ -51,7 +43,7 @@ function readObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
       ? `Foreground objective "${foregroundThread?.title ?? 'chapter objective'}" resolved very early; make the new dominant pressure "${reframeCandidate.title}" explicit before close.`
       : foregroundAnswered
         ? `Foreground objective "${foregroundThread?.title ?? 'chapter objective'}" resolved very early; establish successor pressure or an explicit immediate-close reason before extending the old question.`
-      : undefined
+        : undefined
 
   return {
     chapterTurnCount,
@@ -67,18 +59,12 @@ function readObjectiveGate(state: Sf2State): Sf2bObjectiveGateRead {
 }
 
 function selectForegroundThread(state: Sf2State): Sf2Thread | undefined {
-  const scoreThreadId = state.chapter.setup.tensionScore?.find(
-    (line) => line.role === 'foreground_objective' && line.sourceThreadId
-  )?.sourceThreadId
-  if (scoreThreadId && state.campaign.threads[scoreThreadId]) {
-    return state.campaign.threads[scoreThreadId]
-  }
   return state.chapter.setup.spineThreadId
     ? state.campaign.threads[state.chapter.setup.spineThreadId]
     : undefined
 }
 
-function outcomeForStatus(status: Sf2ThreadStatus): Sf2bObjectiveGateRead['foregroundOutcome'] {
+function outcomeForStatus(status: Sf2ThreadStatus): Sf2ObjectiveGateRead['foregroundOutcome'] {
   if (status === 'resolved_clean' || status === 'resolved_costly') return 'resolved'
   if (status === 'deferred') return 'deferred'
   if (isThreadTerminal(status) || isThreadResolved(status)) return 'failed'
@@ -87,14 +73,8 @@ function outcomeForStatus(status: Sf2ThreadStatus): Sf2bObjectiveGateRead['foreg
 
 function selectReframeCandidate(
   state: Sf2State,
-  previousThreadId: string | undefined,
-  tensionScore: Sf2ChapterTensionScoreLine[] | undefined
-): Sf2bObjectiveGateRead['reframeCandidate'] {
-  const scoreByThreadId = new Map(
-    (tensionScore ?? [])
-      .filter((line) => line.sourceThreadId && line.role !== 'foreground_objective')
-      .map((line) => [line.sourceThreadId as string, tensionRoleScore(line.role)])
-  )
+  previousThreadId: string | undefined
+): Sf2ObjectiveGateRead['reframeCandidate'] {
   const active = Object.values(state.campaign.threads)
     .filter((thread) =>
       thread.status === 'active' &&
@@ -105,7 +85,7 @@ function selectReframeCandidate(
         state.chapter.setup.activeThreadIds.includes(thread.id)
       )
     )
-    .sort((a, b) => compareReframeThreads(a, b, scoreByThreadId))
+    .sort(compareReframeThreads)
 
   const candidate = active[0]
   if (!candidate) return undefined
@@ -116,9 +96,7 @@ function selectReframeCandidate(
   }
 }
 
-function compareReframeThreads(a: Sf2Thread, b: Sf2Thread, scoreByThreadId: Map<string, number>): number {
-  const score = (scoreByThreadId.get(b.id) ?? 0) - (scoreByThreadId.get(a.id) ?? 0)
-  if (score !== 0) return score
+function compareReframeThreads(a: Sf2Thread, b: Sf2Thread): number {
   const driver = driverScore(b) - driverScore(a)
   if (driver !== 0) return driver
   const loadBearing = Number(b.loadBearing) - Number(a.loadBearing)
@@ -126,14 +104,6 @@ function compareReframeThreads(a: Sf2Thread, b: Sf2Thread, scoreByThreadId: Map<
   const spine = Number(Boolean(b.spineForChapter)) - Number(Boolean(a.spineForChapter))
   if (spine !== 0) return spine
   return b.tension - a.tension
-}
-
-function tensionRoleScore(role: Sf2ChapterTensionScoreLine['role']): number {
-  if (role === 'relational_social_pressure') return 4
-  if (role === 'shadow_faction_pressure') return 3
-  if (role === 'cargo_system_pressure') return 2
-  if (role === 'environmental_pressure') return 1
-  return 0
 }
 
 function driverScore(thread: Sf2Thread): number {
