@@ -187,12 +187,25 @@ export interface GenreConfig {
   intelOperationLabel: string
   explorationLabel: string
   heatLabel?: string           // genre-specific name for heat system (default: "Heat")
-  openingHooks: (string | { hook: string; title?: string; classes?: string[]; origins?: string[]; startingCounters?: Record<string, number>; startingCrew?: StartingCrewTemplate[]; frame?: { objective: string; crucible: string }; arc?: { name: string; episode: string } })[]
+  openingHooks: OpeningHook[] // Hook objects with classes must also declare origins; no class-only V1 hooks.
   initialChapterTitle: string
   locationNames: string[]
   npcNames?: string[]        // genre-appropriate NPC name pool — Claude samples from these instead of defaulting to "Aldric"
   startingCrew?: StartingCrewTemplate[]  // crew templates — dynamically named from npcNames at init
 }
+
+export interface OpeningHookObject {
+  hook: string
+  title?: string
+  classes?: string[]
+  origins?: string[]
+  startingCounters?: Record<string, number>
+  startingCrew?: StartingCrewTemplate[]
+  frame?: { objective: string; crucible: string }
+  arc?: { name: string; episode: string }
+}
+
+export type OpeningHook = string | OpeningHookObject
 
 // ─── Stubs ──────────────────────────────────────────────────────────
 

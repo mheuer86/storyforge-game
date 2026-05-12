@@ -1,5 +1,6 @@
 import type { GameState, CharacterState, WorldState, ClueConnection } from './types'
 import { getGenreConfig, genres as genreList, type Genre, type Species, type CharacterClass } from './genre-config'
+import { selectOpeningHook } from './opening-hooks'
 import { findNpcIndexByName } from './npc-utils'
 import { runStage2Migration, formatMigrationReport, applyMigrationActions } from './migrations/stage2'
 
@@ -57,29 +58,7 @@ export function createInitialGameState(
     throw new Error(`Invalid class (${classId}) or species (${speciesId}) for genre ${genre}`)
   }
 
-  // Select opening hook — priority: origin-specific > class-tagged > universal
-  const playerClass = selectedClass.name.toLowerCase()
-  const hookMatchTags = [playerClass, ...(selectedClass.hookTags || []).map(t => t.toLowerCase())]
-  const allHooks = config.openingHooks
-  // Origin-specific hooks (highest priority — most specific to this character)
-  const originHooks = allHooks.filter(h =>
-    typeof h !== 'string' && h.origins && h.origins.some(o => o.toLowerCase() === speciesId.toLowerCase())
-  )
-  // Class-tagged hooks (exclude origin-locked hooks for other origins)
-  const classHooks = allHooks.filter(h => {
-    if (typeof h === 'string') return false
-    if (h.origins) return false // origin-tagged hooks handled separately
-    return h.classes && h.classes.some(c => hookMatchTags.some(tag => tag.includes(c.toLowerCase())))
-  })
-  const universalHooks = allHooks.filter(h =>
-    typeof h === 'string' || (!h.classes && !h.origins)
-  )
-  // Priority: 80% origin hooks if available, else 70% class hooks, else universal
-  const pool = originHooks.length > 0 && Math.random() < 0.8 ? originHooks
-    : classHooks.length > 0 && Math.random() < 0.7 ? classHooks
-    : universalHooks.length > 0 ? universalHooks : allHooks
-  const pickedHook = pool[Math.floor(Math.random() * pool.length)]
-  const hookObj = typeof pickedHook === 'string' ? { hook: pickedHook } : pickedHook
+  const hookObj = selectOpeningHook(config, selectedSpecies.id, selectedClass)
   const hookTitle = hookObj.title || config.initialChapterTitle
 
   const now = new Date().toISOString()
@@ -181,7 +160,7 @@ export function createInitialGameState(
   }
 
   // Pre-populate starting crew with random names from genre pool
-  const crewTemplates = (hookObj as { startingCrew?: typeof config.startingCrew }).startingCrew ?? config.startingCrew ?? []
+  const crewTemplates = hookObj.startingCrew ?? config.startingCrew ?? []
   if (crewTemplates.length > 0 && config.npcNames && config.npcNames.length > 0) {
     const shuffled = [...config.npcNames].sort(() => Math.random() - 0.5)
     world.npcs = crewTemplates.map((tpl, i) => ({

@@ -95,12 +95,12 @@ Hooks can be plain strings or objects with:
 - `hook` -- the scenario text.
 - `title` -- optional display title for the hook selector.
 - `origins` -- optional array of origin/species IDs. When present, the hook only appears if the player chose one of these origins. Used for origin-tier hooks (e.g. institutional hooks available to `['synod', 'minor-house', 'imperial-service']`) and origin-specific hooks.
-- `classes` -- optional array of class/playbook names. When present, further filters within origin. Combined with `origins` for playbook-specific hooks (e.g. `origins: ['synod'], classes: ['Seeker']`). Can also tag hooks that work across origins (e.g. `origins: ['synod', 'imperial-service'], classes: ['Crusader', 'Warden']` for dual-tagged hooks).
+- `classes` -- optional array of class/playbook names or hook tags. Must be paired with `origins`; class-only hooks are invalid V1 data. When present, further filters within origin. Combined with `origins` for playbook-specific hooks (e.g. `origins: ['synod'], classes: ['Seeker']`). Can also tag hooks that work across origins (e.g. `origins: ['synod', 'imperial-service'], classes: ['Crusader', 'Warden']` for dual-tagged hooks).
 - `startingCounters` -- optional `Record<string, number>`. Initializes genre counters when this hook is selected (e.g. `{ exposure: 1 }` for Undrift hooks).
 - `frame` -- optional `{ objective: string; crucible: string }`. Pre-seeds the chapter frame so Claude starts with a tight chapter-1 goal instead of improvising. Objective scoped for ~20-25 turns.
 - `arc` -- optional `{ name: string; episode: string }`. Pre-seeds the first story arc with episode 1 marked active. Gives Claude a broader narrative thread from turn 1.
 
-Hook selection priority: origin+class specific (80%) > origin-only (70%) > universal (fallback). Hooks with no `origins` or `classes` are universal.
+Hook selection is equal-random from all eligible hooks. A hook is eligible when it is true universal (no `origins` or `classes`) or when `origins` includes the selected origin and, if present, `classes` matches the selected playbook name/id or one of its hook tags. There is no fallback to the full genre list.
 
 ## Species Type
 
@@ -261,7 +261,7 @@ openingHooks: [
 ]
 ```
 
-Aim for 3-4 origin-tier hooks, 2-4 per origin, and 3+ per playbook.
+Aim for 3-4 origin-tier hooks, 2-4 per origin, and 3+ per playbook. Do not define `classes` without `origins`; cross-origin archetype hooks must list every origin where the matching hook tag exists.
 
 ### 5. Define the theme
 

@@ -19,6 +19,7 @@
     "sf2:probe": "node scripts/sf2-probe.cjs",
     "sf2:merge-eval": "node scripts/sf2-merge-eval-report.cjs",
     "sf2:check-prompt-genre-leaks": "node scripts/sf2-check-prompt-genre-leaks.cjs",
+    "v1:audit-hooks": "node scripts/v1-opening-hook-audit.cjs",
     "lint": "eslint ."
   },
   "dependencies": {

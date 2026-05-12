@@ -1,6 +1,7 @@
 import type { GameState, DispositionTier } from './types'
 import { getStatModifier, formatModifier } from './game-data'
 import { getGenreConfig, type Genre } from './genre-config'
+import { resolveOpeningHookForCharacter } from './opening-hooks'
 
 /**
  * Returns [staticInstructions, dynamicGameState].
@@ -1997,22 +1998,11 @@ export function buildInitialMessage(gameState: GameState): string | { message: s
 
   if (isNewGame) {
     // Hook was pre-selected in createInitialGameState and stored in meta
-    const hook = gameState.meta?.selectedHook
-      || (() => {
-        // Fallback: re-select if meta.selectedHook is missing (legacy saves)
-        const playerClass = gameState.character?.class?.toLowerCase() ?? ''
-        const allHooks = config.openingHooks
-        const classHooks = allHooks.filter(h =>
-          typeof h !== 'string' && h.classes && h.classes.some(c => playerClass.includes(c.toLowerCase()))
-        )
-        const universalHooks = allHooks.filter(h =>
-          typeof h === 'string' || !h.classes
-        )
-        const pool = classHooks.length > 0 && Math.random() < 0.7 ? classHooks : universalHooks.length > 0 ? universalHooks : allHooks
-        const picked = pool[Math.floor(Math.random() * pool.length)]
-        return typeof picked === 'string' ? picked : picked.hook
-      })()
-    const hookTitle = gameState.meta?.chapterTitle ?? config.initialChapterTitle
+    const hookObj = gameState.meta?.selectedHook
+      ? { hook: gameState.meta.selectedHook, title: gameState.meta.chapterTitle }
+      : resolveOpeningHookForCharacter(config, gameState.character?.species ?? '', gameState.character?.class ?? '')
+    const hook = hookObj.hook
+    const hookTitle = gameState.meta?.chapterTitle ?? hookObj.title ?? config.initialChapterTitle
 
     const hasPresetFrame = !!gameState.chapterFrame
     const hasPresetArcs = gameState.arcs && gameState.arcs.length > 0
