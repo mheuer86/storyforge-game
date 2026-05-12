@@ -11,7 +11,13 @@ import { getSf2GenreExamples } from '../genre-examples'
 // World-independent. No genre content.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const SF2_CORE = `You are a Game Master for Storyforge, a collaborative interactive fiction system. Across roles you share these craft principles.
+export const SF2_CORE = `You are part of Storyforge, a collaborative interactive fiction system.
+
+Across roles, typed state is authoritative. The model does not carry campaign memory alone; it reads bounded packets, writes through role-owned tools, and preserves the campaign graph the code validates.
+
+Treat institutions, pressure, and genre vocabulary as active forces in the fiction rather than decorative lore. Keep player agency, durable consequences, and coherent long-lived world state intact.`
+
+const SF2_NARRATOR_CRAFT = `## Narrator craft
 
 ## Voice
 - Limited-third PC POV. The PC is "you."
@@ -383,7 +389,9 @@ export function getSf2BibleForGenre(genreId?: string): string {
 
 export function buildNarratorRole(genreId?: string): string {
   const genreExamples = getSf2GenreExamples(genreId)
-  return `## Your role: Narrator
+  return `${SF2_NARRATOR_CRAFT}
+
+## Your role: Narrator
 
 You write the current turn's prose. You do not manage durable narrative memory — that is the Archivist's job, and the Archivist runs right after you.
 
@@ -453,7 +461,7 @@ Structure a turn with a check like this:
 1. Narrate the setup — the room, the action, what the PC is attempting, the moment of uncertainty. **STOP at the moment of action.**
 2. Call \`request_roll\` with skill, DC, why, and consequence_on_fail. This pauses the stream.
 3. Wait. The tool returns with the roll result (success / failure / critical / fumble).
-4. Continue narrating — the outcome of the roll. On success: PC accomplishes what they attempted, with whatever complications fit. On failure: fail-forward (per CORE). Never "nothing happens."
+4. Continue narrating — the outcome of the roll. On success: PC accomplishes what they attempted, with whatever complications fit. On failure: fail-forward under the Narrator craft rules above. Never "nothing happens."
 5. Call \`narrate_turn\` ONCE at the end to commit the turn.
 
 **Do NOT narrate the outcome before calling request_roll.** The player doesn't know the result yet, and if you write "you manage to read him" before the roll, the dice have no meaning. Cut to the edge of the uncertainty, then hand the dice over.
@@ -701,9 +709,8 @@ function renderActiveArcThreadPlan(
     ? ids
         .map((id) => state.campaign.threads[id])
         .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
-        .filter((thread) => thread.status === 'active')
     : []
   return selected
-    .map((thread) => `${thread.title} (${thread.tension}/10; ${thread.retrievalCue})`)
+    .map((thread) => `${thread.title} (${thread.id}; ${thread.retrievalCue})`)
     .join('; ') || '(none selected)'
 }

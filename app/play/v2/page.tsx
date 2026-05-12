@@ -653,7 +653,25 @@ export default function PlayV2Page() {
               break
             }
             case 'roll_prompt': {
-              const binding = bindSf2bRollSkill(String(event.skill ?? ''), intendedRollSkills)
+              const serverIntendedSkills = Array.isArray(event.intendedSkills)
+                ? event.intendedSkills.map(String).filter(Boolean)
+                : []
+              const serverSkillOverrideReason =
+                typeof event.skillOverrideReason === 'string' ? event.skillOverrideReason : undefined
+              const serverRequestedSkill =
+                typeof event.requestedSkill === 'string' ? event.requestedSkill : undefined
+              const binding = serverSkillOverrideReason
+                ? {
+                    skill: String(event.skill ?? ''),
+                    requestedSkill: serverRequestedSkill ?? String(event.skill ?? ''),
+                    intendedSkills: serverIntendedSkills,
+                    overridden: true,
+                    diagnostic: serverSkillOverrideReason,
+                  }
+                : bindSf2bRollSkill(
+                    String(event.skill ?? ''),
+                    serverIntendedSkills.length > 0 ? serverIntendedSkills : intendedRollSkills
+                  )
               sawRollPrompt = {
                 toolUseId: String(event.toolUseId ?? ''),
                 skill: binding.skill,
@@ -682,7 +700,7 @@ export default function PlayV2Page() {
                     kind: 'roll',
                     at: Date.now(),
                     data: {
-                      type: 'sf2b_skill_tag_override',
+                      type: 'sf2_skill_tag_override',
                       requestedSkill: binding.requestedSkill,
                       intendedSkills: binding.intendedSkills,
                       chosenSkill: binding.skill,

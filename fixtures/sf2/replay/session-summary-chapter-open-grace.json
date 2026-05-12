@@ -1,0 +1,108 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "session summary chapter open grace",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Issue 11 regression. A newly-opened chapter with active arcs and no arc advancement yet should be not_yet_evaluable during the configurable grace window, not a failed kill criterion."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 2
+      },
+      "chapter": {
+        "number": 2,
+        "setup": {
+          "chapter": 2,
+          "activeThreadIds": ["thread_spine"],
+          "spineThreadId": "thread_spine",
+          "loadBearingThreadIds": ["thread_spine"]
+        }
+      },
+      "campaign": {
+        "arcs": {
+          "arc_registry": {
+            "id": "arc_registry",
+            "title": "Registry Pressure",
+            "chapterCreated": 1,
+            "retrievalCue": "Registry pressure arc.",
+            "category": "arc",
+            "status": "active",
+            "threadIds": ["thread_spine"],
+            "spansChapters": 3,
+            "noSingleResolvingAction": true,
+            "stakesDefinition": "Whether registry pressure can be answered without losing the settlement."
+          }
+        },
+        "threads": {
+          "thread_spine": {
+            "lastAdvancedTurn": 20
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "Turn 0", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "Turn 1", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "Turn 2", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "Turn 3", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "Turn 4", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "Turn 5", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "Turn 6", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "Turn 7", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "Turn 8", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 9, "chapter": 1, "playerInput": "Turn 9", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 10, "chapter": 1, "playerInput": "Turn 10", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 11, "chapter": 1, "playerInput": "Turn 11", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 12, "chapter": 1, "playerInput": "Turn 12", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 13, "chapter": 1, "playerInput": "Turn 13", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 14, "chapter": 1, "playerInput": "Turn 14", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 15, "chapter": 1, "playerInput": "Turn 15", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 16, "chapter": 1, "playerInput": "Turn 16", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 17, "chapter": 1, "playerInput": "Turn 17", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 18, "chapter": 1, "playerInput": "Turn 18", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 19, "chapter": 1, "playerInput": "Turn 19", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 20, "chapter": 1, "playerInput": "Turn 20", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 21, "chapter": 1, "playerInput": "Turn 21", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 22, "chapter": 1, "playerInput": "Turn 22", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 23, "chapter": 1, "playerInput": "Turn 23", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 24, "chapter": 1, "playerInput": "Turn 24", "narratorProse": "Chapter one turn.", "timestamp": "replay" },
+          { "index": 25, "chapter": 2, "playerInput": "Turn 25", "narratorProse": "Chapter two has just opened.", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 26,
+    "playerInput": "Continue.",
+    "narrator": {
+      "prose": "The intake hall holds its breath.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "turnIndex": 27
+      }
+    }
+  },
+  "expected": {
+    "sessionSummary": {
+      "state": "fixture-stateBefore",
+      "chapterActivityGraceTurns": 3,
+      "arcAdvancementPass": true,
+      "arcAdvancementStatus": "not_yet_evaluable",
+      "arcAdvancementNotYetEvaluableChapters": [2],
+      "arcAdvancementFailedChapters": [],
+      "perChapter": [
+        {
+          "chapter": 1,
+          "arcAdvancementStatus": "pass"
+        },
+        {
+          "chapter": 2,
+          "arcAdvancementStatus": "not_yet_evaluable",
+          "arcAdvancementReasonIncludes": "1/3 grace turns"
+        }
+      ]
+    }
+  }
+}

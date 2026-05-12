@@ -1,3 +1,5 @@
+import { canonicalizeSf2RollableSkill, normalizeSf2SkillKey } from '../sf2/rollable-skills'
+
 export interface Sf2bRollSkillBinding {
   skill: string
   intendedSkills: string[]
@@ -6,28 +8,6 @@ export interface Sf2bRollSkillBinding {
   diagnostic?: string
 }
 
-const CANONICAL_SKILLS = new Map<string, string>([
-  ['intimidation', 'Intimidation'],
-  ['persuasion', 'Persuasion'],
-  ['deception', 'Deception'],
-  ['insight', 'Insight'],
-  ['perception', 'Perception'],
-  ['investigation', 'Investigation'],
-  ['athletics', 'Athletics'],
-  ['acrobatics', 'Acrobatics'],
-  ['stealth', 'Stealth'],
-  ['sleightofhand', 'Sleight of Hand'],
-  ['arcana', 'Arcana'],
-  ['religion', 'Religion'],
-  ['history', 'History'],
-  ['medicine', 'Medicine'],
-  ['survival', 'Survival'],
-  ['nature', 'Nature'],
-  ['performance', 'Performance'],
-  ['piloting', 'Piloting'],
-  ['hacking', 'Hacking'],
-])
-
 export function extractSf2bSkillTags(playerInput: string): string[] {
   if (!playerInput) return []
   const skills: string[] = []
@@ -35,7 +15,7 @@ export function extractSf2bSkillTags(playerInput: string): string[] {
   for (const match of playerInput.matchAll(/\[([^\]]+)\]/g)) {
     const tokens = match[1].split(/\s+or\s+|\s*,\s*|\s+and\s+/i).map((token) => token.trim())
     for (const token of tokens) {
-      const found = CANONICAL_SKILLS.get(normalizeSkillKey(token))
+      const found = canonicalizeSf2bSkill(token)
       if (found && !skills.includes(found)) skills.push(found)
     }
   }
@@ -48,8 +28,8 @@ export function bindSf2bRollSkill(
   intendedSkills: string[]
 ): Sf2bRollSkillBinding {
   const requested = canonicalizeSf2bSkill(requestedSkill) ?? requestedSkill
-  const requestedKey = normalizeSkillKey(requested)
-  const matchingIntended = intendedSkills.find((skill) => normalizeSkillKey(skill) === requestedKey)
+  const requestedKey = normalizeSf2SkillKey(requested)
+  const matchingIntended = intendedSkills.find((skill) => normalizeSf2SkillKey(skill) === requestedKey)
 
   if (intendedSkills.length === 0 || matchingIntended) {
     return {
@@ -71,9 +51,5 @@ export function bindSf2bRollSkill(
 }
 
 export function canonicalizeSf2bSkill(skill: string): string | undefined {
-  return CANONICAL_SKILLS.get(normalizeSkillKey(skill))
-}
-
-function normalizeSkillKey(skill: string): string {
-  return skill.toLowerCase().replace(/[^a-z]/g, '')
+  return canonicalizeSf2RollableSkill(skill)
 }

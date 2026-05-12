@@ -180,6 +180,7 @@ Severity: always high.
 Prose introduces on-stage characters (named or unnamed) who are NOT in the scene packet's \`presentNpcIds\`, NOT in the registry, AND whose entrance is NOT narrated as a visible event this turn. Silent background NPCs invented for scene texture.
 
 Skip if: the prose explicitly narrates entry ("two retainers step in from the corridor"); the reference is clearly atmospheric texture nobody named or attributed ("footsteps echoed in the hall").
+Also skip at chapter opening when the scene packet or Author setup contains a placeholder/role NPC and the prose names or sharpens that same on-stage body. Canonize it with a high-confidence NPC create using \`supersedes_id\`; do not emit \`npc_fabrication\` for the canonization itself.
 
 Severity: medium by default; high if the fabricated NPC is given dialogue, action, or a position that affects blocking.
 

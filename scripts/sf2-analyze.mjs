@@ -22,9 +22,11 @@ try {
   exit(2)
 }
 
-const { summary, state, debug } = payload
+const summary = payload.summary
+const state = payload.state ?? payload.finalState
+const debug = payload.debug
 if (!state || !debug || !summary) {
-  console.error('Session log is missing required fields (state / debug / summary).')
+  console.error('Session log is missing required fields (state or finalState / debug / summary).')
   exit(2)
 }
 
@@ -133,6 +135,7 @@ for (let i = 0; i < chapters.length - 1; i += 1) {
     rate,
   })
 }
+const arcCriterion = deriveArcAdvancementCriterion(summary)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Print report
@@ -155,9 +158,9 @@ console.log()
 
 console.log(color('Cost', '1'))
 console.log(`  Total: $${summary.cost.estimatedUsdTotal.toFixed(3)}`)
-console.log(`    Narrator (Sonnet 4.6):  $${summary.cost.estimatedUsdSonnetNarrator.toFixed(3)}`)
-console.log(`    Archivist (Haiku 4.5):  $${summary.cost.estimatedUsdHaikuArchivist.toFixed(3)}`)
-console.log(`    Author    (Sonnet 4.6): $${summary.cost.estimatedUsdSonnetAuthor.toFixed(3)}`)
+console.log(`    Narrator (Sonnet 4.6):  $${roleCost(summary.cost, 'estimatedUsdNarrator', 'estimatedUsdSonnetNarrator').toFixed(3)}`)
+console.log(`    Archivist (Haiku 4.5):  $${roleCost(summary.cost, 'estimatedUsdArchivist', 'estimatedUsdHaikuArchivist').toFixed(3)}`)
+console.log(`    Author    (Sonnet 4.6): $${roleCost(summary.cost, 'estimatedUsdAuthor', 'estimatedUsdSonnetAuthor').toFixed(3)}`)
 console.log()
 
 console.log(color('Archivist quality', '1'))
@@ -174,7 +177,15 @@ console.log()
 
 console.log(color('Per-chapter', '1'))
 for (const c of summary.perChapter) {
-  console.log(`  Ch${c.chapter}: ${c.turns} turns · arc advances ${c.arcAdvancesThisChapter}`)
+  const derivedChapterStatus = deriveChapterArcStatus(c, arcCriterion.graceTurns)
+  const arcStatus =
+    derivedChapterStatus === 'not_yet_evaluable'
+      ? dim('N/E')
+      : derivedChapterStatus === 'fail'
+        ? fail('FAIL')
+        : ok('PASS')
+  const reason = c.arcAdvancementReason ? ` · ${c.arcAdvancementReason}` : ''
+  console.log(`  Ch${c.chapter}: ${c.turns} turns · arc advances ${c.arcAdvancesThisChapter} · ${arcStatus}${reason}`)
 }
 console.log()
 
@@ -199,13 +210,19 @@ const continuityCliff = continuityByTransition.some((t) => t.rate < 0.4)
 console.log(color('Kill criteria', '1'))
 console.log(`  Anchor miss ≤5%:           ${summary.killCriteria.anchorMissRatePass ? ok('PASS') : fail('FAIL')} (${(summary.archivist.anchorMissRate * 100).toFixed(2)}%)`)
 console.log(`  Thread continuity ≥50%:    ${continuityPass && !continuityCliff ? ok('PASS') : continuityByTransition.length === 0 ? dim('N/A') : fail('FAIL')}`)
-console.log(`  Arc advances ≥1/chapter:   ${summary.killCriteria.arcAdvancementPass ? ok('PASS') : fail('FAIL')}`)
+console.log(`  Arc advances ≥1/chapter:   ${formatCriterionStatus(arcCriterion.status, arcCriterion.pass)}`)
+if (arcCriterion.notYetEvaluableChapters.length > 0) {
+  console.log(dim(`    not yet evaluable: Ch${arcCriterion.notYetEvaluableChapters.join(', Ch')} (grace ${arcCriterion.graceTurns} turns)`))
+}
+if (arcCriterion.failedChapters.length > 0) {
+  console.log(fail(`    failed: Ch${arcCriterion.failedChapters.join(', Ch')}`))
+}
 console.log(`  Cost ≤$7:                  ${summary.killCriteria.costPass ? ok('PASS') : fail('FAIL')} ($${summary.cost.estimatedUsdTotal.toFixed(2)})`)
 console.log()
 
 const overallPass =
   summary.killCriteria.anchorMissRatePass &&
-  summary.killCriteria.arcAdvancementPass &&
+  arcCriterion.pass &&
   summary.killCriteria.costPass &&
   (continuityByTransition.length === 0 || (continuityPass && !continuityCliff))
 
@@ -213,3 +230,55 @@ console.log(overallPass ? ok('OVERALL: PASS') : fail('OVERALL: FAIL'))
 console.log()
 
 exit(overallPass ? 0 : 1)
+
+function roleCost(cost, currentKey, legacyKey) {
+  const current = cost?.[currentKey]
+  if (typeof current === 'number') return current
+  const legacy = cost?.[legacyKey]
+  return typeof legacy === 'number' ? legacy : 0
+}
+
+function formatCriterionStatus(status, pass) {
+  if (status === 'not_yet_evaluable') return dim('N/E')
+  if (status === 'fail') return fail('FAIL')
+  return pass ? ok('PASS') : fail('FAIL')
+}
+
+function deriveArcAdvancementCriterion(summary) {
+  const graceTurns = summary.killCriteria?.chapterActivityGraceTurns ?? 3
+  if (summary.killCriteria?.arcAdvancementStatus) {
+    return {
+      graceTurns,
+      pass: Boolean(summary.killCriteria.arcAdvancementPass),
+      status: summary.killCriteria.arcAdvancementStatus,
+      notYetEvaluableChapters: summary.killCriteria.arcAdvancementNotYetEvaluableChapters ?? [],
+      failedChapters: summary.killCriteria.arcAdvancementFailedChapters ?? [],
+    }
+  }
+  const failedChapters = []
+  const notYetEvaluableChapters = []
+  for (const chapter of summary.perChapter ?? []) {
+    const status = deriveChapterArcStatus(chapter, graceTurns)
+    if (status === 'not_yet_evaluable') notYetEvaluableChapters.push(chapter.chapter)
+    else if (status === 'fail') failedChapters.push(chapter.chapter)
+  }
+  const status =
+    failedChapters.length > 0
+      ? 'fail'
+      : notYetEvaluableChapters.length > 0
+        ? 'not_yet_evaluable'
+        : 'pass'
+  return {
+    graceTurns,
+    pass: status !== 'fail',
+    status,
+    notYetEvaluableChapters,
+    failedChapters,
+  }
+}
+
+function deriveChapterArcStatus(chapter, graceTurns) {
+  if (chapter.arcAdvancementStatus) return chapter.arcAdvancementStatus
+  if ((chapter.activeArcs ?? 0) === 0 || (chapter.arcAdvancesThisChapter ?? 0) >= 1) return 'pass'
+  return (chapter.turns ?? 0) <= graceTurns ? 'not_yet_evaluable' : 'fail'
+}

@@ -1,14 +1,13 @@
-// Prompt block composer with cache-breakpoint discipline.
+// Prompt block composer with cache-prefix discipline.
 //
-// HARD RULE: no per-turn content ever appears above BP3. Dynamic state lives
-// in messages, never in system blocks. This is the fix for v1's 55% cache-write
-// share.
+// HARD RULE: no per-turn content ever appears above a cache breakpoint.
+// Dynamic state lives below cached prefixes, usually in messages; when it must
+// stay at system priority, place it after the last system cache marker.
 //
-// Four breakpoints (aligned with Anthropic SDK's cache_control ephemeral marker):
-//   BP1: tools schema
-//   BP2: CORE + BIBLE + ROLE (session-scoped)
-//   BP3: SITUATION (chapter-scoped; cached per chapter)
-//   BP4: scene packet / dynamic content (uncached; enters as messages)
+// System breakpoints (aligned with Anthropic SDK's cache_control ephemeral marker):
+//   BP1: CORE + BIBLE (bytewise-identical shared prefix + genre bible)
+//   BP2: ROLE / stable chapter addendum (role-scoped or chapter-scoped)
+//   BP3: dynamic content (uncached; enters as messages)
 
 import type Anthropic from '@anthropic-ai/sdk'
 
@@ -22,33 +21,47 @@ export interface RoleBlockInputs {
   core: string
   bible: string
   role: string
-  situation: string
+  situation?: string
+  // Set false when situation contains live state but must remain a system
+  // instruction for priority. It will sit after the role cache marker uncached.
+  cacheSituation?: boolean
 }
 
 /**
- * Build system blocks for a role with cache_control markers at BP2 and BP3.
- * - BP2 ephemeral marker on the last of (core + bible + role) blocks: this is
- *   the session-scoped prefix — stays warm across turns within a session.
- * - BP3 ephemeral marker on the situation block: chapter-scoped prefix — stays
- *   warm across turns within a chapter.
+ * Build system blocks for a role with cache_control markers after BIBLE and
+ * after the role-specific stable addendum/situation.
+ * - First marker on BIBLE: shared prefix across roles for the same genre.
+ * - Second marker on the last stable role block: role or chapter prefix.
+ *   Callers can pass cacheSituation=false to keep a dynamic situation as an
+ *   uncached system block after the role marker.
  *
- * Dynamic per-turn content goes in the messages array on the caller side, NOT
- * here.
+ * Dynamic per-turn content usually goes in the messages array on the caller
+ * side. If a caller passes cacheSituation=false, that situation must be below
+ * the cached role marker.
  */
 export function composeSystemBlocks(inputs: RoleBlockInputs): ComposedSystemBlocks {
   const blocks: SystemBlock[] = []
+  const hasSituation = Boolean(inputs.situation?.trim())
+  const cacheSituation = hasSituation && inputs.cacheSituation !== false
+
   blocks.push({ type: 'text', text: inputs.core })
-  blocks.push({ type: 'text', text: inputs.bible })
+  blocks.push({
+    type: 'text',
+    text: inputs.bible,
+    cache_control: { type: 'ephemeral' }, // BP1
+  })
   blocks.push({
     type: 'text',
     text: inputs.role,
-    cache_control: { type: 'ephemeral' }, // BP2
+    cache_control: cacheSituation ? undefined : { type: 'ephemeral' }, // BP2
   })
-  blocks.push({
-    type: 'text',
-    text: inputs.situation,
-    cache_control: { type: 'ephemeral' }, // BP3
-  })
+  if (hasSituation) {
+    blocks.push({
+      type: 'text',
+      text: inputs.situation!,
+      ...(cacheSituation ? { cache_control: { type: 'ephemeral' as const } } : {}),
+    })
+  }
   return { blocks }
 }
 

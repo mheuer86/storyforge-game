@@ -12,6 +12,7 @@ import {
   buildNarratorTurnContext,
   type Sf2NarratorRollResolution,
 } from '../lib/sf2/narrator/turn-context'
+import { extractSf2RollSkillTags, inspectSf2RollSkillTags } from '../lib/sf2/narrator/roll-gates'
 import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit-repair'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
@@ -73,6 +74,7 @@ import {
   type Sf2State,
   type ThreadRole,
 } from '../lib/sf2/types'
+import { computeSessionSummary } from '../lib/sf2/instrumentation/session-summary'
 import {
   coerceDisposition,
   coerceHeat,
@@ -130,6 +132,10 @@ interface ReplayFixture {
       type: string
       stateReference?: string
       suggestedNoteIncludes?: string
+    }>
+    coherenceFindingsExclude?: Array<{
+      type: string
+      stateReference?: string
     }>
     scenePacketCastIncludes?: string[]
     scenePacketCastExcludes?: string[]
@@ -577,6 +583,13 @@ interface ReplayFixture {
       skillsInclude?: string[]
       reasonIncludes?: string
     }
+    rollSkillTags?: {
+      playerInput?: string
+      skillsEquals?: string[]
+      skillsInclude?: string[]
+      unknownSkillLikeTagsInclude?: string[]
+      unknownSkillLikeTagsAbsent?: string[]
+    }
     narratorCommitRepair?: {
       completedAssistantProse: string
       toolNamesEquals?: string[]
@@ -649,6 +662,19 @@ interface ReplayFixture {
     }
     turnResolutionStableJson?: {
       assertThreadKeyOrderIgnored?: boolean
+    }
+    sessionSummary?: {
+      state?: 'fixture-stateBefore' | 'fixture-stateAfter'
+      chapterActivityGraceTurns?: number
+      arcAdvancementPass?: boolean
+      arcAdvancementStatus?: string
+      arcAdvancementNotYetEvaluableChapters?: number[]
+      arcAdvancementFailedChapters?: number[]
+      perChapter?: Array<{
+        chapter: number
+        arcAdvancementStatus?: string
+        arcAdvancementReasonIncludes?: string
+      }>
     }
   }
 }
@@ -880,6 +906,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
     failures
   )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
+  assertRollSkillTags(fixture, failures)
   assertRequiredRollGate(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertNarratorCommitRepair(fixture, stateBefore, failures)
@@ -897,6 +924,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertArchivistSchemaParity(fixture, failures)
   assertRoleSchemaParity(fixture, failures)
   assertTurnResolutionStableJson(fixture, failures)
+  assertSessionSummary(fixture, stateBefore, stateAfter, failures)
   assertProcedurePlanningSupport(fixture, failures)
   assertProcedureOffscreenTask(fixture, failures)
   assertProcedureTransitions(fixture, failures)
@@ -1221,6 +1249,75 @@ function assertTurnResolutionStableJson(fixture: ReplayFixture, failures: string
     includePressure: false,
   })
   if (mutated) failures.push('turnResolutionStableJson: hasDurableTargetMutation treated key order as mutation')
+}
+
+function assertSessionSummary(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  stateAfter: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.sessionSummary
+  if (!expected) return
+  const summaryState = expected.state === 'fixture-stateAfter' ? stateAfter : stateBefore
+  const summary = computeSessionSummary(summaryState, [], {
+    chapterActivityGraceTurns: expected.chapterActivityGraceTurns,
+  })
+  if (
+    expected.arcAdvancementPass !== undefined &&
+    summary.killCriteria.arcAdvancementPass !== expected.arcAdvancementPass
+  ) {
+    failures.push(
+      `sessionSummary.arcAdvancementPass: expected ${expected.arcAdvancementPass}, got ${summary.killCriteria.arcAdvancementPass}`
+    )
+  }
+  if (
+    expected.arcAdvancementStatus !== undefined &&
+    summary.killCriteria.arcAdvancementStatus !== expected.arcAdvancementStatus
+  ) {
+    failures.push(
+      `sessionSummary.arcAdvancementStatus: expected ${expected.arcAdvancementStatus}, got ${summary.killCriteria.arcAdvancementStatus}`
+    )
+  }
+  if (expected.arcAdvancementNotYetEvaluableChapters !== undefined) {
+    assertNumberSetEquals(
+      summary.killCriteria.arcAdvancementNotYetEvaluableChapters,
+      expected.arcAdvancementNotYetEvaluableChapters,
+      'sessionSummary.arcAdvancementNotYetEvaluableChapters',
+      failures
+    )
+  }
+  if (expected.arcAdvancementFailedChapters !== undefined) {
+    assertNumberSetEquals(
+      summary.killCriteria.arcAdvancementFailedChapters,
+      expected.arcAdvancementFailedChapters,
+      'sessionSummary.arcAdvancementFailedChapters',
+      failures
+    )
+  }
+  for (const chapterExpected of expected.perChapter ?? []) {
+    const actual = summary.perChapter.find((chapter) => chapter.chapter === chapterExpected.chapter)
+    if (!actual) {
+      failures.push(`sessionSummary.perChapter missing Ch${chapterExpected.chapter}`)
+      continue
+    }
+    if (
+      chapterExpected.arcAdvancementStatus !== undefined &&
+      actual.arcAdvancementStatus !== chapterExpected.arcAdvancementStatus
+    ) {
+      failures.push(
+        `sessionSummary.perChapter.Ch${chapterExpected.chapter}.arcAdvancementStatus: expected ${chapterExpected.arcAdvancementStatus}, got ${actual.arcAdvancementStatus}`
+      )
+    }
+    if (
+      chapterExpected.arcAdvancementReasonIncludes !== undefined &&
+      !actual.arcAdvancementReason.includes(chapterExpected.arcAdvancementReasonIncludes)
+    ) {
+      failures.push(
+        `sessionSummary.perChapter.Ch${chapterExpected.chapter}.arcAdvancementReason missing "${chapterExpected.arcAdvancementReasonIncludes}"`
+      )
+    }
+  }
 }
 
 function assertRoleSchemaParity(fixture: ReplayFixture, failures: string[]): void {
@@ -2108,6 +2205,19 @@ function assertStringSetEquals(
   }
 }
 
+function assertNumberSetEquals(
+  got: number[],
+  want: number[],
+  label: string,
+  failures: string[]
+): void {
+  const gotSorted = [...got].sort((a, b) => a - b).join(',')
+  const wantSorted = [...want].sort((a, b) => a - b).join(',')
+  if (gotSorted !== wantSorted) {
+    failures.push(`${label}: expected [${wantSorted}], got [${gotSorted}]`)
+  }
+}
+
 function assertOrderedStrings(
   got: string[],
   want: string[],
@@ -2346,6 +2456,37 @@ function assertRequiredRollGate(
   }
 }
 
+function assertRollSkillTags(fixture: ReplayFixture, failures: string[]): void {
+  const expected = fixture.expected?.rollSkillTags
+  if (!expected) return
+
+  const playerInput = expected.playerInput ?? fixture.input.playerInput
+  const skills = extractSf2RollSkillTags(playerInput)
+  const inspection = inspectSf2RollSkillTags(playerInput)
+  if (expected.skillsEquals !== undefined) {
+    assertStringSetEquals(skills, expected.skillsEquals, 'rollSkillTags.skills', failures)
+  }
+  for (const skill of expected.skillsInclude ?? []) {
+    if (!skills.includes(skill)) {
+      failures.push(`rollSkillTags.skills missing ${skill}; got [${skills.join(', ')}]`)
+    }
+  }
+  for (const tag of expected.unknownSkillLikeTagsInclude ?? []) {
+    if (!inspection.unknownSkillLikeTags.includes(tag)) {
+      failures.push(
+        `rollSkillTags.unknownSkillLikeTags missing ${tag}; got [${inspection.unknownSkillLikeTags.join(', ')}]`
+      )
+    }
+  }
+  for (const tag of expected.unknownSkillLikeTagsAbsent ?? []) {
+    if (inspection.unknownSkillLikeTags.includes(tag)) {
+      failures.push(
+        `rollSkillTags.unknownSkillLikeTags unexpectedly included ${tag}; got [${inspection.unknownSkillLikeTags.join(', ')}]`
+      )
+    }
+  }
+}
+
 function messageContentText(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
@@ -2537,6 +2678,16 @@ function assertExpected(
     })
     if (!match) {
       failures.push(`coherence finding missing ${JSON.stringify(want)} (got: ${coherenceFindings.map((f) => `${f.type}:${f.stateReference}`).join(', ') || 'none'})`)
+    }
+  }
+  for (const want of expected.coherenceFindingsExclude ?? []) {
+    const match = coherenceFindings.find((finding) => {
+      if (finding.type !== want.type) return false
+      if (want.stateReference !== undefined && finding.stateReference !== want.stateReference) return false
+      return true
+    })
+    if (match) {
+      failures.push(`coherence finding unexpectedly present ${JSON.stringify(want)} (got: ${coherenceFindings.map((f) => `${f.type}:${f.stateReference}`).join(', ') || 'none'})`)
     }
   }
   for (const id of expected.scenePacketCastIncludes ?? []) {

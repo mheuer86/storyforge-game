@@ -10,6 +10,12 @@ export interface DebugEvent {
   data: unknown
 }
 
+export type KillCriterionStatus = 'pass' | 'fail' | 'not_yet_evaluable'
+
+export interface SessionSummaryOptions {
+  chapterActivityGraceTurns?: number
+}
+
 export interface SessionSummaryMetrics {
   campaignId: string
   genreId: string
@@ -22,6 +28,8 @@ export interface SessionSummaryMetrics {
     turns: number
     activeArcs: number
     arcAdvancesThisChapter: number
+    arcAdvancementStatus: KillCriterionStatus
+    arcAdvancementReason: string
     threadsActiveAtClose: number
     threadsActiveAtOpen: number
     threadContinuity: number | null // null when not enough data
@@ -121,13 +129,19 @@ export interface SessionSummaryMetrics {
     bySeverity: { low: number; medium: number; high: number }
   }
   killCriteria: {
+    chapterActivityGraceTurns: number
     anchorMissRatePass: boolean // ≤5%
     threadContinuityPass: boolean // ≥50% every transition, no cliff <40%
     arcAdvancementPass: boolean // ≥1 per chapter per active arc
+    arcAdvancementStatus: KillCriterionStatus
+    arcAdvancementNotYetEvaluableChapters: number[]
+    arcAdvancementFailedChapters: number[]
     costPass: boolean // ≤$7
     overallPass: boolean
   }
 }
+
+const DEFAULT_CHAPTER_ACTIVITY_GRACE_TURNS = 3
 
 // Pricing per Anthropic public rates (per million tokens).
 const PRICING = {
@@ -164,9 +178,11 @@ interface ChapterSnapshot {
 
 export function computeSessionSummary(
   state: Sf2State,
-  debug: readonly DebugEvent[]
+  debug: readonly DebugEvent[],
+  options: SessionSummaryOptions = {}
 ): SessionSummaryMetrics {
   const turns = state.history.turns
+  const chapterActivityGraceTurns = normalizeGraceTurns(options.chapterActivityGraceTurns)
   const chapters = new Set(turns.map((t) => t.chapter))
   const chapterNumbers = [...chapters].sort((a, b) => a - b)
 
@@ -475,11 +491,22 @@ export function computeSessionSummary(
     // boundary-time resolutions from current state alone).
     const threadsActiveAtOpen = idx === 0 ? 0 : threadsActiveAtClose
 
+    const activeArcs = isLatest ? latestActiveArcs.length : activeArcsApprox.length
+    const arcEvaluation = evaluateChapterActivityCriterion({
+      activeCount: activeArcs,
+      actualCount: arcAdvancesThisChapter,
+      turnsInChapter: turnsInCh,
+      graceTurns: chapterActivityGraceTurns,
+      label: 'arc advancement',
+    })
+
     return {
       chapter: ch,
       turns: turnsInCh,
-      activeArcs: isLatest ? latestActiveArcs.length : activeArcsApprox.length,
+      activeArcs,
       arcAdvancesThisChapter,
+      arcAdvancementStatus: arcEvaluation.status,
+      arcAdvancementReason: arcEvaluation.reason,
       threadsActiveAtClose,
       threadsActiveAtOpen,
       // Still null — proper continuity requires boundary snapshots from
@@ -492,9 +519,19 @@ export function computeSessionSummary(
   const anchorMissRate = totalWrites > 0 ? anchorMissesFlagged / totalWrites : 0
   const anchorMissRatePass = anchorMissRate <= 0.05
   const threadContinuityPass = true // requires post-replay; approximation pending
-  const arcAdvancementPass = perChapter.every(
-    (c) => c.activeArcs === 0 || c.arcAdvancesThisChapter >= 1
-  )
+  const arcAdvancementFailedChapters = perChapter
+    .filter((c) => c.arcAdvancementStatus === 'fail')
+    .map((c) => c.chapter)
+  const arcAdvancementNotYetEvaluableChapters = perChapter
+    .filter((c) => c.arcAdvancementStatus === 'not_yet_evaluable')
+    .map((c) => c.chapter)
+  const arcAdvancementStatus: KillCriterionStatus =
+    arcAdvancementFailedChapters.length > 0
+      ? 'fail'
+      : arcAdvancementNotYetEvaluableChapters.length > 0
+        ? 'not_yet_evaluable'
+        : 'pass'
+  const arcAdvancementPass = arcAdvancementStatus !== 'fail'
   const costPass = estimatedUsdTotal <= 7
   const overallPass = anchorMissRatePass && threadContinuityPass && arcAdvancementPass && costPass
 
@@ -594,12 +631,47 @@ export function computeSessionSummary(
       bySeverity: coherenceBySeverity,
     },
     killCriteria: {
+      chapterActivityGraceTurns,
       anchorMissRatePass,
       threadContinuityPass,
       arcAdvancementPass,
+      arcAdvancementStatus,
+      arcAdvancementNotYetEvaluableChapters,
+      arcAdvancementFailedChapters,
       costPass,
       overallPass,
     },
+  }
+}
+
+function normalizeGraceTurns(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_CHAPTER_ACTIVITY_GRACE_TURNS
+  if (!Number.isFinite(value)) return DEFAULT_CHAPTER_ACTIVITY_GRACE_TURNS
+  return Math.max(0, Math.floor(value))
+}
+
+function evaluateChapterActivityCriterion(input: {
+  activeCount: number
+  actualCount: number
+  turnsInChapter: number
+  graceTurns: number
+  label: string
+}): { status: KillCriterionStatus; reason: string } {
+  if (input.activeCount === 0) {
+    return { status: 'pass', reason: `no active ${input.label} targets` }
+  }
+  if (input.actualCount >= 1) {
+    return { status: 'pass', reason: `${input.label} observed` }
+  }
+  if (input.graceTurns > 0 && input.turnsInChapter < input.graceTurns) {
+    return {
+      status: 'not_yet_evaluable',
+      reason: `chapter has ${input.turnsInChapter}/${input.graceTurns} grace turns`,
+    }
+  }
+  return {
+    status: 'fail',
+    reason: `no ${input.label} after ${input.turnsInChapter} turns`,
   }
 }
 

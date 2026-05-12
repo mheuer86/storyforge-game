@@ -9,6 +9,7 @@ import {
   buildNarratorTurnContext,
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
+import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
 import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
@@ -56,6 +57,9 @@ type Sf2NarratorStreamEvent =
       type: 'roll_prompt'
       toolUseId: string
       skill: string
+      requestedSkill?: string
+      intendedSkills?: string[]
+      skillOverrideReason?: string
       dc: number
       why: string
       consequenceOnFail: string
@@ -149,6 +153,33 @@ function detectNarratorMetaQuestion(prose: string): { pattern: string; snippet: 
     return { pattern: `system_vocab:${match?.[0] ?? 'unknown'}`, snippet: prose.slice(0, 200) }
   }
   return null
+}
+
+function bindRequiredRollGateSkill(
+  requestedSkill: string,
+  turnContext: Sf2NarratorTurnContext
+): { skill: string; requestedSkill?: string; intendedSkills?: string[]; skillOverrideReason?: string } {
+  const gate = turnContext.requiredRollGate
+  if (!gate || gate.source !== 'skill_tag' || gate.skills.length === 0) {
+    return { skill: requestedSkill }
+  }
+
+  const requestedKey = normalizeSf2SkillKey(requestedSkill)
+  const matchingSkill = gate.skills.find((skill) => normalizeSf2SkillKey(skill) === requestedKey)
+  if (matchingSkill) {
+    return {
+      skill: matchingSkill,
+      requestedSkill,
+      intendedSkills: gate.skills,
+    }
+  }
+
+  return {
+    skill: gate.skills[0],
+    requestedSkill,
+    intendedSkills: gate.skills,
+    skillOverrideReason: `SF2 skill-tag override: Narrator requested ${requestedSkill || '(blank)'} but player tagged ${gate.skills.join(' or ')}.`,
+  }
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -561,6 +592,7 @@ export async function POST(req: NextRequest) {
             modifier_type?: 'advantage' | 'disadvantage' | 'challenge'
             modifier_reason?: string
           }
+          const skillBinding = bindRequiredRollGateSkill(input.skill, turnContext)
           const priorMessages: Anthropic.MessageParam[] = [
             ...turnContext.messages,
             { role: 'assistant' as const, content: completed.content },
@@ -568,7 +600,10 @@ export async function POST(req: NextRequest) {
           send({
             type: 'roll_prompt',
             toolUseId: rollUse.id,
-            skill: input.skill,
+            skill: skillBinding.skill,
+            requestedSkill: skillBinding.requestedSkill,
+            intendedSkills: skillBinding.intendedSkills,
+            skillOverrideReason: skillBinding.skillOverrideReason,
             dc: input.dc,
             why: input.why,
             consequenceOnFail: input.consequence_on_fail,

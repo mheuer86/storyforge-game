@@ -7,8 +7,8 @@ import {
   SF2_CHAPTER_MEANING_ROLE,
   buildChapterMeaningSituation,
 } from '@/lib/sf2/chapter-meaning/prompt'
-import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
-import { assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
+import { SF2_CORE, getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
+import { assertNoDynamicLeak, composeSystemBlocks } from '@/lib/sf2/prompt/compose'
 import type { Sf2ChapterMeaning, Sf2ProcedureResidueMode, Sf2State } from '@/lib/sf2/types'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import { PROCEDURE_NONE } from '@/lib/sf2/procedure'
@@ -48,23 +48,19 @@ export async function POST(req: NextRequest) {
     const state = parsed.data.state as unknown as Sf2State
     const situation = buildChapterMeaningSituation(state)
     const bible = getSf2BibleForGenre(state.meta.genreId)
+    const chapterMeaningRole = `${SF2_CHAPTER_MEANING_CORE}\n\n${SF2_CHAPTER_MEANING_ROLE}`
 
-    assertNoDynamicLeak(SF2_CHAPTER_MEANING_CORE, 'CHAPTER_MEANING_CORE')
+    assertNoDynamicLeak(SF2_CORE, 'CORE')
     assertNoDynamicLeak(bible, 'BIBLE')
-    assertNoDynamicLeak(SF2_CHAPTER_MEANING_ROLE, 'CHAPTER_MEANING_ROLE')
+    assertNoDynamicLeak(chapterMeaningRole, 'CHAPTER_MEANING_ROLE')
 
-    // CORE + BIBLE + ROLE are session-stable across all chapter closes in a
-    // campaign → cache them. The dynamic per-chapter context (turn prose,
-    // scene summaries) lives in the user message at BP4 (uncached).
-    const system: Anthropic.TextBlockParam[] = [
-      { type: 'text', text: SF2_CHAPTER_MEANING_CORE },
-      { type: 'text', text: bible },
-      {
-        type: 'text',
-        text: SF2_CHAPTER_MEANING_ROLE,
-        cache_control: { type: 'ephemeral' as const },
-      },
-    ]
+    // Shared CORE + BIBLE prefix stays identical to the other roles. The close
+    // digest/prose is live chapter evidence, so it stays in the user message.
+    const { blocks: system } = composeSystemBlocks({
+      core: SF2_CORE,
+      bible,
+      role: chapterMeaningRole,
+    })
 
     const cachedTools = CHAPTER_MEANING_TOOLS.map((t, i) =>
       i === CHAPTER_MEANING_TOOLS.length - 1

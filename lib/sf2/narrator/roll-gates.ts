@@ -1,5 +1,6 @@
 import { isActiveSf2Procedure } from '../procedure'
 import type { Sf2State } from '../types'
+import { canonicalizeSf2RollableSkill, normalizeSf2SkillKey } from '../rollable-skills'
 
 export type Sf2RollGateSource =
   | 'skill_tag'
@@ -32,25 +33,6 @@ export interface Sf2RequiredRollGate {
 }
 
 const SKILL_TAG_PATTERN = /\[([^\]]+)\]/g
-const ROLLABLE_SKILLS = new Map<string, string>([
-  ['intimidation', 'Intimidation'],
-  ['persuasion', 'Persuasion'],
-  ['deception', 'Deception'],
-  ['insight', 'Insight'],
-  ['perception', 'Perception'],
-  ['investigation', 'Investigation'],
-  ['athletics', 'Athletics'],
-  ['acrobatics', 'Acrobatics'],
-  ['stealth', 'Stealth'],
-  ['sleightofhand', 'Sleight of Hand'],
-  ['arcana', 'Arcana'],
-  ['religion', 'Religion'],
-  ['history', 'History'],
-  ['medicine', 'Medicine'],
-  ['survival', 'Survival'],
-  ['nature', 'Nature'],
-  ['performance', 'Performance'],
-])
 
 const GATE_SKILLS: Record<Exclude<Sf2RollGateKind, 'skill_tag'>, string[]> = {
   social_pressure: ['Intimidation', 'Persuasion', 'Deception'],
@@ -70,15 +52,45 @@ export function extractSf2RollSkillTags(playerInput: string): string[] {
   for (const match of playerInput.matchAll(SKILL_TAG_PATTERN)) {
     const tokens = match[1].trim().split(/\s+or\s+|\s*,\s*|\s+and\s+/i).map((t) => t.trim())
     for (const tok of tokens) {
-      const canonical = ROLLABLE_SKILLS.get(tok.toLowerCase().replace(/[^a-z]/g, ''))
+      const canonical = canonicalizeSf2RollableSkill(tok)
       if (canonical && !skills.includes(canonical)) skills.push(canonical)
     }
   }
   return skills
 }
 
+export interface Sf2RollSkillTagDiagnostics {
+  skills: string[]
+  unknownSkillLikeTags: string[]
+}
+
+export function inspectSf2RollSkillTags(playerInput: string): Sf2RollSkillTagDiagnostics {
+  if (!playerInput) return { skills: [], unknownSkillLikeTags: [] }
+  const skills: string[] = []
+  const unknownSkillLikeTags: string[] = []
+  for (const match of playerInput.matchAll(SKILL_TAG_PATTERN)) {
+    const tokens = match[1].trim().split(/\s+or\s+|\s*,\s*|\s+and\s+/i).map((t) => t.trim())
+    for (const tok of tokens) {
+      const canonical = canonicalizeSf2RollableSkill(tok)
+      if (canonical) {
+        if (!skills.includes(canonical)) skills.push(canonical)
+      } else if (looksLikeSkillTag(tok) && !unknownSkillLikeTags.includes(tok)) {
+        unknownSkillLikeTags.push(tok)
+      }
+    }
+  }
+  return { skills, unknownSkillLikeTags }
+}
+
 export function computeRequiredRollGate(state: Sf2State, playerInput: string): Sf2RequiredRollGate | null {
-  const taggedSkills = extractSf2RollSkillTags(playerInput)
+  const tagInspection = inspectSf2RollSkillTags(playerInput)
+  if (tagInspection.unknownSkillLikeTags.length > 0) {
+    console.warn('[sf2/roll-gate] unknown skill tag(s)', {
+      tags: tagInspection.unknownSkillLikeTags,
+      playerInput: playerInput.slice(0, 500),
+    })
+  }
+  const taggedSkills = tagInspection.skills
   if (taggedSkills.length > 0) {
     return {
       required: true,
@@ -252,4 +264,14 @@ function shouldSkipRollGate(input: string): boolean {
     return true
   }
   return false
+}
+
+function looksLikeSkillTag(token: string): boolean {
+  const trimmed = token.trim()
+  if (!trimmed || trimmed.length > 48) return false
+  if (/[—:;.!?]/.test(trimmed)) return false
+  if (!normalizeSf2SkillKey(trimmed)) return false
+  if (/\([^)]+\)/.test(trimmed)) return true
+  if (/\bof\b/i.test(trimmed)) return true
+  return /^[A-Z][A-Za-z]*(?:\s+[A-Z][A-Za-z]*){0,2}$/.test(trimmed)
 }

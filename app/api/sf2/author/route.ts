@@ -23,7 +23,7 @@ import {
   buildAuthorRetryNudge,
   shouldRetryAuthorValidation,
 } from '@/lib/sf2/author/retry'
-import { getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
+import { SF2_CORE, getSf2BibleForGenre } from '@/lib/sf2/narrator/prompt'
 import { composeSystemBlocks, assertNoDynamicLeak } from '@/lib/sf2/prompt/compose'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import type {
@@ -334,18 +334,19 @@ export async function POST(req: NextRequest) {
     const seed = compileAuthorInputSeed(state, priorMeaning)
     const situation = buildAuthorSituation(state, priorMeaning)
     const bible = getSf2BibleForGenre(state.meta.genreId)
-    const authorRole = buildAuthorRole(state.meta.genreId)
+    const authorRole = `${SF2_AUTHOR_CORE}\n\n${buildAuthorRole(state.meta.genreId)}`
 
-    assertNoDynamicLeak(SF2_AUTHOR_CORE, 'AUTHOR_CORE')
+    assertNoDynamicLeak(SF2_CORE, 'CORE')
     assertNoDynamicLeak(bible, 'BIBLE')
     assertNoDynamicLeak(authorRole, 'AUTHOR_ROLE')
     assertNoDynamicLeak(situation, 'AUTHOR_SITUATION')
 
     const { blocks: system } = composeSystemBlocks({
-      core: SF2_AUTHOR_CORE,
+      core: SF2_CORE,
       bible,
       role: authorRole,
       situation,
+      cacheSituation: false,
     })
 
     const seedBlock = `AUTHOR INPUT SEED (JSON):\n\n${JSON.stringify(seed, null, 2)}`

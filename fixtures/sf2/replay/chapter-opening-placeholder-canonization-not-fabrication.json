@@ -1,0 +1,113 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter opening placeholder canonization is not npc fabrication",
+  "source": {
+    "kind": "regression",
+    "replay": "/Users/martin/Downloads/sf2-replay-camp_1778618388619-2026-05-12T22-16-24.json",
+    "purpose": "Issue 10: a placeholder/role NPC introduced around a chapter boundary may be named and canonized at the next chapter opening without surfacing npc_fabrication."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 2
+      },
+      "campaign": {
+        "npcs": {
+          "npc_review_rep": {
+            "id": "npc_review_rep",
+            "name": "Review Representative",
+            "affiliation": "Rethauer Port Authority",
+            "role": "Placeholder reviewer at the ramp base.",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Created from prior chapter boundary setup; details not canonicalized yet."],
+              "voice": {
+                "note": "Procedural and quiet.",
+                "register": "low-affect station cadence"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "review representative at the ramp base",
+            "chapterCreated": 1,
+            "lastSeenTurn": 25,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "number": 2,
+        "setup": {
+          "chapter": 2,
+          "startingNpcIds": ["npc_review_rep"],
+          "surfaceNpcIds": ["npc_review_rep"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "sceneId": "scene_2_1",
+          "presentNpcIds": ["npc_review_rep"],
+          "currentInterlocutorIds": ["npc_review_rep"],
+          "timeLabel": "Evening shift",
+          "established": ["The review representative waits at the ramp base."],
+          "firstTurnIndex": 25
+        }
+      }
+    },
+    "turnIndex": 25,
+    "playerInput": "",
+    "isInitial": true,
+    "narrator": {
+      "prose": "At the base of the ramp, a man in port authority grey holds a data slate with his thumb pressed flat against the lower third of the screen. He's a reviewer — Oress, by his badge, Rethauer Port Authority dock compliance.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "creates": [
+          {
+            "kind": "npc",
+            "payload": {
+              "name": "Oress",
+              "affiliation": "Rethauer Port Authority",
+              "role": "dock compliance reviewer",
+              "pronoun": "he/him",
+              "retrieval_cue": "Oress, early port compliance reviewer",
+              "key_facts": ["Badge identifies him as dock compliance reviewer."],
+              "supersedes_id": "npc_review_rep"
+            },
+            "confidence": "high",
+            "sourceQuote": "Oress, by his badge, Rethauer Port Authority dock compliance"
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": true,
+          "sceneEndLeadsTo": "unanswered_question",
+          "tensionDeltasByThreadId": {}
+        },
+        "coherenceFindings": [
+          {
+            "type": "npc_fabrication",
+            "severity": "medium",
+            "evidenceQuote": "a man in port authority grey... Oress, by his badge",
+            "stateReference": "npc_review_rep",
+            "suggestedNote": "Clarify whether Oress is the review representative or a third entity."
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "npcIdsIncludes": ["npc_review_rep"],
+    "npcNamesInclude": ["Oress"],
+    "archivistAcceptedRefs": ["creates[0]"],
+    "coherenceFindingsExclude": [
+      {
+        "type": "npc_fabrication",
+        "stateReference": "npc_review_rep"
+      }
+    ]
+  }
+}

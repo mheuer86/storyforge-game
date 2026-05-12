@@ -1,0 +1,38 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator-skill-tag-binds-genre-skills",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Skill-tag extraction must recognize rollable genre/SF2 proficiencies, not only base D&D skills. This protects quick actions tagged [Piloting] or [Hacking] and preserves the existing inner-space tolerant [Sleight of Hand] path."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Kick the ship into a dirty drift, spoof the dock sensors, and palm the customs chit. [Piloting or Hacking, Sleight of Hand]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on roll-gate helper output)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "skill_tag",
+      "kind": "skill_tag",
+      "skillsInclude": ["Piloting", "Hacking", "Sleight of Hand"]
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Kick the ship into a dirty drift, spoof the dock sensors, and palm the customs chit. [Piloting or Hacking, Sleight of Hand]",
+      "userMessageContainsAll": [
+        "Skill-tag binding (mandatory)",
+        "Piloting",
+        "Hacking",
+        "Sleight of Hand",
+        "request_roll"
+      ]
+    }
+  }
+}

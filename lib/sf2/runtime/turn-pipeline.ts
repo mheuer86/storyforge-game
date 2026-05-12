@@ -261,7 +261,9 @@ export function finalizeArchivistTurn(input: FinalizeArchivistTurnInput): Finali
     payload: input.patch.pacingClassification as unknown as Record<string, unknown>,
   }))
 
-  for (const finding of input.patch.coherenceFindings ?? []) {
+  const patchCoherenceFindings = filterChapterOpeningNpcCanonizationFindings(input)
+
+  for (const finding of patchCoherenceFindings) {
     invariantEvents.push(observeActorFirewallWrite(nextState, {
       actor: 'archivist',
       writeKind: 'drift_flag',
@@ -357,7 +359,7 @@ export function finalizeArchivistTurn(input: FinalizeArchivistTurnInput): Finali
 
   const dueRevealFindings = detectDueRevealUnfulfilled(input)
   const allFindings = [
-    ...(input.patch.coherenceFindings ?? []),
+    ...patchCoherenceFindings,
     ...anchorMissFindings,
     ...dueRevealFindings,
   ]
@@ -381,6 +383,33 @@ export function finalizeArchivistTurn(input: FinalizeArchivistTurnInput): Finali
     coherenceFindings: allFindings,
     workingSetTelemetry,
   }
+}
+
+function filterChapterOpeningNpcCanonizationFindings(
+  input: FinalizeArchivistTurnInput
+): Sf2CoherenceFinding[] {
+  const findings = input.patch.coherenceFindings ?? []
+  if (findings.length === 0) return findings
+
+  const observedTurnIndex = Math.max(0, input.patch.turnIndex - 1)
+  const sceneFirstTurnIndex = input.stateBeforeArchivist.world.sceneSnapshot?.firstTurnIndex
+  const isChapterOpeningTurn = sceneFirstTurnIndex === observedTurnIndex
+  if (!isChapterOpeningTurn) return findings
+
+  const canonizedPlaceholderIds = new Set<string>()
+  for (const create of input.patch.creates) {
+    if (create.kind !== 'npc') continue
+    if (create.confidence === 'low') continue
+    const supersedesId = stringValue(create.payload.supersedes_id)
+      ?? stringValue(create.payload.supersedesId)
+    if (supersedesId) canonizedPlaceholderIds.add(supersedesId)
+  }
+  if (canonizedPlaceholderIds.size === 0) return findings
+
+  return findings.filter((finding) => {
+    if (finding.type !== 'npc_fabrication') return true
+    return !canonizedPlaceholderIds.has(finding.stateReference)
+  })
 }
 
 export function extractMechanicalEffects(

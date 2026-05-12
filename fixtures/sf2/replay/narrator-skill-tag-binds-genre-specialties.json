@@ -1,0 +1,44 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator-skill-tag-binds-genre-specialties",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Issue 8 specialty coverage: skill tags are derived from every genre playbook proficiency list, not just the D&D base set or the active campaign seed."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Try the whole toolbox at once. [Arcana (Drift Lore), Apothecary, Animal Handling, Xenotech, Net Architecture, Streetwise, Quantum Basketweaving]",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused — fixture asserts on roll-tag extraction and roll-gate helper output)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "rollSkillTags": {
+      "skillsEquals": [
+        "Arcana (Drift Lore)",
+        "Apothecary",
+        "Animal Handling",
+        "Xenotech",
+        "Net Architecture",
+        "Streetwise"
+      ],
+      "unknownSkillLikeTagsInclude": ["Quantum Basketweaving"]
+    },
+    "requiredRollGate": {
+      "exists": true,
+      "source": "skill_tag",
+      "kind": "skill_tag",
+      "skillsInclude": [
+        "Arcana (Drift Lore)",
+        "Apothecary",
+        "Animal Handling",
+        "Xenotech",
+        "Net Architecture",
+        "Streetwise"
+      ]
+    }
+  }
+}
