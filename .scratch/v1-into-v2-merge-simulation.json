@@ -1,0 +1,240 @@
+{
+  "generatedAt": "2026-05-12T19:27:55.151Z",
+  "models": {
+    "V2_NARRATOR_MODEL": "claude-haiku-4-5-20251001",
+    "V2_MEANING_MODEL": "claude-haiku-4-5-20251001",
+    "V2_AUTHOR_MODEL": "claude-sonnet-4-6"
+  },
+  "mergePrompt": {
+    "narrator": "SF2 role + V1 prose graft",
+    "meaning": "SF2 chapter meaning + V1.5 ledger graft",
+    "author": "SF2 author + V1.5 transition graft"
+  },
+  "runs": {
+    "mergedForty": {
+      "opening": {
+        "text": "The cantina smells like recycled fryer oil and the particular tang of station fuel that never quite washes off your jacket. Orange departure clocks flicker overhead — Helix's eternal visual noise, numbers updating faster than anyone can parse them — and beneath that, the static hum of the arrival board. Late cycle means the place is half-empty: two crews at the bar nursing their debts, a supervisor checking manifest seals in the far booth, and you.\n\nJuno Vale sits across from you at the corner table, hands flat on the scarred surface. They're in the same worn gray station jacket you've seen three times this rotation, hair still slicked back from the fryer steam outside. Back-channel broker, which means they know three routes nobody official admits exist and a fourth that might collapse if the wrong person asks. Right now, though, Juno's just practical — the expression of someone calculating whether a conversation stays a conversation or becomes evidence.\n\n\"Forty thousand,\" they say, and let that number sit for exactly one breath before continuing. \"That's what clears your hold. That's what takes the route permit from *pending* to *hand-your-crew-the-chit*.\"\n\nThey don't smile yet. Juno smiles after the dangerous part.\n\n\"I have work. One run. Passenger and sealed freight, both of which prefer to stay off any manifest Voss or the Remnant would care to see. Last beacon and back. Pay hits forty flat. You clear the hold, you clear Helix, and you leave with the kind of route permission that doesn't get walked back because a collector decided to make noise.\"\n\nOver Juno's shoulder, ",
+        "tool": {
+          "suggested_actions": [
+            "Ask Juno what kind of risk comes locked in the crate — and whether the crew gets to know. [Insight]",
+            "Stall with a question about payment split, timing, or the return route — buy time while you decide.",
+            "Watch Sable's next move while you make up your mind; see whether he's actually waiting or just in position. [Perception]",
+            "Walk away from the table now, head back to the ship, and decide alone before Juno's deadline turns into Sable's leverage."
+          ],
+          "authorial_moves": {
+            "pivot_signaled": false,
+            "planted_revelation_deployed": null,
+            "witness_mark_surfaced": null
+          },
+          "hinted_entities": {
+            "npcs_mentioned": [
+              "npc_juno_vale",
+              "npc_sable_ort",
+              "npc_undisclosed_passenger"
+            ],
+            "threads_touched": [
+              "thread_clear_forty_thousand",
+              "thread_move_sealed_job"
+            ],
+            "clues_dropped": [
+              "The exact debt amount is forty thousand credits — precise enough to feel deliberate.",
+              "Sable Ort's presence at the customs arch coincides with Juno's deadline, suggesting timing coordination or pressure.",
+              "The sealed passenger and crate are both off-book, implying they won't survive customs scrutiny.",
+              "The route window closes after shift change unless Rix accepts Juno's terms."
+            ],
+            "decisions_implied": [],
+            "promises_implied": []
+          }
+        }
+      },
+      "turn": {
+        "text": "Juno's eyes tick toward Sable for half a second—not long enough for him to catch it—then back to you. Her fingers are wrapped around a cooling cup of station coffee, the kind that tastes like recycled coolant and regret.\n\n\"Forty thousand,\" she says quietly, \"because that's what your manifest says you owe Voss. Not forty-one. Not thirty-nine. That number is *public*. It's in the ledger Sable reads every morning.\"\n\nShe leans fractionally closer. The booth creaks under the shift.\n\n\"Tonight because Sable stops being patient when the dock cycle ends. You know how route holds work—tomorrow morning, your ship gets flagged for a 'safety inspection.' That inspection takes four hours minimum. During those four hours, Sable can either clear the hold *or* let it stand while your crew watches the departure window close. He's friendly about it, but the outcome doesn't change.\"\n\nHer cup touches the table. No tremor.\n\n\"The exact amount matters because it proves I have a buyer who knows your exact situation. Not your estimate. Not a round number someone guessed. Your *exact* debt, your *exact* timeline, your *exact* desperation. That specificity is what makes the offer real.\"\n\nShe pauses. Behind you and to the left, Sable is still visible near the customs arch—talking to a dock clerk, but positioned where he can angle toward your booth in maybe three seconds if he wants to look like he's just turning.\n\n\"As for why I'm telling you this now: because in ten minutes, I walk away from this table. The offer stays good for one shift cycle. After that, it doesn't exist, and you and your crew figure",
+        "request_roll": null,
+        "tool": {
+          "suggested_actions": [
+            "Ask Juno what the passenger needs or why they can't use official channels. [Insight]",
+            "Demand to see the crate and cargo manifest before committing to anything.",
+            "Press Juno on Sable's involvement—is he part of this job or just the leverage?",
+            "Tell her you need to talk to your crew before you decide anything."
+          ],
+          "authorial_moves": {
+            "pivot_signaled": false
+          },
+          "hinted_entities": {
+            "clues_dropped": [
+              "Forty thousand is the exact public ledger amount",
+              "Sable controls route holds and departure window access",
+              "Safety inspection four-hour hold begins tomorrow morning",
+              "The buyer knows the crew's exact debt and timeline",
+              "Juno walks away after one shift cycle, offer expires",
+              "The crew has no other exit path from Helix with Voss leverage"
+            ],
+            "decisions_implied": [
+              "PC asked for specific pressure intelligence rather than accepting the offer immediately",
+              "PC is reading Juno for hidden terms and leverage"
+            ],
+            "npcs_mentioned": [
+              "npc_juno_vale",
+              "npc_sable_ort"
+            ],
+            "promises_implied": [
+              "Juno will walk in ten minutes unless the PC engages the job terms"
+            ],
+            "threads_touched": [
+              "thread_clear_forty_thousand",
+              "thread_move_sealed_job"
+            ]
+          }
+        }
+      }
+    },
+    "mergedTithe": {
+      "input": "Wait — let him speak. Who is he?",
+      "baselineFixtureOutput": "The younger man steps forward from the rear exit. He has been there since you entered, leaning against the wall with his arms crossed, jaw locked. Now he uncrosses his arms.\n\n\"My name is Renn,\" he says, voice low and steady. \"And the woman you are about to send to that registry tomorrow — she is my sister. Sev. She has been hiding in this settlement for two years, off the registries, working the shield lattice for the district under no one's name. The settlement protected her because she protected the settlement. And now you are going to take her, because the numbers do not balance, and somebody must pay.\"",
+      "text": "You hold still, let the silence sit. Thorne's jaw tightens — he knows what you're doing, waiting for one of them to fill the gap and expose more.\n\nThe younger man at the rear exit doesn't move. Doesn't even shift his weight. But his eyes slide to Thorne, a fraction of a second, and back.\n\nKess watches you. Professional mask locked. She's said what procedure demands she say.\n\n\"The gentleman at the rear,\" you say to Thorne, not moving your weight, keeping it level. \"Who is he?\"\n\nThorne's shoulders reset. Careful now. \"Settlement personnel. Not relevant to the roster.\"\n\n\"He's in the admin hall during tithe verification. That makes him relevant.\"\n\n\"He's here as a witness,\" Kess says — cleanly, no hesitation. \"The settlement's right under the compact to observe documentation. That's protocol.\"\n\nThorne doesn't correct her. The younger man's arms stay crossed. He hasn't spoken, hasn't acknowledged the question by name.\n\nYou could push harder — demand identification, position it as security concern, invoke your authority to exclude unregistered personnel from a Synod procedure. Or you could read the shape of what's actually happening here. Thorne said *neither* to both options: no hidden adult resources, no child selection. That means the settlement has a third thing ready. The younger man is part of it. His silence isn't evasion; it's discipline.\n\nThe transport window is still 1600 hours. You have time, but not much. And you can feel the settlement holding a breath — waiting to see if you're going to follow procedure exactly as filed, or if you're going to notice that they've alre",
+      "request_roll": null,
+      "tool": {
+        "suggested_actions": [
+          "Demand the younger man's name and clearance status — force the issue before Thorne can shield him further. [Intimidation]",
+          "Ask Thorne directly: what was the third option he meant? Acknowledge the play and negotiate terms. [Persuasion]",
+          "Step toward the younger man, read his posture and expression for tells about what the settlement is actually offering. [Perception]",
+          "Tell Kess to file the manifest with the names the settlement is prepared to give you. Procedurally close the matter without hearing how they got here."
+        ],
+        "authorial_moves": {
+          "pivot_signaled": false
+        },
+        "hinted_entities": {
+          "npcs_mentioned": [
+            "npc_0",
+            "npc_1",
+            "npc_2"
+          ],
+          "clues_dropped": [
+            "The younger man maintains discipline and coordinates with Thorne non-verbally",
+            "Thorne explicitly offered a third option — neither adult resources nor child selection",
+            "Kess invoked the settlement's right to observation under the compact"
+          ],
+          "decisions_implied": [
+            "Ren pressed for identification rather than accepting deflection",
+            "Ren is reading the settlement's coordination and waiting to learn what they are actually offering"
+          ],
+          "threads_touched": [
+            "thread_0"
+          ]
+        }
+      }
+    },
+    "mergedCloseSetup": {
+      "meaning": {
+        "situation": "The crew stands on a narrowing exit from Helix Station—debt cleared through escrow but not erased, holding a sealed passenger-and-crate job with renegotiated terms, and freshly aware that someone knew their exact desperation.",
+        "tension": "Freedom and solvency are available only if the crew accepts terms written by someone else's leverage, and that acceptance proves the leverage worked.",
+        "ticking": "Sable Ort converted the private debt into public route pressure while Juno Vale let the controlled inspection narrow the job's shape and Rix negotiated the price into escrow instead of clearing it clean.",
+        "question": "What are the passenger and crate actually worth, and to whom—enough that Juno tied them to the crew's exact breaking point?",
+        "closer": "The debt is escrow, not paid. The route hold is temporary, not lifted. The crew leaves Helix tonight, but they leave carrying someone else's risk in a sealed crate.",
+        "closingResolution": "costly",
+        "transition_seed": {
+          "prior_chapter_meant": "The crew learned that leverage is the real currency on fractured routes—knowing someone's exact price is how you move them, and moving them at that price is how you own them.",
+          "earned_consequence": "Juno Vale now has a sealed job in play with the crew committed to delivery, and Sable Ort holds a temporary route hold that can be weaponized if the crew fails or hesitates.",
+          "pressure_owner_candidate": "Juno Vale—she controls the sealed passenger-and-crate terms, the escrow release, and knowledge of what's actually being moved.",
+          "worsened_detail": "The controlled inspection happened, but what the inspector actually saw, or what Juno let them see, was never clear.",
+          "unresolved_question": "What is in the sealed crate, who wants it at the last beacon, and what does Juno gain from routing it through a crew she just proved she could leverage into compliance?",
+          "do_not_restage": [
+            "The forty-thousand-credit debt negotiation with Juno Vale",
+            "Sable Ort's route hold leverage—it is temporary and cannot become a recurring pin",
+            "The controlled inspection of the sealed job",
+            "Juno's initial exact-price offer"
+          ],
+          "procedure_residue": {
+            "mechanism": "Escrow hold on forty thousand credits (Juno controls release; crew departure contingent on delivery)",
+            "keep_as": "leverage"
+          }
+        }
+      },
+      "author": {
+        "chapter_frame": {
+          "title": "What the Crate Costs",
+          "premise": "The crew has a ship, a job, and a passenger they haven't met yet. Before they can leave Helix, someone who was watching the deal wants something in return for staying quiet.",
+          "active_pressure": "A third party witnessed the escrow negotiation and now prices their silence at crew exposure.",
+          "central_tension": "The sealed crate's real contents are unknown, and the passenger won't board until the crew proves they can keep a secret.",
+          "objective": "Get the passenger and crate aboard and depart Helix before the job's shape becomes visible to the wrong people.",
+          "crucible": "Every question the crew asks about the crate costs them with Juno; every question they don't ask costs them with themselves.",
+          "outcome_spectrum": {
+            "clean": "Passenger trusts the crew enough to board; Juno's escrow releases clean; departure window holds.",
+            "costly": "Passenger boards but withholds something critical; Juno now owns a favor the crew doesn't fully understand.",
+            "failure": "The third party exposes the job's shape; Sable Ort or station authority grounds the ship before departure.",
+            "catastrophic": "The crate's contents become visible to a Voss or Remnant contact; the crew's registry is flagged for the route beyond the last beacon."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Helix Station berth-ring corridor, twenty meters from the ship's docking clamp",
+          "atmospheric_condition": "Recycled air, low amber lighting, distant clamp machinery grinding",
+          "initial_state": "The escrow paperwork cleared an hour ago; the ship is technically cleared to board cargo, but the passenger hasn't appeared and the crate is still in the station's short-term freight hold.",
+          "first_player_facing": "A station dock-rat named Ferrik is leaning against the freight-hold hatch, arms crossed, watching the PC with the specific patience of someone who has already decided to talk — and is waiting to be paid for it.",
+          "dramatic_situation": "A low-level station informant knows the escrow was negotiated, not paid, and wants a cut of the job's value before the passenger arrives.",
+          "first_visible_pressure": "Ferrik names the passenger's berth assignment aloud — casually, publicly — signaling he knows more than he should.",
+          "first_human_or_institutional_move": "Ferrik tells the PC the passenger is already on the berth ring, watching, and won't approach until the dock-rat problem is resolved.",
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": [
+            "npc_ferrik_dockrat"
+          ],
+          "withheld_premise_facts": [
+            "The passenger has already seen Ferrik and is deciding whether the crew is safe",
+            "Juno Vale is not present but has a contact watching the freight hold",
+            "The crate's customs flag from the inspection was marked 'cleared' but the inspector's notation was altered"
+          ],
+          "do_not_restage": [
+            "The forty-thousand-credit debt negotiation with Juno Vale",
+            "Sable Ort's route hold as recurring leverage pin",
+            "The controlled inspection of the sealed job",
+            "Juno's initial exact-price offer"
+          ]
+        },
+        "active_threads": [
+          {
+            "id": "thread_move_sealed_job",
+            "title": "Move the sealed passenger-and-crate job",
+            "driver_kind": "carry_forward",
+            "tension": 8,
+            "question": "Can the crew board the job without exposing its shape?",
+            "resolution_criteria": "Passenger and crate are aboard, departure window secured, and the job's terms are understood well enough to run.",
+            "failure_mode": "Job shape becomes visible to station authority or Voss; crew is grounded or the terms bind them blindly."
+          },
+          {
+            "id": "thread_keep_crew_whole",
+            "title": "Keep the crew whole",
+            "driver_kind": "carry_forward",
+            "tension": 6,
+            "question": "Does the crew trust the PC's read on this job?",
+            "resolution_criteria": "Crew understands enough of the risk to follow the PC's call without a loyalty fracture.",
+            "failure_mode": "A crew member decides the sealed job is another secret debt and begins withholding trust or options."
+          },
+          {
+            "id": "thread_dock_leak",
+            "title": "Silence the information leak",
+            "driver_kind": "new_pressure",
+            "tension": 7,
+            "question": "Who paid Ferrik to watch, and how far does it reach?",
+            "resolution_criteria": "Ferrik's knowledge is contained and the chain behind him identified or cut before departure.",
+            "failure_mode": "Ferrik sells what he knows to someone with real leverage before the crew can depart."
+          },
+          {
+            "id": "thread_passenger_trust",
+            "title": "Earn the passenger's trust",
+            "driver_kind": "arc_promoted",
+            "tension": 6,
+            "question": "Will the passenger reveal enough to make the job survivable?",
+            "resolution_criteria": "Passenger shares enough of what hunts her for the crew to understand the real risk beyond the last beacon.",
+            "failure_mode": "Passenger boards without disclosure; crew runs the route blind to what is hunting her."
+          }
+        ]
+      },
+      "validationErrors": [
+        "tension_score must contain 3-4 lines for SF2B continuation chapters (got 0)",
+        "continuity_lock.closing_geometry missing loc_opening (Helix Station cantina, berth-ring edge) bridge",
+        "continuation_moves is missing (required for chapter ≥ 2)",
+        "continuation_dramatic_turn is missing (required for chapter ≥ 2)"
+      ]
+    }
+  }
+}

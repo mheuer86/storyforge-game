@@ -1,0 +1,536 @@
+{
+  "generatedAt": "2026-05-12T19:02:12.251Z",
+  "models": {
+    "V1_MODEL": "claude-sonnet-4-6",
+    "V2_NARRATOR_MODEL": "claude-haiku-4-5-20251001",
+    "V2_MEANING_MODEL": "claude-haiku-4-5-20251001",
+    "V2_AUTHOR_MODEL": "claude-sonnet-4-6"
+  },
+  "notes": "No product code changed. Live Anthropic calls plus existing SF2 tithe fixture.",
+  "runs": {
+    "v1Forty": {
+      "opening": {
+        "text": "## Kalindra Station — Concourse Level, The Broken Axle Cantina — Day 1, Late Evening\n\n*Rix. Driftrunner. The galaxy is full of people who need things moved quietly. You are the quiet.*\n\n---\n\nThe cantina smells like recycled air and something fried in oil that hasn't been changed since the Compact was still paying its maintenance crews. Three overhead panels flicker in sequence — *tick, tick, tick* — then hold. Nobody looks up anymore.\n\nYou're in the back booth because you're always in the back booth. Sightlines to the door, the service hatch, and the two exits you already walked before you sat down. Old habit. The kind that kept you alive long enough to owe forty thousand credits to someone with the patience of a glacier and the disposition of a loan shark.\n\nThe debt isn't complicated. It never is. A fuel advance on Voss's line of credit, a cargo run that paid sixty percent of what it promised, a shortfall you kept rolling forward until it became architecture. Now the architecture has a face, and that face is somewhere on the concourse outside, walking.\n\nAcross the bar, Joss wipes down the counter with a rag that's making things worse. He's been behind that bar longer than you've b",
+        "tool": {
+          "pending_check": null,
+          "suggested_actions": [
+            "Take the job and negotiate terms — ask who the passenger is and what's in the crate.",
+            "Stall the stranger and slip out to check the concourse for Voss's collector first.",
+            "Signal Joss — he hears everything. Find out if this stranger is known on the station.",
+            "Name your own terms — the stranger needs you tonight. That's leverage. Use it."
+          ],
+          "chapter_frame": null,
+          "signal_close": null,
+          "close_chapter": null,
+          "world": {}
+        }
+      },
+      "turn": {
+        "text": "The stranger — Juno, apparently, since you've decided to name them — doesn't flinch at the question. Doesn't confirm the name either. Just watches you with the particular stillness of someone who prepared for this conversation in advance and is waiting to see which version of it you're running.\n\nThe angled shoulder is good tradecraft. Juno clocks it anyway. A small acknowledgment — not a smile, something briefer — that says *I see what you're doing* without saying anything at all.\n\n\"Tonight because the window closes tomorrow morning.\" The voice is level, unhurried. \"The amount because it's what the job requires.\"\n\nNeither answer is an answer. Both were delivered like they were.\n\nThe drink sits untouched between their hands. Outside the viewport, the amber concourse light catches something moving — a broad silhouette, unhurried, working the crowd with the systematic patience of someone who does this professionally. Voss's collector. Still a hundred meters out. Maybe less.\n\nJuno hasn't looked at the viewport once.",
+        "tool": {
+          "pending_check": {
+            "skill": "Insight",
+            "stat": "WIS",
+            "dc": 13,
+            "modifier": 0,
+            "reason": "Reading whether Juno's careful non-answers are trained deflection or something closer to genuine urgency — the stillness could mean either."
+          },
+          "suggested_actions": [
+            "Push harder on the money — 'The job requires it' isn't an answer. You want to know who set the price and why it matches your debt to the decimal.",
+            "Shift to the passenger — the crate can stay sealed, but you want to look whoever you're transporting in the eye before you agree to anything.",
+            "Read Juno instead of pressing — stop talking and watch them for a moment. The unhurried stillness could be confidence. Could be rehearsal.",
+            "Excuse yourself to the bar — signal Joss without letting Juno see exactly what you're doing."
+          ],
+          "chapter_frame": null,
+          "signal_close": null,
+          "close_chapter": null,
+          "world": {}
+        }
+      }
+    },
+    "sf2Forty": {
+      "opening": {
+        "text": "The cantina's fryer steam rolls in waves under the orange departure clock—late cycle, the kind of hour when Helix Station's berth-ring trades clarity for speed. Fuel tang cuts through grease-smell. The arrival board overhead stutters through gate closures: routes contracting, clearance windows narrowing, the daily message that not everyone leaving got to choose their departure time.\n\nYou're in a corner booth, the kind a crew needing privacy books without asking why. Across from you sits **Juno Vale**, back-channel broker—the kind of connector who trades in routes other people's route-planners didn't know existed. Juno's hands are steady on the table. So is the smile, the one that usually means the dangerous part already happened somewhere else.\n\n\"Forty thousand,\" Juno says, and slides a route chit across the table's worn plastic. \"Exact price. Your ship, your dock fees, your docking-master's courtesy, station clearance—all of it. Leaves you and the crew with a clean burn and zero heat when the thrusters fire.\"\n\nYou know your numbers. You know what Rix owes. Forty thousand is not a negotiation. It is someone saying *I know exactly what you owe, exactly what you have, and exactly how",
+        "tool": {
+          "suggested_actions": [
+            "Take the route chit and read the sealed manifest—start unpacking what Juno's actually offering. [Investigation]",
+            "Press Juno on why the price is so exact, and what that means about who knows your numbers.",
+            "Lean back and watch Sable move closer—see whether he's truly random or if this is a setup. [Perception]",
+            "Ask straight: what are the real terms before you even consider the departure window?"
+          ],
+          "authorial_moves": {
+            "pivot_signaled": false,
+            "planted_revelation_deployed": null,
+            "witness_mark_surfaced": null
+          },
+          "hinted_entities": {
+            "clues_dropped": [
+              "The exact debt amount—forty thousand—is known to Juno before negotiation",
+              "The route chit shows a sealed passenger manifest and an off-book destination at the last beacon",
+              "Sable Ort is present in the cantina and moving into proximity range",
+              "The PC has a four-hour window before dock-master rotation changes who controls the berth"
+            ],
+            "decisions_implied": [
+              "The PC is meeting Juno to hear an off-book job offer",
+              "The PC has not yet accepted, refused, or negotiated the route terms"
+            ],
+            "npcs_mentioned": [
+              "npc_juno_vale",
+              "npc_sable_ort"
+            ],
+            "promises_implied": [],
+            "threads_touched": [
+              "thread_clear_forty_thousand"
+            ]
+          }
+        }
+      },
+      "turn": {
+        "text": "Juno's smile tightens at the edges. She doesn't reach for the chit either—hasn't touched it since she laid it between you, precise as a knife.\n\n\"Forty thousand is what clears the Voss ledger *and* gives you enough margin to fuel clear of the last beacon,\" she says, low enough that the fryer steam swallows it. \"Tonight because Sable got the approval to lock your berth permit at rotation-end. After that, you're not leaving. Not until the full debt moves.\"\n\nHer eyes don't drift toward Sable. That's the tell—the deliberate absence of it.\n\n\"The passenger and the crate have a window,\" she continues. \"The route is good for the next forty-eight hours. After that, customs protocols change. Scanning becomes mandatory. The whole thing dies.\"\n\nYou watch her fingers on the table. No tremor. Professional distance, the kind that means she's already boxed out what happens next.\n\n\"I need to know if your crew is ready to move cargo that doesn't clear a scanner,\" Juno says. \"Because if you're not, I find another ship, and you stay on Helix until Voss decides what the debt costs you.\" She lets that sit. \"That's not a threat. That's the route.\"\n\nBehind her, nearer the customs arch, Sable is watching th",
+        "request_roll": null,
+        "tool": {
+          "suggested_actions": [
+            "Push back on the timeline—demand a longer window or a different departure slot. [Persuasion]",
+            "Ask what exactly is in the crate that breaks on a scanner—and listen to what she doesn't say. [Insight]",
+            "Accept the terms and move toward sealing the deal before Sable tightens the net. [Perception to read room before committing]",
+            "Signal that you need to consult your crew before the forty thousand leaves the table."
+          ],
+          "authorial_moves": {
+            "pivot_signaled": false
+          },
+          "hinted_entities": {
+            "npcs_mentioned": [
+              "npc_juno_vale",
+              "npc_sable_ort"
+            ],
+            "clues_dropped": [
+              "Voss Recovery ledger closes at rotation-end unless paid",
+              "forty thousand clears debt and last-beacon fuel margin",
+              "passenger and crate have forty-eight-hour customs window before mandatory scanning",
+              "route dies after scanning becomes mandatory",
+              "Juno already walked the cost of job collapse"
+            ],
+            "decisions_implied": [
+              "PC refused the offer's terms without hearing them",
+              "PC identified Sable as leverage/threat"
+            ],
+            "promises_implied": []
+          }
+        }
+      }
+    },
+    "v1Tithe": {
+      "opening": {
+        "text": "## Tethmark Settlement, Verath's Edge — Day 1, Early Morning\n\n*Warden Verum. Imperial Service. The Hegemony runs on Resonants — and on the enforcers who keep the count.*\n\n---\n\nThe dispatch came three days ago, routed through the usual anonymized chain until it landed in your hands with the Imperial seal still warm: *Tethmark, Verath's Edge. Tithe compliance emergency. Warden presence requested by Acting Assessor Pellith.*\n\nRequested. Imperial Service doesn't get requested. It gets assigned.\n\nThe shuttle set you down at dawn in a field that used to be a landing pad, before the permacrete cracked and the settlement stopped expecting visitors. Tethmark is small enough that its entire administrative function — customs, taxation, census, Resonant registry — is conducted from a single prefab building at the edge of what passes for a square. Smoke rises from somewhere behind the low structures. Someone is cooking. Children are not yet out.\n\nActing Assessor Pellith is waiting on the steps of the prefab when you cross the square. He's younger than you expected for the title — early thirties, Synod-gray uniform pressed within an inch of its life, a data-slate clutched in both hands like a sh",
+        "tool": {
+          "pending_check": null,
+          "suggested_actions": [
+            "Step inside to speak with the settlement elder — she knows this settlement better than Pellith does, and she's been waiting.",
+            "Address Pellith directly: you need to understand what 'cause unresolved' means before midday. Press him on the third name.",
+            "Review the tithe manifest yourself — the data-slate is in your hands.",
+            "Say nothing yet. Read the square. Four candidates means four families behind those closed shutters."
+          ],
+          "chapter_frame": {
+            "objective": "Resolve the tithe shortfall before the Synod acts",
+            "crucible": "The Synod will take children if the numbers aren't met",
+            "outcome_spectrum": {
+              "clean": "The shortfall is resolved without children being taken or military escalation.",
+              "costly": "The shortfall is resolved, but a named person pays in standing, freedom, or safety.",
+              "failure": "The Synod begins supplementary selection or higher enforcement.",
+              "catastrophic": "The settlement breaks open under mandate, violence, or exposed hidden Resonants."
+            }
+          },
+          "signal_close": null,
+          "close_chapter": null,
+          "world": {}
+        }
+      },
+      "turn": {
+        "text": "Pellith's grip tightens on the data-slate.\n\nNot fear, exactly. The careful recalibration of a man deciding how much honesty serves him here. He opens the manifest and reads without looking at you.\n\n\"Deceased: Sorel, age nine. Caerun, age eight. Mining collapse, fourth month, Survey Shaft Two.\" He scrolls. \"The site supervisor filed the incident report within the required window. Both families received the standard condolence allocation.\" A breath. \"Absent: Tessil, age eleven. Last confirmed sighting, approximately sixty days ago. The family reported her missing to the settlement watch. No census correction was filed.\"\n\nHe finally looks up. \"The watch has no record of a body. The Synod's position is that absence without confirmed death is a live allocation.\"\n\nSixty days. That's not a child who wandered off.\n\nThrough the window, the elder still sits with her hands flat on the table. A woman who has been waiting for this conversation longer than you've been in the settlement.\n\n\"The elder,\" Pellith says, with the faint emphasis of someone clarifying an obvious thing. \"Damaris. She administered the incident reports for both deceased. She was also Tessil's mother's closest neighbor.\" He ",
+        "tool": {
+          "pending_check": null,
+          "suggested_actions": [
+            "Enter the prefab and speak with Elder Damaris directly.",
+            "Press Pellith — what does he actually believe happened to Tessil?",
+            "Ask to see the incident reports from Survey Shaft Two before speaking to anyone else.",
+            "Step away and observe the square — who's watching, and from where?"
+          ],
+          "chapter_frame": {
+            "objective": "Resolve the tithe shortfall before the Synod acts",
+            "crucible": "The Synod will take children if the numbers aren't met",
+            "outcome_spectrum": {
+              "clean": "The shortfall is resolved without children being taken or military escalation.",
+              "costly": "The shortfall is resolved, but a named person pays in standing, freedom, or safety.",
+              "failure": "The Synod begins supplementary selection or higher enforcement.",
+              "catastrophic": "The settlement breaks open under mandate, violence, or exposed hidden Resonants."
+            }
+          },
+          "signal_close": null,
+          "close_chapter": null,
+          "world": {}
+        }
+      }
+    },
+    "sf2TitheFixture": {
+      "openingText": "The settlement's administrative hall smells of concrete dust and tension. It's a small place—two stories of municipal function squeezed into a building that was never meant to hold what it's holding now: the weight of three missing tithes.\n\nYou arrived by transit authority schedule at 0800, as filed. The manifest in your satchel says this settlement owes the Synod three Resonant conscripts. The same manifest has been empty in those slots for six months. Today you are here to correct that discrepancy.\n\nThe hall's administrative officer, a woman named Kess, sits behind the central desk with her hands flat on its surface. She has the careful posture of someone who has spent six months preparing an answer that will not be accepted. Her eyes track you as you settle into the chair across from her—assessment and resignation mixed.\n\nBeside her stands a taller man in the blue-and-grey of local authority, his insignia marking him as the settlement's Chief Minder. He looks like he has already lost this argument with himself several times over. His name is Thorne, and his job is to enforce local compliance. Today those two directives are in direct opposition.\n\nThe third person on the stage is ",
+      "priorTurn": "You lock onto Thorne's eyes. \"Neither isn't an option. The quota closes at 1600. Either the settlement produces three adult Resonants or we open the selection rolls for children. There is no third procedure.\"\n\nThorne's jaw tightens. He knows you're right. The Synod does not negotiate shortfalls — that's not a threat, it's administrative law. But his silence stretches, and that tells you something worse: he's calculating the cost of each path and finding them both unbearable.\n\nThe younger man moves.\n\nIt's not dramatic — just a shift in weight, arms still crossed, but his eyes track from Thorne to you. Measuring. Testing whether you're the type to be swayed or the type to execute procedure cleanly. His posture says he already knows the settlement's answer. He's waiting to see if you do.\n\n\"There is a third option,\" Kess says quietly from behind the manifest table. Her voice has lost the compliance edge. What's left is thinner, more real. \"But it requires the Warden's discretion.\"\n\nThorne's shoulders drop fractionally. Not relief. Resignation. The barrier he placed between you and the records wasn't about protecting a secret — it was about buying time to figure out whether you could be",
+      "midTurnInput": "Wait — let him speak. Who is he?",
+      "midTurnOutput": "The younger man steps forward from the rear exit. He has been there since you entered, leaning against the wall with his arms crossed, jaw locked. Now he uncrosses his arms.\n\n\"My name is Renn,\" he says, voice low and steady. \"And the woman you are about to send to that registry tomorrow — she is my sister. Sev. She has been hiding in this settlement for two years, off the registries, working the shield lattice for the district under no one's name. The settlement protected her because she protected the settlement. And now you are going to take her, because the numbers do not balance, and somebody must pay.\""
+    },
+    "v1CloseSeed": {
+      "phase1": {
+        "pending_check": null,
+        "suggested_actions": [
+          "Ready for Chapter 2"
+        ],
+        "chapter_frame": {
+          "objective": "Deliver passenger and crate; survive arrival",
+          "crucible": "Three jumps in a sealed ship with unknown cargo and an unseen passenger — and whatever is at those coordinates doesn't appear on any chart.",
+          "outcome_spectrum": {
+            "clean": "Cargo and passenger delivered; Rix learns enough about the destination to negotiate from strength.",
+            "costly": "Delivery made, but the crate or passenger reveals something that puts Rix in the middle of someone else's war.",
+            "failure": "The coordinates lead to a trap or a dead system; delivery fails and the client relationship poisons the route.",
+            "catastrophic": "The passenger is exposed, the crate changes hands violently, and Rix leaves the drop with new enemies and no payment."
+          }
+        },
+        "signal_close": null,
+        "close_chapter": {
+          "summary": "Rix took the stranger's job — forty thousand credits to move one passenger and one sealed crate three jumps past the last beacon — and used it to clear the Voss debt before Sable Ort could leverage the docking clamps into something worse. The debt is paid, but the terms of the job are Juno's, not Rix's, and the destination is three jumps past reliable beacon coverage into territory where no one comes looking. The Last Meridian left Helix Station tonight, as planned, but the shape of the run ahead belongs to someone else.",
+          "key_events": [
+            "Rix accepted a forty-thousand credit contract from a stranger (Juno) to move one passenger and one sealed crate to coordinates three jumps past the last beacon.",
+            "The Voss debt was cleared through the job advance, neutralizing Sable Ort's leverage over the docking clamps.",
+            "Rix departed Helix Station on schedule, avoiding direct confrontation with Voss's collector.",
+            "The destination is beyond beacon coverage — no relay, no rescue, no law."
+          ],
+          "next_title": "The Cargo Breathes",
+          "resolution_met": "Debt cleared and ship departed before Sable Ort could escalate — objective met, but on terms set by the client rather than Rix.",
+          "forward_hook": "The passenger hasn't been seen since boarding. The crate is in the hold. The coordinates lead somewhere the Compact's charts mark as empty. Three jumps, and then whatever is waiting out there.",
+          "outcome_tier": "costly"
+        },
+        "world": {
+          "set_location": {
+            "name": "The Last Meridian — Transit",
+            "description": "Three jumps out from Helix Station, running dark past the last beacon corridor. The hold contains one sealed crate. Somewhere aboard is one passenger Rix hasn't seen since departure."
+          },
+          "update_threads": [
+            {
+              "id": "clear_forty_thousand",
+              "status": "resolved_costly"
+            },
+            {
+              "id": "move_sealed_passenger_and_crate_job",
+              "status": "active — en route, three jumps past last beacon"
+            }
+          ]
+        }
+      },
+      "ledger": {
+        "chapter": 1,
+        "closing_resolution": "The Last Meridian is underway, debt cleared, but the run belongs to Juno Vale — Rix accepted terms they didn't set, to a destination that doesn't appear on any chart, carrying cargo whose inspection was controlled and a passenger they haven't seen since departure.",
+        "planted_bomb": "The Persuasion fumble (8 vs DC 15) means Sable Ort made the Voss debt and the ship's name public in front of dock workers before departure. Rix left believing this was neutralized by clearing the balance, but the route hold Sable attached is structural — the debt being public means interested parties (Voss Recovery, rival brokers, or Juno's enemies) now know the Last Meridian took an unusual job on an unusual night. Rix does not know the route hold was filed or that the departure was witnessed as significant. Additionally, the controlled inspection Juno agreed to was Juno's inspection — Rix saw what Juno permitted, not what the crate actually contains. The Insight success revealed Juno knew the exact debt figure, confirming the job was designed around Rix specifically, but Rix has not yet acted on what that implies about who Juno is and what leverage they may still hold.",
+        "off_screen_actors": [
+          {
+            "name": "Juno Vale",
+            "position": "Client and architect of the job — holds the destination coordinates, the escrow, and knowledge of Rix's exact financial exposure. Likely not at Helix Station anymore.",
+            "vector": "Monitoring whether the delivery proceeds cleanly; may have contingencies if Rix deviates or inspects the cargo more thoroughly mid-transit."
+          },
+          {
+            "name": "Sable Ort",
+            "position": "Filed a route hold against the Last Meridian before departure; the debt is cleared but the hold and the public naming remain on record.",
+            "vector": "May sell the departure information to Voss Recovery or another interested party; the hold gives him a bureaucratic thread to pull if the ship resurfaces."
+          },
+          {
+            "name": "Voss Recovery",
+            "position": "Debt cleared, but they now know Rix came up with forty thousand credits overnight from an unknown source — that is a data point, not a resolution.",
+            "vector": "Likely investigating the source of the payment; Rix is no longer a debtor but may become a person of interest."
+          },
+          {
+            "name": "The Passenger",
+            "position": "Aboard the Last Meridian, unseen since departure, in a sealed section of the ship.",
+            "vector": "Has not made contact; may be waiting for a specific jump threshold, a distress condition, or a signal from the destination before revealing themselves."
+          },
+          {
+            "name": "Unknown Party at Destination Coordinates",
+            "position": "Exists at coordinates three jumps past the last beacon, on no chart — someone is there or something is expected there.",
+            "vector": "Awaiting arrival; their expectations about the cargo and passenger are not known to Rix."
+          }
+        ],
+        "relationships_in_motion": [
+          {
+            "parties": [
+              "Rix",
+              "Juno Vale"
+            ],
+            "direction": "Debt — Rix owes completion of a job whose terms were Juno's design; trust is transactional and asymmetric, with Juno holding more information than Rix at every layer."
+          },
+          {
+            "parties": [
+              "Rix",
+              "Sable Ort"
+            ],
+            "direction": "Latent threat — the debt is cleared but Sable converted the balance into a route hold and made the ship's name public; the relationship is formally resolved and structurally hostile."
+          },
+          {
+            "parties": [
+              "Rix",
+              "The Passenger"
+            ],
+            "direction": "Suspicion — Rix has not seen the passenger since departure; proximity without contact in a sealed ship is pressure accumulating toward a forced encounter."
+          }
+        ],
+        "escalation_vector": [
+          "knowledge",
+          "cost"
+        ],
+        "mid_chapter_reveal_seed": "The passenger makes first contact not by appearing but by leaving something — a message, a mark, an open door — that tells Rix the controlled inspection was itself the test, and what Juno was checking for was whether Rix would push past the permitted boundary.",
+        "required_ch2_motions": [
+          {
+            "motion": "Rix must come into direct contact with the passenger or the unsealed crate — the sealed-ship pressure resolves into knowledge, and that knowledge carries a cost.",
+            "success_condition": "At least one of these must surface: the passenger's identity or faction, the crate's actual contents, or the nature of the destination."
+          },
+          {
+            "motion": "The route hold or the public naming at Helix Station must generate a consequence — someone who learned of the departure acts on that information.",
+            "success_condition": "The consequence must arrive before or during the final jump, not after delivery."
+          },
+          {
+            "motion": "Rix must make a decision about the job's terms under new information — whether to complete delivery, renegotiate, or deviate — with the outcome tier determined by what they know and what they risk."
+          }
+        ],
+        "forbidden_ch2_shapes": [
+          "Rix negotiates a new contract at a station or cantina before delivery — the ship is in transit, leverage is interior, not social.",
+          "The Voss debt resurfaces as the primary threat — it is structurally resolved; new pressure must come from the job itself.",
+          "The crate is opened and found empty or irrelevant — the cargo must carry real weight, not a misdirect that deflates the chapter's premise.",
+          "Juno Vale appears in person to resolve the tension — Juno's power is their absence; a direct appearance flattens the asymmetry that makes the job dangerous."
+        ],
+        "do_not_restage": [
+          "Rix accepting the forty-thousand credit job from Juno Vale",
+          "The Voss debt being cleared through the job advance",
+          "Sable Ort making the ship's name public in the cantina",
+          "The negotiation for escrow and one controlled inspection",
+          "The Last Meridian departing Helix Station",
+          "Rix reading that Juno knew the exact debt figure (Insight success already spent)",
+          "Sable attaching a route hold to the departure despite the cleared balance"
+        ]
+      },
+      "seed": {
+        "chapter_frame": {
+          "objective": "Complete the delivery — the passenger must be contacted or surface on their own terms AND the crate's contents or the destination's nature must be confirmed AND Rix must make an active decision about whether to complete, renegotiate, or deviate under whatever that knowledge costs them — all three before or at the drop point.",
+          "crucible": "Knowledge and cost are escalating together: every jump closer to the destination peels back one layer of what Rix doesn't know, and each revelation arrives with a price tag. The ship is a closed system — no station, no law, no outside leverage — so whatever Rix learns, they have to act on alone, with the credits and the job and possibly their life on the same side of the ledger.",
+          "outcome_spectrum": {
+            "clean": "All three motions satisfied: Rix has direct contact with the passenger and surfaces at least one hard fact about their identity or faction; the crate's contents or the destination's nature is confirmed; and Rix makes the delivery decision from a position of real knowledge, arriving with cargo and passenger intact and enough leverage to negotiate terms at the drop point.",
+            "costly": "Delivery is made, but at least one motion is only partially satisfied — the passenger surfaces but their full allegiance stays obscured, or the crate is confirmed but the destination's stakes revealed are worse than expected, or the decision is made under incomplete information and the delivery puts Rix squarely in the middle of a conflict they cannot exit.",
+            "failure": "The route hold or public naming at Helix Station generates a consequence that interdicts or damages the run before the final jump; or the coordinates resolve to a trap or dead system and delivery fails; the client relationship sours, the route is compromised, and Rix collects nothing.",
+            "catastrophic": "The passenger is exposed against their will or the crate changes hands violently before delivery; new enemies are made at the drop, payment is withheld or seized, and the Last Meridian leaves the destination with damage, debt, and a faction that will not forget the name of the ship."
+          }
+        },
+        "opening_seed": "The Last Meridian is two jumps out from Helix Station, running dark — no beacon ping, no traffic in the sensors, nothing on the charts ahead. The hold is quiet except for a sound Rix cannot place: not mechanical, not structural. Something that stops when the ship stops decelerating. The passenger's section has not opened. The crate has not moved. But a message is waiting in the ship's internal comm queue — no sender tag, no timestamp — and it was not there when Rix last checked. The third jump is six hours away. Whatever is in that queue, and whatever is behind the sealed door, is already deciding how this ends.\"",
+        "forbidden_ch2_shapes": [
+          "Rix negotiates a new contract at a station or cantina before delivery — the ship is in transit, leverage is interior, not social.",
+          "The Voss debt resurfaces as the primary threat — it is structurally resolved; new pressure must come from the job itself.",
+          "The crate is opened and found empty or irrelevant — the cargo must carry real weight, not a misdirect that deflates the chapter's premise.",
+          "Juno Vale appears in person to resolve the tension — Juno's power is their absence; a direct appearance flattens the asymmetry that makes the job dangerous."
+        ],
+        "npcs": [
+          {
+            "name": "The Passenger",
+            "role": "npc",
+            "description": "Identity unknown — boarded at Helix Station under Juno Vale's arrangement and has not been seen since departure. Deliberate in their silence; their stillness reads as patience, not fear.",
+            "disposition": "wary",
+            "affiliation": "Unknown",
+            "key_facts": [
+              "Has not made contact since departure — the untagged comm message may be their first move",
+              "Juno Vale arranged their passage specifically; their presence is load-bearing to the job's design",
+              "Their sealed section has a sound Rix cannot categorize — biological or cargo-adjacent, unclear"
+            ],
+            "last_seen": "Boarded at Helix Station berth; not seen since the Last Meridian departed",
+            "relations": [
+              {
+                "name": "Juno Vale",
+                "type": "arranged by"
+              },
+              {
+                "name": "Rix",
+                "type": "proximity without contact — pressure accumulating"
+              }
+            ],
+            "voice_note": "Speaks only when they choose to. First contact will be on their terms. When they do speak: measured, minimal, offers just enough to keep Rix moving forward."
+          },
+          {
+            "name": "Juno Vale",
+            "role": "contact",
+            "description": "Back-channel broker who designed the job around Rix's exact financial exposure. Composed, transactional, and currently off-ship — power derives entirely from absence and information asymmetry.",
+            "disposition": "neutral",
+            "affiliation": "Back-channel brokers",
+            "key_facts": [
+              "Holds the destination coordinates, the escrow, and knowledge of Rix's exact debt figure",
+              "The controlled inspection Rix conducted was Juno's inspection — Rix saw what Juno permitted",
+              "Likely monitoring whether the delivery proceeds cleanly; has contingencies if Rix deviates"
+            ],
+            "last_seen": "Helix Station — not aboard the Last Meridian",
+            "relations": [
+              {
+                "name": "Rix",
+                "type": "client over — holds escrow and information leverage"
+              },
+              {
+                "name": "The Passenger",
+                "type": "arranged passage for"
+              }
+            ],
+            "voice_note": "Never rattled. Every sentence gives you exactly what you need to keep going and nothing more. Silence from Juno is a tool, not an absence."
+          },
+          {
+            "name": "Sable Ort",
+            "role": "npc",
+            "description": "Voss Recovery collector who filed a route hold and made the Last Meridian's name public at Helix Station before departure. Formally resolved, structurally hostile.",
+            "disposition": "hostile",
+            "affiliation": "Voss Recovery",
+            "key_facts": [
+              "Filed a route hold against the Last Meridian — on record even after debt clearance",
+              "Made the ship's name and the unusual departure public in front of dock workers",
+              "May sell the departure information to Voss Recovery's investigators or a rival broker"
+            ],
+            "last_seen": "Helix Station concourse, before Last Meridian departed",
+            "relations": [
+              {
+                "name": "Rix",
+                "type": "formally resolved, structurally hostile"
+              },
+              {
+                "name": "Voss Recovery",
+                "type": "employed by"
+              }
+            ],
+            "voice_note": "Bureaucratic and precise. Not threatening by volume — threatening by paperwork. Every word is a filing."
+          }
+        ],
+        "npcs_to_promote": [
+          "The Passenger",
+          "Juno Vale"
+        ],
+        "location": {
+          "name": "The Last Meridian — Deep Transit, Between Jump Two and Jump Three",
+          "description": "A solo-run light freighter in hard dark — no beacon corridor, no relay coverage, no traffic. The cockpit is Rix's. The hold holds one sealed crate. A single passenger section is closed and has been since departure. The ship's internal comm queue has one untagged message. Six hours to the final jump."
+        }
+      }
+    },
+    "sf2CloseSetup": {
+      "meaning": {
+        "situation": "The crew stands at Helix Station dock with a sealed passenger-and-crate job they did not fully negotiate, a debt converted into a route hold they must leave under, and the knowledge that their desperation is exactly priced.",
+        "tension": "The sealed terms remain unknown while Juno's escrow and Sable's route lock both tighten — the crew can leave, but only by trusting a job shaped by someone else's leverage.",
+        "ticking": "Sable made the debt public and weaponized it into a departure hold; Juno accepted escrow and one controlled inspection; the clock moved from private crisis to institutional pressure.",
+        "question": "Can the crew fly a sealed job to an unknown last beacon without the terms reshaping them into someone else's asset?",
+        "closer": "The crew has a path off Helix, but the price of that path is already being paid by trusting people who know exactly how much they need to.",
+        "closingResolution": "unresolved",
+        "transition_seed": {
+          "prior_chapter_meant": "The crew learned that Helix Station's infrastructure is weaponized against them — debt, route holds, and desperation are all leverage when you cannot leave.",
+          "earned_consequence": "The crew earned the world's knowledge that they will move cargo under incomplete terms rather than stay pinned, and both Juno and Sable now have proof of that calculation.",
+          "pressure_owner_candidate": "Juno Vale — she holds the escrow, the sealed terms, and the passenger arrival. The sealed job itself is the next pressure surface.",
+          "worsened_detail": "The sealed crate and passenger terms remain unknown beyond last-beacon destination; whatever is inside now owns the crew's next route.",
+          "unresolved_question": "What does the sealed job actually contain, and who benefits if the crew fulfills it or fails to?",
+          "do_not_restage": [
+            "The forty-thousand-credit debt negotiation — it is converted to route hold, not pending",
+            "Sable Ort's leverage play — public naming and route lock have been deployed, not held in reserve",
+            "The escrow and controlled inspection mechanics — they have resolved into acceptance and departure, not ongoing gates"
+          ],
+          "procedure_residue": {
+            "mechanism": "Sealed cargo manifest and route hold against debt",
+            "keep_as": "leverage"
+          }
+        }
+      },
+      "author": {
+        "chapter_frame": {
+          "title": "What the Crate Costs",
+          "premise": "The crew is still on Helix Station's berth ring, sealed job accepted, passenger not yet aboard — but Juno's controlled inspection is about to happen, and someone else has arrived who changes what honoring that deal means.",
+          "active_pressure": "Juno's escrow holds the route; what she reveals during inspection will cost more than time.",
+          "central_tension": "The crew must board a passenger and crate they don't understand, before someone with authority exposes what's inside.",
+          "objective": "Get the passenger and crate aboard under terms the crew can live with, without burning Juno or the route.",
+          "crucible": "The inspection is the one moment everyone's leverage is visible at once — whoever blinks first pays in standing, not just credits.",
+          "outcome_spectrum": {
+            "clean": "Passenger aboard, crate sealed, Juno's route chit honored; the crew still controls their own terms.",
+            "costly": "Job moves but Juno now owns a favor; the crew is assets she can redeploy, not partners.",
+            "failure": "The inspection exposes enough that a station authority flags the manifest; Sable Ort gets a second hold.",
+            "catastrophic": "The passenger's identity surfaces publicly; whoever is hunting them now has the crew's registry and departure vector."
+          }
+        },
+        "opening_scene_spec": {
+          "location": "Helix Station berth ring, service corridor behind bay 14 — narrow, poorly lit, smelling of recycled coolant.",
+          "atmospheric_condition": "Low amber lighting, distant dock machinery cycling, berth-ring quiet before a shift change.",
+          "initial_state": "The crew's ship is still clamped under the route hold; Juno Vale has sent word the controlled inspection starts in twenty minutes at the cargo bay annex, and the passenger has not yet appeared.",
+          "first_player_facing": "A dockhand Rix doesn't recognize is loitering at the annex junction — too still, not working, watching the cargo side.",
+          "dramatic_situation": "The inspection is the one agreed-upon gate before departure, but an unidentified watcher at the annex means the terms Juno set may already have a witness she didn't authorize.",
+          "first_visible_pressure": "The stranger at the annex junction — present before the inspection starts, positioned to see who arrives with what.",
+          "first_human_or_institutional_move": "Juno Vale's runner arrives with a message: the passenger will come to the annex, not the ship — Juno is changing the meeting point thirty minutes before they agreed.",
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": [
+            "npc_juno_vale"
+          ],
+          "withheld_premise_facts": [
+            "The watcher at the annex works for neither Juno nor the station — a third party the crew has not yet named.",
+            "The crate's sealed manifest lists a destination code that does not match any active beacon corridor.",
+            "The passenger knows what is in the crate and has been waiting on Helix Station longer than Juno admitted."
+          ],
+          "do_not_restage": [
+            "The forty-thousand-credit debt negotiation — converted to route hold, closed.",
+            "Sable Ort's public naming and route lock — already deployed, not held in reserve.",
+            "The escrow agreement and controlled-inspection arrangement — resolved into acceptance, not an ongoing gate.",
+            "The departure-board pressure and fee-ledger leverage — spent in Ch1."
+          ]
+        },
+        "active_threads": [
+          {
+            "id": "thread_move_sealed_job",
+            "title": "Board the passenger and crate",
+            "question": "What must the crew expose to get the job moving?",
+            "driver_kind": "carry_forward",
+            "tension": 8,
+            "resolution_criteria": "The passenger and crate are aboard under terms the crew understands, with Juno's route chit honored or explicitly rejected.",
+            "failure_mode": "Juno retracts the chit or the inspection surfaces enough for Sable to place a second hold before departure.",
+            "retrieval_cue": "Sealed job, last-beacon destination, inspection in twenty minutes."
+          },
+          {
+            "id": "thread_keep_crew_whole",
+            "title": "Keep the crew's trust intact",
+            "question": "Can the crew follow a choice made without full information?",
+            "driver_kind": "carry_forward",
+            "tension": 5,
+            "resolution_criteria": "The crew understands the risk well enough to commit, without reading the job as another secret kept from them.",
+            "failure_mode": "The crew interprets the inspection's hidden facts as the PC choosing the job over their safety."
+          },
+          {
+            "id": "thread_identify_the_watcher",
+            "title": "Name the watcher at the annex",
+            "question": "Who sent the third party, and what are they reporting?",
+            "driver_kind": "new_pressure",
+            "tension": 6,
+            "resolution_criteria": "The watcher's principal is identified and their information either intercepted or irreversibly transmitted.",
+            "failure_mode": "The watcher transmits the passenger's presence and the crate's description before the crew can act.",
+            "retrieval_cue": "Too still, not working, watching the cargo side — not station staff."
+          },
+          {
+            "id": "thread_latent_why_the_passenger_runs",
+            "title": "Why can't the passenger use ordinary routes?",
+            "question": "What hunts Kas Verell that closes every legitimate door?",
+            "driver_kind": "arc_promoted",
+            "tension": 7,
+            "resolution_criteria": "The crew learns what or who is hunting the passenger, and what the crate's contents mean for that pursuit.",
+            "failure_mode": "The crew commits to protecting the passenger without knowing what threat they are now carrying alongside them.",
+            "retrieval_cue": "Destination code matches no active beacon corridor."
+          }
+        ],
+        "tension_score": null
+      },
+      "validationErrors": [
+        "chapter_frame.outcome_spectrum.catastrophic must name a human consequence, named entity, or relationship/cost",
+        "active_threads[3].driver_kind arc_promoted must reuse a deferred arc thread id",
+        "arc_link.arc_thread_ids[1] thread_latent_why_the_passenger_runs is not an arc thread id",
+        "tension_score must contain 3-4 lines for SF2B continuation chapters (got 0)",
+        "continuity_lock.closing_geometry missing loc_opening (Helix Station cantina, berth-ring edge) bridge",
+        "continuation_moves is missing (required for chapter ≥ 2)",
+        "continuation_dramatic_turn is missing (required for chapter ≥ 2)"
+      ]
+    }
+  }
+}
