@@ -26,6 +26,28 @@
         ],
         "recentTurns": []
       },
+      "world": {
+        "currentLocation": {
+          "id": "loc_driftrunner_berth",
+          "name": "Driftrunner berth",
+          "description": "The berth the ship just left behind.",
+          "atmosphericConditions": []
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_berth_departure",
+          "location": {
+            "id": "loc_driftrunner_berth",
+            "name": "Driftrunner berth",
+            "description": "The berth the ship just left behind.",
+            "atmosphericConditions": []
+          },
+          "presentNpcIds": [],
+          "currentInterlocutorIds": [],
+          "timeLabel": "departure",
+          "established": ["The ship has left the berth."],
+          "firstTurnIndex": 1
+        }
+      },
       "campaign": {
         "arcPlan": {
           "id": "arc_forty_thousand_blockade_threading",

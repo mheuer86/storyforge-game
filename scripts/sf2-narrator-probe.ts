@@ -35,8 +35,11 @@ interface ReplayLikeFixture {
   }
 }
 
-const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-haiku-4-5-20251001'
-const HAIKU_PRICING = { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 }
+const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-sonnet-4-6'
+const MODEL_PRICING = {
+  haiku45: { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 },
+  sonnet46: { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
+}
 
 async function main(): Promise<void> {
   loadEnvFromDotenvLocal()
@@ -110,21 +113,29 @@ async function main(): Promise<void> {
   }
 
   const usage = response.usage
+  const pricing = pricingForModel(NARRATOR_MODEL)
   const costUsd =
-    (usage.input_tokens * HAIKU_PRICING.input +
-      usage.output_tokens * HAIKU_PRICING.output +
-      (usage.cache_creation_input_tokens ?? 0) * HAIKU_PRICING.cacheWrite +
-      (usage.cache_read_input_tokens ?? 0) * HAIKU_PRICING.cacheRead) /
+    (usage.input_tokens * pricing.input +
+      usage.output_tokens * pricing.output +
+      (usage.cache_creation_input_tokens ?? 0) * pricing.cacheWrite +
+      (usage.cache_read_input_tokens ?? 0) * pricing.cacheRead) /
     1_000_000
 
   if (failures.length > 0) {
-    console.log(`FAIL ${fixture.name}`)
+    console.log(`FAIL ${fixture.name} — model ${NARRATOR_MODEL}`)
     for (const failure of failures) console.log(`  - ${failure}`)
     console.log('\nNarrator text:\n' + text)
     process.exit(1)
   }
-  console.log(`PASS ${fixture.name} — $${costUsd.toFixed(4)}`)
+  console.log(`PASS ${fixture.name} — model ${NARRATOR_MODEL} — $${costUsd.toFixed(4)}`)
   console.log(text.slice(0, 700))
+}
+
+function pricingForModel(model: string): typeof MODEL_PRICING.haiku45 {
+  const normalized = model.toLowerCase()
+  if (normalized.includes('haiku')) return MODEL_PRICING.haiku45
+  if (normalized.includes('sonnet')) return MODEL_PRICING.sonnet46
+  return MODEL_PRICING.sonnet46
 }
 
 function buildStateBefore(fixture: ReplayLikeFixture): Sf2State {

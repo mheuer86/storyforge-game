@@ -21,6 +21,8 @@ import {
   type Sf2Npc,
   type Sf2NpcStatus,
   type Sf2PressureEvent,
+  type Sf2RevealContext,
+  type Sf2RevelationCashConditions,
   type Sf2State,
   type Sf2Thread,
   type Sf2Clue,
@@ -274,6 +276,8 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
     ? state.chapter.scaffolding.possibleRevelations.map((r) => ({
         ...r,
         hintPhrases: stringArray(r.hintPhrases),
+        playerTopicKeys: stringArray(r.playerTopicKeys),
+        cashConditions: normalizeRevelationCashConditions(r.cashConditions),
         hintsRequired: positiveInt(r.hintsRequired, 0),
         hintsDelivered: positiveInt(r.hintsDelivered, 0),
         hintEvidence: Array.isArray(r.hintEvidence) ? r.hintEvidence : [],
@@ -897,6 +901,39 @@ function numberOr(value: unknown, fallback: number): number {
 function positiveInt(value: unknown, fallback: number): number {
   return Math.max(0, Math.round(numberOr(value, fallback)))
 }
+
+function normalizeRevelationCashConditions(value: unknown): Sf2RevelationCashConditions | undefined {
+  const raw = asRecord(value)
+  if (!raw) return undefined
+  const minTension = asRecord(raw.minTension) ?? asRecord(raw.min_tension)
+  const normalized: Sf2RevelationCashConditions = {}
+  if (typeof raw.playerPressesTopic === 'boolean') normalized.playerPressesTopic = raw.playerPressesTopic
+  if (typeof raw.player_presses_topic === 'boolean') normalized.playerPressesTopic = raw.player_presses_topic
+  if (raw.minTurn !== undefined || raw.min_turn !== undefined) {
+    normalized.minTurn = positiveInt(raw.minTurn ?? raw.min_turn, 0)
+  }
+  const threadId = stringOr(minTension?.threadId ?? minTension?.thread_id, '')
+  if (threadId) {
+    normalized.minTension = {
+      threadId,
+      value: clamp(numberOr(minTension?.value, 0), 0, 10),
+    }
+  }
+  const contexts = stringArray(raw.requiresContext ?? raw.requires_context)
+    .filter((context): context is Sf2RevealContext => REVEAL_CONTEXTS.includes(context as Sf2RevealContext))
+  if (contexts.length > 0) normalized.requiresContext = contexts
+  return Object.keys(normalized).length > 0 ? normalized : undefined
+}
+
+const REVEAL_CONTEXTS: Sf2RevealContext[] = [
+  'crisis_of_trust',
+  'private_pressure',
+  'documentary_surface',
+  'confession',
+  'accusation',
+  'forced_disclosure',
+  'inadvertent',
+]
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))

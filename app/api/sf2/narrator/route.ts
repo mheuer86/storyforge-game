@@ -13,7 +13,7 @@ import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-
 import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
 
-const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-haiku-4-5-20251001'
+const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-sonnet-4-6'
 
 function resolveClient(req: NextRequest): Anthropic {
   const byokKey = req.headers.get('x-anthropic-key')?.trim()
@@ -73,7 +73,7 @@ type Sf2NarratorStreamEvent =
     }
   | { type: 'pacing_advisory'; tripped: boolean; reactivityRatio: number; reactivityTripped: boolean; sceneLinkTripped: boolean; stagnantThreadIds: string[]; arcDormantIds: string[] }
   | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number }
-  | { type: 'token_usage'; usage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
+  | { type: 'token_usage'; usage: { model: string; inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
   | { type: 'latency'; role: 'narrator'; latency: Sf2LatencyPayload }
   | { type: 'truncation_warning'; outputTokens: number }
   | {
@@ -445,6 +445,7 @@ export async function POST(req: NextRequest) {
         send({
           type: 'token_usage',
           usage: {
+            model: NARRATOR_MODEL,
             inputTokens: usage.input_tokens,
             outputTokens: usage.output_tokens,
             cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
@@ -660,6 +661,7 @@ export async function POST(req: NextRequest) {
             send({
               type: 'token_usage',
               usage: {
+                model: NARRATOR_MODEL,
                 inputTokens: repairUsage.input_tokens,
                 outputTokens: repairUsage.output_tokens,
                 cacheWriteTokens: repairUsage.cache_creation_input_tokens ?? 0,

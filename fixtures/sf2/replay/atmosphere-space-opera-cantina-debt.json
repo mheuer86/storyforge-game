@@ -1,0 +1,51 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "atmosphere-space-opera-cantina-debt",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera",
+        "campaignId": "atmo_space_cantina"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_cantina",
+          "name": "Sable Reach Cantina",
+          "description": "A station cantina near the docking ring.",
+          "atmosphericConditions": ["neon haze"]
+        },
+        "sceneSnapshot": {
+          "sceneId": "loc_cantina",
+          "location": {
+            "id": "loc_cantina",
+            "name": "Sable Reach Cantina",
+            "description": "A station cantina near the docking ring.",
+            "atmosphericConditions": ["neon haze"]
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "frame": {
+            "activePressure": "Debt pressure from port fees and a collector.",
+            "crucible": "The fee balance blocks departure while the collector closes distance."
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "I look around before answering the job offer.",
+    "narrator": {
+      "prose": "You take in the cantina before you answer.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "scenePacketAtmosphereCountBetween": [3, 6],
+    "scenePacketAtmosphereIncludes": ["neon haze"]
+  }
+}

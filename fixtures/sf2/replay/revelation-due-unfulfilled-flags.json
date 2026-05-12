@@ -1,0 +1,72 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation due unfulfilled flags",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "A due reveal that does not land in prose, annotation, or Archivist reveal output produces a post-turn coherence finding."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_renn_identity",
+              "statement": "Renn is the Synod's younger courier, carrying orders no official will sign.",
+              "heldBy": "npc_renn",
+              "emergenceCondition": "The player presses the younger man's identity.",
+              "recontextualizes": "The quiet assistant is active pressure, not scenery.",
+              "revealed": false,
+              "hintPhrases": ["younger courier", "unsigned orders", "Renn keeps his gloves on"],
+              "playerTopicKeys": ["who is he", "the younger man", "Renn", "npc_renn"],
+              "cashConditions": { "playerPressesTopic": true },
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": ["private_pressure", "confession"],
+              "invalidRevealContexts": ["inadvertent"]
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Who is he?",
+    "narrator": {
+      "prose": "The clerk looks toward the younger man and says only, \"He carries what the office gives him.\" The answer closes without a name.",
+      "annotation": {
+        "suggested_actions": ["Ask again and demand a name.", "Follow the younger man.", "Let the answer pass for now."]
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationProgressIncludes": [
+      {
+        "revelationId": "rev_renn_identity",
+        "due": true,
+        "dueReasonIncludes": "player pressed topic"
+      }
+    ],
+    "coherenceFindingsInclude": [
+      {
+        "type": "revelation_due_unfulfilled",
+        "stateReference": "rev_renn_identity",
+        "suggestedNoteIncludes": "Due reveal missed"
+      }
+    ],
+    "revelationsInclude": [
+      { "id": "rev_renn_identity", "revealed": false }
+    ]
+  }
+}

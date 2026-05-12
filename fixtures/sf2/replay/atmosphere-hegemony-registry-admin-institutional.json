@@ -1,0 +1,50 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "atmosphere-hegemony-registry-admin-institutional",
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "hegemony",
+        "campaignId": "atmo_hegemony_registry"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_registry",
+          "name": "Settlement Registry Admin Hall",
+          "description": "A public records room where tithe compliance is reviewed.",
+          "atmosphericConditions": []
+        },
+        "sceneSnapshot": {
+          "sceneId": "loc_registry",
+          "location": {
+            "id": "loc_registry",
+            "name": "Settlement Registry Admin Hall",
+            "description": "A public records room where tithe compliance is reviewed.",
+            "atmosphericConditions": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "frame": {
+            "activePressure": "Institutional compliance pressure from the Synod registry.",
+            "crucible": "The mandate makes refusal legible before it makes it punishable."
+          }
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "I study the room and the forms before speaking.",
+    "narrator": {
+      "prose": "The registry room waits in procedural silence.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "scenePacketAtmosphereCountBetween": [3, 6]
+  }
+}

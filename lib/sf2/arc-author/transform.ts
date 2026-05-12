@@ -239,5 +239,9 @@ function factionIdForDurableForce(forceId: string, name: string): string {
 
 function looksLikeHiddenAnswer(value: string): boolean {
   const lower = value.toLowerCase()
-  return /\b(reveals?|turns out|is secretly|was secretly|was in on it|actually|proves that|exposes that)\b/.test(lower)
+  if (/\b(reveals?|turns out|is secretly|are secretly|was secretly|were secretly|was in on it|were in on it|proves that|exposes that)\b/.test(lower)) {
+    return true
+  }
+  return /\b(?:is|are|was|were)\s+actually\b/.test(lower)
+    || /\bactually\s+(?:is|are|was|were|works?|worked|serves?|served|belongs?|belonged|owes?|owed|killed|stole|sold|betrayed|planned|caused|sent|built)\b/.test(lower)
 }

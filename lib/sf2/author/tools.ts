@@ -603,8 +603,53 @@ const possibleRevelationsSchema = {
       },
       hint_phrases: {
         type: 'array' as const,
-        description: '3 short substrings the Narrator can plant before this reveal fires.',
+        description: 'Outbound: 3 short substrings the Narrator can plant in prose before this reveal fires.',
         items: { type: 'string' as const },
+      },
+      player_topic_keys: {
+        type: 'array' as const,
+        description:
+          'Inbound: 2-5 short player-input phrases or entity ids that mean the player is pressing this reveal topic directly.',
+        items: { type: 'string' as const },
+      },
+      cash_conditions: {
+        type: 'object' as const,
+        description:
+          'Optional deterministic cash-out gates. Use when direct player pressure, turn count, thread tension, or reveal context should make the reveal due before Narrator prose.',
+        properties: {
+          player_presses_topic: {
+            type: 'boolean' as const,
+            description: 'True when matching player_topic_keys should make this reveal due.',
+          },
+          min_turn: {
+            type: 'number' as const,
+            description: 'Earliest zero-based turn index when this reveal can cash out.',
+          },
+          min_tension: {
+            type: 'object' as const,
+            properties: {
+              thread_id: { type: 'string' as const },
+              value: { type: 'number' as const, description: 'Minimum thread tension, 0-10.' },
+            },
+            required: ['thread_id', 'value'],
+          },
+          requires_context: {
+            type: 'array' as const,
+            description: 'Player-input/reveal contexts required for due-ness.',
+            items: {
+              type: 'string' as const,
+              enum: [
+                'crisis_of_trust',
+                'private_pressure',
+                'documentary_surface',
+                'confession',
+                'accusation',
+                'forced_disclosure',
+                'inadvertent',
+              ],
+            },
+          },
+        },
       },
       hints_required: {
         type: 'number' as const,

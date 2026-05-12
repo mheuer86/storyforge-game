@@ -122,6 +122,19 @@ export interface GenreStatLabels {
   inspiration: string
 }
 
+export type AtmosphericPressureSurface =
+  | 'baseline'
+  | 'authority'
+  | 'debt'
+  | 'transit'
+  | 'institutional'
+  | 'danger'
+
+export type AtmosphericPalette = Record<
+  string,
+  Partial<Record<AtmosphericPressureSurface, string[]>>
+>
+
 export interface GenreConfig {
   id: Genre
   name: string
@@ -160,6 +173,7 @@ export interface GenreConfig {
   deepLore?: string           // cached world lore section (~400-500 words) injected into core layer
   guideNpcDirective?: string  // one-sentence directive for the opening NPC's exposition role
   loreFacets?: Record<string, string>  // scene-keyed lore facets injected when conditions match
+  atmosphericPalettes?: AtmosphericPalette // SF2 scene-packet atmosphere keyed by location archetype + pressure surface
   cohesionGuide?: string     // genre-specific cohesion triggers (overrides generic +1/-1 rules)
   companionLabel: string     // "Companions", "Retainers", "Crew", etc.
   loreAnchors?: string[]     // compact world facts shipped every turn for complex genres

@@ -126,7 +126,8 @@ export const narrateTurnTool: Anthropic.Tool = {
         properties: {
           planted_revelation_deployed: {
             type: 'string',
-            description: 'Revelation id if this turn deployed one.',
+            description:
+              'Revelation id if this turn deployed one. Required when revelationProgress marks a reveal due.',
           },
           witness_mark_surfaced: {
             type: 'string',

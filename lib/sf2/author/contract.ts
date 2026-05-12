@@ -15,6 +15,7 @@ import type {
   Sf2HumanStakeCostSurface,
   Sf2ChapterTensionRole,
   Sf2RevealContext,
+  Sf2RevelationCashConditions,
   Sf2State,
   Sf2ThreadStatus,
 } from '../types'
@@ -444,6 +445,10 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       emergenceCondition: stringField(r, 'emergence_condition', 'emergenceCondition'),
       recontextualizes: stringField(r, 'recontextualizes'),
       hintPhrases: stringArray(r, 'hint_phrases', 'hintPhrases'),
+      playerTopicKeys: stringArray(r, 'player_topic_keys', 'playerTopicKeys'),
+      cashConditions: normalizeRevelationCashConditions(
+        getObject(r, 'cash_conditions', 'cashConditions')
+      ),
       hintsRequired: optionalPositiveInt(valueField(r, 'hints_required', 'hintsRequired')),
       validRevealContexts: revealContextArray(r, 'valid_reveal_contexts', 'validRevealContexts'),
       invalidRevealContexts: revealContextArray(r, 'invalid_reveal_contexts', 'invalidRevealContexts'),
@@ -744,6 +749,7 @@ export function validateAuthorSetup(
       }
     }
     errors.push(...validateContinuationDramaticTurn(authored))
+    errors.push(...validateContinuationOpeningLocationBridge(authored, opts.state))
     errors.push(...validateProcedureGravity(authored, opts.state?.meta.genreId))
     if (opts.state?.chapter?.artifacts?.meaning?.transitionSeed) {
       errors.push(...validateTransitionSeedHonored(authored, opts.state.chapter.artifacts.meaning.transitionSeed))
@@ -751,6 +757,82 @@ export function validateAuthorSetup(
   }
 
   return errors
+}
+
+export function validateAuthorSetupWarnings(
+  authoredInput: AuthorChapterSetupV2,
+  opts: AuthorSetupValidationOptions = { isContinuation: false }
+): string[] {
+  const authored = completeAuthorSetupForValidation(authoredInput, opts)
+  const warnings: string[] = []
+
+  if (opts.isContinuation) {
+    warnings.push(...warnContinuationPressureLaneClustering(authored))
+  }
+
+  return uniqueErrors(warnings)
+}
+
+function validateContinuationOpeningLocationBridge(
+  authored: AuthorChapterSetupV2,
+  state?: Sf2State
+): string[] {
+  if (!state) return []
+
+  const closingLocation = state.world.sceneSnapshot.location
+  const closingTerms = importantLocationTerms(closingLocation.name, closingLocation.id)
+  if (closingTerms.length === 0) return []
+
+  const openingText = [
+    authored.openingSceneSpec.location,
+    authored.openingSceneSpec.initialState,
+    authored.openingSceneSpec.firstPlayerFacing,
+    authored.openingSceneSpec.dramaticSituation,
+    authored.openingSceneSpec.firstVisiblePressure,
+    authored.openingSceneSpec.firstHumanOrInstitutionalMove,
+  ].filter(Boolean).join('\n')
+
+  if (mentionsAnyTerm(openingText, closingTerms)) return []
+  if (hasLocationBridgeLanguage(openingText)) return []
+
+  return [
+    `opening_scene_spec.location must bridge from prior closing location ${closingLocation.id} (${closingLocation.name}); open there, name travel from there, or justify the jump in opening_scene_spec.initial_state/first_player_facing`,
+  ]
+}
+
+function warnContinuationPressureLaneClustering(authored: AuthorChapterSetupV2): string[] {
+  const lanes = authored.activeThreads.map(classifyPressureLane)
+  const laneCounts = new Map<string, number>()
+  for (const lane of lanes) laneCounts.set(lane, (laneCounts.get(lane) ?? 0) + 1)
+
+  const dominant = [...laneCounts.entries()].sort((a, b) => b[1] - a[1])[0]
+  if (!dominant || dominant[1] < 3 || lanes.length < 4) return []
+
+  return [
+    `active_threads cluster in the ${dominant[0]} lane (${dominant[1]}/${lanes.length}); continuation chapters should distribute pressure across foreground objective, relational/social cost, and shadow faction/institution pressure`,
+  ]
+}
+
+function classifyPressureLane(thread: AuthorChapterSetupV2['activeThreads'][number]): string {
+  const text = [
+    thread.title,
+    thread.question,
+    thread.ownerHint,
+    thread.resolutionCriteria,
+    thread.failureMode,
+    thread.retrievalCue,
+  ].join(' ')
+
+  if (/\b(friend|ally|trust|loyal|relationship|promise|contact|family|crew|companion|reputation|standing|owed|debt|betray|protect|safety|freedom)\b/i.test(text)) {
+    return 'relational_social_pressure'
+  }
+  if (/\b(faction|institution|authority|regime|guild|house|court|imperial|corporate|syndicate|watch|police|ministry|hegemony|church|cabal|rival)\b/i.test(text)) {
+    return 'shadow_faction_pressure'
+  }
+  if (/\b(cargo|system|engine|ship|route|environment|storm|radiation|weather|terrain|procedure|audit|record|queue|permit|clearance|gate|lock|timer)\b/i.test(text)) {
+    return 'environmental_or_system_pressure'
+  }
+  return 'foreground_objective'
 }
 
 function canCompleteSuccessorTransition(ctx: AuthorRawValidationContext, predecessorId: string): boolean {
@@ -1265,6 +1347,24 @@ function uniqueErrors(errors: string[]): string[] {
   return [...new Set(errors)]
 }
 
+function importantLocationTerms(name: string, id: string): string[] {
+  const nameTerms = name
+    .split(/[^a-z0-9']+/i)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 4 && !COMMON_TERMS.has(term.toLowerCase()))
+
+  return [...new Set([id, name, ...nameTerms].filter((term) => term.trim().length > 0))]
+}
+
+function mentionsAnyTerm(text: string, terms: string[]): boolean {
+  const lowerText = text.toLowerCase()
+  return terms.some((term) => lowerText.includes(term.toLowerCase()))
+}
+
+function hasLocationBridgeLanguage(text: string): boolean {
+  return /\b(?:from|after leaving|having left|arriv(?:e|es|ed|ing)|travel(?:s|ed|ing)?|walk(?:s|ed|ing)?|drive(?:s|n|ing)?|drove|flew|flies|flight|carried|escorted|taken|brought|transferred|relocat(?:e|es|ed|ing)|time[- ]?jump|jump(?:s|ed|ing)?|days? later|hours? later|meanwhile|elsewhere|because|as a consequence|in the wake of)\b/i.test(text)
+}
+
 function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThreads'][number]['driverKind'] {
   return value === 'carry_forward' || value === 'successor' || value === 'new_pressure' || value === 'arc_promoted'
     ? value
@@ -1303,6 +1403,34 @@ function revealContextArray(
   return stringArray(obj, snake, camel).filter((v): v is Sf2RevealContext =>
     REVEAL_CONTEXTS.includes(v as Sf2RevealContext)
   )
+}
+
+function normalizeRevelationCashConditions(
+  raw: Record<string, unknown>
+): Sf2RevelationCashConditions | undefined {
+  if (Object.keys(raw).length === 0) return undefined
+  const minTension = getObject(raw, 'min_tension', 'minTension')
+  const normalized: Sf2RevelationCashConditions = {}
+  const playerPressesTopic = valueField(raw, 'player_presses_topic', 'playerPressesTopic')
+  if (typeof playerPressesTopic === 'boolean') {
+    normalized.playerPressesTopic = playerPressesTopic
+  }
+  const minTurn = optionalPositiveInt(valueField(raw, 'min_turn', 'minTurn'))
+  if (minTurn !== undefined) normalized.minTurn = minTurn
+  const threadId = stringField(minTension, 'thread_id', 'threadId').trim()
+  const tensionValue = valueField(minTension, 'value')
+  if (threadId && tensionValue !== undefined) {
+    const n = Number(tensionValue)
+    if (Number.isFinite(n)) {
+      normalized.minTension = {
+        threadId,
+        value: Math.max(0, Math.min(10, Math.round(n))),
+      }
+    }
+  }
+  const contexts = revealContextArray(raw, 'requires_context', 'requiresContext')
+  if (contexts.length > 0) normalized.requiresContext = contexts
+  return Object.keys(normalized).length > 0 ? normalized : undefined
 }
 
 function stringField(obj: Record<string, unknown> | undefined, snake: string, camel?: string): string {

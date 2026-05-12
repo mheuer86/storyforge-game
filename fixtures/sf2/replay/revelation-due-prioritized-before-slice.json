@@ -1,0 +1,114 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation due prioritized before packet slice",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "A due reveal beyond the first four authored revelations must still enter the bounded Narrator packet."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_hint_1",
+              "statement": "First hint-only secret.",
+              "heldBy": "narrator",
+              "emergenceCondition": "later",
+              "recontextualizes": "nothing yet",
+              "revealed": false,
+              "hintPhrases": ["first hint"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            },
+            {
+              "id": "rev_hint_2",
+              "statement": "Second hint-only secret.",
+              "heldBy": "narrator",
+              "emergenceCondition": "later",
+              "recontextualizes": "nothing yet",
+              "revealed": false,
+              "hintPhrases": ["second hint"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            },
+            {
+              "id": "rev_hint_3",
+              "statement": "Third hint-only secret.",
+              "heldBy": "narrator",
+              "emergenceCondition": "later",
+              "recontextualizes": "nothing yet",
+              "revealed": false,
+              "hintPhrases": ["third hint"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            },
+            {
+              "id": "rev_hint_4",
+              "statement": "Fourth hint-only secret.",
+              "heldBy": "narrator",
+              "emergenceCondition": "later",
+              "recontextualizes": "nothing yet",
+              "revealed": false,
+              "hintPhrases": ["fourth hint"],
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": []
+            },
+            {
+              "id": "rev_due_5",
+              "statement": "The fifth revelation is due because the player names it.",
+              "heldBy": "narrator",
+              "emergenceCondition": "The player names the fifth key.",
+              "recontextualizes": "Packet ordering must respect due-ness.",
+              "revealed": false,
+              "hintPhrases": ["fifth hint"],
+              "playerTopicKeys": ["fifth key"],
+              "cashConditions": { "playerPressesTopic": true },
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": ["private_pressure"]
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "What about the fifth key?",
+    "narrator": {
+      "prose": "The answer lands cleanly: the fifth revelation is due because the player names it.",
+      "annotation": {
+        "authorial_moves": { "planted_revelation_deployed": "rev_due_5" },
+        "suggested_actions": ["Follow the fifth clue.", "Ask who hid it.", "Wait."]
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationProgressIncludes": [
+      {
+        "revelationId": "rev_due_5",
+        "due": true,
+        "dueReasonIncludes": "player pressed topic"
+      }
+    ]
+  }
+}

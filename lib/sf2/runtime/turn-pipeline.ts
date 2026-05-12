@@ -25,6 +25,7 @@ import {
   applyTurnResolutionConsequences,
   buildTurnResolutionRecord,
 } from '../turn-resolution/resolve'
+import { evaluateRevelationDue, normalizeRevelationTopic } from '../retrieval/revelation-due'
 import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
 import { isSf2bState } from '../../sf2b/mode'
@@ -354,9 +355,14 @@ export function finalizeArchivistTurn(input: FinalizeArchivistTurnInput): Finali
       suggestedNote: d.detail.slice(0, 200),
     }))
 
-  const allFindings = [...(input.patch.coherenceFindings ?? []), ...anchorMissFindings]
-  const coherenceNotes = input.patch.coherenceFindings
-    ? formatCoherenceNotes(input.patch.coherenceFindings)
+  const dueRevealFindings = detectDueRevealUnfulfilled(input)
+  const allFindings = [
+    ...(input.patch.coherenceFindings ?? []),
+    ...anchorMissFindings,
+    ...dueRevealFindings,
+  ]
+  const coherenceNotes = allFindings.length > 0
+    ? formatCoherenceNotes(allFindings)
     : []
   prunedState.campaign.pendingCoherenceNotes =
     coherenceNotes.length > 0 ? coherenceNotes : undefined
@@ -613,6 +619,52 @@ function applyPostArchivistTurnEffects(input: {
   )
 
   return { stateAfter, invariantEvents, mechanicalEffects }
+}
+
+function detectDueRevealUnfulfilled(input: FinalizeArchivistTurnInput): Sf2CoherenceFinding[] {
+  const turnRecord = input.stateBeforeArchivist.history.turns.find((t) => t.index === input.patch.turnIndex - 1)
+    ?? input.stateBeforeArchivist.history.turns.at(-1)
+  if (!turnRecord) return []
+
+  const revealedIds = new Set(
+    (input.patch.revelationsRevealed ?? []).map((reveal) => reveal.revelationId)
+  )
+  const deployedId = narratorDeployedRevelationId(turnRecord.narratorAnnotationRaw)
+    ?? turnRecord.narratorAnnotation?.authorialMoves?.plantedRevelationDeployed
+  const normalizedProse = normalizeRevelationTopic(input.narratorProse)
+
+  return input.stateBeforeArchivist.chapter.scaffolding.possibleRevelations
+    .filter((revelation) => !revelation.revealed)
+    .map((revelation) => ({
+      revelation,
+      due: evaluateRevelationDue(
+        input.stateBeforeArchivist,
+        revelation,
+        turnRecord.playerInput,
+        turnRecord.index
+      ),
+    }))
+    .filter(({ due }) => due.due)
+    .filter(({ revelation }) => {
+      if (revealedIds.has(revelation.id)) return false
+      if (deployedId === revelation.id) return false
+      const statement = normalizeRevelationTopic(revelation.statement)
+      return !statement || !normalizedProse.includes(statement)
+    })
+    .map(({ revelation, due }) => ({
+      type: 'revelation_due_unfulfilled' as Sf2CoherenceFindingType,
+      severity: 'high' as const,
+      evidenceQuote: input.narratorProse.slice(0, 220),
+      stateReference: revelation.id,
+      suggestedNote: `Due reveal missed (${due.dueReason}); land "${revelation.statement.slice(0, 120)}" next turn.`,
+    }))
+}
+
+function narratorDeployedRevelationId(annotation: Record<string, unknown> | undefined): string | undefined {
+  if (!annotation) return undefined
+  const authorial = (annotation.authorial_moves ?? annotation.authorialMoves) as Record<string, unknown> | undefined
+  const value = authorial?.planted_revelation_deployed ?? authorial?.plantedRevelationDeployed
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
 function formatCoherenceNotes(findings: Sf2CoherenceFinding[]): string[] {

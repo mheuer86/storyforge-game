@@ -104,6 +104,12 @@ export type Sf2RevealContext =
   | 'accusation'
   | 'forced_disclosure'
   | 'inadvertent'
+export interface Sf2RevelationCashConditions {
+  playerPressesTopic?: boolean
+  minTurn?: number
+  minTension?: { threadId: Sf2EntityId; value: number }
+  requiresContext?: Sf2RevealContext[]
+}
 export type Sf2ExperimentMode = 'sf2b-hook'
 
 // Document lifecycle. Closed enum + per-type transition map (DOCUMENT_VALID_TRANSITIONS)
@@ -1058,7 +1064,11 @@ export interface Sf2PossibleRevelation {
   recontextualizes: string
   revealed: boolean
   revealedAtTurn?: number
+  // Outbound prose hints the Narrator can plant before the reveal lands.
   hintPhrases: string[]
+  // Inbound player input keys that make a direct press eligible for cash-out.
+  playerTopicKeys?: string[]
+  cashConditions?: Sf2RevelationCashConditions
   hintsRequired: number
   hintsDelivered: number
   hintEvidence: Sf2RevelationHintEvidence[]
@@ -1295,6 +1305,8 @@ export interface AuthorChapterSetupV2 {
     emergenceCondition: string
     recontextualizes: string
     hintPhrases?: string[]
+    playerTopicKeys?: string[]
+    cashConditions?: Sf2RevelationCashConditions
     hintsRequired?: number
     validRevealContexts?: Sf2RevealContext[]
     invalidRevealContexts?: Sf2RevealContext[]
@@ -1579,6 +1591,7 @@ export type Sf2CoherenceFindingType =
   // debug stream has evidence quotes and IDs.
   | 'anchor_miss'
   | 'revelation_premature_reveal'
+  | 'revelation_due_unfulfilled'
   // Prose-level drift on a known Sf2Document: prose attributes the document
   // to a different signer/filer/subject than the canonical record, or claims
   // the document permits/says something different from its originalSummary.
@@ -1667,6 +1680,9 @@ export interface Sf2RevelationProgressPacket {
   hintsDelivered: number
   hintsRequired: number
   hintPhrases: string[]
+  playerTopicKeys?: string[]
+  due: boolean
+  dueReason: string
   validRevealContexts: Sf2RevealContext[]
   invalidRevealContexts?: Sf2RevealContext[]
 }

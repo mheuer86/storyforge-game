@@ -740,6 +740,33 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
     'derelict-void': 'In this scene: the void is not empty; it is patient. Derelict ships carry the silence of crews that stopped transmitting. Describe what remains: personal effects, half-eaten meals, system logs that end mid-sentence.',
     'station-port': 'In this scene: stations are crossroads. Every species, every faction, every agenda passes through. The noise is constant. Information is the most traded commodity. Bartenders know more than intelligence officers.',
   },
+  atmosphericPalettes: {
+    cantina: {
+      baseline: ['scarred booth plating', 'old fry-oil in recycled air', 'muted holos above the bar', 'floor panels sticky with spilled synthale', 'private booth privacy fields humming'],
+      debt: ['credit chips clicking at the counter', 'a collector-visible sightline to the door', 'unpaid tab warnings on the table display', 'dock-fee notices cycling over the bar'],
+      authority: ['port security silhouettes near the entry', 'license scanner sweep across the booths', 'customs advisories muted on the wallfeed'],
+    },
+    'berth-ring': {
+      baseline: ['mag-clamps ticking through the hull', 'fuel-line hiss under the deck', 'amber berth status lamps', 'scratched plexite facing the concourse', 'loader drones whining on worn rails'],
+      debt: ['clamp-hold red on the docking console', 'port-fee balance pulsing beside the release code', 'a payment kiosk queue that never moves', 'dockmaster notices stacked in the ship inbox'],
+      danger: ['pressure seals cycling too often', 'emergency strobes reflected in fuel vapor', 'a patrol skiff idling beyond the berth arm'],
+    },
+    transit: {
+      baseline: ['beacon telemetry crawling across the nav glass', 'low drive harmonics in the deck', 'jump corridor static in the comms', 'cold stars smeared beyond the forward blister', 'restraint straps swaying with micro-corrections'],
+      transit: ['route windows counting down in amber', 'traffic-control pings queued unanswered', 'drift from the corridor edge nudging the autopilot', 'fuel margin warnings kept below alarm volume'],
+      danger: ['collision ghosts flickering at sensor range', 'dark-running lights only', 'emergency burn vectors preloaded'],
+    },
+    customs: {
+      baseline: ['inspection lanes marked in hard white light', 'bored port officers behind scratched glass', 'contraband notices in six trade dialects', 'sealed sample lockers along the wall', 'queue numbers dying on the overhead board'],
+      authority: ['license readers fixed on every wrist', 'search drones resting in open cradles', 'a detention door visible behind the intake desk', 'customs stamps hitting paper with ritual force'],
+      debt: ['fee schedules printed larger than the exit signs', 'lien warnings attached to the docking permit', 'clearance codes withheld behind a payment prompt'],
+    },
+    'freight-manifest': {
+      baseline: ['cargo tags blinking in uneven rows', 'manifest slates chained to the counter', 'loader grease under the clerk windows', 'vacuum wrap crackling around sealed pallets', 'weighbridge numbers refreshing too fast'],
+      debt: ['unreleased cargo flagged in red', 'broker holds layered over the manifest', 'escrow terms pinned beside the cargo seal', 'a balance-due line blocking final release'],
+      danger: ['tamper seals under fresh scan light', 'quarantine tape folded but ready', 'armed dock labor watching the load path'],
+    },
+  },
   loreAnchors: [
     'Compact Collapse=three centuries of infrastructure, forty years of rot. Budget shortfalls led to beacon failures led to isolation. Most people didn\'t notice until the trade ships stopped.',
     'Beacon Corridors=FTL depends on relay stations. Control the beacon, control the traffic. Some corridors went dark; the systems beyond are cut off for years.',

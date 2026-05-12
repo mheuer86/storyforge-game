@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
+import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorSetupWarnings, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { arcThreadsFromArcSetup, transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
@@ -68,6 +68,7 @@ import {
   SF2_SCHEMA_VERSION,
   type Sf2ArchivistPatch,
   type Sf2ChapterMeaning,
+  type Sf2CoherenceFinding,
   type Sf2RollRecord,
   type Sf2State,
   type ThreadRole,
@@ -117,6 +118,19 @@ interface ReplayFixture {
     presentNpcIdsIncludes?: string[]
     presentNpcIdsExcludes?: string[]
     presentNpcIdsExact?: string[]
+    scenePacketAtmosphereIncludes?: string[]
+    scenePacketAtmosphereCountBetween?: [number, number]
+    revelationProgressIncludes?: Array<{
+      revelationId: string
+      due?: boolean
+      dueReasonIncludes?: string
+      statementIncludes?: string
+    }>
+    coherenceFindingsInclude?: Array<{
+      type: string
+      stateReference?: string
+      suggestedNoteIncludes?: string
+    }>
     scenePacketCastIncludes?: string[]
     scenePacketCastExcludes?: string[]
     castPacketIncludes?: Array<{
@@ -440,14 +454,18 @@ interface ReplayFixture {
       expect: {
         rawErrorCount?: number
         validationErrorCount?: number
+        warningCount?: number
         combinedErrorCount?: number
         validationErrorIncludesAll?: string[]
+        warningIncludesAll?: string[]
         combinedErrorIncludesAll?: string[]
         titleEquals?: string
         threadCountEquals?: number
         firstThreadInitialTensionEquals?: number
         visibleNpcIdsEquals?: string[]
         firstRevealValidContextsEquals?: string[]
+        firstRevealPlayerTopicKeysEquals?: string[]
+        firstRevealCashPlayerPressesTopic?: boolean
         pacingTargetEquals?: { min: number; max: number }
         pressureLadderTriggerConditionEquals?: Array<{ index: number; value: string }>
       }
@@ -727,11 +745,12 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   const annotation = fixture.input.narrator.annotation ?? null
   const mechanicalEffects = fixture.input.narrator.mechanicalEffects ?? extractMechanicalEffects(annotation)
   const patch = normalizePatch(fixture.input.archivist?.patch ?? null, turnIndex + 1)
-  const preTurnWorkingSet = buildScenePacket(
+  const preTurnScenePacket = buildScenePacket(
     stateBefore,
     fixture.input.isInitial ? '' : fixture.input.playerInput,
     turnIndex
-  ).workingSet
+  )
+  const preTurnWorkingSet = preTurnScenePacket.workingSet
 
   // Phase C display sentinel — observe mode. Scan the Narrator prose for
   // forbidden debug/control vocabulary AND absent-NPC speech; surface
@@ -829,11 +848,13 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
 
   let scenePacketCastIds: string[] = []
   let scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'] = []
+  let scenePacketAtmosphere: string[] = []
   let perTurnDeltaText = ''
   try {
     const scenePacket = buildScenePacket(stateAfter, fixture.input.playerInput, turnIndex + 1)
     scenePacketCastIds = scenePacket.packet.cast.map((c) => c.npcId)
     scenePacketCast = scenePacket.packet.cast
+    scenePacketAtmosphere = scenePacket.packet.scene.location.atmosphericConditions
     perTurnDeltaText = renderPerTurnDelta(scenePacket.packet, {
       advisoryText: scenePacket.advisoryText,
       isInitial: false,
@@ -849,8 +870,11 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
     stateAfter,
     patchResult,
     invariantEvents,
+    preTurnScenePacket.packet.revelationProgress,
+    (committedTurn.archivistReplay?.coherenceFindings ?? []) as Sf2CoherenceFinding[],
     scenePacketCastIds,
     scenePacketCast,
+    scenePacketAtmosphere,
     perTurnDeltaText,
     archivistTurnMessage,
     failures
@@ -1669,6 +1693,19 @@ function assertAuthorContract(
     }
   }
 
+  const validationWarnings = validateAuthorSetupWarnings(authored, {
+    isContinuation: Boolean(expected.ctx.isContinuation),
+    state: stateBefore,
+  })
+  if (typeof expected.expect.warningCount === 'number' && validationWarnings.length !== expected.expect.warningCount) {
+    failures.push(`authorContract.warnings: expected ${expected.expect.warningCount}, got ${validationWarnings.length} [${validationWarnings.join('; ') || 'none'}]`)
+  }
+  for (const fragment of expected.expect.warningIncludesAll ?? []) {
+    if (!validationWarnings.some((warning) => warning.includes(fragment))) {
+      failures.push(`authorContract.warnings: expected warning containing "${fragment}", got [${validationWarnings.join('; ') || 'none'}]`)
+    }
+  }
+
   const combinedErrors = validateAuthorToolInput(expected.rawToolInput, ctx)
   if (typeof expected.expect.combinedErrorCount === 'number' && combinedErrors.length !== expected.expect.combinedErrorCount) {
     failures.push(`authorContract.combinedErrors: expected ${expected.expect.combinedErrorCount}, got ${combinedErrors.length} [${combinedErrors.join('; ') || 'none'}]`)
@@ -1702,6 +1739,17 @@ function assertAuthorContract(
     const got = [...(authored.possibleRevelations[0]?.validRevealContexts ?? [])].sort().join(',')
     const want = [...expected.expect.firstRevealValidContextsEquals].sort().join(',')
     if (got !== want) failures.push(`authorContract.possibleRevelations[0].validRevealContexts: expected ${want}, got ${got}`)
+  }
+  if (expected.expect.firstRevealPlayerTopicKeysEquals !== undefined) {
+    const got = [...(authored.possibleRevelations[0]?.playerTopicKeys ?? [])].sort().join(',')
+    const want = [...expected.expect.firstRevealPlayerTopicKeysEquals].sort().join(',')
+    if (got !== want) failures.push(`authorContract.possibleRevelations[0].playerTopicKeys: expected ${want}, got ${got}`)
+  }
+  if (expected.expect.firstRevealCashPlayerPressesTopic !== undefined) {
+    const got = authored.possibleRevelations[0]?.cashConditions?.playerPressesTopic
+    if (got !== expected.expect.firstRevealCashPlayerPressesTopic) {
+      failures.push(`authorContract.possibleRevelations[0].cashConditions.playerPressesTopic: expected ${expected.expect.firstRevealCashPlayerPressesTopic}, got ${String(got)}`)
+    }
   }
   if (expected.expect.pacingTargetEquals !== undefined) {
     const got = authored.pacingContract.targetTurns
@@ -2418,8 +2466,11 @@ function assertExpected(
   state: Sf2State,
   patchResult: ApplyPatchResult,
   invariantEvents: Array<{ kind: string; at: number; data: unknown }>,
+  revelationProgress: ReturnType<typeof buildScenePacket>['packet']['revelationProgress'],
+  coherenceFindings: Sf2CoherenceFinding[],
   scenePacketCastIds: string[],
   scenePacketCast: ReturnType<typeof buildScenePacket>['packet']['cast'],
+  scenePacketAtmosphere: string[],
   perTurnDeltaText: string,
   archivistTurnMessage: string,
   failures: string[]
@@ -2436,6 +2487,56 @@ function assertExpected(
     const wanted = [...expected.presentNpcIdsExact].sort()
     if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
       failures.push(`presentNpcIdsExact expected [${wanted.join(',')}], got [${actual.join(',')}]`)
+    }
+  }
+  for (const fragment of expected.scenePacketAtmosphereIncludes ?? []) {
+    const found = scenePacketAtmosphere.some((condition) =>
+      condition.toLowerCase().includes(fragment.toLowerCase())
+    )
+    if (!found) {
+      failures.push(`scene packet atmosphere missing "${fragment}" (got: ${scenePacketAtmosphere.join(', ')})`)
+    }
+  }
+  if (expected.scenePacketAtmosphereCountBetween) {
+    const [min, max] = expected.scenePacketAtmosphereCountBetween
+    if (scenePacketAtmosphere.length < min || scenePacketAtmosphere.length > max) {
+      failures.push(`scene packet atmosphere count expected ${min}-${max}, got ${scenePacketAtmosphere.length}`)
+    }
+  }
+  for (const want of expected.revelationProgressIncludes ?? []) {
+    const packet = revelationProgress.find((r) => r.revelationId === want.revelationId)
+    if (!packet) {
+      failures.push(`revelation progress missing ${want.revelationId}`)
+      continue
+    }
+    if (typeof want.due === 'boolean' && packet.due !== want.due) {
+      failures.push(`revelation progress ${want.revelationId} due expected ${want.due}, got ${packet.due}`)
+    }
+    if (
+      want.dueReasonIncludes &&
+      !packet.dueReason.toLowerCase().includes(want.dueReasonIncludes.toLowerCase())
+    ) {
+      failures.push(`revelation progress ${want.revelationId} dueReason missing "${want.dueReasonIncludes}" (got "${packet.dueReason}")`)
+    }
+    if (
+      want.statementIncludes &&
+      !packet.statement.toLowerCase().includes(want.statementIncludes.toLowerCase())
+    ) {
+      failures.push(`revelation progress ${want.revelationId} statement missing "${want.statementIncludes}"`)
+    }
+  }
+  for (const want of expected.coherenceFindingsInclude ?? []) {
+    const match = coherenceFindings.find((finding) => {
+      if (finding.type !== want.type) return false
+      if (want.stateReference !== undefined && finding.stateReference !== want.stateReference) return false
+      if (
+        want.suggestedNoteIncludes !== undefined &&
+        !finding.suggestedNote.toLowerCase().includes(want.suggestedNoteIncludes.toLowerCase())
+      ) return false
+      return true
+    })
+    if (!match) {
+      failures.push(`coherence finding missing ${JSON.stringify(want)} (got: ${coherenceFindings.map((f) => `${f.type}:${f.stateReference}`).join(', ') || 'none'})`)
     }
   }
   for (const id of expected.scenePacketCastIncludes ?? []) {

@@ -133,6 +133,8 @@ export function transformAuthorSetup(
       recontextualizes: r.recontextualizes,
       revealed: false,
       hintPhrases: r.hintPhrases ?? [],
+      playerTopicKeys: r.playerTopicKeys,
+      cashConditions: r.cashConditions,
       hintsRequired: r.hintsRequired ?? (r.hintPhrases && r.hintPhrases.length > 0 ? 2 : 0),
       hintsDelivered: 0,
       hintEvidence: [],

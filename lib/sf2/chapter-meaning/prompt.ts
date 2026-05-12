@@ -36,6 +36,7 @@ Each is ONE SENTENCE. Tight, weighted, distinct.
 - **Earn each word.** Five sentences total. Each word is expensive.
 - **Not inspirational.** No "proving grounds," no "crucibles of fate," no generic genre varnish. Name the specific thing, in the specific register.
 - **Ground every element in the actual play.** If the chapter never fired the planted revelation, don't pretend it did. If the crucible triggered, say it triggered in the *way* it triggered.
+- **Digest is evidence, not prose.** Use the deterministic digest to preserve hard facts, consequences, and unresolved pressure, then write the sharper five-element meaning in the chapter's own register.
 
 ### What you receive
 
@@ -73,8 +74,7 @@ Default away from procedure. A mechanism becomes next-chapter material only when
 That is the entire output.`
 
 import type { Sf2State } from '../types'
-import { isSf2bState } from '../../sf2b/mode'
-import { buildMeaningDigestCandidate } from '../../sf2b/meaning-digest'
+import { buildMeaningDigestCandidate } from './digest'
 
 export function buildChapterMeaningSituation(state: Sf2State): string {
   const { chapter, campaign } = state
@@ -111,9 +111,7 @@ export function buildChapterMeaningSituation(state: Sf2State): string {
 
   const ladderFired = chapter.setup.pressureLadder.filter((s) => s.fired).length
   const ladderTotal = chapter.setup.pressureLadder.length
-  const sf2bDigest = isSf2bState(state)
-    ? `\n\n### SF2B deterministic meaning digest candidate\nThis is a code-derived candidate, not a script. Use it to preserve consequences and hard facts while writing a sharper five-element retrospective.\n\n${buildMeaningDigestCandidate(state).compactSummary}`
-    : ''
+  const deterministicDigest = `\n\n### Deterministic meaning digest candidate\nThis is code-derived evidence, not a script. Use it to preserve consequences and hard facts while writing a sharper five-element retrospective.\n\n${buildMeaningDigestCandidate(state).compactSummary}`
 
   return `## Chapter ${currentChapter} — closing synthesis context
 
@@ -148,7 +146,7 @@ ${lexiconItems || '_(empty)_'}
 
 ### Recent narrator prose (last 5 turns, for voice continuity)
 ${recentProse || '_(no turns played)_'}
-${sf2bDigest}
+${deterministicDigest}
 
 ---
 

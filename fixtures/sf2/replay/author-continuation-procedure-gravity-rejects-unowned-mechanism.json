@@ -410,16 +410,18 @@
       },
       "expect": {
         "rawErrorCount": 0,
-        "validationErrorCount": 4,
-        "combinedErrorCount": 4,
+        "validationErrorCount": 5,
+        "combinedErrorCount": 5,
         "validationErrorIncludesAll": [
           "pressure_ladder[1].trigger_condition is scene-coupled",
+          "opening_scene_spec.location must bridge from prior closing location",
           "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
           "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
           "transition_seed.do_not_restage not reflected"
         ],
         "combinedErrorIncludesAll": [
           "pressure_ladder[1].trigger_condition is scene-coupled",
+          "opening_scene_spec.location must bridge from prior closing location",
           "procedure_gravity: procedural opener must name who uses the mechanism for leverage",
           "procedure_gravity: procedural opener must state the human leverage or irreversible choice",
           "transition_seed.do_not_restage not reflected"

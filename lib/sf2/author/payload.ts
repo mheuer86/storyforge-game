@@ -9,6 +9,56 @@ import { getSf2SeedForState } from '../game-data'
 import { getGenreConfig } from '../../genres/index'
 import type { AuthorInputSeed, Sf2ChapterMeaning, Sf2State } from '../types'
 
+export interface ChapterOpeningContinuity {
+  priorChapter: number
+  nextChapter: number
+  closingLocationId: string
+  closingLocationName: string
+  closingTimeLabel: string
+  presentNpcIds: string[]
+  establishedFacts: string[]
+  lastSceneSummary?: string
+  lastVisibleProse?: string
+  bridgeInstruction: string
+}
+
+export function deriveChapterOpeningContinuity(state: Sf2State): ChapterOpeningContinuity {
+  const closingLocation = state.world.sceneSnapshot.location
+  const lastTurn = state.history.turns.at(-1)
+  const lastSceneSummary = state.chapter.sceneSummaries.at(-1)?.summary
+
+  return {
+    priorChapter: state.meta.currentChapter,
+    nextChapter: state.meta.currentChapter + 1,
+    closingLocationId: closingLocation.id,
+    closingLocationName: closingLocation.name,
+    closingTimeLabel:
+      state.world.sceneSnapshot.timeLabel ||
+      state.world.currentTimeLabel ||
+      state.meta.currentTimeLabel ||
+      '(unspecified)',
+    presentNpcIds: state.world.sceneSnapshot.presentNpcIds ?? [],
+    establishedFacts: state.world.sceneSnapshot.established.slice(-6),
+    lastSceneSummary,
+    lastVisibleProse: lastTurn?.narratorProse?.slice(-500),
+    bridgeInstruction:
+      'Open at the same place, at a traveled-to place explicitly connected to it, or at a justified jump whose opening text names why the prior location no longer holds the camera.',
+  }
+}
+
+export function renderChapterOpeningContinuity(continuity: ChapterOpeningContinuity): string {
+  return [
+    `- Prior close: ${continuity.closingLocationName} (${continuity.closingLocationId}); time ${continuity.closingTimeLabel}`,
+    `- Present NPC ids at close: ${continuity.presentNpcIds.join(', ') || '(none)'}`,
+    continuity.establishedFacts.length
+      ? `- Established close facts: ${continuity.establishedFacts.join(' | ')}`
+      : '- Established close facts: (none)',
+    continuity.lastSceneSummary ? `- Last scene summary: ${continuity.lastSceneSummary}` : null,
+    continuity.lastVisibleProse ? `- Last visible prose tail: ${continuity.lastVisibleProse}` : null,
+    `- Bridge law: ${continuity.bridgeInstruction}`,
+  ].filter((line): line is string => Boolean(line)).join('\n')
+}
+
 // Pull the PC's capability surface from state + genre config. Surfaced to the
 // Author so chapter design can engage the PC's natural moves; soft enforcement
 // via prompt rule, programmatic backstop comes later via option C from
@@ -137,9 +187,8 @@ export function compileAuthorInputSeed(
     .join('; ')
 
   const nextChapterNumber = state.meta.currentChapter + 1
-  const closingLocation = state.world.sceneSnapshot.location.name
-  const lastSceneSummary = state.chapter.sceneSummaries.at(-1)?.summary
-  const closingGeometry = ` Closing geometry: ${closingLocation}${lastSceneSummary ? ` — ${lastSceneSummary}` : ''}.`
+  const continuity = deriveChapterOpeningContinuity(state)
+  const closingGeometry = ` Closing geometry: ${continuity.closingLocationName}${continuity.lastSceneSummary ? ` — ${continuity.lastSceneSummary}` : ''}. Bridge law: ${continuity.bridgeInstruction}`
   const transitionSeed = priorChapterMeaning?.transitionSeed
   const pressureOwnerLabel = transitionSeed ? pickPressureOwnerLabel(state, transitionSeed) : state.meta.playbookId
   const dramaticFallback = priorChapterMeaning

@@ -723,6 +723,33 @@ Political stratagems always have a faction clock. The longer the player takes, t
     undrift: 'In this scene: trust is transactional and earned in actions. Nobody volunteers information without confirming what you will do with it. The network protects itself before it protects you. Safety is temporary and conditional.',
     military: 'In this scene: soldiers have opinions about their orders. They follow them anyway. The discomfort is quiet and institutional, not rebellious. Violence is precise and regretted, not celebrated. Chain of command is the architecture of moral distance.',
   },
+  atmosphericPalettes: {
+    'tithe-hall': {
+      baseline: ['ledger desks aligned to the seal on the floor', 'allocation slips weighted by brass tabs', 'parents waiting where the benches end', 'ink drying beside stamped roster columns', 'a bell cord beside the clerk dais'],
+      institutional: ['supplementary selection notices stacked face-down', 'compliance phrases painted above the intake doors', 'witness benches angled toward the registry desk'],
+      authority: ['Synod seals repeated on every form', 'retainers posted beside the counting table', 'a transport roster locked under clear glass'],
+    },
+    'registry-admin': {
+      baseline: ['records drawers breathing dust when opened', 'clerks speaking in numbered clauses', 'wax seals cooling beside the copy press', 'thin light over petition counters', 'forms sorted by consequence rather than name'],
+      institutional: ['denial stamps arranged before approval stamps', 'appeal windows marked closed in careful script', 'case files tied in house-color cord'],
+      authority: ['authorization chains displayed behind the desk', 'a witness chair fixed to the floor', 'mandate copies waiting for countersignature'],
+    },
+    'transit-authority': {
+      baseline: ['Drift-lane schedules ticking in formal columns', 'attunement delay notices on slate boards', 'travel writs drying under blue lamps', 'passage gates opening one household at a time', 'route clerks listening to distant relay tones'],
+      transit: ['departure bells held at second warning', 'lane assignments rewritten in public view', 'retinue manifests stacked beside the gate seal'],
+      authority: ['permit readers trained on every wrist-ring', 'transit officers reciting dispensation numbers', 'a sealed refusal ledger beside the exit arch'],
+    },
+    'shield-lattice': {
+      baseline: ['ward pylons humming below the floor', 'Resonance tremor in the handrails', 'maintenance votives burning under shield glass', 'lattice shadows moving across the ceiling', 'cool air around the attunement housings'],
+      danger: ['shield harmonics climbing above conversation', 'warning beads shaking in their trays', 'backup shutters half-lowered over the viewing slit'],
+      institutional: ['service-hour tablets mounted beside the pylons', 'Synod maintenance prayers etched into access plates', 'inspection seals layered over old repairs'],
+    },
+    'noble-institutional': {
+      baseline: ['house banners measured to the same height', 'chairs arranged by rank before comfort', 'tea cooling untouched beside negotiation tablets', 'ancestral portraits watching the doors', 'servants moving only during pauses'],
+      institutional: ['precedent books open to marked passages', 'oath ribbons laid beside the guest register', 'seating charts revised in visible ink'],
+      authority: ['a signet tray waiting between the speakers', 'armed sworn standing behind ceremonial screens', 'the highest chair left deliberately empty'],
+    },
+  },
   cohesionGuide: 'In this genre, cohesion tracks something more complex than loyalty. The retinue includes Resonants whose compliance is property law, not choice. +1: recognizing the personhood of bound resources through small acts, keeping non-mandatory promises, choosing the harder ethical path when the institutional one would have worked. -1: treating Resonants as inventory, breaking implicit trust with the retinue, complicity choices the crew witnesses. High cohesion here means moral authority earned through consistent ethical choices, not just competent leadership.',
   assetFlavors: {
     'minor-house': {

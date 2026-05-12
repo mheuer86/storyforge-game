@@ -1,0 +1,60 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "author retry nudge repairs continuation contract",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression coverage for Ch2+ Author setup attempts that omit continuation_moves, emit an incomplete continuation_dramatic_turn, or fail to assign leverage procedure residue to a named pressure owner."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - retry nudge fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorRetryNudge": {
+      "errors": [
+        "continuation_moves is missing (required for chapter ≥ 2)",
+        "continuation_dramatic_turn.pressure_owner requires id_or_new_bridge and why_they_now_act",
+        "transition_seed.procedure_residue route gate marked leverage but continuation_dramatic_turn.procedure_budget does not assign it to a pressure owner"
+      ],
+      "containsAll": [
+        "For continuation contract errors",
+        "Chapter 2+ requires complete continuation_moves and continuation_dramatic_turn blocks",
+        "Fill every required continuation_moves subfield",
+        "For procedure_residue/procedure_gravity errors",
+        "procedure_residue.keepAs is \"leverage\"",
+        "continuation_dramatic_turn.pressure_owner.id_or_new_bridge",
+        "procedure_budget.owner_using_it",
+        "Do not leave owner_using_it as \"none\", a timer, a readout, a gate, or an abstract system"
+      ],
+      "containsNone": [
+        "For pressure_ladder scene-coupled trigger errors",
+        "For outcome_spectrum human-anchor errors"
+      ]
+    },
+    "authorRetryPolicy": {
+      "defaultMaxAttemptsEquals": 2,
+      "retryableErrors": [
+        "continuation_moves is missing (required for chapter ≥ 2)",
+        "continuation_dramatic_turn.pressure_owner requires id_or_new_bridge and why_they_now_act",
+        "transition_seed.procedure_residue route gate marked leverage but continuation_dramatic_turn.procedure_budget does not assign it to a pressure owner"
+      ],
+      "nonRetryableErrors": [
+        "chapter_frame.title is empty"
+      ]
+    }
+  }
+}

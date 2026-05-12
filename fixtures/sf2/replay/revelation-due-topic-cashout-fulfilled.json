@@ -1,0 +1,74 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "revelation due topic cashout fulfilled",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Player asks the authored inbound topic key directly; pre-Narrator packet marks the reveal due and the turn lands it."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "scaffolding": {
+          "possibleRevelations": [
+            {
+              "id": "rev_renn_identity",
+              "statement": "Renn is the Synod's younger courier, carrying orders no official will sign.",
+              "heldBy": "npc_renn",
+              "emergenceCondition": "The player presses the younger man's identity.",
+              "recontextualizes": "The quiet assistant is active pressure, not scenery.",
+              "revealed": false,
+              "hintPhrases": ["younger courier", "unsigned orders", "Renn keeps his gloves on"],
+              "playerTopicKeys": ["who is he", "the younger man", "Renn", "npc_renn"],
+              "cashConditions": { "playerPressesTopic": true },
+              "hintsRequired": 2,
+              "hintsDelivered": 0,
+              "hintEvidence": [],
+              "validRevealContexts": ["private_pressure", "confession"],
+              "invalidRevealContexts": ["inadvertent"]
+            }
+          ]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "Who is he?",
+    "narrator": {
+      "prose": "The clerk's mouth tightens. \"Renn is the Synod's younger courier, carrying orders no official will sign.\" The younger man lowers his eyes, but not before his gloved hand closes over the packet.",
+      "annotation": {
+        "authorial_moves": { "planted_revelation_deployed": "rev_renn_identity" },
+        "suggested_actions": ["Ask Renn who gave him the packet.", "Demand to see the unsigned orders.", "Watch the clerk instead."]
+      },
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "revelationsRevealed": [
+          {
+            "revelationId": "rev_renn_identity",
+            "context": "private_pressure",
+            "evidenceQuote": "Renn is the Synod's younger courier, carrying orders no official will sign."
+          }
+        ],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "revelationProgressIncludes": [
+      {
+        "revelationId": "rev_renn_identity",
+        "due": true,
+        "dueReasonIncludes": "player pressed topic",
+        "statementIncludes": "Synod's younger courier"
+      }
+    ],
+    "revelationsInclude": [
+      { "id": "rev_renn_identity", "revealed": true, "hintsDelivered": 0 }
+    ]
+  }
+}

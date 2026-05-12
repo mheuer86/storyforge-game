@@ -185,6 +185,22 @@
               "last quarter's silence",
               "the earlier grace"
             ],
+            "player_topic_keys": [
+              "why did Corvin arrive early",
+              "last quarter",
+              "npc_corvin"
+            ],
+            "cash_conditions": {
+              "player_presses_topic": true,
+              "min_turn": 4,
+              "min_tension": {
+                "thread_id": "thread_public_refusal",
+                "value": 6
+              },
+              "requires_context": [
+                "confession"
+              ]
+            },
             "hints_required": 2,
             "valid_reveal_contexts": [
               "confession",
@@ -338,6 +354,12 @@
           "confession",
           "documentary_surface"
         ],
+        "firstRevealPlayerTopicKeysEquals": [
+          "why did Corvin arrive early",
+          "last quarter",
+          "npc_corvin"
+        ],
+        "firstRevealCashPlayerPressesTopic": true,
         "pacingTargetEquals": {
           "min": 18,
           "max": 22

@@ -579,8 +579,8 @@
       },
       "expect": {
         "rawErrorCount": 0,
-        "validationErrorCount": 7,
-        "combinedErrorCount": 7,
+        "validationErrorCount": 8,
+        "combinedErrorCount": 8,
         "validationErrorIncludesAll": [
           "tension_score[0] carried pressure must reference a locked existing entity/thread id; allowed carried source ids:",
           "tension_score[0] source id thread_kira_container is not in the SF2B continuity lock"

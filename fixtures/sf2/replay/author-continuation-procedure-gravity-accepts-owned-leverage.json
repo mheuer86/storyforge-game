@@ -14,6 +14,28 @@
         "playbookId": "operative",
         "originId": "human"
       },
+      "world": {
+        "currentLocation": {
+          "id": "loc_departure_dock",
+          "name": "departure dock",
+          "description": "The dock where the sealed cargo left under private terms."
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_departure_dock",
+          "location": {
+            "id": "loc_departure_dock",
+            "name": "departure dock",
+            "description": "The dock where the sealed cargo left under private terms."
+          },
+          "presentNpcIds": [],
+          "timeLabel": "after lift",
+          "established": [
+            "The Driftrunner lifted with sealed cargo aboard.",
+            "The dockmaster watched the departure light."
+          ],
+          "firstTurnIndex": 1
+        }
+      },
       "history": {
         "turns": [
           {
@@ -89,7 +111,7 @@
         "opening_scene_spec": {
           "location": "Driftrunner cargo bay",
           "atmospheric_condition": "amber clamp light",
-          "initial_state": "The sealed container is aboard, but Hale has paused the release log before the lane clears.",
+          "initial_state": "After leaving the departure dock, the sealed container is aboard, but Hale has paused the release log before the lane clears.",
           "first_player_facing": "Hale offers clean clearance if the PC names the broker behind the sealed cargo.",
           "immediate_choice": "Name the broker for clean release or refuse and risk a traceable hold.",
           "dramatic_situation": "Hale uses clearance to make the prior cargo bargain cost something personal.",

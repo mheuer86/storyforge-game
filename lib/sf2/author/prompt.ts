@@ -74,6 +74,7 @@ Primary goals:
     If you cannot fill \`trigger_event\` without naming a location or scene element, and the objective does not truly require that location, the trigger is over-coupled to the opening — rewrite it as \`entity_action\`.
 23. **Engage the PC's natural moves.** The seed's \`pcCapabilities\` block lists the PC's proficiencies, traits, signature equipment, and (when available) a \`playbookProfile\` with 3-5 natural moves and 2-3 natural domains. **Your pressure ladder must include at least 2 escalation steps that the PC's natural moves can directly engage.** ${genreExamples.pcMisfitChapterRule} The same hook is a different chapter for different PCs.
 24. **Playbook names are role labels, not in-world entity names.** Do not reuse the playbook name as a ship, faction, location, NPC, operation, or document name unless the player explicitly provided it. For Space Opera, Driftrunner means the PC's job, not a default vessel name.
+25. **Three pressure lanes.** For continuation chapters, spread active pressure across foreground objective, relational/social cost, and shadow faction/institution pressure. Add an environmental, cargo/system, or procedure-residue lane only when load-bearing. Do not cluster all active threads around one lane; the chapter needs one visible thing to do, one person or relationship that pays, and one larger force tightening behind it.
 
 ## Continuation Chapter Law
 
@@ -116,6 +117,8 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`pressure_ladder[].{pressure, trigger_event, narrative_effect}\`: 1 compact pressure, one structured trigger event, and one compact effect. \`trigger_event.kind\` is \`entity_action\`, \`location_objective\`, or \`late_unresolved\`. \`location_objective\` requires \`location_id\` and is only for true durable location anchors. \`trigger_event.stakes\` must name who pays, who gains leverage, who is exposed, or what relationship/cost surface worsens.
   - \`human_stakes[]\`: exactly 2-3 entries. \`who_pays\`: a starting_npcs id or "the PC"; at least one must be a starting_npcs id. \`cost_surface\`: standing, freedom, loyalty, relationship, safety, or reputation. \`what_is_lost\`: 1 sentence (≤24 words). \`triggering_pressure\`: active thread id.
   - \`possible_revelations[].{statement, emergence_condition, recontextualizes}\`: 1 sentence each (≤24 words). These are hidden truths about agency, coercion, betrayal, exposure, danger, obligation, identity, power, or relationship stakes — not procedural facts with names attached. \`held_by\`: short phrase. Add exactly 3 \`hint_phrases\`, \`hints_required\`, and \`valid_reveal_contexts\`.
+  - Revelation fields split directionally. \`hint_phrases\` are **outbound**: prose substrings the Narrator can plant before cash-out. \`player_topic_keys\` are **inbound**: short player-input phrases, role nouns, names, aliases, or entity ids that mean the player is pressing this secret directly. A single revelation may have both.
+  - Use \`cash_conditions\` when deterministic runtime should mark a reveal due before the Narrator call. Common shape: \`{ player_presses_topic: true }\` plus 2-5 \`player_topic_keys\`. Add \`min_turn\`, \`min_tension\`, or \`requires_context\` only when those gates are genuinely load-bearing.
   - \`moral_fault_lines[].{tension, side_a, side_b, why_it_hurts}\`: compact phrase or sentence (≤18 words).
   - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤18 words).
   - \`editorialized_lore[].{item, relevance_now, delivery_method}\`: compact phrase or sentence (≤16 words).
@@ -166,6 +169,10 @@ export const SF2_AUTHOR_ROLE = buildAuthorRole()
 import type { Sf2ChapterMeaning, Sf2State } from '../types'
 import { getEffectiveThreadPressure } from '../pressure/derive'
 import { renderStructuralBeatForChapter } from '../structural-beats'
+import {
+  deriveChapterOpeningContinuity,
+  renderChapterOpeningContinuity,
+} from './payload'
 import { isSf2bState } from '../../sf2b/mode'
 import {
   deriveSf2bContinuityLock,
@@ -193,6 +200,7 @@ ${arc && state ? renderArcPlan(state, 1, priorChapterMeaning) : '_(missing arc p
 
   const priorChapter = state.meta.currentChapter
   const arc = state.campaign.arcPlan
+  const openingContinuity = deriveChapterOpeningContinuity(state)
   const continuityLockBlock = isSf2bState(state)
     ? `\n${renderSf2bContinuityLock(deriveSf2bContinuityLock(state))}\n`
     : ''
@@ -257,19 +265,6 @@ How this chapter should respond to the landing:
     })
     .join('\n')
 
-  const lastSceneSummary = state.chapter.sceneSummaries.at(-1)
-  const closingGeometry = [
-    `- Current location: ${state.world.sceneSnapshot.location.name} (${state.world.sceneSnapshot.location.id})`,
-    `- Current time: ${state.world.sceneSnapshot.timeLabel || state.world.currentTimeLabel || state.meta.currentTimeLabel || '(unspecified)'}`,
-    `- On-stage NPC ids: ${state.world.sceneSnapshot.presentNpcIds.join(', ') || '(none)'}`,
-    state.world.sceneSnapshot.established.length > 0
-      ? `- Established scene facts: ${state.world.sceneSnapshot.established.slice(-4).join(' | ')}`
-      : null,
-    lastSceneSummary
-      ? `- Last scene summary: ${lastSceneSummary.summary}${lastSceneSummary.leadsTo ? ` (leads_to: ${lastSceneSummary.leadsTo})` : ''}`
-      : null,
-  ].filter((line): line is string => Boolean(line))
-
   const nextChapter = priorChapter + 1
   const structuralBeatBlock = renderStructuralBeatForChapter(nextChapter, arc)
 
@@ -298,11 +293,11 @@ ${runtimeEngines}
 ### Live NPCs
 ${activeNpcs || '_(none)_'}
 
-### Prior chapter closing geometry
-${closingGeometry.join('\n')}
+### Chapter opening continuity
+${renderChapterOpeningContinuity(openingContinuity)}
 ${continuityLockBlock}
 
-Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the closing geometry above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there or explicitly encode the transition away from it in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
+Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the continuity above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there, open at a place explicitly traveled to from there, or encode the justified jump in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
 
 ### Reuse rules for continuation chapters
 

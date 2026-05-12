@@ -45,6 +45,15 @@
             "activationTags": ["owner_exposure"],
             "status": "open",
             "createdChapter": 1
+          },
+          {
+            "id": "latent_captain_employer",
+            "question": "Who was the captain protecting?",
+            "whyItMatters": "The crew may re-read the route as a setup.",
+            "answerImpactAxis": "the captain actually works for Vethara",
+            "activationTags": ["trust_break"],
+            "status": "open",
+            "createdChapter": 1
           }
         ],
         "playerStanceAxes": [
@@ -63,7 +72,8 @@
       },
       "expect": {
         "errorIncludesAll": [
-          "latent_arc_questions[0].answer_impact_axis must describe an impact axis, not a hidden answer"
+          "latent_arc_questions[0].answer_impact_axis must describe an impact axis, not a hidden answer",
+          "latent_arc_questions[1].answer_impact_axis must describe an impact axis, not a hidden answer"
         ]
       }
     }

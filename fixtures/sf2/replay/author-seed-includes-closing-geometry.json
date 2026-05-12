@@ -106,12 +106,18 @@
       },
       "hookPremiseIncludes": [
         "Closing geometry: Rue's silent door",
+        "Bridge law: Open at the same place, at a traveled-to place explicitly connected to it, or at a justified jump",
         "The chapter closed at Rue's silent door after the secondary bolt landed.",
         "Transition seed support: prior chapter meant \"Rue's refusal made silence a political actor.\"",
         "earned consequence \"The next chapter must show who benefits from the closed door.\"",
         "do not restage knocking at Rue's closed door, waiting for Rue to answer"
       ],
-      "hookFirstEpisodeIncludes": ["Who profits from Rue staying silent?"]
+      "hookFirstEpisodeIncludes": ["Who profits from Rue staying silent?"],
+      "authorSituationIncludes": [
+        "### Chapter opening continuity",
+        "Prior close: Rue's silent door",
+        "Bridge law: Open at the same place, at a traveled-to place explicitly connected to it, or at a justified jump"
+      ]
     }
   }
 }

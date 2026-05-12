@@ -1,0 +1,71 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "arc validation allows actually inside abstract latent answer axis",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Regression for a live Forty Thousand arc where a valid impact axis was rejected because it used the word actually."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "arcValidation": {
+      "arcPlan": {
+        "id": "arc_forty_thousand_black_channel",
+        "status": "active",
+        "title": "Forty Thousand: Black-Channel Run",
+        "sourceHook": {
+          "title": "Forty Thousand",
+          "premise": "A forty-thousand-credit lien creates a back-channel courier offer.",
+          "crucible": "Freedom is bought by creating a larger obligation."
+        },
+        "scenarioShape": {
+          "mode": "underground_network",
+          "premise": "A deniable courier run exposes the network that keeps frontier settlements alive.",
+          "whyThisRun": "The underground network keeps the pressure mobile and personal.",
+          "whatThisIsNot": "Not a creditor confrontation.",
+          "selectionRationale": "Black-channel pressure fits Driftrunner agency better than a paper audit.",
+          "rejectedDefaultShape": "A registry official demanding payment at a counter."
+        },
+        "arcQuestion": "Can the crew buy freedom without breaking the network that made freedom possible?",
+        "coreCrucible": "The crew's exit depends on invisible infrastructure that exposure would destroy.",
+        "invariantFacts": [],
+        "variableTruthsForThisRun": [],
+        "durableForces": [],
+        "durableNpcSeeds": [],
+        "arcThreadIds": ["thread_lien_obligation"],
+        "latentArcQuestions": [
+          {
+            "id": "latent_broker_ai_debt",
+            "question": "What did the broker promise the Rogue AI cutout?",
+            "whyItMatters": "If the claim transfers, route freedom was never free.",
+            "answerImpactAxis": "Obligation and freedom: whose debt the crew actually carries, and what repayment means.",
+            "activationTags": ["obligation_due", "trust_break"],
+            "status": "open",
+            "createdChapter": 1
+          }
+        ],
+        "playerStanceAxes": [
+          { "id": "axis_route", "axis": "Route loyalty", "poleA": "Run", "poleB": "Root", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" },
+          { "id": "axis_denial", "axis": "Deniability", "poleA": "Quiet", "poleB": "Disclose", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" },
+          { "id": "axis_broker", "axis": "Broker trust", "poleA": "Trust", "poleB": "Bypass", "signalsA": [], "signalsB": [], "ifAHardens": "", "ifBHardens": "" }
+        ],
+        "chapterFunctionMap": [
+          { "chapter": 1, "function": "Establish the lien and courier offer.", "pressureQuestion": "What will the crew carry to leave?", "possibleEndStates": [] },
+          { "chapter": 2, "function": "Complicate the first route hop.", "pressureQuestion": "Who pays when the trace starts?", "possibleEndStates": [] },
+          { "chapter": 3, "function": "Reveal what the manifest changes.", "pressureQuestion": "Who becomes culpable?", "possibleEndStates": [] },
+          { "chapter": 4, "function": "Force a visible bargain.", "pressureQuestion": "What deniability gets spent?", "possibleEndStates": [] },
+          { "chapter": 5, "function": "Resolve the freedom cost.", "pressureQuestion": "Whose freedom was bought?", "possibleEndStates": [] }
+        ],
+        "possibleEndgames": []
+      },
+      "expect": {
+        "errorIncludesNone": [
+          "latent_arc_questions[0].answer_impact_axis must describe an impact axis, not a hidden answer"
+        ]
+      }
+    }
+  }
+}

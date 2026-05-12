@@ -18,6 +18,8 @@ import { buildRecentContextPacket } from './packets/recent-context'
 import { buildThreadPackets } from './packets/tensions'
 import { buildWorkingSet } from './working-set'
 import { renderBeatModeBlock } from '../beat-mode'
+import { evaluateRevelationDue } from './revelation-due'
+import { buildAtmosphericConditions } from '../atmosphere'
 
 export function buildScenePacket(
   state: Sf2State,
@@ -31,7 +33,12 @@ export function buildScenePacket(
     id: state.world.currentLocation.id,
     name: state.world.currentLocation.name,
     description: state.world.currentLocation.description,
-    atmosphericConditions: state.world.currentLocation.atmosphericConditions ?? [],
+    atmosphericConditions: buildAtmosphericConditions(
+      state,
+      state.world.currentLocation,
+      playerInput,
+      turnIndex
+    ),
     currentAreaNode: state.world.currentLocation.areaNodes?.find((node) =>
       node.id === state.world.currentPosition?.areaNodeId
     ),
@@ -51,7 +58,7 @@ export function buildScenePacket(
     cast: buildPresentCastPackets(state, workingSet),
     tensions: buildThreadPackets(state, workingSet, turnIndex),
     emotionalBeats: buildEmotionalBeatPackets(state, workingSet),
-    revelationProgress: buildRevelationProgressPackets(state),
+    revelationProgress: buildRevelationProgressPackets(state, playerInput, turnIndex),
     temporalAnchors: buildTemporalAnchorPackets(state),
     chapter: buildChapterPacket(state),
     mechanics: buildMechanicsPacket(state, playerInput),
@@ -436,10 +443,16 @@ function renderActiveRevelationHintProgress(packet: Sf2NarratorScenePacket, isIn
     const invalid = r.invalidRevealContexts && r.invalidRevealContexts.length > 0
       ? `; avoid ${r.invalidRevealContexts.join(', ')}`
       : ''
+    if (r.due) {
+      return `- ${r.revelationId}: DUE NOW (${r.dueReason}). Land this statement this turn: "${r.statement}". Record authorial_moves.planted_revelation_deployed="${r.revelationId}".`
+    }
     const phraseHint = remaining > 0 && r.hintPhrases.length > 0
       ? `; eligible after ${remaining} more hint${remaining === 1 ? '' : 's'} such as "${r.hintPhrases.slice(0, 2).join('" or "')}"`
       : ''
-    return `- ${r.revelationId}: ${r.hintsDelivered}/${r.hintsRequired} hints delivered; reveal context: ${contexts}${invalid}${phraseHint}`
+    const topicHint = r.playerTopicKeys && r.playerTopicKeys.length > 0
+      ? `; player-topic keys: ${r.playerTopicKeys.slice(0, 4).join(', ')}`
+      : ''
+    return `- ${r.revelationId}: ${r.hintsDelivered}/${r.hintsRequired} hints delivered; reveal context: ${contexts}${invalid}${phraseHint}${topicHint}; due=${r.due} (${r.dueReason})`
   })
 }
 
@@ -493,22 +506,36 @@ function buildEmotionalBeatPackets(
     }))
 }
 
-function buildRevelationProgressPackets(
-  state: Sf2State
+export function buildRevelationProgressPackets(
+  state: Sf2State,
+  playerInput = '',
+  turnIndex = state.history.turns.length
 ): Sf2NarratorScenePacket['revelationProgress'] {
   return state.chapter.scaffolding.possibleRevelations
     .filter((r) => !r.revealed)
-    .filter((r) => (r.hintsRequired ?? 0) > 0 || (r.hintPhrases ?? []).length > 0)
+    .filter((r) =>
+      (r.hintsRequired ?? 0) > 0 ||
+      (r.hintPhrases ?? []).length > 0 ||
+      (r.playerTopicKeys ?? []).length > 0 ||
+      Boolean(r.cashConditions)
+    )
+    .map((r) => {
+      const due = evaluateRevelationDue(state, r, playerInput, turnIndex)
+      return {
+        revelationId: r.id,
+        statement: r.statement,
+        hintsDelivered: r.hintsDelivered ?? 0,
+        hintsRequired: r.hintsRequired ?? 0,
+        hintPhrases: r.hintPhrases ?? [],
+        playerTopicKeys: r.playerTopicKeys,
+        due: due.due,
+        dueReason: due.dueReason,
+        validRevealContexts: r.validRevealContexts ?? [],
+        invalidRevealContexts: r.invalidRevealContexts,
+      }
+    })
+    .sort((a, b) => Number(b.due) - Number(a.due))
     .slice(0, 4)
-    .map((r) => ({
-      revelationId: r.id,
-      statement: r.statement,
-      hintsDelivered: r.hintsDelivered ?? 0,
-      hintsRequired: r.hintsRequired ?? 0,
-      hintPhrases: r.hintPhrases ?? [],
-      validRevealContexts: r.validRevealContexts ?? [],
-      invalidRevealContexts: r.invalidRevealContexts,
-    }))
 }
 
 export function renderScenePacket(packet: Sf2NarratorScenePacket): string {

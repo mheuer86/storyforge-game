@@ -148,6 +148,13 @@ function tokenCost(
   )
 }
 
+function pricingForModel(model: string | undefined, fallback: keyof typeof PRICING): typeof PRICING.haiku45 {
+  const normalized = (model ?? '').toLowerCase()
+  if (normalized.includes('haiku')) return PRICING.haiku45
+  if (normalized.includes('sonnet')) return PRICING.sonnet46
+  return PRICING[fallback]
+}
+
 interface ChapterSnapshot {
   chapter: number
   turn: number
@@ -243,9 +250,10 @@ export function computeSessionSummary(
   let arcAuthorCallsObserved = 0
   let authorOnlyCallsObserved = 0
   let chapterMeaningCallsObserved = 0
+  let narratorEventCost = 0
   for (const ev of debug) {
     if (ev.kind !== 'token_usage') continue
-    const d = ev.data as { role?: string; inputTokens?: number; outputTokens?: number; cacheWriteTokens?: number; cacheReadTokens?: number }
+    const d = ev.data as { role?: string; model?: string; inputTokens?: number; outputTokens?: number; cacheWriteTokens?: number; cacheReadTokens?: number }
     const bucket =
       d.role === 'narrator'
         ? narratorTokens
@@ -263,7 +271,18 @@ export function computeSessionSummary(
     bucket.out += d.outputTokens ?? 0
     bucket.cacheWrite += d.cacheWriteTokens ?? 0
     bucket.cacheRead += d.cacheReadTokens ?? 0
-    if (d.role === 'narrator') narratorTurnsObserved += 1
+    if (d.role === 'narrator') {
+      narratorTurnsObserved += 1
+      narratorEventCost += tokenCost(
+        {
+          in: d.inputTokens ?? 0,
+          out: d.outputTokens ?? 0,
+          cacheWrite: d.cacheWriteTokens ?? 0,
+          cacheRead: d.cacheReadTokens ?? 0,
+        },
+        pricingForModel(d.model, 'sonnet46')
+      )
+    }
     else if (d.role === 'archivist') archivistTurnsObserved += 1
     else if (d.role === 'arc-author') {
       authorCallsObserved += 1
@@ -328,7 +347,9 @@ export function computeSessionSummary(
     }
   }
 
-  const estimatedUsdNarrator = tokenCost(narratorTokens, PRICING.haiku45)
+  const estimatedUsdNarrator = narratorEventCost > 0
+    ? narratorEventCost
+    : tokenCost(narratorTokens, PRICING.sonnet46)
   const estimatedUsdArchivist = tokenCost(archivistTokens, PRICING.haiku45)
   const estimatedUsdArcAuthor = tokenCost(arcAuthorTokens, PRICING.sonnet46)
   const estimatedUsdAuthor = tokenCost(authorTokens, PRICING.sonnet46)
