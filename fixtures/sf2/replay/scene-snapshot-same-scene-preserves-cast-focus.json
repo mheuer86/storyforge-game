@@ -1,0 +1,134 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene snapshot same scene preserves cast and narrows focus",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "A same-scene snapshot update may narrow current_interlocutor_ids without restating present_npc_ids. The cast and replay-window cutoff must survive."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "npcs": {
+          "npc_moth": {
+            "id": "npc_moth",
+            "name": "Moth",
+            "affiliation": "Dockside",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "neutral",
+            "identity": {
+              "keyFacts": ["Knows the underpass routes."],
+              "voice": {
+                "note": "Low, quick warnings.",
+                "register": "streetwise"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Moth, currently in the intake scene.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_ion": {
+            "id": "npc_ion",
+            "name": "Ion",
+            "affiliation": "Registry",
+            "role": "npc",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Controls the intake queue."],
+              "voice": {
+                "note": "Flat, procedural refusals.",
+                "register": "official"
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Ion, the clerk visible at the intake counter.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "startingNpcIds": ["npc_moth", "npc_ion"],
+          "surfaceNpcIds": ["npc_moth", "npc_ion"]
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "sceneId": "scene_intake",
+          "location": {
+            "id": "scene_intake",
+            "name": "Intake Hall",
+            "description": "A narrow public intake hall with old counters and tired lights.",
+            "atmosphericConditions": ["stale air"]
+          },
+          "presentNpcIds": ["npc_moth", "npc_ion"],
+          "currentInterlocutorIds": ["npc_moth"],
+          "timeLabel": "morning",
+          "established": ["Moth and Ion are both visible at the counter."],
+          "firstTurnIndex": 0
+        },
+        "sceneBundleCache": {
+          "sceneId": "scene_intake",
+          "bundleText": "same scene bundle",
+          "builtAtTurn": 0
+        }
+      }
+    },
+    "playerInput": "I turn from Moth to Ion.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Ion lifts one hand from the counter ledger, making it clear the next answer has to come through him.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "location_id": "scene_intake",
+              "current_interlocutor_ids": ["npc_ion"],
+              "time_label": "later morning",
+              "established": ["Moth and Ion are both visible at the counter."]
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": ["npc_ion"],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      }
+    },
+    "archivist": {
+      "patch": {
+        "creates": []
+      }
+    }
+  },
+  "expected": {
+    "currentSceneId": "scene_intake",
+    "currentLocationId": "scene_intake",
+    "currentTimeLabel": "later morning",
+    "presentNpcIdsExact": ["npc_moth", "npc_ion"],
+    "sceneBundleCacheCleared": false,
+    "sceneKernel": {
+      "sceneId": "scene_intake",
+      "presentEntityIdsEquals": ["npc_moth", "npc_ion"],
+      "currentInterlocutorIdsEquals": ["npc_ion"]
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "sceneSnapshotFirstTurnIndexEquals": 0
+    }
+  }
+}

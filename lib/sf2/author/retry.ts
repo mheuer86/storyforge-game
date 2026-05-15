@@ -1,4 +1,4 @@
-import { getSf2GenreExamples } from '../genre-examples'
+import { getSf2GenreExamples } from '../genre-profile'
 
 export const AUTHOR_DEFAULT_MAX_ATTEMPTS = 2
 

@@ -11,8 +11,9 @@ import {
 } from '@/lib/sf2/narrator/turn-context'
 import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
-import { startTimer, type Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
-import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
+import { startTimer } from '@/lib/sf2/instrumentation/latency'
+import type { Sf2NarratorStreamEvent } from '@/lib/sf2/narrator/stream-protocol'
+import type { Sf2State } from '@/lib/sf2/types'
 
 const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-sonnet-4-6'
 
@@ -49,95 +50,6 @@ const requestSchema = z.object({
   isInitial: z.boolean().default(false),
   rollResolution: rollResolutionSchema.optional(),
 })
-
-type Sf2NarratorStreamEvent =
-  | { type: 'text'; content: string }
-  | { type: 'narrate_turn'; input: Record<string, unknown> }
-  | {
-      type: 'roll_prompt'
-      toolUseId: string
-      skill: string
-      requestedSkill?: string
-      intendedSkills?: string[]
-      skillOverrideReason?: string
-      dc: number
-      why: string
-      consequenceOnFail: string
-      modifierType?: 'advantage' | 'disadvantage' | 'challenge'
-      modifierReason?: string
-      priorMessages: unknown[]
-      originalInput?: string
-      currentIntent?: string
-      remainingIntents?: string[]
-    }
-  | {
-      type: 'working_set'
-      summary: { full: string[]; stub: string[]; excluded: number; reasons: Record<string, string[]> }
-      workingSet: Sf2WorkingSet
-    }
-  | { type: 'pacing_advisory'; tripped: boolean; reactivityRatio: number; reactivityTripped: boolean; sceneLinkTripped: boolean; stagnantThreadIds: string[]; arcDormantIds: string[] }
-  | { type: 'scene_bundle_built'; sceneId: string; bundleText: string; builtAtTurn: number }
-  | { type: 'token_usage'; usage: { model: string; inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number } }
-  | { type: 'latency'; role: 'narrator'; latency: Sf2LatencyPayload }
-  | { type: 'truncation_warning'; outputTokens: number }
-  | {
-      type: 'roll_gate_diagnostic'
-      required: boolean
-      source?: string
-      kind?: string
-      skills?: string[]
-      reason?: string
-      sourceId?: string
-      action: 'none' | 'request_roll' | 'block_narrate_turn'
-      repair?: 'not_needed' | 'narrator_complied' | 'blocked_missing_request_roll'
-    }
-  | {
-      // Display sentinel — observe mode. Emitted after the Narrator finishes
-      // producing prose. Findings are advisory only in this slice; the
-      // streaming buffer / cancel / repair path is a separate slice. Client
-      // logs these for telemetry; future enforcement will read the same
-      // stream of findings.
-      type: 'display_sentinel'
-      mode: 'observe' | 'enforce'
-      // When true, `repairedProse` supersedes all prior `text` events for
-      // this Narrator turn. Clients should replace the accumulated visible
-      // turn prose with `repairedProse` instead of appending it.
-      repaired: boolean
-      repairedProse?: string
-      findings: Array<{
-        type: string
-        severity: string
-        surface?: string
-        entityId?: string
-        evidence: string
-        matchStart: number
-        matchEnd?: number
-        recommendedAction: string
-      }>
-    }
-  | {
-      // Observation-only signal that the Narrator emitted non-narrative output
-      // (meta-question, system-reference, or out-of-character clarification
-      // request). No retry, no block — telemetry for tuning the eventual
-      // recovery path. See scene-bundle-cache-preserves-replay-window fixture
-      // for the failure shape this signal was added to surface.
-      type: 'narrator_meta_observed'
-      pattern: string
-      snippet: string
-      turnIndex: number
-    }
-  | {
-      // Salvage signal: narrate_turn input was malformed or missing required
-      // fields, and the route recovered values from alt-keys, prior turn, or
-      // defaults. recoveryNotes lists what was fixed. Cheaper than retry; see
-      // playthrough 7 turns 6+8 for the failure shapes (missing
-      // suggested_actions; hinted_entities-as-XML-wrapper).
-      type: 'narrator_output_recovered'
-      recoveryNotes: string[]
-      turnIndex: number
-    }
-  | { type: 'error'; message: string }
-  | { type: 'done' }
 
 // Observation-only meta-question detector. Fires when the Narrator's prose
 // opens with a GM-meta voice or references system-internal vocabulary. Both

@@ -1,0 +1,91 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "archivist-extraction-normalizes-new-lanes",
+  "source": {
+    "issue": "01-archivist-extraction-adapter",
+    "purpose": "Pure-function route adapter check for raw Archivist extraction of newer lanes."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 2,
+    "playerInput": "I let the deadline bite and watch who pays.",
+    "narrator": {
+      "prose": "The Registry posts the notice. The fee window closes, and the PC now has to choose between appeal and immediate seizure."
+    },
+    "archivist": {
+      "patch": {
+        "turnIndex": 3,
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "archivistExtraction": {
+      "turnIndex": 3,
+      "rawToolInput": {
+        "creates": [],
+        "updates": [],
+        "transitions": [],
+        "attachments": [],
+        "flags": [],
+        "pacing_classification": {
+          "world_initiated": true,
+          "scene_end_leads_to": "kinetic_carry",
+          "tension_deltas": {
+            "thread_spine": 1
+          }
+        },
+        "pressure_events": [
+          {
+            "source": "deadline",
+            "target_thread_ids": ["thread_spine"],
+            "scope": "canonical_thread",
+            "amount": 1,
+            "severity": "hard",
+            "evidence_quote": "The fee window closes",
+            "human_consequence": {
+              "who_pays": "the PC",
+              "what_gets_harder": "appeal now competes with immediate seizure",
+              "what_is_at_risk": "the PC loses control of the case tempo",
+              "visible_pressure": "a posted notice starts the seizure clock"
+            },
+            "idempotency_key": "turn_3:deadline:thread_spine:fee_window_closes"
+          }
+        ],
+        "coherence_findings": [
+          {
+            "type": "heat_mismatch",
+            "severity": "urgent",
+            "evidence_quote": "The Registry posts the notice",
+            "state_reference": "faction_registry",
+            "suggested_note": "Registry pressure escalated without matching heat."
+          },
+          {
+            "type": "not_a_real_finding",
+            "severity": "high",
+            "evidence_quote": "ignored",
+            "state_reference": "thread_spine",
+            "suggested_note": "This should be dropped."
+          }
+        ]
+      },
+      "expect": {
+        "pressureEventsCount": 1,
+        "pressureEventIdsEquals": ["pressure_event_3_1"],
+        "coherenceFindingTypesEquals": ["heat_mismatch"],
+        "fallbackCounters": {
+          "coherence_severity_defaulted": 1,
+          "coherence_finding_dropped": 1
+        },
+        "summaryEquals": {
+          "rejected": 0,
+          "deferred": 0
+        }
+      }
+    }
+  }
+}

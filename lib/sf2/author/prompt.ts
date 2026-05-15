@@ -1,7 +1,7 @@
 // Author prompt scaffolds + paste-ready system block per decision #5.
 // Source: /Users/martin.heuer/vaults/brainforest/storyforge/Storyforge v2 System Design Codex/storyforge-2-author-validation-example.md §4
 
-import { getSf2GenreExamples } from '../genre-examples'
+import { getSf2GenreExamples } from '../genre-profile'
 import { selectLatentArcQuestionsForChapter } from '../arc-questions'
 
 // ─────────────────────────────────────────────────────────────────────────────

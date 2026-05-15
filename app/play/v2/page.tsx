@@ -16,12 +16,16 @@ import {
   isArcAuthored,
   isChapterAuthored,
 } from '@/lib/sf2/game-data'
-import { applyAuthoredToCampaign } from '@/lib/sf2/author/hydrate'
+import { applyAuthorChapterOpening } from '@/lib/sf2/author/chapter-opening'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
   diagnosticsStore,
   type TokenUsage,
 } from '@/lib/sf2/diagnostics-store'
+import {
+  parseSf2NarratorStreamEvent,
+  type Sf2NarratorRollPromptEvent,
+} from '@/lib/sf2/narrator/stream-protocol'
 import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
@@ -34,7 +38,6 @@ import {
 import {
   chapterPressureRuntime,
 } from '@/lib/sf2/pressure/runtime'
-import { applyLatentArcQuestionChapterOpen } from '@/lib/sf2/arc-questions'
 import {
   Sf2PlayShell,
   type Sf2CloseReadinessView,
@@ -449,22 +452,7 @@ export default function PlayV2Page() {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
-      let sawRollPrompt: {
-        toolUseId: string
-        skill: string
-        dc: number
-        why: string
-        consequenceOnFail: string
-        requestedSkill?: string
-        intendedSkills?: string[]
-        skillOverrideReason?: string
-        modifierType?: 'advantage' | 'disadvantage' | 'challenge'
-        modifierReason?: string
-        priorMessages: unknown[]
-        originalInput?: string
-        currentIntent?: string
-        remainingIntents?: string[]
-      } | null = null
+      let sawRollPrompt: Sf2NarratorRollPromptEvent | null = null
       let sawNarrateTurn = false
       let sawStreamError = false
       let streamErrorMessage: string | undefined
@@ -477,49 +465,22 @@ export default function PlayV2Page() {
         buffer = lines.pop() ?? ''
         for (const line of lines) {
           if (!line.trim()) continue
-          let event: Record<string, unknown>
-          try { event = JSON.parse(line) as Record<string, unknown> } catch { continue }
+          let decoded: unknown
+          try { decoded = JSON.parse(line) } catch { continue }
+          const event = parseSf2NarratorStreamEvent(decoded)
+          if (!event) continue
           switch (event.type) {
             case 'text': {
-              proseAccum += String(event.content ?? '')
+              proseAccum += event.content
               setProse(proseAccum)
               break
             }
             case 'roll_prompt': {
-              const serverIntendedSkills = Array.isArray(event.intendedSkills)
-                ? event.intendedSkills.map(String).filter(Boolean)
-                : []
-              const serverSkillOverrideReason =
-                typeof event.skillOverrideReason === 'string' ? event.skillOverrideReason : undefined
-              const serverRequestedSkill =
-                typeof event.requestedSkill === 'string' ? event.requestedSkill : undefined
-              sawRollPrompt = {
-                toolUseId: String(event.toolUseId ?? ''),
-                skill: String(event.skill ?? ''),
-                requestedSkill: serverRequestedSkill,
-                intendedSkills: serverIntendedSkills,
-                skillOverrideReason: serverSkillOverrideReason,
-                dc: Number(event.dc ?? 15),
-                why: String(event.why ?? ''),
-                consequenceOnFail: String(event.consequenceOnFail ?? ''),
-                modifierType:
-                  event.modifierType === 'advantage' ||
-                  event.modifierType === 'disadvantage' ||
-                  event.modifierType === 'challenge'
-                    ? event.modifierType
-                    : undefined,
-                modifierReason: typeof event.modifierReason === 'string' ? event.modifierReason : undefined,
-                priorMessages: (event.priorMessages as unknown[]) ?? [],
-                originalInput: typeof event.originalInput === 'string' ? event.originalInput : undefined,
-                currentIntent: typeof event.currentIntent === 'string' ? event.currentIntent : undefined,
-                remainingIntents: Array.isArray(event.remainingIntents)
-                  ? event.remainingIntents.map(String)
-                  : undefined,
-              }
+              sawRollPrompt = event
               break
             }
             case 'narrate_turn': {
-              annotation = event.input as Record<string, unknown>
+              annotation = event.input
               sawNarrateTurn = true
               diagnosticsStore.pushDebug({ kind: 'narrate_turn', at: Date.now(), data: annotation })
               const actions = (annotation?.suggested_actions as string[] | undefined) ?? []
@@ -537,19 +498,19 @@ export default function PlayV2Page() {
               diagnosticsStore.pushDebug({
                   kind: 'latency',
                   at: Date.now(),
-                  data: { role: event.role ?? 'narrator', ...(event.latency as Record<string, unknown>) },
+                  data: { role: event.role, ...event.latency },
                 })
               break
             }
             case 'working_set':
-              turnWorkingSet = (event.workingSet as Sf2WorkingSet | undefined) ?? null
+              turnWorkingSet = event.workingSet
               diagnosticsStore.pushDebug({ kind: 'working_set', at: Date.now(), data: event.summary })
               break
             case 'scene_bundle_built': {
               const built = {
-                sceneId: String(event.sceneId ?? ''),
-                bundleText: String(event.bundleText ?? ''),
-                builtAtTurn: Number(event.builtAtTurn ?? 0),
+                sceneId: event.sceneId,
+                bundleText: event.bundleText,
+                builtAtTurn: event.builtAtTurn,
               }
               bundleBuilt = built
               diagnosticsStore.pushDebug({
@@ -572,8 +533,8 @@ export default function PlayV2Page() {
                 at: Date.now(),
                 data: {
                   pattern: String(event.pattern ?? ''),
-                  snippet: String(event.snippet ?? ''),
-                  turnIndex: Number(event.turnIndex ?? 0),
+                  snippet: event.snippet,
+                  turnIndex: event.turnIndex,
                 },
               })
               break
@@ -582,8 +543,8 @@ export default function PlayV2Page() {
                 kind: 'narrator_output_recovered',
                 at: Date.now(),
                 data: {
-                  recoveryNotes: Array.isArray(event.recoveryNotes) ? event.recoveryNotes.map(String) : [],
-                  turnIndex: Number(event.turnIndex ?? 0),
+                  recoveryNotes: event.recoveryNotes,
+                  turnIndex: event.turnIndex,
                 },
               })
               break
@@ -591,10 +552,9 @@ export default function PlayV2Page() {
               diagnosticsStore.pushDebug({ kind: 'truncation', at: Date.now(), data: event })
               break
             case 'display_sentinel': {
-              const findings = (event.findings as Array<Record<string, unknown>>) ?? []
-              const mode = String(event.mode ?? 'observe')
-              const repaired = event.repaired === true
-                || (event.repaired === undefined && mode === 'enforce' && typeof event.repairedProse === 'string')
+              const findings = event.findings
+              const mode = event.mode
+              const repaired = event.repaired
               if (repaired && typeof event.repairedProse === 'string') {
                 proseAccum = event.repairedProse
                 setProse(proseAccum)
@@ -613,7 +573,7 @@ export default function PlayV2Page() {
             }
             case 'error':
               sawStreamError = true
-              streamErrorMessage = String(event.message ?? 'Narrator stream failed')
+              streamErrorMessage = event.message
               diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: streamErrorMessage })
               break
             case 'done':
@@ -1074,82 +1034,23 @@ export default function PlayV2Page() {
         usage: TokenUsage
         latency?: LatencyPayload
       }
-      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
-        chapter: data.chapter,
-        title: data.runtimeState.title,
-        npcCount: data.runtimeState.startingNpcIds.length,
-        threadCount: data.runtimeState.activeThreadIds.length,
-        ladderSteps: data.runtimeState.pressureLadder.length,
-        chapterFunction: data.runtimeState.arcLink?.chapterFunction,
-        pacing: data.runtimeState.pacingContract?.targetTurns,
-      } })
+      const opened = applyAuthorChapterOpening({
+        state: currentState,
+        phase: 'chapter_1',
+        authorResult: data,
+      })
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: opened.debugSummary })
       diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
       if (data.latency) {
         diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
       }
 
-      // Apply Ch1 setup to state.
-      const next: Sf2State = structuredClone(currentState)
-      // Snapshot the prior chapter's active threads BEFORE overwriting
-      // next.chapter — pressure-runtime uses this to split 'active' (was-on-
-      // stage-last-chapter) from 'background' (carried but quiet). Reading it
-      // from the new setup later would always match itself and collapse to
-      // 'active'.
-      const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
-      next.meta.currentChapter = data.chapter
-      next.chapter = {
-        number: data.chapter,
-        title: data.runtimeState.title,
-        setup: data.runtimeState,
-        scaffolding: data.scaffolding,
-        artifacts: { opening: data.openingSeed },
-        sceneSummaries: [],
-        currentSceneId: `scene_${data.chapter}_1`,
-      }
-      // Hydrate campaign.npcs and campaign.threads from the FULL authored
-      // payload so voice/affiliation/retrievalCue/resolutionCriteria/failureMode/
-      // owner are populated — not the skeletal placeholder seed we used to ship.
-      applyAuthoredToCampaign(
-        next,
-        data.authored,
-        data.chapter as Sf2State['chapter']['number'],
-        data.runtimeState.loadBearingThreadIds
-      )
-      applyLatentArcQuestionChapterOpen(
-        next,
-        data.chapter,
-        data.runtimeState.arcLink?.promotedLatentQuestionIds ?? []
-      )
-      next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
-      // Scene snapshot: opening-location name from the opening scene spec.
-      next.world.currentLocation = {
-        id: 'loc_opening',
-        name: data.runtimeState.openingSceneSpec.location,
-        description: data.runtimeState.openingSceneSpec.initialState,
-        atmosphericConditions: [data.runtimeState.openingSceneSpec.atmosphericCondition],
-        chapterCreated: data.chapter,
-      }
-      next.campaign.locations[next.world.currentLocation.id] = next.world.currentLocation
-      next.world.sceneSnapshot = {
-        sceneId: `scene_${data.chapter}_1`,
-        location: next.world.currentLocation,
-        presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
-        timeLabel: '',
-        established: [data.runtimeState.openingSceneSpec.initialState],
-        firstTurnIndex: next.history.turns.length,
-      }
-      next.meta.currentSceneId = `scene_${data.chapter}_1`
-      next.meta.updatedAt = new Date().toISOString()
+      const next = opened.nextState
       diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
         actor: 'author',
         writeKind: 'chapter_setup',
         turnIndex: firewallTurnIndexFor(next),
-        payload: {
-          chapter: data.chapter,
-          title: data.runtimeState.title,
-          activeThreadCount: data.runtimeState.activeThreadIds.length,
-          pressureLadderCount: data.runtimeState.pressureLadder.length,
-        },
+        payload: opened.telemetry,
       }))
       setState(next)
       persist(next)
@@ -1360,106 +1261,23 @@ export default function PlayV2Page() {
         latency?: LatencyPayload
       }
 
-      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
-        chapter: data.chapter,
-        title: data.runtimeState.title,
-        npcCount: data.runtimeState.startingNpcIds.length,
-        threadCount: data.runtimeState.activeThreadIds.length,
-        ladderSteps: data.runtimeState.pressureLadder.length,
-        threadTransitions: data.threadTransitions ?? [],
-        chapterFunction: data.runtimeState.arcLink?.chapterFunction,
-        pacing: data.runtimeState.pacingContract?.targetTurns,
-      } })
+      const opened = applyAuthorChapterOpening({
+        state: authorBaseState,
+        phase: 'continuation',
+        authorResult: data,
+      })
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: opened.debugSummary })
       diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
       if (data.latency) {
         diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
       }
 
-      // Apply the new chapter: bump chapter counter, swap setup/scaffolding/opening,
-      // reset per-chapter view fields. DOES NOT drop the campaign graph (NPCs, threads,
-      // clues carry across; the Author may reference existing ids via ownerHint).
-      const next: Sf2State = structuredClone(authorBaseState)
-      // Snapshot prior chapter's actives before overwriting next.chapter —
-      // see chapterPressureRuntime.prepareChapterOpen: this drives the active vs
-      // background role split.
-      const priorActiveThreadIds = next.chapter?.setup.activeThreadIds ?? []
-      next.meta.currentChapter = data.chapter
-      next.meta.currentSceneId = `scene_${data.chapter}_1`
-      // Apply Author-emitted thread transitions to carried campaign threads.
-      // Closes threads whose resolutionCriteria was met in the prior chapter
-      // but wasn't transitioned during play.
-      for (const t of data.threadTransitions ?? []) {
-        const thread = next.campaign.threads[t.id]
-        if (!thread) continue
-        thread.status = t.toStatus
-        thread.lastAdvancedTurn = next.history.turns.length
-      }
-      next.chapter = {
-        number: data.chapter,
-        title: data.runtimeState.title,
-        setup: data.runtimeState,
-        scaffolding: data.scaffolding,
-        artifacts: { opening: data.openingSeed },
-        sceneSummaries: [],
-        currentSceneId: `scene_${data.chapter}_1`,
-      }
-      // Hydrate campaign graph with full Author payload: new entities get
-      // rich fields; carried-forward entities get refreshed voice/affiliation/
-      // retrievalCue/resolutionCriteria/failureMode when the Author evolved them.
-      applyAuthoredToCampaign(
-        next,
-        data.authored,
-        data.chapter as Sf2State['chapter']['number'],
-        data.runtimeState.loadBearingThreadIds
-      )
-      applyLatentArcQuestionChapterOpen(
-        next,
-        data.chapter,
-        data.runtimeState.arcLink?.promotedLatentQuestionIds ?? []
-      )
-      next.chapter.setup = chapterPressureRuntime.prepareChapterOpen(next, next.chapter.setup, priorActiveThreadIds)
-      // Reset scene view at chapter transition. Derive a fresh timeLabel
-      // from the Author's atmosphericCondition so the new chapter opens at
-      // its authored moment instead of inheriting the prior chapter's close
-      // time (which caused a regression: Ch1 closed at dusk, Ch2 opening
-      // atmospheric said "late afternoon" → Narrator produced conflicting
-      // snapshots with time going backwards).
-      const atmos = data.runtimeState.openingSceneSpec.atmosphericCondition ?? ''
-      const derivedTimeLabel = atmos.split(/[.;]/)[0].trim().slice(0, 80)
-      next.world.currentTimeLabel = derivedTimeLabel
-      next.meta.currentTimeLabel = derivedTimeLabel
-      // Location: use the authored opening location description for the new
-      // scene so Narrator doesn't hang on to the prior chapter's location.
-      next.world.currentLocation = {
-        id: `loc_ch${data.chapter}_opening`,
-        name: data.runtimeState.openingSceneSpec.location || next.world.currentLocation.name,
-        description: data.runtimeState.openingSceneSpec.initialState || '',
-        atmosphericConditions: atmos ? [atmos] : undefined,
-        chapterCreated: data.chapter,
-      }
-      next.campaign.locations[next.world.currentLocation.id] = next.world.currentLocation
-      next.world.sceneSnapshot = {
-        sceneId: `scene_${data.chapter}_1`,
-        location: next.world.currentLocation,
-        presentNpcIds: data.openingSeed.visibleNpcIds.filter((id) => next.campaign.npcs[id]),
-        timeLabel: derivedTimeLabel,
-        established: [`Chapter ${data.chapter} opens.`, data.runtimeState.openingSceneSpec.initialState],
-        firstTurnIndex: next.history.turns.length,
-      }
-      // Scene changed — clear the prior chapter's scene bundle cache. The
-      // Narrator route will rebuild on the first turn of the new chapter.
-      next.world.sceneBundleCache = undefined
-      next.meta.updatedAt = new Date().toISOString()
+      const next = opened.nextState
       diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
         actor: 'author',
         writeKind: 'chapter_setup',
         turnIndex: firewallTurnIndexFor(next),
-        payload: {
-          chapter: data.chapter,
-          title: data.runtimeState.title,
-          activeThreadCount: data.runtimeState.activeThreadIds.length,
-          pressureLadderCount: data.runtimeState.pressureLadder.length,
-        },
+        payload: opened.telemetry,
       }))
       setState(next)
       await persist(next)

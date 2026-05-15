@@ -1,0 +1,230 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter opening continuation applies author state",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-function regression coverage for continuation chapter opening: thread transitions happen before hydration, pressure preparation uses prior active threads, opening location/time reset, scene bundle cache clears, and firstTurnIndex stays monotonic."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "turn 0", "narratorProse": "turn 0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "turn 1", "narratorProse": "turn 1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "turn 2", "narratorProse": "turn 2", "timestamp": "replay" }
+        ]
+      },
+      "campaign": {
+        "threads": {
+          "thread_resolved": {
+            "id": "thread_resolved",
+            "title": "The spent petition",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 4,
+            "peakTension": 4,
+            "resolutionCriteria": "The petition is answered.",
+            "failureMode": "The petition curdles into public blame.",
+            "retrievalCue": "The petition was the prior chapter's loose end.",
+            "loadBearing": false,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "activeThreadIds": ["thread_spine", "thread_resolved"],
+          "loadBearingThreadIds": ["thread_spine"]
+        }
+      },
+      "world": {
+        "sceneBundleCache": {
+          "sceneId": "scene_1_3",
+          "builtAtTurn": 2,
+          "packet": {
+            "sceneId": "scene_1_3",
+            "chapter": 1,
+            "location": "Old room",
+            "atmosphere": [],
+            "cast": [],
+            "visibleThreads": [],
+            "revelations": [],
+            "procedures": [],
+            "workingSet": { "full": [], "stubs": [], "excluded": [] },
+            "recentTurnDelta": [],
+            "continuityWarnings": []
+          }
+        }
+      }
+    },
+    "playerInput": "(unused - author chapter opening pure-function fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "authorChapterOpening": {
+      "phase": "continuation",
+      "chapter": 2,
+      "rawToolInput": {
+        "chapter_frame": {
+          "title": "The Registry Bell",
+          "premise": "The old petition is settled, but the registry turns the settlement's silence into new leverage.",
+          "active_pressure": "The bell makes every private delay public.",
+          "central_tension": "Whether the player can keep procedure from becoming a spectacle.",
+          "chapter_scope": "One registry office, one ringing deadline, one visible witness.",
+          "objective": "Stop the registry bell from converting delay into public sanction.",
+          "crucible": "The player must decide whether to answer publicly or pull the witness aside.",
+          "outcome_spectrum": {
+            "clean": "The bell is silenced before the witness is named.",
+            "costly": "The bell stops, but the witness pays a visible cost.",
+            "failure": "The registry records the delay as refusal.",
+            "catastrophic": "The crowd treats the player as the cause of the sanction."
+          }
+        },
+        "antagonist_field": {
+          "source_system": "The Registry",
+          "core_pressure": "Public procedure turns delay into blame.",
+          "default_face": {
+            "name": "Clerk Vale",
+            "role": "registry clerk",
+            "pressure_style": "quiet public counting"
+          },
+          "possible_faces": [
+            {
+              "id": "face_vale",
+              "name": "Clerk Vale",
+              "role": "registry clerk",
+              "becomes_primary_when": "The bell rings a second time.",
+              "pressure_style": "quiet public counting"
+            }
+          ],
+          "escalation_logic": "Each unanswered chime names one more delay in public."
+        },
+        "starting_npcs": [
+          {
+            "id": "npc_vale",
+            "name": "Clerk Vale",
+            "affiliation": "Registry",
+            "role": "registry clerk",
+            "voice_register": "soft formal",
+            "voice_note": "counts before answering, then says the smallest possible sentence",
+            "dramatic_function": "public pressure face",
+            "hidden_pressure": "Needs the witness named before the office closes.",
+            "retrieval_cue": "Vale makes silence count against the player.",
+            "initial_disposition": "wary",
+            "disposition_reason": "Vale believes mercy creates audit exposure."
+          }
+        ],
+        "active_threads": [
+          {
+            "id": "thread_spine",
+            "title": "The intake problem",
+            "question": "Can the intake pressure be kept from becoming public sanction?",
+            "owner_hint": "Registry",
+            "tension": 5,
+            "initial_tension": 3,
+            "resolution_criteria": "The registry accepts a concrete answer or public sanction begins.",
+            "failure_mode": "The registry records delay as refusal.",
+            "retrieval_cue": "The carried intake thread now lives in the registry bell."
+          },
+          {
+            "id": "thread_bell",
+            "title": "The registry bell",
+            "question": "Who pays when the bell makes delay public?",
+            "owner_hint": "Registry",
+            "tension": 7,
+            "initial_tension": 6,
+            "resolution_criteria": "The bell is stopped or its target is named.",
+            "failure_mode": "The crowd learns who can be punished for the delay.",
+            "retrieval_cue": "The registry bell turns silence into public pressure.",
+            "driver_kind": "new_pressure"
+          }
+        ],
+        "thread_transitions": [
+          {
+            "id": "thread_resolved",
+            "to_status": "resolved_costly",
+            "reason": "The petition was answered, but only by exposing the witness."
+          }
+        ],
+        "pressure_ladder": [
+          {
+            "id": "ladder_second_chime",
+            "pressure": "Vale lets the bell ring a second time.",
+            "trigger_condition": "The player delays the answer.",
+            "narrative_effect": "The witness hears their danger become public.",
+            "severity": "standard"
+          }
+        ],
+        "possible_revelations": [],
+        "moral_fault_lines": [],
+        "escalation_options": [],
+        "editorialized_lore": [],
+        "arc_link": {
+          "arc_id": "arc_registry",
+          "chapter_function": "Turn a settled petition into public institutional pressure.",
+          "player_stance_read": "The player has not chosen public answer or private mercy.",
+          "pressure_engine_ids": []
+        },
+        "pacing_contract": {
+          "target_turns": { "min": 18, "max": 22 },
+          "chapter_question": "Can the player stop the bell without naming the witness?",
+          "acceptable_resolutions": ["bell stopped", "witness protected", "public sanction accepted"],
+          "early_pressure": "Open on the first bell.",
+          "middle_pressure": "Force a public or private answer.",
+          "late_pressure": "Make the second chime imminent.",
+          "close_when_any": ["bell stopped", "witness named"],
+          "avoid_extending_for": ["extra office color"]
+        },
+        "opening_scene_spec": {
+          "location": "Registry Bell Room",
+          "atmospheric_condition": "late afternoon; brass bell humming over the counter",
+          "initial_state": "The first chime is still vibrating when Vale looks up.",
+          "first_player_facing": "Vale asks whether the answer should be recorded aloud.",
+          "immediate_choice": "Answer publicly or draw Vale away from the counter.",
+          "no_starting_combat": true,
+          "no_exposition_dump": true,
+          "visible_npc_ids": ["npc_vale"]
+        },
+        "human_stakes": [
+          {
+            "who_pays": "npc_vale",
+            "cost_surface": "reputation",
+            "what_is_lost": "Vale becomes the clerk who hid a public deadline.",
+            "triggering_pressure": "thread_bell"
+          }
+        ]
+      },
+      "expect": {
+        "currentChapterEquals": 2,
+        "currentSceneIdEquals": "scene_2_1",
+        "currentLocationIdEquals": "loc_ch2_opening",
+        "currentLocationNameEquals": "Registry Bell Room",
+        "currentTimeLabelEquals": "late afternoon",
+        "sceneSnapshotFirstTurnIndexEquals": 3,
+        "sceneBundleCacheCleared": true,
+        "threadStatusesInclude": [
+          { "threadId": "thread_resolved", "status": "resolved_costly" }
+        ],
+        "threadPressureIncludes": [
+          { "threadId": "thread_spine", "role": "active", "openingFloor": 3, "localEscalation": 0, "maxThisChapter": 3 },
+          { "threadId": "thread_bell", "role": "new", "openingFloor": 6, "localEscalation": 0, "maxThisChapter": 6 }
+        ],
+        "telemetryEquals": {
+          "chapter": 2,
+          "title": "The Registry Bell",
+          "activeThreadCount": 2,
+          "pressureLadderCount": 1
+        }
+      }
+    }
+  }
+}

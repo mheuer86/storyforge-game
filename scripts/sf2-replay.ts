@@ -1,9 +1,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorSetupWarnings, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
+import { applyAuthorChapterOpening } from '../lib/sf2/author/chapter-opening'
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
 import { arcThreadsFromArcSetup, transformArcSetup, validateArcPlan } from '../lib/sf2/arc-author/transform'
+import { transformAuthorSetup } from '../lib/sf2/author/transform'
 import { getArcVariantCandidates } from '../lib/sf2/arc-author/variants'
 import { applyLatentArcQuestionChapterOpen, selectLatentArcQuestionsForChapter } from '../lib/sf2/arc-questions'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
@@ -29,6 +31,7 @@ import { evaluateProcedureArcPassBar } from '../lib/sf2/arc-author/procedure-eva
 import { debugEntriesToDiagnosticFindings, queryOpenErrorFindingsForEntity } from '../lib/sf2/diagnostics'
 import { buildArchivistTurnMessage } from '../lib/sf2/archivist/prompt'
 import { ARCHIVIST_PARITY_CONTRACT, extractTurnTool } from '../lib/sf2/archivist/tools'
+import { processArchivistExtraction } from '../lib/sf2/archivist/extraction'
 import { AUTHOR_TOOLS, AUTHOR_TOOL_NAME } from '../lib/sf2/author/tools'
 import { ARC_AUTHOR_TOOLS, ARC_AUTHOR_TOOL_NAME } from '../lib/sf2/arc-author/tools'
 import { CHAPTER_MEANING_TOOLS, CHAPTER_MEANING_TOOL_NAME } from '../lib/sf2/chapter-meaning/tools'
@@ -491,6 +494,28 @@ interface ReplayFixture {
         threadOwnerEquals?: { threadId: string; kind: string; id: string }
       }
     }
+    authorChapterOpening?: {
+      phase: 'chapter_1' | 'continuation'
+      rawToolInput: Record<string, unknown>
+      chapter: number
+      expect: {
+        currentChapterEquals?: number
+        currentSceneIdEquals?: string
+        currentLocationIdEquals?: string
+        currentLocationNameEquals?: string
+        currentTimeLabelEquals?: string
+        sceneSnapshotFirstTurnIndexEquals?: number
+        sceneBundleCacheCleared?: boolean
+        threadStatusesInclude?: Array<{ threadId: string; status: string }>
+        threadPressureIncludes?: Array<{ threadId: string; role?: string; openingFloor?: number; localEscalation?: number; maxThisChapter?: number }>
+        telemetryEquals?: {
+          chapter?: number
+          title?: string
+          activeThreadCount?: number
+          pressureLadderCount?: number
+        }
+      }
+    }
     referencePolicy?: {
       // Pure-function checks on lib/sf2/reference-policy. These assert the
       // policy boundary directly so observe/strict/repair behavior is visible
@@ -627,6 +652,24 @@ interface ReplayFixture {
     }
     archivistSchemaParity?: {
       assertContract?: boolean
+    }
+    archivistExtraction?: {
+      rawToolInput: Record<string, unknown>
+      turnIndex?: number
+      narratorProse?: string
+      expect: {
+        pressureEventIdsEquals?: string[]
+        pressureEventsCount?: number
+        coherenceFindingTypesEquals?: string[]
+        fallbackCounters?: Record<string, number>
+        summaryEquals?: {
+          totalWrites?: number
+          accepted?: number
+          rejected?: number
+          deferred?: number
+          anchorMisses?: number
+        }
+      }
     }
     roleSchemaParity?: {
       assertNarrator?: boolean
@@ -888,6 +931,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertDispositionDerivation(fixture, failures)
   assertAuthorContract(fixture, stateBefore, failures)
   assertAuthorHydration(fixture, stateBefore, failures)
+  assertAuthorChapterOpening(fixture, stateBefore, failures)
   assertPersistenceNormalize(fixture, failures)
   assertReferencePolicy(fixture, stateBefore, failures)
   assertArcTransform(fixture, failures)
@@ -895,6 +939,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertLatentArcQuestions(fixture, stateBefore, failures)
   assertChapterMeaningValidation(fixture, stateBefore, failures)
   assertArchivistSchemaParity(fixture, failures)
+  assertArchivistExtraction(fixture, stateBefore, failures)
   assertRoleSchemaParity(fixture, failures)
   assertTurnResolutionStableJson(fixture, failures)
   assertSessionSummary(fixture, stateBefore, stateAfter, failures)
@@ -1467,6 +1512,56 @@ function assertArchivistSchemaParity(fixture: ReplayFixture, failures: string[])
   }
 }
 
+function assertArchivistExtraction(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.archivistExtraction
+  if (!expected) return
+
+  const result = processArchivistExtraction({
+    state: structuredClone(stateBefore),
+    rawToolInput: expected.rawToolInput,
+    turnIndex: expected.turnIndex ?? ((fixture.input.turnIndex ?? stateBefore.history.turns.length) + 1),
+    narratorProse: expected.narratorProse ?? fixture.input.narrator.prose,
+  })
+
+  if (typeof expected.expect.pressureEventsCount === 'number') {
+    const got = result.patch.pressureEvents?.length ?? 0
+    if (got !== expected.expect.pressureEventsCount) {
+      failures.push(`archivistExtraction.pressureEvents: expected ${expected.expect.pressureEventsCount}, got ${got}`)
+    }
+  }
+
+  if (expected.expect.pressureEventIdsEquals !== undefined) {
+    const got = (result.patch.pressureEvents ?? []).map((event) => event.id).sort().join(',')
+    const want = [...expected.expect.pressureEventIdsEquals].sort().join(',')
+    if (got !== want) failures.push(`archivistExtraction.pressureEventIds: expected ${want}, got ${got}`)
+  }
+
+  if (expected.expect.coherenceFindingTypesEquals !== undefined) {
+    const got = (result.patch.coherenceFindings ?? []).map((finding) => finding.type).sort().join(',')
+    const want = [...expected.expect.coherenceFindingTypesEquals].sort().join(',')
+    if (got !== want) failures.push(`archivistExtraction.coherenceFindingTypes: expected ${want}, got ${got}`)
+  }
+
+  for (const [key, want] of Object.entries(expected.expect.fallbackCounters ?? {})) {
+    const got = result.normalization.fallbackCounters[key] ?? 0
+    if (got !== want) failures.push(`archivistExtraction.fallbackCounters.${key}: expected ${want}, got ${got}`)
+  }
+
+  const summary = expected.expect.summaryEquals
+  if (summary) {
+    for (const key of ['totalWrites', 'accepted', 'rejected', 'deferred', 'anchorMisses'] as const) {
+      const want = summary[key]
+      if (want !== undefined && result.summary[key] !== want) {
+        failures.push(`archivistExtraction.summary.${key}: expected ${want}, got ${result.summary[key]}`)
+      }
+    }
+  }
+}
+
 function getRequired(schema: Record<string, unknown>): string[] {
   return Array.isArray(schema.required) ? schema.required.map(String) : []
 }
@@ -1785,6 +1880,97 @@ function assertAuthorHydration(
       failures.push(
         `authorHydration.threadOwner: expected ${threadOwner.kind}:${threadOwner.id}, got ${thread.owner.kind}:${thread.owner.id}`
       )
+    }
+  }
+}
+
+function assertAuthorChapterOpening(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.authorChapterOpening
+  if (!expected) return
+
+  const authored = normalizeAuthorSetup(expected.rawToolInput)
+  const transformed = transformAuthorSetup(
+    authored,
+    expected.chapter as Sf2State['chapter']['number']
+  )
+  const result = applyAuthorChapterOpening({
+    state: stateBefore,
+    phase: expected.phase,
+    authorResult: {
+      ...transformed,
+      authored,
+    },
+  })
+  const state = result.nextState
+  const e = expected.expect
+
+  if (e.currentChapterEquals !== undefined && state.meta.currentChapter !== e.currentChapterEquals) {
+    failures.push(`authorChapterOpening.currentChapter: expected ${e.currentChapterEquals}, got ${state.meta.currentChapter}`)
+  }
+  if (e.currentSceneIdEquals !== undefined && state.meta.currentSceneId !== e.currentSceneIdEquals) {
+    failures.push(`authorChapterOpening.currentSceneId: expected ${e.currentSceneIdEquals}, got ${state.meta.currentSceneId}`)
+  }
+  if (e.currentLocationIdEquals !== undefined && state.world.currentLocation.id !== e.currentLocationIdEquals) {
+    failures.push(`authorChapterOpening.currentLocation.id: expected ${e.currentLocationIdEquals}, got ${state.world.currentLocation.id}`)
+  }
+  if (e.currentLocationNameEquals !== undefined && state.world.currentLocation.name !== e.currentLocationNameEquals) {
+    failures.push(`authorChapterOpening.currentLocation.name: expected ${e.currentLocationNameEquals}, got ${state.world.currentLocation.name}`)
+  }
+  if (e.currentTimeLabelEquals !== undefined && state.world.currentTimeLabel !== e.currentTimeLabelEquals) {
+    failures.push(`authorChapterOpening.currentTimeLabel: expected ${e.currentTimeLabelEquals}, got ${state.world.currentTimeLabel}`)
+  }
+  if (
+    typeof e.sceneSnapshotFirstTurnIndexEquals === 'number' &&
+    state.world.sceneSnapshot.firstTurnIndex !== e.sceneSnapshotFirstTurnIndexEquals
+  ) {
+    failures.push(
+      `authorChapterOpening.sceneSnapshot.firstTurnIndex: expected ${e.sceneSnapshotFirstTurnIndexEquals}, got ${state.world.sceneSnapshot.firstTurnIndex}`
+    )
+  }
+  if (typeof e.sceneBundleCacheCleared === 'boolean') {
+    const cleared = state.world.sceneBundleCache === undefined
+    if (cleared !== e.sceneBundleCacheCleared) {
+      failures.push(`authorChapterOpening.sceneBundleCacheCleared: expected ${e.sceneBundleCacheCleared}, got ${cleared}`)
+    }
+  }
+  for (const want of e.threadStatusesInclude ?? []) {
+    const thread = state.campaign.threads[want.threadId]
+    if (!thread) {
+      failures.push(`authorChapterOpening.threadStatus: missing ${want.threadId}`)
+    } else if (thread.status !== want.status) {
+      failures.push(`authorChapterOpening.threadStatus.${want.threadId}: expected ${want.status}, got ${thread.status}`)
+    }
+  }
+  for (const want of e.threadPressureIncludes ?? []) {
+    const pressure = state.chapter.setup.threadPressure[want.threadId]
+    if (!pressure) {
+      failures.push(`authorChapterOpening.threadPressure: missing ${want.threadId}`)
+      continue
+    }
+    if (want.role !== undefined && pressure.role !== want.role) {
+      failures.push(`authorChapterOpening.threadPressure.${want.threadId}.role: expected ${want.role}, got ${pressure.role}`)
+    }
+    if (want.openingFloor !== undefined && pressure.openingFloor !== want.openingFloor) {
+      failures.push(`authorChapterOpening.threadPressure.${want.threadId}.openingFloor: expected ${want.openingFloor}, got ${pressure.openingFloor}`)
+    }
+    if (want.localEscalation !== undefined && pressure.localEscalation !== want.localEscalation) {
+      failures.push(`authorChapterOpening.threadPressure.${want.threadId}.localEscalation: expected ${want.localEscalation}, got ${pressure.localEscalation}`)
+    }
+    if (want.maxThisChapter !== undefined && pressure.maxThisChapter !== want.maxThisChapter) {
+      failures.push(`authorChapterOpening.threadPressure.${want.threadId}.maxThisChapter: expected ${want.maxThisChapter}, got ${pressure.maxThisChapter}`)
+    }
+  }
+  const telemetry = e.telemetryEquals
+  if (telemetry) {
+    for (const [key, want] of Object.entries(telemetry)) {
+      const got = result.telemetry[key as keyof typeof result.telemetry]
+      if (got !== want) {
+        failures.push(`authorChapterOpening.telemetry.${key}: expected ${String(want)}, got ${String(got)}`)
+      }
     }
   }
 }
