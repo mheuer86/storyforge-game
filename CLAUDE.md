@@ -1,131 +1,209 @@
 # CLAUDE.md
 
+Primary technical handbook for agents working in Storyforge.
+
+For product vision, current project state, the V1/SF2 distinction, and the knowledge map, read `CONTEXT.md`. For operational behavior, read `AGENTS.md`.
+
 ## Project Overview
 
-Storyforge is a solo text RPG where Claude acts as Game Master. Players create a character (genre, species/origin, class), and Claude drives branching storylines with D&D 5e-inspired mechanics. Built with Next.js (App Router) and TypeScript.
+Storyforge is a solo text RPG where Claude acts as Game Master. Players choose a genre, origin/species, playbook/class, and opening hook; the game then runs a persistent chapter-based campaign with D&D-inspired checks and code-owned state.
 
-Five genres: space-opera, fantasy, cyberpunk, grimdark, noire. Each has unique species/origins, classes, themes, opening hooks, and prompt flavor.
+SF2 is now the primary `/play` experience. V1 is preserved at `/play/v1` for legacy localStorage saves and maintenance work. `/play/v2` remains as an SF2 alias for older links.
 
-For product vision, current project state, the V1/SF2 distinction, and the project knowledge map, read `CONTEXT.md`.
+Active genres: `space-opera`, `fantasy`, `grimdark`, `cyberpunk`, `noire`, `epic-scifi`.
 
-## Agent skills
+## Agent Skills
 
-### Issue tracker
+### Issue Tracker
 
 Issues and PRDs are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
 
-### Triage labels
+### Triage Labels
 
 This repo uses the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.
 
-### Domain docs
+### Domain Docs
 
 Storyforge is a single-context repo with root `CONTEXT.md` and supporting architecture docs under `docs/`. See `docs/agents/domain.md`.
+
+Current root docs describe SF2. V1 docs are archived under `docs/v1/`.
 
 ## Commands
 
 ```bash
-npm run dev       # Start development server (localhost:3000)
-npm run build     # Production build
-npm run lint      # ESLint
+npm run dev        # Start development server (localhost:3000)
+npm run build      # Production build
+npm run lint       # ESLint
+npm run sf2:replay # Run SF2 replay fixtures
 ```
 
-No test framework. Deploy with `npx vercel --prod --yes` (GitHub integration doesn't persist).
+Useful focused commands:
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/<fixture-name>.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run sf2:fixture -- --input <export.json> --turn <index> --name <fixture-name>
+```
+
+There is no general V1 test suite. SF2 has replay fixtures.
 
 ## Architecture
 
-### App Layer
-- `app/api/game/route.ts` — Claude streaming + tool-use loop. Newline-delimited JSON events. Handles roll pauses, retries, close sequences, audit calls.
-- `app/api/auth/route.ts` — Session validation with HMAC-SHA256 signed cookies
-- `app/play/page.tsx` — Main game page (client component)
+### Routes
+
+| Path | Current role |
+|---|---|
+| `app/play/page.tsx` | Primary SF2 play page. Wraps `Sf2PlayApp` with access/budget gates. |
+| `app/play/v2/page.tsx` | SF2 alias. |
+| `app/play/v1/page.tsx` | Legacy V1 client. |
+| `app/api/sf2/narrator/route.ts` | Streams prose, roll prompts, final Narrator annotation, diagnostics. |
+| `app/api/sf2/archivist/route.ts` | Extracts durable narrative-state patches. |
+| `app/api/sf2/arc-author/route.ts` | Creates the long arc plan before Chapter 1. |
+| `app/api/sf2/author/route.ts` | Creates chapter setup and pressure surface. |
+| `app/api/sf2/chapter-meaning/route.ts` | Synthesizes closed-chapter meaning for the next chapter. |
+| `app/api/game/route.ts` | Legacy V1 streaming route. |
+| `app/api/auth/route.ts` | Passphrase/session validation. |
 
 ### Components
-- `components/game/game-screen.tsx` — Central game loop: message streaming, roll handling, state updates, quick actions. The largest component.
-- `components/game/burger-menu.tsx` — Side panel with tabs: Character, World (sub-tabs: Locations/People/Narrative), Intel, Ship, Chapters. Displays all game state.
-- `components/game/dice-roll-modal.tsx` — Interactive dice modal. Supports d6/d8/d10/d12/d20 with rollType-aware headlines.
-- `components/game/roll-badge.tsx` — Inline roll results in chat. Damage/healing variants.
-- `components/setup/` — Onboarding: genre select, character creation, campaign load
-- `components/ui/` — shadcn/ui primitives
 
-### Lib (Core Logic)
-- `lib/types.ts` — All TypeScript interfaces for game state
-- `lib/system-prompt.ts` — Modular prompt system + compressed game state + initial message builder
-- `lib/tools.ts` — Anthropic tool definitions (20+ tools for game state mutations)
-- `lib/tool-processor.ts` — Applies tool results to game state, generates stat change chips
-- `lib/genre-config.ts` — Genre definitions: species (with lore), classes (with traits), opening hooks (with titles), themes, prompt sections. ~1700 lines, pure data.
-- `lib/game-data.ts` — localStorage persistence, save/load, migrations
+| Area | Files |
+|---|---|
+| SF2 app orchestration | `components/sf2/play-app.tsx` |
+| SF2 play surface | `components/sf2/play-shell.tsx` and sibling panels |
+| Setup | `components/setup/*` |
+| V1 legacy game loop | `components/game/game-screen.tsx` and related V1 panels |
+| Shared UI | `components/ui/*` |
 
-## Key Patterns
+`components/sf2/play-app.tsx` owns IndexedDB boot, campaign activation, setup, Arc Author and Author calls, Narrator stream handling, roll resume, Archivist commit, chapter transitions, saves, and diagnostics exports.
 
-### Prompt Architecture (Modular)
-The system prompt is assembled from layers, not a monolith:
-- **Core layer** (~1800 tokens) — GM identity, universal rules, hidden systems. Always loads.
-- **Situation module** (~400-500 tokens) — One of five: Tutorial, Planning, Combat, Infiltration, Social. Selected based on game context.
-- **Investigation overlay** — Always loads, appends to any module except combat.
-- **Compressed game state** — Every turn, full game state is compressed into a ~500-800 token block (PC stats, inventory, location, NPCs, threads, promises, decisions, clocks, etc.)
-- **Adaptive history window** — ~4000 tokens of recent messages, trimmed to fit.
+`components/sf2/play-shell.tsx` renders the three-column game surface: character/objective/gear on the left, prose and rolls in the center, locations/present cast/intel on the right.
 
-Specialized prompts (separate API calls):
-- **Audit prompt** (Haiku) — 14 checks, fires every ~5 player turns. Silent quality control.
-- **Close prompt** (Sonnet) — 6-step atomic close sequence at chapter end.
+### SF2 Core Lib
 
-### Opening Hooks & Titles
-107 hooks across 5 genres (3 per class + 4 universal per genre). Each hook has a title used as the Chapter 1 header. Selection: 70% class-specific, 30% universal. Hook + title are selected server-side in `buildInitialMessage` before Claude sees anything.
+| Area | Files |
+|---|---|
+| Types and state | `lib/sf2/types.ts`, `lib/sf2/game-data.ts` |
+| Client turn flow | `lib/sf2/runtime/client-turn-orchestrator.ts`, `lib/sf2/runtime/turn-pipeline.ts` |
+| Narrator | `lib/sf2/narrator/*` |
+| Archivist | `lib/sf2/archivist/*` |
+| Author roles | `lib/sf2/author/*`, `lib/sf2/arc-author/*`, `lib/sf2/chapter-meaning/*` |
+| Retrieval and scene packet | `lib/sf2/retrieval/*` |
+| Pressure and pacing | `lib/sf2/pressure/*`, `lib/sf2/pacing/*` |
+| Validation and firewall | `lib/sf2/validation/*`, `lib/sf2/firewall/*` |
+| Procedures | `lib/sf2/procedure*.ts` |
+| Persistence | `lib/sf2/persistence/indexeddb.ts` |
+| Shared genre config | `lib/genre-config.ts`, `lib/genres/*` |
 
-### Origin Lore
-Each species/origin has structured lore with three mechanical layers:
-1. Starting contact at an explicit disposition tier
-2. Advantage on specific check types
-3. Vulnerability (disadvantage or social cost)
-Lore is injected as an `ORIGIN:` line in compressed state every turn.
+### V1 Legacy Lib
 
-### State Management
-All game state in localStorage (`storyforge_gamestate`). Three manual save slots + auto-save mirroring. State structure: `GameState { meta, character, world, combat, history, chapterFrame }`.
+V1 remains real code, but it is not the primary `/play` path:
 
-### AI Integration
-Request -> `/api/game` -> Anthropic SDK -> streaming NDJSON events. Types: `text`, `tools`, `roll_prompt`, `chapter_title`, `retrying`, `done`, `error`. When `request_roll` is called, the stream pauses for user dice interaction, then resumes with the roll result.
+- `app/api/game/route.ts`
+- `components/game/*`
+- `lib/system-prompt.ts`
+- `lib/tools.ts`
+- `lib/tool-processor.ts`
+- `lib/rules-engine.ts`
+- `lib/game-data.ts`
+- `lib/types.ts`
 
-### Genre Theming
-CSS variables switch via `[data-genre="..."]` attribute. Each genre defines full OKLch color palettes, fonts, background effects, and glow styles.
+Use `docs/v1/*` when changing those surfaces.
+
+## SF2 Key Patterns
+
+### State Over History
+
+`Sf2State` is authoritative. The campaign graph stores arcs, threads, NPCs, factions, decisions, promises, obligations, clues, beats, documents, temporal anchors, procedures, pressure events, and lexicon. Transcript history is a replay/rendering source, not the memory layer.
+
+### Role Pipeline
+
+```mermaid
+flowchart LR
+  State["Canonical state"] --> Packet["Working set + scene packet"]
+  Packet --> Narrator["Narrator"]
+  Narrator --> Archivist["Archivist"]
+  Archivist --> Validation["Validation + partial accept"]
+  Validation --> State
+  State --> Pressure["Pressure, pacing, retrieval"]
+```
+
+Role ownership:
+
+- Arc Author: arc plan and initial arc pressure
+- Author: chapter setup and pressure surface
+- Narrator: prose, roll requests, visible mechanical effects, suggested actions
+- Archivist: durable narrative-state extraction
+- Chapter Meaning: closed-chapter transition material
+- Code: validation, pressure, roll math, retrieval, persistence, diagnostics
+
+### Streaming And Roll Resume
+
+Narrator calls use NDJSON streaming. When `request_roll` appears, the client pauses, resolves the d20, sends `rollResolution`, and the Narrator resumes before ending with `narrate_turn`.
+
+Preserve the streaming feel. Timing, roll pauses, and when text appears are core game feel.
+
+### Validation Before Persistence
+
+Archivist patches are partially accepted. Valid sub-writes land; invalid anchors, illegal transitions, weak evidence, or role leaks are rejected and logged.
+
+The actor firewall throws outside production when a role writes outside its contract.
+
+### Computed Pressure
+
+Thread pressure, local escalation, ladder cooldowns, close readiness, pacing advisories, and working-set retrieval are code-derived. Do not try to fix repeated mechanical drift with prompt wording alone.
+
+### Bounded Context
+
+The Narrator gets a scene bundle, recent in-scene turns, and a per-turn delta. Mutable state must not leak into cached system blocks.
 
 ## Game Systems
 
-### World State Systems
-- **NPCs**: name, description, role (crew/contact/npc), disposition tier (hidden), voice note, combat tier
-- **Threads**: narrative plot lines with deterioration tracking
-- **Promises**: player commitments with status lifecycle (open → strained → fulfilled/broken)
-- **Decisions**: non-operational player choices (moral/tactical/strategic/relational) with auto-recording, 8-cap, auto-archive
-- **Tension Clocks**: 4 or 6 segment clocks that trigger effects when filled
-- **Timers**: hard calendar deadlines
-- **Heat**: per-faction exposure tracking
-- **Ledger**: financial transaction history with 3-layer dedup
-- **Operation State**: multi-phase tactical plans (planning → active → extraction → complete)
-- **Exploration State**: spatial tracking for facilities/dungeons
-- **Notebook/Evidence**: clue tracking with tiered connections (lead → breakthrough)
-- **Crew Cohesion**: 1-5 scale affecting crew roll advantages
+SF2 currently models:
 
-### Combat
-d20 skill checks for attacks, variable-sided dice for damage/healing. Enemy damage auto-resolved via `rollBreakdown`. Spatial tracking with positions and exits. Combat abilities on NPCs.
+- chapters with objective, crucible, outcome spectrum, and pressure surface
+- arcs and threads with owners/stakeholders
+- NPCs and factions with disposition, agenda, heat, identity anchors, voice, and state
+- decisions, promises, obligations, clues, documents, temporal anchors, and emotional beats
+- roll gates, d20 checks, advantage/disadvantage/challenge, inspiration rerolls
+- thread pressure, local escalation, pressure events, and ladder fires
+- procedures for operations, access, exploration, investigation, combat, and montage tasks
+- scene summaries, recent turns, chapter artifacts, and replay frames
+- IndexedDB campaigns and save slots
 
-### Chapter System
-Chapters close via `signal_close_ready` → dedicated close prompt → 6-step atomic sequence (wrap narrative, level up, award proficiencies, generate debrief, set next frame, transition).
+For details, read `docs/game-systems.md`, `docs/rules-engine.md`, `docs/prompt-composition.md`, and `docs/tool-reference.md`.
+
+## High-Risk Areas
+
+- `app/api/sf2/narrator/route.ts`: streaming protocol, roll pause/resume, repair, sentinels
+- `components/sf2/play-app.tsx`: client orchestration and persistence
+- `lib/sf2/runtime/turn-pipeline.ts`: commit sequencing
+- `lib/sf2/validation/apply-patch.ts`: persistence boundary
+- `lib/sf2/pressure/runtime.ts`: chapter pressure and close readiness
+- `lib/sf2/retrieval/working-set.ts`: bounded memory selection
+- `lib/sf2/narrator/messages.ts`: cache-sensitive message assembly
+- `lib/genres/*`: content-heavy genre definitions
+- V1 legacy: `app/api/game/route.ts`, `components/game/game-screen.tsx`, `lib/system-prompt.ts`, `lib/tools.ts`, `lib/tool-processor.ts`
 
 ## Code Style
 
-- **Files**: kebab-case (`game-screen.tsx`)
-- **Components/interfaces**: PascalCase (`GameScreen`, `CharacterState`)
-- **Variables/functions**: camelCase (`gameState`, `handleContinue`)
-- **Constants**: CONSTANT_CASE (`STORAGE_KEY`, `RETRY_DELAY_MS`)
-- **IDs/keys**: snake_case (`pulse_pistol`, `spirit_wolf`)
-- **Styling**: Tailwind CSS utility classes; `cn()` from `lib/utils` for conditional classes
-- **React**: Functional components with hooks; `'use client'` for interactive components
-- **TypeScript**: Strict mode; explicit types; `export type` for type-only exports
-- **Tool definitions**: use `type: 'object' as const` for Anthropic SDK compatibility
+- Files: kebab-case (`play-shell.tsx`)
+- Components/interfaces: PascalCase (`Sf2PlayShell`, `Sf2State`)
+- Variables/functions: camelCase (`buildWorkingSet`)
+- Constants: CONSTANT_CASE (`SF2_SCHEMA_VERSION`)
+- IDs/keys: snake_case (`thread_missing_witness`)
+- Styling: Tailwind CSS utilities; `cn()` from `lib/utils`
+- React: functional components with hooks; use `'use client'` for interactive components
+- TypeScript: strict mode; explicit exported types; use `export type` for type-only exports
+- Anthropic tool definitions: use `type: 'object' as const`
 
 ## Tech Stack
 
-Next.js 16, React 19, TypeScript 5.7, Tailwind CSS 4, shadcn/ui (Radix), @anthropic-ai/sdk, React Hook Form + Zod, OKLch color space
+Next.js 16, React 19, TypeScript 5.7, Tailwind CSS 4, shadcn/ui/Radix, `@anthropic-ai/sdk`, React Hook Form, Zod, IndexedDB, OKLch color tokens.
 
 ## Deploy
 
-`npx vercel --prod --yes` from project root. Production URL: storyforge-flame.vercel.app
+```bash
+npx vercel --prod --yes
+```
+
+Production URL: `storyforge-flame.vercel.app`.

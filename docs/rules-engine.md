@@ -1,168 +1,190 @@
-# Rules Engine
+# SF2 Rules Engine
 
-Client-side rules engine that runs after each `commit_turn` is applied. Evaluates genre-specific rules, increments persistent counters, applies threshold-based state mutations, detects roll sequences, derives crew cohesion, and checks crew breaking points.
+SF2 does not have one monolithic `rules-engine.ts`. Rules live in small runtime modules under `lib/sf2/`, then meet during Narrator context building and `commitSf2Turn()`.
 
-Source: `lib/rules-engine.ts`
+The rule of thumb: models propose fiction; code decides whether the mechanical contract was met, applies deterministic consequences, and records drift.
+
+Sources: `lib/sf2/narrator/roll-gates.ts`, `lib/sf2/action-resolver/resolve.ts`, `lib/sf2/pressure/runtime.ts`, `lib/sf2/pacing/signals.ts`, `lib/sf2/validation/apply-patch.ts`, `lib/sf2/firewall/actor.ts`, `lib/sf2/sentinel/display.ts`, `scripts/sf2-replay.cjs`.
+
+---
 
 ## Overview
 
-`runRulesEngine(state, commitInput, rollContext)` is the main entry point. It:
+```mermaid
+flowchart TD
+  Input["Player input"] --> Gates["Roll gate detection"]
+  State["Sf2State"] --> Retrieval["Working set + scene packet"]
+  Gates --> Narrator["Narrator route"]
+  Retrieval --> Narrator
+  Narrator --> Sentinels["Display sentinels + repair"]
+  Narrator --> Commit["commitSf2Turn"]
+  Commit --> Archivist["Archivist extraction"]
+  Archivist --> Validation["Patch validation + partial accept"]
+  Validation --> Firewall["Actor firewall"]
+  Firewall --> Pressure["Pressure + pacing runtime"]
+  Pressure --> Persist["Persist + replay frame"]
+```
 
-1. Clears the previous turn's `rulesWarnings` array
-2. Dispatches to genre-specific rules based on `state.meta.genre`
-3. Runs cross-genre systems: roll sequence detection, cohesion derivation, crew breaking-point checks
-4. Returns the mutated state with updated counters, warnings, faction stances, and NPC dispositions
+The rules engine is distributed because each rule belongs near the state it protects:
 
-The engine does not just warn. It directly mutates game state (faction stances, NPC disposition caps) when thresholds are crossed.
+| Rule family | Primary files |
+|---|---|
+| Roll gates | `lib/sf2/narrator/roll-gates.ts` |
+| Roll modifiers and outcomes | `lib/sf2/action-resolver/resolve.ts`, `lib/sf2/social-modifiers/evaluate.ts` |
+| Pressure and close readiness | `lib/sf2/pressure/runtime.ts`, `lib/sf2/pressure/derive.ts` |
+| Pacing advisories | `lib/sf2/pacing/signals.ts` |
+| Patch validation | `lib/sf2/validation/apply-patch.ts` |
+| Role ownership | `lib/sf2/firewall/actor.ts` |
+| Player-visible output sentinels | `lib/sf2/sentinel/display.ts` |
+| Regression contracts | `fixtures/sf2/replay/*.json` |
 
-## Trait Detection
+## Roll Gate Enforcement
 
-Two complementary detection methods, combined via `traitFired()` for ~90% coverage:
+Roll gates protect uncertainty. A roll is required when the player action has meaningful risk and the outcome should not be chosen by the GM.
 
-**A) `trait_update` in commit_turn** — When the AI decrements `uses_remaining` on a trait, the commit includes a `character.trait_update` with the trait name. Matched case-insensitively against the target trait name.
+Detected gates include:
 
-**B) Roll skill name matching** — When a roll resolves, the `RollContext.check` field contains the skill/trait name used. Matched case-insensitively. Catches cases where the AI uses a trait in a roll but doesn't emit a `trait_update`.
+- explicit roll/check language
+- attack or combat action
+- investigation/search/examination
+- NPC information extraction
+- social pressure or coercion
+- technical/system intrusion
+- risky movement or physical contest
+- constrained departure from a dangerous scene
+- quick actions with bracketed skill tags, such as `[Insight]`
 
-Either method firing counts as a trait use for counter purposes.
+Skill tags from suggested actions are treated as binding hints for the next player action. If a hard gate is required and the Narrator emits `narrate_turn` without first calling `request_roll`, the Narrator route blocks the turn with a diagnostic instead of letting the model skip the mechanic.
 
-## Genre Rules
+## Roll Resolution
 
-### Epic Sci-Fi (`epic-scifi`)
+The Narrator can request:
 
-**Counter:** `drift_exposure` (persistent, survives chapter close)
-**Trigger trait:** Drift Touch
+- `skill`
+- `dc`
+- `why`
+- `consequence_on_fail`
+- optional `modifier_type`: `advantage`, `disadvantage`, or `challenge`
+- optional `modifier_reason`
 
-| Threshold | Warning | State Mutation |
-|-----------|---------|----------------|
-| 3+ | Synod notice event imminent | `setFactionStance('The Synod', 'Suspicious -- monitoring Drift activity')` |
-| 6+ | Active Synod search in progress | `setFactionStance('The Synod', 'Hostile -- active search')` |
-| 10+ | Synod bounty active, agents hunting | `setFactionStance('The Synod', 'Hostile -- active bounty on Resonant')` |
+The browser resolves the die. Code applies stat/proficiency modifiers, advantage/disadvantage, challenge, and inspiration rerolls. The result is sent back to the Narrator as `rollResolution`, and the Narrator continues from the paused moment.
 
-Thresholds are evaluated highest-first (if-else chain), so only the highest matching threshold applies per turn.
+Failed rolls can also create pressure. Current deterministic pressure recovery applies local escalation to target threads: ordinary failure is +2, critical failure is +3.
 
-### Grimdark (`grimdark`)
+## Social Modifiers
 
-**Counter:** `corruption` (persistent)
-**Trigger trait:** Corruption Tap
+`lib/sf2/social-modifiers/evaluate.ts` can override or supplement the requested modifier when state clearly supports it. Inputs include origin, disposition, faction pressure, cohesion-like relationship state, and current social context.
 
-| Threshold | Warning | State Mutation |
-|-----------|---------|----------------|
-| 3+ | Church NPCs now start at Hostile | `capNpcDisposition(affiliation === 'The Church', 'hostile')` |
-| 5+ | Common folk capped at Wary | `capNpcDisposition(non-crew + non-combat, 'wary')` |
-| 8+ | Church actively hunting | `setFactionStance('The Church', 'Hostile -- hunting the curseworker')` + `capNpcDisposition(non-crew + non-combat, 'wary')` |
-| 10+ | Physical manifestation visible | `capNpcDisposition(ALL non-crew, 'wary')` -- combat NPCs now included |
+This keeps social math state-derived. The Narrator can explain why a check is hard or favorable, but code owns the final modifier contract.
 
-**Chapter decay:** On chapter close, `resetChapterCounters` degrades `ship.systems` entries for `morale` and `provisions` by 1 level each (if above 1). Appends `[degraded]` / `[depleted]` to description. The GM can restore them through in-chapter contracts and victories.
+## Pressure Runtime
 
-### Cyberpunk (`cyberpunk`)
+Current pressure is thread-driven.
 
-**Counter:** `chrome_stress` (persistent)
-**Trigger traits:** Zero Trace, Adrenaline Overclocked (each increments independently)
+| Concept | Meaning |
+|---|---|
+| Canonical tension | Durable tension on `campaign.threads` |
+| Local escalation | Chapter-local pressure layered on top of the thread |
+| Opening floor | Author-specified minimum pressure for a chapter thread |
+| Ladder fire | One-shot escalation step tied to chapter pressure |
+| Pressure event | Human-consequence record of who pays and what got harder |
 
-| Threshold | Warning | State Mutation |
-|-----------|---------|----------------|
-| 3+ | NPCs notice machine-like behavior | Warning only |
-| 6+ | Empathy degradation, Insight disadvantage | Warning only |
-| 10+ | Cyberpsychosis risk, WIS save DC 16 | Warning only |
+`campaign.engines` remains in the state shape for legacy compatibility, but current chapter pressure reads thread pressure surfaces and chapter scaffolding.
 
-Chrome stress thresholds are warning-only; no direct state mutations.
+Ladder rules:
 
-**Counter:** `deep_dive_uses` (per-chapter, resets on chapter close)
-**Trigger trait:** Deep Dive
+- no repeated fire on consecutive turns for the same step
+- maximum two ladder fires per turn
+- fired steps are tracked so they do not repeat as if new
+- ladder output is recorded as code-owned pressure, not Narrator invention
 
-| Threshold | Warning |
-|-----------|---------|
-| 3+ (within chapter) | Cyberpsychosis episode imminent, involuntary disconnection risk |
+## Chapter Close Readiness
 
-`deep_dive_uses` is the only counter listed in `chapterResetCounters` for cyberpunk.
+`computeChapterCloseReadiness()` is the current close gate. It uses projected chapter pressure, objective gate state, spine thread state, pivot signals, stagnation, and turn count.
 
-### Noir (`noire`)
+Important current behavior:
 
-**Counter:** `favor_balance` (persistent)
-**Trigger trait:** Favor Owed
+- the minimum close floor is `MIN_CLOSE_TURN = 18`
+- objective gate can recommend close or reframe when the current chapter question has resolved
+- pivot signaling and spine resolution matter
+- stalled chapters can fall back into close/reframe pressure instead of drifting forever
 
-| Threshold | Warning | State Mutation |
-|-----------|---------|----------------|
-| 3+ | Contacts demand reciprocity before helping | Warning only |
+This differs from older V1 docs that described 10-18 turn chapters and a turn-20 hard close. SF2 is more explicit about objective and pressure readiness.
 
-## Cross-Genre Systems
+## Pacing Advisories
 
-### Derived Cohesion
+`lib/sf2/pacing/signals.ts` computes advisories that are passed to the Narrator and surfaced in diagnostics.
 
-`deriveCohesionFromCrew()` computes `world.crewCohesion.score` from the average disposition of all NPCs with `role === 'crew'`.
+| Advisory | Trigger shape |
+|---|---|
+| Low reactivity | World-initiated pressure ratio under threshold across recent turns |
+| Scene link discipline | Multiple clean scene closures without enough forward hook |
+| Thread stagnation | Repeated touches with little or no total tension movement |
+| Arc dormancy | Arc threads receive no progress for several current-chapter turns |
 
-Disposition scale: Hostile=1, Wary=2, Neutral=3, Favorable=4, Trusted=5.
+These are advisories, not automatic prose. They give the Narrator a state-derived reason to push, link, or reframe.
 
-The average is rounded to the nearest integer and clamped to 1-5. Only updates if the derived value differs from the current score. If no crew NPCs exist, cohesion is left unchanged.
+## Patch Validation
 
-### Crew Breaking Points
+The Archivist emits semantic patch proposals through `extract_turn`. Code applies valid sub-writes and rejects invalid sub-writes. This partial-accept model is important: one bad anchor should not throw away all valid state extraction from a turn.
 
-`checkCrewBreakingPoints()` evaluates each crew NPC's `tempLoad` array. Load entries have a `severity` field (`severe` or `moderate`).
+Validation responsibilities include:
 
-**At breaking point** (triggers warning with break behavior mandate):
-- 3+ severe entries
-- 1+ severe AND 3+ moderate
-- 5+ moderate entries
+- canonical id lookup and dedupe
+- owner and stakeholder normalization
+- anchor requirements for decisions and promises
+- floating clue allowance only for real evidence that is not anchored yet
+- document lifecycle constraints
+- procedure shape normalization
+- status transition legality
+- confidence handling
 
-**Approaching breaking point** (triggers advisory warning):
-- 2+ severe entries
-- 1+ severe AND 2+ moderate
-- 4+ moderate entries
+Low-confidence writes are logged but generally not persisted as durable facts.
 
-Warnings include the NPC's `vulnerability` field if present, which indicates how their break will manifest. Recovery requires dedicated personal scenes.
+## Actor Firewall
 
-### Roll Sequence Detection
+`lib/sf2/firewall/actor.ts` enforces which actor can write which kind of state.
 
-`detectRollSequences()` scans `state.history.rollLog` for consecutive failure runs (3+ failures on the same check). Records two pattern types:
+| Actor | Allowed writes |
+|---|---|
+| Narrator | HP, credits, inventory use, location, scene end, scene snapshot, pending check, suggested actions, annotation |
+| Archivist | Entity creation/update/transition, anchor attachment, pacing classification, drift flag |
+| Author | Chapter setup, chapter meaning |
+| Code | Face shifts, ladder fires, passive awareness delivery, working set compute, cohesion recompute, drift flag |
 
-1. **Breakthrough pattern** -- failure run followed by a success or critical. Example: "4 consecutive failures on Stealth, released on nat 20 Stealth"
-2. **Ongoing run** -- 3+ consecutive failures still active (no resolution yet). Example: "3 consecutive failures on Persuasion (ongoing)"
+In local and test runs, illegal actor/write pairs throw immediately. In production, the same decision is returned as telemetry so the app can keep running.
 
-Sequences are deduplicated by description and stored in `state.rollSequences` with turn range and chapter number. Only `failure` and `fumble` results count as failures; only runs on the same `check` value are consecutive.
+## Display Sentinels And Repair
 
-## State Mutations vs. Warnings
+The Narrator route scans output for player-visible contract violations.
 
-The engine applies two types of consequences:
+Current repaired cases include:
 
-**Direct mutations** (immediate, no GM discretion):
-- `setFactionStance()` -- creates or updates a faction's stance string. Used by Epic Sci-Fi (Synod) and Grimdark (Church).
-- `capNpcDisposition()` -- downgrades NPC dispositions to a maximum tier. Only downgrades, never improves. Filter functions select which NPCs are affected (by role, affiliation, combatTier).
-- `deriveCohesionFromCrew()` -- updates `crewCohesion.score` based on crew dispositions.
+- leaked raw roll values or DC math in prose
+- suggested action leakage into prose instead of the tool payload
+- malformed or missing `suggested_actions`
+- missing final `narrate_turn` tool call
 
-**Warnings** (injected into `rulesWarnings`, consumed by prompt compression):
-- All thresholds emit a warning string regardless of whether they also mutate state.
-- Warnings are prefixed with `⚠` (active/critical) or `📌` (rising/advisory).
-- Cyberpunk and Noir thresholds are warning-only at all levels.
-- Crew breaking-point checks are warning-only.
+Other sentinel findings can remain observe-mode diagnostics depending on the rule. The important distinction is that the sentinel layer is already wired, but not every finding is enforced as a repair.
 
-## Chapter Reset
+## Replay Fixtures
 
-`resetChapterCounters(state)` is called during chapter close. It does two things:
+Replay is the SF2 regression harness:
 
-1. **Deletes per-chapter counters** listed in the genre's `chapterResetCounters` array. Currently only cyberpunk defines this: `['deep_dive_uses']`. The counter key is removed from `state.counters` entirely (not zeroed).
+```bash
+npm run sf2:replay -- fixtures/sf2/replay
+```
 
-2. **Grimdark Company decay** -- if the genre is `grimdark` and `state.world.ship` exists, degrades `morale` and `provisions` system levels by 1 (minimum level 1). This models the Company's logistical entropy between chapters.
+Use a focused fixture when changing:
 
-Persistent counters (`drift_exposure`, `corruption`, `chrome_stress`, `favor_balance`) are not affected by chapter reset. They accumulate across the entire campaign.
+- roll gate behavior
+- narrator stream recovery
+- patch validation
+- pressure projection
+- working set scoring
+- display sentinel behavior
+- turn commit effects
+- procedure mechanics
+- chapter close readiness
 
-## Integration
-
-The engine is called from `game-screen.tsx` at two points:
-
-1. **After `applyToolResults`** -- processes the commit_turn input for trait detection via `trait_update`.
-2. **After roll resolution** -- called with `RollContext` containing the check name and result for trait-in-roll detection.
-
-The `rulesWarnings` array produced by the engine is injected into `compressGameState`, making warnings available to the AI's next prompt as part of the compressed state context.
-
-## Genre Dispatch
-
-Genre is read from `state.meta.genre`, defaulting to `'space-opera'` if unset. The `genreRulesMap` maps genre slugs to rule implementations:
-
-| Genre slug | Rules object |
-|-----------|-------------|
-| `epic-scifi` | `epicSciFiRules` |
-| `grimdark` | `grimdarkRules` |
-| `cyberpunk` | `cyberpunkRules` |
-| `noire` | `noirRules` |
-
-Genres not in the map (e.g., `space-opera`, `weird-west`) skip genre-specific evaluation but still run all cross-genre systems.
+Fixtures should be deterministic and model-free. If the bug is inside an API route, extract the contract into a helper and fixture that helper rather than relying on another live Anthropic call.

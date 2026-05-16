@@ -1,294 +1,179 @@
-# Genre Config System
+# SF2 Genre Config System
 
-Developer reference for the Storyforge genre configuration layer.
+Developer reference for how Storyforge's shared genre layer feeds the current SF2 `/play` engine.
 
-## Overview
+The genre configs remain shared infrastructure. V1 and SF2 both read from `lib/genre-config.ts` / `lib/genres/*`, but SF2 uses the config through setup selection, Author seed compilation, scene-packet styling, and role prompt grounding.
 
-Storyforge runs 6 active genres on a single game engine. Each genre is a complete game: unique species, character classes, opening hooks, visual themes, and prompt sections that shape the AI game master's voice and world. The engine is genre-agnostic; all genre-specific behavior flows through `GenreConfig`.
+Sources: `lib/genres/index.ts`, `lib/genre-config.ts`, `lib/sf2/setup/options.ts`, `lib/sf2/setup/compile-seed.ts`, `lib/sf2/genre-profile.ts`, `components/setup/*`, `components/sf2/*`.
 
-Active genres: Space Opera, Fantasy, Grimdark, Cyberpunk, Noir, Epic Sci-Fi.
-Stubbed (not yet playable): Western, Zombie Apocalypse, Post-Atomic Wasteland, Cold War.
+---
 
-All genre configs live in `lib/genres/`. The registry and shared types are in `lib/genres/index.ts`.
+## Active Genres
 
-## GenreConfig Interface
+Playable genres:
 
-Defined in `lib/genres/index.ts`. Every genre must satisfy this interface.
+- `space-opera`
+- `fantasy`
+- `grimdark`
+- `cyberpunk`
+- `noire`
+- `epic-scifi`
 
-### Identity
+Stubbed but unavailable genres:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `Genre` | Unique slug, e.g. `'space-opera'`. Union type of all genre IDs. |
-| `name` | `string` | Display name, e.g. `'Space Opera'`. |
-| `tagline` | `string` | One-line pitch shown on genre selection screen. |
-| `available` | `boolean` | Whether the genre is playable. Stubs set this to `false`. |
+- `western`
+- `zombie`
+- `wasteland`
+- `cold-war`
 
-### Species and Classes
+The setup wizard filters by `genres.filter((genre) => genre.available)`.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `species` | `Species[]` | Playable species/origins for the genre. See [Species Type](#species-type). |
-| `speciesLabel` | `string` | UI label for the species picker, e.g. `'Origin'`, `'Species'`, `'Background'`. |
-| `classes` | `CharacterClass[]` | Playable classes. See [CharacterClass Type](#characterclass-type). |
+## Shared Config Shape
 
-### Theme
+`GenreConfig` provides:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `theme` | `GenreTheme` | Full visual identity: colors, fonts, background effect. See [GenreTheme](#genretheme). |
+| Area | Examples |
+|---|---|
+| Identity | `id`, `name`, `tagline`, `available` |
+| Character options | `species`, `speciesLabel`, `classes`, optional origin-keyed `playbooks` |
+| Mechanics | stats, proficiencies, traits, starting inventory, starting HP/AC/credits |
+| UI vocabulary | currency, companion label, intel label, exploration label, heat label |
+| Theme | fonts, colors, severe token, background effect |
+| Prompt language | role, setting, vocabulary, tone override, trait rules, asset mechanic, investigation guide |
+| Lore | deep lore, lore facets, lore anchors, atmospheric palettes |
+| Campaign starts | opening hooks, starting contacts, starting crew templates |
 
-### World Labels
+The config should carry genre-specific language. The engine should avoid `if genre === ...` branches unless the behavior is truly mechanical and cannot be represented as data.
 
-These strings let the engine speak in the genre's vocabulary without conditional logic.
+## SF2 Setup Flow
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `currencyName` | `string` | Full name of currency, e.g. `'credits'`, `'gold'`, `'caps'`. |
-| `currencyAbbrev` | `string` | Short form, e.g. `'cr'`, `'gp'`, `'$'`. |
-| `partyBaseName` | `string` | What the party's base/home is called: `'Ship'`, `'Camp'`, `'Office'`. |
-| `settingNoun` | `string` | Generic world reference: `'galaxy'`, `'realm'`, `'city'`. |
-| `companionLabel` | `string` | UI label for companions panel: `'Crew'`, `'Retainers'`, `'Companions'`. |
-| `notebookLabel` | `string` | Label for the player notebook tab. |
-| `intelTabLabel` | `string` | Label for the intel/investigation tab. |
-| `intelNotebookLabel` | `string` | Label for intel entries, e.g. `'Evidence'`, `'Dossier'`. |
-| `intelOperationLabel` | `string` | Label for intel operations, e.g. `'Operation'`, `'Case'`. |
-| `explorationLabel` | `string` | Label for exploration/location entries. |
-| `heatLabel` | `string?` | Genre-specific name for the heat system. Defaults to `'Heat'` if omitted. |
-| `initialChapterTitle` | `string` | Title for Chapter 1 when a new game starts. |
-
-### Prompt Sections
-
-The `promptSections` object contains strings injected into specific positions in the system prompt. This is how the genre shapes AI behavior without touching engine code.
-
-| Field | Type | Injected Into |
-|-------|------|---------------|
-| `role` | `string` | Core system prompt. Defines who the GM is in this genre. |
-| `setting` | `string` | Core system prompt. World description, factions, tone. |
-| `vocabulary` | `string` | Core system prompt. Genre-specific terms the GM should use. |
-| `toneOverride` | `string` | Core system prompt. Narrative voice and style constraints. |
-| `assetMechanic` | `string` | Situation modules. Rules for the party's primary asset (ship, base, office). |
-| `traitRules` | `string` | Situation modules. How class traits work mechanically. |
-| `consumableLabel` | `string` | Situation modules. What consumables are called in this genre. |
-| `tutorialContext` | `string` | Tutorial/onboarding module. Genre-specific guidance for new players. |
-| `npcVoiceGuide` | `string` | NPC generation. How NPCs should speak, dialect, register. |
-| `buildAssetState` | `((ship: ShipState, shipName: string) => string) \| null` | Dynamic asset state builder. Returns a prompt string describing current asset condition. `null` if the genre has no trackable asset. |
-| `investigationGuide` | `string` | Investigation overlay. Rules for clue discovery, evidence mechanics. |
-
-There is also a legacy `systemPromptFlavor` object (`role`, `setting`, `vocabulary`, `tutorialContext`) that duplicates a subset of `promptSections`. New genres should populate `promptSections` only.
-
-### Cohesion and Lore
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `cohesionGuide` | `string?` | Genre-specific cohesion triggers that override the generic +1/-1 rules. |
-| `loreAnchors` | `string[]?` | Compact world facts shipped every turn for complex genres (e.g. Epic Sci-Fi). Keeps the GM grounded when the world is dense. |
-
-### Opening Hooks
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `openingHooks` | `(string \| HookObject)[]` | Scenario starters shown at game creation. All 133 hooks across 6 genres now include frame + arc. |
-| `locationNames` | `string[]` | Default location names available in the genre world. |
-
-Hooks can be plain strings or objects with:
-- `hook` -- the scenario text.
-- `title` -- optional display title for the hook selector.
-- `origins` -- optional array of origin/species IDs. When present, the hook only appears if the player chose one of these origins. Used for origin-tier hooks (e.g. institutional hooks available to `['synod', 'minor-house', 'imperial-service']`) and origin-specific hooks.
-- `classes` -- optional array of class/playbook names or hook tags. Must be paired with `origins`; class-only hooks are invalid V1 data. When present, further filters within origin. Combined with `origins` for playbook-specific hooks (e.g. `origins: ['synod'], classes: ['Seeker']`). Can also tag hooks that work across origins (e.g. `origins: ['synod', 'imperial-service'], classes: ['Crusader', 'Warden']` for dual-tagged hooks).
-- `startingCounters` -- optional `Record<string, number>`. Initializes genre counters when this hook is selected (e.g. `{ exposure: 1 }` for Undrift hooks).
-- `frame` -- optional `{ objective: string; crucible: string }`. Pre-seeds the chapter frame so Claude starts with a tight chapter-1 goal instead of improvising. Objective scoped for ~20-25 turns.
-- `arc` -- optional `{ name: string; episode: string }`. Pre-seeds the first story arc with episode 1 marked active. Gives Claude a broader narrative thread from turn 1.
-
-Hook selection is equal-random from all eligible hooks. A hook is eligible when it is true universal (no `origins` or `classes`) or when `origins` includes the selected origin and, if present, `classes` matches the selected playbook name/id or one of its hook tags. There is no fallback to the full genre list.
-
-## Species Type
-
-```typescript
-interface Species {
-  id: string            // unique slug, e.g. 'vrynn'
-  name: string          // display name
-  description: string   // one-line summary shown in picker
-  lore: string          // full lore paragraph, injected into GM context
-  startingContacts?: StartingContact[]
-}
+```mermaid
+flowchart TD
+  Genre["Genre option"] --> Origin["Origin/species option"]
+  Origin --> Playbook["Playbook option"]
+  Playbook --> Hook["Eligible opening hook"]
+  Hook --> Selection["Sf2SetupSelection"]
+  Selection --> Seed["compileSf2SetupSeed"]
+  Seed --> ArcAuthor["author_arc_setup"]
+  ArcAuthor --> ChapterAuthor["author_chapter_setup"]
+  ChapterAuthor --> Play["Chapter 1 play"]
 ```
 
-### Starting Contacts
+Setup helpers:
 
-Each species can define contacts that are auto-created as NPCs when a game initializes. This gives species mechanical weight beyond flavor: a Vrynn starts with a diaspora information broker, a Korath starts with a dock boss.
+| Helper | Purpose |
+|---|---|
+| `listSf2SetupGenres()` | Playable genre picker |
+| `listSf2SetupOrigins()` | Origin/species picker, excluding hidden shifted origins |
+| `listSf2SetupPlaybooks()` | Origin-keyed playbooks if present, otherwise genre classes |
+| `listSf2SetupHooks()` | Hook options eligible for the selected origin/playbook |
+| `compileSf2SetupSeed()` | Converts config and selection into an Author seed |
 
-```typescript
-interface StartingContact {
-  role: string              // descriptive role, e.g. 'trade agent', 'mentor'
-  disposition: 'hostile' | 'wary' | 'neutral' | 'favorable' | 'trusted'
-  description: string       // who they are, narrative context
-  affiliation?: string      // faction name, e.g. 'The Synod'
-  npcRole?: 'crew' | 'contact' | 'npc'  // defaults to 'contact'
-}
-```
+Hook ids are stable slugs plus a short content hash. This lets the wizard remember a chosen hook without relying on array indexes.
 
-The GM names these contacts during game initialization. The player sees them as pre-existing relationships in their NPC panel.
+## Opening Hook Eligibility
 
-## CharacterClass Type
+Opening hooks may include:
 
-```typescript
-interface CharacterClass {
-  id: string
-  name: string
-  concept: string           // one-line class fantasy
-  description?: string      // longer explanation
-  primaryStat: string       // e.g. 'CHA', 'STR'
-  proficiencies: string[]   // skill proficiencies
-  stats: {
-    STR: number; DEX: number; CON: number
-    INT: number; WIS: number; CHA: number
-  }
-  startingInventory: InventoryItem[]
-  startingCredits: number
-  startingHp: number
-  startingAc: number
-  hitDieAvg: number         // avg HP per level (before CON mod)
-  trait: Trait
-}
-```
+- `title`
+- `hook`
+- `origins`
+- `classes`
+- `startingCounters`
+- `startingCrew`
+- `frame`
+- `arc`
 
-### Stat Allocation
+Eligibility is strict. A hook is available when it is universal or its origin/playbook filters match the current selection. Class-specific hooks are expected to be paired with origin filters in the current data model.
 
-Each class defines a fixed stat array. The six stats follow D&D conventions (STR/DEX/CON/INT/WIS/CHA). These drive skill checks and combat modifiers in the engine.
+In SF2, hook `frame` and `arc` fields are not just flavor. They become part of the Author seed, shaping the first chapter's objective, crucible, and arc pressure.
 
-### Hit Die Average
+## Author Seed Compilation
 
-Determines HP scaling. Convention:
-- Tanks: 6
-- Mixed/hybrid: 5
-- Faces/casters: 4
+`compileSf2SetupSeed()` adapts shared genre config into SF2-specific Author input.
 
-### Trait
+It derives:
 
-```typescript
-interface Trait {
-  name: string
-  description: string
-  usesPerDay: number
-  usesRemaining: number
-}
-```
+- setting summary
+- opening pressure
+- institutional forces
+- social pressures
+- likely affiliations
+- faction voice rules
+- banned registers
+- vocabulary handles
+- tone principles
+- playbook fit from `playbookProfile`
+- origin lore and behavioral directives
+- starting inventory and trait information
 
-Each class gets exactly one trait: a signature ability with limited daily uses. Traits are the primary mechanical differentiator between classes of the same stat archetype.
+This is where generic genre data becomes chapter-authorable pressure.
 
-## GenreTheme
+## Prompt Sections
 
-Controls the full visual identity. Applied at runtime via CSS custom properties.
+SF2 still uses the shared prompt sections, but not through the old V1 prompt stack.
 
-Key fields:
-- `logo` -- genre logo asset path.
-- `fontNarrative`, `fontHeading`, `fontSystem` -- font families for narrative text, headings, and UI.
-- `fontScale?` -- multiplier for base font sizes (1.0 default, 0.9 = 90%).
-- `backgroundEffect` -- one of `'starfield'`, `'mist'`, `'static'`, `'drift'`. Handled by CSS via `[data-genre]` selectors. Mist is color-differentiated per genre: Fantasy = warm amber, Grimdark = ashen red, Noir = cold grey-blue. Space Opera gets starfield + grid overlay. Epic Sci-Fi gets drift aurora (purple/gold). Cyberpunk gets static scanlines (green/amber).
-- Color tokens: `background`, `foreground`, `card`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`, `narrative`, `meta`, `success`, `warning`, `tertiary`, plus foreground variants.
-- Glow tokens: `titleGlow`, `actionGlow`, `actionGlowHover`.
-- Scrollbar: `scrollbarThumb`, `scrollbarThumbHover`.
+| Config field | SF2 use |
+|---|---|
+| `promptSections.role` | Stable role/genre identity in system blocks |
+| `promptSections.setting` | Genre bible and setting grounding |
+| `promptSections.vocabulary` | Lexicon, proper nouns, genre-specific nouns |
+| `promptSections.toneOverride` | Narrator voice constraints |
+| `promptSections.narrativeCraft` | Prose craft and pacing guidance |
+| `promptSections.traitRules` | Class trait expectations for mechanics |
+| `promptSections.assetMechanic` | Ship/company/office/base pressure where relevant |
+| `promptSections.investigationGuide` | Case/clue handling for investigation scenes |
+| `promptSections.npcVoiceGuide` | Cast voice differentiation |
 
-`applyGenreTheme()` in `index.ts` maps every theme field to a CSS custom property on the document root. Font properties go on `document.body`. The genre ID is set as `data-genre` on the root element.
+Genre prompt content should remain strongly flavored. SF2's bounded packets make it easier to keep genre loud without letting lore sprawl replace state.
 
-## How Prompt Sections Work
+## Theme And UI Labels
 
-The engine builds a system prompt from multiple layers. Genre prompt sections slot into specific positions:
+`applyGenreTheme()` writes CSS custom properties and `data-genre` on the root element. SF2 UI surfaces use the same theme variables as V1, with newer fields such as `statLabels`, `severe`, and atmospheric palettes used where available.
 
-**Core layer** (every turn):
-- `promptSections.role` -- defines the GM persona.
-- `promptSections.setting` -- world context and factions.
-- `promptSections.vocabulary` -- genre-specific terminology.
-- `promptSections.toneOverride` -- narrative voice constraints.
+Important UI vocabulary:
 
-**Situation modules** (context-dependent, assembled per turn):
-- `promptSections.traitRules` -- how class traits resolve mechanically.
-- `promptSections.assetMechanic` -- ship/base/office management rules.
-- `promptSections.consumableLabel` -- what to call consumable items.
-- `promptSections.tutorialContext` -- extra guidance for early-game turns.
-- `promptSections.npcVoiceGuide` -- dialect and register for NPC dialogue.
+- `currencyName` and `currencyAbbrev`
+- `companionLabel`
+- `notebookLabel`
+- `intelTabLabel`
+- `intelNotebookLabel`
+- `intelOperationLabel`
+- `explorationLabel`
+- `heatLabel`
+- `statLabels`
 
-**Investigation overlay** (when investigation mode is active):
-- `promptSections.investigationGuide` -- clue discovery rules, evidence mechanics.
+When adding a new SF2 UI panel, read labels from the config instead of hard-coding generic RPG terms.
 
-**Dynamic asset state** (when the genre has a trackable asset):
-- `promptSections.buildAssetState(ship, shipName)` -- returns a prompt string describing the current asset condition (hull integrity, fuel, etc.). Returns `null`-function for genres without asset tracking.
+## Starting Contacts And Crew
 
-The engine never checks genre IDs to decide behavior. All genre-specific prompt content flows through these strings.
+Origins can define `startingContacts`. Genres can define `startingCrew`. SF2 setup and Author calls use these as pressure-bearing relationships rather than disconnected flavor.
 
-## Adding a New Genre
+Starting crew templates intentionally omit final identity details. The Author and Narrator establish names, voice, key facts, and relationship hooks through setup and play, then the Archivist persists the durable facts.
 
-### 1. Create the config file
+## Atmospheric Palettes
 
-Create `lib/genres/{genre-id}.ts`. Import the shared types:
+`atmosphericPalettes` let SF2 choose atmosphere by location archetype and pressure surface:
 
-```typescript
-import type { InventoryItem, Trait, ShipState } from '../types'
-import type { Species, CharacterClass, GenreTheme, GenreConfig } from './index'
-```
+- `baseline`
+- `authority`
+- `debt`
+- `transit`
+- `institutional`
+- `danger`
 
-### 2. Define species
+These palettes help the scene packet make an authority office feel different from a transit corridor without inventing a separate prompt branch for every genre.
 
-Create a `Species[]` array. Each species needs:
-- Unique `id` slug.
-- `lore` that gives the GM enough context to roleplay species-specific interactions.
-- `startingContacts` that give species mechanical differentiation (different species = different starting network).
+## Adding Or Changing A Genre
 
-### 3. Define classes
+Checklist:
 
-Create a `CharacterClass[]` array. Each class needs:
-- Balanced `stats` (follow existing genres as benchmarks).
-- A unique `trait` with `usesPerDay` tuned to the genre's pacing.
-- `startingInventory` with `InventoryItem[]` objects.
-- `hitDieAvg` following the tank/hybrid/face convention.
-- `proficiencies` that make sense for the class fantasy.
+1. Add or update the genre config in `lib/genres/*`.
+2. Keep `available` accurate in `lib/genres/index.ts`.
+3. Provide origins/species, playbooks/classes, theme, labels, prompt sections, and opening hooks.
+4. Add `playbookProfile` where Author pressure should adapt to natural player moves.
+5. Verify hook eligibility with the selected origin and playbook.
+6. Check SF2 setup seed output if the genre needs special institutional pressure.
+7. Run the app setup flow or add focused fixtures if behavior changes.
 
-### 4. Define opening hooks
-
-Layer hooks by scope: origin-tier (shared across related origins), origin-specific, and playbook-specific:
-
-```typescript
-openingHooks: [
-  // Origin-tier: available to multiple origins
-  { hook: 'An institutional scenario...', title: 'The Hook', origins: ['origin-a', 'origin-b'] },
-  // Origin-specific: any playbook within one origin
-  { hook: 'An origin scenario...', title: 'Origin Hook', origins: ['origin-a'] },
-  // Playbook-specific: one origin + one playbook
-  { hook: 'A playbook scenario...', title: 'Playbook Hook', origins: ['origin-a'], classes: ['Playbook'] },
-  // Dual-tagged: works for playbooks across origins
-  { hook: 'A cross-origin scenario...', title: 'Shared Hook', origins: ['origin-a', 'origin-b'], classes: ['PlaybookA', 'PlaybookB'] },
-]
-```
-
-Aim for 3-4 origin-tier hooks, 2-4 per origin, and 3+ per playbook. Do not define `classes` without `origins`; cross-origin archetype hooks must list every origin where the matching hook tag exists.
-
-### 5. Define the theme
-
-Fill out a complete `GenreTheme` object. Pick a `backgroundEffect` from the four options. Set three font families. Define all color tokens. Test contrast between `foreground`/`background` and `card`/`cardForeground` pairs.
-
-### 6. Fill prompt sections
-
-Write all `promptSections` strings. These are the most important part of the genre. The `role` and `setting` sections define the entire feel of the game. `toneOverride` controls narrative voice. `traitRules` and `assetMechanic` drive gameplay mechanics.
-
-If the genre has a trackable asset (ship, base, etc.), implement `buildAssetState` as a function. Otherwise set it to `null`.
-
-### 7. Set world labels
-
-Fill in `currencyName`, `currencyAbbrev`, `partyBaseName`, `settingNoun`, `companionLabel`, and all tab/panel labels. These propagate throughout the UI automatically.
-
-### 8. Add location names
-
-Populate `locationNames` with default locations for the genre world.
-
-### 9. Register in index.ts
-
-1. Import the config: `import myGenreConfig from './my-genre'`
-2. Add to the `genreConfigs` record.
-3. Add to the `genres` array with `available: true`.
-4. Add the genre ID to the `Genre` union type.
-5. Remove any existing stub for this ID.
-
-### 10. Create character portraits
-
-Add portrait assets for each species/class combination. These are loaded by the character creation UI.
+Avoid normalizing genre voices. Storyforge wants a grimdark company, a noir case, and an epic-scifi Hegemony to feel mechanically and linguistically distinct.

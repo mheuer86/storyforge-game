@@ -1,80 +1,110 @@
-# BYOK Security Model
+# BYOK And Access Security
 
-Storyforge supports two modes: **demo** (server-side API key, access code protected) and **BYOK** (Bring Your Own Key, player provides their own Anthropic API key). This document explains how BYOK keys are handled, how demo budget enforcement works, and what protections are in place.
+How the current `/play` SF2 app handles access gates, demo usage, and bring-your-own Anthropic keys.
 
-## Demo budget & BYOK enforcement
+Sources: `lib/api-key.ts`, `components/setup/passphrase-gate.tsx`, `components/setup/demo-budget-gate.tsx`, `app/api/auth/route.ts`, `middleware.ts`, `app/api/sf2/*`.
 
-Demo mode has a client-side monthly token budget of **250K tokens** per browser (`DEMO_MONTHLY_BUDGET` in `lib/api-key.ts`). Token usage is tracked in localStorage (`storyforge_demo_usage`) and resets on the 1st of each month (keyed by `YYYY-MM`).
+---
 
-When the budget is exhausted, players are prompted to enter their own API key at three points:
+## Access Layers
 
-1. **Before setup** (`DemoBudgetGate`): if budget is already exhausted when arriving at `/play`, a full-screen form blocks access until a key is entered. Players never go through character creation only to be blocked.
-2. **Mid-game** (`game-screen.tsx`): if budget runs out during play, a modal dialog with key entry replaces the inline error. The game state is preserved; entering a key lets the player continue immediately.
-3. **API errors**: if the demo key's Anthropic account runs dry (credit/balance/billing errors), the same modal dialog appears for demo users.
+`/play` is wrapped by:
 
-The budget is approximate — it tracks tokens seen in API responses, not the actual Anthropic billing. It's a guardrail, not an accounting system.
+- `PassphraseGate`
+- `DemoBudgetGate`
+- `Sf2PlayApp`
 
-## How the key flows
+The same wrapper is used by `/play/v2`. `/play/v1` is legacy V1 and has its own app path.
 
-1. Player enters their `sk-ant-...` key in the passphrase gate (`?byok=1`), the demo budget gate, the in-game budget dialog, or the burger menu settings
-2. Key is stored in the browser's `localStorage` under `storyforge_api_key`
-3. On each game request, the key is sent as an `x-anthropic-key` header to `/api/game`
-4. The server creates a one-time `Anthropic()` client with the player's key and forwards the request
-5. The key is never persisted server-side, never logged, never sent to any third party
-
-```
-Browser (localStorage) ──x-anthropic-key──> /api/game ──apiKey──> Anthropic API
-                                              │
-                                         not stored
-                                         not logged
+```mermaid
+flowchart TD
+  Browser["Browser"] --> Gate["PassphraseGate"]
+  Gate --> Budget["DemoBudgetGate"]
+  Budget --> App["Sf2PlayApp"]
+  App --> Api["/api/sf2/*"]
+  Api --> Anthropic["Anthropic API"]
 ```
 
-## Protections in place
+## BYOK Storage
 
-### Content Security Policy (middleware.ts)
+BYOK means the player provides their own Anthropic API key.
 
-The CSP header locks down what the browser can do:
+Client-side helpers in `lib/api-key.ts` use:
 
-- `connect-src 'self'` — the browser can only make requests to the Storyforge origin. A malicious script or browser extension cannot exfiltrate the key to a third-party domain.
-- `frame-ancestors 'none'` — prevents the page from being embedded in an iframe (clickjacking).
-- `script-src 'self' 'unsafe-inline'` — only scripts from the same origin can execute. `unsafe-inline` is required for Next.js hydration.
+| Key | Purpose |
+|---|---|
+| `storyforge_api_key` | Stored Anthropic API key |
+| `storyforge_demo_usage` | Local demo-token usage counter |
 
-### What CSP does NOT protect against
+The API key is stored in browser localStorage. This is convenient for local play, but it is not a secure secret store. The security model is to keep the key on the same origin and avoid third-party exfiltration.
 
-- A compromised browser or OS-level malware can still read localStorage directly. CSP operates at the network/document level, not at the process level.
-- `unsafe-inline` means an attacker who achieves HTML injection could run inline script. However, `connect-src 'self'` still prevents that script from sending data anywhere.
+## API Header Flow
 
-### Additional headers
+`apiHeaders()` adds:
 
-- `X-Frame-Options: DENY` — redundant with `frame-ancestors 'none'`, covers older browsers
-- `X-Content-Type-Options: nosniff` — prevents MIME-type confusion attacks
-- `Referrer-Policy: strict-origin-when-cross-origin` — doesn't leak URL paths cross-origin
-- `Permissions-Policy` — disables camera, microphone, geolocation
-
-## localStorage vs sessionStorage
-
-The key is stored in `localStorage` (persists across browser sessions) rather than `sessionStorage` (cleared on tab close). This is a deliberate tradeoff: players shouldn't have to re-enter their key every time they open the game. The risk is that the key persists on disk until explicitly cleared.
-
-Players can remove their key at any time from the in-game menu (burger menu > settings) or by running `localStorage.removeItem('storyforge_api_key')` in the browser console.
-
-## Server-side handling
-
-In `/api/game/route.ts`, the BYOK key is read from the request header and used to create an Anthropic client for that single request. Key details:
-
-- The key is never written to any persistent store (no database, no file, no cache)
-- The key is never included in error responses sent back to the client
-- The key is never logged (no `console.log` of request headers)
-- The server does not validate the key before use; if it's invalid, the Anthropic API returns an auth error which is forwarded as a game error
-
-## Self-hosting
-
-Players who don't want their key to transit any server can run Storyforge locally:
-
-```bash
-git clone https://github.com/mheuer86/storyforge-game
-cd storyforge-game
-echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local
-npm install && npm run dev
+```text
+x-anthropic-key: <stored key>
 ```
 
-In this mode, the key stays in `.env.local` and the server uses it directly. No BYOK header is involved.
+when a BYOK key exists. SF2 API routes then choose the BYOK header or the server `ANTHROPIC_API_KEY`.
+
+The browser does not call Anthropic directly. It calls the app origin, and the server route calls Anthropic.
+
+## Demo Usage
+
+Without BYOK, demo mode uses a local token budget:
+
+| Constant | Value |
+|---|---|
+| `DEMO_MONTHLY_BUDGET` | `250_000` tokens |
+
+The usage record stores the current month and token count. If the month changes, the local counter resets.
+
+This is client-side budget UX, not billing enforcement. Server-side deployment controls still matter for real spend.
+
+## Passphrase Gate
+
+`PassphraseGate` allows access when one of these is true:
+
+- a BYOK key already exists
+- the user enters through the BYOK path
+- `/api/auth` validates the passphrase and sets the session cookie
+
+`app/api/auth/route.ts` handles the auth check. It uses HMAC-signed cookie behavior for session validation.
+
+## Content Security Policy
+
+`middleware.ts` sets security headers for all non-static routes:
+
+| Header | Purpose |
+|---|---|
+| `X-Frame-Options: DENY` | Prevent framing |
+| `X-Content-Type-Options: nosniff` | Prevent MIME sniffing |
+| `Referrer-Policy: strict-origin-when-cross-origin` | Limit cross-origin referrers |
+| `Permissions-Policy` | Disable camera, microphone, geolocation |
+| `Content-Security-Policy` | Restrict scripts, styles, images, fonts, connections, framing |
+
+The important BYOK line is:
+
+```text
+connect-src 'self'
+```
+
+That means browser network calls can connect only to the app origin. If a malicious client-side script were injected, the CSP is intended to prevent it from sending the stored key to a third-party host.
+
+## Route Responsibility
+
+Each SF2 API route that calls Anthropic should:
+
+- read the BYOK header if present
+- fall back to server `ANTHROPIC_API_KEY`
+- avoid logging the raw key
+- return diagnostics without secrets
+- preserve streaming behavior for Narrator calls
+
+## Operational Notes
+
+- BYOK localStorage is per browser profile.
+- Clearing site data removes the stored key and SF2 IndexedDB saves.
+- V1 and SF2 share the BYOK helper, but their save stores are separate.
+- Diagnostics exports should contain game state and replay data, not API keys.

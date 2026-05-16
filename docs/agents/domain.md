@@ -6,7 +6,8 @@ Storyforge is a single-context repo. Engineering skills should use the root proj
 
 - `CLAUDE.md` for commands, architecture, code style, and high-value files.
 - `CONTEXT.md` for product vision, current state, V1/SF2 distinction, and domain language.
-- Relevant stable docs under `docs/`, especially when touching shipped systems.
+- Relevant stable docs under `docs/`, especially when touching shipped SF2 systems.
+- `docs/v1/` when touching `/play/v1`, V1 prompts/tools, or V1 save behavior.
 - `docs/adr/` if it exists in the future. If it does not exist, proceed silently.
 
 ## Additional project knowledge
@@ -15,7 +16,7 @@ When the user references a zettel by ID or title, search the Brainforest vault p
 
 ## Vocabulary
 
-Use Storyforge's existing terms from `CONTEXT.md`, `CLAUDE.md`, and the relevant docs. Preserve the V1/SF2 distinction, and do not normalize Storyforge-specific language into generic RPG or app terms.
+Use Storyforge's existing terms from `CONTEXT.md`, `CLAUDE.md`, and the relevant docs. Treat root `docs/` as current SF2 documentation and `docs/v1/` as the legacy V1 snapshot. Preserve the V1/SF2 distinction, and do not normalize Storyforge-specific language into generic RPG or app terms.
 
 ## Conflict handling
 
