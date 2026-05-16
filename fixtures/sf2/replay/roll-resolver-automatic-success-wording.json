@@ -1,0 +1,80 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll resolver automatic success wording",
+  "source": {
+    "purpose": "SF2 roll resolver treats existing 'automatically succeed' trait wording as a selectable auto-success resource."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "cyberpunk",
+        "originId": "ripperdoc",
+        "playbookId": "street-doc",
+        "setupSelection": {
+          "genreId": "cyberpunk",
+          "originId": "ripperdoc",
+          "playbookId": "street-doc",
+          "hookId": "clinic"
+        }
+      },
+      "player": {
+        "name": "Replay Street Doc",
+        "species": "Ripperdoc",
+        "origin": { "id": "ripperdoc", "name": "Ripperdoc" },
+        "class": { "id": "street-doc", "name": "Street Doc" },
+        "level": 1,
+        "stats": { "STR": 12, "DEX": 12, "CON": 17, "INT": 12, "WIS": 14, "CHA": 10 },
+        "proficiencies": ["Medicine", "Insight", "Streetwise"],
+        "inventory": [],
+        "traits": [
+          {
+            "id": "seen-worse",
+            "name": "Seen Worse",
+            "description": "Once per day, automatically succeed on a death save or stabilization check. The patient lives because you've lost enough to know what dying looks like, and this isn't it yet.",
+            "uses": { "current": 1, "max": 1 }
+          }
+        ]
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Keep the patient alive.",
+    "narrator": {
+      "prose": "The heart monitor stutters.",
+      "annotation": {
+        "suggested_actions": ["Force the patient through the crash [Death Save]"],
+        "mechanical_effects": []
+      }
+    },
+    "archivist": null
+  },
+  "expected": {
+    "rollResolver": {
+      "cases": [
+        {
+          "name": "automatically succeed selected",
+          "skill": "Death Save",
+          "dc": 15,
+          "selectedActionLabelIncludes": "Seen Worse",
+          "expect": {
+            "resolutionKind": "trait_auto_success",
+            "actionOptionKindsInclude": ["auto_success"],
+            "sourceLabelsInclude": ["Seen Worse: auto-success"],
+            "spentResourcesInclude": [{ "kind": "trait", "name": "Seen Worse", "amount": 1 }],
+            "applySpend": {
+              "traitUses": [{ "name": "Seen Worse", "current": 0 }]
+            }
+          }
+        },
+        {
+          "name": "specific automatic success not offered for unrelated checks",
+          "skill": "Athletics",
+          "dc": 12,
+          "expect": {
+            "actionOptionLabelsExclude": ["Seen Worse"]
+          }
+        }
+      ]
+    }
+  }
+}

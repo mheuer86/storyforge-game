@@ -2,9 +2,19 @@ import {
   parseSf2NarratorStreamEvent,
   type Sf2NarratorRollPromptEvent,
 } from '@/lib/sf2/narrator/stream-protocol'
+import { extractAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { DebugEntry, TokenUsage } from '@/lib/sf2/diagnostics-store'
 import type { Sf2TurnPipelineEvent } from '@/lib/sf2/runtime/turn-pipeline'
-import type { Sf2State, Sf2WorkingSet } from '@/lib/sf2/types'
+import { applySf2RollResourceSpends } from '@/lib/sf2/rolls/resolve'
+import type {
+  Sf2RollDiceMode,
+  Sf2RollResolutionKind,
+  Sf2RollResourceSpend,
+  Sf2RollSourceBreakdown,
+  Sf2SelectedRollAction,
+  Sf2State,
+  Sf2WorkingSet,
+} from '@/lib/sf2/types'
 
 export interface Sf2ClientPendingCheck {
   toolUseId: string
@@ -21,13 +31,19 @@ export interface Sf2ClientPendingCheck {
 }
 
 export interface Sf2ClientRollOutcome {
-  d20: number
+  d20?: number
   rawRolls?: number[]
   modifier: number
   total: number
   dc: number
   effectiveDc?: number
   result: 'critical' | 'success' | 'failure' | 'fumble'
+  resolutionKind?: Sf2RollResolutionKind
+  diceMode?: Sf2RollDiceMode
+  criticalRange?: number
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
+  selectedRollAction?: Sf2SelectedRollAction
+  spentResources?: Sf2RollResourceSpend[]
   skill?: string
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
   modifierReason?: string
@@ -87,10 +103,16 @@ type RollResolution = {
   skill: string
   dc: number
   effectiveDc?: number
-  d20: number
+  d20?: number
   modifier: number
   total: number
   result: Sf2ClientRollOutcome['result']
+  resolutionKind?: Sf2RollResolutionKind
+  diceMode?: Sf2RollDiceMode
+  criticalRange?: number
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
+  selectedRollAction?: Sf2SelectedRollAction
+  spentResources?: Sf2RollResourceSpend[]
   modifierType?: Sf2ClientRollOutcome['modifierType']
   modifierReason?: string
   priorMessages: unknown[]
@@ -112,38 +134,8 @@ function rollFailureSummary(result: Sf2ClientRollOutcome['result'], consequenceO
 }
 
 function formatNarratorHttpError(status: number, body: unknown): string {
-  const bodyMessage = extractErrorMessage(body)
+  const bodyMessage = extractAnthropicErrorMessage(body)
   return bodyMessage ? `HTTP ${status}: ${bodyMessage}` : `HTTP ${status}`
-}
-
-function extractErrorMessage(value: unknown): string | null {
-  if (!value) return null
-  if (typeof value === 'string') return parseEmbeddedAnthropicError(value) ?? value
-  if (typeof value !== 'object') return String(value)
-  const record = value as Record<string, unknown>
-  const direct = record.message ?? record.error
-  if (typeof direct === 'string') return direct
-  if (direct && typeof direct === 'object') {
-    const nested = direct as Record<string, unknown>
-    if (typeof nested.message === 'string') return nested.message
-  }
-  if (typeof record.body === 'string') return parseEmbeddedAnthropicError(record.body) ?? record.body
-  return null
-}
-
-function parseEmbeddedAnthropicError(message: string): string | null {
-  const jsonStart = message.indexOf('{')
-  if (jsonStart < 0) return null
-  try {
-    const parsed = JSON.parse(message.slice(jsonStart)) as Record<string, unknown>
-    const error = parsed.error
-    if (error && typeof error === 'object') {
-      const nested = error as Record<string, unknown>
-      if (typeof nested.message === 'string') return nested.message
-    }
-    if (typeof parsed.message === 'string') return parsed.message
-  } catch {}
-  return null
 }
 
 export async function runSf2ClientNarratorTurn(
@@ -364,6 +356,9 @@ export async function runSf2ClientNarratorTurn(
           currentState = structuredClone(currentState)
           currentState.player.inspiration = Math.max(0, currentState.player.inspiration - 1)
         }
+        if (outcome.spentResources && outcome.spentResources.length > 0) {
+          currentState = applySf2RollResourceSpends(currentState, outcome.spentResources)
+        }
         effects.onDiagnostic({
           kind: 'roll',
           at: Date.now(),
@@ -392,12 +387,19 @@ export async function runSf2ClientNarratorTurn(
           rollResult: outcome.d20,
           rawRolls: outcome.rawRolls,
           modifier: outcome.modifier,
+          total: outcome.total,
           outcome: rollOutcomeForLog(outcome.result),
+          resolutionKind: outcome.resolutionKind,
+          diceMode: outcome.diceMode,
+          criticalRange: outcome.criticalRange,
+          sourceBreakdown: outcome.sourceBreakdown,
+          selectedRollAction: outcome.selectedRollAction,
+          spentResources: outcome.spentResources,
           consequenceSummary: rollFailureSummary(outcome.result, sawRollPrompt.consequenceOnFail),
           modifierType: outcome.modifierType,
           modifierReason: outcome.modifierReason,
           inspirationSpent: outcome.inspirationSpent,
-          originalRoll: outcome.originalRoll
+          originalRoll: outcome.originalRoll && outcome.originalRoll.d20 !== undefined
             ? {
                 rollResult: outcome.originalRoll.d20,
                 modifier: outcome.originalRoll.modifier,
@@ -416,6 +418,12 @@ export async function runSf2ClientNarratorTurn(
           modifier: outcome.modifier,
           total: outcome.total,
           result: outcome.result,
+          resolutionKind: outcome.resolutionKind,
+          diceMode: outcome.diceMode,
+          criticalRange: outcome.criticalRange,
+          sourceBreakdown: outcome.sourceBreakdown,
+          selectedRollAction: outcome.selectedRollAction,
+          spentResources: outcome.spentResources,
           modifierType: outcome.modifierType,
           modifierReason: outcome.modifierReason,
           priorMessages: sawRollPrompt.priorMessages,

@@ -32,6 +32,11 @@ import {
   type Sf2ClientRollOutcome,
 } from '@/lib/sf2/runtime/client-turn-orchestrator'
 import {
+  applySf2RollResourceSpends,
+  resolveSf2Roll,
+} from '@/lib/sf2/rolls/resolve'
+import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
+import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
 import {
@@ -58,6 +63,7 @@ import type {
   Sf2Arc,
   Sf2ArcPlan,
   Sf2Faction,
+  Sf2RollResourceSpend,
   Sf2State,
   Sf2Thread,
   Sf2TurnDiffEntry,
@@ -92,63 +98,21 @@ interface WizardSetupData {
   genre: Genre
 }
 
-function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc): RollOutcome {
+function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc, criticalRange = 20): RollOutcome {
   const total = d20 + modifier
+  const normalizedCriticalRange = Math.min(20, Math.max(2, Math.trunc(criticalRange)))
   let result: RollOutcome['result']
-  if (d20 === 20) result = 'critical'
-  else if (d20 === 1) result = 'fumble'
+  if (d20 === 1) result = 'fumble'
+  else if (d20 === 20 || d20 >= normalizedCriticalRange) result = 'critical'
   else if (total >= effectiveDc) result = 'success'
   else result = 'failure'
   return { d20, modifier, total, dc, effectiveDc, result }
-}
-
-function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
-  return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
 }
 
 function firewallTurnIndexFor(state: Sf2State): number {
   return state.history.turns.at(-1)?.index ?? state.history.turns.length
 }
 
-// Pick ability by skill name + apply proficiency bonus if the player is
-// proficient in the skill. Proficiency bonus scales with level per D&D rules:
-// +2 (1-4), +3 (5-8), +4 (9-12), +5 (13-16), +6 (17+).
-function modifierForSkill(state: Sf2State, skill: string): number {
-  const s = skill.toLowerCase()
-  const stats = state.player.stats
-  const mod = (v: number) => Math.floor((v - 10) / 2)
-  const level = state.player.level ?? 1
-  const proficiencyBonus = Math.floor((level - 1) / 4) + 2
-
-  let abilityMod = mod(stats.WIS)
-  if (
-    s.includes('investigation')
-    || s.includes('arcana')
-    || s.includes('history')
-    || s.includes('nature')
-    || s.includes('hacking')
-    || s.includes('electronics')
-    || s.includes('net architecture')
-    || s.includes('engineering')
-    || s.includes('apothecary')
-    || s.includes('appraisal')
-  ) abilityMod = mod(stats.INT)
-  else if (s.includes('persua') || s.includes('decept') || s.includes('intimid') || s.includes('performance')) abilityMod = mod(stats.CHA)
-  else if (s.includes('athlet')) abilityMod = mod(stats.STR)
-  else if (s.includes('acrob') || s.includes('stealth') || s.includes('sleight') || s.includes('lockpick')) abilityMod = mod(stats.DEX)
-  else if (s.includes('constitution') || s.includes('endur')) abilityMod = mod(stats.CON)
-  else if (s.includes('heavy weapon') || s.includes('melee') || s.includes('ranged')) abilityMod = mod(stats.STR)
-  // Default WIS for insight/perception/religion/survival/medicine + fallback
-
-  // Proficiency: case-insensitive match against the player's proficiency list.
-  // Allows partial matches ("Heavy Weapons" proficient → "Heavy Weapons attack" rolled).
-  const isProficient = state.player.proficiencies.some((p) => {
-    const pl = p.toLowerCase()
-    return s.includes(pl) || pl.includes(s)
-  })
-
-  return abilityMod + (isProficient ? proficiencyBonus : 0)
-}
 
 export function Sf2PlayApp() {
   const [state, setState] = useState<Sf2State | null>(null)
@@ -168,6 +132,7 @@ export function Sf2PlayApp() {
   const [pendingCheck, setPendingCheck] = useState<PendingCheck | null>(null)
   const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
   const [inspirationOffer, setInspirationOffer] = useState<RollOutcome | null>(null)
+  const [selectedRollActionId, setSelectedRollActionId] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const replayFramesRef = useRef<ReplayFrame[]>([])
@@ -189,6 +154,11 @@ export function Sf2PlayApp() {
   // Inspiration spends are only persisted once the full turn commits. This
   // keeps a paused roll from mutating state that sendTurn later replaces.
   const pendingInspirationSpendRef = useRef(0)
+  const pendingRollResourceSpendsRef = useRef<Sf2RollResourceSpend[]>([])
+
+  function stateWithPendingRollSpends(s: Sf2State): Sf2State {
+    return applySf2RollResourceSpends(s, pendingRollResourceSpendsRef.current)
+  }
 
   const refreshSaveSlots = useCallback(async () => {
     const p = persistenceRef.current
@@ -216,6 +186,8 @@ export function Sf2PlayApp() {
     setTurnIndex(loaded.history.turns.length)
     setPivotSignaled(chapterHasPivotSignal(loaded))
     pendingInspirationSpendRef.current = 0
+    pendingRollResourceSpendsRef.current = []
+    setSelectedRollActionId(null)
     const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
     setSuggestedActions(lastTurn?.narratorAnnotation?.suggestedActions ?? [])
     try {
@@ -396,6 +368,8 @@ export function Sf2PlayApp() {
     setTurnIndex(0)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
+    pendingRollResourceSpendsRef.current = []
+    setSelectedRollActionId(null)
     diagnosticsStore.pushDebug({
       kind: 'experiment',
       at: Date.now(),
@@ -437,6 +411,8 @@ export function Sf2PlayApp() {
     setPendingCheck(null)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
+    pendingRollResourceSpendsRef.current = []
+    setSelectedRollActionId(null)
     void refreshSaveSlots()
   }
 
@@ -468,6 +444,8 @@ export function Sf2PlayApp() {
     setTurnIndex(0)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
+    pendingRollResourceSpendsRef.current = []
+    setSelectedRollActionId(null)
   }
 
   async function saveToSlot(slot: Sf2SaveSlotNumber) {
@@ -500,22 +478,7 @@ export function Sf2PlayApp() {
   }
 
   function cleanNarratorErrorMessage(message: string): string {
-    return parseEmbeddedAnthropicError(message) ?? message
-  }
-
-  function parseEmbeddedAnthropicError(message: string): string | null {
-    const jsonStart = message.indexOf('{')
-    if (jsonStart < 0) return null
-    try {
-      const parsed = JSON.parse(message.slice(jsonStart)) as Record<string, unknown>
-      const error = parsed.error
-      if (error && typeof error === 'object') {
-        const nested = error as Record<string, unknown>
-        if (typeof nested.message === 'string') return nested.message
-      }
-      if (typeof parsed.message === 'string') return parsed.message
-    } catch {}
-    return null
+    return normalizeAnthropicErrorMessage(message)
   }
 
   async function runNarrator(
@@ -544,12 +507,17 @@ export function Sf2PlayApp() {
         onStreamingChange: setIsStreaming,
         onProse: setProse,
         onSuggestedActions: setSuggestedActions,
-        onPendingCheck: setPendingCheck,
+        onPendingCheck: (check) => {
+          setPendingCheck(check)
+          setSelectedRollActionId(null)
+        },
         onRollResult: setRollResult,
         onLiveRollAdded: (roll) => setLiveRolls((cards) => [...cards, roll]),
         onInspirationOffer: setInspirationOffer,
         onResetPendingInspirationSpend: () => {
           pendingInspirationSpendRef.current = 0
+          pendingRollResourceSpendsRef.current = []
+          setSelectedRollActionId(null)
         },
         onAnnotation: (annotation) => {
           if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
@@ -929,6 +897,8 @@ export function Sf2PlayApp() {
     const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
     if (!narratorResult.completed) {
       pendingInspirationSpendRef.current = 0
+      pendingRollResourceSpendsRef.current = []
+      setSelectedRollActionId(null)
       setProse('')
       setSuggestedActions([])
       setPendingInput(isInitial ? '' : playerInput)
@@ -1001,6 +971,8 @@ export function Sf2PlayApp() {
     setRollResult(null)
     setInspirationOffer(null)
     pendingInspirationSpendRef.current = 0
+    pendingRollResourceSpendsRef.current = []
+    setSelectedRollActionId(null)
     persist(committedTurn.stateAfter)
   }
 
@@ -1135,6 +1107,22 @@ export function Sf2PlayApp() {
     return Math.max(0, s.player.inspiration - pendingInspirationSpendRef.current)
   }
 
+  function rememberRollResourceSpends(outcome: RollOutcome) {
+    if (!outcome.spentResources || outcome.spentResources.length === 0) return
+    pendingRollResourceSpendsRef.current = [
+      ...pendingRollResourceSpendsRef.current,
+      ...outcome.spentResources,
+    ]
+  }
+
+  function completePendingRoll(outcome: RollOutcome) {
+    rememberRollResourceSpends(outcome)
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    setSelectedRollActionId(null)
+    if (resolver) resolver(outcome)
+  }
+
   function setLatestLiveRollOutcome(outcome: RollOutcome) {
     setLiveRolls((cards) => {
       let pendingIndex = -1
@@ -1152,46 +1140,72 @@ export function Sf2PlayApp() {
 
   function resolvePendingCheck() {
     if (!state || !pendingCheck) return
+    const rollState = stateWithPendingRollSpends(state)
+    const resolution = resolveSf2Roll(rollState, pendingCheck, selectedRollActionId)
+    if (resolution.resolutionKind === 'trait_auto_success' || resolution.resolutionKind === 'trait_auto_critical') {
+      const outcome: RollOutcome = {
+        d20: undefined,
+        rawRolls: undefined,
+        modifier: resolution.modifier,
+        total: resolution.effectiveDc,
+        dc: pendingCheck.dc,
+        effectiveDc: resolution.effectiveDc,
+        result: resolution.resolutionKind === 'trait_auto_critical' ? 'critical' : 'success',
+        resolutionKind: resolution.resolutionKind,
+        diceMode: resolution.diceMode,
+        criticalRange: resolution.criticalRange,
+        sourceBreakdown: resolution.sourceBreakdown,
+        selectedRollAction: resolution.selectedRollAction,
+        spentResources: resolution.spentResources,
+        skill: pendingCheck.skill,
+        modifierType: resolution.modifierType,
+        modifierReason: resolution.modifierReason,
+      }
+      setLatestLiveRollOutcome(outcome)
+      completePendingRoll(outcome)
+      return
+    }
+
     const rollOne = () => 1 + Math.floor(Math.random() * 20)
     const first = rollOne()
     const second =
-      pendingCheck.modifierType === 'advantage' || pendingCheck.modifierType === 'disadvantage'
+      resolution.diceMode === 'advantage' || resolution.diceMode === 'disadvantage'
         ? rollOne()
         : undefined
     const d20 =
-      pendingCheck.modifierType === 'advantage' && second !== undefined
+      resolution.diceMode === 'advantage' && second !== undefined
         ? Math.max(first, second)
-        : pendingCheck.modifierType === 'disadvantage' && second !== undefined
+        : resolution.diceMode === 'disadvantage' && second !== undefined
           ? Math.min(first, second)
           : first
-    const modifier = modifierForSkill(state, pendingCheck.skill)
-    const effectiveDc = effectiveDcFor(pendingCheck)
     const outcome = {
-      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      ...resolveRoll(d20, resolution.modifier, pendingCheck.dc, resolution.effectiveDc, resolution.criticalRange),
       rawRolls: second !== undefined ? [first, second] : undefined,
       skill: pendingCheck.skill,
-      modifierType: pendingCheck.modifierType,
-      modifierReason: pendingCheck.modifierReason,
+      resolutionKind: 'rolled' as const,
+      diceMode: resolution.diceMode,
+      criticalRange: resolution.criticalRange,
+      sourceBreakdown: resolution.sourceBreakdown,
+      selectedRollAction: resolution.selectedRollAction,
+      spentResources: resolution.spentResources,
+      modifierType: resolution.modifierType,
+      modifierReason: resolution.modifierReason,
     }
     setLatestLiveRollOutcome(outcome)
     const failed = outcome.result === 'failure' || outcome.result === 'fumble'
-    if (failed && availableInspiration(state) > 0) {
+    const hasTraitReroll = resolution.actionOptions.some((option) => option.kind === 'reroll')
+    if (failed && (availableInspiration(state) > 0 || hasTraitReroll)) {
       setRollResult(outcome)
       setInspirationOffer(outcome)
       return
     }
-    // Hand the outcome back to the paused narrator loop.
-    const resolver = rollResolverRef.current
-    rollResolverRef.current = null
-    if (resolver) resolver(outcome)
+    completePendingRoll(outcome)
   }
 
   function declineInspirationReroll() {
     if (!inspirationOffer) return
-    const resolver = rollResolverRef.current
-    rollResolverRef.current = null
     setInspirationOffer(null)
-    if (resolver) resolver(inspirationOffer)
+    completePendingRoll(inspirationOffer)
   }
 
   // Inspiration is a flat reroll, not advantage-equivalent: a way out of a
@@ -1204,11 +1218,24 @@ export function Sf2PlayApp() {
     pendingInspirationSpendRef.current += 1
 
     const d20 = 1 + Math.floor(Math.random() * 20)
-    const modifier = modifierForSkill(state, pendingCheck.skill)
-    const effectiveDc = effectiveDcFor(pendingCheck)
+    const rollState = stateWithPendingRollSpends(state)
+    const resolution = resolveSf2Roll(rollState, pendingCheck)
     const outcome: RollOutcome = {
-      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      ...resolveRoll(d20, resolution.modifier, pendingCheck.dc, resolution.effectiveDc),
       skill: pendingCheck.skill,
+      resolutionKind: 'rolled',
+      diceMode: 'normal',
+      criticalRange: 20,
+      sourceBreakdown: [
+        ...resolution.sourceBreakdown,
+        {
+          kind: 'selected_trait',
+          source: 'Inspiration',
+          label: 'Inspiration reroll',
+          detail: 'spent after failed roll',
+        },
+      ],
+      spentResources: inspirationOffer.spentResources,
       modifierType: 'inspiration',
       modifierReason: 'spent after failed roll',
       inspirationSpent: true,
@@ -1217,9 +1244,37 @@ export function Sf2PlayApp() {
     setRollResult(outcome)
     setLatestLiveRollOutcome(outcome)
     setInspirationOffer(null)
-    const resolver = rollResolverRef.current
-    rollResolverRef.current = null
-    if (resolver) resolver(outcome)
+    completePendingRoll(outcome)
+  }
+
+  function spendTraitReroll(actionId: string) {
+    if (!state || !pendingCheck || !inspirationOffer) return
+    const rollState = stateWithPendingRollSpends(state)
+    const resolution = resolveSf2Roll(rollState, pendingCheck, actionId)
+    const selected = resolution.selectedRollAction
+    if (!selected || selected.kind !== 'reroll') return
+
+    const d20 = 1 + Math.floor(Math.random() * 20)
+    const outcome: RollOutcome = {
+      ...resolveRoll(d20, resolution.modifier, pendingCheck.dc, resolution.effectiveDc),
+      skill: pendingCheck.skill,
+      resolutionKind: 'rolled',
+      diceMode: 'normal',
+      criticalRange: 20,
+      sourceBreakdown: resolution.sourceBreakdown,
+      selectedRollAction: selected,
+      spentResources: [
+        ...(inspirationOffer.spentResources ?? []),
+        ...resolution.spentResources,
+      ],
+      modifierType: undefined,
+      modifierReason: selected.label,
+      originalRoll: inspirationOffer,
+    }
+    setRollResult(outcome)
+    setLatestLiveRollOutcome(outcome)
+    setInspirationOffer(null)
+    completePendingRoll(outcome)
   }
 
   // ────────── Render ──────────
@@ -1383,12 +1438,11 @@ export function Sf2PlayApp() {
     successorRequired: pressureProjection.closeReadiness.successorRequired,
     promotedSpineThreadId: pressureProjection.closeReadiness.promotedSpineThreadId,
   }
-  const rollModifier = pendingCheck
-    ? modifierForSkill(state, pendingCheck.skill)
-    : rollResult?.modifier ?? null
-  const currentEffectiveDc = pendingCheck
-    ? effectiveDcFor(pendingCheck)
-    : rollResult?.effectiveDc ?? rollResult?.dc ?? null
+  const currentRollResolution = pendingCheck
+    ? resolveSf2Roll(stateWithPendingRollSpends(state), pendingCheck, selectedRollActionId)
+    : null
+  const rollModifier = currentRollResolution?.modifier ?? rollResult?.modifier ?? null
+  const currentEffectiveDc = currentRollResolution?.effectiveDc ?? rollResult?.effectiveDc ?? rollResult?.dc ?? null
 
   return (
     <Sf2PlayShell
@@ -1405,6 +1459,10 @@ export function Sf2PlayApp() {
       inspirationOffer={inspirationOffer}
       rollModifier={rollModifier}
       effectiveDc={currentEffectiveDc}
+      rollDiceMode={currentRollResolution?.diceMode ?? rollResult?.diceMode ?? null}
+      rollSourceBreakdown={currentRollResolution?.sourceBreakdown ?? rollResult?.sourceBreakdown ?? []}
+      rollActionOptions={currentRollResolution?.actionOptions ?? []}
+      selectedRollActionId={selectedRollActionId}
       inspirationRemaining={availableInspiration(state)}
       isStreaming={isStreaming}
       isArchiving={isArchiving}
@@ -1420,7 +1478,9 @@ export function Sf2PlayApp() {
       onPendingInputChange={setPendingInput}
       onSendTurn={sendTurn}
       onResolvePendingCheck={resolvePendingCheck}
+      onSelectRollAction={setSelectedRollActionId}
       onSpendInspiration={spendInspirationReroll}
+      onSpendTraitReroll={spendTraitReroll}
       onDeclineInspiration={declineInspirationReroll}
       onCloseChapter={closeChapterAndOpenNext}
       onResetCampaign={resetCampaign}

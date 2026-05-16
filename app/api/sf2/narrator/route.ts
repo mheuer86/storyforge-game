@@ -7,12 +7,14 @@ import { repairSuggestedActions } from '@/lib/sf2/narrator/suggested-actions'
 import {
   buildSf2RollPromptIntentResume,
   buildNarratorTurnContext,
+  type Sf2NarratorRollResolution,
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
 import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
 import { reconcileRollModifierWithSocialAdvisories } from '@/lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
+import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { Sf2NarratorStreamEvent } from '@/lib/sf2/narrator/stream-protocol'
 import type { Sf2State } from '@/lib/sf2/types'
 
@@ -33,10 +35,16 @@ const rollResolutionSchema = z.object({
   skill: z.string(),
   dc: z.number(),
   effectiveDc: z.number().optional(),
-  d20: z.number().min(1).max(20),
+  d20: z.number().min(1).max(20).optional(),
   modifier: z.number(),
   total: z.number(),
   result: z.enum(['critical', 'success', 'failure', 'fumble']),
+  resolutionKind: z.enum(['rolled', 'trait_auto_success', 'trait_auto_critical']).optional(),
+  diceMode: z.enum(['normal', 'advantage', 'disadvantage']).optional(),
+  criticalRange: z.number().min(1).max(20).optional(),
+  sourceBreakdown: z.array(z.unknown()).optional(),
+  selectedRollAction: z.unknown().optional(),
+  spentResources: z.array(z.unknown()).optional(),
   modifierType: z.enum(['advantage', 'disadvantage', 'inspiration', 'challenge']).optional(),
   modifierReason: z.string().optional(),
   priorMessages: z.array(z.unknown()),
@@ -97,6 +105,33 @@ function bindRequiredRollGateSkill(
 
 function dropUndefinedFields<T extends Record<string, unknown>>(value: T): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined))
+}
+
+function stripCacheControlDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((entry) => stripCacheControlDeep(entry)) as T
+  }
+  if (!value || typeof value !== 'object') return value
+
+  const next: Record<string, unknown> = {}
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (key === 'cache_control') continue
+    next[key] = stripCacheControlDeep(entry)
+  }
+  return next as T
+}
+
+function isAnthropicInternalServerError(error: unknown): boolean {
+  if (error instanceof Anthropic.APIError) return error.status === 500
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    return (
+      message.includes('internal server error') ||
+      message.includes('"code":500') ||
+      message.includes('"type":"api_error"')
+    )
+  }
+  return false
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -273,7 +308,7 @@ export async function POST(req: NextRequest) {
     state = parsed.data.state as unknown as Sf2State
     playerInput = parsed.data.playerInput
     isInitial = parsed.data.isInitial
-    const rollResolution = parsed.data.rollResolution
+    const rollResolution = parsed.data.rollResolution as Sf2NarratorRollResolution | undefined
     const turnIndex = state.history.turns.length
     turnContext = buildNarratorTurnContext({
       state,
@@ -352,12 +387,20 @@ export async function POST(req: NextRequest) {
       // Captured at finalMessage() resolve so the latency payload reports
       // pure SDK time, not SDK+post-processing.
       let apiMsForLatency: number | null = null
-      try {
+      let apiAttempts = 0
+      let visibleTextSent = false
+      const providerRetryNotes: string[] = []
+      const streamModelAttempt = async (cacheControl: 'cached' | 'uncached') => {
+        apiAttempts += 1
         const modelStream = await client.messages.stream({
           model: NARRATOR_MODEL,
           max_tokens: 4096,
-          system: turnContext.system,
-          tools: turnContext.cachedTools,
+          system: cacheControl === 'cached'
+            ? turnContext.system
+            : stripCacheControlDeep(turnContext.system),
+          tools: cacheControl === 'cached'
+            ? turnContext.cachedTools
+            : stripCacheControlDeep(turnContext.cachedTools),
           // The Narrator owns two tools — request_roll (mid-turn pause) and
           // narrate_turn (final commit) — and the flow assumes mutual
           // exclusion: one or the other per turn. Without this flag, parallel
@@ -365,7 +408,9 @@ export async function POST(req: NextRequest) {
           // dispatch silently drops the narrate_turn (request_roll wins
           // ordering). disable_parallel_tool_use makes the contract explicit.
           tool_choice: { type: 'auto', disable_parallel_tool_use: true },
-          messages: turnContext.messages,
+          messages: cacheControl === 'cached'
+            ? turnContext.messages
+            : stripCacheControlDeep(turnContext.messages),
         })
 
         for await (const event of modelStream) {
@@ -376,13 +421,38 @@ export async function POST(req: NextRequest) {
               if (turnContext.requiredRollGate) {
                 gatedTextBuffer += text
               } else {
+                visibleTextSent = true
                 send({ type: 'text', content: text })
               }
             }
           }
         }
 
-        const completed = await modelStream.finalMessage()
+        return modelStream.finalMessage()
+      }
+
+      try {
+        let completed: Anthropic.Message
+        try {
+          completed = await streamModelAttempt('cached')
+        } catch (err) {
+          if (isAnthropicInternalServerError(err) && !visibleTextSent && apiAttempts === 1) {
+            const message = normalizeAnthropicErrorMessage(err instanceof Error ? err.message : 'unknown_error')
+            providerRetryNotes.push(
+              `Anthropic 500 before visible prose; retried once without prompt-cache markers. First error: ${message}`
+            )
+            console.warn('[sf2/narrator] retrying Anthropic 500 without cache_control', {
+              model: NARRATOR_MODEL,
+              message,
+              turnIndex: state.history.turns.length,
+            })
+            gatedTextBuffer = ''
+            ttftMs = undefined
+            completed = await streamModelAttempt('uncached')
+          } else {
+            throw err
+          }
+        }
         apiMsForLatency = apiTimer.elapsed()
         const usage = completed.usage as {
           input_tokens: number
@@ -400,6 +470,13 @@ export async function POST(req: NextRequest) {
             cacheReadTokens: usage.cache_read_input_tokens ?? 0,
           },
         })
+        if (providerRetryNotes.length > 0) {
+          send({
+            type: 'narrator_output_recovered',
+            recoveryNotes: providerRetryNotes,
+            turnIndex: state.history.turns.length,
+          })
+        }
 
         if (completed.stop_reason === 'max_tokens') {
           send({ type: 'truncation_warning', outputTokens: usage.output_tokens })
@@ -665,7 +742,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'unknown_error'
+        const message = normalizeAnthropicErrorMessage(err instanceof Error ? err.message : 'unknown_error')
         const status = err instanceof Anthropic.APIError ? err.status : undefined
         console.error('[sf2/narrator] anthropic call failed', {
           model: NARRATOR_MODEL,
@@ -682,7 +759,7 @@ export async function POST(req: NextRequest) {
         send({
           type: 'latency',
           role: 'narrator',
-          latency: { totalMs, apiMs, ttftMs },
+          latency: { totalMs, apiMs, ttftMs, attempts: apiAttempts || undefined },
         })
         send({ type: 'done' })
         controller.close()

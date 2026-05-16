@@ -9,6 +9,7 @@ import { transformAuthorSetup } from '../lib/sf2/author/transform'
 import { getArcVariantCandidates } from '../lib/sf2/arc-author/variants'
 import { applyLatentArcQuestionChapterOpen, selectLatentArcQuestionsForChapter } from '../lib/sf2/arc-questions'
 import { normalizePersistedSf2State } from '../lib/sf2/persistence/normalize'
+import { applySf2RollResourceSpends, resolveSf2Roll } from '../lib/sf2/rolls/resolve'
 import { buildScenePacket, renderPerTurnDelta } from '../lib/sf2/retrieval/scene-packet'
 import {
   buildNarratorTurnContext,
@@ -242,6 +243,10 @@ interface ReplayFixture {
       objectiveOutcome?: string
       reframeCandidateThreadId?: string
       closeOrReframeDirectiveIncludes?: string
+    }
+    postTurnPressureRecovery?: {
+      pendingRecoveryNotesInclude?: string[]
+      eventsInclude?: Array<{ type: string; reason?: string }>
     }
     quickActionRepair?: {
       failedSkill?: string
@@ -542,6 +547,7 @@ interface ReplayFixture {
       chapter?: number
       loadBearingIds?: string[]
       expect: {
+        npcIdentityIncludes?: Array<{ npcId: string; pronoun?: string; age?: string; profileFactsInclude?: string[] }>
         npcRolesInclude?: Array<{ npcId: string; role: string }>
         ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
         threadOwnerEquals?: { threadId: string; kind: string; id: string }
@@ -635,6 +641,37 @@ interface ReplayFixture {
       sourceId?: string
       skillsInclude?: string[]
       reasonIncludes?: string
+    }
+    rollResolver?: {
+      cases: Array<{
+        name: string
+        skill: string
+        dc?: number
+        modifierType?: 'advantage' | 'disadvantage' | 'challenge'
+        modifierReason?: string
+        selectedActionLabelIncludes?: string
+        expect: {
+          ability?: string
+          proficient?: boolean
+          modifier?: number
+          flatBonus?: number
+          effectiveDc?: number
+          diceMode?: string
+          criticalRange?: number
+          resolutionKind?: string
+          actionOptionKindsInclude?: string[]
+          actionOptionLabelsInclude?: string[]
+          actionOptionLabelsExclude?: string[]
+          sourceLabelsInclude?: string[]
+          sourceLabelCounts?: Array<{ labelIncludes: string; count: number }>
+          sourceKindsInclude?: string[]
+          spentResourcesInclude?: Array<{ kind: string; name: string; amount?: number }>
+          applySpend?: {
+            traitUses?: Array<{ name: string; current: number }>
+            itemCharges?: Array<{ name: string; charges: number }>
+          }
+        }
+      }>
     }
     rollSkillTags?: {
       playerInput?: string
@@ -1029,6 +1066,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertProcedureOffscreenTask(fixture, failures)
   assertProcedureTransitions(fixture, failures)
   assertForwardMotionAdvisories(fixture, failures)
+  assertRollResolver(fixture, stateBefore, failures)
   assertProcedureAccessExploration(fixture, stateAfter, failures)
   assertProcedureInvestigation(fixture, stateAfter, failures)
   assertProcedureActivationDiagnostics(fixture, stateAfter, failures)
@@ -1970,6 +2008,7 @@ function assertAuthorHydration(
     expected.loadBearingIds ?? []
   )
 
+  assertNpcIdentityIncludes(state, expected.expect.npcIdentityIncludes, 'authorHydration', failures)
   assertNpcRoles(state, expected.expect.npcRolesInclude, 'authorHydration', failures)
   assertOwnerThreadIds(state, expected.expect.ownerThreadIdsEquals, 'authorHydration', failures)
 
@@ -2429,6 +2468,36 @@ function assertOwnerThreadIds(
   }
 }
 
+function assertNpcIdentityIncludes(
+  state: Sf2State,
+  expected: Array<{ npcId: string; pronoun?: string; age?: string; profileFactsInclude?: string[] }> | undefined,
+  label: string,
+  failures: string[]
+): void {
+  for (const identity of expected ?? []) {
+    const npc = state.campaign.npcs[identity.npcId]
+    if (!npc) {
+      failures.push(`${label}.npcIdentity: target ${identity.npcId} missing`)
+      continue
+    }
+    if (identity.pronoun !== undefined && npc.identity.pronoun !== identity.pronoun) {
+      failures.push(
+        `${label}.npcIdentity ${identity.npcId}: pronoun expected ${identity.pronoun}, got ${npc.identity.pronoun ?? 'unset'}`
+      )
+    }
+    if (identity.age !== undefined && npc.identity.age !== identity.age) {
+      failures.push(
+        `${label}.npcIdentity ${identity.npcId}: age expected ${identity.age}, got ${npc.identity.age ?? 'unset'}`
+      )
+    }
+    for (const fact of identity.profileFactsInclude ?? []) {
+      if (!(npc.identity.profileFacts ?? []).some((actual) => actual.toLowerCase().includes(fact.toLowerCase()))) {
+        failures.push(`${label}.npcIdentity ${identity.npcId}: profileFacts missing "${fact}"`)
+      }
+    }
+  }
+}
+
 function assertArcStatuses(
   state: Sf2State,
   expected: Array<{ arcId: string; status: string; arcPlanStatus?: string }> | undefined,
@@ -2633,6 +2702,123 @@ function assertRollSkillTags(fixture: ReplayFixture, failures: string[]): void {
       failures.push(
         `rollSkillTags.unknownSkillLikeTags unexpectedly included ${tag}; got [${inspection.unknownSkillLikeTags.join(', ')}]`
       )
+    }
+  }
+}
+
+function assertRollResolver(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.rollResolver
+  if (!expected) return
+
+  for (const testCase of expected.cases) {
+    const base = resolveSf2Roll(stateBefore, {
+      skill: testCase.skill,
+      dc: testCase.dc ?? 12,
+      modifierType: testCase.modifierType,
+      modifierReason: testCase.modifierReason,
+    })
+    const selected = testCase.selectedActionLabelIncludes
+      ? base.actionOptions.find((option) => option.label.includes(testCase.selectedActionLabelIncludes ?? ''))
+      : undefined
+    const resolved = resolveSf2Roll(stateBefore, {
+      skill: testCase.skill,
+      dc: testCase.dc ?? 12,
+      modifierType: testCase.modifierType,
+      modifierReason: testCase.modifierReason,
+    }, selected?.id)
+    const prefix = `rollResolver.${testCase.name}`
+    const want = testCase.expect
+
+    if (testCase.selectedActionLabelIncludes && !selected) {
+      failures.push(`${prefix}.selectedAction: missing option containing "${testCase.selectedActionLabelIncludes}"; got [${base.actionOptions.map((option) => option.label).join('; ')}]`)
+    }
+    if (want.ability !== undefined && resolved.ability !== want.ability) {
+      failures.push(`${prefix}.ability: expected ${want.ability}, got ${resolved.ability}`)
+    }
+    if (want.proficient !== undefined && resolved.proficient !== want.proficient) {
+      failures.push(`${prefix}.proficient: expected ${String(want.proficient)}, got ${String(resolved.proficient)}`)
+    }
+    if (want.modifier !== undefined && resolved.modifier !== want.modifier) {
+      failures.push(`${prefix}.modifier: expected ${want.modifier}, got ${resolved.modifier}`)
+    }
+    if (want.flatBonus !== undefined && resolved.flatBonus !== want.flatBonus) {
+      failures.push(`${prefix}.flatBonus: expected ${want.flatBonus}, got ${resolved.flatBonus}`)
+    }
+    if (want.effectiveDc !== undefined && resolved.effectiveDc !== want.effectiveDc) {
+      failures.push(`${prefix}.effectiveDc: expected ${want.effectiveDc}, got ${resolved.effectiveDc}`)
+    }
+    if (want.diceMode !== undefined && resolved.diceMode !== want.diceMode) {
+      failures.push(`${prefix}.diceMode: expected ${want.diceMode}, got ${resolved.diceMode}`)
+    }
+    if (want.criticalRange !== undefined && resolved.criticalRange !== want.criticalRange) {
+      failures.push(`${prefix}.criticalRange: expected ${want.criticalRange}, got ${resolved.criticalRange}`)
+    }
+    if (want.resolutionKind !== undefined && resolved.resolutionKind !== want.resolutionKind) {
+      failures.push(`${prefix}.resolutionKind: expected ${want.resolutionKind}, got ${resolved.resolutionKind ?? 'unset'}`)
+    }
+
+    const actionKinds = resolved.actionOptions.map((option) => option.kind)
+    for (const kind of want.actionOptionKindsInclude ?? []) {
+      if (!actionKinds.includes(kind as typeof actionKinds[number])) {
+        failures.push(`${prefix}.actionOptions.kind missing ${kind}; got [${actionKinds.join(', ')}]`)
+      }
+    }
+    for (const fragment of want.actionOptionLabelsInclude ?? []) {
+      if (!resolved.actionOptions.some((option) => option.label.includes(fragment))) {
+        failures.push(`${prefix}.actionOptions.label missing "${fragment}"; got [${resolved.actionOptions.map((option) => option.label).join('; ')}]`)
+      }
+    }
+    for (const fragment of want.actionOptionLabelsExclude ?? []) {
+      if (resolved.actionOptions.some((option) => option.label.includes(fragment))) {
+        failures.push(`${prefix}.actionOptions.label should not include "${fragment}"; got [${resolved.actionOptions.map((option) => option.label).join('; ')}]`)
+      }
+    }
+    for (const fragment of want.sourceLabelsInclude ?? []) {
+      if (!resolved.sourceBreakdown.some((source) => source.label.includes(fragment))) {
+        failures.push(`${prefix}.sourceLabels missing "${fragment}"; got [${resolved.sourceBreakdown.map((source) => source.label).join('; ')}]`)
+      }
+    }
+    for (const expectedCount of want.sourceLabelCounts ?? []) {
+      const count = resolved.sourceBreakdown.filter((source) =>
+        source.label.includes(expectedCount.labelIncludes)
+      ).length
+      if (count !== expectedCount.count) {
+        failures.push(`${prefix}.sourceLabelCounts.${expectedCount.labelIncludes}: expected ${expectedCount.count}, got ${count}; got [${resolved.sourceBreakdown.map((source) => source.label).join('; ')}]`)
+      }
+    }
+    for (const kind of want.sourceKindsInclude ?? []) {
+      if (!resolved.sourceBreakdown.some((source) => source.kind === kind)) {
+        failures.push(`${prefix}.sourceKinds missing ${kind}; got [${resolved.sourceBreakdown.map((source) => source.kind).join(', ')}]`)
+      }
+    }
+    for (const spend of want.spentResourcesInclude ?? []) {
+      const found = resolved.spentResources.find((actual) =>
+        actual.kind === spend.kind
+        && actual.name === spend.name
+        && (spend.amount === undefined || actual.amount === spend.amount)
+      )
+      if (!found) {
+        failures.push(`${prefix}.spentResources missing ${JSON.stringify(spend)}; got ${JSON.stringify(resolved.spentResources)}`)
+      }
+    }
+    if (want.applySpend) {
+      const spentState = applySf2RollResourceSpends(stateBefore, resolved.spentResources)
+      for (const trait of want.applySpend.traitUses ?? []) {
+        const actual = spentState.player.traits.find((candidate) => candidate.name === trait.name)
+        if (actual?.uses?.current !== trait.current) {
+          failures.push(`${prefix}.applySpend.trait.${trait.name}: expected ${trait.current}, got ${String(actual?.uses?.current)}`)
+        }
+      }
+      for (const item of want.applySpend.itemCharges ?? []) {
+        const actual = spentState.player.inventory.find((candidate) => candidate.name === item.name)
+        if (actual?.charges !== item.charges) {
+          failures.push(`${prefix}.applySpend.item.${item.name}: expected ${item.charges}, got ${String(actual?.charges)}`)
+        }
+      }
     }
   }
 }
@@ -3061,26 +3247,7 @@ function assertExpected(
     )
     if (match) failures.push(`npc name "${name}" exists as ${match.id}`)
   }
-  for (const identity of expected.npcIdentityIncludes ?? []) {
-    const npc = state.campaign.npcs[identity.npcId]
-    if (!npc) {
-      failures.push(`npc identity target ${identity.npcId} missing`)
-      continue
-    }
-    if (identity.pronoun !== undefined && npc.identity.pronoun !== identity.pronoun) {
-      failures.push(
-        `npc ${identity.npcId} pronoun expected ${identity.pronoun}, got ${npc.identity.pronoun ?? 'unset'}`
-      )
-    }
-    if (identity.age !== undefined && npc.identity.age !== identity.age) {
-      failures.push(`npc ${identity.npcId} age expected ${identity.age}, got ${npc.identity.age ?? 'unset'}`)
-    }
-    for (const fact of identity.profileFactsInclude ?? []) {
-      if (!(npc.identity.profileFacts ?? []).some((actual) => actual.toLowerCase().includes(fact.toLowerCase()))) {
-        failures.push(`npc ${identity.npcId} profileFacts missing "${fact}"`)
-      }
-    }
-  }
+  assertNpcIdentityIncludes(state, expected.npcIdentityIncludes, 'stateAfter', failures)
   for (const agendaExpected of expected.npcAgendasInclude ?? []) {
     const npc = state.campaign.npcs[agendaExpected.npcId]
     if (!npc) {
@@ -3463,6 +3630,26 @@ function assertExpected(
       failures.push(
         `chapterCloseReadiness.closeOrReframeDirective expected to include "${expected.chapterCloseReadiness.closeOrReframeDirectiveIncludes}", got "${readiness.closeOrReframeDirective ?? 'unset'}"`
       )
+    }
+  }
+  if (expected.postTurnPressureRecovery) {
+    const recoveryState: Sf2State = structuredClone(state)
+    const recovery = chapterPressureRuntime.recoverAfterTurn(recoveryState)
+    for (const fragment of expected.postTurnPressureRecovery.pendingRecoveryNotesInclude ?? []) {
+      const notes = recoveryState.campaign.pendingRecoveryNotes ?? []
+      if (!notes.some((note) => note.includes(fragment))) {
+        failures.push(`postTurnPressureRecovery.pendingRecoveryNotes missing "${fragment}"`)
+      }
+    }
+    for (const want of expected.postTurnPressureRecovery.eventsInclude ?? []) {
+      const match = recovery.events.find((event) => {
+        if (event.type !== want.type) return false
+        if (want.reason !== undefined && event.data.reason !== want.reason) return false
+        return true
+      })
+      if (!match) {
+        failures.push(`postTurnPressureRecovery.events missing ${JSON.stringify(want)}`)
+      }
     }
   }
   if (expected.quickActionRepair) {
@@ -3921,6 +4108,12 @@ function assertExpected(
   if (expected.currentSceneId !== undefined && expected.currentSceneId !== null) {
     if (state.meta.currentSceneId !== expected.currentSceneId) {
       failures.push(`currentSceneId expected ${expected.currentSceneId}, got ${state.meta.currentSceneId}`)
+    }
+    if (state.chapter.currentSceneId !== expected.currentSceneId) {
+      failures.push(`chapter.currentSceneId expected ${expected.currentSceneId}, got ${state.chapter.currentSceneId}`)
+    }
+    if (state.world.sceneSnapshot.sceneId !== expected.currentSceneId) {
+      failures.push(`world.sceneSnapshot.sceneId expected ${expected.currentSceneId}, got ${state.world.sceneSnapshot.sceneId}`)
     }
   }
   if (expected.currentTimeLabel !== undefined && expected.currentTimeLabel !== null) {

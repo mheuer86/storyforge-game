@@ -17,6 +17,7 @@ export function buildPlayerPacket(state: Sf2State): Sf2PlayerPacket {
     exhaustion: p.exhaustion,
     activeTraits: p.traits.map((t) => ({
       name: t.name,
+      description: t.description,
       usesRemaining: t.uses?.current,
     })),
     tempModifiers: p.tempModifiers.map((m) => `${m.source}: ${m.effect}`),

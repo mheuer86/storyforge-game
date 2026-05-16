@@ -17,7 +17,7 @@ import {
   SPACE_OPERA_DRIFTRUNNER_SEED_ID,
 } from '@/lib/sf2/game-data'
 import { chapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
-import type { Sf2State } from '@/lib/sf2/types'
+import type { Sf2RollActionOption, Sf2RollSourceBreakdown, Sf2State } from '@/lib/sf2/types'
 
 type PreviewGenre = 'space-opera' | 'epic-scifi'
 
@@ -27,6 +27,8 @@ interface MockPreview {
   pendingCheck: Sf2PendingCheckView
   rollModifier: number
   effectiveDc: number
+  rollSourceBreakdown: Sf2RollSourceBreakdown[]
+  rollActionOptions: Sf2RollActionOption[]
 }
 
 const SPACE_OPERA_ACTIONS = [
@@ -75,6 +77,7 @@ function PlayDesignPreviewContent() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pendingInput, setPendingInput] = useState('')
   const [rollResult, setRollResult] = useState<Sf2RollOutcomeView | null>(null)
+  const [selectedRollActionId, setSelectedRollActionId] = useState<string | null>(null)
   const preview = useMemo(() => buildMockPreview(previewGenre), [previewGenre])
   const pressureProjection = useMemo(
     () => chapterPressureRuntime.project(preview.state, { pivotSignaled: false }),
@@ -94,12 +97,14 @@ function PlayDesignPreviewContent() {
 
   useEffect(() => {
     setRollResult(null)
+    setSelectedRollActionId(null)
   }, [previewGenre])
 
   function resolveMockRoll() {
     const d20 = 15
     const modifier = preview.rollModifier
     const effectiveDc = preview.effectiveDc
+    const selectedAction = preview.rollActionOptions.find((option) => option.id === selectedRollActionId)
     setRollResult({
       d20,
       modifier,
@@ -108,6 +113,21 @@ function PlayDesignPreviewContent() {
       total: d20 + modifier,
       result: d20 + modifier >= effectiveDc ? 'success' : 'failure',
       skill: preview.pendingCheck.skill,
+      diceMode: selectedAction?.kind === 'advantage' ? 'advantage' : 'normal',
+      rawRolls: selectedAction?.kind === 'advantage' ? [8, d20] : undefined,
+      sourceBreakdown: selectedAction
+        ? [
+            ...preview.rollSourceBreakdown,
+            {
+              kind: selectedAction.sourceType === 'trait' ? 'selected_trait' : 'selected_item',
+              source: selectedAction.sourceName,
+              label: selectedAction.label,
+              detail: selectedAction.description,
+            },
+          ]
+        : preview.rollSourceBreakdown,
+      selectedRollAction: selectedAction,
+      spentResources: selectedAction?.spend ? [selectedAction.spend] : undefined,
       modifierType: preview.pendingCheck.modifierType,
       modifierReason: preview.pendingCheck.modifierReason,
     })
@@ -117,9 +137,9 @@ function PlayDesignPreviewContent() {
     <Sf2PlayShell
       state={preview.state}
       scrollRef={scrollRef}
-      prose=""
+      prose="The lock accepts the first half of the cipher, then stalls with HELIA listening in the metal."
       turnCommitError={null}
-      activePlayerInput=""
+      activePlayerInput="I take the panel and feed it the old Cartel cipher."
       liveRolls={pendingCheck ? [{
         id: 'preview-roll',
         proseOffset: 0,
@@ -133,6 +153,10 @@ function PlayDesignPreviewContent() {
       inspirationOffer={null}
       rollModifier={preview.rollModifier}
       effectiveDc={preview.effectiveDc}
+      rollDiceMode={selectedRollActionId ? 'advantage' : null}
+      rollSourceBreakdown={preview.rollSourceBreakdown}
+      rollActionOptions={preview.rollActionOptions}
+      selectedRollActionId={selectedRollActionId}
       inspirationRemaining={2}
       isStreaming={false}
       isArchiving={false}
@@ -148,7 +172,9 @@ function PlayDesignPreviewContent() {
       onPendingInputChange={setPendingInput}
       onSendTurn={() => {}}
       onResolvePendingCheck={resolveMockRoll}
+      onSelectRollAction={setSelectedRollActionId}
       onSpendInspiration={() => {}}
+      onSpendTraitReroll={() => {}}
       onDeclineInspiration={() => {}}
       onCloseChapter={() => {}}
       onResetCampaign={() => {}}
@@ -175,6 +201,23 @@ function buildMockPreview(genre: PreviewGenre): MockPreview {
       pendingCheck: EPIC_SCIFI_CHECK,
       rollModifier: 3,
       effectiveDc: EPIC_SCIFI_CHECK.dc + 2,
+      rollSourceBreakdown: [
+        { kind: 'stat', source: 'CHA', label: 'CHA +1', value: 1, detail: 'Authority uses presence here' },
+        { kind: 'proficiency', source: 'proficiency', label: 'Proficiency +2', value: 2 },
+        { kind: 'challenge', source: 'Synod witnesses', label: 'Challenge +2 DC', value: 2, detail: EPIC_SCIFI_CHECK.modifierReason },
+      ],
+      rollActionOptions: [
+        {
+          id: 'warden-seal-advantage',
+          kind: 'advantage',
+          sourceType: 'trait',
+          sourceId: 'warden-seal',
+          sourceName: 'Warden Seal',
+          label: 'Warden Seal: advantage',
+          description: 'Invoke institutional authority before the Prefect closes the ledger.',
+          spend: { kind: 'trait', id: 'warden-seal', name: 'Warden Seal', amount: 1, before: 1, after: 0 },
+        },
+      ],
     }
   }
 
@@ -185,6 +228,23 @@ function buildMockPreview(genre: PreviewGenre): MockPreview {
     pendingCheck: SPACE_OPERA_CHECK,
     rollModifier: 4,
     effectiveDc: SPACE_OPERA_CHECK.dc + 2,
+    rollSourceBreakdown: [
+      { kind: 'stat', source: 'INT', label: 'INT +2', value: 2, detail: 'Slicing maps to technical expertise' },
+      { kind: 'proficiency', source: 'proficiency', label: 'Proficiency +2', value: 2 },
+      { kind: 'challenge', source: 'HELIA', label: 'Challenge +2 DC', value: 2, detail: SPACE_OPERA_CHECK.modifierReason },
+    ],
+    rollActionOptions: [
+      {
+        id: 'cipher-spike-advantage',
+        kind: 'advantage',
+        sourceType: 'item',
+        sourceId: 'cipher-spike',
+        sourceName: 'Cipher Spike',
+        label: 'Cipher Spike: advantage',
+        description: 'Burn the prepared spike to gain advantage on the Slicing check.',
+        spend: { kind: 'item', id: 'cipher-spike', name: 'Cipher Spike', amount: 1, before: 1, after: 0 },
+      },
+    ],
   }
 }
 

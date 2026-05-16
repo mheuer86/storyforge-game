@@ -1288,6 +1288,7 @@ export interface AuthorChapterSetupV2 {
   startingNPCs: Array<{
     id: string
     name: string
+    pronoun?: Sf2PronounAnchor
     affiliation: string
     role: string
     voiceRegister: string
@@ -1378,8 +1379,23 @@ export interface Sf2Player {
   credits: number
   stats: { STR: number; DEX: number; CON: number; INT: number; WIS: number; CHA: number }
   proficiencies: string[]
-  inventory: Array<{ name: string; qty: number; tags?: string[] }>
-  traits: Array<{ name: string; uses?: { current: number; max: number } }>
+  inventory: Array<{
+    id?: string
+    name: string
+    description?: string
+    qty: number
+    tags?: string[]
+    damage?: string
+    effect?: string
+    charges?: number
+    maxCharges?: number
+  }>
+  traits: Array<{
+    id?: string
+    name: string
+    description?: string
+    uses?: { current: number; max: number }
+  }>
   tempModifiers: Array<{ source: string; effect: string; expiresAtTurn?: number }>
   inspiration: number
   exhaustion: number
@@ -1429,6 +1445,72 @@ export interface Sf2TurnDiffEntry {
   value?: string | number
 }
 
+export type Sf2RollResolutionKind =
+  | 'rolled'
+  | 'trait_auto_success'
+  | 'trait_auto_critical'
+
+export type Sf2RollDiceMode = 'normal' | 'advantage' | 'disadvantage'
+
+export type Sf2RollActionKind =
+  | 'advantage'
+  | 'auto_success'
+  | 'auto_critical'
+  | 'expanded_crit'
+  | 'reroll'
+
+export interface Sf2RollSourceBreakdown {
+  kind:
+    | 'stat'
+    | 'proficiency'
+    | 'flat_bonus'
+    | 'advantage'
+    | 'disadvantage'
+    | 'challenge'
+    | 'trait'
+    | 'equipment'
+    | 'origin'
+    | 'temp'
+    | 'selected_trait'
+    | 'selected_item'
+    | 'fallback'
+  source: string
+  label: string
+  value?: number
+  detail?: string
+}
+
+export interface Sf2RollResourceSpend {
+  kind: 'trait' | 'item'
+  id?: string
+  name: string
+  amount: number
+  before?: number
+  after?: number
+}
+
+export interface Sf2RollActionOption {
+  id: string
+  kind: Sf2RollActionKind
+  sourceType: 'trait' | 'item'
+  sourceId?: string
+  sourceName: string
+  label: string
+  description: string
+  spend?: Sf2RollResourceSpend
+  criticalRange?: number
+}
+
+export interface Sf2SelectedRollAction {
+  id: string
+  kind: Sf2RollActionKind
+  sourceType: 'trait' | 'item'
+  sourceId?: string
+  sourceName: string
+  label: string
+  description?: string
+}
+
 export interface Sf2RollRecord {
   turn: number
   proseOffset?: number
@@ -1439,10 +1521,17 @@ export interface Sf2RollRecord {
   skillOverrideReason?: string
   dc: number
   effectiveDc?: number
-  rollResult: number
+  rollResult?: number
   rawRolls?: number[]
   modifier: number
+  total?: number
   outcome: 'success' | 'failure' | 'critical_success' | 'critical_failure'
+  resolutionKind?: Sf2RollResolutionKind
+  diceMode?: Sf2RollDiceMode
+  criticalRange?: number
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
+  selectedRollAction?: Sf2SelectedRollAction
+  spentResources?: Sf2RollResourceSpend[]
   consequenceSummary?: string
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
   modifierReason?: string
@@ -1870,7 +1959,7 @@ export interface Sf2PlayerPacket {
   credits: number
   inspiration: number
   exhaustion: number
-  activeTraits: Array<{ name: string; usesRemaining?: number }>
+  activeTraits: Array<{ name: string; description?: string; usesRemaining?: number }>
   tempModifiers: string[]
   className: string
   originName: string

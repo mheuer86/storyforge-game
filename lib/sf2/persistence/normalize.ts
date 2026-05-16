@@ -43,6 +43,7 @@ import {
 import { compactRetrievalCue } from '../retrieval-cues'
 import { isActiveSf2Procedure, normalizeProcedureRuntime } from '../procedure'
 import type { Sf2SetupSelection } from '../setup/types'
+import { getGenreConfig, type CharacterClass, type Genre } from '../../genre-config'
 
 const RECENT_TURNS_LIMIT = 6
 const PRESSURE_EVENT_LIMIT = 50
@@ -99,10 +100,104 @@ export function normalizePersistedSf2State(
   normalizeCampaign(state, repairs)
   normalizeChapter(state, repairs)
   normalizeWorld(state, repairs)
+  normalizePlayer(state, repairs)
   normalizeHistory(state, repairs)
   normalizeDerived(state, repairs)
 
   return { state, repairs }
+}
+
+function normalizePlayer(state: Sf2State, repairs: string[]): void {
+  const playbook = findPlaybookForState(state)
+  const startingItems = playbook?.startingInventory ?? []
+  state.player.inventory = Array.isArray(state.player.inventory) ? state.player.inventory : []
+  state.player.traits = Array.isArray(state.player.traits) ? state.player.traits : []
+
+  state.player.inventory = state.player.inventory.map((item) => {
+    const raw = asRecord(item) ?? {}
+    const name = stringOr(raw.name, '')
+    const match = startingItems.find((candidate) =>
+      (typeof raw.id === 'string' && raw.id === candidate.id)
+      || normalizeLookup(candidate.name) === normalizeLookup(name)
+    )
+    const next = {
+      ...item,
+      id: stringOr(raw.id, match?.id),
+      name: name || match?.name || 'Unknown Item',
+      description: stringOr(raw.description, match?.description),
+      qty: positiveInt(raw.qty, match?.quantity ?? 1),
+      tags: Array.isArray(raw.tags) ? stringArray(raw.tags) : item.tags,
+      damage: stringOr(raw.damage, match?.damage),
+      effect: stringOr(raw.effect, match?.effect),
+      charges: raw.charges === undefined && match?.charges !== undefined
+        ? match.charges
+        : typeof raw.charges === 'number'
+          ? raw.charges
+          : undefined,
+      maxCharges: raw.maxCharges === undefined && match?.maxCharges !== undefined
+        ? match.maxCharges
+        : typeof raw.maxCharges === 'number'
+          ? raw.maxCharges
+          : undefined,
+    }
+    if (match) {
+      if (!raw.id) repairs.push(`player.inventory.${match.name}.id:hydrated`)
+      if (!raw.description) repairs.push(`player.inventory.${match.name}.description:hydrated`)
+      if (raw.charges === undefined && match.charges !== undefined) repairs.push(`player.inventory.${match.name}.charges:hydrated`)
+    }
+    return next
+  })
+
+  const playbookTrait = playbook?.trait
+  state.player.traits = state.player.traits.map((trait) => {
+    const raw = asRecord(trait) ?? {}
+    const name = stringOr(raw.name, playbookTrait?.name ?? 'Trait')
+    const isPlaybookTrait = playbookTrait && normalizeLookup(name) === normalizeLookup(playbookTrait.name)
+    const uses = asRecord(raw.uses)
+    const maxUses = isPlaybookTrait ? playbookTrait.usesPerDay : positiveInt(uses?.max, 0)
+    const currentUses = isPlaybookTrait
+      ? positiveInt(uses?.current, playbookTrait.usesRemaining ?? maxUses)
+      : positiveInt(uses?.current, maxUses)
+    const next = {
+      ...trait,
+      id: stringOr(raw.id, isPlaybookTrait ? slug(playbookTrait.name) : undefined),
+      name,
+      description: stringOr(raw.description, isPlaybookTrait ? playbookTrait.description : undefined),
+      uses: uses || maxUses > 0
+        ? { current: Math.min(currentUses, Math.max(maxUses, currentUses)), max: Math.max(maxUses, currentUses) }
+        : undefined,
+    }
+    if (isPlaybookTrait) {
+      if (!raw.id) repairs.push(`player.traits.${playbookTrait.name}.id:hydrated`)
+      if (!raw.description) repairs.push(`player.traits.${playbookTrait.name}.description:hydrated`)
+    }
+    return next
+  })
+}
+
+function findPlaybookForState(state: Sf2State): CharacterClass | null {
+  const genreId = state.meta.genreId || state.meta.setupSelection?.genreId
+  if (!genreId) return null
+  try {
+    const config = getGenreConfig(genreId as Genre)
+    const candidates = [
+      ...(state.player.origin.id ? (config.playbooks?.[state.player.origin.id] ?? []) : []),
+      ...(state.meta.setupSelection?.originId ? (config.playbooks?.[state.meta.setupSelection.originId] ?? []) : []),
+      ...Object.values(config.playbooks ?? {}).flat(),
+      ...config.classes,
+    ]
+    return candidates.find((candidate) =>
+      candidate.id === state.player.class.id
+      || candidate.name === state.player.class.name
+      || candidate.id === state.meta.playbookId
+    ) ?? null
+  } catch {
+    return null
+  }
+}
+
+function normalizeLookup(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '')
 }
 
 export function normalizeSf2StateForPersistence(state: Sf2State): Sf2State {

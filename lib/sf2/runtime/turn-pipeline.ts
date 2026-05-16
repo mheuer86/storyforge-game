@@ -29,6 +29,7 @@ import {
 import { evaluateRevelationDue, normalizeRevelationTopic } from '../retrieval/revelation-due'
 import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
+import { applySf2RollResourceSpends } from '../rolls/resolve'
 
 export type Sf2TurnPipelineEvent =
   | Sf2ReplayInvariantEvent
@@ -469,6 +470,13 @@ function logNarratedTurn(
     .length
   if (inspirationSpentCount > 0) {
     next.player.inspiration = Math.max(0, next.player.inspiration - inspirationSpentCount)
+  }
+  const rollResourceSpends = (input.narrator.rollRecords ?? [])
+    .flatMap((record) => record.spentResources ?? [])
+  if (rollResourceSpends.length > 0) {
+    const spentState = applySf2RollResourceSpends(next, rollResourceSpends)
+    next.player.traits = spentState.player.traits
+    next.player.inventory = spentState.player.inventory
   }
   next.history.rollLog.push(...(input.narrator.rollRecords ?? []))
   next.history.recentTurns = next.history.turns.slice(-6)

@@ -21,6 +21,13 @@ import {
 } from './diagnostics'
 import { buildNarratorSentinelContext } from './sentinel-context'
 import { buildReplayMetadata } from './replay-metadata'
+import type {
+  Sf2RollDiceMode,
+  Sf2RollResolutionKind,
+  Sf2RollResourceSpend,
+  Sf2RollSourceBreakdown,
+  Sf2SelectedRollAction,
+} from '../types'
 export { rollResultMessage } from './roll-result'
 
 export interface Sf2NarratorRollResolution {
@@ -28,10 +35,16 @@ export interface Sf2NarratorRollResolution {
   skill: string
   dc: number
   effectiveDc?: number
-  d20: number
+  d20?: number
   modifier: number
   total: number
   result: 'critical' | 'success' | 'failure' | 'fumble'
+  resolutionKind?: Sf2RollResolutionKind
+  diceMode?: Sf2RollDiceMode
+  criticalRange?: number
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
+  selectedRollAction?: Sf2SelectedRollAction
+  spentResources?: Sf2RollResourceSpend[]
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
   modifierReason?: string
   priorMessages: unknown[]

@@ -187,7 +187,8 @@ export function renderSceneBundle(
       `These NPCs exist in the chapter but are not on-stage right now. When the player pursues one of these roles, or the fiction calls for one of them to come into scene, use the authored id and name — do NOT invent a parallel character. Invent new NPCs only when no entry below fits the fiction's needs.`
     )
     for (const n of offstageCast) {
-      lines.push(`- **${n.name}** (${n.id}) — ${n.affiliation}${n.role ? ` · ${n.role}` : ''}${n.retrievalCue ? ` — ${n.retrievalCue}` : ''}`)
+      const identity = n.pronoun ? ` · pronoun: ${n.pronoun}` : ''
+      lines.push(`- **${n.name}** (${n.id}) — ${n.affiliation}${n.role ? ` · ${n.role}` : ''}${identity}${n.retrievalCue ? ` — ${n.retrievalCue}` : ''}`)
     }
   }
 
@@ -277,7 +278,10 @@ export function renderPerTurnDelta(
   }
   if (packet.player.activeTraits.length > 0) {
     lines.push(
-      `- Traits: ${packet.player.activeTraits.map((t) => (t.usesRemaining !== undefined ? `${t.name} (${t.usesRemaining})` : t.name)).join(', ')}`
+      `- Traits: ${packet.player.activeTraits.map((t) => {
+        const uses = t.usesRemaining !== undefined ? ` (${t.usesRemaining})` : ''
+        return t.description ? `${t.name}${uses}: ${t.description}` : `${t.name}${uses}`
+      }).join(' | ')}`
     )
   }
   if (packet.player.tempModifiers.length > 0) {
@@ -577,7 +581,10 @@ export function renderScenePacket(packet: Sf2NarratorScenePacket): string {
   }
   if (packet.player.activeTraits.length > 0) {
     lines.push(
-      `- Traits: ${packet.player.activeTraits.map((t) => (t.usesRemaining !== undefined ? `${t.name} (${t.usesRemaining})` : t.name)).join(', ')}`
+      `- Traits: ${packet.player.activeTraits.map((t) => {
+        const uses = t.usesRemaining !== undefined ? ` (${t.usesRemaining})` : ''
+        return t.description ? `${t.name}${uses}: ${t.description}` : `${t.name}${uses}`
+      }).join(' | ')}`
     )
   }
   if (packet.player.tempModifiers.length > 0) {
@@ -855,6 +862,7 @@ interface OffstageCastEntry {
   name: string
   affiliation: string
   role: string
+  pronoun?: string
   retrievalCue: string
 }
 
@@ -913,6 +921,7 @@ function buildOffstageCast(
     name: npc.name,
     affiliation: npc.affiliation,
     role: npc.role ?? '',
+    pronoun: npc.identity.pronoun,
     retrievalCue: npc.retrievalCue,
   }))
 }

@@ -1,0 +1,89 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll resolver corsair passive trait",
+  "source": {
+    "purpose": "SF2 roll resolver maps Piloting to DEX and applies Corsair Dead Eye's passive piloting expertise without spending the limited critical trait use."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera",
+        "originId": "zerith",
+        "playbookId": "corsair",
+        "setupSelection": {
+          "genreId": "space-opera",
+          "originId": "zerith",
+          "playbookId": "corsair",
+          "hookId": "fumes"
+        }
+      },
+      "player": {
+        "name": "Replay Corsair",
+        "species": "Zerith",
+        "origin": { "id": "zerith", "name": "Zerith" },
+        "class": { "id": "corsair", "name": "Corsair" },
+        "level": 1,
+        "stats": { "STR": 12, "DEX": 16, "CON": 13, "INT": 12, "WIS": 13, "CHA": 11 },
+        "proficiencies": ["Piloting", "Sharpshooting", "Acrobatics", "Mechanics"],
+        "inventory": [],
+        "traits": [
+          {
+            "id": "dead-eye",
+            "name": "Dead Eye",
+            "description": "Once per chapter, treat one ranged attack as a critical hit (on a 19-20). Also has vehicle expertise: advantage on all piloting checks. The Zerith reflex advantage in the cockpit is real, and everyone who's flown against you knows it.",
+            "uses": { "current": 1, "max": 1 }
+          }
+        ]
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Thread the ship through the docking debris.",
+    "narrator": {
+      "prose": "The debris field closes like a jaw.",
+      "annotation": {
+        "suggested_actions": ["Burn hard through the debris [Piloting]"],
+        "mechanical_effects": []
+      }
+    },
+    "archivist": null
+  },
+  "expected": {
+    "rollResolver": {
+      "cases": [
+        {
+          "name": "piloting uses dex and passive expertise",
+          "skill": "Piloting",
+          "dc": 14,
+          "expect": {
+            "ability": "DEX",
+            "proficient": true,
+            "modifier": 5,
+            "diceMode": "advantage",
+            "sourceLabelsInclude": ["DEX +3", "Proficiency +2", "Dead Eye: advantage"],
+            "sourceLabelCounts": [{ "labelIncludes": "Dead Eye: advantage", "count": 1 }],
+            "sourceKindsInclude": ["advantage"]
+          }
+        },
+        {
+          "name": "dead eye ranged critical option",
+          "skill": "Sharpshooting",
+          "dc": 15,
+          "selectedActionLabelIncludes": "Dead Eye",
+          "expect": {
+            "ability": "DEX",
+            "proficient": true,
+            "modifier": 5,
+            "criticalRange": 19,
+            "actionOptionKindsInclude": ["expanded_crit"],
+            "spentResourcesInclude": [{ "kind": "trait", "name": "Dead Eye", "amount": 1 }],
+            "sourceLabelsInclude": ["Dead Eye: crit on 19-20"],
+            "applySpend": {
+              "traitUses": [{ "name": "Dead Eye", "current": 0 }]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -93,13 +93,21 @@ function buildPlayerFromSeed(seed: AuthorInputSeed, playerName: string): Sf2Play
     stats: { ...playbook.stats },
     proficiencies: [...playbook.proficiencies],
     inventory: playbook.startingInventory.map((item) => ({
+      id: item.id,
       name: item.name,
+      description: item.description,
       qty: item.quantity,
       tags: tagsForStartingItem(item),
+      damage: item.damage,
+      effect: item.effect,
+      charges: item.charges,
+      maxCharges: item.maxCharges,
     })),
     traits: [
       {
+        id: playbook.trait.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
         name: playbook.trait.name,
+        description: playbook.trait.description,
         uses: { current: playbook.trait.usesRemaining ?? traitUses, max: traitUses },
       },
     ],

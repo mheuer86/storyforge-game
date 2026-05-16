@@ -28,7 +28,15 @@ import { cn } from '@/lib/utils'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { Sf2SaveSlotData, Sf2SaveSlotNumber } from '@/lib/sf2/persistence/types'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
-import type { Sf2State, Sf2TurnDiffEntry } from '@/lib/sf2/types'
+import type {
+  Sf2RollActionOption,
+  Sf2RollDiceMode,
+  Sf2RollResolutionKind,
+  Sf2RollSourceBreakdown,
+  Sf2SelectedRollAction,
+  Sf2State,
+  Sf2TurnDiffEntry,
+} from '@/lib/sf2/types'
 
 const DiagnosticsPanel = dynamic(() => import('./diagnostics-panel'), { ssr: false })
 type StatLabels = { hp: string; defense: string; currency: string; inspiration: string }
@@ -62,13 +70,19 @@ export interface Sf2PendingCheckView {
 }
 
 export interface Sf2RollOutcomeView {
-  d20: number
+  d20?: number
   rawRolls?: number[]
   modifier: number
   total: number
   dc: number
   effectiveDc?: number
   result: 'critical' | 'success' | 'failure' | 'fumble'
+  resolutionKind?: Sf2RollResolutionKind
+  diceMode?: Sf2RollDiceMode
+  criticalRange?: number
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
+  selectedRollAction?: Sf2SelectedRollAction
+  spentResources?: Array<{ kind: 'trait' | 'item'; id?: string; name: string; amount: number; before?: number; after?: number }>
   skill?: string
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
   modifierReason?: string
@@ -118,6 +132,10 @@ interface Sf2PlayShellProps {
   inspirationOffer: Sf2RollOutcomeView | null
   rollModifier: number | null
   effectiveDc: number | null
+  rollDiceMode: Sf2RollDiceMode | null
+  rollSourceBreakdown: Sf2RollSourceBreakdown[]
+  rollActionOptions: Sf2RollActionOption[]
+  selectedRollActionId: string | null
   inspirationRemaining: number
   isStreaming: boolean
   isArchiving: boolean
@@ -133,7 +151,9 @@ interface Sf2PlayShellProps {
   onPendingInputChange: (value: string) => void
   onSendTurn: (input: string) => void
   onResolvePendingCheck: () => void
+  onSelectRollAction: (id: string | null) => void
   onSpendInspiration: () => void
+  onSpendTraitReroll: (id: string) => void
   onDeclineInspiration: () => void
   onCloseChapter: () => void
   onResetCampaign: () => void
@@ -217,6 +237,10 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     inspirationOffer,
     rollModifier,
     effectiveDc,
+    rollDiceMode,
+    rollSourceBreakdown,
+    rollActionOptions,
+    selectedRollActionId,
     inspirationRemaining,
     isStreaming,
     isArchiving,
@@ -232,7 +256,9 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     onPendingInputChange,
     onSendTurn,
     onResolvePendingCheck,
+    onSelectRollAction,
     onSpendInspiration,
+    onSpendTraitReroll,
     onDeclineInspiration,
     onCloseChapter,
     onResetCampaign,
@@ -405,6 +431,10 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 inspirationOffer={inspirationOffer}
                 rollModifier={rollModifier}
                 effectiveDc={effectiveDc}
+                rollDiceMode={rollDiceMode}
+                rollSourceBreakdown={rollSourceBreakdown}
+                rollActionOptions={rollActionOptions}
+                selectedRollActionId={selectedRollActionId}
                 inspirationRemaining={inspirationRemaining}
                 rollBusy={busy && !pendingCheck}
                 rollLogByTurn={rollLogByTurn}
@@ -415,7 +445,9 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 isArchiving={isArchiving}
                 chapterTurnCount={chapterTurnCount}
                 onResolvePendingCheck={onResolvePendingCheck}
+                onSelectRollAction={onSelectRollAction}
                 onSpendInspiration={onSpendInspiration}
+                onSpendTraitReroll={onSpendTraitReroll}
                 onDeclineInspiration={onDeclineInspiration}
                 actionSurface={(
                   <ActionSurface
@@ -1279,6 +1311,10 @@ function TurnStream({
   inspirationOffer,
   rollModifier,
   effectiveDc,
+  rollDiceMode,
+  rollSourceBreakdown,
+  rollActionOptions,
+  selectedRollActionId,
   inspirationRemaining,
   rollBusy,
   rollLogByTurn,
@@ -1289,7 +1325,9 @@ function TurnStream({
   isArchiving,
   chapterTurnCount,
   onResolvePendingCheck,
+  onSelectRollAction,
   onSpendInspiration,
+  onSpendTraitReroll,
   onDeclineInspiration,
   actionSurface,
 }: {
@@ -1302,6 +1340,10 @@ function TurnStream({
   inspirationOffer: Sf2RollOutcomeView | null
   rollModifier: number | null
   effectiveDc: number | null
+  rollDiceMode: Sf2RollDiceMode | null
+  rollSourceBreakdown: Sf2RollSourceBreakdown[]
+  rollActionOptions: Sf2RollActionOption[]
+  selectedRollActionId: string | null
   inspirationRemaining: number
   rollBusy: boolean
   rollLogByTurn: Map<number, Sf2State['history']['rollLog']>
@@ -1312,7 +1354,9 @@ function TurnStream({
   isArchiving: boolean
   chapterTurnCount: number
   onResolvePendingCheck: () => void
+  onSelectRollAction: (id: string | null) => void
   onSpendInspiration: () => void
+  onSpendTraitReroll: (id: string) => void
   onDeclineInspiration: () => void
   actionSurface: ReactNode
 }) {
@@ -1373,10 +1417,16 @@ function TurnStream({
                     inspirationOffer={index === liveRolls.length - 1 ? inspirationOffer : null}
                     modifier={rollModifier}
                     effectiveDc={effectiveDc}
+                    diceMode={index === liveRolls.length - 1 ? rollDiceMode : null}
+                    sourceBreakdown={index === liveRolls.length - 1 ? rollSourceBreakdown : []}
+                    actionOptions={index === liveRolls.length - 1 ? rollActionOptions : []}
+                    selectedRollActionId={index === liveRolls.length - 1 ? selectedRollActionId : null}
                     inspirationRemaining={inspirationRemaining}
                     busy={rollBusy}
                     onRoll={onResolvePendingCheck}
+                    onSelectRollAction={onSelectRollAction}
                     onSpendInspiration={onSpendInspiration}
+                    onSpendTraitReroll={onSpendTraitReroll}
                     onDeclineInspiration={onDeclineInspiration}
                   />
                 ),
@@ -1671,7 +1721,9 @@ function RollCardView({
   modifier,
   total,
   dice,
+  resolutionKind,
   modifierType,
+  sourceBreakdown,
   originalRoll,
   actionLabel,
   rolling,
@@ -1685,7 +1737,9 @@ function RollCardView({
   modifier?: number | null
   total?: number | null
   dice: DieView[]
+  resolutionKind?: Sf2RollResolutionKind
   modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
+  sourceBreakdown?: Sf2RollSourceBreakdown[]
   originalRoll?: OriginalRollView
   actionLabel?: string
   rolling?: boolean
@@ -1702,8 +1756,11 @@ function RollCardView({
         ? 'challenge'
         : null
   const breakdown = resolved && total !== null && total !== undefined && modifier !== null && modifier !== undefined
-    ? formatRollMath(dice, modifier, total, dc)
+    ? formatRollMath(dice, modifier, total, dc, resolutionKind)
     : null
+  const visibleSources = (sourceBreakdown ?? []).filter((source) =>
+    source.kind !== 'stat' || source.value !== 0
+  ).slice(0, 7)
 
   const advantageChip = advantageLabel ? (
     <span className={cn(
@@ -1737,6 +1794,13 @@ function RollCardView({
         {breakdown && (
           <div className="mt-2 font-mono text-[12px] tabular-nums text-foreground/75 md:text-[13px]">
             {breakdown}
+          </div>
+        )}
+        {visibleSources.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {visibleSources.map((source, index) => (
+              <RollSourceChip key={`${source.kind}-${source.source}-${index}`} source={source} />
+            ))}
           </div>
         )}
         {reason && (
@@ -1827,7 +1891,38 @@ function OriginalRollStrip({ original }: { original: OriginalRollView }) {
   )
 }
 
-function formatRollMath(dice: DieView[], modifier: number, total: number, dc: number | null) {
+function RollSourceChip({ source }: { source: Sf2RollSourceBreakdown }) {
+  const tone = source.kind === 'disadvantage' || source.kind === 'challenge'
+    ? 'warning'
+    : source.kind === 'advantage' || source.kind === 'selected_trait' || source.kind === 'selected_item'
+      ? 'success'
+      : 'neutral'
+  return (
+    <span
+      title={source.detail}
+      className={cn(
+        'rounded border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.11em]',
+        tone === 'success' && 'border-success/35 bg-success/10 text-success',
+        tone === 'warning' && 'border-warning/35 bg-warning/10 text-warning',
+        tone === 'neutral' && 'border-border/35 bg-background/45 text-muted-foreground',
+      )}
+    >
+      {source.label}
+    </span>
+  )
+}
+
+function formatRollMath(
+  dice: DieView[],
+  modifier: number,
+  total: number,
+  dc: number | null,
+  resolutionKind?: Sf2RollResolutionKind
+) {
+  if (resolutionKind === 'trait_auto_success' || resolutionKind === 'trait_auto_critical') {
+    const dcText = dc !== null ? ` vs DC ${dc}` : ''
+    return `trait result = ${total}${dcText}`
+  }
   const kept = dice.find((d) => d.state === 'kept') ?? dice[0]
   const keptValue = typeof kept?.value === 'number' ? kept.value : null
   if (keptValue === null) return null
@@ -1836,7 +1931,12 @@ function formatRollMath(dice: DieView[], modifier: number, total: number, dc: nu
   return `${keptValue}${modText} = ${total}${dcText}`
 }
 
-function diceForResolved(d20: number, rawRolls: number[] | undefined, modifierType: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge' | undefined): DieView[] {
+function diceForResolved(
+  d20: number | undefined,
+  rawRolls: number[] | undefined,
+  modifierType: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge' | undefined
+): DieView[] {
+  if (d20 === undefined) return [{ value: 'Trait', state: 'kept' }]
   if (rawRolls && rawRolls.length > 1 && (modifierType === 'advantage' || modifierType === 'disadvantage')) {
     const keptIndex = rawRolls.findIndex((r) => r === d20)
     return rawRolls.map((r, i) => ({
@@ -1850,7 +1950,7 @@ function diceForResolved(d20: number, rawRolls: number[] | undefined, modifierTy
 function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number] }) {
   const tone = rollToneForHistory(roll.outcome)
   const dc = roll.effectiveDc ?? roll.dc
-  const total = roll.rollResult + roll.modifier
+  const total = roll.total ?? (roll.rollResult !== undefined ? roll.rollResult + roll.modifier : roll.effectiveDc ?? roll.dc)
   const failureReason =
     roll.outcome === 'failure' || roll.outcome === 'critical_failure'
       ? roll.consequenceSummary
@@ -1875,7 +1975,9 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
       modifier={roll.modifier}
       total={total}
       dice={dice}
+      resolutionKind={roll.resolutionKind}
       modifierType={roll.modifierType}
+      sourceBreakdown={roll.sourceBreakdown}
       originalRoll={originalRoll}
     />
   )
@@ -2008,10 +2110,16 @@ function DiceTray({
   inspirationOffer,
   modifier,
   effectiveDc,
+  diceMode,
+  sourceBreakdown,
+  actionOptions,
+  selectedRollActionId,
   inspirationRemaining,
   busy,
   onRoll,
+  onSelectRollAction,
   onSpendInspiration,
+  onSpendTraitReroll,
   onDeclineInspiration,
 }: {
   pendingCheck: Sf2PendingCheckView | null
@@ -2019,10 +2127,16 @@ function DiceTray({
   inspirationOffer: Sf2RollOutcomeView | null
   modifier: number | null
   effectiveDc: number | null
+  diceMode: Sf2RollDiceMode | null
+  sourceBreakdown: Sf2RollSourceBreakdown[]
+  actionOptions: Sf2RollActionOption[]
+  selectedRollActionId: string | null
   inspirationRemaining: number
   busy: boolean
   onRoll: () => void
+  onSelectRollAction: (id: string | null) => void
   onSpendInspiration: () => void
+  onSpendTraitReroll: (id: string) => void
   onDeclineInspiration: () => void
 }) {
   const [isRolling, setIsRolling] = useState(false)
@@ -2032,7 +2146,29 @@ function DiceTray({
   const tone = rollToneForResult(result?.result)
   const title = `${pendingCheck?.skill ?? result?.skill ?? 'Skill'} Check`
   const resolvedDc = result?.effectiveDc ?? result?.dc ?? effectiveDc ?? pendingCheck?.dc ?? null
-  const activeModifierType = result?.modifierType ?? pendingCheck?.modifierType
+  const activeSourceBreakdown = result?.sourceBreakdown ?? sourceBreakdown
+  const sourceAdvantage = activeSourceBreakdown.some((source) =>
+    source.kind === 'advantage'
+    || (source.kind === 'selected_trait' && /advantage/i.test(source.label))
+    || (source.kind === 'selected_item' && /advantage/i.test(source.label))
+  )
+  const sourceDisadvantage = activeSourceBreakdown.some((source) => source.kind === 'disadvantage')
+  const computedDiceMode: Sf2RollDiceMode = result?.diceMode
+    ?? diceMode
+    ?? (sourceAdvantage && !sourceDisadvantage
+      ? 'advantage'
+      : sourceDisadvantage && !sourceAdvantage
+        ? 'disadvantage'
+        : 'normal')
+  const activeModifierType = result?.modifierType
+    ?? (computedDiceMode === 'advantage' || computedDiceMode === 'disadvantage'
+      ? computedDiceMode
+      : pendingCheck?.modifierType)
+  const preRollOptions = actionOptions.filter((option) => option.kind !== 'reroll')
+  const rerollOptions = actionOptions.filter((option) => option.kind === 'reroll')
+  const selectedOption = selectedRollActionId
+    ? preRollOptions.find((option) => option.id === selectedRollActionId)
+    : undefined
   const usesTwoDice = activeModifierType === 'advantage' || activeModifierType === 'disadvantage'
 
   const dice: DieView[] = result
@@ -2044,7 +2180,7 @@ function DiceTray({
         ]
       : [{ value: display ?? 'd20', state: 'pending' }]
 
-  const originalRoll = result?.inspirationSpent && result?.originalRoll
+  const originalRoll = result?.inspirationSpent && result?.originalRoll && result.originalRoll.d20 !== undefined
     ? {
         rollResult: result.originalRoll.d20,
         modifier: result.originalRoll.modifier,
@@ -2093,30 +2229,71 @@ function DiceTray({
         modifier={result?.modifier ?? modifier}
         total={result?.total}
         dice={dice}
+        resolutionKind={result?.resolutionKind}
         modifierType={activeModifierType}
+        sourceBreakdown={activeSourceBreakdown}
         originalRoll={originalRoll}
-        actionLabel={!result ? (isRolling ? 'Rolling...' : 'Tap to roll') : undefined}
+        actionLabel={!result ? (isRolling ? 'Rolling...' : selectedOption?.kind === 'auto_success' || selectedOption?.kind === 'auto_critical' ? 'Resolve trait' : 'Tap to roll') : undefined}
         rolling={isRolling}
         disabled={busy || isRolling}
         onClick={!result && pendingCheck ? handleRoll : undefined}
       />
 
+      {!result && preRollOptions.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {preRollOptions.map((option) => {
+            const selected = selectedRollActionId === option.id
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSelectRollAction(selected ? null : option.id)}
+                title={option.description}
+                className={cn(
+                  'rounded-lg border px-3 py-2 text-left font-mono text-[11px] uppercase tracking-[0.1em] transition-[background-color,color,border-color,transform] active:scale-[0.97]',
+                  selected
+                    ? 'border-success/65 bg-success/15 text-success'
+                    : 'border-border/40 bg-background/45 text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {inspirationOffer && (
         <div className="mt-2 flex flex-col gap-2 rounded-xl border border-info/35 bg-background/55 px-3 py-3 text-info md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="font-mono text-[12px] uppercase tracking-[0.16em]">Spend inspiration?</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.16em]">Reroll failed check?</div>
             <div className="mt-1 text-[12px] text-info/80">
-              Reroll this failed check. Inspiration remaining: {inspirationRemaining}
+              {inspirationRemaining > 0
+                ? `Inspiration remaining: ${inspirationRemaining}`
+                : 'A limited trait can still change this result.'}
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onSpendInspiration}
-              className="rounded-lg border border-info/55 bg-info/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-info transition-[background-color,transform] hover:bg-info/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-info/65 active:scale-[0.96]"
-            >
-              Spend
-            </button>
+          <div className="flex flex-wrap gap-2">
+            {inspirationRemaining > 0 && (
+              <button
+                type="button"
+                onClick={onSpendInspiration}
+                className="rounded-lg border border-info/55 bg-info/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-info transition-[background-color,transform] hover:bg-info/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-info/65 active:scale-[0.96]"
+              >
+                Inspiration
+              </button>
+            )}
+            {rerollOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSpendTraitReroll(option.id)}
+                title={option.description}
+                className="rounded-lg border border-success/55 bg-success/15 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-success transition-[background-color,transform] hover:bg-success/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-success/65 active:scale-[0.96]"
+              >
+                {option.sourceName}
+              </button>
+            ))}
             <button
               type="button"
               onClick={onDeclineInspiration}

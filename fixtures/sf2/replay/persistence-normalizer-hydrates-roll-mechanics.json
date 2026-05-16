@@ -1,0 +1,59 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer hydrates roll mechanics",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Old SF2 saves that only stored item names and quantities are hydrated with playbook trait descriptions, item ids, effects, and charges for the roll resolver."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_legacy_roll_mechanics",
+          "createdAt": "2026-05-16T00:00:00.000Z",
+          "updatedAt": "2026-05-16T00:05:00.000Z",
+          "schemaVersion": "3.1.0",
+          "genreId": "space-opera",
+          "originId": "human",
+          "playbookId": "operative",
+          "currentChapter": 1,
+          "currentSceneId": "scene_intake",
+          "currentTimeLabel": "morning"
+        },
+        "player": {
+          "name": "Legacy Driftrunner",
+          "origin": { "id": "human", "name": "Human" },
+          "class": { "id": "operative", "name": "Driftrunner" },
+          "inventory": [
+            { "name": "Pulse Pistol", "qty": 1, "tags": ["weapon"] },
+            { "name": "Vibro-Knife", "qty": 1, "tags": ["weapon"] },
+            { "name": "Holo-Cloak", "qty": 1, "tags": ["signature"] },
+            { "name": "Lockbreaker Kit", "qty": 1, "tags": ["signature"] }
+          ],
+          "traits": [
+            { "name": "Smuggler's Luck", "uses": { "current": 1, "max": 1 } }
+          ]
+        },
+        "history": {
+          "turns": [],
+          "rollLog": []
+        }
+      },
+      "expect": {
+        "schemaVersionEquals": "3.2.0",
+        "repairsInclude": [
+          "player.inventory.Holo-Cloak.id:hydrated",
+          "player.inventory.Holo-Cloak.description:hydrated",
+          "player.inventory.Holo-Cloak.charges:hydrated",
+          "player.traits.Smuggler's Luck.id:hydrated",
+          "player.traits.Smuggler's Luck.description:hydrated"
+        ]
+      }
+    }
+  }
+}

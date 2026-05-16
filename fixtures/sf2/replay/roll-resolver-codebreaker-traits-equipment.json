@@ -1,0 +1,120 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll resolver codebreaker traits equipment",
+  "source": {
+    "purpose": "SF2 roll resolver applies specialty stat mapping, equipment flat bonuses, selected auto-success traits, and charged item activation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera",
+        "originId": "vrynn",
+        "playbookId": "codebreaker",
+        "setupSelection": {
+          "genreId": "space-opera",
+          "originId": "vrynn",
+          "playbookId": "codebreaker",
+          "hookId": "blackout"
+        }
+      },
+      "player": {
+        "name": "Replay Codebreaker",
+        "species": "Vrynn",
+        "origin": { "id": "vrynn", "name": "Vrynn" },
+        "class": { "id": "codebreaker", "name": "Codebreaker" },
+        "level": 1,
+        "stats": { "STR": 10, "DEX": 13, "CON": 12, "INT": 17, "WIS": 13, "CHA": 10 },
+        "proficiencies": ["Hacking", "Investigation", "Engineering", "Xenotech"],
+        "inventory": [
+          {
+            "id": "neural_jack_s",
+            "name": "Neural Jack",
+            "description": "+3 to all Hacking checks",
+            "qty": 1
+          },
+          {
+            "id": "holo_cloak_g",
+            "name": "Holo-Cloak",
+            "description": "Advantage on Stealth checks",
+            "qty": 1,
+            "charges": 1,
+            "maxCharges": 1
+          }
+        ],
+        "traits": [
+          {
+            "id": "system-override",
+            "name": "System Override",
+            "description": "Once per chapter, auto-succeed on one hacking check or seize a machine for 1 minute. The intrusion leaves a trace; the GM may introduce a delayed consequence.",
+            "uses": { "current": 1, "max": 1 }
+          }
+        ]
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Bypass the station lockout.",
+    "narrator": {
+      "prose": "The console waits for a choice.",
+      "annotation": {
+        "suggested_actions": ["Override the lockout [Hacking]"],
+        "mechanical_effects": []
+      }
+    },
+    "archivist": null
+  },
+  "expected": {
+    "rollResolver": {
+      "cases": [
+        {
+          "name": "neural jack hacking math",
+          "skill": "Hacking",
+          "dc": 15,
+          "expect": {
+            "ability": "INT",
+            "proficient": true,
+            "flatBonus": 3,
+            "modifier": 8,
+            "effectiveDc": 15,
+            "diceMode": "normal",
+            "actionOptionKindsInclude": ["auto_success"],
+            "actionOptionLabelsInclude": ["System Override"],
+            "sourceLabelsInclude": ["INT +3", "Proficiency +2", "Neural Jack +3"]
+          }
+        },
+        {
+          "name": "system override selected",
+          "skill": "Hacking",
+          "dc": 15,
+          "selectedActionLabelIncludes": "System Override",
+          "expect": {
+            "resolutionKind": "trait_auto_success",
+            "spentResourcesInclude": [{ "kind": "trait", "name": "System Override", "amount": 1 }],
+            "sourceLabelsInclude": ["System Override: auto-success"],
+            "applySpend": {
+              "traitUses": [{ "name": "System Override", "current": 0 }]
+            }
+          }
+        },
+        {
+          "name": "holo cloak selected stealth",
+          "skill": "Stealth",
+          "dc": 14,
+          "selectedActionLabelIncludes": "Holo-Cloak",
+          "expect": {
+            "ability": "DEX",
+            "proficient": false,
+            "modifier": 1,
+            "diceMode": "advantage",
+            "actionOptionKindsInclude": ["advantage"],
+            "sourceLabelsInclude": ["Holo-Cloak: advantage"],
+            "spentResourcesInclude": [{ "kind": "item", "name": "Holo-Cloak", "amount": 1 }],
+            "applySpend": {
+              "itemCharges": [{ "name": "Holo-Cloak", "charges": 0 }]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

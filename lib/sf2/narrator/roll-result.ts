@@ -1,16 +1,39 @@
 import type { Sf2NarratorRollResolution } from './turn-context'
 
 export function rollResultMessage(resolution: Omit<Sf2NarratorRollResolution, 'priorMessages' | 'toolUseId'>): string {
-  const { skill, dc, effectiveDc, d20, modifier, total, result, modifierType, modifierReason } = resolution
+  const {
+    skill,
+    dc,
+    effectiveDc,
+    d20,
+    modifier,
+    total,
+    result,
+    resolutionKind,
+    modifierType,
+    modifierReason,
+    selectedRollAction,
+    sourceBreakdown,
+  } = resolution
   const dcText = effectiveDc && effectiveDc !== dc ? `DC ${effectiveDc} (base ${dc})` : `DC ${dc}`
   const modifierText = modifierType
     ? ` Modifier: ${modifierType}${modifierReason ? ` (${modifierReason})` : ''}.`
     : ''
-  const base = `Roll result — ${skill} vs ${dcText}: rolled d20=${d20} + ${modifier} = ${total}.${modifierText} `
+  const sourceText = sourceBreakdown?.length
+    ? ` Sources: ${sourceBreakdown.map((source) => source.label).slice(0, 6).join('; ')}.`
+    : ''
+  const traitText = selectedRollAction
+    ? ` Selected ${selectedRollAction.sourceType}: ${selectedRollAction.label}.`
+    : ''
+  const base = resolutionKind === 'trait_auto_success' || resolutionKind === 'trait_auto_critical'
+    ? `Trait result — ${skill} vs ${dcText}: ${selectedRollAction?.label ?? 'selected trait'} resolved without a random d20. Total is recorded as ${total}.${modifierText}${sourceText}${traitText} `
+    : `Roll result — ${skill} vs ${dcText}: rolled d20=${d20} + ${modifier} = ${total}.${modifierText}${sourceText}${traitText} `
   if (result === 'critical') {
     return (
       base +
-      'Natural 20. Critical success. Narrate an exceptional outcome that pays off beyond the baseline.'
+      (resolutionKind === 'trait_auto_critical'
+        ? 'Trait-granted critical success. Narrate an exceptional outcome that pays off beyond the baseline; do not describe it as luck or a natural 20.'
+        : 'Natural 20 or expanded critical. Critical success. Narrate an exceptional outcome that pays off beyond the baseline.')
     )
   }
   if (result === 'fumble') {
