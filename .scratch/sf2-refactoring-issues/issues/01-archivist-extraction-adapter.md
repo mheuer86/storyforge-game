@@ -1,7 +1,13 @@
 # Archivist Extraction Adapter
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Agent readiness
+
+Ready for an implementation agent.
+
+No human shaping decision is open. The expected Interface and behavior-preservation boundaries are specified below. Prefer a focused extraction with one route-facing function and named internal steps, plus replay coverage for at least one newer Archivist patch lane.
 
 ## What to build
 

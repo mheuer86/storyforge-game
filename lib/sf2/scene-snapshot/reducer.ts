@@ -330,28 +330,37 @@ function reduceLocationProjection({
   raw,
   intent,
 }: LocationProjectionInput): Sf2Location {
-  let nextLocation = state.world.currentLocation
   const nextLocked = typeof snap.locked === 'boolean'
     ? snap.locked
     : typeof raw.locked === 'boolean'
       ? raw.locked
       : undefined
 
-  if (intent.locationChanged) {
-    const proposedLocation = {
-      id: intent.requestedLocationId,
-      name: snapshotString(snap, raw, 'name') ?? intent.requestedLocationId.replace(/_/g, ' '),
-      description: snapshotString(snap, raw, 'description') ??
-        (Array.isArray(snap.established)
-          ? (snap.established as string[]).join(' · ')
-          : state.world.currentLocation.description),
-      atmosphericConditions: snapshotStringArray(snap, raw, 'atmospheric_conditions') ??
-        state.world.currentLocation.atmosphericConditions,
-      locked: nextLocked,
-      chapterCreated: state.meta.currentChapter,
-    }
-    const flattened = parseFlattenedLocationAlias(state, proposedLocation)
-    const registered = flattened?.location ?? state.campaign.locations[intent.nextLocationId]
+  const proposedLocation = {
+    id: intent.requestedLocationId,
+    name: snapshotString(snap, raw, 'name') ?? intent.requestedLocationId.replace(/_/g, ' '),
+    description: snapshotString(snap, raw, 'description') ??
+      (intent.locationChanged && Array.isArray(snap.established)
+        ? (snap.established as string[]).join(' · ')
+        : undefined),
+    atmosphericConditions: snapshotStringArray(snap, raw, 'atmospheric_conditions'),
+    locked: nextLocked,
+    chapterCreated: state.meta.currentChapter,
+  }
+  const hasExplicitLocationRefinement =
+    snapshotString(snap, raw, 'name') !== undefined ||
+    snapshotString(snap, raw, 'description') !== undefined ||
+    snapshotStringArray(snap, raw, 'atmospheric_conditions') !== undefined ||
+    nextLocked !== undefined
+  const flattened = parseFlattenedLocationAlias(state, proposedLocation)
+  const registered =
+    flattened?.location ??
+    state.campaign.locations[intent.nextLocationId] ??
+    (state.world.currentLocation.id === intent.nextLocationId ? state.world.currentLocation : undefined) ??
+    (state.world.sceneSnapshot.location.id === intent.nextLocationId ? state.world.sceneSnapshot.location : undefined)
+  let nextLocation = registered ?? state.world.currentLocation
+
+  if (intent.locationChanged || flattened || hasExplicitLocationRefinement) {
     if (registered) {
       nextLocation = mergeLocationIntoExisting(registered, flattened
         ? {
@@ -359,17 +368,18 @@ function reduceLocationProjection({
             areaNodes: [flattened.areaNode],
           }
         : proposedLocation)
-      state.campaign.locations[nextLocation.id] = nextLocation
-      if (flattened) {
-        state.world.currentPosition = {
-          locationId: nextLocation.id,
-          areaNodeId: flattened.areaNode.id,
-        }
-      }
     } else {
-      nextLocation = { ...proposedLocation, id: intent.nextLocationId }
-      state.campaign.locations[nextLocation.id] = nextLocation
+      nextLocation = {
+        id: intent.nextLocationId,
+        name: proposedLocation.name,
+        description: proposedLocation.description ?? state.world.currentLocation.description,
+        atmosphericConditions: proposedLocation.atmosphericConditions ??
+          state.world.currentLocation.atmosphericConditions,
+        locked: proposedLocation.locked,
+        chapterCreated: proposedLocation.chapterCreated,
+      }
     }
+    state.campaign.locations[nextLocation.id] = nextLocation
     if (
       intent.requestedLocationId !== nextLocation.id &&
       state.campaign.locations[intent.requestedLocationId]
@@ -382,13 +392,15 @@ function reduceLocationProjection({
       delete state.campaign.locations[intent.requestedLocationId]
       replaceLocationReferences(state, intent.requestedLocationId, nextLocation)
     }
-  } else if (nextLocked !== undefined) {
-    nextLocation = {
-      ...nextLocation,
-      locked: nextLocked,
-      chapterCreated: nextLocation.chapterCreated ?? state.meta.currentChapter,
+  }
+
+  if (flattened) {
+    state.world.currentPosition = {
+      locationId: nextLocation.id,
+      areaNodeId: flattened.areaNode.id,
     }
-    state.campaign.locations[nextLocation.id] = nextLocation
+  } else if (intent.locationChanged || state.world.currentPosition?.locationId !== nextLocation.id) {
+    state.world.currentPosition = { locationId: nextLocation.id }
   }
 
   state.campaign.locations[nextLocation.id] = nextLocation
@@ -431,6 +443,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function hasTopLevelSnapshotFields(value: Record<string, unknown>): boolean {
   return [
     'location_id',
+    'scene_id',
     'present_npc_ids',
     'current_interlocutor_ids',
     'time_label',

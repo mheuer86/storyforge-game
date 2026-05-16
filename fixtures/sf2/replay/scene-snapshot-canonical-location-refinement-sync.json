@@ -1,0 +1,82 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "scene snapshot canonical location refinement sync",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Scene snapshot location refinements must update canonical campaign.locations first, then sync currentLocation and sceneSnapshot.location from that canonical projection while clearing stale area-node position on normal location transitions."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "locations": {
+          "loc_bridge": {
+            "id": "loc_bridge",
+            "name": "Bridge",
+            "description": "A bare bridge.",
+            "atmosphericConditions": ["quiet panels"],
+            "chapterCreated": 1
+          }
+        }
+      },
+      "world": {
+        "currentPosition": {
+          "locationId": "scene_intake",
+          "areaNodeId": "scene_intake_counter"
+        }
+      }
+    },
+    "playerInput": "Move to the bridge.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The bridge lights sharpen from quiet panels into red alarm glass.",
+      "annotation": {
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "scene_id": "scene_bridge_alarm",
+              "location_id": "loc_bridge",
+              "name": "Bridge",
+              "description": "A long command bridge with red alarm glass over every station.",
+              "atmospheric_conditions": ["quiet panels", "red alarm glass"],
+              "present_npc_ids": [],
+              "time_label": "red watch",
+              "established": ["The bridge is under visible alarm."]
+            }
+          }
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [],
+          "threads_touched": ["thread_spine"],
+          "decisions_implied": [],
+          "promises_implied": [],
+          "clues_dropped": []
+        },
+        "authorial_moves": {},
+        "suggested_actions": []
+      }
+    },
+    "archivist": {
+      "patch": {}
+    }
+  },
+  "expected": {
+    "currentSceneId": "scene_bridge_alarm",
+    "currentLocationId": "loc_bridge",
+    "currentAreaNodeId": null,
+    "currentTimeLabel": "red watch",
+    "locationDetailsInclude": [
+      {
+        "locationId": "loc_bridge",
+        "descriptionIncludes": "red alarm glass",
+        "atmosphericConditionsInclude": ["quiet panels", "red alarm glass"]
+      }
+    ],
+    "sceneBundleCacheCleared": true,
+    "narratorMessages": {
+      "stateBefore": "fixture-stateAfter",
+      "sceneSnapshotFirstTurnIndexEquals": 1
+    }
+  }
+}

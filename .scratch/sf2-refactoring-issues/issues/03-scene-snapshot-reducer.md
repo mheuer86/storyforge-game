@@ -1,7 +1,15 @@
 # Scene Snapshot Reducer
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Agent readiness
+
+Ready for an implementation agent.
+
+No human shaping decision is open. The location-storage decision is settled for this slice: keep embedded `SceneSnapshot.location`, but treat it as a synchronized runtime projection from canonical `campaign.locations`.
+
+This is the largest and highest-risk remaining ticket. It is still AFK-pick-up-able, but the agent should run focused scene/location fixtures before the full replay suite.
 
 ## What to build
 

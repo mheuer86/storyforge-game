@@ -632,6 +632,11 @@ interface ReplayFixture {
       idsInclude?: string[]
       idsExclude?: string[]
     }>
+    locationDetailsInclude?: Array<{
+      locationId: string
+      descriptionIncludes?: string
+      atmosphericConditionsInclude?: string[]
+    }>
     locationAreaNodes?: Array<{
       locationId: string
       idsInclude?: string[]
@@ -3597,8 +3602,12 @@ function assertExpected(
       failures.push(`currentLocation.id expected ${expected.currentLocationId}, got ${state.world.currentLocation.id}`)
     }
   }
-  if (expected.currentAreaNodeId !== undefined && expected.currentAreaNodeId !== null) {
-    if (state.world.currentPosition?.areaNodeId !== expected.currentAreaNodeId) {
+  if (expected.currentAreaNodeId !== undefined) {
+    if (expected.currentAreaNodeId === null) {
+      if (state.world.currentPosition?.areaNodeId !== undefined) {
+        failures.push(`currentPosition.areaNodeId expected unset, got ${state.world.currentPosition.areaNodeId}`)
+      }
+    } else if (state.world.currentPosition?.areaNodeId !== expected.currentAreaNodeId) {
       failures.push(`currentPosition.areaNodeId expected ${expected.currentAreaNodeId}, got ${state.world.currentPosition?.areaNodeId ?? 'unset'}`)
     }
   }
@@ -3629,6 +3638,26 @@ function assertExpected(
     for (const id of matchExpected.idsExclude ?? []) {
       if (matches.some((location) => location.id === id)) {
         failures.push(`locations matching "${matchExpected.name}" unexpectedly includes ${id}`)
+      }
+    }
+  }
+  for (const detailExpected of expected.locationDetailsInclude ?? []) {
+    const location = state.campaign.locations[detailExpected.locationId]
+    if (!location) {
+      failures.push(`locationDetails ${detailExpected.locationId} missing`)
+      continue
+    }
+    if (
+      detailExpected.descriptionIncludes !== undefined &&
+      !location.description.includes(detailExpected.descriptionIncludes)
+    ) {
+      failures.push(
+        `locationDetails ${detailExpected.locationId}.description missing "${detailExpected.descriptionIncludes}"`
+      )
+    }
+    for (const condition of detailExpected.atmosphericConditionsInclude ?? []) {
+      if (!(location.atmosphericConditions ?? []).includes(condition)) {
+        failures.push(`locationDetails ${detailExpected.locationId}.atmosphericConditions missing "${condition}"`)
       }
     }
   }

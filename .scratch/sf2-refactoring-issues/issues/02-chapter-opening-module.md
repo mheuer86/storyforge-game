@@ -1,7 +1,13 @@
 # Chapter Opening Module
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Agent readiness
+
+Ready for an implementation agent.
+
+No human shaping decision is open. The phase decision is pinned: the new Module must accept an explicit `phase: 'chapter_1' | 'continuation'` discriminant rather than inferring the branch from state.
 
 ## What to build
 
