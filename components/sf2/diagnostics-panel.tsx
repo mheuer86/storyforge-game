@@ -152,7 +152,7 @@ export default function DiagnosticsPanel(props: DiagnosticsPanelProps) {
         />
         <UtilityButton icon={<RotateCcw className="h-4 w-4" />} label="Reset campaign" onClick={onResetCampaign} />
         <a
-          href="/play"
+          href="/play/v1"
           className="inline-flex items-center justify-center gap-2 rounded border border-border/50 bg-card/55 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 md:col-span-2"
         >
           Back to v1

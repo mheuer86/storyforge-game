@@ -1,0 +1,88 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "social modifier trusted contact advantage",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A trusted NPC grants advantage for cooperative information-sharing and fills an omitted roll modifier."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "epic-scifi",
+        "originId": "undrift",
+        "playbookId": "runner"
+      },
+      "player": {
+        "origin": { "id": "undrift", "name": "Undrift" },
+        "class": { "id": "runner", "name": "Runner" },
+        "proficiencies": ["Persuasion", "Stealth", "Insight"]
+      },
+      "campaign": {
+        "npcs": {
+          "npc_nera": {
+            "id": "npc_nera",
+            "name": "Nera",
+            "affiliation": "Undrift Network",
+            "role": "network handler",
+            "status": "alive",
+            "disposition": "trusted",
+            "identity": {
+              "keyFacts": ["Maintains checkpoint movement reports"],
+              "voice": { "note": "plain and fast", "register": "intimate" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Trusted Undrift handler with checkpoint intelligence.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_nera"],
+          "currentInterlocutorIds": ["npc_nera"]
+        }
+      }
+    },
+    "turnIndex": 4,
+    "playerInput": "I ask Nera to share what the network knows about the checkpoint patrol.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "socialModifierAdvisories": {
+      "skill": "Persuasion",
+      "countEquals": 1,
+      "includes": [
+        {
+          "id": "disposition_trusted_npc_nera",
+          "source": "disposition",
+          "modifierType": "advantage",
+          "targetNpcId": "npc_nera",
+          "reasonIncludes": "Nera is trusted"
+        }
+      ],
+      "reconciliation": {
+        "skill": "Persuasion",
+        "modifierType": "advantage",
+        "modifierReasonIncludes": [
+          "Nera is trusted",
+          "cooperative help or information-sharing"
+        ]
+      }
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "playerInput": "I ask Nera to share what the network knows about the checkpoint patrol.",
+      "userMessageContainsAll": [
+        "### Private social roll modifier advisories (never mention)",
+        "ADVANTAGE [disposition",
+        "Nera is trusted"
+      ]
+    }
+  }
+}

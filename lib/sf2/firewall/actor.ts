@@ -26,6 +26,7 @@ const ALLOWED: Record<Sf2Actor, ReadonlySet<Sf2WriteKind>> = {
   code: new Set<Sf2WriteKind>([
     'face_shift',
     'ladder_fire',
+    'passive_awareness_delivered',
     'working_set_compute',
     'cohesion_recompute',
     'drift_flag',

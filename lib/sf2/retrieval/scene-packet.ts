@@ -20,6 +20,7 @@ import { buildWorkingSet } from './working-set'
 import { renderBeatModeBlock } from '../beat-mode'
 import { evaluateRevelationDue } from './revelation-due'
 import { buildAtmosphericConditions } from '../atmosphere'
+import { evaluatePassiveAwareness } from '../passive-awareness/evaluate'
 
 export function buildScenePacket(
   state: Sf2State,
@@ -65,6 +66,11 @@ export function buildScenePacket(
     operationPlan: state.campaign.operationPlan,
     recentContext: buildRecentContextPacket(state),
     pacing: computePacingAdvisory(state),
+    passiveAwareness: evaluatePassiveAwareness({
+      state,
+      sceneId: state.world.sceneSnapshot.sceneId,
+      turnIndex,
+    }),
     playerInput: { text: playerInput, inferredIntent: '', resolvedAction },
   }
 
@@ -351,6 +357,10 @@ export function renderPerTurnDelta(
 
   if (packet.mechanics.beatMode) {
     lines.push(`\n${renderBeatModeBlock(packet.mechanics.beatMode.mode)}`)
+  }
+
+  if (packet.passiveAwareness.advisoryText) {
+    lines.push(`\n${packet.passiveAwareness.advisoryText}`)
   }
 
   if (packet.mechanics.activeModules.length > 0) {

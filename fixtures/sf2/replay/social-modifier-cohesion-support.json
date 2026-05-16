@@ -1,0 +1,66 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "social modifier cohesion support",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "When derived cohesion is present, crew-supported social checks receive a cohesion advisory without inventing cohesion."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera",
+        "originId": "drifter",
+        "playbookId": "captain"
+      },
+      "player": {
+        "origin": { "id": "drifter", "name": "Drifter" },
+        "class": { "id": "captain", "name": "Captain" },
+        "proficiencies": ["Persuasion", "Piloting", "Insight"]
+      },
+      "derived": {
+        "cohesion": 5
+      }
+    },
+    "turnIndex": 5,
+    "playerInput": "I coordinate with my crew and ask them to back me while I negotiate with the dockmaster.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "socialModifierAdvisories": {
+      "skill": "Persuasion",
+      "countEquals": 1,
+      "includes": [
+        {
+          "id": "cohesion_high_support",
+          "source": "cohesion",
+          "modifierType": "advantage",
+          "reasonIncludes": "High cohesion (5/5)"
+        }
+      ],
+      "renderedIncludes": [
+        "ADVANTAGE [cohesion",
+        "High cohesion (5/5)"
+      ],
+      "reconciliation": {
+        "skill": "Persuasion",
+        "modifierType": "advantage",
+        "modifierReasonIncludes": [
+          "High cohesion (5/5)",
+          "coordinated crew or contact-backed checks"
+        ]
+      }
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "playerInput": "I coordinate with my crew and ask them to back me while I negotiate with the dockmaster.",
+      "userMessageContainsAll": [
+        "### Private social roll modifier advisories (never mention)",
+        "High cohesion (5/5) supports coordinated crew or contact-backed checks."
+      ]
+    }
+  }
+}

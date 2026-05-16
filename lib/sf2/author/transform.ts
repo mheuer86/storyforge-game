@@ -148,6 +148,8 @@ export function transformAuthorSetup(
     })),
     continuationMoves: authored.continuationMoves,
     continuationDramaticTurn: authored.continuationDramaticTurn,
+    passiveAwarenessCues: [],
+    passiveAwarenessDelivered: {},
   }
 
   // Opening visibility: prefer the Author's explicit visibleNpcIds (new field)

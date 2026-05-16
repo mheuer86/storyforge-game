@@ -1,0 +1,52 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "passive awareness: under-threshold cue stays private",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verifies that below-threshold passive awareness cues are not rendered into Narrator context and do not create missed-detail prose pressure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "stats": { "WIS": 10 },
+        "proficiencies": []
+      },
+      "chapter": {
+        "scaffolding": {
+          "passiveAwarenessCues": [
+            {
+              "id": "passive_repeating_drone",
+              "kind": "surveillance_trace",
+              "passiveDc": 14,
+              "surfaceText": "The same maintenance drone has crossed the corridor three times without servicing anything.",
+              "sceneId": "scene_intake",
+              "source": "fixture"
+            }
+          ]
+        }
+      }
+    },
+    "playerInput": "Keep walking toward the counter.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "You cross the intake hall.",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Keep walking toward the counter.",
+      "userMessageContainsNone": [
+        "Passive awareness met",
+        "maintenance drone has crossed"
+      ]
+    },
+    "perTurnDeltaExcludes": [
+      "maintenance drone has crossed",
+      "do not notice"
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import {
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
 import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
+import { reconcileRollModifierWithSocialAdvisories } from '@/lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2NarratorStreamEvent } from '@/lib/sf2/narrator/stream-protocol'
@@ -92,6 +93,10 @@ function bindRequiredRollGateSkill(
     intendedSkills: gate.skills,
     skillOverrideReason: `SF2 skill-tag override: Narrator requested ${requestedSkill || '(blank)'} but player tagged ${gate.skills.join(' or ')}.`,
   }
+}
+
+function dropUndefinedFields<T extends Record<string, unknown>>(value: T): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined))
 }
 
 // Salvage layer for malformed/incomplete narrate_turn tool input. Two failure
@@ -505,9 +510,35 @@ export async function POST(req: NextRequest) {
             modifier_reason?: string
           }
           const skillBinding = bindRequiredRollGateSkill(input.skill, turnContext)
+          const rollModifier = reconcileRollModifierWithSocialAdvisories({
+            state,
+            playerInput: turnContext.intentQueue.current.text || playerInput,
+            skill: skillBinding.skill,
+            requestedModifierType: input.modifier_type,
+            requestedModifierReason: input.modifier_reason,
+          })
+          if (rollModifier.diagnostics.length > 0) {
+            console.warn('[sf2/narrator] social roll modifier reconciliation', {
+              diagnostics: rollModifier.diagnostics,
+              turnIndex: state.history.turns.length,
+              skill: skillBinding.skill,
+            })
+          }
+          const completedContentForResume = completed.content.map((block) => {
+            if (block.type !== 'tool_use' || block.id !== rollUse.id) return block
+            return {
+              ...block,
+              input: dropUndefinedFields({
+                ...input,
+                skill: skillBinding.skill,
+                modifier_type: rollModifier.modifierType,
+                modifier_reason: rollModifier.modifierReason,
+              }),
+            }
+          })
           const priorMessages: Anthropic.MessageParam[] = [
             ...turnContext.messages,
-            { role: 'assistant' as const, content: completed.content },
+            { role: 'assistant' as const, content: completedContentForResume },
           ]
           send({
             type: 'roll_prompt',
@@ -519,8 +550,8 @@ export async function POST(req: NextRequest) {
             dc: input.dc,
             why: input.why,
             consequenceOnFail: input.consequence_on_fail,
-            modifierType: input.modifier_type,
-            modifierReason: input.modifier_reason,
+            modifierType: rollModifier.modifierType,
+            modifierReason: rollModifier.modifierReason,
             priorMessages,
             ...buildSf2RollPromptIntentResume(turnContext.intentQueue),
           })

@@ -1,0 +1,59 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "passive awareness: over-threshold cue enters narrator context once",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verifies that an explicit passive awareness cue whose DC is met appears in the dynamic Narrator context and is marked delivered after the turn so it does not repeat."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "stats": { "WIS": 14 },
+        "proficiencies": ["Perception"]
+      },
+      "chapter": {
+        "scaffolding": {
+          "passiveAwarenessCues": [
+            {
+              "id": "passive_damp_sleeve",
+              "kind": "npc_tell",
+              "passiveDc": 13,
+              "surfaceText": "The clerk's sleeve is damp with disinfectant, but there is no clinic smell in the office.",
+              "followupQuestion": "Why is a registry clerk carrying fresh clinic residue?",
+              "sceneId": "scene_intake",
+              "source": "fixture"
+            }
+          ]
+        }
+      }
+    },
+    "playerInput": "Wait and take in the room before speaking.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "You let the room breathe for a beat.",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Wait and take in the room before speaking.",
+      "userMessageContainsAll": [
+        "Passive awareness met",
+        "The clerk's sleeve is damp with disinfectant",
+        "observable surface details only"
+      ]
+    },
+    "invariantEventDetailIncludes": [
+      {
+        "type": "actor_firewall_observation",
+        "detailIncludes": "code:passive_awareness_delivered observed within ownership contract"
+      }
+    ],
+    "perTurnDeltaExcludes": [
+      "The clerk's sleeve is damp with disinfectant"
+    ]
+  }
+}

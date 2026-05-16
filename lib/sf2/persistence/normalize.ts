@@ -27,6 +27,8 @@ import {
   type Sf2Thread,
   type Sf2Clue,
   type Sf2ClueEvidenceKind,
+  type Sf2PassiveAwarenessCue,
+  type Sf2PassiveAwarenessKind,
   type Sf2ThreadResolutionMode,
   type Sf2ThreadStatus,
 } from '../types'
@@ -40,6 +42,7 @@ import {
 } from '../thread-resolution'
 import { compactRetrievalCue } from '../retrieval-cues'
 import { isActiveSf2Procedure, normalizeProcedureRuntime } from '../procedure'
+import type { Sf2SetupSelection } from '../setup/types'
 
 const RECENT_TURNS_LIMIT = 6
 const PRESSURE_EVENT_LIMIT = 50
@@ -61,6 +64,14 @@ const PRESSURE_EVENT_SEVERITIES: NonNullable<Sf2PressureEvent['severity']>[] = [
   'standard',
   'hard',
 ]
+const PASSIVE_AWARENESS_KINDS: Sf2PassiveAwarenessKind[] = [
+  'environmental_detail',
+  'hazard_sign',
+  'surveillance_trace',
+  'tail_sign',
+  'npc_tell',
+  'procedure_affordance',
+]
 
 export interface Sf2PersistenceNormalizeReport {
   state: Sf2State
@@ -79,7 +90,8 @@ export function normalizePersistedSf2State(
   const rawPlayer = asRecord(raw.player)
   const playerName = stringOr(rawPlayer?.name, 'Ren')
   const seedId = stringOr(rawMeta?.seedId, undefined)
-  const base = createInitialSf2State({ campaignId, playerName, seedId })
+  const setupSelection = setupSelectionOr(rawMeta?.setupSelection)
+  const base = createInitialSf2State({ campaignId, playerName, seedId, setupSelection })
   const state = deepMerge(base, raw) as Sf2State
   const repairs: string[] = []
 
@@ -113,12 +125,33 @@ function normalizeMeta(
   if (meta.schemaVersion !== SF2_SCHEMA_VERSION) repairs.push(`meta.schemaVersion:${String(meta.schemaVersion)}→${SF2_SCHEMA_VERSION}`)
   meta.schemaVersion = SF2_SCHEMA_VERSION
   meta.seedId = stringOr(meta.seedId, fallback.seedId)
+  meta.setupSelection = setupSelectionOr(meta.setupSelection) ?? fallback.setupSelection
+  meta.hookId = stringOr(meta.hookId, fallback.hookId)
+  meta.hookTitle = stringOr(meta.hookTitle, fallback.hookTitle)
   meta.genreId = stringOr(meta.genreId, fallback.genreId)
   meta.playbookId = stringOr(meta.playbookId, fallback.playbookId)
   meta.originId = stringOr(meta.originId, fallback.originId)
   meta.currentChapter = positiveInt(meta.currentChapter, fallback.currentChapter) as Sf2ChapterNumber
   meta.currentSceneId = stringOr(meta.currentSceneId, fallback.currentSceneId)
   meta.currentTimeLabel = stringOr(meta.currentTimeLabel, fallback.currentTimeLabel)
+}
+
+function setupSelectionOr(value: unknown): Sf2SetupSelection | undefined {
+  const record = asRecord(value)
+  if (!record) return undefined
+  const genreId = stringOr(record.genreId, '')
+  const originId = stringOr(record.originId, '')
+  const playbookId = stringOr(record.playbookId, '')
+  const hookId = stringOr(record.hookId, '')
+  if (!genreId || !originId || !playbookId || !hookId) return undefined
+  const characterName = stringOr(record.characterName, undefined)
+  return {
+    genreId,
+    originId,
+    playbookId,
+    hookId,
+    ...(characterName ? { characterName } : {}),
+  }
 }
 
 function normalizeCampaign(state: Sf2State, repairs: string[]): void {
@@ -278,6 +311,13 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
   state.chapter.scaffolding.escalationOptions = Array.isArray(state.chapter.scaffolding.escalationOptions)
     ? state.chapter.scaffolding.escalationOptions.map((e) => ({ ...e, used: Boolean(e.used) }))
     : []
+  state.chapter.scaffolding.passiveAwarenessCues = normalizePassiveAwarenessCues(
+    state.chapter.scaffolding.passiveAwarenessCues,
+    repairs
+  )
+  state.chapter.scaffolding.passiveAwarenessDelivered = normalizePassiveAwarenessDelivered(
+    state.chapter.scaffolding.passiveAwarenessDelivered
+  )
   state.chapter.artifacts.opening.visibleNpcIds = stringArray(state.chapter.artifacts.opening.visibleNpcIds)
   state.chapter.artifacts.opening.visibleThreadIds = stringArray(state.chapter.artifacts.opening.visibleThreadIds)
   state.chapter.artifacts.opening.loreForOpening = Array.isArray(state.chapter.artifacts.opening.loreForOpening)
@@ -566,6 +606,75 @@ function normalizeClue(
   clue.chapterCreated = positiveInt(clue.chapterCreated, currentChapter) as Sf2ChapterNumber
   clue.turn = numberOr(clue.turn, 0)
   return clue
+}
+
+function normalizePassiveAwarenessCues(
+  raw: unknown,
+  repairs: string[]
+): Sf2PassiveAwarenessCue[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    repairs.push('chapter.scaffolding.passiveAwarenessCues:[]')
+    return []
+  }
+
+  const seen = new Set<string>()
+  const cues: Sf2PassiveAwarenessCue[] = []
+  for (const item of raw) {
+    const record = asRecord(item)
+    if (!record) {
+      repairs.push('chapter.scaffolding.passiveAwarenessCues:dropped-invalid')
+      continue
+    }
+
+    const id = stringOr(record.id, '')
+    const surfaceText = stringOr(record.surfaceText ?? record.surface_text, '')
+    const passiveDc = clamp(positiveInt(record.passiveDc ?? record.passive_dc, 12), 10, 20)
+    if (!id || seen.has(id) || !surfaceText) {
+      repairs.push('chapter.scaffolding.passiveAwarenessCues:dropped-keyless-or-empty')
+      continue
+    }
+
+    seen.add(id)
+    cues.push({
+      id,
+      kind: oneOf<Sf2PassiveAwarenessKind>(
+        record.kind,
+        PASSIVE_AWARENESS_KINDS,
+        'environmental_detail'
+      ),
+      passiveDc,
+      surfaceText,
+      followupQuestion: stringOr(record.followupQuestion ?? record.followup_question, undefined) || undefined,
+      sceneId: stringOr(record.sceneId ?? record.scene_id, undefined) || undefined,
+      locationId: stringOr(record.locationId ?? record.location_id, undefined) || undefined,
+      npcId: stringOr(record.npcId ?? record.npc_id, undefined) || undefined,
+      threadId: stringOr(record.threadId ?? record.thread_id, undefined) || undefined,
+      source: oneOf(record.source, ['author', 'runtime', 'fixture'], 'runtime'),
+    })
+  }
+
+  if (cues.length !== raw.length) {
+    repairs.push(`chapter.scaffolding.passiveAwarenessCues:kept-${cues.length}-of-${raw.length}`)
+  }
+  return cues
+}
+
+function normalizePassiveAwarenessDelivered(
+  raw: unknown
+): Record<string, { sceneId: string; turnIndex: number }> {
+  if (!isRecord(raw)) return {}
+  return Object.fromEntries(
+    Object.entries(raw)
+      .map(([cueId, value]) => {
+        const record = asRecord(value)
+        if (!record) return null
+        const sceneId = stringOr(record.sceneId ?? record.scene_id, '')
+        if (!cueId || !sceneId) return null
+        return [cueId, { sceneId, turnIndex: positiveInt(record.turnIndex ?? record.turn_index, 0) }] as const
+      })
+      .filter((entry): entry is readonly [string, { sceneId: string; turnIndex: number }] => Boolean(entry))
+  )
 }
 
 function compactRetrievalCueBucket(

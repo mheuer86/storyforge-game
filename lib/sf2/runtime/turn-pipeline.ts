@@ -1,6 +1,7 @@
 import { recordObservation } from '../firewall/actor'
 import { recordTurnTelemetry } from '../instrumentation/working-set-telemetry'
 import { chapterPressureRuntime } from '../pressure/runtime'
+import { markPassiveAwarenessDelivered } from '../passive-awareness/evaluate'
 import {
   applyMechanicalEffectLocally,
   makeInvariantEvent,
@@ -475,6 +476,21 @@ function logNarratedTurn(
   next.campaign.pendingRecoveryNotes = undefined
   next.campaign.pendingCoherenceNotes = undefined
 
+  const deliveredPassiveAwarenessCueIds = markPassiveAwarenessDelivered({
+    state: next,
+    sceneId: input.stateBefore.world.sceneSnapshot.sceneId,
+    turnIndex: input.turnIndex,
+  })
+  if (deliveredPassiveAwarenessCueIds.length > 0) {
+    invariantEvents.push(observeActorFirewallWrite(next, {
+      actor: 'code',
+      writeKind: 'passive_awareness_delivered',
+      turnIndex: input.turnIndex,
+      payload: { cueIds: deliveredPassiveAwarenessCueIds },
+      timestamp,
+    }))
+  }
+
   if (input.narrator.annotation) {
     invariantEvents.push(observeActorFirewallWrite(next, {
       actor: 'narrator',
@@ -732,6 +748,7 @@ const OBSERVABLE_WRITE_KINDS = new Set<Sf2WriteKind>([
   'anchor_attachment',
   'pacing_classification',
   'drift_flag',
+  'passive_awareness_delivered',
   'chapter_setup',
   'chapter_meaning',
   'face_shift',

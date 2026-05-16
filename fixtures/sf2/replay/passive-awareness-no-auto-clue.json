@@ -1,0 +1,63 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "passive awareness: surface cue does not auto-create clue",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verifies that passive awareness delivery is only Narrator context; it does not create durable clues without Archivist extraction."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "stats": { "WIS": 14 },
+        "proficiencies": ["Perception"]
+      },
+      "chapter": {
+        "scaffolding": {
+          "passiveAwarenessCues": [
+            {
+              "id": "passive_service_hatch",
+              "kind": "procedure_affordance",
+              "passiveDc": 12,
+              "surfaceText": "A service hatch beside the intake counter has fresh scrape marks around the latch.",
+              "sceneId": "scene_intake",
+              "source": "fixture"
+            }
+          ]
+        }
+      }
+    },
+    "playerInput": "Study the counter before asking for the file.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Fresh scrape marks catch the light around the service hatch beside the counter, close enough to matter and ordinary enough that nobody on staff looks at it.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "creates": [],
+        "updates": [],
+        "transitions": [],
+        "attachments": [],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Study the counter before asking for the file.",
+      "userMessageContainsAll": [
+        "Passive awareness met",
+        "service hatch beside the intake counter has fresh scrape marks"
+      ]
+    },
+    "cluesCount": 0,
+    "entityIdsAbsent": ["clue_service_hatch_scrapes"]
+  }
+}

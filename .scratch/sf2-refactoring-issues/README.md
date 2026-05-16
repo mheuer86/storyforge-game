@@ -14,6 +14,10 @@ Selected first:
 8. Narrator Prompt Surface Module - implemented
 9. Narrator Prompt Facade Import Cleanup - satisfied by 08 implementation
 10. Narrator Turn Context Orchestrator Cleanup - implemented as part of 08 scope
+11. Social Roll Modifier Advisories - implemented
+12. SF2 Setup Compiler For V1 Hooks And Playbooks - implemented
+13. Passive Perception Equivalent - implemented
+14. Wire Public Play Route To SF2 - implemented
 
 ## Current status after Ticket 08
 
@@ -67,3 +71,37 @@ Key prompt-surface decisions from shaping:
 - `buildNarratorSituation(state)` can move, but its output must be byte-equivalent.
 - The boundary between cached chapter situation, cached scene bundle, and per-turn mutable delta is not in scope to change.
 - Fixtures are required for validation, using the existing SF2 replay harness.
+
+## Current status after V1 carry-over shaping
+
+The first post-audit V1 carry-over decisions were made on 2026-05-16.
+
+Tickets 11-14 were implemented on 2026-05-16:
+
+- `11-social-roll-modifier-advisories.md`: SF2-native social modifier advisories and roll reconciliation landed with origin/disposition/cohesion fixtures.
+- `12-sf2-setup-compiler-for-v1-hooks-and-playbooks.md`: SF2 setup now compiles V1 genre/origin/playbook/hook selections into `AuthorInputSeed` while preserving Arc Author -> Chapter Author -> Narrator startup.
+- `13-passive-perception-equivalent.md`: passive Perception evaluates explicit surface-detail cues into dynamic Narrator context and marks delivered cues to avoid repeat spam.
+- `14-wire-public-play-route-to-sf2.md`: `/play` now renders the gated SF2 app, `/play/v2` is an alias, and legacy V1 is available at `/play/v1`.
+
+Post-14 verification:
+
+- Focused new fixtures passed.
+- `npm run sf2:replay -- fixtures/sf2/replay` passed: 233/233.
+- `npm run build` passed.
+- Browser smoke on `http://localhost:3001`: `/play?byok=1` BYOK gate, `/play` SF2 setup/create/reload, `/play/v2` alias, `/play/v1` legacy route, and diagnostics copy controls all worked. Live Arc Author / Chapter Author model calls were not run with the smoke's dummy local BYOK key.
+
+Implemented carry-over slices:
+
+- `11-social-roll-modifier-advisories.md`: bring over origin as persistent social modifier, plus disposition/cohesion/origin based advantage/disadvantage advisories. This should be SF2-native and code-owned, not copied as V1 prompt prose.
+- `12-sf2-setup-compiler-for-v1-hooks-and-playbooks.md`: let SF2 start from the existing V1 genre/origin/playbook/opening-hook data by compiling selections into `AuthorInputSeed`, while preserving the Arc Author -> Chapter Author -> Narrator flow.
+- `13-passive-perception-equivalent.md`: add a modest SF2 passive awareness path. First slice uses classic passive Perception only, explicit passive-awareness cues, surface detail reveal only, and dynamic Narrator advisories. No hidden-answer reveal and no red-herring machinery.
+
+Implemented migration boundary:
+
+- `14-wire-public-play-route-to-sf2.md`: after the SF2 setup compiler lands, make `/play` use SF2 and keep `/play/v2` as a temporary alias/dev route. This is the public route flip that finalizes the V1 -> SF2 migration for normal play.
+
+Explicitly not being restored now:
+
+- Witness marks: late-game mechanic, not proven enough to carry into SF2 yet.
+- Failed-investigation/red-herring machinery: current SF2 prompt defenses stay as-is, but no new system/validator is added unless playthroughs show the failure again.
+- Roll drought / pacing pressure: observe more gameplays before restoring.

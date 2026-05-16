@@ -5,6 +5,10 @@ import {
   renderSceneBundle,
 } from '../retrieval/scene-packet'
 import type { Sf2State } from '../types'
+import {
+  evaluateSocialModifierAdvisories,
+  renderSocialModifierAdvisories,
+} from '../social-modifiers/evaluate'
 import { computeRequiredRollGate, renderRollGateBlock } from './roll-gates'
 
 // Playbook preference block — soft directive injecting the PC's strongest
@@ -164,6 +168,15 @@ export function buildMessagesForNarrator(
   const roleAliasBlock = buildRoleAliasBlock(state, playerInput)
   const rollGateBlock = renderRollGateBlock(computeRequiredRollGate(state, playerInput))
   const playbookPrefBlock = buildPlaybookPreferenceBlock(state)
+  const resolvedAction = packet.playerInput.resolvedAction
+  const socialModifierBlock = renderSocialModifierAdvisories(
+    evaluateSocialModifierAdvisories({
+      state,
+      playerInput,
+      resolvedAction,
+      targetEntityIds: resolvedAction?.targetEntityIds,
+    })
+  )
   const locationContinuityGuardBlock = buildLocationContinuityGuardBlock(state)
 
   const openingSeed = state.chapter.artifacts.opening
@@ -172,7 +185,7 @@ export function buildMessagesForNarrator(
     isInitial,
     playerInput,
     withheldPremiseFacts: isInitial ? openingSeed?.withheldPremiseFacts : undefined,
-  }) + roleAliasBlock + rollGateBlock + playbookPrefBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
+  }) + roleAliasBlock + rollGateBlock + playbookPrefBlock + socialModifierBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
 
   // Cache marker strategy:
   //   Anthropic allows at most 4 cache_control markers per request. We already

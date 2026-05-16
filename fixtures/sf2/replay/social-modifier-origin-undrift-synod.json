@@ -1,0 +1,95 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "social modifier origin undrift synod",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "A Synod-origin PC pressing an Undrift-aligned NPC receives a code-owned disadvantage advisory and roll reconciliation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "epic-scifi",
+        "originId": "synod",
+        "playbookId": "seeker"
+      },
+      "player": {
+        "origin": { "id": "synod", "name": "Synod" },
+        "class": { "id": "seeker", "name": "Seeker" },
+        "proficiencies": ["Investigation", "Insight", "Religion"]
+      },
+      "campaign": {
+        "npcs": {
+          "npc_vel_kore": {
+            "id": "npc_vel_kore",
+            "name": "Vel Kore",
+            "affiliation": "The Undrift",
+            "role": "safehouse contact",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": ["Knows where the fugitive was moved"],
+              "voice": { "note": "low and clipped", "register": "guarded" },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Undrift contact protecting a hidden safehouse route.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["npc_vel_kore"],
+          "currentInterlocutorIds": ["npc_vel_kore"]
+        }
+      }
+    },
+    "turnIndex": 3,
+    "playerInput": "I press Vel Kore to tell me where the safehouse moved the fugitive.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "socialModifierAdvisories": {
+      "skill": "Persuasion",
+      "countEquals": 2,
+      "includes": [
+        {
+          "id": "origin_synod_undrift_npc_vel_kore",
+          "source": "origin",
+          "modifierType": "disadvantage",
+          "targetNpcId": "npc_vel_kore",
+          "reasonIncludes": "Undrift contact treats Synod-trained PCs"
+        }
+      ],
+      "renderedIncludes": [
+        "Private social roll modifier advisories",
+        "DISADVANTAGE [origin",
+        "Undrift contact treats Synod-trained PCs as an institutional threat."
+      ],
+      "reconciliation": {
+        "skill": "Persuasion",
+        "requestedModifierType": "advantage",
+        "requestedModifierReason": "Narrator overvalued pressure.",
+        "modifierType": "disadvantage",
+        "modifierReasonIncludes": [
+          "Undrift contact treats Synod-trained PCs",
+          "Narrator requested advantage"
+        ],
+        "diagnosticsInclude": ["social_modifier_override"]
+      }
+    },
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "playerInput": "I press Vel Kore to tell me where the safehouse moved the fugitive.",
+      "userMessageContainsAll": [
+        "### Private social roll modifier advisories (never mention)",
+        "Undrift contact treats Synod-trained PCs as an institutional threat."
+      ]
+    }
+  }
+}

@@ -1,0 +1,1622 @@
+'use client'
+
+// Storyforge v2 play app
+// Stage 2 end-to-end: Narrator streams → Archivist applies patch → IDB persists.
+// Includes a minimal pending-check roll flow (d20 + modifier computed client-side,
+// result sent as a follow-up turn). The clean tool_result-continuation roll flow
+// is Stage 3+ work.
+
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { apiHeaders } from '@/lib/api-key'
+import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
+import {
+  createInitialSf2State,
+  isArcAuthored,
+  isChapterAuthored,
+} from '@/lib/sf2/game-data'
+import { compileSf2SetupSeed } from '@/lib/sf2/setup/compile-seed'
+import {
+  listSf2SetupGenres,
+  listSf2SetupHooks,
+  listSf2SetupOrigins,
+  listSf2SetupPlaybooks,
+} from '@/lib/sf2/setup/options'
+import type { Sf2SetupSelection } from '@/lib/sf2/setup/types'
+import { applyAuthorChapterOpening } from '@/lib/sf2/author/chapter-opening'
+import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
+import {
+  diagnosticsStore,
+  type TokenUsage,
+} from '@/lib/sf2/diagnostics-store'
+import {
+  runSf2ClientNarratorTurn,
+  type Sf2ClientPendingCheck,
+  type Sf2ClientRollOutcome,
+} from '@/lib/sf2/runtime/client-turn-orchestrator'
+import {
+  createIndexedDbPersistence,
+} from '@/lib/sf2/persistence/indexeddb'
+import {
+  commitSf2Turn,
+  observeActorFirewallWrite,
+  type Sf2TurnPipelineEvent,
+  type Sf2TurnReplayFrame,
+} from '@/lib/sf2/runtime/turn-pipeline'
+import {
+  chapterPressureRuntime,
+} from '@/lib/sf2/pressure/runtime'
+import {
+  Sf2PlayShell,
+  type Sf2CloseReadinessView,
+  type Sf2LiveRollView,
+} from '@/components/sf2/play-shell'
+import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
+import type {
+  AuthorChapterSetupV2,
+  Sf2Arc,
+  Sf2ArcPlan,
+  Sf2Faction,
+  Sf2State,
+  Sf2Thread,
+  Sf2TurnDiffEntry,
+} from '@/lib/sf2/types'
+
+const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
+const DEFAULT_SF2_SETUP_GENRE_ID = 'epic-scifi'
+
+const API_ENDPOINTS = {
+  narrator: '/api/sf2/narrator',
+  archivist: '/api/sf2/archivist',
+  arcAuthor: '/api/sf2/arc-author',
+  author: '/api/sf2/author',
+  chapterMeaning: '/api/sf2/chapter-meaning',
+}
+
+interface LatencyPayload {
+  totalMs: number
+  apiMs: number
+  ttftMs?: number
+  attempts?: number
+}
+
+type ReplayFrame = Sf2TurnReplayFrame
+
+type PendingCheck = Sf2ClientPendingCheck
+type RollOutcome = Sf2ClientRollOutcome
+
+function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc): RollOutcome {
+  const total = d20 + modifier
+  let result: RollOutcome['result']
+  if (d20 === 20) result = 'critical'
+  else if (d20 === 1) result = 'fumble'
+  else if (total >= effectiveDc) result = 'success'
+  else result = 'failure'
+  return { d20, modifier, total, dc, effectiveDc, result }
+}
+
+function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
+  return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
+}
+
+function firewallTurnIndexFor(state: Sf2State): number {
+  return state.history.turns.at(-1)?.index ?? state.history.turns.length
+}
+
+// Pick ability by skill name + apply proficiency bonus if the player is
+// proficient in the skill. Proficiency bonus scales with level per D&D rules:
+// +2 (1-4), +3 (5-8), +4 (9-12), +5 (13-16), +6 (17+).
+function modifierForSkill(state: Sf2State, skill: string): number {
+  const s = skill.toLowerCase()
+  const stats = state.player.stats
+  const mod = (v: number) => Math.floor((v - 10) / 2)
+  const level = state.player.level ?? 1
+  const proficiencyBonus = Math.floor((level - 1) / 4) + 2
+
+  let abilityMod = mod(stats.WIS)
+  if (
+    s.includes('investigation')
+    || s.includes('arcana')
+    || s.includes('history')
+    || s.includes('nature')
+    || s.includes('hacking')
+    || s.includes('electronics')
+    || s.includes('net architecture')
+    || s.includes('engineering')
+    || s.includes('apothecary')
+    || s.includes('appraisal')
+  ) abilityMod = mod(stats.INT)
+  else if (s.includes('persua') || s.includes('decept') || s.includes('intimid') || s.includes('performance')) abilityMod = mod(stats.CHA)
+  else if (s.includes('athlet')) abilityMod = mod(stats.STR)
+  else if (s.includes('acrob') || s.includes('stealth') || s.includes('sleight') || s.includes('lockpick')) abilityMod = mod(stats.DEX)
+  else if (s.includes('constitution') || s.includes('endur')) abilityMod = mod(stats.CON)
+  else if (s.includes('heavy weapon') || s.includes('melee') || s.includes('ranged')) abilityMod = mod(stats.STR)
+  // Default WIS for insight/perception/religion/survival/medicine + fallback
+
+  // Proficiency: case-insensitive match against the player's proficiency list.
+  // Allows partial matches ("Heavy Weapons" proficient → "Heavy Weapons attack" rolled).
+  const isProficient = state.player.proficiencies.some((p) => {
+    const pl = p.toLowerCase()
+    return s.includes(pl) || pl.includes(s)
+  })
+
+  return abilityMod + (isProficient ? proficiencyBonus : 0)
+}
+
+export function Sf2PlayApp() {
+  const [state, setState] = useState<Sf2State | null>(null)
+  const [playerName, setPlayerName] = useState('Ren')
+  const [selectedGenreId, setSelectedGenreId] = useState(DEFAULT_SF2_SETUP_GENRE_ID)
+  const [selectedOriginId, setSelectedOriginId] = useState('')
+  const [selectedPlaybookId, setSelectedPlaybookId] = useState('')
+  const [selectedHookId, setSelectedHookId] = useState('')
+  const [prose, setProse] = useState<string>('')
+  const [suggestedActions, setSuggestedActions] = useState<string[]>([])
+  const [pendingInput, setPendingInput] = useState<string>('')
+  const [activePlayerInput, setActivePlayerInput] = useState<string>('')
+  const [turnCommitError, setTurnCommitError] = useState<string | null>(null)
+  const [liveRolls, setLiveRolls] = useState<Sf2LiveRollView[]>([])
+  const [pendingCheck, setPendingCheck] = useState<PendingCheck | null>(null)
+  const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
+  const [inspirationOffer, setInspirationOffer] = useState<RollOutcome | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
+  const replayFramesRef = useRef<ReplayFrame[]>([])
+  const [turnIndex, setTurnIndex] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [pivotSignaled, setPivotSignaled] = useState(false)
+  const [isGeneratingChapter, setIsGeneratingChapter] = useState(false)
+  const generationStartTimeRef = useRef<number | null>(null)
+  const [generationElapsed, setGenerationElapsed] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const pendingInitialBottomScrollRef = useRef(false)
+  const pendingLiveTurnScrollRef = useRef(false)
+  const [liveTurnScrollKey, setLiveTurnScrollKey] = useState(0)
+  const persistenceRef = useRef<StoryforgePersistence2 | null>(null)
+  // When a roll_prompt arrives mid-stream, we store a resolver the modal calls
+  // after the player rolls. The narrator loop awaits this promise before
+  // resuming with rollResolution.
+  const rollResolverRef = useRef<((outcome: RollOutcome) => void) | null>(null)
+  // Inspiration spends are only persisted once the full turn commits. This
+  // keeps a paused roll from mutating state that sendTurn later replaces.
+  const pendingInspirationSpendRef = useRef(0)
+  const genreOptions = useMemo(() => listSf2SetupGenres(), [])
+  const originOptions = useMemo(() => {
+    try {
+      return listSf2SetupOrigins(selectedGenreId)
+    } catch {
+      return []
+    }
+  }, [selectedGenreId])
+  const playbookOptions = useMemo(() => {
+    if (!selectedOriginId) return []
+    try {
+      return listSf2SetupPlaybooks(selectedGenreId, selectedOriginId)
+    } catch {
+      return []
+    }
+  }, [selectedGenreId, selectedOriginId])
+  const hookOptions = useMemo(() => {
+    if (!selectedOriginId || !selectedPlaybookId) return []
+    try {
+      return listSf2SetupHooks(selectedGenreId, selectedOriginId, selectedPlaybookId)
+    } catch {
+      return []
+    }
+  }, [selectedGenreId, selectedOriginId, selectedPlaybookId])
+
+  useEffect(() => {
+    if (originOptions.some((origin) => origin.id === selectedOriginId)) return
+    setSelectedOriginId(originOptions[0]?.id ?? '')
+  }, [originOptions, selectedOriginId])
+
+  useEffect(() => {
+    if (playbookOptions.some((playbook) => playbook.id === selectedPlaybookId)) return
+    setSelectedPlaybookId(playbookOptions[0]?.id ?? '')
+  }, [playbookOptions, selectedPlaybookId])
+
+  useEffect(() => {
+    if (hookOptions.some((hook) => hook.id === selectedHookId)) return
+    setSelectedHookId(hookOptions[0]?.id ?? '')
+  }, [hookOptions, selectedHookId])
+
+  const setupSelection = useMemo<Sf2SetupSelection | null>(() => {
+    if (!selectedGenreId || !selectedOriginId || !selectedPlaybookId || !selectedHookId) return null
+    return {
+      genreId: selectedGenreId,
+      originId: selectedOriginId,
+      playbookId: selectedPlaybookId,
+      hookId: selectedHookId,
+      characterName: playerName.trim() || 'Ren',
+    }
+  }, [playerName, selectedGenreId, selectedHookId, selectedOriginId, selectedPlaybookId])
+
+  const selectedSeed = useMemo(() => {
+    if (!setupSelection) return null
+    try {
+      return compileSf2SetupSeed(setupSelection)
+    } catch {
+      return null
+    }
+  }, [setupSelection])
+
+  const selectedHook = useMemo(
+    () => hookOptions.find((hook) => hook.id === selectedHookId) ?? null,
+    [hookOptions, selectedHookId]
+  )
+
+  const selectedGenreConfig = useMemo(() => {
+    try {
+      return getGenreConfig(selectedGenreId as Genre)
+    } catch {
+      return null
+    }
+  }, [selectedGenreId])
+
+  // Initialize persistence + try loading last campaign.
+  useEffect(() => {
+    const p = createIndexedDbPersistence()
+    persistenceRef.current = p
+    const lastId = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_CAMPAIGN_KEY) : null
+    if (lastId) {
+      p.loadCampaign(lastId)
+        .then((loaded) => {
+          if (loaded) {
+            pendingInitialBottomScrollRef.current = true
+            setState(loaded)
+            setTurnIndex(loaded.history.turns.length)
+            setPivotSignaled(chapterHasPivotSignal(loaded))
+            // Restore quick actions from the last committed turn. Prose is
+            // rendered from history now; live `prose` is reserved for the
+            // currently streaming, uncommitted narrator output.
+            const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
+            if (lastTurn) {
+              setSuggestedActions(lastTurn.narratorAnnotation?.suggestedActions ?? [])
+            }
+          } else if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!state || loading || !pendingInitialBottomScrollRef.current) return
+    const scroller = scrollRef.current
+    if (!scroller) return
+    pendingInitialBottomScrollRef.current = false
+    requestAnimationFrame(() => {
+      scroller.scrollTop = scroller.scrollHeight
+    })
+  }, [loading, state])
+
+  useLayoutEffect(() => {
+    if (!pendingLiveTurnScrollRef.current || liveTurnScrollKey === 0) return
+    const scroller = scrollRef.current
+    const liveTurn = scroller?.querySelector<HTMLElement>('[data-sf2-live-turn]')
+    if (!scroller || !liveTurn) return
+    pendingLiveTurnScrollRef.current = false
+    requestAnimationFrame(() => {
+      liveTurn.scrollIntoView({ block: 'start' })
+    })
+  }, [liveTurnScrollKey, activePlayerInput, prose, isStreaming, isGeneratingChapter, isArchiving])
+
+  useEffect(() => {
+    if (state) return
+    try {
+      applyGenreTheme(selectedGenreId as Genre)
+    } catch {
+      document.documentElement.setAttribute('data-genre', selectedGenreId)
+    }
+    document.body.setAttribute('data-genre', selectedGenreId)
+  }, [selectedGenreId, state])
+
+  // Live timer while generating a chapter (Author call can take 30-90s).
+  useEffect(() => {
+    if (!isGeneratingChapter) {
+      setGenerationElapsed(0)
+      return
+    }
+    const interval = setInterval(() => {
+      const start = generationStartTimeRef.current
+      if (start === null) return
+      setGenerationElapsed(Math.floor((Date.now() - start) / 1000))
+    }, 500)
+    return () => clearInterval(interval)
+  }, [isGeneratingChapter])
+
+  const persist = useCallback(async (s: Sf2State) => {
+    const p = persistenceRef.current
+    if (!p) return
+    try {
+      await p.saveCampaign(s)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LAST_CAMPAIGN_KEY, s.meta.campaignId)
+      }
+    } catch {
+      // non-fatal; surface in debug if needed
+    }
+  }, [])
+
+  function startCampaign() {
+    if (!setupSelection) return
+    const next = createInitialSf2State({
+      campaignId: `camp_${Date.now()}`,
+      playerName: playerName.trim() || 'Ren',
+      setupSelection,
+    })
+    setState(next)
+    setProse('')
+    setTurnCommitError(null)
+    setSuggestedActions([])
+    diagnosticsStore.resetAll()
+    replayFramesRef.current = []
+    setPendingCheck(null)
+    setRollResult(null)
+    setTurnIndex(0)
+    setPivotSignaled(false)
+    pendingInspirationSpendRef.current = 0
+    diagnosticsStore.pushDebug({
+      kind: 'experiment',
+      at: Date.now(),
+      data: {
+        seedId: next.meta.seedId,
+        setupSelection,
+        selectedGenreId,
+        selectedOriginId,
+        selectedPlaybookId,
+        selectedHookId,
+        hookTitle: selectedSeed?.hook.title,
+      },
+    })
+    persist(next)
+  }
+
+  async function resetCampaign() {
+    const p = persistenceRef.current
+    if (p && state) {
+      try {
+        await p.deleteCampaign(state.meta.campaignId)
+      } catch {}
+    }
+    if (typeof window !== 'undefined' && state) {
+      window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+    }
+    setState(null)
+    setProse('')
+    setTurnCommitError(null)
+    setActivePlayerInput('')
+    setLiveRolls([])
+    setSuggestedActions([])
+    diagnosticsStore.resetDebug()
+    replayFramesRef.current = []
+    setTurnIndex(0)
+    setPendingCheck(null)
+    setPivotSignaled(false)
+    pendingInspirationSpendRef.current = 0
+  }
+
+  function cleanNarratorErrorMessage(message: string): string {
+    return parseEmbeddedAnthropicError(message) ?? message
+  }
+
+  function parseEmbeddedAnthropicError(message: string): string | null {
+    const jsonStart = message.indexOf('{')
+    if (jsonStart < 0) return null
+    try {
+      const parsed = JSON.parse(message.slice(jsonStart)) as Record<string, unknown>
+      const error = parsed.error
+      if (error && typeof error === 'object') {
+        const nested = error as Record<string, unknown>
+        if (typeof nested.message === 'string') return nested.message
+      }
+      if (typeof parsed.message === 'string') return parsed.message
+    } catch {}
+    return null
+  }
+
+  async function runNarrator(
+    currentState: Sf2State,
+    playerInput: string,
+    isInitial: boolean
+  ) {
+    setLiveRolls([])
+    return runSf2ClientNarratorTurn({
+      state: currentState,
+      playerInput,
+      isInitial,
+      turnIndex,
+      fetchNarrator: (body) => fetch(API_ENDPOINTS.narrator, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify(body),
+      }),
+      requestRoll: () => {
+        // The modal resolves this promise after the player rolls.
+        return new Promise<RollOutcome>((resolve) => {
+          rollResolverRef.current = resolve
+        })
+      },
+      effects: {
+        onStreamingChange: setIsStreaming,
+        onProse: setProse,
+        onSuggestedActions: setSuggestedActions,
+        onPendingCheck: setPendingCheck,
+        onRollResult: setRollResult,
+        onLiveRollAdded: (roll) => setLiveRolls((cards) => [...cards, roll]),
+        onInspirationOffer: setInspirationOffer,
+        onResetPendingInspirationSpend: () => {
+          pendingInspirationSpendRef.current = 0
+        },
+        onAnnotation: (annotation) => {
+          if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
+        },
+        onNarratorUsage: (usage) => diagnosticsStore.setNarratorUsage(usage),
+        onDiagnostic: (entry) => diagnosticsStore.pushDebug(entry),
+      },
+    })
+  }
+
+  async function runArchivist(
+    preTurnState: Sf2State,
+    narratorProse: string,
+    narratorAnnotation: Record<string, unknown> | null,
+    nextTurnIndex: number
+  ): Promise<{
+    nextState: Sf2State
+    replay: ReplayFrame['archivist']
+    invariantEvents?: Sf2TurnPipelineEvent[]
+  }> {
+    setIsArchiving(true)
+    try {
+      const res = await fetch(API_ENDPOINTS.archivist, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          state: preTurnState,
+          narratorProse,
+          narratorAnnotation: narratorAnnotation ?? undefined,
+          turnIndex: nextTurnIndex,
+        }),
+      })
+      if (!res.ok) {
+        let errorBody: unknown = null
+        try {
+          errorBody = await res.json()
+        } catch {
+          try {
+            errorBody = await res.text()
+          } catch {}
+        }
+        diagnosticsStore.pushDebug({
+            kind: 'error',
+            at: Date.now(),
+            data: { status: res.status, source: 'archivist', body: errorBody },
+          })
+        return { nextState: preTurnState, replay: null }
+      }
+      const data = (await res.json()) as {
+        nextState: Sf2State
+        patch: unknown
+        outcomes: unknown
+        deferredWrites: unknown
+        drift: unknown
+        summary: unknown
+        faceShift: unknown
+        ladderFired: unknown[]
+        pruneSummary?: { demotedDecisions: number; demotedPromises: number; consumedClues: number; clearedFloatingClues: number }
+        coherenceFindings?: Array<{
+          type: string
+          severity: 'low' | 'medium' | 'high'
+          evidenceQuote: string
+          stateReference: string
+          suggestedNote: string
+        }>
+        invariantEvents?: Sf2TurnPipelineEvent[]
+        usage: TokenUsage
+        latency?: LatencyPayload
+      }
+      diagnosticsStore.setArchivistUsage(data.usage)
+      const archivistPatch = data.patch && typeof data.patch === 'object'
+        ? data.patch as { flags?: unknown[] }
+        : null
+      diagnosticsStore.pushDebug({
+          kind: 'archivist',
+          at: Date.now(),
+          data: {
+            summary: data.summary,
+            patch: data.patch,
+            flags: Array.isArray(archivistPatch?.flags) ? archivistPatch.flags : [],
+            outcomes: data.outcomes,
+            deferred: data.deferredWrites,
+            drift: data.drift,
+          },
+        })
+      if (Array.isArray(data.drift)) {
+        for (const drift of data.drift as Array<{ kind?: string; detail?: string; entityId?: string }>) {
+          if (drift.kind === 'identity_drift' && drift.detail?.startsWith('dedup:')) {
+            diagnosticsStore.pushDebug({
+                kind: 'sf2.invariant',
+                at: Date.now(),
+                data: {
+                  type: 'placeholder_or_duplicate_npc_merged',
+                  entityId: drift.entityId,
+                  detail: drift.detail,
+                },
+              })
+          } else if (drift.kind === 'anchor_reference_missing') {
+            diagnosticsStore.pushDebug({
+                kind: 'sf2.invariant',
+                at: Date.now(),
+                data: {
+                  type: 'anchor_miss',
+                  entityId: drift.entityId,
+                  detail: drift.detail,
+                },
+              })
+          }
+        }
+      }
+      if (data.faceShift) {
+        diagnosticsStore.pushDebug({ kind: 'face_shift', at: Date.now(), data: data.faceShift })
+      }
+      if (Array.isArray(data.ladderFired) && data.ladderFired.length > 0) {
+        diagnosticsStore.pushDebug({ kind: 'ladder_fired', at: Date.now(), data: data.ladderFired })
+      }
+      const pruneTotal =
+        (data.pruneSummary?.demotedDecisions ?? 0) +
+        (data.pruneSummary?.demotedPromises ?? 0) +
+        (data.pruneSummary?.consumedClues ?? 0) +
+        (data.pruneSummary?.clearedFloatingClues ?? 0)
+      if (pruneTotal > 0) {
+        diagnosticsStore.pushDebug({ kind: 'archivist', at: Date.now(), data: { pruned: data.pruneSummary } })
+      }
+      // If the patch surfaced lexicon additions, log them — they're rare and
+      // worth seeing.
+      const lex = (data.patch as { lexiconAdditions?: unknown[] } | undefined)?.lexiconAdditions
+      if (Array.isArray(lex) && lex.length > 0) {
+        diagnosticsStore.pushDebug({ kind: 'archivist', at: Date.now(), data: { lexicon_additions: lex } })
+      }
+      // Coherence findings: push each as an event so rate + types are
+      // inspectable in the debug stream and aggregatable in session summary.
+      // Emit a clean_turn counterpart when zero, so the rate is computable
+      // without counting-by-absence.
+      const findings = data.coherenceFindings ?? []
+      if (findings.length > 0) {
+        for (const f of findings) {
+          diagnosticsStore.pushDebug({ kind: 'sf2.coherence.finding', at: Date.now(), data: f })
+        }
+      } else {
+        diagnosticsStore.pushDebug({ kind: 'sf2.coherence.clean_turn', at: Date.now(), data: null })
+      }
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'archivist', ...data.usage } })
+      if (data.latency) {
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'archivist', ...data.latency } })
+      }
+      return {
+        nextState: data.nextState,
+        replay: {
+          patch: data.patch,
+          outcomes: data.outcomes,
+          deferredWrites: data.deferredWrites,
+          drift: data.drift,
+          summary: data.summary,
+          coherenceFindings: data.coherenceFindings ?? [],
+        },
+        invariantEvents: data.invariantEvents,
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'archivist_error'
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
+      return { nextState: preTurnState, replay: null }
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
+  async function generateArcIfNeeded(currentState: Sf2State): Promise<Sf2State | null> {
+    if (isArcAuthored(currentState)) return currentState
+    const existingArcPlan = currentState.campaign.arcPlan
+    if (existingArcPlan && existingArcPlan.status !== 'active') {
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
+        source: 'arc-author',
+        message: 'arc plan is no longer active; automatic next-arc generation is future work',
+        arcStatus: existingArcPlan.status,
+      } })
+      return null
+    }
+    setIsArchiving(true)
+    setIsGeneratingChapter(true)
+    generationStartTimeRef.current = Date.now()
+    try {
+      const res = await fetch(API_ENDPOINTS.arcAuthor, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ state: currentState }),
+      })
+      if (!res.ok) {
+        let body: unknown = null
+        try { body = await res.json() } catch {
+          try { body = await res.text() } catch {}
+        }
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'arc-author', body } })
+        return null
+      }
+      const data = (await res.json()) as {
+        arcPlan: Sf2ArcPlan
+        arcEntity: Sf2Arc
+        arcThreads?: Sf2Thread[]
+        arcFactions?: Sf2Faction[]
+        selectedArcVariantSeed?: Sf2ArcPlan['sourceHook'] & Record<string, unknown>
+        usage: TokenUsage
+        latency?: LatencyPayload
+      }
+      const next: Sf2State = structuredClone(currentState)
+      next.campaign.arcPlan = data.arcPlan
+      next.campaign.arcs[data.arcEntity.id] = data.arcEntity
+      for (const faction of data.arcFactions ?? []) {
+        next.campaign.factions[faction.id] = next.campaign.factions[faction.id] ?? faction
+      }
+      for (const thread of data.arcThreads ?? []) {
+        next.campaign.threads[thread.id] = next.campaign.threads[thread.id] ?? thread
+        const owner = thread.owner.kind === 'faction' ? next.campaign.factions[thread.owner.id] : undefined
+        if (owner && !owner.ownedThreadIds.includes(thread.id)) owner.ownedThreadIds.push(thread.id)
+      }
+      next.meta.updatedAt = new Date().toISOString()
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: {
+        arc: data.arcPlan.title,
+        scenario: data.arcPlan.scenarioShape.mode,
+        variantSeed: data.selectedArcVariantSeed,
+        selectionRationale: data.arcPlan.scenarioShape.selectionRationale,
+        rejectedDefaultShape: data.arcPlan.scenarioShape.rejectedDefaultShape,
+        chapterFunctions: data.arcPlan.chapterFunctionMap.map((c) => `${c.chapter}: ${c.function}`),
+        arcThreads: data.arcPlan.arcThreadIds,
+        latentQuestions: data.arcPlan.latentArcQuestions.map((q) => q.id),
+        stanceAxes: data.arcPlan.playerStanceAxes.map((a) => a.id),
+      } })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'arc-author', ...data.usage } })
+      if (data.latency) {
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'arc-author', ...data.latency } })
+      }
+      setState(next)
+      persist(next)
+      return next
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'arc_author_error'
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
+      return null
+    } finally {
+      setIsArchiving(false)
+      setIsGeneratingChapter(false)
+      generationStartTimeRef.current = null
+    }
+  }
+
+  async function generateChapter1IfNeeded(currentState: Sf2State): Promise<Sf2State | null> {
+    const authored = isChapterAuthored(currentState)
+    // eslint-disable-next-line no-console
+    console.log('[sf2/client] generateChapter1IfNeeded check', {
+      alreadyAuthored: authored,
+      chapterTitle: currentState.chapter.title,
+      frameTitle: currentState.chapter.setup.frame.title,
+      npcCount: Object.keys(currentState.campaign.npcs).length,
+      threadCount: Object.keys(currentState.campaign.threads).length,
+    })
+    if (authored) {
+      diagnosticsStore.pushDebug({
+          kind: 'author',
+          at: Date.now(),
+          data: {
+            note: 'skipped — chapter already authored in state (loaded from IDB?)',
+            chapterTitle: currentState.chapter.title,
+          },
+        })
+      return currentState
+    }
+    const arced = await generateArcIfNeeded(currentState)
+    if (!arced) return null
+    currentState = arced
+    setIsArchiving(true)
+    setIsGeneratingChapter(true)
+    generationStartTimeRef.current = Date.now()
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[sf2/client] generating chapter 1, fetching author endpoint...')
+      const arcPlan = currentState.campaign.arcPlan
+      if (arcPlan && arcPlan.status !== 'active') {
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
+          source: 'author',
+          message: 'arc plan is no longer active; automatic next-arc generation is future work',
+          arcStatus: arcPlan.status,
+        } })
+        return null
+      }
+
+      const res = await fetch(API_ENDPOINTS.author, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          state: currentState,
+          priorChapterMeaning: null,
+          targetChapter: 1,
+        }),
+      })
+      // eslint-disable-next-line no-console
+      console.log('[sf2/client] author fetch returned, status:', res.status)
+      if (!res.ok) {
+        let body: unknown = null
+        try { body = await res.json() } catch {
+          try { body = await res.text() } catch {}
+        }
+        // eslint-disable-next-line no-console
+        console.error('[sf2/client] author failed', res.status, body)
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'author-ch1', body } })
+        return null
+      }
+      const data = (await res.json()) as {
+        chapter: number
+        runtimeState: Sf2State['chapter']['setup']
+        scaffolding: Sf2State['chapter']['scaffolding']
+        openingSeed: Sf2State['chapter']['artifacts']['opening']
+        authored: AuthorChapterSetupV2
+        usage: TokenUsage
+        latency?: LatencyPayload
+      }
+      const opened = applyAuthorChapterOpening({
+        state: currentState,
+        phase: 'chapter_1',
+        authorResult: data,
+      })
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: opened.debugSummary })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
+      if (data.latency) {
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
+      }
+
+      const next = opened.nextState
+      diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
+        actor: 'author',
+        writeKind: 'chapter_setup',
+        turnIndex: firewallTurnIndexFor(next),
+        payload: opened.telemetry,
+      }))
+      setState(next)
+      persist(next)
+      return next
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'author_ch1_error'
+      // eslint-disable-next-line no-console
+      console.error('[sf2/client] author-ch1 threw', err)
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
+      return null
+    } finally {
+      setIsArchiving(false)
+      setIsGeneratingChapter(false)
+      generationStartTimeRef.current = null
+    }
+  }
+
+  async function sendTurn(input: string) {
+    if (!state || isStreaming || isArchiving || pendingCheck) return
+    const playerInput = input.trim()
+    // "Initial" = first turn of the CURRENT chapter. turnIndex is monotonic
+    // across chapters now, so derive chapter-scope from history.
+    const currentChapterTurns = state.history.turns.filter(
+      (t) => t.chapter === state.meta.currentChapter
+    ).length
+    const isInitial = currentChapterTurns === 0
+    if (!playerInput && !isInitial) return
+
+    setSuggestedActions([])
+    setPendingInput('')
+    setTurnCommitError(null)
+    setActivePlayerInput(isInitial ? '' : playerInput)
+    pendingLiveTurnScrollRef.current = true
+    setLiveTurnScrollKey((key) => key + 1)
+
+    // On first turn: ensure Chapter 1 has been authored before Narrator opens.
+    let effectiveState = state
+    if (isInitial && !isChapterAuthored(state)) {
+      const generated = await generateChapter1IfNeeded(state)
+      if (!generated) return // Author failed; debug panel shows why
+      effectiveState = generated
+    }
+
+    // Narrator
+    const narratorResult = await runNarrator(effectiveState, playerInput, isInitial)
+    if (!narratorResult.completed) {
+      pendingInspirationSpendRef.current = 0
+      setProse('')
+      setSuggestedActions([])
+      setPendingInput(isInitial ? '' : playerInput)
+      setActivePlayerInput('')
+      setLiveRolls([])
+      setRollResult(null)
+      setTurnCommitError(
+        narratorResult.errorMessage
+          ? `Narrator failed: ${cleanNarratorErrorMessage(narratorResult.errorMessage)}`
+          : narratorResult.prose.trim()
+          ? 'Narrator output was discarded because it did not commit state. Retry the action.'
+          : 'Narrator did not commit the turn. Retry the action.'
+      )
+      return
+    }
+    const {
+      prose: narratorProse,
+      annotation,
+      bundleBuilt,
+      rollRecords,
+      sentinelEvents: turnSentinelEvents,
+      workingSet,
+    } = narratorResult
+
+    // Order note: Archivist runs BEFORE mechanical effects.
+    //
+    // The Narrator's set_scene_snapshot mechanical effect can reference new
+    // NPCs the prose introduces (e.g. "Elder Moth is in the processing
+    // annex"). If mechanical effects applied first, resolveNpcReference
+    // would fail for the new name (not yet in registry) and silently drop
+    // it from presentNpcIds — Moth gets elided from the scene even though
+    // prose established her. The Archivist creates those NPCs from prose;
+    // running it first means set_scene_snapshot can resolve them below.
+    const committedTurn = await commitSf2Turn({
+      stateBefore: effectiveState,
+      turnIndex,
+      playerInput,
+      isInitial,
+      narrator: {
+        prose: narratorProse,
+        annotation,
+        bundleBuilt,
+        rollRecords,
+        sentinelEvents: turnSentinelEvents,
+        workingSet,
+      },
+      applyArchivist: ({ stateWithTurnLogged, narratorProse, narratorAnnotation, nextTurnIndex }) =>
+        runArchivist(stateWithTurnLogged, narratorProse, narratorAnnotation, nextTurnIndex),
+    })
+
+    const stateDiff = buildTurnStateDiff(effectiveState, committedTurn.stateAfter)
+    const turnRecord = committedTurn.stateAfter.history.turns.find((t) => t.index === turnIndex)
+      ?? committedTurn.stateAfter.history.turns.at(-1)
+    if (turnRecord && stateDiff.length > 0) {
+      turnRecord.stateDiff = stateDiff
+    }
+    committedTurn.stateAfter.history.recentTurns = committedTurn.stateAfter.history.turns.slice(-6)
+    committedTurn.replayFrame.stateAfter = structuredClone(committedTurn.stateAfter)
+
+    if (committedTurn.invariantEvents.length > 0) {
+      diagnosticsStore.pushDebugMany(committedTurn.invariantEvents)
+    }
+    replayFramesRef.current = [...replayFramesRef.current, committedTurn.replayFrame]
+    setState(committedTurn.stateAfter)
+    setTurnIndex(committedTurn.nextTurnIndex)
+    setPivotSignaled(chapterHasPivotSignal(committedTurn.stateAfter))
+    setProse('')
+    setActivePlayerInput('')
+    setLiveRolls([])
+    setRollResult(null)
+    setInspirationOffer(null)
+    pendingInspirationSpendRef.current = 0
+    persist(committedTurn.stateAfter)
+  }
+
+  async function closeChapterAndOpenNext() {
+    if (!state || isStreaming || isArchiving) return
+    const targetChapter = state.meta.currentChapter + 1
+    setIsArchiving(true)
+    try {
+      let authorBaseState = state
+      // Step 1: synthesize chapter_meaning (Haiku retrospective by default).
+      // Step 2: pass it to Author as priorChapterMeaning.
+      // Step 3: persist meaning on chapter.artifacts.
+      const meaningRes = await fetch(API_ENDPOINTS.chapterMeaning, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ state }),
+      })
+
+      let priorChapterMeaning: Sf2State['chapter']['artifacts']['meaning'] | null = null
+      if (meaningRes.ok) {
+        const meaningData = (await meaningRes.json()) as {
+          meaning: NonNullable<Sf2State['chapter']['artifacts']['meaning']>
+          usage: TokenUsage
+          latency?: LatencyPayload
+        }
+        priorChapterMeaning = meaningData.meaning
+        diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: { chapter_meaning: meaningData.meaning } })
+        diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.usage } })
+        if (meaningData.latency) {
+          diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'chapter-meaning', ...meaningData.latency } })
+        }
+
+        // Persist meaning on the closing chapter's artifacts.
+        authorBaseState = structuredClone(authorBaseState)
+        authorBaseState.chapter.artifacts.meaning = meaningData.meaning
+        authorBaseState.meta.updatedAt = new Date().toISOString()
+        diagnosticsStore.pushDebug(observeActorFirewallWrite(authorBaseState, {
+          actor: 'author',
+          writeKind: 'chapter_meaning',
+          turnIndex: firewallTurnIndexFor(authorBaseState),
+          payload: {
+            chapter: authorBaseState.chapter.number,
+            closingResolution: meaningData.meaning.closingResolution,
+          },
+        }))
+        setState(authorBaseState)
+        await persist(authorBaseState)
+      } else {
+        let body: unknown = null
+        try { body = await meaningRes.json() } catch {}
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: meaningRes.status, source: 'chapter-meaning', body } })
+        // Proceed without priorChapterMeaning — Author will fall back to state-derived hook.
+      }
+
+      const arcPlan = authorBaseState.campaign.arcPlan
+      if (arcPlan && arcPlan.status !== 'active') {
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: {
+          source: 'author',
+          message: 'arc plan is no longer active; automatic next-arc generation is future work',
+          arcStatus: arcPlan.status,
+        } })
+        return
+      }
+
+      const res = await fetch(API_ENDPOINTS.author, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          state: authorBaseState,
+          priorChapterMeaning,
+          targetChapter,
+        }),
+      })
+      if (!res.ok) {
+        let body: unknown = null
+        try { body = await res.json() } catch {}
+        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'author', body } })
+        return
+      }
+      const data = (await res.json()) as {
+        chapter: number
+        runtimeState: Sf2State['chapter']['setup']
+        scaffolding: Sf2State['chapter']['scaffolding']
+        openingSeed: Sf2State['chapter']['artifacts']['opening']
+        threadTransitions?: Array<{
+          id: string
+          toStatus: Sf2State['campaign']['threads'][string]['status']
+          reason: string
+        }>
+        authored: AuthorChapterSetupV2
+        usage: TokenUsage
+        latency?: LatencyPayload
+      }
+
+      const opened = applyAuthorChapterOpening({
+        state: authorBaseState,
+        phase: 'continuation',
+        authorResult: data,
+      })
+      diagnosticsStore.pushDebug({ kind: 'author', at: Date.now(), data: opened.debugSummary })
+      diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'author', ...data.usage } })
+      if (data.latency) {
+        diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'author', ...data.latency } })
+      }
+
+      const next = opened.nextState
+      diagnosticsStore.pushDebug(observeActorFirewallWrite(next, {
+        actor: 'author',
+        writeKind: 'chapter_setup',
+        turnIndex: firewallTurnIndexFor(next),
+        payload: opened.telemetry,
+      }))
+      setState(next)
+      await persist(next)
+      // Reset scene view — but KEEP turnIndex monotonic across chapters so
+      // history.turns[].index stays unique. "Is this the first turn of the
+      // chapter?" is derived from history in sendTurn / render via
+      // chapterTurnCount === 0 instead.
+      setProse('')
+      setSuggestedActions([])
+      setPendingCheck(null)
+      setPivotSignaled(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'author_error'
+      diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: message })
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
+  function availableInspiration(s: Sf2State): number {
+    return Math.max(0, s.player.inspiration - pendingInspirationSpendRef.current)
+  }
+
+  function setLatestLiveRollOutcome(outcome: RollOutcome) {
+    setLiveRolls((cards) => {
+      let pendingIndex = -1
+      for (let i = cards.length - 1; i >= 0; i -= 1) {
+        if (!cards[i].outcome) {
+          pendingIndex = i
+          break
+        }
+      }
+      const targetIndex = pendingIndex >= 0 ? pendingIndex : cards.length - 1
+      if (targetIndex < 0) return cards
+      return cards.map((card, i) => i === targetIndex ? { ...card, outcome } : card)
+    })
+  }
+
+  function resolvePendingCheck() {
+    if (!state || !pendingCheck) return
+    const rollOne = () => 1 + Math.floor(Math.random() * 20)
+    const first = rollOne()
+    const second =
+      pendingCheck.modifierType === 'advantage' || pendingCheck.modifierType === 'disadvantage'
+        ? rollOne()
+        : undefined
+    const d20 =
+      pendingCheck.modifierType === 'advantage' && second !== undefined
+        ? Math.max(first, second)
+        : pendingCheck.modifierType === 'disadvantage' && second !== undefined
+          ? Math.min(first, second)
+          : first
+    const modifier = modifierForSkill(state, pendingCheck.skill)
+    const effectiveDc = effectiveDcFor(pendingCheck)
+    const outcome = {
+      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      rawRolls: second !== undefined ? [first, second] : undefined,
+      skill: pendingCheck.skill,
+      modifierType: pendingCheck.modifierType,
+      modifierReason: pendingCheck.modifierReason,
+    }
+    setLatestLiveRollOutcome(outcome)
+    const failed = outcome.result === 'failure' || outcome.result === 'fumble'
+    if (failed && availableInspiration(state) > 0) {
+      setRollResult(outcome)
+      setInspirationOffer(outcome)
+      return
+    }
+    // Hand the outcome back to the paused narrator loop.
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    if (resolver) resolver(outcome)
+  }
+
+  function declineInspirationReroll() {
+    if (!inspirationOffer) return
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    setInspirationOffer(null)
+    if (resolver) resolver(inspirationOffer)
+  }
+
+  // Inspiration is a flat reroll, not advantage-equivalent: a way out of a
+  // failed check, not stacked dice. Original outcome is preserved as
+  // originalRoll so the chronicle can show "rolled 7, spent inspiration,
+  // rolled 14".
+  function spendInspirationReroll() {
+    if (!state || !pendingCheck || !inspirationOffer) return
+    if (availableInspiration(state) <= 0) return
+    pendingInspirationSpendRef.current += 1
+
+    const d20 = 1 + Math.floor(Math.random() * 20)
+    const modifier = modifierForSkill(state, pendingCheck.skill)
+    const effectiveDc = effectiveDcFor(pendingCheck)
+    const outcome: RollOutcome = {
+      ...resolveRoll(d20, modifier, pendingCheck.dc, effectiveDc),
+      skill: pendingCheck.skill,
+      modifierType: 'inspiration',
+      modifierReason: 'spent after failed roll',
+      inspirationSpent: true,
+      originalRoll: inspirationOffer,
+    }
+    setRollResult(outcome)
+    setLatestLiveRollOutcome(outcome)
+    setInspirationOffer(null)
+    const resolver = rollResolverRef.current
+    rollResolverRef.current = null
+    if (resolver) resolver(outcome)
+  }
+
+  // ────────── Render ──────────
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background font-mono text-foreground">
+        <div className="text-sm text-muted-foreground">loading...</div>
+      </div>
+    )
+  }
+
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-background px-4 py-6 text-foreground md:px-8 md:py-10">
+        <div className="pointer-events-none fixed inset-0" style={{
+          background: [
+            'radial-gradient(circle at 16% 0%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 30%)',
+            'radial-gradient(circle at 86% 10%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 28%)',
+            'linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 82%, var(--card) 18%))',
+          ].join(', '),
+        }} />
+        <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-5xl content-center gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
+          <section className="space-y-5">
+            <div className="space-y-3">
+              <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
+                {selectedGenreConfig?.name ?? selectedSeed?.genreName ?? 'Storyforge'}
+              </div>
+              <h1 className="font-heading text-3xl font-semibold tracking-normal text-foreground md:text-5xl">
+                {selectedSeed?.hook.title ?? 'Choose an opening'}
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty] md:text-base">
+                {selectedGenreConfig?.tagline ?? 'Build the pressure field for a new SF2 campaign.'}
+              </p>
+            </div>
+
+            <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Origin</div>
+                <div className="truncate text-foreground">{selectedSeed?.originName ?? 'Select origin'}</div>
+              </div>
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Playbook</div>
+                <div className="truncate text-foreground">{selectedSeed?.playbookName ?? 'Select playbook'}</div>
+              </div>
+              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
+                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Hook</div>
+                <div className="truncate text-foreground">{selectedSeed?.hook.title ?? 'No hook available'}</div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/35 bg-card/45 p-4 text-sm leading-6 text-muted-foreground">
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/80">
+                Pressure
+              </div>
+              <p className="[text-wrap:pretty]">{selectedSeed?.hook.premise ?? 'No eligible hook matches this origin and playbook.'}</p>
+              <p className="mt-3 text-foreground/85 [text-wrap:pretty]">{selectedSeed?.hook.crucible ?? 'Choose another combination to continue.'}</p>
+            </div>
+          </section>
+
+          <section className="self-center rounded-lg border border-border/45 bg-card/75 p-5 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <div className="mb-5 space-y-1">
+              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Storyforge v2
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">
+                Compile a V1 origin, playbook, and hook into an SF2 Author seed.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-mono text-sm text-muted-foreground" htmlFor="genre">
+                Genre
+              </label>
+              <select
+                id="genre"
+                value={selectedGenreId}
+                onChange={(e) => setSelectedGenreId(e.target.value)}
+                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+              >
+                {genreOptions.map((genre) => (
+                  <option key={genre.id} value={genre.id}>
+                    {genre.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="font-mono text-sm text-muted-foreground" htmlFor="origin">
+                  Origin
+                </label>
+                <select
+                  id="origin"
+                  value={selectedOriginId}
+                  onChange={(e) => setSelectedOriginId(e.target.value)}
+                  className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+                >
+                  {originOptions.map((origin) => (
+                    <option key={origin.id} value={origin.id}>
+                      {origin.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-mono text-sm text-muted-foreground" htmlFor="playbook">
+                  Playbook
+                </label>
+                <select
+                  id="playbook"
+                  value={selectedPlaybookId}
+                  onChange={(e) => setSelectedPlaybookId(e.target.value)}
+                  className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+                >
+                  {playbookOptions.map((playbook) => (
+                    <option key={playbook.id} value={playbook.id}>
+                      {playbook.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <label className="font-mono text-sm text-muted-foreground" htmlFor="hook">
+                Opening hook
+              </label>
+              <select
+                id="hook"
+                value={selectedHookId}
+                onChange={(e) => setSelectedHookId(e.target.value)}
+                disabled={hookOptions.length === 0}
+                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {hookOptions.length > 0 ? hookOptions.map((hook) => (
+                  <option key={hook.id} value={hook.id}>
+                    {hook.title}
+                  </option>
+                )) : (
+                  <option value="">No eligible hooks</option>
+                )}
+              </select>
+              {selectedHook?.objective ? (
+                <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">
+                  {selectedHook.objective}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <label className="font-mono text-sm text-muted-foreground" htmlFor="name">
+                Character name
+              </label>
+              <input
+                id="name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
+              />
+            </div>
+
+            <button
+              onClick={startCampaign}
+              disabled={!setupSelection || !selectedSeed || hookOptions.length === 0}
+              className="action-glow mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-[box-shadow,transform,filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              Create campaign
+            </button>
+          </section>
+        </div>
+      </div>
+    )
+  }
+
+  const busy = isStreaming || isArchiving
+  const chapterPivotSignaled = pivotSignaled || chapterHasPivotSignal(state)
+
+  const pressureProjection = chapterPressureRuntime.project(state, {
+    pivotSignaled: chapterPivotSignaled,
+  })
+  const { chapterTurnCount } = pressureProjection.closeReadiness
+
+  function buildSessionLogExport() {
+    if (!state) return null
+    const debugSnapshot = diagnosticsStore.getDebug()
+    const summary = computeSessionSummary(state, debugSnapshot)
+    return {
+      filename: `sf2-session-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      payload: { summary, state, debug: debugSnapshot, replayFrames: replayFramesRef.current },
+    }
+  }
+
+  function buildReplayFixtureExport() {
+    if (!state) return null
+    const debugSnapshot = diagnosticsStore.getDebug()
+    const summary = computeSessionSummary(state, debugSnapshot)
+    return {
+      filename: `sf2-replay-${state.meta.campaignId}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      payload: {
+        schema: 'sf2-replay-fixture/v1',
+        exportedAt: new Date().toISOString(),
+        campaignId: state.meta.campaignId,
+        summary,
+        finalState: state,
+        debug: debugSnapshot,
+        frames: replayFramesRef.current,
+        note:
+          'Replay frames are captured model outputs plus before/after states. They are intended for model-free testing of deterministic tool application, cache invalidation, scene packets, and invariants.',
+      },
+    }
+  }
+
+  function downloadJsonExport(exportData: { filename: string; payload: unknown } | null) {
+    if (!exportData) return
+    const blob = new Blob([JSON.stringify(exportData.payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = exportData.filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  function downloadSessionLog() {
+    downloadJsonExport(buildSessionLogExport())
+  }
+
+  function downloadReplayFixture() {
+    downloadJsonExport(buildReplayFixtureExport())
+  }
+
+  async function copyJsonExport(label: 'session' | 'replay', exportData: { filename: string; payload: unknown } | null) {
+    if (!exportData) return
+    const json = JSON.stringify(exportData.payload, null, 2)
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(json)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = json
+        textarea.setAttribute('readonly', 'true')
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        textarea.remove()
+      }
+      diagnosticsStore.setExportCopyStatus(`Copied ${label} JSON: ${exportData.filename}`)
+    } catch (error) {
+      diagnosticsStore.setExportCopyStatus(`Copy failed: ${error instanceof Error ? error.message : 'unknown error'}`)
+    }
+    window.setTimeout(() => diagnosticsStore.setExportCopyStatus(null), 5000)
+  }
+
+  function copySessionLog() {
+    void copyJsonExport('session', buildSessionLogExport())
+  }
+
+  function copyReplayFixture() {
+    void copyJsonExport('replay', buildReplayFixtureExport())
+  }
+
+  const campaignStats = {
+    npcs: Object.keys(state.campaign.npcs).length,
+    threads: Object.keys(state.campaign.threads).length,
+    decisions: Object.values(state.campaign.decisions).filter((d) => d.status === 'active').length,
+    promises: Object.values(state.campaign.promises).filter((p) => p.status === 'active').length,
+    clues: Object.keys(state.campaign.clues).length,
+  }
+
+  const closeReadiness: Sf2CloseReadinessView = {
+    closeReady: pressureProjection.closeReadiness.closeReady,
+    chapterPivotSignaled,
+    spineResolved: pressureProjection.closeReadiness.spineResolved,
+    stalledFallback: pressureProjection.closeReadiness.stalledFallback,
+    ladderFiredCount: pressureProjection.closeReadiness.ladderFiredCount,
+    ladderStepCount: pressureProjection.closeReadiness.ladderStepCount,
+    spineStatus: pressureProjection.closeReadiness.spineStatus,
+    spineTension: pressureProjection.closeReadiness.spineTension ?? 0,
+    successorRequired: pressureProjection.closeReadiness.successorRequired,
+    promotedSpineThreadId: pressureProjection.closeReadiness.promotedSpineThreadId,
+  }
+  const rollModifier = pendingCheck
+    ? modifierForSkill(state, pendingCheck.skill)
+    : rollResult?.modifier ?? null
+  const currentEffectiveDc = pendingCheck
+    ? effectiveDcFor(pendingCheck)
+    : rollResult?.effectiveDc ?? rollResult?.dc ?? null
+
+  return (
+    <Sf2PlayShell
+      state={state}
+      scrollRef={scrollRef}
+      prose={prose}
+      turnCommitError={turnCommitError}
+      activePlayerInput={activePlayerInput}
+      liveRolls={liveRolls}
+      suggestedActions={suggestedActions}
+      pendingInput={pendingInput}
+      pendingCheck={pendingCheck}
+      rollResult={rollResult}
+      inspirationOffer={inspirationOffer}
+      rollModifier={rollModifier}
+      effectiveDc={currentEffectiveDc}
+      inspirationRemaining={availableInspiration(state)}
+      isStreaming={isStreaming}
+      isArchiving={isArchiving}
+      isGeneratingChapter={isGeneratingChapter}
+      generationElapsed={generationElapsed}
+      busy={busy}
+      chapterTurnCount={chapterTurnCount}
+      pressureProjection={pressureProjection}
+      closeReadiness={closeReadiness}
+      campaignStats={campaignStats}
+      onPendingInputChange={setPendingInput}
+      onSendTurn={sendTurn}
+      onResolvePendingCheck={resolvePendingCheck}
+      onSpendInspiration={spendInspirationReroll}
+      onDeclineInspiration={declineInspirationReroll}
+      onCloseChapter={closeChapterAndOpenNext}
+      onResetCampaign={resetCampaign}
+      onDownloadSessionLog={downloadSessionLog}
+      onDownloadReplayFixture={downloadReplayFixture}
+      onCopySessionLog={copySessionLog}
+      onCopyReplayFixture={copyReplayFixture}
+    />
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DISPOSITION_SCORE: Record<string, number> = {
+  hostile: 0,
+  wary: 1,
+  neutral: 2,
+  favorable: 3,
+  trusted: 4,
+}
+
+function buildTurnStateDiff(before: Sf2State, after: Sf2State): Sf2TurnDiffEntry[] {
+  const entries: Sf2TurnDiffEntry[] = []
+  const hpDelta = after.player.hp.current - before.player.hp.current
+  if (hpDelta !== 0) {
+    entries.push({
+      kind: 'hp',
+      label: `HP ${formatDiffSigned(hpDelta)}`,
+      tone: hpDelta > 0 ? 'gain' : after.player.hp.current === 0 ? 'severe' : 'loss',
+      from: before.player.hp.current,
+      to: after.player.hp.current,
+      value: hpDelta,
+    })
+  }
+
+  const creditDelta = after.player.credits - before.player.credits
+  if (creditDelta !== 0) {
+    entries.push({
+      kind: 'credits',
+      label: `CRED ${formatDiffSigned(creditDelta)}`,
+      tone: creditDelta > 0 ? 'gain' : 'loss',
+      from: before.player.credits,
+      to: after.player.credits,
+      value: creditDelta,
+    })
+  }
+
+  const beforeInventory = new Map(before.player.inventory.map((item) => [item.name, item.qty]))
+  const afterInventory = new Map(after.player.inventory.map((item) => [item.name, item.qty]))
+  for (const name of new Set([...beforeInventory.keys(), ...afterInventory.keys()])) {
+    const from = beforeInventory.get(name) ?? 0
+    const to = afterInventory.get(name) ?? 0
+    if (from === to) continue
+    entries.push({
+      kind: 'inventory',
+      label: `${compactLabel(name)} ${from}->${to}`,
+      tone: to > from ? 'gain' : 'loss',
+      from,
+      to,
+      value: to - from,
+    })
+  }
+
+  const currentChapter = after.meta.currentChapter
+  const newClues = Object.values(after.campaign.clues)
+    .filter((clue) => !before.campaign.clues[clue.id])
+    .filter((clue) => clue.chapterCreated === currentChapter)
+  if (newClues.length > 0) {
+    entries.push({
+      kind: 'intel',
+      label: newClues.length === 1 ? '+Intel' : `+${newClues.length} Intel`,
+      tone: 'gain',
+      entityId: newClues[0]?.id,
+      value: newClues.length,
+    })
+  }
+
+  for (const npc of Object.values(after.campaign.npcs)) {
+    const prior = before.campaign.npcs[npc.id]
+    if (!prior || prior.disposition === npc.disposition) continue
+    const delta = (DISPOSITION_SCORE[npc.disposition] ?? 0) - (DISPOSITION_SCORE[prior.disposition] ?? 0)
+    if (delta === 0) continue
+    entries.push({
+      kind: 'npc',
+      label: `${compactLabel(npc.name)} ${formatDiffSigned(delta)}`,
+      tone: delta > 0 ? 'gain' : 'loss',
+      entityId: npc.id,
+      from: prior.disposition,
+      to: npc.disposition,
+      value: delta,
+    })
+  }
+
+  const newLocations = Object.values(after.campaign.locations)
+    .filter((location) => !before.campaign.locations[location.id])
+    .filter((location) => location.chapterCreated === currentChapter && location.id !== 'loc_pending')
+  if (newLocations.length > 0) {
+    entries.push({
+      kind: 'location',
+      label: newLocations.length === 1 ? `+${compactLabel(newLocations[0].name || 'Location')}` : `+${newLocations.length} Locations`,
+      tone: 'gain',
+      entityId: newLocations[0]?.id,
+      value: newLocations.length,
+    })
+  }
+
+  if (operationPlanChanged(before, after)) {
+    entries.push({
+      kind: 'operation_plan',
+      label: before.campaign.operationPlan ? 'Ops plan updated' : '+Ops plan',
+      tone: 'change',
+    })
+  }
+
+  for (const thread of Object.values(after.campaign.threads)) {
+    const prior = before.campaign.threads[thread.id]
+    if (!prior || prior.tension === thread.tension) continue
+    const delta = thread.tension - prior.tension
+    entries.push({
+      kind: 'thread',
+      label: `${compactLabel(thread.title)} ${formatDiffSigned(delta)}`,
+      tone: delta > 0 ? 'loss' : 'gain',
+      entityId: thread.id,
+      from: prior.tension,
+      to: thread.tension,
+      value: delta,
+    })
+  }
+
+  return entries
+}
+
+function operationPlanChanged(before: Sf2State, after: Sf2State): boolean {
+  const prior = before.campaign.operationPlan
+  const next = after.campaign.operationPlan
+  if (!prior && !next) return false
+  if (!prior || !next) return true
+  return (
+    prior.name !== next.name ||
+    prior.target !== next.target ||
+    prior.approach !== next.approach ||
+    prior.fallback !== next.fallback ||
+    prior.status !== next.status
+  )
+}
+
+function compactLabel(label: string): string {
+  const trimmed = label.trim()
+  if (trimmed.length <= 18) return trimmed
+  return `${trimmed.slice(0, 17)}...`
+}
+
+function formatDiffSigned(value: number): string {
+  return value > 0 ? `+${value}` : String(value)
+}
+
+function annotationHasPivotSignal(annotation: Record<string, unknown> | null | undefined): boolean {
+  if (!annotation) return false
+  const rawMoves = annotation.authorial_moves as Record<string, unknown> | undefined
+  const normalizedMoves = annotation.authorialMoves as Record<string, unknown> | undefined
+  return rawMoves?.pivot_signaled === true ||
+    rawMoves?.pivotSignaled === true ||
+    normalizedMoves?.pivotSignaled === true ||
+    normalizedMoves?.pivot_signaled === true
+}
+
+function chapterHasPivotSignal(state: Sf2State): boolean {
+  return state.history.turns.some((turn) =>
+    turn.chapter === state.meta.currentChapter &&
+    (
+      turn.narratorAnnotation?.authorialMoves?.pivotSignaled === true ||
+      annotationHasPivotSignal(turn.narratorAnnotationRaw)
+    )
+  )
+}

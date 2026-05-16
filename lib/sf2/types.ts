@@ -103,6 +103,13 @@ export type Sf2RevealContext =
   | 'accusation'
   | 'forced_disclosure'
   | 'inadvertent'
+export type Sf2PassiveAwarenessKind =
+  | 'environmental_detail'
+  | 'hazard_sign'
+  | 'surveillance_trace'
+  | 'tail_sign'
+  | 'npc_tell'
+  | 'procedure_affordance'
 export interface Sf2RevelationCashConditions {
   playerPressesTopic?: boolean
   minTurn?: number
@@ -971,6 +978,31 @@ export interface Sf2OperationPlan {
   lastUpdatedTurn: number
 }
 
+export interface Sf2PassiveAwarenessCue {
+  id: Sf2EntityId
+  kind: Sf2PassiveAwarenessKind
+  passiveDc: number
+  surfaceText: string
+  followupQuestion?: string
+  sceneId?: Sf2EntityId
+  locationId?: Sf2EntityId
+  npcId?: Sf2EntityId
+  threadId?: Sf2EntityId
+  source: 'author' | 'runtime' | 'fixture'
+}
+
+export interface Sf2PassiveAwarenessDelivery {
+  sceneId: Sf2EntityId
+  turnIndex: number
+}
+
+export interface Sf2PassiveAwarenessEvaluation {
+  passivePerception: number
+  met: Sf2PassiveAwarenessCue[]
+  unmet: Array<{ cueId: Sf2EntityId; passiveDc: number }>
+  advisoryText: string
+}
+
 // Output 1: persisted, retrieval-facing
 export interface Sf2ChapterSetupRuntimeState {
   chapter: Sf2ChapterNumber
@@ -1020,6 +1052,8 @@ export interface Sf2ChapterSetupScaffolding {
   }>
   continuationMoves?: Sf2ChapterContinuationMoves
   continuationDramaticTurn?: Sf2ContinuationDramaticTurn
+  passiveAwarenessCues?: Sf2PassiveAwarenessCue[]
+  passiveAwarenessDelivered?: Record<Sf2EntityId, Sf2PassiveAwarenessDelivery>
 }
 
 export interface Sf2RevelationHintEvidence {
@@ -1808,6 +1842,7 @@ export interface Sf2NarratorScenePacket {
   operationPlan?: Sf2OperationPlan
   recentContext: Sf2RecentContextPacket
   pacing: Sf2PacingAdvisory
+  passiveAwareness: Sf2PassiveAwarenessEvaluation
   playerInput: {
     text: string
     inferredIntent: string
@@ -1841,6 +1876,15 @@ export interface Sf2CampaignMeta {
   updatedAt: string
   schemaVersion: typeof SF2_SCHEMA_VERSION
   seedId?: string
+  setupSelection?: {
+    genreId: string
+    originId: string
+    playbookId: string
+    hookId: string
+    characterName?: string
+  }
+  hookId?: string
+  hookTitle?: string
   genreId: string
   playbookId: string
   originId: string
@@ -1979,6 +2023,7 @@ export type Sf2WriteKind =
   // Code-owned
   | 'face_shift'
   | 'ladder_fire'
+  | 'passive_awareness_delivered'
   | 'working_set_compute'
   | 'cohesion_recompute'
 

@@ -15,11 +15,18 @@ import type {
 } from './types'
 import { SF2_SCHEMA_VERSION } from './types'
 import { getGenreConfig, type CharacterClass, type Genre } from '../genre-config'
+import {
+  buildSf2PlayerFromSetupSelection,
+  compileSf2SetupSeed,
+  describeSf2SetupSelection,
+} from './setup/compile-seed'
+import type { Sf2SetupSelection } from './setup/types'
 
 export interface NewCampaignInputs {
   campaignId: string
   playerName: string
   seedId?: string
+  setupSelection?: Sf2SetupSelection
 }
 
 // Warden / Imperial Service base stats per lib/genres/epic-scifi.ts.
@@ -104,9 +111,16 @@ function buildPlayerFromSeed(seed: AuthorInputSeed, playerName: string): Sf2Play
 
 export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
   const now = new Date().toISOString()
-  const seedEntry = getSf2SeedById(inputs.seedId)
+  const setupDescriptor = inputs.setupSelection
+    ? describeSf2SetupSelection(inputs.setupSelection)
+    : null
+  const seedEntry = inputs.setupSelection
+    ? buildSf2SetupSeedEntry(inputs.setupSelection)
+    : getSf2SeedById(inputs.seedId)
   const seed = seedEntry.seed
-  const player = seedEntry.buildPlayer(inputs.playerName)
+  const player = inputs.setupSelection
+    ? buildSf2PlayerFromSetupSelection(inputs.setupSelection, inputs.playerName)
+    : seedEntry.buildPlayer(inputs.playerName)
 
   // Empty chapter placeholder. The Author fills this on the first Begin click.
   // Title === '' signals unauthored; the client fires Author-for-Ch1 before
@@ -161,6 +175,8 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       possibleRevelations: [],
       moralFaultLines: [],
       escalationOptions: [],
+      passiveAwarenessCues: [],
+      passiveAwarenessDelivered: {},
     },
     artifacts: {
       opening: {
@@ -185,6 +201,8 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       updatedAt: now,
       schemaVersion: SF2_SCHEMA_VERSION,
       seedId: seedEntry.id,
+      ...(inputs.setupSelection ? { setupSelection: inputs.setupSelection } : {}),
+      ...(setupDescriptor ? { hookId: setupDescriptor.hookId, hookTitle: setupDescriptor.hookTitle } : {}),
       genreId: seed.genreId,
       playbookId: seed.playbookId,
       originId: seed.originId,
@@ -1004,8 +1022,21 @@ export function getSf2SeedById(seedId?: string): Sf2SeedRegistryEntry {
   return (seedId ? SF2_SEED_REGISTRY[seedId] : undefined) ?? SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID]
 }
 
+function buildSf2SetupSeedEntry(selection: Sf2SetupSelection): Sf2SeedRegistryEntry {
+  const seed = compileSf2SetupSeed(selection)
+  const descriptor = describeSf2SetupSelection(selection)
+  return {
+    id: descriptor.seedId,
+    label: `${seed.genreName} · ${seed.originName} · ${seed.playbookName} · ${seed.hook.title}`,
+    description: seed.hook.premise,
+    seed,
+    buildPlayer: (playerName) => buildSf2PlayerFromSetupSelection(selection, playerName),
+  }
+}
+
 export function getSf2SeedForState(state: Pick<Sf2State, 'meta'> | null | undefined): Sf2SeedRegistryEntry {
   if (!state) return SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID]
+  if (state.meta.setupSelection) return buildSf2SetupSeedEntry(state.meta.setupSelection)
   const byId = getSf2SeedById(state.meta.seedId)
   if (state.meta.seedId && byId.id === state.meta.seedId) return byId
 

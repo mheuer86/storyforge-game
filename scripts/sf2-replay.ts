@@ -15,12 +15,24 @@ import {
   type Sf2NarratorRollResolution,
 } from '../lib/sf2/narrator/turn-context'
 import { extractSf2RollSkillTags, inspectSf2RollSkillTags } from '../lib/sf2/narrator/roll-gates'
+import {
+  evaluateSocialModifierAdvisories,
+  reconcileRollModifierWithSocialAdvisories,
+  renderSocialModifierAdvisories,
+} from '../lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit-repair'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import { buildAuthorSituation } from '../lib/sf2/author/prompt'
+import { compileSf2SetupSeed } from '../lib/sf2/setup/compile-seed'
+import {
+  listSf2SetupHooks,
+  listSf2SetupOrigins,
+  listSf2SetupPlaybooks,
+} from '../lib/sf2/setup/options'
+import type { Sf2SetupSelection } from '../lib/sf2/setup/types'
 import { buildArcAuthorSituation, SF2_ARC_AUTHOR_ROLE } from '../lib/sf2/arc-author/prompt'
 import {
   AUTHOR_DEFAULT_MAX_ATTEMPTS,
@@ -218,6 +230,7 @@ interface ReplayFixture {
       retrievalCueMaxWords?: number
       retrievalCueMaxChars?: number
     }>
+    cluesCount?: number
     chapterCloseReadiness?: {
       pivotSignaled?: boolean
       closeReady: boolean
@@ -263,6 +276,42 @@ interface ReplayFixture {
       arcVariantCandidateScenarioBiasesInclude?: string[]
       arcVariantCandidateJsonIncludes?: string[]
       arcVariantCandidateJsonExcludes?: string[]
+    }
+    setupCompiler?: {
+      cases: Array<{
+        name: string
+        selection: Omit<Sf2SetupSelection, 'hookId'> & { hookTitle: string }
+        expect: {
+          originName?: string
+          playbookName?: string
+          hookTitle?: string
+          hookPremiseIncludes?: string[]
+          hookObjectiveEquals?: string
+          hookCrucibleEquals?: string
+          hookArcNameEquals?: string
+          hookFirstEpisodeEquals?: string
+          worldVocabularyIncludes?: string[]
+          playerHpEquals?: number
+          playerAcEquals?: number
+          playerCreditsEquals?: number
+          playerProficienciesInclude?: string[]
+          playerInventoryIncludes?: string[]
+          playerTraitEquals?: string
+          pcNaturalMovesInclude?: string[]
+        }
+      }>
+      hookFilters?: Array<{
+        genreId: string
+        originId: string
+        playbookId: string
+        includesTitles?: string[]
+        excludesTitles?: string[]
+      }>
+      optionLists?: Array<{
+        genreId: string
+        originIdsInclude?: string[]
+        playbookIdsInclude?: Array<{ originId: string; playbookIds: string[] }>
+      }>
     }
     authorRetryNudge?: {
       errors: string[]
@@ -589,6 +638,29 @@ interface ReplayFixture {
       skillsInclude?: string[]
       unknownSkillLikeTagsInclude?: string[]
       unknownSkillLikeTagsAbsent?: string[]
+    }
+    socialModifierAdvisories?: {
+      stateBefore?: 'fixture-stateBefore' | 'fixture-stateAfter'
+      playerInput?: string
+      skill?: string
+      targetEntityIds?: string[]
+      countEquals?: number
+      includes?: Array<{
+        id?: string
+        source?: string
+        modifierType?: string
+        targetNpcId?: string
+        reasonIncludes?: string
+      }>
+      renderedIncludes?: string[]
+      reconciliation?: {
+        skill: string
+        requestedModifierType?: 'advantage' | 'disadvantage' | 'challenge'
+        requestedModifierReason?: string
+        modifierType?: 'advantage' | 'disadvantage' | 'challenge'
+        modifierReasonIncludes?: string[]
+        diagnosticsInclude?: string[]
+      }
     }
     narratorCommitRepair?: {
       completedAssistantProse: string
@@ -930,6 +1002,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   )
   assertSensitiveDisclosureGaps(fixture, stateBefore, failures)
   assertRollSkillTags(fixture, failures)
+  assertSocialModifierAdvisories(fixture, stateBefore, stateAfter, failures)
   assertRequiredRollGate(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertNarratorCommitRepair(fixture, stateBefore, failures)
@@ -2524,6 +2597,85 @@ function assertRollSkillTags(fixture: ReplayFixture, failures: string[]): void {
   }
 }
 
+function assertSocialModifierAdvisories(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  stateAfter: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.socialModifierAdvisories
+  if (!expected) return
+
+  const state = expected.stateBefore === 'fixture-stateAfter' ? stateAfter : stateBefore
+  const playerInput = expected.playerInput ?? fixture.input.playerInput
+  const advisories = evaluateSocialModifierAdvisories({
+    state,
+    playerInput,
+    skill: expected.skill,
+    targetEntityIds: expected.targetEntityIds,
+  })
+
+  if (typeof expected.countEquals === 'number' && advisories.length !== expected.countEquals) {
+    failures.push(`socialModifierAdvisories.count: expected ${expected.countEquals}, got ${advisories.length}`)
+  }
+
+  for (const want of expected.includes ?? []) {
+    const found = advisories.find((advisory) => {
+      if (want.id !== undefined && advisory.id !== want.id) return false
+      if (want.source !== undefined && advisory.source !== want.source) return false
+      if (want.modifierType !== undefined && advisory.modifierType !== want.modifierType) return false
+      if (want.targetNpcId !== undefined && advisory.targetNpcId !== want.targetNpcId) return false
+      if (want.reasonIncludes !== undefined && !advisory.reason.includes(want.reasonIncludes)) return false
+      return true
+    })
+    if (!found) {
+      failures.push(
+        `socialModifierAdvisories missing ${JSON.stringify(want)}; got ${JSON.stringify(advisories)}`
+      )
+    }
+  }
+
+  const rendered = renderSocialModifierAdvisories(advisories)
+  for (const fragment of expected.renderedIncludes ?? []) {
+    if (!rendered.includes(fragment)) {
+      failures.push(`socialModifierAdvisories.rendered missing "${fragment}"`)
+    }
+  }
+
+  if (expected.reconciliation) {
+    const reconciliation = reconcileRollModifierWithSocialAdvisories({
+      state,
+      playerInput,
+      skill: expected.reconciliation.skill,
+      requestedModifierType: expected.reconciliation.requestedModifierType,
+      requestedModifierReason: expected.reconciliation.requestedModifierReason,
+      targetEntityIds: expected.targetEntityIds,
+    })
+    if (
+      expected.reconciliation.modifierType !== undefined &&
+      reconciliation.modifierType !== expected.reconciliation.modifierType
+    ) {
+      failures.push(
+        `socialModifierAdvisories.reconciliation.modifierType: expected ${expected.reconciliation.modifierType}, got ${reconciliation.modifierType ?? 'unset'}`
+      )
+    }
+    for (const fragment of expected.reconciliation.modifierReasonIncludes ?? []) {
+      if (!reconciliation.modifierReason?.includes(fragment)) {
+        failures.push(
+          `socialModifierAdvisories.reconciliation.modifierReason missing "${fragment}"; got "${reconciliation.modifierReason ?? ''}"`
+        )
+      }
+    }
+    for (const fragment of expected.reconciliation.diagnosticsInclude ?? []) {
+      if (!reconciliation.diagnostics.some((line) => line.includes(fragment))) {
+        failures.push(
+          `socialModifierAdvisories.reconciliation.diagnostics missing "${fragment}"; got [${reconciliation.diagnostics.join('; ')}]`
+        )
+      }
+    }
+  }
+}
+
 function messageContentText(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
@@ -2612,6 +2764,28 @@ function buildStateBefore(fixture: ReplayFixture): Sf2State {
     return deepMerge(createMinimalState(), fixture.input.stateBeforePatch ?? {}) as Sf2State
   }
   throw new Error(`fixture ${fixture.name} needs input.stateBefore or input.stateBeforePreset`)
+}
+
+function resolveSetupSelectionByTitle(
+  selection: Omit<Sf2SetupSelection, 'hookId'> & { hookTitle: string }
+): Sf2SetupSelection {
+  const hook = listSf2SetupHooks(
+    selection.genreId,
+    selection.originId,
+    selection.playbookId
+  ).find((candidate) => candidate.title === selection.hookTitle)
+  if (!hook) {
+    throw new Error(
+      `No setup hook titled "${selection.hookTitle}" for ${selection.genreId}/${selection.originId}/${selection.playbookId}`
+    )
+  }
+  return {
+    genreId: selection.genreId,
+    originId: selection.originId,
+    playbookId: selection.playbookId,
+    hookId: hook.id,
+    ...(selection.characterName ? { characterName: selection.characterName } : {}),
+  }
 }
 
 function normalizePatch(patch: Partial<Sf2ArchivistPatch> | null, turnIndex: number): Sf2ArchivistPatch {
@@ -3163,6 +3337,12 @@ function assertExpected(
       }
     }
   }
+  if (expected.cluesCount !== undefined) {
+    const count = Object.keys(state.campaign.clues ?? {}).length
+    if (count !== expected.cluesCount) {
+      failures.push(`clues count expected ${expected.cluesCount}, got ${count}`)
+    }
+  }
   if (expected.chapterCloseReadiness) {
     const readiness = computeChapterCloseReadiness(
       state,
@@ -3391,6 +3571,120 @@ function assertExpected(
     for (const snippet of expected.authorInputSeed.arcVariantCandidateJsonExcludes ?? []) {
       if (arcVariantCandidateJson.includes(snippet)) {
         failures.push(`authorInputSeed.arcVariantCandidates JSON unexpectedly includes "${snippet}"`)
+      }
+    }
+  }
+  if (expected.setupCompiler) {
+    for (const optionList of expected.setupCompiler.optionLists ?? []) {
+      const origins = listSf2SetupOrigins(optionList.genreId)
+      for (const originId of optionList.originIdsInclude ?? []) {
+        if (!origins.some((origin) => origin.id === originId)) {
+          failures.push(`setupCompiler.optionLists ${optionList.genreId}: missing origin ${originId}`)
+        }
+      }
+      for (const playbookList of optionList.playbookIdsInclude ?? []) {
+        const playbooks = listSf2SetupPlaybooks(optionList.genreId, playbookList.originId)
+        for (const playbookId of playbookList.playbookIds) {
+          if (!playbooks.some((playbook) => playbook.id === playbookId)) {
+            failures.push(`setupCompiler.optionLists ${optionList.genreId}/${playbookList.originId}: missing playbook ${playbookId}`)
+          }
+        }
+      }
+    }
+
+    for (const filter of expected.setupCompiler.hookFilters ?? []) {
+      const hooks = listSf2SetupHooks(filter.genreId, filter.originId, filter.playbookId)
+      const titles = hooks.map((hook) => hook.title)
+      for (const title of filter.includesTitles ?? []) {
+        if (!titles.includes(title)) {
+          failures.push(`setupCompiler.hookFilters ${filter.genreId}/${filter.originId}/${filter.playbookId}: missing hook "${title}"`)
+        }
+      }
+      for (const title of filter.excludesTitles ?? []) {
+        if (titles.includes(title)) {
+          failures.push(`setupCompiler.hookFilters ${filter.genreId}/${filter.originId}/${filter.playbookId}: unexpectedly includes hook "${title}"`)
+        }
+      }
+    }
+
+    for (const setupCase of expected.setupCompiler.cases) {
+      const selection = resolveSetupSelectionByTitle(setupCase.selection)
+      const seed = compileSf2SetupSeed(selection)
+      const created = createInitialSf2State({
+        campaignId: `setup_${setupCase.name.replace(/\W+/g, '_')}`,
+        playerName: setupCase.selection.characterName ?? 'Replay Runner',
+        setupSelection: selection,
+      })
+      const player = created.player
+      const expect = setupCase.expect
+      const label = `setupCompiler.${setupCase.name}`
+      if (expect.originName !== undefined && seed.originName !== expect.originName) {
+        failures.push(`${label}.originName expected ${expect.originName}, got ${seed.originName}`)
+      }
+      if (expect.playbookName !== undefined && seed.playbookName !== expect.playbookName) {
+        failures.push(`${label}.playbookName expected ${expect.playbookName}, got ${seed.playbookName}`)
+      }
+      if (expect.hookTitle !== undefined && seed.hook.title !== expect.hookTitle) {
+        failures.push(`${label}.hook.title expected ${expect.hookTitle}, got ${seed.hook.title}`)
+      }
+      for (const snippet of expect.hookPremiseIncludes ?? []) {
+        if (!seed.hook.premise.includes(snippet)) {
+          failures.push(`${label}.hook.premise missing "${snippet}"`)
+        }
+      }
+      if (expect.hookObjectiveEquals !== undefined && seed.hook.objective !== expect.hookObjectiveEquals) {
+        failures.push(`${label}.hook.objective expected ${expect.hookObjectiveEquals}, got ${seed.hook.objective ?? 'unset'}`)
+      }
+      if (expect.hookCrucibleEquals !== undefined && seed.hook.crucible !== expect.hookCrucibleEquals) {
+        failures.push(`${label}.hook.crucible expected ${expect.hookCrucibleEquals}, got ${seed.hook.crucible}`)
+      }
+      if (expect.hookArcNameEquals !== undefined && seed.hook.arcName !== expect.hookArcNameEquals) {
+        failures.push(`${label}.hook.arcName expected ${expect.hookArcNameEquals}, got ${seed.hook.arcName ?? 'unset'}`)
+      }
+      if (expect.hookFirstEpisodeEquals !== undefined && seed.hook.firstEpisode !== expect.hookFirstEpisodeEquals) {
+        failures.push(`${label}.hook.firstEpisode expected ${expect.hookFirstEpisodeEquals}, got ${seed.hook.firstEpisode ?? 'unset'}`)
+      }
+      for (const term of expect.worldVocabularyIncludes ?? []) {
+        if (!seed.worldRules.vocabulary.includes(term)) {
+          failures.push(`${label}.worldRules.vocabulary missing ${term}`)
+        }
+      }
+      if (expect.playerHpEquals !== undefined && player.hp.max !== expect.playerHpEquals) {
+        failures.push(`${label}.player.hp expected ${expect.playerHpEquals}, got ${player.hp.max}`)
+      }
+      if (expect.playerAcEquals !== undefined && player.ac !== expect.playerAcEquals) {
+        failures.push(`${label}.player.ac expected ${expect.playerAcEquals}, got ${player.ac}`)
+      }
+      if (expect.playerCreditsEquals !== undefined && player.credits !== expect.playerCreditsEquals) {
+        failures.push(`${label}.player.credits expected ${expect.playerCreditsEquals}, got ${player.credits}`)
+      }
+      for (const proficiency of expect.playerProficienciesInclude ?? []) {
+        if (!player.proficiencies.includes(proficiency)) {
+          failures.push(`${label}.player.proficiencies missing ${proficiency}`)
+        }
+      }
+      for (const itemName of expect.playerInventoryIncludes ?? []) {
+        if (!player.inventory.some((item) => item.name === itemName)) {
+          failures.push(`${label}.player.inventory missing ${itemName}`)
+        }
+      }
+      if (expect.playerTraitEquals !== undefined && player.traits[0]?.name !== expect.playerTraitEquals) {
+        failures.push(`${label}.player.trait expected ${expect.playerTraitEquals}, got ${player.traits[0]?.name ?? 'unset'}`)
+      }
+      for (const naturalMove of expect.pcNaturalMovesInclude ?? []) {
+        if (!seed.pcCapabilities?.playbookProfile?.naturalMoves.includes(naturalMove)) {
+          failures.push(`${label}.pcCapabilities.playbookProfile.naturalMoves missing ${naturalMove}`)
+        }
+      }
+      if (created.meta.setupSelection?.hookId !== selection.hookId) {
+        failures.push(`${label}.meta.setupSelection hook id was not persisted`)
+      }
+      if (created.meta.hookTitle !== seed.hook.title) {
+        failures.push(`${label}.meta.hookTitle expected ${seed.hook.title}, got ${created.meta.hookTitle ?? 'unset'}`)
+      }
+      const compiledFromState = compileAuthorInputSeed(created, null)
+      if (compiledFromState.hook.title !== seed.hook.title) {
+        failures.push(`${label}.compileAuthorInputSeed returned ${compiledFromState.hook.title}, expected ${seed.hook.title}`)
       }
     }
   }

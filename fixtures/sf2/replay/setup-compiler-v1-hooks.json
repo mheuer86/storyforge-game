@@ -1,0 +1,169 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "SF2 setup compiler preserves V1 hook and playbook data",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure compiler coverage for Ticket 12: V1 genre/origin/playbook/hook selections compile into AuthorInputSeed and Sf2Player without model calls."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - setup compiler fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "setupCompiler": {
+      "optionLists": [
+        {
+          "genreId": "epic-scifi",
+          "originIdsInclude": ["synod"],
+          "playbookIdsInclude": [
+            { "originId": "synod", "playbookIds": ["seeker"] }
+          ]
+        },
+        {
+          "genreId": "space-opera",
+          "originIdsInclude": ["human"],
+          "playbookIdsInclude": [
+            { "originId": "human", "playbookIds": ["operative"] }
+          ]
+        },
+        {
+          "genreId": "fantasy",
+          "originIdsInclude": ["human"],
+          "playbookIdsInclude": [
+            { "originId": "human", "playbookIds": ["seeker"] }
+          ]
+        }
+      ],
+      "hookFilters": [
+        {
+          "genreId": "epic-scifi",
+          "originId": "synod",
+          "playbookId": "seeker",
+          "includesTitles": ["The Taken Child"],
+          "excludesTitles": ["The Uprising"]
+        },
+        {
+          "genreId": "space-opera",
+          "originId": "human",
+          "playbookId": "captain",
+          "excludesTitles": ["Forty Thousand", "The Defector"]
+        }
+      ],
+      "cases": [
+        {
+          "name": "hegemony synod seeker",
+          "selection": {
+            "genreId": "epic-scifi",
+            "originId": "synod",
+            "playbookId": "seeker",
+            "hookTitle": "The Taken Child",
+            "characterName": "Iria"
+          },
+          "expect": {
+            "originName": "Synod",
+            "playbookName": "Seeker",
+            "hookTitle": "The Taken Child",
+            "hookPremiseIncludes": ["Another seven-year-old has been seized"],
+            "hookObjectiveEquals": "Restore order without losing the community",
+            "hookCrucibleEquals": "The elders are offering peace on terms you weren't authorized to accept",
+            "hookArcNameEquals": "The Taken Child",
+            "hookFirstEpisodeEquals": "Approach the township gate and face the delegation of elders",
+            "worldVocabularyIncludes": ["Synod", "Resonant", "Drift"],
+            "playerHpEquals": 8,
+            "playerAcEquals": 12,
+            "playerCreditsEquals": 120,
+            "playerProficienciesInclude": ["Investigation", "Arcana (Drift Lore)"],
+            "playerInventoryIncludes": ["Inquisitor's Codex", "Attunement Scanner"],
+            "playerTraitEquals": "Inquisition"
+          }
+        },
+        {
+          "name": "space opera human driftrunner",
+          "selection": {
+            "genreId": "space-opera",
+            "originId": "human",
+            "playbookId": "operative",
+            "hookTitle": "Forty Thousand",
+            "characterName": "Ren"
+          },
+          "expect": {
+            "originName": "Human",
+            "playbookName": "Driftrunner",
+            "hookTitle": "Forty Thousand",
+            "hookPremiseIncludes": ["You owe Maren Voss forty thousand credits"],
+            "hookObjectiveEquals": "Take the job, pay the debt, and get out before Voss's collector finds you",
+            "hookArcNameEquals": "The Forty Thousand Job",
+            "hookFirstEpisodeEquals": "Take the passenger and the crate aboard and clear the station before the collector closes in",
+            "worldVocabularyIncludes": ["Compact", "Fracture", "beacon corridors"],
+            "playerHpEquals": 9,
+            "playerAcEquals": 15,
+            "playerCreditsEquals": 120,
+            "playerProficienciesInclude": ["Stealth", "Piloting", "Hacking"],
+            "playerInventoryIncludes": ["Pulse Pistol", "Holo-Cloak", "Lockbreaker Kit"],
+            "playerTraitEquals": "Smuggler's Luck",
+            "pcNaturalMovesInclude": ["stealth through station and ship security"]
+          }
+        },
+        {
+          "name": "fantasy human seeker",
+          "selection": {
+            "genreId": "fantasy",
+            "originId": "human",
+            "playbookId": "seeker",
+            "hookTitle": "For Those Who Come After",
+            "characterName": "Mara"
+          },
+          "expect": {
+            "originName": "Human",
+            "playbookName": "Seeker",
+            "hookTitle": "For Those Who Come After",
+            "hookPremiseIncludes": ["A map found in a dead adventurer's pack"],
+            "hookObjectiveEquals": "Enter the watchtower and determine what the machine is doing",
+            "hookCrucibleEquals": "Something Ancient is still running beneath a watchtower, and the last person who found it was too afraid to interfere",
+            "hookArcNameEquals": "For Those Who Come After",
+            "hookFirstEpisodeEquals": "Enter the watchtower and assess whether the machine is preserving or containing",
+            "worldVocabularyIncludes": ["Collegium", "Sundering", "ruin"],
+            "playerHpEquals": 8,
+            "playerAcEquals": 12,
+            "playerCreditsEquals": 120,
+            "playerProficienciesInclude": ["Investigation", "Arcana", "Survival"],
+            "playerInventoryIncludes": ["Hand Crossbow", "Research Journal", "Cartographer's Kit"],
+            "playerTraitEquals": "Fragment Recovery"
+          }
+        },
+        {
+          "name": "space opera metadata preservation",
+          "selection": {
+            "genreId": "space-opera",
+            "originId": "human",
+            "playbookId": "operative",
+            "hookTitle": "The Defector",
+            "characterName": "Vega"
+          },
+          "expect": {
+            "hookTitle": "The Defector",
+            "hookPremiseIncludes": ["The cargo is a person.", "compromised beacon operators"],
+            "hookObjectiveEquals": "Get the defector to safe harbor alive",
+            "hookCrucibleEquals": "A black-ops corvette, a passenger who knows too much, and the question of whether her data is worth dying for",
+            "hookArcNameEquals": "The Defector's Data",
+            "hookFirstEpisodeEquals": "Evade the corvette and decide whether to trust what the defector is carrying"
+          }
+        }
+      ]
+    }
+  }
+}
