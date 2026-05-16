@@ -56,9 +56,12 @@
   "expected": {
     "authorInputSeed": {
       "hookPremiseIncludes": [
-        "Your next route cannot open cleanly until forty thousand credits of leverage clears."
+        "You are forty thousand credits in debt",
+        "You do not want the job",
+        "who will take advantage of whom"
       ],
       "hookPremiseExcludes": [
+        "Your next route cannot open cleanly",
         "Your ship cannot leave cleanly",
         "docking clamps",
         "port fees",
@@ -67,7 +70,8 @@
         "cantina"
       ],
       "hookCrucibleIncludes": [
-        "which exit the crew needs"
+        "a rotten job",
+        "how desperate the crew is"
       ],
       "hookCrucibleExcludes": [
         "the Driftrunner",

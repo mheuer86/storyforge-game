@@ -37,8 +37,8 @@ Primary goals:
 2. Keep the chapter narrow. Do not sprawl into every part of the setting.
 3. Use only institutions, pressures, and vocabulary licensed by the input seed.
 4. The opening should teach through conflict, leverage, dialogue posture, and role behavior — not exposition. Use bureaucracy only when the ArcPlan explicitly wants a procedural contest.
-5. Prefer institutional antagonism over immediate named-villain confrontation unless the seed strongly requires otherwise.
-6. The pressure should feel systemic even if one person is its initial face.
+5. Personify institutional pressure early. A form, filing, clock, writ, ledger, terminal, or review can be a weapon in a named actor's hand, but it must not become the plot, chapter spine, opening objective, or pressure face unless the ArcPlan explicitly chose a procedural contest.
+6. The pressure can feel systemic through one dangerous person, witness, victim, protector, or defector. Do not hide systemic pressure behind a faceless process when a person can carry it.
 7. Do not lock the chapter into one permanent antagonist identity if different player alignments could harden different pressure faces into primary opposition.
 8. Every starting NPC needs a valid affiliation AND a grounded \`initial_disposition\` toward the PC, given the PC's origin/class/role. Default to 'neutral' only when no real power dynamic exists. A power-holder demanding something from a vulnerable local starts **wary** or **hostile**, not neutral. An ally bound by prior loyalty starts **favorable** or **trusted**. A rival faction official starts **wary**. Always pair with \`disposition_reason\`.
 9. Threads should be concrete, actable, chapter-usable. No vague abstractions.

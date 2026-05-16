@@ -92,7 +92,12 @@ export function normalizePersistedSf2State(
   const playerName = stringOr(rawPlayer?.name, 'Ren')
   const seedId = stringOr(rawMeta?.seedId, undefined)
   const setupSelection = setupSelectionOr(rawMeta?.setupSelection)
-  const base = createInitialSf2State({ campaignId, playerName, seedId, setupSelection })
+  let base: Sf2State
+  try {
+    base = createInitialSf2State({ campaignId, playerName, seedId, setupSelection })
+  } catch {
+    return null
+  }
   const state = deepMerge(base, raw) as Sf2State
   const repairs: string[] = []
 

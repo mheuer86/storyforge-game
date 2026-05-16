@@ -68,7 +68,17 @@ export async function POST(req: NextRequest) {
     }
 
     const state = (parsed.data.state ?? null) as Sf2State | null
-    const seed = structuredClone((parsed.data.seed ?? compileAuthorInputSeed(state, null)) as AuthorInputSeed)
+    if (!parsed.data.seed && !state) {
+      return new Response(
+        JSON.stringify({
+          error: 'missing_seed_or_state',
+          message: 'Arc Author requires either a selected SF2 state or an explicit AuthorInputSeed.',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    const seedSource = parsed.data.seed ?? compileAuthorInputSeed(state as Sf2State, null)
+    const seed = structuredClone(seedSource as AuthorInputSeed)
     if (parsed.data.arcVariantSeed) {
       seed.arcVariantSeed = parsed.data.arcVariantSeed as AuthorInputSeed['arcVariantSeed']
     } else {

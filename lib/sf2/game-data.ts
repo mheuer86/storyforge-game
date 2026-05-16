@@ -3,9 +3,9 @@
 // unauthored by `state.chapter.title === ''`; the client gates the Narrator
 // call on Author-for-Ch1 having run successfully.
 //
-// The default AuthorInputSeed is the Warden / Imperial Service / "The Tithe"
-// seed from the Codex validation example. Additional experimental seeds live in
-// the registry below and are selected only at campaign creation.
+// Campaigns should be created from a setupSelection chosen by the setup wizard.
+// The registry below is only for explicit bootstrap/design seeds; it must not
+// provide a global story fallback.
 
 import type {
   AuthorInputSeed,
@@ -29,13 +29,6 @@ export interface NewCampaignInputs {
   setupSelection?: Sf2SetupSelection
 }
 
-// Warden / Imperial Service base stats per lib/genres/epic-scifi.ts.
-const WARDEN_STATS = { STR: 17, DEX: 12, CON: 15, INT: 11, WIS: 12, CHA: 10 }
-const WARDEN_STARTING_HP = 14
-const WARDEN_STARTING_AC = 14
-const STARTING_CREDITS = 200
-
-export const DEFAULT_SF2_SEED_ID = 'epic-scifi/warden/the-tithe'
 export const SPACE_OPERA_DRIFTRUNNER_SEED_ID = 'space-opera/human/operative/forty-thousand'
 export const SPACE_OPERA_DEFECTOR_SEED_ID = 'space-opera/human/operative/the-defector'
 export const FANTASY_SEEKER_SEED_ID = 'fantasy/human/seeker/the-second-library'
@@ -125,6 +118,9 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
   const seedEntry = inputs.setupSelection
     ? buildSf2SetupSeedEntry(inputs.setupSelection)
     : getSf2SeedById(inputs.seedId)
+  if (!seedEntry) {
+    throw new Error('SF2 campaign creation requires setupSelection or a valid seedId; there is no global default seed.')
+  }
   const seed = seedEntry.seed
   const player = inputs.setupSelection
     ? buildSf2PlayerFromSetupSelection(inputs.setupSelection, inputs.playerName)
@@ -282,104 +278,6 @@ export function isArcAuthored(state: Sf2State): boolean {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Canonical AuthorInputSeed — Warden / Imperial Service / "The Tithe"
-// Direct lift from the Codex validation example. The Author consumes this on
-// Ch1 setup; Ch2+ derive a morphed seed from state via compileAuthorInputSeed.
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const CAMPAIGN_INITIAL_SEED: AuthorInputSeed = {
-  genreId: 'epic-scifi',
-  genreName: 'The Hegemony',
-  playbookId: 'warden',
-  playbookName: 'Warden',
-  originId: 'imperial-service',
-  originName: 'Imperial Service',
-  // Hook is the pressure only. objective/arcName/firstEpisode are Author
-  // decisions — the Author chooses the Ch1 frame from this pressure; passing
-  // a pre-authored first beat collapses every Ch1 to the same tableau.
-  hook: {
-    title: 'The Tithe',
-    premise:
-      'A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.',
-    crucible: 'The Synod will take children if the numbers are not met.',
-  },
-  worldRules: {
-    settingSummary:
-      'A thousand-year interstellar empire held together by human fuel. Resonants attune to the Drift, powering FTL, shields, and weapons. They are identified as children, taken by the Synod, and deployed as infrastructure. Their power is immense and their status is property. Houses compete for Resonant allocation. The Synod controls supply and enforces doctrine. The Throne balances both. The Undrift survive in hiding. Everyone is complicit; nobody is clean. The player is inside this machine.',
-    institutionalForces: [
-      'The Synod controls Resonant supply and enforces doctrine.',
-      'The Great Houses compete for allocation, privilege, and exemption.',
-      'The Throne balances Houses and Synod rather than abolishing either.',
-      'Resonants are treated as infrastructure inside the system\'s logic.',
-      'Administrative language makes violence sound routine; it reveals harm when someone must pay for the wording.',
-    ],
-    socialPressures: [
-      'Political and institutional failures are as dangerous as physical failures.',
-      'Ordinary people live under inherited institutional pressure they did not create.',
-      'Compliance is framed as care.',
-      'Silence, omission, and reframing are normal tools of survival.',
-    ],
-    bannedRegisters: [
-      'space opera slang such as credits, mercs, beacon, hyperspace',
-      'casual modern sci-fi banter that breaks feudal-imperial tone',
-      'exposition-dump explanation of the setting',
-    ],
-    vocabulary: [
-      'house', 'sworn', 'tithe', 'allocation', 'mandate', 'Conclave', 'dispensation',
-      'heresy', 'compliance', 'Drift lanes', 'attunement arrays', 'shield lattice',
-      'transit authority', 'writs', 'retainers', 'conscripts', 'tinctures',
-      'drift suppressants', 'stimulants',
-    ],
-  },
-  toneRules: {
-    toneMix:
-      'Gritty 40%, Epic 40%, Witty 20% - grand but grounded. Humor is dry and usually masks something worse.',
-    narrativePrinciples: [
-      'Institutional weight should be felt in speech, ritual, rank, and omission.',
-      'Use administrative language as the surface of harm, not as a checklist.',
-      'Alternate long sentences that compress time with short sentences that stop it.',
-      'Center small, specific human courage against overwhelming systems.',
-      'Let details echo across scenes with changed meaning.',
-      'Treat history as active pressure, not inert backstory.',
-    ],
-  },
-  npcRules: {
-    likelyAffiliations: [
-      'The Synod',
-      'House authority',
-      'Imperial Service',
-      'The Undrift',
-      'frontier settlement leadership',
-      'retainers or sworn personnel',
-    ],
-    factionVoiceRules: [
-      'House nobility speaks formally and strategically; every sentence is a move.',
-      'Synod officials speak righteously and procedurally, framing control as care.',
-      'Imperial officers speak clipped, duty-first language and dislike ambiguity.',
-      'Undrift contacts speak cautiously and specifically; trust is earned in action.',
-      'Retainers are loyal but not voiceless; they will speak plainly when asked.',
-      'Resonants who speak freely are tired, precise, and burdened by what they know.',
-    ],
-    affiliationRequirement:
-      'Every starting NPC must carry an affiliation that reflects their institutional location so they can be grouped and retrieved correctly.',
-  },
-  onboardingRules: {
-    playerKnowledgeAssumption:
-      'The player does not know this world yet and should learn it through behavior, ritual, omission, and observable pressure.',
-    avoidEarly: [
-      'combat as the opening move',
-      'direct exposition dump about the setting',
-      'free-floating lore not anchored to an NPC or institutional behavior',
-      'making the world feel cleanly divided into innocent and guilty parties',
-    ],
-    // mustIntroduce / firstCheckStyle / firstMoralWeight removed by design.
-    // They were over-specifying scene-level decisions the Author should make.
-    // The Author's prompt carries equivalent soft guidance; `avoidEarly`
-    // preserves the guardrails that actually matter.
-  },
-}
-
 export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   genreId: 'space-opera',
   genreName: 'Space Opera',
@@ -390,9 +288,9 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'Forty Thousand',
     premise:
-      'Your next route cannot open cleanly until forty thousand credits of leverage clears. The surface might be debt, lien, bounty, missing fee, crew obligation, bad paperwork, damaged reputation, or someone blocking access to a route, patron, market, crew, or future; the person or faction holding it is not fixed. A back-channel offer arrives for exactly forty thousand credits and can get the crew moving tonight, but the job carries an undisclosed passenger, freight, data, route, or faction claim. Keep the number fixed; author who is owed, why, who pays, what they want moved, and where the route leads differently for this run.',
+      'You are forty thousand credits in debt, and the marker has reached someone who enjoys owning desperate people. One way out appears tonight: a broker offers exactly forty thousand up front for a job you would never take if you were free to refuse. The cargo, passenger, data, route, or claim is not fixed yet, but everyone involved knows the offer is rotten. You do not want the job. You also cannot stay where you are. The only way out is through, and the real question is who will take advantage of whom before the end. Keep the number fixed; author who owns the debt, who offers the job, why the PC cannot refuse cleanly, what the job wants moved or done, and how the PC might use the situation back.',
     crucible:
-      'Forty thousand credits can buy immediate freedom only by creating a larger obligation to someone who knows exactly which exit the crew needs.',
+      'Forty thousand credits can buy immediate freedom only by accepting a rotten job from someone who knows exactly how desperate the crew is.',
   },
   worldRules: {
     settingSummary:
@@ -897,33 +795,6 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
 }
 
-function buildWardenPlayer(playerName: string): Sf2Player {
-  return {
-    name: playerName,
-    species: 'Human',
-    origin: { id: CAMPAIGN_INITIAL_SEED.originId, name: CAMPAIGN_INITIAL_SEED.originName },
-    class: { id: CAMPAIGN_INITIAL_SEED.playbookId, name: CAMPAIGN_INITIAL_SEED.playbookName },
-    level: 1,
-    hp: { current: WARDEN_STARTING_HP, max: WARDEN_STARTING_HP },
-    ac: WARDEN_STARTING_AC,
-    credits: STARTING_CREDITS,
-    stats: WARDEN_STATS,
-    proficiencies: ['Athletics', 'Intimidation', 'Perception', 'Heavy Weapons'],
-    inventory: [
-      { name: 'Imperial writ of authority', qty: 1, tags: ['credential'] },
-      { name: 'Warden sidearm', qty: 1, tags: ['weapon'] },
-      { name: 'Heavy pattern blade', qty: 1, tags: ['weapon'] },
-      { name: 'Compliance cord', qty: 2, tags: ['restraint'] },
-    ],
-    traits: [
-      { name: 'Martial Authority', uses: { current: 2, max: 2 } },
-    ],
-    tempModifiers: [],
-    inspiration: 0,
-    exhaustion: 0,
-  }
-}
-
 function buildDriftrunnerPlayer(playerName: string): Sf2Player {
   return {
     name: playerName,
@@ -958,19 +829,11 @@ function buildDriftrunnerPlayer(playerName: string): Sf2Player {
 }
 
 export const SF2_SEED_REGISTRY: Record<string, Sf2SeedRegistryEntry> = {
-  [DEFAULT_SF2_SEED_ID]: {
-    id: DEFAULT_SF2_SEED_ID,
-    label: 'Epic Sci-Fi · Warden · The Tithe',
-    description:
-      'Imperial Service Warden inside Hegemony tithe pressure; the original v2 validation seed.',
-    seed: CAMPAIGN_INITIAL_SEED,
-    buildPlayer: buildWardenPlayer,
-  },
   [SPACE_OPERA_DRIFTRUNNER_SEED_ID]: {
     id: SPACE_OPERA_DRIFTRUNNER_SEED_ID,
     label: 'Space Opera · Driftrunner · Forty Thousand',
     description:
-      'Human Driftrunner under a fixed forty-thousand-credit exit pressure and a suspicious paid route.',
+      'Human Driftrunner under a fixed forty-thousand-credit debt and a rotten job offer they cannot cleanly refuse.',
     seed: SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED,
     buildPlayer: buildDriftrunnerPlayer,
   },
@@ -1017,7 +880,6 @@ export const SF2_SEED_REGISTRY: Record<string, Sf2SeedRegistryEntry> = {
 }
 
 export const SF2_BOOTSTRAP_SEED_OPTIONS = [
-  SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID],
   SF2_SEED_REGISTRY[SPACE_OPERA_DRIFTRUNNER_SEED_ID],
   SF2_SEED_REGISTRY[SPACE_OPERA_DEFECTOR_SEED_ID],
   SF2_SEED_REGISTRY[FANTASY_SEEKER_SEED_ID],
@@ -1026,8 +888,8 @@ export const SF2_BOOTSTRAP_SEED_OPTIONS = [
   SF2_SEED_REGISTRY[NOIRE_METHODICAL_SEED_ID],
 ]
 
-export function getSf2SeedById(seedId?: string): Sf2SeedRegistryEntry {
-  return (seedId ? SF2_SEED_REGISTRY[seedId] : undefined) ?? SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID]
+export function getSf2SeedById(seedId?: string): Sf2SeedRegistryEntry | undefined {
+  return seedId ? SF2_SEED_REGISTRY[seedId] : undefined
 }
 
 function buildSf2SetupSeedEntry(selection: Sf2SetupSelection): Sf2SeedRegistryEntry {
@@ -1043,18 +905,18 @@ function buildSf2SetupSeedEntry(selection: Sf2SetupSelection): Sf2SeedRegistryEn
 }
 
 export function getSf2SeedForState(state: Pick<Sf2State, 'meta'> | null | undefined): Sf2SeedRegistryEntry {
-  if (!state) return SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID]
+  if (!state) {
+    throw new Error('Cannot resolve SF2 seed without state or an explicit AuthorInputSeed.')
+  }
   if (state.meta.setupSelection) return buildSf2SetupSeedEntry(state.meta.setupSelection)
   const byId = getSf2SeedById(state.meta.seedId)
-  if (state.meta.seedId && byId.id === state.meta.seedId) return byId
+  if (byId) return byId
 
   const byMeta = SF2_BOOTSTRAP_SEED_OPTIONS.find((entry) =>
     entry.seed.genreId === state.meta.genreId
     && entry.seed.originId === state.meta.originId
     && entry.seed.playbookId === state.meta.playbookId
   )
-  return byMeta ?? SF2_SEED_REGISTRY[DEFAULT_SF2_SEED_ID]
+  if (byMeta) return byMeta
+  throw new Error(`Cannot resolve SF2 seed for state ${state.meta.campaignId}. Missing setupSelection and valid seedId.`)
 }
-
-// Back-compat alias — old code may still import the Synod Seeker name.
-export const SYNOD_SEEKER_AUTHOR_INPUT_SEED = CAMPAIGN_INITIAL_SEED

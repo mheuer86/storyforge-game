@@ -17,35 +17,36 @@ const TITHE_VARIANTS: Sf2ArcVariantSeed[] = [
   {
     id: 'tithe-revolt',
     scenarioBias: 'revolt',
-    creativeAngle: 'The shortage has become a public legitimacy crisis before the PC arrives.',
+    creativeAngle:
+      'The shortage has become a public legitimacy crisis before the PC arrives because someone named refuses to let replacement selection proceed.',
     avoidModes: ['investigation', 'chamber_play'],
   },
   {
     id: 'tithe-protection',
     scenarioBias: 'protection',
     creativeAngle:
-      "The PC's authority makes them responsible for preventing replacement selection without openly defying the Synod.",
+      "One protected person is the shortage's living fulcrum; the PC's authority makes them responsible for preventing replacement selection without openly defying the Synod.",
     avoidModes: ['investigation', 'chamber_play'],
   },
   {
     id: 'tithe-pursuit',
     scenarioBias: 'pursuit',
     creativeAngle:
-      'The missing tithe has already moved; the playable arc follows custody, flight, and jurisdiction.',
+      'The missing tithe has already moved; the playable arc follows who moved them, who paid for the route, and whose jurisdiction will break first.',
     avoidModes: ['chamber_play'],
   },
   {
     id: 'tithe-underground',
     scenarioBias: 'underground_network',
     creativeAngle:
-      'The shortage exposes a hidden route that moves Resonants and children beyond official allocation.',
+      'The shortage exposes a hidden Undrift route that moves Resonants and children beyond official allocation, with a handler close enough to threaten or bargain with.',
     avoidModes: ['procedural_contest', 'chamber_play'],
   },
   {
     id: 'tithe-superior-fallout',
     scenarioBias: 'superior_fallout',
     creativeAngle:
-      "The Warden's superiors have already made the cruel choice; the arc tests whether the PC contains, enforces, or exposes the fallout.",
+      "A Synod or Imperial superior is pulling the shortage tight from above; the arc tests whether the PC contains, enforces, or exposes the engineered fallout.",
     avoidModes: ['investigation'],
   },
 ]
@@ -55,35 +56,35 @@ const FORTY_THOUSAND_VARIANTS: Sf2ArcVariantSeed[] = [
     id: 'forty-thousand-smuggler-run',
     scenarioBias: 'extraction',
     creativeAngle:
-      'The back-channel offer is an off-book run through deniable brokers, blind route chits, patrol lanes, or blockade gaps; the forty thousand opens the route only if the PC keeps the cargo, passenger, or data protected until handoff.',
+      'The back-channel offer is an off-book run through deniable brokers, blind route chits, patrol lanes, or blockade gaps; the forty thousand buys survival only if the PC keeps a person, cargo, or data packet protected while looking for a way to use the broker back.',
     avoidModes: ['chamber_play', 'procedural_contest'],
   },
   {
     id: 'forty-thousand-hot-cargo',
     scenarioBias: 'protection',
     creativeAngle:
-      'The job turns out to be hot: the person, cargo, data, or ship component is already being hunted, and the forty-thousand-credit price forces the PC to protect it before knowing why.',
+      'The job is already hot: the person, cargo, data, or ship component is being hunted, and the forty-thousand-credit price was chosen because the broker knows the PC is too cornered to ask enough questions.',
     avoidModes: ['procedural_contest'],
   },
   {
     id: 'forty-thousand-blockade-threading',
     scenarioBias: 'pursuit',
     creativeAngle:
-      'The route itself is the danger: beacon windows, pirate tolls, Corporate Bloc patrols, or Remnant interdiction turn the forty-thousand-credit obligation into a running lane chase.',
+      'The job forces a running lane chase through beacon windows, pirate tolls, Corporate Bloc patrols, or Remnant interdiction; every obstacle belongs to someone who thinks the PC is exploitable.',
     avoidModes: ['chamber_play', 'procedural_contest'],
   },
   {
     id: 'forty-thousand-crew-collateral',
     scenarioBias: 'protection',
     creativeAngle:
-      'The debt, lien, or hold is tied to a crew member, ship system, license, or old favor; the paid route tests whether the PC protects shipboard trust or buys freedom by spending it.',
+      'The debt is tied to a crew member, ship system, license, or old favor; the paid job tests whether the PC protects shipboard trust or buys freedom by spending someone close.',
     avoidModes: ['procedural_contest'],
   },
   {
     id: 'forty-thousand-black-channel',
     scenarioBias: 'underground_network',
     creativeAngle:
-      'The job opens a black-channel courier route used by smugglers, refugees, salvage crews, or AI cutouts; it is not a resistance network by default, but a route economy that survives by staying deniable.',
+      'The job opens a black-channel route economy used by smugglers, refugees, salvage crews, or AI cutouts; the route survives by using desperate carriers, and the PC has to decide whether to become prey, partner, or predator.',
     avoidModes: ['siege', 'procedural_contest'],
   },
 ]

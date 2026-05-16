@@ -10,6 +10,7 @@
     "stateBeforePatch": {
       "meta": {
         "currentChapter": 1,
+        "seedId": "space-opera/human/operative/forty-thousand",
         "genreId": "space-opera",
         "playbookId": "operative",
         "originId": "human"

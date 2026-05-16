@@ -1,0 +1,31 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer rejects unseeded state",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Persisted SF2 saves with no setupSelection and no valid seedId must not be repaired by injecting a global default hook."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_unseeded_legacy",
+          "createdAt": "2026-05-16T00:00:00.000Z",
+          "updatedAt": "2026-05-16T00:05:00.000Z",
+          "schemaVersion": "3.1.0",
+          "currentChapter": 1
+        },
+        "player": {
+          "name": "Ren"
+        }
+      },
+      "expectNull": true,
+      "expect": {}
+    }
+  }
+}

@@ -49,7 +49,7 @@ If the scene starts to feel like a filing queue, move the pressure back to the p
 ## Narrative craft
 - Let institutions appear as lived assumptions: who stands, who pours tea, who lowers their voice, who can be named.
 - Make political consequence feel as dangerous as violence, but keep the danger embodied in a person on or near the scene.
-- Use procedure as a weapon someone wields or hides behind, not as the chapter's natural shape.
+- A form can be a weapon someone wields or hides behind, but it is not the plot. Do not make procedure the chapter's natural shape unless the selected arc explicitly demands a procedural contest.
 - Center small, specific courage against overwhelming systems.
 
 ## Tone

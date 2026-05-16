@@ -18,6 +18,13 @@
           "createdAt": "2026-04-27T00:00:00.000Z",
           "updatedAt": "2026-04-27T00:05:00.000Z",
           "schemaVersion": "3.0.0",
+          "setupSelection": {
+            "genreId": "epic-scifi",
+            "originId": "imperial-service",
+            "playbookId": "warden",
+            "hookId": "the-tithe-9pebyb",
+            "characterName": "Ren"
+          },
           "genreId": "epic-scifi",
           "playbookId": "warden",
           "originId": "imperial-service",

@@ -515,6 +515,7 @@ interface ReplayFixture {
       // legacy or partial stored blob and asserts the current save-shape that
       // loadCampaign/saveCampaign will see through the IndexedDB adapter.
       rawState: Record<string, unknown>
+      expectNull?: boolean
       expect: {
         schemaVersionEquals?: string
         recentTurnsCountEquals?: number
@@ -2121,6 +2122,12 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
   if (!expected) return
 
   const normalized = normalizePersistedSf2State(expected.rawState)
+  if (expected.expectNull) {
+    if (normalized) {
+      failures.push('persistenceNormalize: expected null, got normalized state')
+    }
+    return
+  }
   if (!normalized) {
     failures.push('persistenceNormalize: expected normalized state, got null')
     return

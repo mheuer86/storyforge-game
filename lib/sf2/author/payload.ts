@@ -156,16 +156,16 @@ export function compileAuthorInputSeed(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): AuthorInputSeed {
+  if (!state) {
+    throw new Error('compileAuthorInputSeed requires selected SF2 state. Pass an explicit seed when no state exists.')
+  }
   const base = getSf2SeedForState(state).seed
 
   // Ch1 or fresh campaign: use the selected pre-authored seed.
-  if (!state || state.history.turns.length === 0) {
-    if (state) {
-      // State exists (player has selected playbook/origin) but no turns yet —
-      // we can still surface PC capabilities so Ch1 Author sees them.
-      return { ...base, pcCapabilities: derivePcCapabilities(state) }
-    }
-    return base
+  if (state.history.turns.length === 0) {
+    // State exists (player has selected playbook/origin) but no turns yet —
+    // we can still surface PC capabilities so Ch1 Author sees them.
+    return { ...base, pcCapabilities: derivePcCapabilities(state) }
   }
 
   // Ch2+: derive a new hook from the prior chapter's meaning + carry-forward

@@ -13,10 +13,10 @@ import {
 } from '@/components/sf2/play-shell'
 import {
   createInitialSf2State,
-  DEFAULT_SF2_SEED_ID,
   SPACE_OPERA_DRIFTRUNNER_SEED_ID,
 } from '@/lib/sf2/game-data'
 import { chapterPressureRuntime } from '@/lib/sf2/pressure/runtime'
+import { listSf2SetupHooks } from '@/lib/sf2/setup/options'
 import type { Sf2RollActionOption, Sf2RollSourceBreakdown, Sf2State } from '@/lib/sf2/types'
 
 type PreviewGenre = 'space-opera' | 'epic-scifi'
@@ -430,10 +430,21 @@ function buildSpaceOperaMockSf2State(): Sf2State {
 }
 
 function buildEpicSciFiMockSf2State(): Sf2State {
+  const titheHook = listSf2SetupHooks('epic-scifi', 'imperial-service', 'warden')
+    .find((hook) => hook.title === 'The Tithe')
+  if (!titheHook) {
+    throw new Error('Design preview could not resolve the Epic Sci-Fi Warden Tithe hook')
+  }
   const state = createInitialSf2State({
     campaignId: 'design_preview_epic_scifi',
     playerName: 'M. Vale',
-    seedId: DEFAULT_SF2_SEED_ID,
+    setupSelection: {
+      genreId: 'epic-scifi',
+      originId: 'imperial-service',
+      playbookId: 'warden',
+      hookId: titheHook.id,
+      characterName: 'M. Vale',
+    },
   })
 
   state.meta.currentChapter = 2
