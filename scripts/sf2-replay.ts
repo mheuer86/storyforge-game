@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { normalizeAuthorSetup, validateAuthorSetup, validateAuthorSetupWarnings, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
+import { completeAuthorSetupForValidation, normalizeAuthorSetup, validateAuthorSetup, validateAuthorSetupWarnings, validateAuthorToolInput, validateChapterRaw } from '../lib/sf2/author/contract'
 import { applyAuthorChapterOpening } from '../lib/sf2/author/chapter-opening'
 import { applyAuthoredToCampaign } from '../lib/sf2/author/hydrate'
 import { validateNpcDisposition } from '../lib/sf2/author/disposition-defaults'
@@ -501,6 +501,8 @@ interface ReplayFixture {
         firstRevealCashPlayerPressesTopic?: boolean
         pacingTargetEquals?: { min: number; max: number }
         pressureLadderTriggerConditionEquals?: Array<{ index: number; value: string }>
+        arcThreadIdsEquals?: string[]
+        threadLinksEquals?: Array<{ activeThreadId: string; arcThreadId: string; relation?: string }>
       }
     }
     persistenceNormalize?: {
@@ -530,6 +532,8 @@ interface ReplayFixture {
         ownerThreadIdsEquals?: Array<{ ownerKind: string; ownerId: string; threadIds: string[] }>
         arcPlanStatusEquals?: string
         arcEntityStatusEquals?: { arcId: string; status: string }
+        chapterArcThreadIdsEquals?: string[]
+        chapterThreadLinksEquals?: Array<{ activeThreadId: string; arcThreadId: string; relation?: string }>
         repairsInclude?: string[]
       }
     }
@@ -1841,6 +1845,10 @@ function assertAuthorContract(
   }
 
   const authored = normalizeAuthorSetup(expected.rawToolInput)
+  const completedAuthored = completeAuthorSetupForValidation(authored, {
+    isContinuation: Boolean(expected.ctx.isContinuation),
+    state: stateBefore,
+  })
   const validationErrors = validateAuthorSetup(authored, {
     isContinuation: Boolean(expected.ctx.isContinuation),
     state: stateBefore,
@@ -1926,6 +1934,22 @@ function assertAuthorContract(
         `authorContract.pressureLadder[${expectedTrigger.index}].triggerCondition: expected "${expectedTrigger.value}", got "${got}"`
       )
     }
+  }
+  if (expected.expect.arcThreadIdsEquals !== undefined) {
+    const got = [...completedAuthored.arcLink.arcThreadIds].sort().join(',')
+    const want = [...expected.expect.arcThreadIdsEquals].sort().join(',')
+    if (got !== want) failures.push(`authorContract.arcLink.arcThreadIds: expected ${want}, got ${got}`)
+  }
+  if (expected.expect.threadLinksEquals !== undefined) {
+    const got = completedAuthored.arcLink.threadLinks
+      .map((link) => `${link.activeThreadId}->${link.arcThreadId}:${link.relation}`)
+      .sort()
+      .join(',')
+    const want = expected.expect.threadLinksEquals
+      .map((link) => `${link.activeThreadId}->${link.arcThreadId}:${link.relation ?? 'instantiates'}`)
+      .sort()
+      .join(',')
+    if (got !== want) failures.push(`authorContract.arcLink.threadLinks: expected ${want}, got ${got}`)
   }
 }
 
@@ -2135,6 +2159,22 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
         `persistenceNormalize.arcEntityStatus: expected ${e.arcEntityStatusEquals.status}, got ${arc.status}`
       )
     }
+  }
+  if (e.chapterArcThreadIdsEquals !== undefined) {
+    const got = [...(state.chapter.setup.arcLink?.arcThreadIds ?? [])].sort().join(',')
+    const want = [...e.chapterArcThreadIdsEquals].sort().join(',')
+    if (got !== want) failures.push(`persistenceNormalize.chapter.arcThreadIds: expected ${want}, got ${got}`)
+  }
+  if (e.chapterThreadLinksEquals !== undefined) {
+    const got = (state.chapter.setup.arcLink?.threadLinks ?? [])
+      .map((link) => `${link.activeThreadId}->${link.arcThreadId}:${link.relation}`)
+      .sort()
+      .join(',')
+    const want = e.chapterThreadLinksEquals
+      .map((link) => `${link.activeThreadId}->${link.arcThreadId}:${link.relation ?? 'instantiates'}`)
+      .sort()
+      .join(',')
+    if (got !== want) failures.push(`persistenceNormalize.chapter.threadLinks: expected ${want}, got ${got}`)
   }
   for (const fragment of e.repairsInclude ?? []) {
     if (!normalized.repairs.some((repair) => repair.includes(fragment))) {

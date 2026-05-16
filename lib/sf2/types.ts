@@ -1108,8 +1108,21 @@ export interface Sf2ChapterArcLink {
   arcId: Sf2EntityId
   chapterFunction: string
   playerStanceRead: string
+  threadLinks: Sf2ChapterArcThreadLink[]
   arcThreadIds: Sf2EntityId[]
   promotedLatentQuestionIds: Sf2EntityId[]
+}
+
+export type Sf2ChapterArcThreadLinkRelation =
+  | 'instantiates'
+  | 'pressures'
+  | 'complicates'
+  | 'resolves'
+
+export interface Sf2ChapterArcThreadLink {
+  activeThreadId: Sf2EntityId
+  arcThreadId: Sf2EntityId
+  relation: Sf2ChapterArcThreadLinkRelation
 }
 
 export interface Sf2ChapterPacingContract {

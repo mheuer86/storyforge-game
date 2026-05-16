@@ -61,6 +61,13 @@
           "spineThreadId": "thread_gate_delay",
           "arcLink": {
             "arcId": "arc_registry",
+            "threadLinks": [
+              {
+                "activeThreadId": "thread_gate_delay",
+                "arcThreadId": "thread_gate_delay",
+                "relation": "instantiates"
+              }
+            ],
             "arcThreadIds": ["thread_gate_delay"],
             "chapterFunction": "force the institution to show its seams",
             "playerStanceRead": "Ren is still enforcing law, but selectively"
@@ -134,6 +141,7 @@
         "### Pressure ladder plan\n- 1. \"The clerk starts the seal clock.\"",
         "### Spine thread anchor\nThe gate delay (thread_gate_delay)",
         "### Arc context\n- Arc: The Registry's Mercy",
+        "Chapter threads advancing arc: The gate delay (thread_gate_delay; The registry checkpoint can still be delayed before the record seals.) -> The gate delay (thread_gate_delay) [instantiates]",
         "### Chapter pacing contract\n- Target: 6-9 turns"
       ],
       "userMessageContainsAll": [

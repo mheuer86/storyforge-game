@@ -1,0 +1,94 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer preserves legacy chapter arc ids without an ArcPlan",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Protects older saves that carry chapter.setup.arcLink.arcThreadIds but no matching campaign.arcPlan. The new thread_links migration must not erase legacy arc ids when there is no ArcPlan set to validate against."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_legacy_arc_link",
+          "createdAt": "2026-05-16T00:00:00.000Z",
+          "updatedAt": "2026-05-16T00:00:00.000Z",
+          "schemaVersion": "3.1.0",
+          "genreId": "epic-scifi",
+          "playbookId": "warden",
+          "originId": "imperial-service",
+          "currentChapter": 1,
+          "currentSceneId": "scene_registry"
+        },
+        "player": {
+          "name": "Ren"
+        },
+        "campaign": {
+          "threads": {
+            "thread_legacy_active": {
+              "id": "thread_legacy_active",
+              "title": "Legacy active pressure",
+              "category": "thread",
+              "status": "active",
+              "tension": 6,
+              "peakTension": 6,
+              "retrievalCue": "The chapter still references this pre-ArcPlan pressure.",
+              "resolutionCriteria": "The old pressure is resolved or carried forward.",
+              "failureMode": "The pressure is forgotten."
+            }
+          },
+          "npcs": {},
+          "factions": {}
+        },
+        "chapter": {
+          "number": 1,
+          "title": "Legacy Pressure",
+          "setup": {
+            "chapter": 1,
+            "title": "Legacy Pressure",
+            "activeThreadIds": ["thread_legacy_active"],
+            "loadBearingThreadIds": ["thread_legacy_active"],
+            "arcLink": {
+              "arcId": "arc_legacy_missing_plan",
+              "chapterFunction": "Preserve an older chapter link shape.",
+              "playerStanceRead": "The player has not chosen a side.",
+              "arcThreadIds": ["thread_legacy_active"],
+              "promotedLatentQuestionIds": []
+            }
+          }
+        },
+        "world": {
+          "currentLocation": {
+            "id": "loc_registry",
+            "name": "Registry Hall",
+            "description": "A wet counting hall."
+          },
+          "sceneSnapshot": {
+            "sceneId": "scene_registry",
+            "location": {
+              "id": "loc_registry",
+              "name": "Registry Hall",
+              "description": "A wet counting hall."
+            },
+            "presentNpcIds": [],
+            "timeLabel": "rain morning",
+            "established": ["The old pressure is still on the table."]
+          }
+        },
+        "history": {
+          "turns": [],
+          "rollLog": []
+        }
+      },
+      "expect": {
+        "schemaVersionEquals": "3.2.0",
+        "chapterArcThreadIdsEquals": ["thread_legacy_active"],
+        "chapterThreadLinksEquals": []
+      }
+    }
+  }
+}

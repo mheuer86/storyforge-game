@@ -260,10 +260,32 @@ const arcLinkSchema = {
     arc_id: { type: 'string' as const },
     chapter_function: { type: 'string' as const },
     player_stance_read: { type: 'string' as const },
-    arc_thread_ids: { type: 'array' as const, items: { type: 'string' as const } },
+    thread_links: {
+      type: 'array' as const,
+      description:
+        'One link per active_threads[] entry. active_thread_id is this chapter thread; arc_thread_id is the ArcPlan thread it advances.',
+      items: {
+        type: 'object' as const,
+        properties: {
+          active_thread_id: { type: 'string' as const },
+          arc_thread_id: { type: 'string' as const },
+          relation: {
+            type: 'string' as const,
+            enum: ['instantiates', 'pressures', 'complicates', 'resolves'],
+          },
+        },
+        required: ['active_thread_id', 'arc_thread_id', 'relation'],
+      },
+    },
+    arc_thread_ids: {
+      type: 'array' as const,
+      description:
+        'Legacy mirror of thread_links[].arc_thread_id. Prefer thread_links; do not put chapter-only thread ids here.',
+      items: { type: 'string' as const },
+    },
     promoted_latent_question_ids: { type: 'array' as const, items: { type: 'string' as const } },
   },
-  required: ['arc_id', 'chapter_function', 'player_stance_read', 'arc_thread_ids', 'promoted_latent_question_ids'],
+  required: ['arc_id', 'chapter_function', 'player_stance_read', 'thread_links', 'promoted_latent_question_ids'],
 }
 
 const pacingContractSchema = {

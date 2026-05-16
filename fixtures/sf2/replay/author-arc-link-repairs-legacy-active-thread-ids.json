@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "author contract normalizes raw tool input and validates chapter setup",
+  "name": "author arc link repairs legacy active thread ids",
   "source": {
-    "kind": "synthetic-deterministic",
-    "purpose": "Pure-function check on lib/sf2/author/contract.ts. Verifies raw Author tool validation, snake_case to camelCase normalization, reveal context filtering, visible NPC parsing, and final normalized boundary validation."
+    "kind": "synthetic-regression",
+    "purpose": "Regression for live Ch1 502 where Chapter Author put chapter-active thread ids in legacy arc_link.arc_thread_ids. The contract should deterministically repair them into chapter-to-arc thread_links instead of forcing another setup call."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -172,26 +172,26 @@
         ],
         "active_threads": [
           {
-            "id": "thread_missing_roster",
-            "title": "The missing tithe roster",
-            "question": "Can the Warden close the roster without breaking the settlement?",
+            "id": "thread_shortfall_truth",
+            "title": "Shortfall truth",
+            "question": "Can the Warden use authority to expose the real shortfall without breaking trust?",
             "owner_hint": "Auditor Corvin Hale",
             "tension": 6,
             "initial_tension": 4,
             "resolution_criteria": "A filed roster or a formal extension with named cost.",
             "failure_mode": "The Synod treats the settlement as noncompliant.",
-            "retrieval_cue": "Roster count, Synod deadline, public compliance."
+            "retrieval_cue": "Warden authority, shortfall truth, local trust."
           },
           {
-            "id": "thread_public_refusal",
-            "title": "Public refusal momentum",
-            "question": "Will the settlement make refusal impossible to soften?",
+            "id": "thread_warden_stance",
+            "title": "Warden stance",
+            "question": "Will the Warden protect settlement standing or Patron House comfort?",
             "owner_hint": "Frontier settlement leadership",
             "tension": 5,
             "initial_tension": 3,
             "resolution_criteria": "The crowd accepts a concrete next step.",
             "failure_mode": "The council steps become the real court.",
-            "retrieval_cue": "Crowd, council steps, legitimacy."
+            "retrieval_cue": "Patron House complicity, settlement standing, Warden stance."
           },
           {
             "id": "thread_hidden_route",
@@ -358,23 +358,11 @@
           "arc_id": "arc_tithe_revolt",
           "chapter_function": "Establish the public compliance crisis.",
           "player_stance_read": "The Warden has not yet picked enforcement or mediation.",
-          "thread_links": [
-            {
-              "active_thread_id": "thread_missing_roster",
-              "arc_thread_id": "thread_writ_leverage",
-              "relation": "pressures"
-            },
-            {
-              "active_thread_id": "thread_public_refusal",
-              "arc_thread_id": "thread_house_complicity",
-              "relation": "complicates"
-            },
-            {
-              "active_thread_id": "thread_hidden_route",
-              "arc_thread_id": "thread_network_exposure",
-              "relation": "instantiates"
-            }
-          ]
+          "arc_thread_ids": [
+            "thread_shortfall_truth",
+            "thread_warden_stance"
+          ],
+          "promoted_latent_question_ids": []
         },
         "pacing_contract": {
           "target_turns": {
@@ -420,53 +408,20 @@
             "who_pays": "npc_vesh",
             "cost_surface": "relationship",
             "what_is_lost": "Their trust stops protecting the PC unless repaired.",
-            "triggering_pressure": "thread_missing_roster"
+            "triggering_pressure": "thread_shortfall_truth"
           },
           {
             "who_pays": "the PC",
             "cost_surface": "reputation",
             "what_is_lost": "The PC becomes known as too costly to help.",
-            "triggering_pressure": "thread_public_refusal"
+            "triggering_pressure": "thread_warden_stance"
           }
         ]
       },
       "expect": {
         "rawErrorCount": 0,
         "validationErrorCount": 0,
-        "titleEquals": "The Tithe Ledger",
-        "threadCountEquals": 3,
-        "firstThreadInitialTensionEquals": 4,
-        "visibleNpcIdsEquals": [
-          "npc_vesh"
-        ],
-        "firstRevealValidContextsEquals": [
-          "confession",
-          "documentary_surface"
-        ],
-        "firstRevealPlayerTopicKeysEquals": [
-          "why did Corvin arrive early",
-          "last quarter",
-          "npc_corvin"
-        ],
-        "firstRevealCashPlayerPressesTopic": true,
-        "pacingTargetEquals": {
-          "min": 18,
-          "max": 22
-        },
-        "pressureLadderTriggerConditionEquals": [
-          {
-            "index": 0,
-            "value": "When npc_corvin demands a cost from npc_vesh, making Vesh protection leverage visible."
-          },
-          {
-            "index": 1,
-            "value": "When the PC retrieves package_black_case at loc_station, making Ash shelter risk public."
-          },
-          {
-            "index": 2,
-            "value": "When thread_missing_roster remains unresolved late and npc_corvin uses that delay to raise the cost."
-          }
-        ],
+        "combinedErrorCount": 0,
         "arcThreadIdsEquals": [
           "thread_writ_leverage",
           "thread_house_complicity",
@@ -474,14 +429,14 @@
         ],
         "threadLinksEquals": [
           {
-            "activeThreadId": "thread_missing_roster",
+            "activeThreadId": "thread_shortfall_truth",
             "arcThreadId": "thread_writ_leverage",
-            "relation": "pressures"
+            "relation": "instantiates"
           },
           {
-            "activeThreadId": "thread_public_refusal",
+            "activeThreadId": "thread_warden_stance",
             "arcThreadId": "thread_house_complicity",
-            "relation": "complicates"
+            "relation": "instantiates"
           },
           {
             "activeThreadId": "thread_hidden_route",

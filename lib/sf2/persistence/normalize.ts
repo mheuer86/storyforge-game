@@ -350,6 +350,89 @@ function normalizeChapterSetupShape(state: Sf2State, repairs: string[]): void {
   if (antag.sourceSystem !== undefined) {
     delete antag.sourceSystem
   }
+
+  normalizeChapterArcLink(state, repairs)
+}
+
+function normalizeChapterArcLink(state: Sf2State, repairs: string[]): void {
+  const arcLink = state.chapter.setup.arcLink as
+    | (NonNullable<Sf2State['chapter']['setup']['arcLink']> & { threadLinks?: unknown; arcThreadIds?: unknown })
+    | undefined
+  if (!arcLink) return
+
+  const activeThreadIds = state.chapter.setup.activeThreadIds
+  const activeSet = new Set(activeThreadIds)
+  const arcPlan = state.campaign.arcPlan
+  const arcThreadIds = arcPlan?.id === arcLink.arcId ? arcPlan.arcThreadIds : []
+  const arcSet = new Set(arcThreadIds)
+  const legacyArcThreadIds = stringArray(arcLink.arcThreadIds)
+  const rawLinks = Array.isArray(arcLink.threadLinks) ? arcLink.threadLinks : []
+  const normalizedLinks = rawLinks
+    .map((raw) => asRecord(raw))
+    .filter((raw): raw is Record<string, unknown> => Boolean(raw))
+    .map((raw) => ({
+      activeThreadId: stringOr(raw.activeThreadId ?? raw.active_thread_id, ''),
+      arcThreadId: stringOr(raw.arcThreadId ?? raw.arc_thread_id, ''),
+      relation: normalizeArcThreadLinkRelation(raw.relation),
+    }))
+    .filter((link) => link.activeThreadId && link.arcThreadId)
+
+  const links = [...normalizedLinks]
+  const linkedActiveIds = new Set(
+    links
+      .filter((link) => activeSet.has(link.activeThreadId))
+      .map((link) => link.activeThreadId)
+  )
+  const usedArcIds = new Set(
+    links
+      .filter((link) => arcSet.has(link.arcThreadId))
+      .map((link) => link.arcThreadId)
+  )
+
+  if (arcThreadIds.length === 0) {
+    arcLink.threadLinks = normalizedLinks
+    arcLink.arcThreadIds = legacyArcThreadIds.length > 0
+      ? legacyArcThreadIds
+      : [...new Set(normalizedLinks.map((link) => link.arcThreadId))]
+    return
+  }
+
+  if (links.length === 0 && arcThreadIds.length > 0) {
+    for (const id of legacyArcThreadIds) {
+      if (activeSet.has(id) && arcSet.has(id) && !linkedActiveIds.has(id)) {
+        links.push({ activeThreadId: id, arcThreadId: id, relation: 'instantiates' })
+        linkedActiveIds.add(id)
+        usedArcIds.add(id)
+      }
+    }
+    for (const id of legacyArcThreadIds) {
+      if (activeSet.has(id) && !arcSet.has(id) && !linkedActiveIds.has(id)) {
+        const arcThreadId = arcThreadIds.find((candidate) => !usedArcIds.has(candidate)) ?? arcThreadIds[0]
+        if (arcThreadId) {
+          links.push({ activeThreadId: id, arcThreadId, relation: 'instantiates' })
+          linkedActiveIds.add(id)
+          usedArcIds.add(arcThreadId)
+        }
+      }
+    }
+  }
+
+  if (arcThreadIds.length > 0) {
+    for (const id of activeThreadIds) {
+      if (linkedActiveIds.has(id)) continue
+      const arcThreadId = arcThreadIds.find((candidate) => !usedArcIds.has(candidate)) ?? arcThreadIds[0]
+      if (!arcThreadId) continue
+      links.push({ activeThreadId: id, arcThreadId, relation: 'instantiates' })
+      linkedActiveIds.add(id)
+      usedArcIds.add(arcThreadId)
+    }
+  }
+
+  arcLink.threadLinks = links
+  arcLink.arcThreadIds = [...new Set(links.map((link) => link.arcThreadId).filter((id) => arcSet.has(id)))]
+  if (normalizedLinks.length === 0 && links.length > 0) {
+    repairs.push('chapter.setup.arcLink.threadLinks:derived')
+  }
 }
 
 function normalizeWorld(state: Sf2State, repairs: string[]): void {
@@ -979,6 +1062,12 @@ function stringOr(value: unknown, fallback: string | undefined): string {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter((s) => s.length > 0) : []
+}
+
+function normalizeArcThreadLinkRelation(value: unknown): 'instantiates' | 'pressures' | 'complicates' | 'resolves' {
+  return value === 'pressures' || value === 'complicates' || value === 'resolves'
+    ? value
+    : 'instantiates'
 }
 
 function slug(value: string): string {

@@ -123,6 +123,8 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`escalation_options[].{condition, consequence}\`: 1 sentence each (≤18 words).
   - \`editorialized_lore[].{item, relevance_now, delivery_method}\`: compact phrase or sentence (≤16 words).
   - \`arc_link.{chapter_function, player_stance_read}\`: 1 sentence each (≤20 words).
+  - \`arc_link.thread_links[]\`: exactly one link per \`active_threads[]\` entry. \`active_thread_id\` must be the chapter thread id; \`arc_thread_id\` must be an exact ArcPlan thread id from "Arc threads" below; \`relation\` is \`instantiates\`, \`pressures\`, \`complicates\`, or \`resolves\`.
+  - \`arc_link.arc_thread_ids\` is legacy mirror only. If you include it, it contains ArcPlan thread ids only, never chapter-only thread ids.
   - \`pacing_contract\`: use phrases, not paragraphs.
 
   Strip throat-clearing ("This thread represents…", "The intent here is…"). Lead with the noun or verb that carries the meaning. Tight prose at this layer reads better and costs less without sacrificing chapter quality — the Narrator inflates from these seeds during play, so over-elaboration here is wasted effort.
@@ -130,11 +132,12 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
 - **Human stakes block.** Name the people who pay for pressure. Example: \`[{ who_pays: "npc_laine", cost_surface: "relationship", what_is_lost: "Laine stops risking their name for the PC unless trust is repaired.", triggering_pressure: "thread_broker_debt" }, { who_pays: "the PC", cost_surface: "reputation", what_is_lost: "The PC becomes the person local brokers cite as too expensive to help.", triggering_pressure: "thread_route_heat" }]\`.
 - Emit exactly 3 starting NPCs.
 - Emit exactly 3 active threads for Chapter 1.
+- For Chapter 1, author concrete playable active threads that advance the ArcPlan threads; do not reuse abstract arc thread ids unless the exact arc thread is directly playable now. Link each active thread to the ArcPlan thread it advances in \`arc_link.thread_links\`.
 - For Chapter 2 and later, emit exactly 4 active threads. You may carry forward up to 3 old threads, but at least 1 active thread must be a new chapter driver: \`driver_kind: "new_pressure"\`, \`"successor"\`, or \`"arc_promoted"\`.
 - For Chapter 2 and later, emit \`continuation_dramatic_turn\` and the continuation-only \`opening_scene_spec\` fields. These are not summaries; they are the contract that prevents the chapter from becoming a procedure queue.
 - For Chapter 2 and later, every \`active_threads[]\` entry must include \`driver_kind\`: \`carry_forward\`, \`successor\`, \`new_pressure\`, or \`arc_promoted\`. Successor threads must also include \`successor_to_thread_id\`.
 - An \`arc_promoted\` thread must reuse a deferred arc thread id shown below; do not invent a duplicate thread for the same arc pressure.
-- The new/successor/arc_promoted driver must be load-bearing: give it tension ≥6, include its id in \`arc_link.arc_thread_ids\` when it comes from the arc, and make it eligible to become spine.
+- The new/successor/arc_promoted driver must be load-bearing: give it tension ≥6, link it in \`arc_link.thread_links\`, and make it eligible to become spine. For \`arc_promoted\`, \`active_thread_id\` and \`arc_thread_id\` are the same exact id.
 - If a prior objective was already satisfied, transition that old thread in \`thread_transitions\` and create a successor instead of reusing the answered question as this chapter's spine.
 - Prefer the new/successor/arc_promoted load-bearing driver as the chapter spine unless a carried thread is clearly the unresolved chapter-scale pressure.
 - Emit exactly 3 pressure ladder items.
@@ -295,7 +298,9 @@ Use this as a binding continuity constraint for \`opening_scene_spec\`. A contin
 
 - **Continuation thread broadening**: Ch2+ must contain exactly 4 active threads. At most 3 may be \`driver_kind: "carry_forward"\`. At least 1 must be \`driver_kind: "new_pressure"\`, \`"successor"\`, or \`"arc_promoted"\`; that new/successor/arc_promoted thread must be load-bearing (tension ≥6). If the prior chapter already satisfied an old thread's resolution criteria, do not reheat it as the spine. Transition it, then author a successor with \`successor_to_thread_id\`.
 
-- **Arc thread promotion**: Deferred arc threads are already real campaign threads anchored to the arc. To activate one, reuse its id in \`active_threads\` with \`driver_kind: "arc_promoted"\`, tension ≥6, and put the same id in \`arc_link.arc_thread_ids\`.
+- **Arc thread links**: Chapter threads are the concrete playable pressures for this chapter; ArcPlan threads are the durable arc pressures they advance. Every \`active_threads[]\` entry must have one \`arc_link.thread_links[]\` entry pointing to an exact ArcPlan thread id from the packet. Use \`relation: "instantiates"\` when the chapter thread is the local playable version of an arc pressure, \`"pressures"\` when it raises the cost, \`"complicates"\` when it crosses two pressures, and \`"resolves"\` only when this chapter can settle that arc thread.
+
+- **Arc thread promotion**: Deferred arc threads are already real campaign threads anchored to the arc. To activate one as-is, reuse its id in \`active_threads\` with \`driver_kind: "arc_promoted"\`, tension ≥6, and add a \`thread_links\` self-link where \`active_thread_id\` and \`arc_thread_id\` are the same id.
 
 - **Latent question promotion**: Only promote latent questions listed in the packet. If the packet says promotion is required, include exactly one selected id in \`arc_link.promoted_latent_question_ids\` and turn that question into either a \`possible_revelations\` entry or an active thread pressure. Do not state a hidden answer unless it appears as a normal chapter revelation with hints and reveal contexts.
 

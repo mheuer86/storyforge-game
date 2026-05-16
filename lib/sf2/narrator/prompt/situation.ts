@@ -46,7 +46,7 @@ ${arc ? `### Arc context
 - Arc question: ${arc.arcQuestion}
 - Chapter function: ${arcLink?.chapterFunction ?? '(not set)'}
 - Player stance read: ${arcLink?.playerStanceRead ?? '(not set)'}
-- Active arc threads: ${renderActiveArcThreadPlan(state, arcLink?.arcThreadIds ?? [])}` : ''}
+- Chapter threads advancing arc: ${renderChapterArcThreadPlan(state)}` : ''}
 
 ${pacing ? `### Chapter pacing contract
 - Target: ${pacing.targetTurns.min}-${pacing.targetTurns.max} turns
@@ -59,15 +59,26 @@ ${pacing ? `### Chapter pacing contract
 Do not open a new major branch unless it helps land the chapter question.` : ''}`
 }
 
-function renderActiveArcThreadPlan(
-  state: Sf2State,
-  ids: string[]
-): string {
-  const selected = ids.length > 0
-    ? ids
-        .map((id) => state.campaign.threads[id])
-        .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
-    : []
+function renderChapterArcThreadPlan(state: Sf2State): string {
+  const arcLink = state.chapter.setup.arcLink
+  const links = arcLink?.threadLinks ?? []
+  if (links.length > 0) {
+    return links
+      .map((link) => {
+        const activeThread = state.campaign.threads[link.activeThreadId]
+        const arcThread = state.campaign.threads[link.arcThreadId]
+        const activeLabel = activeThread
+          ? `${activeThread.title} (${activeThread.id}; ${activeThread.retrievalCue})`
+          : link.activeThreadId
+        const arcLabel = arcThread ? `${arcThread.title} (${arcThread.id})` : link.arcThreadId
+        return `${activeLabel} -> ${arcLabel} [${link.relation}]`
+      })
+      .join('; ')
+  }
+
+  const selected = (arcLink?.arcThreadIds ?? [])
+    .map((id) => state.campaign.threads[id])
+    .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
   return selected
     .map((thread) => `${thread.title} (${thread.id}; ${thread.retrievalCue})`)
     .join('; ') || '(none selected)'

@@ -7,6 +7,8 @@ import { normalizeThreadResolutionGates } from '../thread-resolution'
 import { PROCEDURE_NONE } from '../procedure'
 import type {
   AuthorChapterSetupV2,
+  Sf2ChapterArcThreadLink,
+  Sf2ChapterArcThreadLinkRelation,
   Sf2HumanStakeCostSurface,
   Sf2RevealContext,
   Sf2RevelationCashConditions,
@@ -443,6 +445,11 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       arcId: stringField(arcLink, 'arc_id', 'arcId'),
       chapterFunction: stringField(arcLink, 'chapter_function', 'chapterFunction'),
       playerStanceRead: stringField(arcLink, 'player_stance_read', 'playerStanceRead'),
+      threadLinks: getArray(arcLink, 'thread_links', 'threadLinks').map((link) => ({
+        activeThreadId: stringField(link, 'active_thread_id', 'activeThreadId'),
+        arcThreadId: stringField(link, 'arc_thread_id', 'arcThreadId'),
+        relation: normalizeArcThreadLinkRelation(valueField(link, 'relation')),
+      })),
       arcThreadIds: stringArray(arcLink, 'arc_thread_ids', 'arcThreadIds').length > 0
         ? stringArray(arcLink, 'arc_thread_ids', 'arcThreadIds')
         : stringArray(arcLink, 'pressure_engine_ids', 'pressureEngineIds'),
@@ -527,6 +534,8 @@ export function completeAuthorSetupForValidation(
     completed = { ...completed, threadTransitions: transitions }
   }
 
+  completed = completeArcThreadLinks(completed, opts.state)
+
   const residue = opts.state?.chapter.artifacts.meaning?.transitionSeed?.procedureResidue
   const budget = completed.continuationDramaticTurn?.procedureBudget
   if (
@@ -553,6 +562,144 @@ export function completeAuthorSetupForValidation(
   }
 
   return completed
+}
+
+function completeArcThreadLinks(
+  authored: AuthorChapterSetupV2,
+  state?: Sf2State
+): AuthorChapterSetupV2 {
+  const activeThreads = authored.activeThreads
+  const existingLinks = authored.arcLink.threadLinks ?? []
+  const arcPlan = state?.campaign.arcPlan
+
+  if (!arcPlan || arcPlan.id !== authored.arcLink.arcId || arcPlan.arcThreadIds.length === 0) {
+    const derivedArcThreadIds = uniqueStrings(
+      existingLinks.map((link) => link.arcThreadId).filter(Boolean).length > 0
+        ? existingLinks.map((link) => link.arcThreadId)
+        : authored.arcLink.arcThreadIds
+    )
+    return {
+      ...authored,
+      arcLink: {
+        ...authored.arcLink,
+        threadLinks: existingLinks,
+        arcThreadIds: derivedArcThreadIds,
+      },
+    }
+  }
+
+  const activeThreadIds = new Set(activeThreads.map((thread) => thread.id))
+  const arcThreadIds = new Set(arcPlan.arcThreadIds)
+  const links: Sf2ChapterArcThreadLink[] = []
+  const linkedActiveIds = new Set<string>()
+  const usedArcIds = new Set<string>()
+  const addLink = (
+    activeThreadId: string,
+    arcThreadId: string,
+    relation: Sf2ChapterArcThreadLinkRelation = 'instantiates'
+  ) => {
+    if (!activeThreadId || !arcThreadId) return
+    if (linkedActiveIds.has(activeThreadId)) return
+    links.push({ activeThreadId, arcThreadId, relation })
+    if (activeThreadIds.has(activeThreadId)) linkedActiveIds.add(activeThreadId)
+    if (arcThreadIds.has(arcThreadId)) usedArcIds.add(arcThreadId)
+  }
+
+  for (const link of existingLinks) {
+    addLink(link.activeThreadId, link.arcThreadId, link.relation)
+  }
+
+  const legacyIds = authored.arcLink.arcThreadIds ?? []
+  if (existingLinks.length === 0) {
+    for (const id of legacyIds) {
+      if (activeThreadIds.has(id) && arcThreadIds.has(id)) {
+        addLink(id, id, 'instantiates')
+      }
+    }
+    for (const id of legacyIds) {
+      if (activeThreadIds.has(id) && !arcThreadIds.has(id)) {
+        const activeThread = activeThreads.find((thread) => thread.id === id)
+        if (activeThread) {
+          addLink(activeThread.id, selectBestArcThreadId(activeThread, state, usedArcIds), 'instantiates')
+        }
+      }
+    }
+  }
+
+  for (const thread of activeThreads) {
+    if (linkedActiveIds.has(thread.id)) continue
+    addLink(thread.id, selectBestArcThreadId(thread, state, usedArcIds), 'instantiates')
+  }
+
+  return {
+    ...authored,
+    arcLink: {
+      ...authored.arcLink,
+      threadLinks: links,
+      arcThreadIds: uniqueStrings(
+        links
+          .map((link) => link.arcThreadId)
+          .filter((id) => arcThreadIds.has(id))
+      ),
+    },
+  }
+}
+
+function selectBestArcThreadId(
+  activeThread: AuthorChapterSetupV2['activeThreads'][number],
+  state: Sf2State,
+  usedArcIds: Set<string>
+): string {
+  const arcIds = state.campaign.arcPlan?.arcThreadIds ?? []
+  const activeTerms = linkTerms(
+    activeThread.id,
+    activeThread.title,
+    activeThread.question,
+    activeThread.retrievalCue,
+    activeThread.resolutionCriteria,
+    activeThread.failureMode
+  )
+  let bestId = ''
+  let bestScore = -1
+  for (const arcId of arcIds) {
+    const arcThread = state.campaign.threads[arcId]
+    const arcTerms = linkTerms(
+      arcId,
+      arcThread?.title ?? '',
+      arcThread?.retrievalCue ?? '',
+      arcThread?.resolutionCriteria ?? '',
+      arcThread?.failureMode ?? ''
+    )
+    let score = 0
+    for (const term of activeTerms) {
+      if (arcTerms.has(term)) score += 1
+    }
+    if (
+      score > bestScore ||
+      (score === bestScore && !usedArcIds.has(arcId) && usedArcIds.has(bestId))
+    ) {
+      bestScore = score
+      bestId = arcId
+    }
+  }
+  if (bestScore > 0 && bestId) return bestId
+  return arcIds.find((id) => !usedArcIds.has(id)) ?? arcIds[0] ?? ''
+}
+
+function linkTerms(...values: string[]): Set<string> {
+  return new Set(
+    values
+      .join(' ')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length >= 4 && !COMMON_TERMS.has(term))
+  )
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter((value) => value.trim().length > 0))]
 }
 
 // Final boundary validation on the normalized single-call AuthorChapterSetupV2.
@@ -1058,9 +1205,27 @@ function validateArcThreadAndLatentPromotion(
     }
   })
 
+  const linkedActiveIds = new Set<string>()
+  authored.arcLink.threadLinks.forEach((link, index) => {
+    if (!activeThreadIds.has(link.activeThreadId)) {
+      errors.push(`arc_link.thread_links[${index}].active_thread_id ${link.activeThreadId} is not an active thread id`)
+    } else {
+      linkedActiveIds.add(link.activeThreadId)
+    }
+    if (!arcThreadIds.has(link.arcThreadId)) {
+      errors.push(`arc_link.thread_links[${index}].arc_thread_id ${link.arcThreadId} is not an arc thread id`)
+    }
+    if (!['instantiates', 'pressures', 'complicates', 'resolves'].includes(link.relation)) {
+      errors.push(`arc_link.thread_links[${index}].relation is invalid`)
+    }
+  })
+  authored.activeThreads.forEach((thread, index) => {
+    if (!linkedActiveIds.has(thread.id)) {
+      errors.push(`arc_link.thread_links must include active_threads[${index}] ${thread.id}`)
+    }
+  })
   authored.arcLink.arcThreadIds.forEach((id, index) => {
     if (!arcThreadIds.has(id)) errors.push(`arc_link.arc_thread_ids[${index}] ${id} is not an arc thread id`)
-    if (!activeThreadIds.has(id)) errors.push(`arc_link.arc_thread_ids[${index}] ${id} must also be in active_threads`)
   })
 
   const selection = selectLatentArcQuestionsForChapter(state, targetChapter, null)
@@ -1246,6 +1411,7 @@ function meaningfulTerms(value: string): string[] {
 }
 
 const COMMON_TERMS = new Set([
+  'thread',
   'chapter',
   'prior',
   'scene',
@@ -1313,6 +1479,12 @@ function normalizeDriverKind(value: unknown): AuthorChapterSetupV2['activeThread
   return value === 'carry_forward' || value === 'successor' || value === 'new_pressure' || value === 'arc_promoted'
     ? value
     : undefined
+}
+
+function normalizeArcThreadLinkRelation(value: unknown): Sf2ChapterArcThreadLinkRelation {
+  return value === 'pressures' || value === 'complicates' || value === 'resolves'
+    ? value
+    : 'instantiates'
 }
 
 const REVEAL_CONTEXTS: Sf2RevealContext[] = [

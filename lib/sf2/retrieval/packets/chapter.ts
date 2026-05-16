@@ -14,12 +14,7 @@ export function buildChapterPacket(state: Sf2State): Sf2ChapterPacket {
       pressure: step.pressure,
     }))
   const arc = state.campaign.arcPlan
-  const arcThreadIds = setup.arcLink?.arcThreadIds ?? []
-  const activeArcThreads = arcThreadIds
-    .map((id) => state.campaign.threads?.[id])
-    .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
-    .filter((thread) => thread.status === 'active')
-    .map((thread) => `${thread.title} ${thread.tension}/10: ${thread.retrievalCue}`)
+  const activeArcThreads = renderChapterArcThreadLinks(state)
 
   return {
     objective: setup.frame.objective,
@@ -44,4 +39,27 @@ export function buildChapterPacket(state: Sf2State): Sf2ChapterPacket {
     continuationDramaticTurn: setup.continuationDramaticTurn,
     humanStakes: setup.humanStakes ?? [],
   }
+}
+
+function renderChapterArcThreadLinks(state: Sf2State): string[] {
+  const setup = state.chapter.setup
+  const links = setup.arcLink?.threadLinks ?? []
+  if (links.length > 0) {
+    return links.map((link) => {
+      const activeThread = state.campaign.threads?.[link.activeThreadId]
+      const arcThread = state.campaign.threads?.[link.arcThreadId]
+      const activeLabel = activeThread
+        ? `${activeThread.title} ${activeThread.tension}/10`
+        : link.activeThreadId
+      const arcLabel = arcThread?.title ?? link.arcThreadId
+      const cue = activeThread?.retrievalCue ? `: ${activeThread.retrievalCue}` : ''
+      return `${activeLabel} -> ${arcLabel} (${link.relation})${cue}`
+    })
+  }
+
+  return (setup.arcLink?.arcThreadIds ?? [])
+    .map((id) => state.campaign.threads?.[id])
+    .filter((thread): thread is NonNullable<typeof thread> => Boolean(thread))
+    .filter((thread) => thread.status === 'active')
+    .map((thread) => `${thread.title} ${thread.tension}/10: ${thread.retrievalCue}`)
 }
