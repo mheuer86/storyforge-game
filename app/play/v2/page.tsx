@@ -6,7 +6,7 @@
 // result sent as a follow-up turn). The clean tool_result-continuation roll flow
 // is Stage 3+ work.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { apiHeaders } from '@/lib/api-key'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import {
@@ -158,6 +158,9 @@ export default function PlayV2Page() {
   const generationStartTimeRef = useRef<number | null>(null)
   const [generationElapsed, setGenerationElapsed] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const pendingInitialBottomScrollRef = useRef(false)
+  const pendingLiveTurnScrollRef = useRef(false)
+  const [liveTurnScrollKey, setLiveTurnScrollKey] = useState(0)
   const persistenceRef = useRef<StoryforgePersistence2 | null>(null)
   // When a roll_prompt arrives mid-stream, we store a resolver the modal calls
   // after the player rolls. The narrator loop awaits this promise before
@@ -189,6 +192,7 @@ export default function PlayV2Page() {
       p.loadCampaign(lastId)
         .then((loaded) => {
           if (loaded) {
+            pendingInitialBottomScrollRef.current = true
             setState(loaded)
             setTurnIndex(loaded.history.turns.length)
             setPivotSignaled(chapterHasPivotSignal(loaded))
@@ -210,9 +214,26 @@ export default function PlayV2Page() {
     }
   }, [])
 
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [prose, isStreaming])
+  useLayoutEffect(() => {
+    if (!state || loading || !pendingInitialBottomScrollRef.current) return
+    const scroller = scrollRef.current
+    if (!scroller) return
+    pendingInitialBottomScrollRef.current = false
+    requestAnimationFrame(() => {
+      scroller.scrollTop = scroller.scrollHeight
+    })
+  }, [loading, state])
+
+  useLayoutEffect(() => {
+    if (!pendingLiveTurnScrollRef.current || liveTurnScrollKey === 0) return
+    const scroller = scrollRef.current
+    const liveTurn = scroller?.querySelector<HTMLElement>('[data-sf2-live-turn]')
+    if (!scroller || !liveTurn) return
+    pendingLiveTurnScrollRef.current = false
+    requestAnimationFrame(() => {
+      liveTurn.scrollIntoView({ block: 'start' })
+    })
+  }, [liveTurnScrollKey, activePlayerInput, prose, isStreaming, isGeneratingChapter, isArchiving])
 
   useEffect(() => {
     if (state) return
@@ -714,9 +735,12 @@ export default function PlayV2Page() {
     const isInitial = currentChapterTurns === 0
     if (!playerInput && !isInitial) return
 
+    setSuggestedActions([])
     setPendingInput('')
     setTurnCommitError(null)
     setActivePlayerInput(isInitial ? '' : playerInput)
+    pendingLiveTurnScrollRef.current = true
+    setLiveTurnScrollKey((key) => key + 1)
 
     // On first turn: ensure Chapter 1 has been authored before Narrator opens.
     let effectiveState = state

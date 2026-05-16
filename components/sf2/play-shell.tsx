@@ -404,22 +404,21 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
                 onResolvePendingCheck={onResolvePendingCheck}
                 onSpendInspiration={onSpendInspiration}
                 onDeclineInspiration={onDeclineInspiration}
-              />
-            </div>
-
-            <div className="shrink-0 border-t border-border/25 bg-transparent p-3 md:p-4">
-              <ActionSurface
-                state={state}
-                suggestedActions={suggestedActions}
-                pendingInput={pendingInput}
-                pendingCheck={pendingCheck}
-                busy={busy}
-                chapterTurnCount={chapterTurnCount}
-                closeReadiness={closeReadiness}
-                hasActiveRoll={hasActiveRoll}
-                onPendingInputChange={onPendingInputChange}
-                onSendTurn={onSendTurn}
-                onCloseChapter={onCloseChapter}
+                actionSurface={(
+                  <ActionSurface
+                    state={state}
+                    suggestedActions={suggestedActions}
+                    pendingInput={pendingInput}
+                    pendingCheck={pendingCheck}
+                    busy={busy}
+                    chapterTurnCount={chapterTurnCount}
+                    closeReadiness={closeReadiness}
+                    hasActiveRoll={hasActiveRoll}
+                    onPendingInputChange={onPendingInputChange}
+                    onSendTurn={onSendTurn}
+                    onCloseChapter={onCloseChapter}
+                  />
+                )}
               />
             </div>
           </main>
@@ -1279,6 +1278,7 @@ function TurnStream({
   onResolvePendingCheck,
   onSpendInspiration,
   onDeclineInspiration,
+  actionSurface,
 }: {
   state: Sf2State
   chapterTurns: Sf2State['history']['turns']
@@ -1301,6 +1301,7 @@ function TurnStream({
   onResolvePendingCheck: () => void
   onSpendInspiration: () => void
   onDeclineInspiration: () => void
+  actionSurface: ReactNode
 }) {
   const turns = chapterTurns
   const showLiveTurn = Boolean(activePlayerInput || prose || turnCommitError || isStreaming || isGeneratingChapter || isArchiving)
@@ -1309,7 +1310,7 @@ function TurnStream({
   const rollPauseActive = liveRolls.some((roll) => !roll.outcome)
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col justify-end space-y-6">
+    <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col space-y-6">
       {turns.length === 0 && !prose && !isGeneratingChapter && (
         <div className="rounded-r-lg border-l border-primary/30 bg-card/35 py-5 pl-5 pr-5 text-foreground">
           <p className="text-sm leading-relaxed text-muted-foreground [text-wrap:pretty]" style={{ fontFamily: 'var(--font-narrative)' }}>
@@ -1337,7 +1338,7 @@ function TurnStream({
       ))}
 
       {showLiveTurn && (
-        <div className="space-y-4">
+        <div className="space-y-4 scroll-mt-6" data-sf2-live-turn>
           {activePlayerInput && (
             <>
               <SceneMarker turn={liveTurnNumber} location={liveLocation} />
@@ -1384,6 +1385,9 @@ function TurnStream({
           )}
         </div>
       )}
+      <div className="pt-1">
+        {actionSurface}
+      </div>
     </div>
   )
 }
@@ -1947,11 +1951,11 @@ function ActionSurface(props: {
                 key={`${action}-${index}`}
                 type="button"
                 onClick={() => onPendingInputChange(action)}
-                className="sf2-action-enter grid w-full grid-cols-[76px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2.5 text-left transition-[background-color,border-color,transform] hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
+                className="sf2-action-enter grid w-full grid-cols-[92px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2.5 text-left transition-[background-color,border-color,transform] hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
                 style={{ '--sf2-action-delay': `${index * 70}ms` } as CSSProperties}
               >
                 <span className={cn(
-                  'line-clamp-2 font-mono text-[10px] uppercase leading-snug tracking-[0.16em]',
+                  'line-clamp-2 font-mono text-[10px] uppercase leading-snug tracking-[0.16em] [overflow-wrap:anywhere]',
                   parsed.rollType ? 'text-primary/75' : 'text-muted-foreground/55',
                 )}>
                   {parsed.rollType ?? 'Action'}
