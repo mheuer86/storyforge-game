@@ -376,7 +376,7 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     crucible:
       'A person sold as cargo, a black-ops corvette, and route secrets valuable enough to kill a ship make the passage contract meaningless unless the PC decides who is using whom.',
     firstEpisode:
-      'Make the defector, pursuers, and first piece of data reveal who is using the passage before the corvette defines the contract.',
+      'Put the defector\'s first data against her pursuers before the corvette defines the passage as its contract.',
   },
   worldRules: {
     ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.worldRules,
