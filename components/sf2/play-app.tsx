@@ -8,18 +8,16 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { apiHeaders } from '@/lib/api-key'
-import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
+import { CharacterSetup } from '@/components/setup/character-setup'
+import { WorldSetup } from '@/components/setup/world-setup'
+import { applyGenreTheme, getGenreConfig, type CharacterClass, type Genre, type Species } from '@/lib/genre-config'
 import {
   createInitialSf2State,
   isArcAuthored,
   isChapterAuthored,
 } from '@/lib/sf2/game-data'
-import { compileSf2SetupSeed } from '@/lib/sf2/setup/compile-seed'
 import {
-  listSf2SetupGenres,
   listSf2SetupHooks,
-  listSf2SetupOrigins,
-  listSf2SetupPlaybooks,
 } from '@/lib/sf2/setup/options'
 import type { Sf2SetupSelection } from '@/lib/sf2/setup/types'
 import { applyAuthorChapterOpening } from '@/lib/sf2/author/chapter-opening'
@@ -66,7 +64,7 @@ import type {
 } from '@/lib/sf2/types'
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
-const DEFAULT_SF2_SETUP_GENRE_ID = 'epic-scifi'
+const DEFAULT_SF2_SETUP_GENRE_ID: Genre = 'space-opera'
 const EMPTY_SAVE_SLOTS: (Sf2SaveSlotData | null)[] = [null, null, null]
 
 const API_ENDPOINTS = {
@@ -88,6 +86,11 @@ type ReplayFrame = Sf2TurnReplayFrame
 
 type PendingCheck = Sf2ClientPendingCheck
 type RollOutcome = Sf2ClientRollOutcome
+type SetupStep = 'world' | 'character'
+
+interface WizardSetupData {
+  genre: Genre
+}
 
 function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc): RollOutcome {
   const total = d20 + modifier
@@ -153,11 +156,9 @@ export function Sf2PlayApp() {
   const [showCampaignSelect, setShowCampaignSelect] = useState(false)
   const [saveSlots, setSaveSlots] = useState<(Sf2SaveSlotData | null)[]>(() => [...EMPTY_SAVE_SLOTS])
   const [saveSlotStatus, setSaveSlotStatus] = useState<string | null>(null)
-  const [playerName, setPlayerName] = useState('Ren')
-  const [selectedGenreId, setSelectedGenreId] = useState(DEFAULT_SF2_SETUP_GENRE_ID)
-  const [selectedOriginId, setSelectedOriginId] = useState('')
-  const [selectedPlaybookId, setSelectedPlaybookId] = useState('')
-  const [selectedHookId, setSelectedHookId] = useState('')
+  const [setupStep, setSetupStep] = useState<SetupStep>('world')
+  const [setupData, setSetupData] = useState<WizardSetupData>({ genre: DEFAULT_SF2_SETUP_GENRE_ID })
+  const [setupError, setSetupError] = useState<string | null>(null)
   const [prose, setProse] = useState<string>('')
   const [suggestedActions, setSuggestedActions] = useState<string[]>([])
   const [pendingInput, setPendingInput] = useState<string>('')
@@ -188,78 +189,6 @@ export function Sf2PlayApp() {
   // Inspiration spends are only persisted once the full turn commits. This
   // keeps a paused roll from mutating state that sendTurn later replaces.
   const pendingInspirationSpendRef = useRef(0)
-  const genreOptions = useMemo(() => listSf2SetupGenres(), [])
-  const originOptions = useMemo(() => {
-    try {
-      return listSf2SetupOrigins(selectedGenreId)
-    } catch {
-      return []
-    }
-  }, [selectedGenreId])
-  const playbookOptions = useMemo(() => {
-    if (!selectedOriginId) return []
-    try {
-      return listSf2SetupPlaybooks(selectedGenreId, selectedOriginId)
-    } catch {
-      return []
-    }
-  }, [selectedGenreId, selectedOriginId])
-  const hookOptions = useMemo(() => {
-    if (!selectedOriginId || !selectedPlaybookId) return []
-    try {
-      return listSf2SetupHooks(selectedGenreId, selectedOriginId, selectedPlaybookId)
-    } catch {
-      return []
-    }
-  }, [selectedGenreId, selectedOriginId, selectedPlaybookId])
-
-  useEffect(() => {
-    if (originOptions.some((origin) => origin.id === selectedOriginId)) return
-    setSelectedOriginId(originOptions[0]?.id ?? '')
-  }, [originOptions, selectedOriginId])
-
-  useEffect(() => {
-    if (playbookOptions.some((playbook) => playbook.id === selectedPlaybookId)) return
-    setSelectedPlaybookId(playbookOptions[0]?.id ?? '')
-  }, [playbookOptions, selectedPlaybookId])
-
-  useEffect(() => {
-    if (hookOptions.some((hook) => hook.id === selectedHookId)) return
-    setSelectedHookId(hookOptions[0]?.id ?? '')
-  }, [hookOptions, selectedHookId])
-
-  const setupSelection = useMemo<Sf2SetupSelection | null>(() => {
-    if (!selectedGenreId || !selectedOriginId || !selectedPlaybookId || !selectedHookId) return null
-    return {
-      genreId: selectedGenreId,
-      originId: selectedOriginId,
-      playbookId: selectedPlaybookId,
-      hookId: selectedHookId,
-      characterName: playerName.trim() || 'Ren',
-    }
-  }, [playerName, selectedGenreId, selectedHookId, selectedOriginId, selectedPlaybookId])
-
-  const selectedSeed = useMemo(() => {
-    if (!setupSelection) return null
-    try {
-      return compileSf2SetupSeed(setupSelection)
-    } catch {
-      return null
-    }
-  }, [setupSelection])
-
-  const selectedHook = useMemo(
-    () => hookOptions.find((hook) => hook.id === selectedHookId) ?? null,
-    [hookOptions, selectedHookId]
-  )
-
-  const selectedGenreConfig = useMemo(() => {
-    try {
-      return getGenreConfig(selectedGenreId as Genre)
-    } catch {
-      return null
-    }
-  }, [selectedGenreId])
 
   const refreshSaveSlots = useCallback(async () => {
     const p = persistenceRef.current
@@ -364,12 +293,12 @@ export function Sf2PlayApp() {
   useEffect(() => {
     if (state || showCampaignSelect) return
     try {
-      applyGenreTheme(selectedGenreId as Genre)
+      applyGenreTheme(setupData.genre)
     } catch {
-      document.documentElement.setAttribute('data-genre', selectedGenreId)
+      document.documentElement.setAttribute('data-genre', setupData.genre)
     }
-    document.body.setAttribute('data-genre', selectedGenreId)
-  }, [selectedGenreId, showCampaignSelect, state])
+    document.body.setAttribute('data-genre', setupData.genre)
+  }, [setupData.genre, showCampaignSelect, state])
 
   // Live timer while generating a chapter (Author call can take 30-90s).
   useEffect(() => {
@@ -407,11 +336,50 @@ export function Sf2PlayApp() {
     }
   }, [])
 
-  function startCampaign() {
-    if (!setupSelection) return
+  function handleWorldSetupComplete(data: { genre: Genre }) {
+    setSetupData({ genre: data.genre })
+    setSetupStep('character')
+    setSetupError(null)
+    try {
+      applyGenreTheme(data.genre)
+    } catch {
+      document.documentElement.setAttribute('data-genre', data.genre)
+    }
+    document.body.setAttribute('data-genre', data.genre)
+  }
+
+  function handleBackToWorldSetup() {
+    setSetupError(null)
+    setSetupStep('world')
+  }
+
+  function startCampaignFromWizard(data: {
+    name: string
+    species: Species
+    characterClass: CharacterClass
+    gender: 'he' | 'she' | 'they'
+  }) {
+    let hooks: ReturnType<typeof listSf2SetupHooks> = []
+    try {
+      hooks = listSf2SetupHooks(setupData.genre, data.species.id, data.characterClass.id)
+    } catch {
+      hooks = []
+    }
+    if (hooks.length === 0) {
+      setSetupError('No SF2 opening hook is available for that origin and playbook yet.')
+      return
+    }
+    const hook = hooks[Math.min(Math.floor(Math.random() * hooks.length), hooks.length - 1)]
+    const setupSelection: Sf2SetupSelection = {
+      genreId: setupData.genre,
+      originId: data.species.id,
+      playbookId: data.characterClass.id,
+      hookId: hook.id,
+      characterName: data.name,
+    }
     const next = createInitialSf2State({
       campaignId: `camp_${Date.now()}`,
-      playerName: playerName.trim() || 'Ren',
+      playerName: data.name,
       setupSelection,
     })
     setState(next)
@@ -434,11 +402,8 @@ export function Sf2PlayApp() {
       data: {
         seedId: next.meta.seedId,
         setupSelection,
-        selectedGenreId,
-        selectedOriginId,
-        selectedPlaybookId,
-        selectedHookId,
-        hookTitle: selectedSeed?.hook.title,
+        setupSurface: 'v1_wizard',
+        hookTitle: hook.title,
       },
     })
     persist(next)
@@ -458,6 +423,9 @@ export function Sf2PlayApp() {
     setLastCampaign(null)
     setShowCampaignSelect(false)
     setSaveSlotStatus(null)
+    setSetupStep('world')
+    setSetupData({ genre: DEFAULT_SF2_SETUP_GENRE_ID })
+    setSetupError(null)
     setProse('')
     setTurnCommitError(null)
     setActivePlayerInput('')
@@ -485,11 +453,9 @@ export function Sf2PlayApp() {
     setLastCampaign(null)
     setShowCampaignSelect(false)
     setSaveSlotStatus(null)
-    setPlayerName('Ren')
-    setSelectedGenreId(DEFAULT_SF2_SETUP_GENRE_ID)
-    setSelectedOriginId('')
-    setSelectedPlaybookId('')
-    setSelectedHookId('')
+    setSetupStep('world')
+    setSetupData({ genre: DEFAULT_SF2_SETUP_GENRE_ID })
+    setSetupError(null)
     setProse('')
     setTurnCommitError(null)
     setActivePlayerInput('')
@@ -1281,175 +1247,27 @@ export function Sf2PlayApp() {
   }
 
   if (!state) {
+    if (setupStep === 'world') {
+      return (
+        <WorldSetup
+          onNext={handleWorldSetupComplete}
+          onBack={saveSlots.some(Boolean) || lastCampaign ? () => setShowCampaignSelect(true) : undefined}
+        />
+      )
+    }
+
     return (
-      <div className="min-h-screen bg-background px-4 py-6 text-foreground md:px-8 md:py-10">
-        <div className="pointer-events-none fixed inset-0" style={{
-          background: [
-            'radial-gradient(circle at 16% 0%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 30%)',
-            'radial-gradient(circle at 86% 10%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 28%)',
-            'linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 82%, var(--card) 18%))',
-          ].join(', '),
-        }} />
-        <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-5xl content-center gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
-          <section className="space-y-5">
-            <div className="space-y-3">
-              <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
-                {selectedGenreConfig?.name ?? selectedSeed?.genreName ?? 'Storyforge'}
-              </div>
-              <h1 className="font-heading text-3xl font-semibold tracking-normal text-foreground md:text-5xl">
-                {selectedSeed?.hook.title ?? 'Choose an opening'}
-              </h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground [text-wrap:pretty] md:text-base">
-                {selectedGenreConfig?.tagline ?? 'Build the pressure field for a new SF2 campaign.'}
-              </p>
-            </div>
-
-            <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
-              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
-                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Origin</div>
-                <div className="truncate text-foreground">{selectedSeed?.originName ?? 'Select origin'}</div>
-              </div>
-              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
-                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Playbook</div>
-                <div className="truncate text-foreground">{selectedSeed?.playbookName ?? 'Select playbook'}</div>
-              </div>
-              <div className="rounded-lg border border-border/35 bg-card/55 p-3">
-                <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-primary/80">Hook</div>
-                <div className="truncate text-foreground">{selectedSeed?.hook.title ?? 'No hook available'}</div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border/35 bg-card/45 p-4 text-sm leading-6 text-muted-foreground">
-              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/80">
-                Pressure
-              </div>
-              <p className="[text-wrap:pretty]">{selectedSeed?.hook.premise ?? 'No eligible hook matches this origin and playbook.'}</p>
-              <p className="mt-3 text-foreground/85 [text-wrap:pretty]">{selectedSeed?.hook.crucible ?? 'Choose another combination to continue.'}</p>
-            </div>
-          </section>
-
-          <section className="self-center rounded-lg border border-border/45 bg-card/75 p-5 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-            <div className="mb-5 space-y-1">
-              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-                Storyforge v2
-              </div>
-              <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">
-                Compile a V1 origin, playbook, and hook into an SF2 Author seed.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-mono text-sm text-muted-foreground" htmlFor="genre">
-                Genre
-              </label>
-              <select
-                id="genre"
-                value={selectedGenreId}
-                onChange={(e) => setSelectedGenreId(e.target.value)}
-                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
-              >
-                {genreOptions.map((genre) => (
-                  <option key={genre.id} value={genre.id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="font-mono text-sm text-muted-foreground" htmlFor="origin">
-                  Origin
-                </label>
-                <select
-                  id="origin"
-                  value={selectedOriginId}
-                  onChange={(e) => setSelectedOriginId(e.target.value)}
-                  className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
-                >
-                  {originOptions.map((origin) => (
-                    <option key={origin.id} value={origin.id}>
-                      {origin.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-sm text-muted-foreground" htmlFor="playbook">
-                  Playbook
-                </label>
-                <select
-                  id="playbook"
-                  value={selectedPlaybookId}
-                  onChange={(e) => setSelectedPlaybookId(e.target.value)}
-                  className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
-                >
-                  {playbookOptions.map((playbook) => (
-                    <option key={playbook.id} value={playbook.id}>
-                      {playbook.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <label className="font-mono text-sm text-muted-foreground" htmlFor="hook">
-                Opening hook
-              </label>
-              <select
-                id="hook"
-                value={selectedHookId}
-                onChange={(e) => setSelectedHookId(e.target.value)}
-                disabled={hookOptions.length === 0}
-                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {hookOptions.length > 0 ? hookOptions.map((hook) => (
-                  <option key={hook.id} value={hook.id}>
-                    {hook.title}
-                  </option>
-                )) : (
-                  <option value="">No eligible hooks</option>
-                )}
-              </select>
-              {selectedHook?.objective ? (
-                <p className="text-xs leading-5 text-muted-foreground [text-wrap:pretty]">
-                  {selectedHook.objective}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <label className="font-mono text-sm text-muted-foreground" htmlFor="name">
-                Character name
-              </label>
-              <input
-                id="name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full rounded-lg border border-border/55 bg-background/70 px-3 py-2 font-mono text-foreground outline-none transition-colors focus:border-primary/70 focus:ring-1 focus:ring-primary/55"
-              />
-            </div>
-
-            <button
-              onClick={startCampaign}
-              disabled={!setupSelection || !selectedSeed || hookOptions.length === 0}
-              className="action-glow mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-[box-shadow,transform,filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
-            >
-              Create campaign
-            </button>
-            {saveSlots.some(Boolean) && (
-              <button
-                type="button"
-                onClick={() => setShowCampaignSelect(true)}
-                className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg border border-border/55 bg-background/45 px-4 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/45 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70"
-              >
-                Saved games
-              </button>
-            )}
-          </section>
-        </div>
+      <div className="relative">
+        <CharacterSetup
+          genre={setupData.genre}
+          onBack={handleBackToWorldSetup}
+          onStart={startCampaignFromWizard}
+        />
+        {setupError && (
+          <div className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-lg border border-destructive/45 bg-card/95 px-4 py-3 text-center text-sm text-destructive shadow-lg">
+            {setupError}
+          </div>
+        )}
       </div>
     )
   }
