@@ -1,224 +1,238 @@
 # Narrator Prompt Surface Module
 
-Status: draft-blocked
-Type: HITL
+Status: needs-triage
+Type: AFK
 
 ## What to build
 
-Draft a deeper Narrator Prompt Surface Module that owns the structure of the Narrator prompt surface: cached system blocks, dynamic scene bundle, in-scene replay, current-turn delta, roll-resume tool-result content, dynamic advisory blocks, and diagnostics describing what was included.
+Refactor the SF2 Narrator prompt text surface into a clearer Module while preserving behavior exactly.
 
-This ticket is intentionally blocked. Do not implement it until the decisions listed below are made.
+This ticket is structure-only. It should make the prompt surface easier to navigate, test, and safely change later. It must not add, delete, shorten, reorder, or rewrite prompt rules.
 
-## Current problem
+## Decisions from shaping
 
-`buildNarratorTurnContext` is already a useful route-facing Module, but the prompt surface underneath it still has scattered knowledge:
+These decisions are already made and should be treated as requirements:
 
-- `lib/sf2/narrator/prompt.ts` owns core, bible, role, and chapter situation text.
-- `lib/sf2/narrator/messages.ts` owns scene bundle placement, in-scene replay, current-turn delta, role lookup, roll gates, playbook preference, location continuity guard, recovery notes, coherence notes, and message cache markers.
-- `lib/sf2/narrator/turn-context.ts` owns system composition, cached tools, roll-resume messages, roll-result prose, failed-roll pressure manifestation, pacing diagnostics, and sentinel context.
-- `lib/sf2/retrieval/scene-packet.ts` renders major dynamic packet sections.
-- `lib/sf2/narrator/roll-gates.ts` and `lib/sf2/narrator/intent-queue.ts` inject mandatory dynamic instructions.
+- Ticket 08 is strictly structural. No V1 systems are restored here.
+- Duplicated defensive prompt rules stay duplicated. They are deep defense against observed failures, not cleanup targets.
+- `buildNarratorSituation(state)` is in scope for move-only extraction with byte-equivalent output.
+- The current boundary between cached chapter situation, scene-scoped scene bundle, and per-turn mutable delta/private blocks is not in scope to change.
+- Deterministic fixtures are required for validation.
+- Use the existing SF2 replay harness for equivalence checks.
+- Keep `lib/sf2/narrator/prompt.ts` as the formal public facade.
+- Add a small README/context file for the new Narrator prompt module.
+- Lightly update the prompt inventory artifact after implementation.
+- Do not refactor `lib/sf2/narrator/turn-context.ts` in this ticket. That is a follow-up ticket.
 
-The behavior is valuable, but the Interface is still implicit. A maintainer must remember cache boundaries, dynamic placement, roll-resume differences, and prompt/tool coupling across several files.
+## Current files to inspect
 
-This ticket intentionally covers the `buildNarratorTurnContext` orchestration concern. Do not create a separate turn-context refactor ticket unless, after this ticket is implemented, `turn-context.ts` still owns substantial prompt-surface implementation details instead of acting as a thin route-facing coordinator.
+- `lib/sf2/narrator/prompt.ts`
+- `lib/sf2/narrator/messages.ts`
+- `lib/sf2/narrator/turn-context.ts`
+- `lib/sf2/narrator/roll-gates.ts`
+- `lib/sf2/narrator/intent-queue.ts`
+- `lib/sf2/retrieval/scene-packet.ts`
+- `lib/sf2/genre-profile/*`
+- `scripts/sf2-replay.ts`
+- `.scratch/sf2-refactoring-issues/artifacts/prompt-surface-inventory-and-parity-audit.md`
 
-## Target Module - draft shape
+## Current boundary to preserve
 
-Potential location:
+There are three prompt/context layers. Do not blur them.
 
-- `lib/sf2/narrator/prompt-surface/`
+### 1. Narrator situation - chapter-scoped cached system block
 
-Potential files:
+Current owner: `buildNarratorSituation(state)` in `lib/sf2/narrator/prompt.ts`.
 
-- `lib/sf2/narrator/prompt-surface/build.ts`
-- `lib/sf2/narrator/prompt-surface/types.ts`
-- `lib/sf2/narrator/prompt-surface/roll-resume.ts`
-- `lib/sf2/narrator/prompt-surface/diagnostics.ts`
+Contains durable Author chapter setup:
 
-Potential Interface:
+- chapter number/title
+- frame objective, crucible, active pressure
+- outcome spectrum
+- antagonist field
+- authored pressure ladder plan
+- spine thread anchor
+- arc context
+- chapter pacing contract
 
-```ts
-interface BuildNarratorPromptSurfaceInput {
-  state: Sf2State
-  playerInput: string
-  isInitial: boolean
-  turnIndex: number
-  rollResolution?: Sf2NarratorRollResolution
-}
+This answers: what is this chapter about, and what dramatic machine did Author build?
 
-interface NarratorPromptSurface {
-  mode: 'normal' | 'roll_resume'
-  system: Anthropic.TextBlockParam[]
-  messages: Anthropic.MessageParam[]
-  cachedTools: Anthropic.Tool[]
-  diagnostics: {
-    workingSet: Sf2NarratorWorkingSetEventPayload | null
-    sceneBundleBuilt: Sf2NarratorSceneBundleEventPayload | null
-    pacingAdvisory: Sf2NarratorPacingEventPayload | null
-    promptBlocks: Array<{
-      label: string
-      placement: 'cached_system' | 'dynamic_message' | 'roll_resume_tool_result'
-      approximateChars: number
-    }>
-  }
-  sentinelContext: ScanDisplayOutputOptions
-  failedRollSkill?: string
-  requiredRollGate: Sf2RequiredRollGate | null
-  intentQueue: Sf2NarratorIntentQueue
-}
-```
+### 2. Scene bundle - scene-scoped cached message
 
-The exact shape should be informed by tickets 06 and 07. The important goal is Locality: prompt-surface assembly rules sit behind one Module Interface, while `buildNarratorTurnContext` remains the route-facing caller.
+Current owner: `renderSceneBundle(...)` in `lib/sf2/retrieval/scene-packet.ts`, assembled by `lib/sf2/narrator/messages.ts`.
 
-## Decisions required before implementation
+Contains relatively stable scene context:
 
-### Decision 1: Which prompt edits are approved?
+- current location, area/node, atmosphere
+- scene intent
+- scene-level chapter objective/crucible
+- current pressure face/step at scene open
+- arc summary and pacing target
+- continuation dramatic turn
+- human stakes
+- on-stage cast identity
+- off-stage authored/relevant cast
 
-Source: `06-prompt-surface-inventory-and-parity-audit.md`
+This answers: what scene are we in, who is here, and what stable context should not be rediscovered every turn?
 
-Before implementation, decide:
+### 3. Per-turn delta/private blocks - current mutable uncached message content
 
-- Which duplicated instructions can be merged or deleted?
-- Which bug-scar instructions are still load-bearing?
-- Which V1 rules should be restored in SF2 prompt text?
-- Which V1 rules are intentionally replaced by SF2 code/schema/validators?
-- Which rules should move to replay fixtures, validators, sentinels, or derived advisories instead of prompt prose?
+Current owners: `renderPerTurnDelta(...)` in `lib/sf2/retrieval/scene-packet.ts` plus appended private blocks in `lib/sf2/narrator/messages.ts`.
 
-Default before this decision: do not change prompt wording. Extract structure only.
+Contains mutable/current-turn context:
 
-### Decision 2: What does the Genre Narrative Profile own?
+- player mechanical state, proficiencies, traits, temp modifiers
+- current time and temporal anchors
+- fired pressure ladder steps
+- revelation hint progress
+- cast mutable reads: disposition, temp load, posture, behavioral contract, will-share/will-not, active pressure
+- operation plan
+- thread tensions and local pressure
+- emotional beats
+- beat mode and active mechanics/procedure packets
+- advisory text
+- establishment vs continuation instruction
+- current player input
+- deterministic resolved action/pronoun target info
+- role alias lookup
+- required roll gate
+- playbook preference
+- location continuity guard
+- recovery/coherence notes
+- intent queue block
 
-Source: `07-sf2-genre-narrative-profile-module.md`
+This answers: what changed or matters right now?
 
-Before implementation, decide:
+## Target Module
 
-- Does the Narrator prompt surface consume `getSf2GenreNarrativeProfile` directly?
-- Do Author, Narrator, Arc Author, and retry prompts all use the same profile Interface?
-- Are genre bible and examples the whole first profile, or should the profile also own tone ratios, banned names, vocabulary guards, quick-action examples, continuation examples, or role-specific examples?
+Create a small internal Module under:
 
-Default before this decision: consume whatever compatibility helpers ticket 07 leaves in place; do not expand profile scope.
+- `lib/sf2/narrator/prompt/`
 
-### Decision 3: What is the cache-boundary contract?
+Suggested files:
 
-Current behavior:
+- `lib/sf2/narrator/prompt/core.ts`
+- `lib/sf2/narrator/prompt/role.ts`
+- `lib/sf2/narrator/prompt/situation.ts`
+- `lib/sf2/narrator/prompt/index.ts`
+- `lib/sf2/narrator/prompt/README.md`
 
-- `SF2_CORE`, genre bible, role, and chapter situation are system blocks.
-- `composeSystemBlocks` owns cache markers.
-- Per-turn scene packet and current turn delta live in messages.
-- Roll-resume uses preserved prior messages plus a `tool_result`.
+The exact file names may vary, but the ownership should be obvious.
 
-Before implementation, decide:
+Keep this public facade:
 
-- Should `buildNarratorSituation(state)` remain a cached chapter-scoped system block?
-- Should dynamic chapter-state fragments ever move out of the situation block?
-- Should the prompt surface Module expose a diagnostic map of cached vs dynamic blocks?
+- `lib/sf2/narrator/prompt.ts`
 
-Default before this decision: preserve current cache placement exactly.
+The facade should continue exporting the existing public surface, including:
 
-### Decision 4: Where does roll-resume prose live?
+- `SF2_CORE`
+- `SF2_NARRATOR_ROLE`
+- `buildNarratorRole`
+- `buildNarratorSituation`
+- current genre-profile compatibility re-exports such as `getSf2BibleForGenre` and `SF2_BIBLE_HEGEMONY`
 
-Current behavior:
+Existing route/script callers should not need broad import churn in this ticket.
 
-- `rollResultMessage` and failed-roll pressure manifestation live in `lib/sf2/narrator/turn-context.ts`.
-- Roll resume skips working-set rebuild and appends a `tool_result` to prior messages.
+## README requirements
 
-Before implementation, decide:
+Add a tiny README/context file in the new module. It should explain:
 
-- Should roll-resume text construction move into the prompt-surface Module?
-- Should pressure manifestation on failed rolls be treated as prompt surface, turn-resolution behavior, or a separate runtime advisory?
+- `lib/sf2/narrator/prompt.ts` is the public facade.
+- Internal modules own implementation details.
+- `core` is world-independent cached core.
+- `role` is cached role/craft/output contract.
+- `situation` is chapter-scoped cached Author setup projection.
+- Per-turn state does not belong in situation.
+- Scene/message assembly lives in `lib/sf2/narrator/messages.ts`, `lib/sf2/narrator/turn-context.ts`, and `lib/sf2/retrieval/scene-packet.ts`.
+- Any behavior-changing prompt edit belongs in a dedicated ticket with fixture coverage.
 
-Default before this decision: moving roll-resume construction is allowed only if output text and message shape stay identical.
+## Required behavior to preserve
 
-### Decision 5: What test surface proves safety?
-
-Before implementation, decide:
-
-- Do we need deterministic prompt-surface fixtures/snapshots?
-- Is full `sf2:replay` enough when prompt structure changes but model calls are not live?
-- Should tests assert that dynamic content does not enter cached system blocks?
-- Should tests assert roll-resume does not rebuild the normal-turn working set?
-
-Default before this decision: add focused deterministic tests or replay fixtures for cache/dynamic placement if a pure helper can expose the contract.
-
-### Decision 6: What remains in `buildNarratorTurnContext`?
-
-Before implementation, decide the intended residual responsibility of `lib/sf2/narrator/turn-context.ts`.
-
-Recommended default:
-
-- Keep `buildNarratorTurnContext` as the route-facing coordinator because routes already depend on that Interface.
-- Move prompt-surface assembly details behind the new Module.
-- Let `turn-context.ts` still coordinate non-prompt concerns only when they are naturally part of the route-facing turn context: required roll gate exposure, replay metadata shape, and any compatibility shims.
-
-If the implementation leaves `turn-context.ts` owning system composition, message cache placement, roll-resume text construction, failed-roll pressure instruction construction, and prompt-surface diagnostics, then this ticket has not actually deepened the Module. In that case, open a follow-up rather than calling the prompt-surface work complete.
-
-## Draft boundaries
-
-The eventual Module should own:
-
-- system block assembly
-- cached-vs-dynamic placement labels
-- normal-turn message assembly coordination
-- roll-resume message assembly coordination
-- dynamic advisory block ordering
-- prompt-surface diagnostics useful in replay/debugging
-
-The Module should not own:
-
-- Anthropic streaming
-- route error handling
-- tool dispatch
-- actual prompt copy decisions not approved by the audit
-- Archivist patching
-- Scene Snapshot reducer behavior
-- Genre content writing beyond consuming the Genre Narrative Profile
-
-## Required behavior to preserve if implemented
-
-- Same system block order unless a decision explicitly changes it.
-- Same cache marker placement unless a decision explicitly changes it.
-- Same normal-turn message order.
-- Same roll-resume message shape.
+- Same exported public names from `lib/sf2/narrator/prompt.ts`.
+- Same `SF2_CORE` text.
+- Same `SF2_NARRATOR_ROLE` text.
+- Same `buildNarratorRole(genreId)` output text for existing genres.
+- Same `buildNarratorSituation(state)` output text for representative states.
+- Same section order in the role and situation output.
+- Same genre-profile outputs and compatibility re-exports.
+- Same system block order and cache marker behavior through existing callers.
+- Same normal-turn message assembly.
+- Same roll-resume behavior.
 - Same required roll-gate behavior.
-- Same intent-queue behavior.
-- Same scene bundle cache semantics.
-- Same pacing advisory diagnostics.
+- Same scene bundle and per-turn delta boundary.
 - Same display sentinel context.
-- Same `buildNarratorTurnContext` route-facing output shape unless callers are updated in one narrow pass.
 
-## Acceptance criteria - draft
+## Out of scope
 
-These are provisional and should be revised after decisions 1-5.
+- No V1 system restorations.
+- No prompt copy edits.
+- No duplicate-rule cleanup.
+- No cache-boundary changes.
+- No `turn-context.ts` refactor.
+- No role/schema/tool behavior changes.
+- No import-cleanup campaign beyond what is needed to keep the facade working.
+- No genre content writing.
 
-- [ ] A `lib/sf2/narrator/prompt-surface/` Module exists.
-- [ ] `buildNarratorTurnContext` delegates prompt-surface assembly to the new Module.
-- [ ] `buildNarratorTurnContext` is left as a thin route-facing coordinator, or a follow-up ticket is created explaining what still needs extraction.
-- [ ] Prompt copy is unchanged unless approved by the audit decision queue.
-- [ ] The Module returns or exposes diagnostics showing cached vs dynamic prompt blocks.
-- [ ] Normal-turn and roll-resume paths are explicit in the Module Interface.
-- [ ] Dynamic player input/current-turn state never enters cached system blocks.
-- [ ] Roll-resume does not recompute or misrepresent the pre-roll working set.
+## Fixture / replay requirements
+
+Use the existing SF2 replay harness rather than adding a separate runner.
+
+Add deterministic fixture assertions that protect output text/order/cache-sensitive assembly. Exact equality is preferred for extracted helper output where practical; substring/order checks are acceptable for large assembled message arrays.
+
+Minimum useful coverage:
+
+- `buildNarratorRole('hegemony')` or system block output includes the same load-bearing sections in the same order.
+- `buildNarratorRole('space-opera')` or system block output includes the same genre-specific surface in the same order.
+- `buildNarratorSituation(state)` exact-output fixture for a representative authored chapter state.
+- one normal message assembly case through `buildNarratorTurnContext(...)` or existing `narratorMessages` fixture surface.
+- one roll-resume message case proving prior messages and the `tool_result` content remain stable.
+
+Do not use live model calls.
+
+## Suggested implementation steps
+
+1. Add focused replay-harness assertions for prompt role/situation/system text if the current harness does not expose enough.
+2. Add or extend focused fixtures before moving code.
+3. Create `lib/sf2/narrator/prompt/` internal modules.
+4. Move `SF2_CORE` into the core module without text changes.
+5. Move `buildNarratorRole` and `SF2_NARRATOR_ROLE` into the role module without text changes.
+6. Move `buildNarratorSituation` and its private render helper into the situation module without text changes.
+7. Keep `lib/sf2/narrator/prompt.ts` as the public facade re-exporting the same public names.
+8. Add the module README/context file.
+9. Lightly update the inventory artifact with a Post-08 reconciliation note and current file ownership.
+10. Run focused fixtures first, then full replay/build.
+
+## Acceptance criteria
+
+- [ ] `lib/sf2/narrator/prompt/` exists and owns core/role/situation implementation.
+- [ ] `lib/sf2/narrator/prompt.ts` remains the formal public facade.
+- [ ] Existing public imports from `lib/sf2/narrator/prompt.ts` continue to work.
+- [ ] The new module README documents the cache/dynamic boundary.
+- [ ] Prompt text and section order are preserved.
+- [ ] No per-turn mutable state is moved into the cached situation block.
+- [ ] Deterministic replay-harness coverage protects role/situation/system/message equivalence.
+- [ ] The prompt inventory artifact has a short Post-08 reconciliation note.
 - [ ] Existing SF2 replay fixtures pass.
 - [ ] `npm run build` passes.
 
-## Verification - draft
+## Verification
 
-After decisions and implementation, run:
+Run focused new/changed fixtures first, then:
 
 ```bash
 npm run sf2:replay -- fixtures/sf2/replay
 npm run build
 ```
 
-Add focused deterministic tests/fixtures if the implementation creates a pure prompt-surface helper whose contracts can be asserted without live model calls.
+If build cannot run because of network font fetching, state that explicitly and still run the replay suite.
 
 ## Blocked by
 
-- `06-prompt-surface-inventory-and-parity-audit.md`
-- `07-sf2-genre-narrative-profile-module.md`
-- Human decisions listed in "Decisions required before implementation"
+None in the current branch: the prompt inventory exists and the genre profile structural move has landed.
 
-## Comments
+If picked up on a branch where ticket 06 or ticket 07 has not landed, complete those first.
 
-This draft exists so the shape is discoverable, but it should not be picked up as an AFK implementation ticket yet. The safe path is: inventory first, genre profile consolidation in parallel, then decide which prompt-surface changes are structural only versus behavior-changing.
+## Follow-ups intentionally split out
+
+- `09-narrator-prompt-facade-import-cleanup.md`: standardize imports around the public facade.
+- `10-narrator-turn-context-orchestrator-cleanup.md`: refactor turn-context orchestration after this prompt module exists.

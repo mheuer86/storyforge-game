@@ -23,9 +23,10 @@ import {
   type TokenUsage,
 } from '@/lib/sf2/diagnostics-store'
 import {
-  parseSf2NarratorStreamEvent,
-  type Sf2NarratorRollPromptEvent,
-} from '@/lib/sf2/narrator/stream-protocol'
+  runSf2ClientNarratorTurn,
+  type Sf2ClientPendingCheck,
+  type Sf2ClientRollOutcome,
+} from '@/lib/sf2/runtime/client-turn-orchestrator'
 import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
@@ -52,7 +53,6 @@ import type {
   Sf2State,
   Sf2Thread,
   Sf2TurnDiffEntry,
-  Sf2WorkingSet,
 } from '@/lib/sf2/types'
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
@@ -74,34 +74,8 @@ interface LatencyPayload {
 
 type ReplayFrame = Sf2TurnReplayFrame
 
-interface PendingCheck {
-  toolUseId: string
-  skill: string
-  dc: number
-  why: string
-  consequenceOnFail: string
-  modifierType?: 'advantage' | 'disadvantage' | 'challenge'
-  modifierReason?: string
-  priorMessages: unknown[]
-  originalInput?: string
-  currentIntent?: string
-  remainingIntents?: string[]
-}
-
-interface RollOutcome {
-  d20: number
-  rawRolls?: number[]
-  modifier: number
-  total: number
-  dc: number
-  effectiveDc?: number
-  result: 'critical' | 'success' | 'failure' | 'fumble'
-  skill?: string
-  modifierType?: 'advantage' | 'disadvantage' | 'inspiration' | 'challenge'
-  modifierReason?: string
-  inspirationSpent?: boolean
-  originalRoll?: RollOutcome
-}
+type PendingCheck = Sf2ClientPendingCheck
+type RollOutcome = Sf2ClientRollOutcome
 
 function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc): RollOutcome {
   const total = d20 + modifier
@@ -115,12 +89,6 @@ function resolveRoll(d20: number, modifier: number, dc: number, effectiveDc = dc
 
 function effectiveDcFor(check: Pick<PendingCheck, 'dc' | 'modifierType'>): number {
   return check.modifierType === 'challenge' ? check.dc + 2 : check.dc
-}
-
-function rollFailureSummary(result: RollOutcome['result'], consequenceOnFail: string): string | undefined {
-  if (result !== 'failure' && result !== 'fumble') return undefined
-  const trimmed = consequenceOnFail.trim()
-  return trimmed.length > 0 ? trimmed : undefined
 }
 
 function firewallTurnIndexFor(state: Sf2State): number {
@@ -335,28 +303,8 @@ export default function PlayV2Page() {
     pendingInspirationSpendRef.current = 0
   }
 
-  function formatNarratorHttpError(status: number, body: unknown): string {
-    const bodyMessage = extractErrorMessage(body)
-    return bodyMessage ? `HTTP ${status}: ${bodyMessage}` : `HTTP ${status}`
-  }
-
   function cleanNarratorErrorMessage(message: string): string {
     return parseEmbeddedAnthropicError(message) ?? message
-  }
-
-  function extractErrorMessage(value: unknown): string | null {
-    if (!value) return null
-    if (typeof value === 'string') return parseEmbeddedAnthropicError(value) ?? value
-    if (typeof value !== 'object') return String(value)
-    const record = value as Record<string, unknown>
-    const direct = record.message ?? record.error
-    if (typeof direct === 'string') return direct
-    if (direct && typeof direct === 'object') {
-      const nested = direct as Record<string, unknown>
-      if (typeof nested.message === 'string') return nested.message
-    }
-    if (typeof record.body === 'string') return parseEmbeddedAnthropicError(record.body) ?? record.body
-    return null
   }
 
   function parseEmbeddedAnthropicError(message: string): string | null {
@@ -378,355 +326,42 @@ export default function PlayV2Page() {
     currentState: Sf2State,
     playerInput: string,
     isInitial: boolean
-  ): Promise<{
-    completed: boolean
-    prose: string
-    annotation: Record<string, unknown> | null
-    errorMessage?: string
-    bundleBuilt: Sf2State['world']['sceneBundleCache'] | null
-    rollRecords: Sf2State['history']['rollLog']
-    sentinelEvents: Sf2TurnPipelineEvent[]
-    workingSet: Sf2WorkingSet | null
-  }> {
-    setIsStreaming(true)
-    setProse('')
-    setSuggestedActions([])
-    setPendingCheck(null)
-    setRollResult(null)
+  ) {
     setLiveRolls([])
-    setInspirationOffer(null)
-    pendingInspirationSpendRef.current = 0
-
-    let proseAccum = ''
-    let annotation: Record<string, unknown> | null = null
-    let rollResolution: object | null = null
-    let bundleBuilt: Sf2State['world']['sceneBundleCache'] | null = null
-    let turnWorkingSet: Sf2WorkingSet | null = null
-    const rollRecords: Sf2State['history']['rollLog'] = []
-    // Display sentinel findings for THIS turn — captured during the stream so
-    // they land in the per-turn frame's invariantEvents (and via that into the
-    // session-log / replay-fixture downloads). Reset on every narrator call.
-    const turnSentinelEvents: Sf2TurnPipelineEvent[] = []
-    // Loop: each iteration runs one narrator stream. A request_roll mid-stream
-    // pauses; we await the player's roll, then loop again with rollResolution
-    // in the request body. Terminates when narrate_turn arrives.
-    while (true) {
-      const body = rollResolution
-        ? {
-            state: currentState,
-            playerInput: isInitial ? '' : playerInput,
-            isInitial: false,
-            rollResolution,
-          }
-        : {
-            state: currentState,
-            playerInput: isInitial ? '' : playerInput,
-            isInitial,
-          }
-
-      const res = await fetch(API_ENDPOINTS.narrator, {
+    return runSf2ClientNarratorTurn({
+      state: currentState,
+      playerInput,
+      isInitial,
+      turnIndex,
+      fetchNarrator: (body) => fetch(API_ENDPOINTS.narrator, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify(body),
-      })
-
-      if (!res.ok || !res.body) {
-        let errorBody: unknown = null
-        try { errorBody = await res.json() } catch {
-          try { errorBody = await res.text() } catch {}
-        }
-        diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: res.status, source: 'narrator', body: errorBody } })
-        setIsStreaming(false)
-        return {
-          completed: false,
-          prose: proseAccum,
-          annotation,
-          errorMessage: formatNarratorHttpError(res.status, errorBody),
-          bundleBuilt,
-          rollRecords,
-          sentinelEvents: turnSentinelEvents,
-          workingSet: turnWorkingSet,
-        }
-      }
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let sawRollPrompt: Sf2NarratorRollPromptEvent | null = null
-      let sawNarrateTurn = false
-      let sawStreamError = false
-      let streamErrorMessage: string | undefined
-
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.trim()) continue
-          let decoded: unknown
-          try { decoded = JSON.parse(line) } catch { continue }
-          const event = parseSf2NarratorStreamEvent(decoded)
-          if (!event) continue
-          switch (event.type) {
-            case 'text': {
-              proseAccum += event.content
-              setProse(proseAccum)
-              break
-            }
-            case 'roll_prompt': {
-              sawRollPrompt = event
-              break
-            }
-            case 'narrate_turn': {
-              annotation = event.input
-              sawNarrateTurn = true
-              diagnosticsStore.pushDebug({ kind: 'narrate_turn', at: Date.now(), data: annotation })
-              const actions = (annotation?.suggested_actions as string[] | undefined) ?? []
-              setSuggestedActions(actions)
-              if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
-              break
-            }
-            case 'token_usage': {
-              const usage = event.usage as TokenUsage
-              diagnosticsStore.setNarratorUsage(usage)
-              diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'narrator', ...usage } })
-              break
-            }
-            case 'latency': {
-              diagnosticsStore.pushDebug({
-                  kind: 'latency',
-                  at: Date.now(),
-                  data: { role: event.role, ...event.latency },
-                })
-              break
-            }
-            case 'working_set':
-              turnWorkingSet = event.workingSet
-              diagnosticsStore.pushDebug({ kind: 'working_set', at: Date.now(), data: event.summary })
-              break
-            case 'scene_bundle_built': {
-              const built = {
-                sceneId: event.sceneId,
-                bundleText: event.bundleText,
-                builtAtTurn: event.builtAtTurn,
-              }
-              bundleBuilt = built
-              diagnosticsStore.pushDebug({
-                kind: 'scene_bundle_built',
-                at: Date.now(),
-                data: {
-                  sceneId: built.sceneId,
-                  builtAtTurn: built.builtAtTurn,
-                  bundleBytes: built.bundleText.length,
-                },
-              })
-              break
-            }
-            case 'pacing_advisory':
-              diagnosticsStore.pushDebug({ kind: 'pacing_advisory', at: Date.now(), data: event })
-              break
-            case 'narrator_meta_observed':
-              diagnosticsStore.pushDebug({
-                kind: 'narrator_meta_observed',
-                at: Date.now(),
-                data: {
-                  pattern: String(event.pattern ?? ''),
-                  snippet: event.snippet,
-                  turnIndex: event.turnIndex,
-                },
-              })
-              break
-            case 'narrator_output_recovered':
-              diagnosticsStore.pushDebug({
-                kind: 'narrator_output_recovered',
-                at: Date.now(),
-                data: {
-                  recoveryNotes: event.recoveryNotes,
-                  turnIndex: event.turnIndex,
-                },
-              })
-              break
-            case 'truncation_warning':
-              diagnosticsStore.pushDebug({ kind: 'truncation', at: Date.now(), data: event })
-              break
-            case 'display_sentinel': {
-              const findings = event.findings
-              const mode = event.mode
-              const repaired = event.repaired
-              if (repaired && typeof event.repairedProse === 'string') {
-                proseAccum = event.repairedProse
-                setProse(proseAccum)
-              }
-              // Always emit the entry — even findings.length === 0 is useful
-              // signal: "scanner ran, clean turn". This makes the false-
-              // positive baseline observable in the session log.
-              const entry: Sf2TurnPipelineEvent = {
-                kind: 'display_sentinel',
-                at: Date.now(),
-                data: { mode, repaired, findings, findingCount: findings.length },
-              }
-              turnSentinelEvents.push(entry)
-              diagnosticsStore.pushDebug(entry)
-              break
-            }
-            case 'error':
-              sawStreamError = true
-              streamErrorMessage = event.message
-              diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: streamErrorMessage })
-              break
-            case 'done':
-              break
-          }
-        }
-      }
-
-      if (sawStreamError) {
-        setIsStreaming(false)
-        return {
-          completed: false,
-          prose: proseAccum,
-          annotation,
-          errorMessage: streamErrorMessage,
-          bundleBuilt,
-          rollRecords,
-          sentinelEvents: turnSentinelEvents,
-          workingSet: turnWorkingSet,
-        }
-      }
-
-      if (sawRollPrompt) {
-        // Pause the narrator loop. Show the modal, wait for the player to roll.
-        // If a roll chip from an earlier roll in this turn is still visible,
-        // clear it so the new modal doesn't compete with stale outcome text.
-        const rollId = sawRollPrompt.toolUseId || `roll_${turnIndex}_${rollRecords.length}`
-        const proseOffset = proseAccum.length
-        setRollResult(null)
-        setPendingCheck(sawRollPrompt)
-        setLiveRolls((cards) => [
-          ...cards,
-          {
-            id: rollId,
-            proseOffset,
-            check: {
-              skill: sawRollPrompt.skill,
-              dc: sawRollPrompt.dc,
-              why: sawRollPrompt.why,
-              consequenceOnFail: sawRollPrompt.consequenceOnFail,
-              modifierType: sawRollPrompt.modifierType,
-              modifierReason: sawRollPrompt.modifierReason,
-            },
-          },
-        ])
-        const outcome = await new Promise<RollOutcome>((resolve) => {
+      }),
+      requestRoll: () => {
+        // The modal resolves this promise after the player rolls.
+        return new Promise<RollOutcome>((resolve) => {
           rollResolverRef.current = resolve
         })
-        setPendingCheck(null)
-        setRollResult(outcome)
-        if (outcome.inspirationSpent) {
-          currentState = structuredClone(currentState)
-          currentState.player.inspiration = Math.max(0, currentState.player.inspiration - 1)
-        }
-        diagnosticsStore.pushDebug({
-            kind: 'roll',
-            at: Date.now(),
-            data: {
-              ...outcome,
-              skill: sawRollPrompt?.skill,
-              dc: sawRollPrompt?.dc,
-              why: sawRollPrompt?.why,
-              consequenceOnFail: sawRollPrompt?.consequenceOnFail,
-              requestedSkill: sawRollPrompt?.requestedSkill,
-              intendedSkills: sawRollPrompt?.intendedSkills,
-              skillOverrideReason: sawRollPrompt?.skillOverrideReason,
-              turnIndex,
-            },
-          })
-        rollRecords.push({
-          turn: turnIndex,
-          proseOffset,
-          skill: sawRollPrompt.skill,
-          intendedSkill: sawRollPrompt.intendedSkills?.[0],
-          intendedSkills: sawRollPrompt.intendedSkills,
-          requestedSkill: sawRollPrompt.requestedSkill,
-          skillOverrideReason: sawRollPrompt.skillOverrideReason,
-          dc: sawRollPrompt.dc,
-          effectiveDc: outcome.effectiveDc,
-          rollResult: outcome.d20,
-          rawRolls: outcome.rawRolls,
-          modifier: outcome.modifier,
-          outcome:
-            outcome.result === 'critical'
-              ? 'critical_success'
-              : outcome.result === 'fumble'
-                ? 'critical_failure'
-                : outcome.result,
-          consequenceSummary: rollFailureSummary(outcome.result, sawRollPrompt.consequenceOnFail),
-          modifierType: outcome.modifierType,
-          modifierReason: outcome.modifierReason,
-          inspirationSpent: outcome.inspirationSpent,
-          originalRoll: outcome.originalRoll
-            ? {
-                rollResult: outcome.originalRoll.d20,
-                modifier: outcome.originalRoll.modifier,
-                total: outcome.originalRoll.total,
-                outcome:
-                  outcome.originalRoll.result === 'critical'
-                    ? 'critical_success'
-                    : outcome.originalRoll.result === 'fumble'
-                      ? 'critical_failure'
-                      : outcome.originalRoll.result,
-              }
-            : undefined,
-        })
-
-        rollResolution = {
-          toolUseId: sawRollPrompt.toolUseId,
-          skill: sawRollPrompt.skill,
-          dc: sawRollPrompt.dc,
-          effectiveDc: outcome.effectiveDc,
-          d20: outcome.d20,
-          modifier: outcome.modifier,
-          total: outcome.total,
-          result: outcome.result,
-          modifierType: outcome.modifierType,
-          modifierReason: outcome.modifierReason,
-          priorMessages: sawRollPrompt.priorMessages,
-          originalInput: sawRollPrompt.originalInput,
-          currentIntent: sawRollPrompt.currentIntent,
-          remainingIntents: sawRollPrompt.remainingIntents,
-        }
-        // Chip persists for the rest of this turn. Cleared at next turn start
-        // (runNarrator's initial setRollResult(null)) or when a new roll fires.
-        continue
-      }
-
-      if (sawNarrateTurn) break
-      // If neither fired, the stream ended prematurely; bail.
-      diagnosticsStore.pushDebug({
-        kind: 'error',
-        at: Date.now(),
-        data: {
-          source: 'narrator',
-          message: 'stream ended before narrate_turn; turn was not committed',
+      },
+      effects: {
+        onStreamingChange: setIsStreaming,
+        onProse: setProse,
+        onSuggestedActions: setSuggestedActions,
+        onPendingCheck: setPendingCheck,
+        onRollResult: setRollResult,
+        onLiveRollAdded: (roll) => setLiveRolls((cards) => [...cards, roll]),
+        onInspirationOffer: setInspirationOffer,
+        onResetPendingInspirationSpend: () => {
+          pendingInspirationSpendRef.current = 0
         },
-      })
-      setIsStreaming(false)
-      return {
-        completed: false,
-        prose: proseAccum,
-        annotation,
-        errorMessage: 'stream ended before narrate_turn; turn was not committed',
-        bundleBuilt,
-        rollRecords,
-        sentinelEvents: turnSentinelEvents,
-        workingSet: turnWorkingSet,
-      }
-    }
-
-    setIsStreaming(false)
-    return { completed: true, prose: proseAccum, annotation, bundleBuilt, rollRecords, sentinelEvents: turnSentinelEvents, workingSet: turnWorkingSet }
+        onAnnotation: (annotation) => {
+          if (annotationHasPivotSignal(annotation)) setPivotSignaled(true)
+        },
+        onNarratorUsage: (usage) => diagnosticsStore.setNarratorUsage(usage),
+        onDiagnostic: (entry) => diagnosticsStore.pushDebug(entry),
+      },
+    })
   }
 
   async function runArchivist(

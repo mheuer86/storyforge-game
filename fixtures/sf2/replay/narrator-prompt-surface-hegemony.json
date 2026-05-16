@@ -1,0 +1,145 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator prompt surface: hegemony role and authored situation",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Ticket 08: protect Narrator prompt facade/module extraction for Hegemony system blocks, authored chapter situation, and normal message assembly without live model calls."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "chapter": {
+        "number": 2,
+        "title": "The Sealed Gate",
+        "setup": {
+          "chapter": 2,
+          "title": "The Sealed Gate",
+          "frame": {
+            "title": "The Sealed Gate",
+            "premise": "A registry checkpoint can still be turned before the audit closes.",
+            "activePressure": "The gate clerk will seal the record unless Ren forces a lawful delay.",
+            "centralTension": "Procedure protects the settlement and buries it at the same time.",
+            "objective": "Secure a lawful delay at the checkpoint.",
+            "crucible": "Ren must decide how much authority to spend on a suspect record.",
+            "outcomeSpectrum": {
+              "clean": "The delay is granted without exposing Ren.",
+              "costly": "The delay holds, but Ren owes the clerk a formal explanation.",
+              "failure": "The record seals and the settlement loses appeal standing.",
+              "catastrophic": "The clerk flags Ren for interference and escalates to command."
+            }
+          },
+          "antagonistField": {
+            "sourceFactionLabel": "Imperial Registry",
+            "sourceFactionId": "faction_registry",
+            "corePressure": "Forms become verdicts when no one challenges them.",
+            "defaultFace": {
+              "id": "npc_gate_clerk",
+              "name": "Gate Clerk Iven",
+              "role": "checkpoint clerk",
+              "pressureStyle": "polite procedural closure"
+            },
+            "currentPrimaryFace": {
+              "id": "npc_gate_clerk",
+              "name": "Gate Clerk Iven",
+              "role": "checkpoint clerk",
+              "pressureStyle": "polite procedural closure"
+            },
+            "escalationLogic": "Each challenge moves the dispute from desk discretion to command review."
+          },
+          "pressureLadder": [
+            {
+              "pressure": "The clerk starts the seal clock.",
+              "triggerCondition": "Ren asks for delay without citing authority.",
+              "narrativeEffect": "The checkpoint prints a closure receipt."
+            },
+            {
+              "pressure": "Command review is invoked.",
+              "triggerCondition": "Ren contradicts the registry record directly.",
+              "narrativeEffect": "An auditor is notified before Ren can leave."
+            }
+          ],
+          "spineThreadId": "thread_gate_delay",
+          "arcLink": {
+            "arcId": "arc_registry",
+            "arcThreadIds": ["thread_gate_delay"],
+            "chapterFunction": "force the institution to show its seams",
+            "playerStanceRead": "Ren is still enforcing law, but selectively"
+          },
+          "pacingContract": {
+            "targetTurns": { "min": 6, "max": 9 },
+            "chapterQuestion": "Can Ren win time without openly defecting?",
+            "earlyPressure": "The line backs up behind Ren.",
+            "middlePressure": "The clerk asks for a cited authority.",
+            "latePressure": "Command review becomes the cost of delay.",
+            "closeWhenAny": ["delay secured", "record sealed", "command review triggered"]
+          }
+        }
+      },
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_registry",
+          "title": "The Registry's Mercy",
+          "status": "active",
+          "arcQuestion": "Can an officer make law protect people it was built to sort?",
+          "scenarioShape": {
+            "mode": "institutional_pressure",
+            "premise": "A lawful apparatus produces human harm through ordinary compliance."
+          }
+        },
+        "threads": {
+          "thread_gate_delay": {
+            "id": "thread_gate_delay",
+            "title": "The gate delay",
+            "chapterCreated": 2,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_registry" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5,
+            "resolutionCriteria": "Ren wins or loses a lawful delay.",
+            "failureMode": "The record seals and appeal standing collapses.",
+            "retrievalCue": "The registry checkpoint can still be delayed before the record seals.",
+            "loadBearing": true,
+            "chapterDriverKind": "spine",
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Ask the clerk what authority would stop the seal.",
+    "isInitial": true,
+    "narrator": {
+      "prose": "(unused - fixture asserts on buildNarratorTurnContext system/message output)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": true,
+      "playerInput": "Ask the clerk what authority would stop the seal.",
+      "messageCountEquals": 2,
+      "assistantMessageCountEquals": 0,
+      "systemContainsAll": [
+        "You are part of Storyforge, a collaborative interactive fiction system.",
+        "## Your role: Narrator",
+        "## Chapter 2: The Sealed Gate",
+        "### Frame\n- Objective: Secure a lawful delay at the checkpoint.",
+        "### Outcome spectrum (how this chapter can resolve)",
+        "### Antagonist field\n- Source faction: Imperial Registry",
+        "### Pressure ladder plan\n- 1. \"The clerk starts the seal clock.\"",
+        "### Spine thread anchor\nThe gate delay (thread_gate_delay)",
+        "### Arc context\n- Arc: The Registry's Mercy",
+        "### Chapter pacing contract\n- Target: 6-9 turns"
+      ],
+      "userMessageContainsAll": [
+        "## CURRENT TURN (opening — ESTABLISHMENT mode)",
+        "**Establishment turn.** Open the chapter from the opening scene spec."
+      ]
+    }
+  }
+}

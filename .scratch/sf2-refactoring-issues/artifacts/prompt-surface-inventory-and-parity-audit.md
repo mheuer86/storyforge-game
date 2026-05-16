@@ -19,13 +19,18 @@ High-value human decisions before prompt edits:
 - whether SF2 should restore V1 origin/social modifier language beyond current playbook/proficiency preference;
 - whether V1's roll drought / momentum trap should become an SF2 diagnostic rather than prompt prose;
 - whether duplicated fail-forward and hidden-cognition bans should stay duplicated as defense-in-depth;
-- whether genre examples should move into a Genre Narrative Profile Module.
+- whether future genre-profile content changes should alter prompt behavior beyond the completed structural move.
+
+Post-07 reconciliation: Ticket 07 has landed. Genre bibles and examples now live behind `lib/sf2/genre-profile/`; `lib/sf2/genre-examples.ts` is a compatibility shim. The audit conclusions still stand, but the current-state rows below reflect the new ownership boundary.
 
 ## Prompt Surface Map
 
 | Surface | Role | Placement | Caller / flow | Output authority | Main categories | Notes |
 |---|---|---:|---|---|---|---|
-| `lib/sf2/narrator/prompt.ts` | Narrator | cached system BP2 (`CORE` + bible + role), cached chapter system BP3 (`SITUATION`) | `buildNarratorTurnContext` | prose, `request_roll`, `narrate_turn` mechanical effects + annotation only | `contract_rule`, `behavior_rule`, `craft_rule`, `bug_scar`, `example`, `duplicate`, `genre_profile_candidate` | Highest-risk prompt surface. Includes role firewalls, PC POV, fail-forward, establishment/continuation, chapter close, suggested actions, genre bibles. |
+| `lib/sf2/narrator/prompt.ts` | Narrator prompt facade | cached system BP2 (`CORE` + bible + role), cached chapter system BP3 (`SITUATION`) | `buildNarratorTurnContext` via `system-blocks.ts` | public imports only | compatibility | Post-08 public facade. Re-exports `core`, `role`, `situation`, and genre-profile compatibility names; callers should continue importing here. |
+| `lib/sf2/narrator/prompt/core.ts` | Narrator core | cached system BP2 (`CORE`) | `buildNarratorTurnContext` via facade | shared role principles | `contract_rule`, `craft_rule` | World-independent cached core. No genre or per-turn content belongs here. |
+| `lib/sf2/narrator/prompt/role.ts` | Narrator role | cached system BP2 (`ROLE`) | `buildNarratorTurnContext` via facade | prose, `request_roll`, `narrate_turn` mechanical effects + annotation only | `contract_rule`, `behavior_rule`, `craft_rule`, `bug_scar`, `example`, `duplicate` | Highest-risk Narrator prompt text. Includes role firewalls, PC POV, fail-forward, establishment/continuation, chapter close, and suggested actions. |
+| `lib/sf2/narrator/prompt/situation.ts` | Narrator situation | cached chapter system BP3 (`SITUATION`) | `buildNarratorTurnContext` via facade | chapter Author setup projection | `contract_rule` | Chapter-scoped Author setup projection. Per-turn mutable state stays in scene/message surfaces. |
 | `lib/sf2/narrator/messages.ts` | Narrator | cached scene bundle message, dynamic current-turn user message, BP4 cache marker | `buildMessagesForNarrator` | message assembly only | `contract_rule`, `behavior_rule`, `bug_scar`, `duplicate`, `code_owned_candidate` | Owns scene-bounded conversation, role alias lookup, playbook preference, location continuity guard, recovery/coherence notes. Cache-marker strategy is load-bearing. |
 | `lib/sf2/narrator/turn-context.ts` | Narrator | system block assembly, cached tool array, roll-resume tool result | API route / narrator call | call context and diagnostics | `contract_rule`, `behavior_rule`, `duplicate`, `code_owned_candidate` | Builds roll-resume text, failed-roll pressure manifestation, sentinel context. |
 | `lib/sf2/narrator/roll-gates.ts` | Narrator | dynamic per-turn private block | `messages.ts` / intent queue | required roll advisories | `contract_rule`, `behavior_rule`, `code_owned_candidate`, `duplicate` | Replaces much of V1 ROLL GATE dynamic warning with deterministic heuristics plus mandatory per-turn block. |
@@ -40,7 +45,8 @@ High-value human decisions before prompt edits:
 | `lib/sf2/chapter-meaning/prompt.ts` | Retrospective Author | role prompt + dynamic chapter digest | chapter close / transition synthesis | `synthesize_chapter_meaning` | `contract_rule`, `craft_rule`, `code_owned_candidate` | Retrospective counterpart to Author. Preserves chapter meaning and transition seed, not plot recap. |
 | `lib/sf2/prompt/compose.ts` | All SF2 roles | cache composer | role prompt builders | cache discipline | `contract_rule`, `code_owned_candidate` | Load-bearing Anthropic cache discipline and dynamic leak assertions. Do not alter in ticket 08. |
 | `lib/sf2/retrieval/scene-packet.ts` | Narrator packet | cached scene bundle + uncached per-turn delta | `messages.ts` | dynamic state/advisory text | `contract_rule`, `behavior_rule`, `duplicate`, `code_owned_candidate` | Replaces V1 compressed state with bounded scene packet plus current mutable state. Includes present NPC authority, withheld facts, revelation progress, procedure packets. |
-| `lib/sf2/genre-examples.ts` | Author/Narrator examples | interpolated into cached role/retry prompts | Author and Narrator prompt builders | examples only | `example`, `genre_profile_candidate`, `bug_scar` | Good candidate for Genre Narrative Profile Module, but currently also supplies validator repair examples. |
+| `lib/sf2/genre-profile/*` | SF2 genre narrative profile | consumed by cached role/retry prompts and bible system blocks | Narrator, Author, Author retry, compatibility re-exports | genre bibles and cross-role examples | `craft_rule`, `example`, `bug_scar`, `contract_rule` | Post-07 owner for SF2 genre narrative identity. Structural move is complete; future content edits still require human approval and prompt snapshot verification. |
+| `lib/sf2/genre-examples.ts` | Compatibility shim | re-export only | legacy imports | none | compatibility | Re-exports `Sf2GenreExamples` and `getSf2GenreExamples` from `genre-profile`; no longer owns prompt content. |
 | `lib/system-prompt.ts` | V1 GM, audit, close, setup, extraction | cached core/situation, dynamic state message, special prompts | V1 route | V1 prose + `commit_turn`; audit/close/setup tools | `contract_rule`, `behavior_rule`, `craft_rule`, `bug_scar`, `lost_v1_load_bearing_rule` source | Comparison source. V1 combines Narrator, Referee, World Custodian in one surface. |
 | `docs/prompt-composition.md` | V1 documentation | docs only | agents/humans | none | `contract_rule`, `example` | Authoritative explanation of V1 cache/state split and special prompts; some doc details predate source changes. |
 | `lib/tools.ts` | V1 tool schemas | cached tools | V1 route | `commit_turn` and special tools | `contract_rule`, `duplicate` | V1 tool descriptions enforce suggested actions, pending checks, narrative state writes, chapter close, origin events. |
@@ -55,7 +61,10 @@ Token estimates use the rough project convention of 0.25 tokens per character fo
 
 | Surface | Lines | Chars | Est tokens | Likely cache/dynamic class | Per-turn cost note |
 |---|---:|---:|---:|---|---|
-| `lib/sf2/narrator/prompt.ts` | 716 | 63,065 | ~15,766 | cached BP2/BP3 | Large, but mostly cached. Situation changes by chapter. |
+| `lib/sf2/narrator/prompt.ts` | 20 | 650 | ~163 | facade | Public import surface only; no prompt text ownership beyond re-export paths. |
+| `lib/sf2/narrator/prompt/core.ts` | 7 | 565 | ~141 | cached BP2 core | World-independent cached core. |
+| `lib/sf2/narrator/prompt/role.ts` | 331 | 37,211 | ~9,303 | cached BP2 role | Largest Narrator role/craft/output contract surface. |
+| `lib/sf2/narrator/prompt/situation.ts` | 74 | 2,959 | ~740 | cached BP3 situation | Chapter-scoped Author setup projection; changes by chapter. |
 | `lib/sf2/narrator/messages.ts` | 234 | 10,813 | ~2,703 | mixed, mostly dynamic assembly | Per-turn text generated here includes scene bundle/delta/private notes. |
 | `lib/sf2/narrator/turn-context.ts` | 367 | 13,730 | ~3,433 | assembly + roll-resume dynamic | Roll-result text only on roll resume. |
 | `lib/sf2/narrator/roll-gates.ts` | 277 | 13,131 | ~3,283 | code + small dynamic block | Dynamic only when a gate is detected. |
@@ -70,7 +79,8 @@ Token estimates use the rough project convention of 0.25 tokens per character fo
 | `lib/sf2/chapter-meaning/prompt.ts` | 154 | 8,427 | ~2,107 | close/transition only | Not per turn. |
 | `lib/sf2/prompt/compose.ts` | 92 | 3,603 | ~901 | code | No model prompt except composed strings. |
 | `lib/sf2/retrieval/scene-packet.ts` | 908 | 41,631 | ~10,408 | dynamic rendered state | Scene bundle cached within scene; per-turn delta uncached. |
-| `lib/sf2/genre-examples.ts` | 203 | 9,491 | ~2,373 | interpolated examples | Cached when embedded in role/retry prompts. |
+| `lib/sf2/genre-profile/*` | 530 | 30,590 | ~7,648 | genre bibles + examples | Cached when bibles/examples are embedded in role/retry/system prompts. |
+| `lib/sf2/genre-examples.ts` | 2 | 110 | ~28 | compatibility shim | No prompt cost except import indirection. |
 | `lib/system-prompt.ts` | 2,347 | 148,501 | ~37,125 | V1 mixed | Core/situation cached, compressed state dynamic, special prompts separate. |
 | `docs/prompt-composition.md` | 274 | 19,856 | ~4,964 | docs | No runtime cost. |
 | `lib/tools.ts` | 1,179 | 55,388 | ~13,847 | V1 cached tools | Stable per V1 call type. |
@@ -88,10 +98,10 @@ Practical cost split:
 
 | Concept | V1 surface | SF2 status | SF2 surface(s) | Audit classification | Notes / decision |
 |---|---|---|---|---|---|
-| Genre injection | `lib/system-prompt.ts` core uses genre promptSections; `lib/genres/*` | preserved, but different shape | Narrator bibles in `prompt.ts`; `genre-examples.ts`; Author/Arc examples; shared genre files | preserved in SF2 prompt | SF2 has built-in bibles for hegemony plus legacy genres. Needs Genre Narrative Profile decision before moving examples. |
-| Roll discipline | V1 pending_check before outcome, roll gate dynamic warnings, uncertainty + consequence | preserved and partly code-derived | `narrator/prompt.ts`, `roll-gates.ts`, `intent-queue.ts`, `tools.ts`, roll resume text | replaced by SF2 code/schema/validator + prompt | SF2 stronger on deterministic gates and roll resume. V1 advantage/disadvantage origin/disposition nuance is less explicit. |
-| Fail forward | V1 fail-forward section and failed-read rules | preserved | `narrator/prompt.ts`, `turn-context.ts` roll result message, `request_roll.consequence_on_fail` | preserved in SF2 prompt | Duplicated intentionally across baseline and roll resume. |
-| Failed-investigation POV | V1 "miss reveal" and wrong belief rules | preserved | `narrator/prompt.ts` fail-forward, hidden cognition, click-of-realization ban; roll result message | preserved in SF2 prompt | Very strong in SF2; likely bug-scar duplication should stay until sentinel coverage proves safe. |
+| Genre injection | `lib/system-prompt.ts` core uses genre promptSections; `lib/genres/*` | preserved, but different shape | `genre-profile` bibles/examples, Narrator prompt compatibility re-exports, Author/Arc examples, shared genre files | preserved in SF2 prompt | SF2 has built-in bibles for hegemony plus legacy genres. Genre Narrative Profile structural move is complete; future content changes still need explicit approval. |
+| Roll discipline | V1 pending_check before outcome, roll gate dynamic warnings, uncertainty + consequence | preserved and partly code-derived | `narrator/prompt/role.ts`, `roll-gates.ts`, `intent-queue.ts`, `tools.ts`, roll resume text | replaced by SF2 code/schema/validator + prompt | SF2 stronger on deterministic gates and roll resume. V1 advantage/disadvantage origin/disposition nuance is less explicit. |
+| Fail forward | V1 fail-forward section and failed-read rules | preserved | `narrator/prompt/role.ts`, roll result message, `request_roll.consequence_on_fail` | preserved in SF2 prompt | Duplicated intentionally across baseline and roll resume. |
+| Failed-investigation POV | V1 "miss reveal" and wrong belief rules | preserved | `narrator/prompt/role.ts` fail-forward, hidden cognition, click-of-realization ban; roll result message | preserved in SF2 prompt | Very strong in SF2; likely bug-scar duplication should stay until sentinel coverage proves safe. |
 | NPC information gating | V1 risky questions / NPC info gated, disposition-driven | preserved and code-aided | `roll-gates.ts` `detectNpcInformationGate`, Narrator role, scene packet NPC contracts | replaced by SF2 code/schema/validator + dynamic packet | Trusted-with-earned-disclosure exception exists in code; less rich than V1's disposition ladder prose. |
 | Origin/social modifiers | V1 origin lore, starting contacts, persistent social modifier, origin counters | partially preserved | Author seed/playbook lens, Narrator player origin line, genre setup, dynamic player block | accidentally missing / needs decision | SF2 has origin name and PC capabilities, but not a clear origin-as-persistent-social-modifier rule equivalent. Decide whether to restore as prompt, state packet, or Author/NPC disposition contract. |
 | Promises | V1 prompt hidden system + commit/audit tools | preserved structurally | Archivist anchors/promises, scene packet anchored promises, chapter meaning digest | replaced by SF2 code/schema/validator + dynamic packet | SF2 promise handling is more graph-owned; no need to reintroduce V1 lifecycle prose except if UX needs two-chapter strain semantics. |
@@ -99,7 +109,7 @@ Practical cost split:
 | Clocks/timers/heat | V1 hidden systems + audit checks + dynamic state | replaced by pressure ladders, temporal anchors, faction heat, procedures | Author pressure ladder/human stakes, Archivist ladder fires/temporal anchors/heat, scene packet | replaced by SF2 code/schema/validator | SF2 should not restore generic V1 clock prose wholesale; pressure engines are the new pattern. |
 | Post-action checklist | V1 checklist before `commit_turn` | intentionally replaced | Narrator tool split + Archivist extraction + apply-patch | intentionally_replaced_v1_rule | SF2 Narrator no longer owns durable narrative writes, so V1 checklist would be harmful if copied. |
 | Scene boundaries | V1 scene pacing + scene_end tracked/extracted | preserved and strengthened | Narrator establishment/continuation, scene snapshot effects, scene bundle cache, Archivist scene_result | preserved in SF2 prompt + dynamic packet | Load-bearing and heavily duplicated. Keep through ticket 08. |
-| Suggested actions | V1 mandatory scene-valid quick actions | preserved | `narrator/prompt.ts`, `narrator/tools.ts`, per-turn establishment instruction | preserved in SF2 prompt/schema | SF2 adds prose-grounding and stance coherence. Good parity. |
+| Suggested actions | V1 mandatory scene-valid quick actions | preserved | `narrator/prompt/role.ts`, `narrator/tools.ts`, per-turn establishment instruction | preserved in SF2 prompt/schema | SF2 adds prose-grounding and stance coherence. Good parity. |
 | Compressed-state warnings | V1 compressed state warnings: no commit, scene summary owed, close, depleted item, roll gate | partially replaced | scene packet, recovery/coherence notes, sentinels, roll gates, diagnostics | preserved in SF2 dynamic packet | SF2 has stronger role-specific notes but not every V1 warning class. Do not port blindly. |
 | Roll drought / momentum trap | V1 prompt and `[SYSTEM: ROLL DROUGHT]` | weak/unclear in inspected SF2 surfaces | roll-gates, pacing diagnostics, required roll gates | accidentally missing / needs decision | SF2 gates individual inputs, but no inspected roll-drought ratio directive equivalent. Prefer diagnostic/replay fixture over prompt prose. |
 | Dense scene roster / present NPC authority | V1 dense scene roster in compressed state | preserved and strengthened | scene bundle cast/off-stage cast, present_npc_ids, Archivist registry, role alias block | preserved in SF2 dynamic packet | SF2 is better: on-stage/off-stage split and Narrator opening law. |
@@ -113,13 +123,13 @@ Practical cost split:
 
 | Rule / scar | Appears in | Classification | Recommended action | Rationale |
 |---|---|---|---|---|
-| Fail-forward / failed roll must create consequence | `narrator/prompt.ts`, `turn-context.ts` roll result, `request_roll.consequence_on_fail`, V1 core | `duplicate`, `bug_scar` | keep for now | It operates in normal and roll-resume contexts. Removing one copy risks behavior regression. |
-| Hidden cognition / "what you don't notice" ban | `narrator/prompt.ts` fail-forward, hidden cognition, click-of-realization, roll result; V1 core | `duplicate`, `bug_scar` | keep or move to sentinel after calibration | This is a known high-frequency failure. Good eventual sentinel/replay candidate. |
-| Establishment vs continuation | `narrator/prompt.ts`, `renderPerTurnDelta`, scene bundle comments, scene snapshot rules | `duplicate`, `bug_scar` | keep through ticket 08 | Explicitly marked most-failed. Structural extraction only. |
+| Fail-forward / failed roll must create consequence | `narrator/prompt/role.ts`, roll result, `request_roll.consequence_on_fail`, V1 core | `duplicate`, `bug_scar` | keep for now | It operates in normal and roll-resume contexts. Removing one copy risks behavior regression. |
+| Hidden cognition / "what you don't notice" ban | `narrator/prompt/role.ts` fail-forward, hidden cognition, click-of-realization, roll result; V1 core | `duplicate`, `bug_scar` | keep or move to sentinel after calibration | This is a known high-frequency failure. Good eventual sentinel/replay candidate. |
+| Establishment vs continuation | `narrator/prompt/role.ts`, `renderPerTurnDelta`, scene bundle comments, scene snapshot rules | `duplicate`, `bug_scar` | keep through ticket 08 | Explicitly marked most-failed. Structural extraction only. |
 | Present/off-stage NPC authority | Author visible_npc_ids rules, Narrator opening law, scene bundle off-stage cast, role alias block, Archivist NPC preservation | `duplicate`, `bug_scar` | keep, later move more to code/validator | Multiple roles need the same constraint at different points. |
 | Suggested-action grounding | Narrator role and `narrate_turn` schema | `duplicate` | keep | Role guidance explains why; schema enforces localized contract at tool call. |
-| Skill hint examples | Narrator role and `genre-examples.ts` | `example`, `genre_profile_candidate` | move to genre profile after human approval | Safe only if interpolation remains byte-stable or tests compare output prompt. |
-| Pressure-ladder scene-coupled trigger ban | Author role, Author retry, validator errors, genre examples | `duplicate`, `bug_scar`, `code_owned_candidate` | keep prompt + validator; move examples to profile later | Validator-backed, but prompt prevents invalid first pass cost. |
+| Skill hint examples | Narrator role and `genre-profile` examples | `example`, `bug_scar` | keep current module boundary; content changes need approval | Structural move is complete. Prompt output should remain byte-stable unless a later content decision approves changes. |
+| Pressure-ladder scene-coupled trigger ban | Author role, Author retry, validator errors, genre-profile examples | `duplicate`, `bug_scar`, `code_owned_candidate` | keep prompt + validator + profile examples | Validator-backed, but prompt prevents invalid first pass cost. |
 | Outcome spectrum human anchors | Author role, Author retry, author schema descriptions | `duplicate`, `bug_scar` | keep | Strong quality/cost rule; retry is targeted. |
 | Procedure must be human leverage | Arc Author, Chapter Author continuation, Chapter Meaning transition seed, Author retry | `duplicate`, `bug_scar` | keep, consider validator/replay coverage | Core SF2 principle; do not trim without fixtures. |
 | Chapter continuation law / do not restage | Author role, Author situation, Chapter Meaning transition seed, scene packet continuation dramatic turn | `duplicate`, `bug_scar` | keep | Cross-role handoff contract. |
@@ -136,23 +146,23 @@ No prompt deletion/restoration should happen automatically from this audit. Deci
 
 | Decision | Default recommendation | Risk | Affected files | Suggested verification |
 |---|---|---|---|---|
-| Restore origin as persistent social modifier in SF2? | Needs human decision. Prefer derived packet/Author/NPC disposition contract over generic Narrator prose. | Without it, origin may become cosmetic; with loose prose, Narrator may over-index stereotypes. | `lib/sf2/author/prompt.ts`, `lib/sf2/retrieval/scene-packet.ts`, possibly `lib/sf2/narrator/prompt.ts` | Add replay fixture where origin should change NPC starting disposition or roll modifier. |
+| Restore origin as persistent social modifier in SF2? | Needs human decision. Prefer derived packet/Author/NPC disposition contract over generic Narrator prose. | Without it, origin may become cosmetic; with loose prose, Narrator may over-index stereotypes. | `lib/sf2/author/prompt.ts`, `lib/sf2/retrieval/scene-packet.ts`, possibly `lib/sf2/narrator/prompt/role.ts` | Add replay fixture where origin should change NPC starting disposition or roll modifier. |
 | Restore V1 witness marks in SF2? | Needs human decision. | Could add a strong moral mechanic, but conflicts with SF2 Archivist ownership unless modeled. | types/schema/Archivist/Narrator roll modifier path | New schema + fixture; not a prompt-only edit. |
 | Add roll drought / momentum trap to SF2? | Prefer diagnostic/code-derived advisory over prompt restoration. | Prompt-only version may nag rolls; code version can inspect actual gates. | `roll-gates.ts`, pacing signals, scene packet advisory | Fixture with multiple forward-motion no-roll turns. |
 | Add passive perception equivalent? | Needs product decision. | Can cheapen investigation if auto-notice too broad. | retrieval packet, roll gates, rules engine | Focused fixture for hidden clue under PP threshold. |
-| Add V1 advantage/disadvantage trigger table? | Needs design review. | Loose prompt may conflict with code-resolved modifiers. | `narrator/prompt.ts`, `request_roll` schema, scene packet | Fixture asserting trusted/wary disposition changes modifier or effective DC. |
-| Collapse duplicate hidden-cognition bans? | Do not do in ticket 08. | High regression risk; most copies are context-specific. | `narrator/prompt.ts`, `turn-context.ts` | Display sentinel/replay coverage for banned phrases before deletion. |
-| Move genre examples out of role prompts? | Safe only as content-preserving module extraction first. Content changes require approval. | Examples feed both behavior and validator repair. | `genre-examples.ts`, `narrator/prompt.ts`, `author/prompt.ts`, `author/retry.ts` | Snapshot generated prompt text for at least two genres before/after. |
+| Add V1 advantage/disadvantage trigger table? | Needs design review. | Loose prompt may conflict with code-resolved modifiers. | `narrator/prompt/role.ts`, `request_roll` schema, scene packet | Fixture asserting trusted/wary disposition changes modifier or effective DC. |
+| Collapse duplicate hidden-cognition bans? | Do not do in ticket 08. | High regression risk; most copies are context-specific. | `narrator/prompt/role.ts`, roll result | Display sentinel/replay coverage for banned phrases before deletion. |
+| Change genre-profile example or bible content? | Do not auto-edit. The content-preserving module extraction is already complete. | Examples feed both behavior and validator repair; bible text drives genre voice. | `genre-profile/*`, `narrator/prompt/role.ts`, `author/prompt.ts`, `author/retry.ts` | Snapshot generated prompt text for at least two genres before/after; run genre leak check and replay. |
 | Shorten Author continuation law? | Do not auto-edit. | This is current SF2 reliability spine for Ch2+. | `author/prompt.ts`, `chapter-meaning/prompt.ts` | Continuation replay fixtures around do-not-restage/procedure leverage. |
 | Move ladder fire skepticism from Archivist prompt to runtime only? | Needs proof runtime fully covers it. | Over-firing pressure ladders changes chapter feel. | `archivist/prompt.ts`, apply-patch validators | Replay fixture with consecutive possible fires. |
-| Harden chapter close timing like V1 hard turn budgets? | Needs product decision. | Could preserve short chapters, but may fight SF2 pressure-ladder computed pacing. | `narrator/prompt.ts`, pacing signals, Author pacing contract | Playthrough/replay around high inherited tension and late objective resolution. |
+| Harden chapter close timing like V1 hard turn budgets? | Needs product decision. | Could preserve short chapters, but may fight SF2 pressure-ladder computed pacing. | `narrator/prompt/role.ts`, pacing signals, Author pacing contract | Playthrough/replay around high inherited tension and late objective resolution. |
 
 ## Implementation Feed For Ticket 08
 
 Safe Narrator Prompt Surface Module work:
 
 - Extract `SF2_NARRATOR_CRAFT` subsections into named constants/functions without changing text: voice, mechanics, fail forward, consequences, scene discipline, craft.
-- Extract genre bible lookup and bible constants behind a module boundary without changing `getSf2BibleForGenre` output.
+- Genre bible lookup and bible constants have already been extracted behind `lib/sf2/genre-profile/`; preserve the current compatibility re-exports and output.
 - Extract `buildNarratorRole(genreId)` composition into stable section renderers while preserving exact section order and interpolation of `genreExamples`.
 - Extract `buildNarratorSituation(state)` into a situation module as long as output text remains byte-equivalent for representative states.
 - Keep `SF2_CORE` as session-scoped and world-independent.
@@ -161,7 +171,7 @@ Content changes blocked pending human approval:
 
 - Deleting or shortening fail-forward, hidden cognition, establishment/continuation, suggested-action, chapter-close, or campaign-lexicon sections.
 - Restoring V1 origin/social modifier, passive perception, witness marks, roll drought, or advantage/disadvantage trigger tables.
-- Moving examples into a genre profile if output text changes.
+- Editing genre-profile examples or bibles in any way that changes prompt output.
 - Any change that alters when `request_roll` is required, when `narrate_turn` is called, or how roll resume text is phrased.
 
 Load-bearing cache/dynamic placement rules:
@@ -187,3 +197,14 @@ Suggested ticket 08 verification:
 - `lib/sf2b/narrator-kernel.ts`: not present in this checkout.
 
 All other listed SF2 and V1 surfaces were inspected at least for structure, key prompt text, and count baseline. `lib/genres/*` was inspected as shared genre data by file counts and targeted search; full genre files are content-heavy and were not quoted exhaustively into this artifact.
+
+## Post-08 Reconciliation
+
+Ticket 08 has landed as a structural extraction. `lib/sf2/narrator/prompt.ts` is now the public facade and keeps the existing exports for `SF2_CORE`, `SF2_NARRATOR_ROLE`, `buildNarratorRole`, `buildNarratorSituation`, and genre-profile compatibility names.
+
+Internal ownership now sits under `lib/sf2/narrator/prompt/`: `core.ts` owns the world-independent cached core, `role.ts` owns Narrator craft/role/output contract, and `situation.ts` owns the chapter-scoped Author setup projection. Scene/message assembly and per-turn mutable state remain outside this module in `messages.ts`, `turn-context.ts`, and `retrieval/scene-packet.ts`.
+
+Added replay coverage:
+
+- `fixtures/sf2/replay/narrator-prompt-surface-hegemony.json`
+- `fixtures/sf2/replay/narrator-prompt-surface-space-opera-roll-resume.json`

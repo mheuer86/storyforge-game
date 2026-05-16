@@ -1,0 +1,119 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator prompt surface: space opera role and roll resume",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Ticket 08: protect space-opera Narrator role surface through system assembly and preserve roll-resume message behavior after prompt module extraction."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera"
+      },
+      "chapter": {
+        "number": 1,
+        "title": "Forty Thousand",
+        "setup": {
+          "chapter": 1,
+          "title": "Forty Thousand",
+          "frame": {
+            "title": "Forty Thousand",
+            "premise": "A departure hold turns debt into immediate leverage.",
+            "activePressure": "The port authority can keep the ship docked until the debt is answered.",
+            "centralTension": "Leaving quickly risks making the debt permanent.",
+            "objective": "Get the ship cleared to depart.",
+            "crucible": "The captain must choose between paperwork, pressure, and a risky departure.",
+            "outcomeSpectrum": {
+              "clean": "The hold clears before departure.",
+              "costly": "The ship departs with a new obligation attached.",
+              "failure": "The port keeps the ship docked.",
+              "catastrophic": "The creditor converts the hold into seizure authority."
+            }
+          },
+          "antagonistField": {
+            "sourceFactionLabel": "Port Authority",
+            "sourceFactionId": "faction_port",
+            "corePressure": "Debt can become infrastructure.",
+            "defaultFace": {
+              "id": "npc_port_factor",
+              "name": "Lira Voss",
+              "role": "port factor",
+              "pressureStyle": "calm commercial leverage"
+            },
+            "currentPrimaryFace": {
+              "id": "npc_port_factor",
+              "name": "Lira Voss",
+              "role": "port factor",
+              "pressureStyle": "calm commercial leverage"
+            },
+            "escalationLogic": "Each failed workaround moves the hold closer to seizure."
+          },
+          "pressureLadder": []
+        }
+      }
+    },
+    "playerInput": "",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on buildNarratorTurnContext output)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "",
+      "rollResolution": {
+        "toolUseId": "toolu_space_opera_prompt_surface",
+        "skill": "Piloting",
+        "dc": 15,
+        "d20": 11,
+        "modifier": 3,
+        "total": 14,
+        "result": "failure",
+        "priorMessages": [
+          {
+            "role": "user",
+            "content": "Pre-roll scene packet and current turn delta."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_space_opera_prompt_surface",
+                "name": "request_roll",
+                "input": {
+                  "skill": "Piloting",
+                  "dc": 15,
+                  "why": "Thread the launch corridor before the hold propagates.",
+                  "consequence_on_fail": "The port authority marks the ship for manual clearance."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "messageCountEquals": 3,
+      "assistantMessageCountEquals": 1,
+      "workingSetEventAbsent": true,
+      "sceneBundleEventAbsent": true,
+      "pacingEventAbsent": true,
+      "systemContainsAll": [
+        "## Your role: Narrator",
+        "Examples:",
+        "Nara Quell",
+        "Press Nara on who really bought the route. [Persuasion]",
+        "## Chapter 1: Forty Thousand"
+      ],
+      "userMessageContainsAll": [
+        "Roll result — Piloting vs DC 15: rolled d20=11 + 3 = 14.",
+        "Failure — the stated goal is not achieved"
+      ]
+    }
+  }
+}
