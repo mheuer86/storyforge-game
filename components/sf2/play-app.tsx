@@ -6,7 +6,7 @@
 // result sent as a follow-up turn). The clean tool_result-continuation roll flow
 // is Stage 3+ work.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { apiHeaders } from '@/lib/api-key'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
 import {
@@ -50,7 +50,11 @@ import {
   type Sf2CloseReadinessView,
   type Sf2LiveRollView,
 } from '@/components/sf2/play-shell'
-import type { StoryforgePersistence2 } from '@/lib/sf2/persistence/types'
+import type {
+  Sf2SaveSlotData,
+  Sf2SaveSlotNumber,
+  StoryforgePersistence2,
+} from '@/lib/sf2/persistence/types'
 import type {
   AuthorChapterSetupV2,
   Sf2Arc,
@@ -63,6 +67,7 @@ import type {
 
 const LAST_CAMPAIGN_KEY = 'sf2_last_campaign_id'
 const DEFAULT_SF2_SETUP_GENRE_ID = 'epic-scifi'
+const EMPTY_SAVE_SLOTS: (Sf2SaveSlotData | null)[] = [null, null, null]
 
 const API_ENDPOINTS = {
   narrator: '/api/sf2/narrator',
@@ -144,6 +149,10 @@ function modifierForSkill(state: Sf2State, skill: string): number {
 
 export function Sf2PlayApp() {
   const [state, setState] = useState<Sf2State | null>(null)
+  const [lastCampaign, setLastCampaign] = useState<Sf2State | null>(null)
+  const [showCampaignSelect, setShowCampaignSelect] = useState(false)
+  const [saveSlots, setSaveSlots] = useState<(Sf2SaveSlotData | null)[]>(() => [...EMPTY_SAVE_SLOTS])
+  const [saveSlotStatus, setSaveSlotStatus] = useState<string | null>(null)
   const [playerName, setPlayerName] = useState('Ren')
   const [selectedGenreId, setSelectedGenreId] = useState(DEFAULT_SF2_SETUP_GENRE_ID)
   const [selectedOriginId, setSelectedOriginId] = useState('')
@@ -252,35 +261,83 @@ export function Sf2PlayApp() {
     }
   }, [selectedGenreId])
 
-  // Initialize persistence + try loading last campaign.
+  const refreshSaveSlots = useCallback(async () => {
+    const p = persistenceRef.current
+    if (!p) return
+    try {
+      setSaveSlots(await p.listSaveSlots())
+    } catch {
+      setSaveSlots([...EMPTY_SAVE_SLOTS])
+    }
+  }, [])
+
+  const activateCampaign = useCallback((loaded: Sf2State) => {
+    pendingInitialBottomScrollRef.current = true
+    setState(loaded)
+    setLastCampaign(loaded)
+    setShowCampaignSelect(false)
+    setProse('')
+    setPendingInput('')
+    setActivePlayerInput('')
+    setTurnCommitError(null)
+    setLiveRolls([])
+    setPendingCheck(null)
+    setRollResult(null)
+    setInspirationOffer(null)
+    setTurnIndex(loaded.history.turns.length)
+    setPivotSignaled(chapterHasPivotSignal(loaded))
+    pendingInspirationSpendRef.current = 0
+    const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
+    setSuggestedActions(lastTurn?.narratorAnnotation?.suggestedActions ?? [])
+    try {
+      applyGenreTheme(loaded.meta.genreId as Genre)
+    } catch {
+      document.documentElement.setAttribute('data-genre', loaded.meta.genreId)
+    }
+    document.body.setAttribute('data-genre', loaded.meta.genreId)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LAST_CAMPAIGN_KEY, loaded.meta.campaignId)
+    }
+  }, [])
+
+  // Initialize persistence + list campaigns/save slots.
   useEffect(() => {
     const p = createIndexedDbPersistence()
     persistenceRef.current = p
     const lastId = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_CAMPAIGN_KEY) : null
-    if (lastId) {
-      p.loadCampaign(lastId)
-        .then((loaded) => {
-          if (loaded) {
-            pendingInitialBottomScrollRef.current = true
-            setState(loaded)
-            setTurnIndex(loaded.history.turns.length)
-            setPivotSignaled(chapterHasPivotSignal(loaded))
-            // Restore quick actions from the last committed turn. Prose is
-            // rendered from history now; live `prose` is reserved for the
-            // currently streaming, uncommitted narrator output.
-            const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
-            if (lastTurn) {
-              setSuggestedActions(lastTurn.narratorAnnotation?.suggestedActions ?? [])
-            }
-          } else if (typeof window !== 'undefined') {
-            window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+
+    async function boot() {
+      try {
+        const [loaded, slots] = await Promise.all([
+          lastId ? p.loadCampaign(lastId) : Promise.resolve(null),
+          p.listSaveSlots(),
+        ])
+        setLastCampaign(loaded)
+        setSaveSlots(slots)
+        if (loaded) {
+          try {
+            applyGenreTheme(loaded.meta.genreId as Genre)
+          } catch {
+            document.documentElement.setAttribute('data-genre', loaded.meta.genreId)
           }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
+          document.body.setAttribute('data-genre', loaded.meta.genreId)
+        } else if (lastId && typeof window !== 'undefined') {
+          window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+        }
+        setShowCampaignSelect(Boolean(loaded || slots.some(Boolean)))
+      } catch {
+        if (lastId && typeof window !== 'undefined') {
+          window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+        }
+        setLastCampaign(null)
+        setSaveSlots([...EMPTY_SAVE_SLOTS])
+        setShowCampaignSelect(false)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    void boot()
   }, [])
 
   useLayoutEffect(() => {
@@ -305,14 +362,14 @@ export function Sf2PlayApp() {
   }, [liveTurnScrollKey, activePlayerInput, prose, isStreaming, isGeneratingChapter, isArchiving])
 
   useEffect(() => {
-    if (state) return
+    if (state || showCampaignSelect) return
     try {
       applyGenreTheme(selectedGenreId as Genre)
     } catch {
       document.documentElement.setAttribute('data-genre', selectedGenreId)
     }
     document.body.setAttribute('data-genre', selectedGenreId)
-  }, [selectedGenreId, state])
+  }, [selectedGenreId, showCampaignSelect, state])
 
   // Live timer while generating a chapter (Author call can take 30-90s).
   useEffect(() => {
@@ -333,6 +390,15 @@ export function Sf2PlayApp() {
     if (!p) return
     try {
       await p.saveCampaign(s)
+      const slots = await p.listSaveSlots()
+      const matchingSlot = slots.find((slot) => slot?.campaignId === s.meta.campaignId)
+      if (matchingSlot) {
+        await p.saveToSlot(matchingSlot.slot, s)
+        setSaveSlots(await p.listSaveSlots())
+      } else {
+        setSaveSlots(slots)
+      }
+      setLastCampaign(s)
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(LAST_CAMPAIGN_KEY, s.meta.campaignId)
       }
@@ -349,6 +415,9 @@ export function Sf2PlayApp() {
       setupSelection,
     })
     setState(next)
+    setLastCampaign(next)
+    setShowCampaignSelect(false)
+    setSaveSlotStatus(null)
     setProse('')
     setTurnCommitError(null)
     setSuggestedActions([])
@@ -386,6 +455,9 @@ export function Sf2PlayApp() {
       window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
     }
     setState(null)
+    setLastCampaign(null)
+    setShowCampaignSelect(false)
+    setSaveSlotStatus(null)
     setProse('')
     setTurnCommitError(null)
     setActivePlayerInput('')
@@ -397,6 +469,68 @@ export function Sf2PlayApp() {
     setPendingCheck(null)
     setPivotSignaled(false)
     pendingInspirationSpendRef.current = 0
+    void refreshSaveSlots()
+  }
+
+  function continueLastCampaign() {
+    if (!lastCampaign) return
+    activateCampaign(lastCampaign)
+  }
+
+  function startNewCampaignSetup() {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(LAST_CAMPAIGN_KEY)
+    }
+    setState(null)
+    setLastCampaign(null)
+    setShowCampaignSelect(false)
+    setSaveSlotStatus(null)
+    setPlayerName('Ren')
+    setSelectedGenreId(DEFAULT_SF2_SETUP_GENRE_ID)
+    setSelectedOriginId('')
+    setSelectedPlaybookId('')
+    setSelectedHookId('')
+    setProse('')
+    setTurnCommitError(null)
+    setActivePlayerInput('')
+    setPendingInput('')
+    setLiveRolls([])
+    setSuggestedActions([])
+    setPendingCheck(null)
+    setRollResult(null)
+    setInspirationOffer(null)
+    setTurnIndex(0)
+    setPivotSignaled(false)
+    pendingInspirationSpendRef.current = 0
+  }
+
+  async function saveToSlot(slot: Sf2SaveSlotNumber) {
+    if (!state) return
+    const p = persistenceRef.current
+    if (!p) return
+    try {
+      await p.saveCampaign(state)
+      await p.saveToSlot(slot, state)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LAST_CAMPAIGN_KEY, state.meta.campaignId)
+      }
+      setLastCampaign(state)
+      setSaveSlots(await p.listSaveSlots())
+      setSaveSlotStatus(`Saved slot ${slot}`)
+      window.setTimeout(() => setSaveSlotStatus(null), 3000)
+    } catch (error) {
+      setSaveSlotStatus(error instanceof Error ? error.message : 'Save failed')
+      window.setTimeout(() => setSaveSlotStatus(null), 5000)
+    }
+  }
+
+  async function loadSaveSlot(slot: Sf2SaveSlotData) {
+    if (state) {
+      await persist(state)
+    }
+    activateCampaign(slot.state)
+    await persist(slot.state)
+    await refreshSaveSlots()
   }
 
   function cleanNarratorErrorMessage(message: string): string {
@@ -1132,6 +1266,20 @@ export function Sf2PlayApp() {
     )
   }
 
+  if (showCampaignSelect) {
+    return (
+      <Sf2CampaignSelect
+        activeCampaign={lastCampaign}
+        slots={saveSlots}
+        onContinue={continueLastCampaign}
+        onLoadSlot={(slot) => {
+          void loadSaveSlot(slot)
+        }}
+        onNewCampaign={startNewCampaignSetup}
+      />
+    )
+  }
+
   if (!state) {
     return (
       <div className="min-h-screen bg-background px-4 py-6 text-foreground md:px-8 md:py-10">
@@ -1291,6 +1439,15 @@ export function Sf2PlayApp() {
             >
               Create campaign
             </button>
+            {saveSlots.some(Boolean) && (
+              <button
+                type="button"
+                onClick={() => setShowCampaignSelect(true)}
+                className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg border border-border/55 bg-background/45 px-4 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/45 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70"
+              >
+                Saved games
+              </button>
+            )}
           </section>
         </div>
       </div>
@@ -1440,6 +1597,8 @@ export function Sf2PlayApp() {
       pressureProjection={pressureProjection}
       closeReadiness={closeReadiness}
       campaignStats={campaignStats}
+      saveSlots={saveSlots}
+      saveSlotStatus={saveSlotStatus}
       onPendingInputChange={setPendingInput}
       onSendTurn={sendTurn}
       onResolvePendingCheck={resolvePendingCheck}
@@ -1447,12 +1606,216 @@ export function Sf2PlayApp() {
       onDeclineInspiration={declineInspirationReroll}
       onCloseChapter={closeChapterAndOpenNext}
       onResetCampaign={resetCampaign}
+      onSaveToSlot={(slot) => {
+        void saveToSlot(slot)
+      }}
+      onLoadSaveSlot={(slot) => {
+        void loadSaveSlot(slot)
+      }}
       onDownloadSessionLog={downloadSessionLog}
       onDownloadReplayFixture={downloadReplayFixture}
       onCopySessionLog={copySessionLog}
       onCopyReplayFixture={copyReplayFixture}
     />
   )
+}
+
+function Sf2CampaignSelect({
+  activeCampaign,
+  slots,
+  onContinue,
+  onLoadSlot,
+  onNewCampaign,
+}: {
+  activeCampaign: Sf2State | null
+  slots: (Sf2SaveSlotData | null)[]
+  onContinue: () => void
+  onLoadSlot: (slot: Sf2SaveSlotData) => void
+  onNewCampaign: () => void
+}) {
+  const hasSlots = slots.some(Boolean)
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-background px-6 py-14 text-foreground">
+      <div className="pointer-events-none fixed inset-0" style={{
+        background: [
+          'radial-gradient(circle at 16% 0%, color-mix(in oklch, var(--primary) 14%, transparent), transparent 30%)',
+          'radial-gradient(circle at 84% 8%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 28%)',
+          'linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 82%, var(--card) 18%))',
+        ].join(', '),
+      }} />
+      <div className="relative mx-auto flex max-w-2xl flex-col gap-12">
+        <div className="text-center">
+          <div className="font-heading text-2xl font-semibold uppercase tracking-[0.25em] text-primary">
+            Storyforge
+          </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+            Storyforge v2
+          </div>
+        </div>
+
+        {activeCampaign && (() => {
+          const summary = summarizeCampaign(activeCampaign)
+          return (
+            <section>
+              <SectionKicker>Active Campaign</SectionKicker>
+              <button
+                type="button"
+                onClick={onContinue}
+                className="group relative w-full text-left"
+              >
+                <div
+                  className="absolute -inset-4 rounded-2xl opacity-0 blur-[60px] transition-opacity duration-500 group-hover:opacity-100"
+                  style={{ background: summary.accent, opacity: 0.05 }}
+                />
+                <div
+                  className="relative rounded-xl border-l-2 px-5 py-5 transition-colors hover:bg-card/35"
+                  style={{ borderColor: `color-mix(in oklch, ${summary.accent} 42%, transparent)` }}
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <span
+                      className="rounded-sm px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.15em]"
+                      style={{ color: summary.accent, backgroundColor: `color-mix(in oklch, ${summary.accent} 10%, transparent)` }}
+                    >
+                      {summary.genreName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/50">Chapter {summary.chapterNumber}</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground">{timeAgo(summary.savedAt)}</span>
+                  </div>
+                  <h1 className="mb-1.5 font-heading text-3xl font-bold tracking-normal text-foreground sm:text-4xl">
+                    {summary.chapterTitle}
+                  </h1>
+                  <p className="text-base text-foreground/70">
+                    {summary.playerName}
+                    <span className="text-muted-foreground/50"> / {summary.playerClass}</span>
+                  </p>
+                  <div
+                    className="mt-4 text-sm font-medium transition-transform duration-200 group-hover:translate-x-1"
+                    style={{ color: summary.accent }}
+                  >
+                    Continue Story
+                  </div>
+                </div>
+              </button>
+            </section>
+          )
+        })()}
+
+        {hasSlots && (
+          <section>
+            <SectionKicker>Saved Games</SectionKicker>
+            <div className="flex flex-col gap-1">
+              {slots.map((slot, index) => {
+                if (!slot) return null
+                const summary = summarizeSaveSlot(slot)
+                return (
+                  <button
+                    key={slot.slot}
+                    type="button"
+                    onClick={() => onLoadSlot(slot)}
+                    className="group w-full rounded-lg px-4 py-3.5 text-left transition-colors duration-200 hover:bg-secondary/10"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-medium text-foreground">
+                          Slot {index + 1}: {summary.playerName}
+                        </div>
+                        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground/65">
+                          <span>{summary.playerClass}</span>
+                          <span className="text-muted-foreground/25">/</span>
+                          <span>Ch. {summary.chapterNumber}</span>
+                          <span className="text-muted-foreground/25">/</span>
+                          <span className="truncate">{summary.chapterTitle}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span
+                          className="text-[10px] font-medium uppercase tracking-[0.1em]"
+                          style={{ color: summary.accent }}
+                        >
+                          {summary.genreName}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">{timeAgo(summary.savedAt)}</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={onNewCampaign}
+            className="rounded-lg border border-primary/25 px-10 py-3 text-sm font-medium text-foreground/70 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+          >
+            Start New Campaign
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SectionKicker({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center gap-2.5">
+      <div className="h-px w-6 bg-primary/40" />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary/80">{children}</span>
+    </div>
+  )
+}
+
+function summarizeCampaign(state: Sf2State) {
+  const genre = genrePresentation(state.meta.genreId)
+  return {
+    playerName: state.player.name,
+    playerClass: state.player.class.name,
+    genreName: genre.name,
+    accent: genre.accent,
+    chapterNumber: state.meta.currentChapter,
+    chapterTitle: state.chapter.title || state.meta.hookTitle || 'Chapter setup pending',
+    savedAt: state.meta.updatedAt,
+  }
+}
+
+function summarizeSaveSlot(slot: Sf2SaveSlotData) {
+  const genre = genrePresentation(slot.genreId)
+  return {
+    playerName: slot.playerName,
+    playerClass: slot.playerClass,
+    genreName: genre.name,
+    accent: genre.accent,
+    chapterNumber: slot.chapterNumber,
+    chapterTitle: slot.chapterTitle,
+    savedAt: slot.savedAt,
+  }
+}
+
+function genrePresentation(genreId: string): { name: string; accent: string } {
+  try {
+    const config = getGenreConfig(genreId as Genre)
+    return { name: config.name, accent: config.theme.primary }
+  } catch {
+    return { name: genreId, accent: 'oklch(0.82 0.15 175)' }
+  }
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

@@ -1,17 +1,19 @@
 'use client'
 
 import { useMemo, type ReactNode } from 'react'
-import { Activity, Copy, FileDown, RotateCcw, ScrollText } from 'lucide-react'
+import { Activity, Copy, FileDown, FolderOpen, RotateCcw, Save, ScrollText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import { useDiagnosticsStore, type TokenUsage } from '@/lib/sf2/diagnostics-store'
 import { queryOpenErrorFindingsForEntity } from '@/lib/sf2/diagnostics'
+import type { Sf2SaveSlotData, Sf2SaveSlotNumber } from '@/lib/sf2/persistence/types'
 import type { Sf2State } from '@/lib/sf2/types'
 import {
   EmptyLine,
   HudPanel,
   sidebarBodyTextClassName,
+  sidebarEmptyTextClassName,
   sidebarTitleTextClassName,
   type Sf2CampaignStatsView,
   type Sf2CloseReadinessView,
@@ -24,6 +26,10 @@ interface DiagnosticsPanelProps {
   busy: boolean
   pressureProjection: ChapterPressureProjection
   closeReadiness: Sf2CloseReadinessView
+  saveSlots: (Sf2SaveSlotData | null)[]
+  saveSlotStatus: string | null
+  onSaveToSlot: (slot: Sf2SaveSlotNumber) => void
+  onLoadSaveSlot: (slot: Sf2SaveSlotData) => void
   onCloseChapter: () => void
   onResetCampaign: () => void
   onDownloadSessionLog: () => void
@@ -40,6 +46,10 @@ export default function DiagnosticsPanel(props: DiagnosticsPanelProps) {
     busy,
     pressureProjection,
     closeReadiness,
+    saveSlots,
+    saveSlotStatus,
+    onSaveToSlot,
+    onLoadSaveSlot,
     onCloseChapter,
     onResetCampaign,
     onDownloadSessionLog,
@@ -97,6 +107,57 @@ export default function DiagnosticsPanel(props: DiagnosticsPanelProps) {
         <div className="space-y-2 text-[12px] text-muted-foreground">
           <UsageLine label="Narrator" usage={lastNarratorUsage} />
           <UsageLine label="Archivist" usage={lastArchivistUsage} />
+        </div>
+      </HudPanel>
+
+      <HudPanel
+        title="Save Games"
+        right={saveSlotStatus ? (
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
+            {saveSlotStatus}
+          </span>
+        ) : null}
+      >
+        <div className="space-y-2">
+          {([1, 2, 3] as const).map((slotNumber) => {
+            const slot = saveSlots[slotNumber - 1]
+            return (
+              <div
+                key={slotNumber}
+                className="grid gap-2 border-t border-border/25 pt-2 first:border-t-0 first:pt-0 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
+              >
+                <div className="min-w-0">
+                  {slot ? (
+                    <>
+                      <div className={cn('truncate', sidebarTitleTextClassName)}>
+                        Slot {slotNumber}: {slot.playerName}
+                      </div>
+                      <div className={cn('mt-0.5 truncate', sidebarBodyTextClassName)}>
+                        {slot.playerClass} / Ch.{slot.chapterNumber} / {slot.chapterTitle}
+                      </div>
+                      <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/65">
+                        {timeAgo(slot.savedAt)} / {slot.turnCount} turns
+                      </div>
+                    </>
+                  ) : (
+                    <div className={sidebarEmptyTextClassName}>Slot {slotNumber}: empty</div>
+                  )}
+                </div>
+                <UtilityButton
+                  icon={<Save className="h-4 w-4" />}
+                  label="Save"
+                  onClick={() => onSaveToSlot(slotNumber)}
+                  disabled={busy}
+                />
+                <UtilityButton
+                  icon={<FolderOpen className="h-4 w-4" />}
+                  label="Load"
+                  onClick={() => slot && onLoadSaveSlot(slot)}
+                  disabled={busy || !slot}
+                />
+              </div>
+            )
+          })}
         </div>
       </HudPanel>
 
@@ -233,6 +294,17 @@ function MiniStat({ label, value }: { label: string; value: number }) {
       <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
     </div>
   )
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
 }
 
 function UtilityButton({

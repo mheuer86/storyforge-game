@@ -143,6 +143,8 @@ function PlayDesignPreviewContent() {
       pressureProjection={pressureProjection}
       closeReadiness={closeReadiness}
       campaignStats={{ npcs: 4, threads: 4, decisions: 3, promises: 1, clues: 10 }}
+      saveSlots={[null, null, null]}
+      saveSlotStatus={null}
       onPendingInputChange={setPendingInput}
       onSendTurn={() => {}}
       onResolvePendingCheck={resolveMockRoll}
@@ -150,6 +152,8 @@ function PlayDesignPreviewContent() {
       onDeclineInspiration={() => {}}
       onCloseChapter={() => {}}
       onResetCampaign={() => {}}
+      onSaveToSlot={() => {}}
+      onLoadSaveSlot={() => {}}
       onDownloadSessionLog={() => {}}
       onDownloadReplayFixture={() => {}}
       onCopySessionLog={() => {}}

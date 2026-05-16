@@ -8,7 +8,7 @@ import { CharacterSetup } from '@/components/setup/character-setup'
 import { CampaignSelect } from '@/components/setup/campaign-select'
 import { GameScreen } from '@/components/game/game-screen'
 import { GameErrorBoundary } from '@/components/error-boundary'
-import { loadGameState, createInitialGameState, clearGameState, getSaveSlot, saveGameState, saveToSlot, type SaveSlotData } from '@/lib/game-data'
+import { loadGameState, createInitialGameState, getSaveSlot, saveGameState, saveToSlot, type SaveSlotData } from '@/lib/game-data'
 import { applyGenreTheme, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import type { GameState } from '@/lib/types'
 
@@ -47,7 +47,7 @@ function AppContent() {
       }
       setAppState('campaign-select')
     } else {
-      setAppState('world-setup')
+      window.location.replace('/play')
     }
   }, [])
 
@@ -123,11 +123,7 @@ function AppContent() {
   }
 
   const handleNewGame = () => {
-    clearGameState()
-    setPendingGameState(null)
-    setSetupData({ genre: 'space-opera', characterName: '', species: null, characterClass: null })
-    applyGenreTheme('space-opera')
-    setAppState('world-setup')
+    window.location.href = '/play'
   }
 
   if (appState === 'loading') {

@@ -8,6 +8,13 @@ import { RollBadge } from '@/components/game/roll-badge'
 import { genres, getGenreConfig, type Genre } from '@/lib/genre-config'
 import type { RollDisplayData } from '@/lib/types'
 
+const V1_SAVE_KEYS = [
+  'storyforge_gamestate',
+  'storyforge_save_1',
+  'storyforge_save_2',
+  'storyforge_save_3',
+]
+
 // ─── Per-genre demo content ──────────────────────────────────────────
 
 const ts = new Date(0) // fixed timestamp to avoid SSR/client hydration mismatch
@@ -279,6 +286,7 @@ export function LandingPage() {
   const [activeGenre, setActiveGenre] = useState<Genre>('space-opera')
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null)
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
+  const [hasV1Saves, setHasV1Saves] = useState(false)
   const detailRef = useRef<HTMLDivElement>(null)
   const availableGenres = genres.filter((g) => g.available)
   const activeConfig = getGenreConfig(activeGenre)
@@ -311,6 +319,14 @@ export function LandingPage() {
     const firstMiddleCard = el.children[availableGenres.length] as HTMLElement
     if (firstMiddleCard) {
       el.scrollLeft = firstMiddleCard.offsetLeft - el.offsetWidth / 2 + firstMiddleCard.offsetWidth / 2
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      setHasV1Saves(V1_SAVE_KEYS.some((key) => Boolean(window.localStorage.getItem(key))))
+    } catch {
+      setHasV1Saves(false)
     }
   }, [])
 
@@ -465,7 +481,7 @@ export function LandingPage() {
             href="/play"
             className="bg-primary px-8 py-3.5 font-mono text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
           >
-            Play demo
+            Start new game
           </a>
           <a
             href="/play?byok=1"
@@ -473,6 +489,14 @@ export function LandingPage() {
           >
             Bring your own API key
           </a>
+          {hasV1Saves && (
+            <a
+              href="/play/v1"
+              className="border border-muted-foreground/20 px-8 py-3.5 font-mono text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              Continue old save
+            </a>
+          )}
         </div>
         <div className="hero-stagger relative mt-5 flex flex-col items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-muted-foreground/50" style={{ animationDelay: '0.9s' }}>
           <span>Powered by Claude. Bring your own API key for unlimited play.</span>
@@ -960,7 +984,7 @@ export function LandingPage() {
             href="/play"
             className="bg-primary px-10 py-4 font-mono text-sm font-semibold text-primary-foreground transition-shadow hover:shadow-[0_0_25px_-3px] hover:shadow-primary/40 border border-primary"
           >
-            Play demo
+            Start new game
           </a>
           <a
             href="/play?byok=1"
@@ -968,6 +992,14 @@ export function LandingPage() {
           >
             Bring your own API key
           </a>
+          {hasV1Saves && (
+            <a
+              href="/play/v1"
+              className="border border-muted-foreground/20 px-10 py-4 font-mono text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              Continue old save
+            </a>
+          )}
         </div>
         <p className="mt-8 max-w-sm font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
           Built by one person with Claude Code.

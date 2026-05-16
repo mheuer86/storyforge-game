@@ -26,6 +26,7 @@ import {
 import { useIsMobile } from '@/components/ui/use-mobile'
 import { cn } from '@/lib/utils'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
+import type { Sf2SaveSlotData, Sf2SaveSlotNumber } from '@/lib/sf2/persistence/types'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
 import type { Sf2State, Sf2TurnDiffEntry } from '@/lib/sf2/types'
 
@@ -127,6 +128,8 @@ interface Sf2PlayShellProps {
   pressureProjection: ChapterPressureProjection
   closeReadiness: Sf2CloseReadinessView
   campaignStats: Sf2CampaignStatsView
+  saveSlots: (Sf2SaveSlotData | null)[]
+  saveSlotStatus: string | null
   onPendingInputChange: (value: string) => void
   onSendTurn: (input: string) => void
   onResolvePendingCheck: () => void
@@ -134,6 +137,8 @@ interface Sf2PlayShellProps {
   onDeclineInspiration: () => void
   onCloseChapter: () => void
   onResetCampaign: () => void
+  onSaveToSlot: (slot: Sf2SaveSlotNumber) => void
+  onLoadSaveSlot: (slot: Sf2SaveSlotData) => void
   onDownloadSessionLog: () => void
   onDownloadReplayFixture: () => void
   onCopySessionLog: () => void
@@ -222,6 +227,8 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     pressureProjection,
     closeReadiness,
     campaignStats,
+    saveSlots,
+    saveSlotStatus,
     onPendingInputChange,
     onSendTurn,
     onResolvePendingCheck,
@@ -229,6 +236,8 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
     onDeclineInspiration,
     onCloseChapter,
     onResetCampaign,
+    onSaveToSlot,
+    onLoadSaveSlot,
     onDownloadSessionLog,
     onDownloadReplayFixture,
     onCopySessionLog,
@@ -347,6 +356,10 @@ export function Sf2PlayShell(props: Sf2PlayShellProps) {
           busy={busy}
           pressureProjection={pressureProjection}
           closeReadiness={closeReadiness}
+          saveSlots={saveSlots}
+          saveSlotStatus={saveSlotStatus}
+          onSaveToSlot={onSaveToSlot}
+          onLoadSaveSlot={onLoadSaveSlot}
           onCloseChapter={onCloseChapter}
           onResetCampaign={onResetCampaign}
           onDownloadSessionLog={onDownloadSessionLog}

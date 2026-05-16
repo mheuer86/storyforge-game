@@ -2,6 +2,8 @@ import type { Sf2State } from '../types'
 import type {
   Sf2CampaignListItem,
   Sf2ChapterArtifactRecord,
+  Sf2SaveSlotData,
+  Sf2SaveSlotNumber,
   StoryforgePersistence2,
 } from './types'
 import {
@@ -10,10 +12,11 @@ import {
 } from './normalize'
 
 const DB_NAME = 'storyforge_sf2'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORE_CAMPAIGNS = 'campaigns'
 const STORE_ARTIFACTS = 'chapter_artifacts'
 const STORE_INDEX = 'campaign_index'
+const STORE_SAVE_SLOTS = 'save_slots'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -34,6 +37,9 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_INDEX)) {
         db.createObjectStore(STORE_INDEX, { keyPath: 'campaignId' })
       }
+      if (!db.objectStoreNames.contains(STORE_SAVE_SLOTS)) {
+        db.createObjectStore(STORE_SAVE_SLOTS, { keyPath: 'slot' })
+      }
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -46,6 +52,48 @@ function txAwait<T>(tx: IDBTransaction, request: IDBRequest<T>): Promise<T> {
     request.onerror = () => reject(request.error)
     tx.onerror = () => reject(tx.error)
   })
+}
+
+function summarizeSaveSlot(slot: Sf2SaveSlotNumber, state: Sf2State): Sf2SaveSlotData {
+  const savedAt = new Date().toISOString()
+  return {
+    slot,
+    savedAt,
+    campaignId: state.meta.campaignId,
+    playerName: state.player.name,
+    playerClass: state.player.class.name,
+    playerOrigin: state.player.origin.name,
+    genreId: state.meta.genreId,
+    chapterNumber: state.meta.currentChapter,
+    chapterTitle: state.chapter.title || state.meta.hookTitle || 'Chapter setup pending',
+    turnCount: state.history.turns.length,
+    state,
+  }
+}
+
+function normalizeSaveSlot(raw: unknown): Sf2SaveSlotData | null {
+  if (!raw || typeof raw !== 'object') return null
+  const record = raw as Partial<Sf2SaveSlotData>
+  if (record.slot !== 1 && record.slot !== 2 && record.slot !== 3) return null
+  const normalized = normalizePersistedSf2State(record.state)
+  if (!normalized) return null
+  const state = normalized.state
+  return {
+    slot: record.slot,
+    savedAt: typeof record.savedAt === 'string' ? record.savedAt : state.meta.updatedAt,
+    campaignId: state.meta.campaignId,
+    playerName: typeof record.playerName === 'string' ? record.playerName : state.player.name,
+    playerClass: typeof record.playerClass === 'string' ? record.playerClass : state.player.class.name,
+    playerOrigin: typeof record.playerOrigin === 'string' ? record.playerOrigin : state.player.origin.name,
+    genreId: typeof record.genreId === 'string' ? record.genreId : state.meta.genreId,
+    chapterNumber: state.meta.currentChapter,
+    chapterTitle:
+      typeof record.chapterTitle === 'string' && record.chapterTitle.trim()
+        ? record.chapterTitle
+        : state.chapter.title || state.meta.hookTitle || 'Chapter setup pending',
+    turnCount: typeof record.turnCount === 'number' ? record.turnCount : state.history.turns.length,
+    state,
+  }
 }
 
 export class IndexedDbPersistence implements StoryforgePersistence2 {
@@ -113,6 +161,25 @@ export class IndexedDbPersistence implements StoryforgePersistence2 {
       }
       cursorReq.onerror = () => reject(cursorReq.error)
     })
+  }
+
+  async getSaveSlot(slot: Sf2SaveSlotNumber): Promise<Sf2SaveSlotData | null> {
+    const db = await this.db()
+    const tx = db.transaction(STORE_SAVE_SLOTS, 'readonly')
+    const store = tx.objectStore(STORE_SAVE_SLOTS)
+    const result = await txAwait(tx, store.get(slot))
+    return normalizeSaveSlot(result)
+  }
+
+  async listSaveSlots(): Promise<(Sf2SaveSlotData | null)[]> {
+    return Promise.all(([1, 2, 3] as const).map((slot) => this.getSaveSlot(slot)))
+  }
+
+  async saveToSlot(slot: Sf2SaveSlotNumber, state: Sf2State): Promise<void> {
+    const normalized = normalizeSf2StateForPersistence(state)
+    const db = await this.db()
+    const tx = db.transaction(STORE_SAVE_SLOTS, 'readwrite')
+    await txAwait(tx, tx.objectStore(STORE_SAVE_SLOTS).put(summarizeSaveSlot(slot, normalized)))
   }
 
   async saveChapterArtifact(record: Sf2ChapterArtifactRecord): Promise<void> {
