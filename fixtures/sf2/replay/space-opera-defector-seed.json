@@ -56,9 +56,9 @@
   "expected": {
     "authorInputSeed": {
       "hookPremiseIncludes": [
-        "The passenger is a defector from a Compact Remnant intelligence bureau.",
+        "The cargo is a person: a defector from a Compact Remnant intelligence bureau",
         "compromised beacon operators",
-        "A black-ops corvette has just dropped out of FTL behind the ship without hailing."
+        "the black-ops corvette dropping out behind the ship"
       ],
       "hookPremiseExcludes": [
         "forty thousand credits",
@@ -67,11 +67,12 @@
         "docking clamps"
       ],
       "hookCrucibleIncludes": [
-        "A passenger who knows too much can buy passage"
+        "A person sold as cargo",
+        "who is using whom"
       ],
       "hookFirstEpisodeIncludes": [
-        "Keep the defector alive",
-        "who can be trusted with her data"
+        "Make the defector, pursuers, and first piece of data",
+        "before the corvette defines the contract"
       ],
       "worldVocabularyIncludes": [
         "black-ops corvette",

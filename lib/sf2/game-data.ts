@@ -372,11 +372,11 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'The Defector',
     premise:
-      'The passenger is a defector from a Compact Remnant intelligence bureau. She paid for passage, not protection, and the data she carries can expose a network of compromised beacon operators. A black-ops corvette has just dropped out of FTL behind the ship without hailing. Keep the defector, compromised beacon-operator data, pursuing corvette, and safe-harbor need fixed; author her bureau, what the data proves, who is compromised, and where safety might actually exist differently for this run.',
+      'The cargo is a person: a defector from a Compact Remnant intelligence bureau carrying data on compromised beacon operators. She paid for passage, not protection, but the black-ops corvette dropping out behind the ship means someone has decided there is no difference. Keep the defector, compromised beacon-operator data, pursuing corvette, and safe-harbor need fixed; author her bureau, what the data proves, who is compromised, and whether the passage is rescue, leverage, or trap differently for this run.',
     crucible:
-      'A passenger who knows too much can buy passage, but only trust, speed, and dangerous choices can keep her alive long enough for the data to matter.',
+      'A person sold as cargo, a black-ops corvette, and route secrets valuable enough to kill a ship make the passage contract meaningless unless the PC decides who is using whom.',
     firstEpisode:
-      'Keep the defector alive and decide who can be trusted with her data while the corvette hunts the ship\'s wake.',
+      'Make the defector, pursuers, and first piece of data reveal who is using the passage before the corvette defines the contract.',
   },
   worldRules: {
     ...SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED.worldRules,
@@ -457,7 +457,7 @@ export const FANTASY_SEEKER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'The Second Library',
     premise:
-      'A scholar at the Collegium dies under suspicious circumstances. Her last research notes describe a place she calls the second library and write about it as if you have already been there together. You have never met her. Keep the dead scholar, impossible shared history, and hidden library fixed; author the scholar, death, notes, first clue, and what the library truly is differently for this run.',
+      'A scholar at the Collegium dies under suspicious circumstances. Her last notes describe the second library and write about it as if you have already been there together, though you have never met her. The Collegium wants the notes sealed, a patron wants them bought, and someone who feared the scholar wants you to believe the library is only metaphor. Keep the dead scholar, impossible shared history, competing claimants, and hidden library fixed; author the scholar, death, notes, first clue, and what the library truly is differently for this run.',
     crucible:
       'A dead scholar knew your name and tied you to a lost place you cannot remember, and every institution that wants the notes has a different reason to keep the library buried.',
   },
@@ -544,9 +544,9 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'Blackout',
     premise:
-      'The city goes dark. Not a power failure, but a targeted blackout in a six-block radius. In the silence, a voice on every local channel says your name. Keep the blackout, six-block radius, local-channel broadcast, and your name as the fixed pressure; author the neighborhood, source, payload, motive, and faction reach differently for this run.',
+      'The city goes dark. Not a power failure, but a targeted blackout in a six-block radius. In the silence, a voice on every local channel says your name. Someone with grid-level reach has made you the only clear signal in a blind neighborhood: fixers hear opportunity, gangs hear bait, residents hear blame, and corps want the lights back before anyone asks what the dark revealed. Keep the blackout, six-block radius, local-channel broadcast, and your name as the fixed pressure; author the neighborhood, source, payload, motive, and faction reach differently for this run.',
     crucible:
-      'Someone with the power to blind six blocks can put your name into every ear, and the city will treat the question of why as a market opportunity before it treats it as a warning.',
+      'Someone powerful enough to blind six blocks has made every faction ask what the PC owes them before anyone knows why.',
   },
   worldRules: {
     settingSummary:
@@ -631,9 +631,9 @@ export const GRIMDARK_SCAVENGER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'The Cache',
     premise:
-      'A dying Scavenger from a rival outfit gets a map into your hands. It points to a supply cache buried under a Church waystation, enough provisions to keep a company alive for a month. She says the Church killed her crew for finding it and that something else is buried there. Keep the rival Scavenger, map, cache, Church waystation, and Church patrol pressure fixed; author who she was, how she reaches you, what else is buried, and which faction moves first differently for this run.',
+      'A dying Scavenger from a rival outfit gets a map into your hands. It points to a supply cache under a Church waystation, enough provisions to keep a company alive for a month. She says the Church killed her crew for finding it and that something else is buried there. The map is a claim from the dead, and every hungry ally, rival witness, and Church patrol can turn that claim against you. Keep the rival Scavenger, map, cache, Church waystation, and Church patrol pressure fixed; author who she was, how she reaches you, what else is buried, and which faction moves first differently for this run.',
     crucible:
-      'The cache can keep people alive, but taking it means trespassing under Church authority and learning what the Church was willing to kill to keep buried.',
+      'The cache can keep people alive, but the Church killed to protect its other burial, and the PC must decide who eats from what the dead rival found.',
   },
   worldRules: {
     settingSummary:
@@ -718,9 +718,9 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   hook: {
     title: 'Five Names',
     premise:
-      'A woman you have never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names; four of them are still alive. Keep the dead stranger, will, locked box, five names, and four living names fixed; author who she was, why she chose you, what the first name means, and which city institution reacts first differently for this run.',
+      'A woman you have never met left your name in her will. She died yesterday. The inheritance is a locked box and a list of five names; four of them are still alive. The executor wants the box surrendered, the cops want to know why a dead woman chose you, and someone connected to the list is already trying to make the inheritance look like motive. Keep the dead stranger, will, locked box, five names, and four living names fixed; author who she was, why she chose you, what the first name means, and which city institution reacts first differently for this run.',
     crucible:
-      'A dead stranger trusted you with a box, the list is already losing names, and every answer you find can make you responsible for the next one.',
+      'A stranger trusted the PI with a box, and every living name turns evidence into obligation before another one disappears.',
   },
   worldRules: {
     settingSummary:

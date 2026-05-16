@@ -130,16 +130,16 @@ const SECOND_LIBRARY_VARIANTS: Sf2ArcVariantSeed[] = [
   },
   {
     id: 'second-library-archive-custody',
-    scenarioBias: 'procedural_contest',
+    scenarioBias: 'chamber_play',
     creativeAngle:
-      'The second library exists first as a human archive fight: notes, seals, charters, and catalogue authority become weapons over who gets to name dangerous knowledge.',
-    avoidModes: ['siege'],
+      'The second library exists first as a human archive fight: notes, seals, charters, and catalogue authority become weapons in the hands of scholars, patrons, or witnesses trying to control who gets to name dangerous knowledge.',
+    avoidModes: ['procedural_contest', 'siege'],
   },
   {
     id: 'second-library-ruin-expedition',
     scenarioBias: 'extraction',
     creativeAngle:
-      'The usable lead points into a ruin, sealed annex, or unstable magical site where the Seeker must recover an index, key, fragment, or witness before rivals or the site itself erase it.',
+      'The usable lead points into a ruin, sealed annex, or unstable magical site where rivals, witnesses, and the site itself force the Seeker to decide who can inherit the first proof before it is erased or claimed.',
     avoidModes: ['procedural_contest'],
   },
   {
@@ -185,16 +185,16 @@ const BLACKOUT_VARIANTS: Sf2ArcVariantSeed[] = [
 const CACHE_VARIANTS: Sf2ArcVariantSeed[] = [
   {
     id: 'cache-waystation-heist',
-    scenarioBias: 'extraction',
+    scenarioBias: 'protection',
     creativeAngle:
-      'The cache must be removed from beneath Church custody before patrol pressure, Wasting symptoms, or hungry allies make stealth impossible.',
-    avoidModes: ['chamber_play'],
+      'The waystation cache is living leverage: Church custody, hungry allies, Wasting symptoms, and patrol pressure all force the Scavenger to decide who gets fed, exposed, or protected.',
+    avoidModes: ['procedural_contest', 'chamber_play'],
   },
   {
     id: 'cache-lockdown',
-    scenarioBias: 'siege',
+    scenarioBias: 'public_crisis',
     creativeAngle:
-      'The waystation locks down around the buried secret, turning the cache into a pressure point between Church authority and outside hunger.',
+      'The waystation locks down around the buried secret, turning Church authority and outside hunger against each other while people argue over whether the cache is food, evidence, or contamination.',
     avoidModes: ['procedural_contest'],
   },
   {
@@ -223,10 +223,10 @@ const FIVE_NAMES_VARIANTS: Sf2ArcVariantSeed[] = [
   },
   {
     id: 'five-names-probate-squeeze',
-    scenarioBias: 'procedural_contest',
+    scenarioBias: 'chamber_play',
     creativeAngle:
-      'The will, locked box, probate records, and official custody of the list become weapons in living hands before the street-level danger shows itself.',
-    avoidModes: ['siege'],
+      'The will, locked box, probate records, and official custody of the list become weapons in living hands: executor, cops, heirs, or list-adjacent people use procedure to pressure the PI before street-level danger shows itself.',
+    avoidModes: ['procedural_contest', 'siege'],
   },
   {
     id: 'five-names-one-by-one',

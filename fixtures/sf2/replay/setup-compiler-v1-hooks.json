@@ -132,10 +132,10 @@
             "playbookName": "Seeker",
             "hookTitle": "For Those Who Come After",
             "hookPremiseIncludes": ["A map found in a dead adventurer's pack"],
-            "hookObjectiveEquals": "Enter the watchtower and determine what the machine is doing",
-            "hookCrucibleEquals": "Something Ancient is still running beneath a watchtower, and the last person who found it was too afraid to interfere",
+            "hookObjectiveEquals": "Decide whether the machine is preserving a life, containing a threat, or being claimed by the wrong people",
+            "hookCrucibleEquals": "Ancient machinery still works, and every living claimant wants its purpose before they understand its cost",
             "hookArcNameEquals": "For Those Who Come After",
-            "hookFirstEpisodeEquals": "Enter the watchtower and assess whether the machine is preserving or containing",
+            "hookFirstEpisodeEquals": "Read the dead adventurer's warning against the claims of the patron and the lord before touching the machine",
             "worldVocabularyIncludes": ["Collegium", "Sundering", "ruin"],
             "playerHpEquals": 8,
             "playerAcEquals": 12,
@@ -157,10 +157,10 @@
           "expect": {
             "hookTitle": "The Defector",
             "hookPremiseIncludes": ["The cargo is a person.", "compromised beacon operators"],
-            "hookObjectiveEquals": "Get the defector to safe harbor alive",
-            "hookCrucibleEquals": "A black-ops corvette, a passenger who knows too much, and the question of whether her data is worth dying for",
+            "hookObjectiveEquals": "Decide whether the defector is passenger, leverage, or trap before her pursuers make the contract meaningless",
+            "hookCrucibleEquals": "A person sold as cargo, a black-ops corvette, and route secrets valuable enough to kill a ship",
             "hookArcNameEquals": "The Defector's Data",
-            "hookFirstEpisodeEquals": "Evade the corvette and decide whether to trust what the defector is carrying"
+            "hookFirstEpisodeEquals": "Make the defector, pursuers, and first piece of data reveal who is using the passage"
           }
         }
       ]
