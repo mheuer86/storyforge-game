@@ -82,6 +82,9 @@ export function applyAuthoredToCampaign(
       if (resolvedNote) {
         existing.identity.voice.note = resolvedNote
       }
+      if (n.pronoun && !existing.identity.pronoun) {
+        existing.identity.pronoun = n.pronoun
+      }
       continue
     }
     state.campaign.npcs[n.id] = {
@@ -93,6 +96,7 @@ export function applyAuthoredToCampaign(
       disposition: n.initialDisposition ?? 'neutral',
       identity: {
         keyFacts: [],
+        pronoun: n.pronoun,
         voice: { note: resolvedNote, register: n.voiceRegister },
         relations: [],
       },

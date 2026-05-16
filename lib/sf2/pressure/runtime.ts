@@ -262,6 +262,28 @@ function applyPostTurnPressureRecovery(state: Sf2State): ChapterPressureRecovery
       },
     })
   }
+  if (closeRecovery.stalledFallback) {
+    const note =
+      `Chapter pacing fallback is active: ${closeRecovery.chapterTurnCount} turns, ` +
+      `${closeRecovery.ladderFiredCount}/${closeRecovery.ladderStepCount} ladder steps fired, ` +
+      `spine tension ${closeRecovery.spineTension ?? 0}/10. Do not add procedural runway. ` +
+      'This turn must force a decisive consequence, visible irreversible choice, or explicit chapter-close pivot.'
+    state.campaign.pendingRecoveryNotes = Array.from(new Set([
+      ...(state.campaign.pendingRecoveryNotes ?? []),
+      note,
+    ])).slice(-6)
+    events.push({
+      type: 'objective_close_or_reframe',
+      data: {
+        reason: 'stalled_fallback',
+        chapterTurnCount: closeRecovery.chapterTurnCount,
+        spineThreadId: state.chapter.setup.spineThreadId,
+        spineTension: closeRecovery.spineTension,
+        ladderFiredCount: closeRecovery.ladderFiredCount,
+        ladderStepCount: closeRecovery.ladderStepCount,
+      },
+    })
+  }
   if (closeRecovery.promotedSpineThreadId) {
     const promoted = state.campaign.threads[closeRecovery.promotedSpineThreadId]
     state.chapter.setup.spineThreadId = closeRecovery.promotedSpineThreadId

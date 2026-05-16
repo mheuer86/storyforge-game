@@ -370,6 +370,7 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
     startingNPCs: getArray(raw, 'starting_npcs', 'startingNPCs').map((n) => ({
       id: stringField(n, 'id'),
       name: stringField(n, 'name'),
+      pronoun: coerceAuthorPronoun(valueField(n, 'pronoun', 'pronouns')),
       affiliation: stringField(n, 'affiliation'),
       role: stringField(n, 'role'),
       voiceRegister: stringField(n, 'voice_register', 'voiceRegister'),
@@ -930,6 +931,11 @@ function canCompleteSuccessorTransition(ctx: AuthorRawValidationContext, predece
   if (!ctx.isContinuation || !ctx.state) return false
   const predecessor = ctx.state.campaign.threads[predecessorId]
   return Boolean(predecessor && !isThreadTerminal(predecessor.status))
+}
+
+function coerceAuthorPronoun(value: unknown): AuthorChapterSetupV2['startingNPCs'][number]['pronoun'] {
+  if (value !== 'she/her' && value !== 'he/him' && value !== 'they/them' && value !== 'other') return undefined
+  return value
 }
 
 function terminalStatusForChapterClose(

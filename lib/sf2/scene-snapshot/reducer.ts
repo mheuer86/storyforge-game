@@ -191,6 +191,7 @@ export function applySetLocationMechanicalEffect(
     firstTurnIndex: state.history.turns.length,
   }
   state.meta.currentSceneId = loc.id
+  state.chapter.currentSceneId = loc.id
   state.world.sceneBundleCache = undefined
 
   return {
@@ -416,6 +417,7 @@ function syncRuntimeSceneProjection(
   state.world.currentLocation = location
   state.world.currentTimeLabel = timeLabel
   state.meta.currentSceneId = sceneId
+  state.chapter.currentSceneId = sceneId
   state.meta.currentTimeLabel = timeLabel
 }
 

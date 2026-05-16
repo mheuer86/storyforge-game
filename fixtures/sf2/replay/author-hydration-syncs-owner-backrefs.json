@@ -22,6 +22,7 @@
           {
             "id": "npc_mara",
             "name": "Mara Venn",
+            "pronoun": "she/her",
             "affiliation": "District Office",
             "role": "district solicitor",
             "voice_register": "procedural",
@@ -35,6 +36,7 @@
           {
             "id": "npc_orrin",
             "name": "Orrin Hale",
+            "pronoun": "he/him",
             "affiliation": "Freight Guild",
             "role": "dock broker",
             "voice_register": "commercial",
@@ -48,6 +50,7 @@
           {
             "id": "npc_sola",
             "name": "Sola Reeve",
+            "pronoun": "they/them",
             "affiliation": "District Office",
             "role": "records aide",
             "voice_register": "quiet",
@@ -95,6 +98,20 @@
             "ownerKind": "faction",
             "ownerId": "faction_district_office",
             "threadIds": ["thread_ledger"]
+          }
+        ],
+        "npcIdentityIncludes": [
+          {
+            "npcId": "npc_mara",
+            "pronoun": "she/her"
+          },
+          {
+            "npcId": "npc_orrin",
+            "pronoun": "he/him"
+          },
+          {
+            "npcId": "npc_sola",
+            "pronoun": "they/them"
           }
         ]
       }

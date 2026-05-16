@@ -271,6 +271,10 @@ When creating a thread whose resolution depends on evidence discovery, set \`res
 
 Clues anchor only to investigation threads. Do not anchor clues to pressure, pursuit, extraction, debt, combat, relationship, or ordinary objective threads. A floating clue is allowed only when there is already an active investigation thread and the evidence is concrete but the PC has not yet connected it to the right investigation. Do not invent an \`evidence_question\` to promote pressure facts into clues. If you cannot write a clear \`evidence_question\`, do not create a clue.
 
+If the prose surfaces concrete evidence and the only obvious anchors are pressure threads, choose the correct lane before writing:
+- If the evidence directly satisfies a pressure thread's resolution criteria or gate, emit thread progress/gate satisfaction and a transition when warranted. Do not also create a clue just to celebrate the fact.
+- If the evidence opens or advances a real evidence question that should persist, create a focused \`resolution_mode: "investigation"\` thread in the same patch and anchor the clue to that new thread. Do not emit a clue that is guaranteed to be rejected by anchoring it to the pressure thread.
+
 ### Continuity-critical operational facts
 
 Some world facts are mechanically small but continuity-critical. Preserve them through existing state lanes — not clues.

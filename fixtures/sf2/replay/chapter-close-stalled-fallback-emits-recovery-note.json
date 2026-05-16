@@ -1,0 +1,121 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "chapter close: stalled fallback emits recovery note",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "A chapter that has exceeded pacing max with half the ladder fired and a hot spine should push the next Narrator turn toward decisive closure instead of more procedure."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "threads": {
+          "thread_spine": {
+            "tension": 8,
+            "peakTension": 8
+          }
+        }
+      },
+      "chapter": {
+        "setup": {
+          "pressureLadder": [
+            {
+              "id": "pressure_1",
+              "pressure": "The file is routed upward.",
+              "triggerCondition": "Procedure stalls.",
+              "narrativeEffect": "The local office loses control.",
+              "severity": "standard",
+              "fired": true,
+              "firedAtTurn": 7
+            },
+            {
+              "id": "pressure_2",
+              "pressure": "The adjudicator enters the record.",
+              "triggerCondition": "The player keeps pushing without a turn.",
+              "narrativeEffect": "Authority hardens.",
+              "severity": "hard",
+              "fired": true,
+              "firedAtTurn": 15
+            },
+            {
+              "id": "pressure_3",
+              "pressure": "The clock closes the filing window.",
+              "triggerCondition": "The scene keeps circling.",
+              "narrativeEffect": "Delay becomes consequence.",
+              "severity": "hard",
+              "fired": false
+            },
+            {
+              "id": "pressure_4",
+              "pressure": "The witness is removed from reach.",
+              "triggerCondition": "The chapter refuses a pivot.",
+              "narrativeEffect": "The next choice costs someone.",
+              "severity": "hard",
+              "fired": false
+            }
+          ]
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "0", "narratorProse": "0", "timestamp": "replay" },
+          { "index": 1, "chapter": 1, "playerInput": "1", "narratorProse": "1", "timestamp": "replay" },
+          { "index": 2, "chapter": 1, "playerInput": "2", "narratorProse": "2", "timestamp": "replay" },
+          { "index": 3, "chapter": 1, "playerInput": "3", "narratorProse": "3", "timestamp": "replay" },
+          { "index": 4, "chapter": 1, "playerInput": "4", "narratorProse": "4", "timestamp": "replay" },
+          { "index": 5, "chapter": 1, "playerInput": "5", "narratorProse": "5", "timestamp": "replay" },
+          { "index": 6, "chapter": 1, "playerInput": "6", "narratorProse": "6", "timestamp": "replay" },
+          { "index": 7, "chapter": 1, "playerInput": "7", "narratorProse": "7", "timestamp": "replay" },
+          { "index": 8, "chapter": 1, "playerInput": "8", "narratorProse": "8", "timestamp": "replay" },
+          { "index": 9, "chapter": 1, "playerInput": "9", "narratorProse": "9", "timestamp": "replay" },
+          { "index": 10, "chapter": 1, "playerInput": "10", "narratorProse": "10", "timestamp": "replay" },
+          { "index": 11, "chapter": 1, "playerInput": "11", "narratorProse": "11", "timestamp": "replay" },
+          { "index": 12, "chapter": 1, "playerInput": "12", "narratorProse": "12", "timestamp": "replay" },
+          { "index": 13, "chapter": 1, "playerInput": "13", "narratorProse": "13", "timestamp": "replay" },
+          { "index": 14, "chapter": 1, "playerInput": "14", "narratorProse": "14", "timestamp": "replay" },
+          { "index": 15, "chapter": 1, "playerInput": "15", "narratorProse": "15", "timestamp": "replay" },
+          { "index": 16, "chapter": 1, "playerInput": "16", "narratorProse": "16", "timestamp": "replay" },
+          { "index": 17, "chapter": 1, "playerInput": "17", "narratorProse": "17", "timestamp": "replay" },
+          { "index": 18, "chapter": 1, "playerInput": "18", "narratorProse": "18", "timestamp": "replay" },
+          { "index": 19, "chapter": 1, "playerInput": "19", "narratorProse": "19", "timestamp": "replay" },
+          { "index": 20, "chapter": 1, "playerInput": "20", "narratorProse": "20", "timestamp": "replay" },
+          { "index": 21, "chapter": 1, "playerInput": "21", "narratorProse": "21", "timestamp": "replay" },
+          { "index": 22, "chapter": 1, "playerInput": "22", "narratorProse": "22", "timestamp": "replay" },
+          { "index": 23, "chapter": 1, "playerInput": "23", "narratorProse": "23", "timestamp": "replay" }
+        ]
+      }
+    },
+    "turnIndex": 24,
+    "playerInput": "Stop circling and make this mean something.",
+    "narrator": {
+      "prose": "The room finally stops treating delay as neutral.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {}
+    }
+  },
+  "expected": {
+    "chapterCloseReadiness": {
+      "pivotSignaled": false,
+      "closeReady": true,
+      "spineResolved": false,
+      "stalledFallback": true,
+      "successorRequired": false
+    },
+    "postTurnPressureRecovery": {
+      "pendingRecoveryNotesInclude": [
+        "Chapter pacing fallback is active",
+        "Do not add procedural runway",
+        "decisive consequence"
+      ],
+      "eventsInclude": [
+        {
+          "type": "objective_close_or_reframe",
+          "reason": "stalled_fallback"
+        }
+      ]
+    }
+  }
+}

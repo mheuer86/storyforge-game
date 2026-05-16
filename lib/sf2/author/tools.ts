@@ -136,6 +136,11 @@ const startingNpcsSchema = {
     properties: {
       id: { type: 'string' as const, description: 'npc_<snake_case_name>' },
       name: { type: 'string' as const },
+      pronoun: {
+        type: 'string' as const,
+        enum: ['she/her', 'he/him', 'they/them', 'other'],
+        description: 'Stable identity anchor used by Narrator before first on-stage rendering.',
+      },
       affiliation: { type: 'string' as const },
       role: { type: 'string' as const },
       voice_register: { type: 'string' as const, description: '≤12 words. The formal speaking style: judicial, procedural, clipped, military, etc. The category, not the personality.' },
