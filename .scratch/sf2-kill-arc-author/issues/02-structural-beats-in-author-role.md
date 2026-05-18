@@ -1,48 +1,89 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Structural beats into Author role
 
-## Problem
+## Parent
 
-The Author currently learns its chapter's structural job from `chapterFunctionMap` in the arc plan — e.g. "Ch3: the hidden pressure becomes costly to protect." Without the arc plan, the Author needs structural beat awareness baked into its own role.
+`.scratch/sf2-kill-arc-author/README.md`
 
-`lib/sf2/structural-beats.ts` already defines the 7-point-compressed-to-5 beat structure. The function `renderStructuralBeatForChapter` is already called in `buildAuthorSituation` for Ch2+ (line 261). But for Ch1 it's not called — Ch1 gets its beat from the arc plan's `chapterFunctionMap[0]`.
+## What to build
 
-## Change
+Move chapter structural-beat awareness into Chapter Author itself so the system no longer needs Arc Author `chapterFunctionMap` to tell Ch3, Ch4, or Ch5 what kind of chapter they are.
 
-1. Call `renderStructuralBeatForChapter` for ALL chapters in `buildAuthorSituation`, including Ch1. This already works — the function takes a chapter number and returns the structural beat description.
+`lib/sf2/structural-beats.ts` already owns the compressed five-chapter beat model. `buildAuthorSituation` already renders `renderStructuralBeatForChapter` for Ch2+. This ticket makes that beat contract explicit and universal.
 
-2. Add a compact structural beat awareness section to the Author role prompt (`buildAuthorRole`). This replaces the arc plan's `chapterFunctionMap` as the Author's source of structural knowledge:
+## Required Behavior
 
-```
-## Structural pacing across a campaign
+- Author role prompt includes compact structural pacing guidance for Ch1-Ch5.
+- Ch1 Author situation renders the Ch1 structural beat.
+- Ch2+ continues to render the target chapter structural beat.
+- Author no longer relies on ArcPlan `chapterFunctionMap` as the only source of chapter purpose.
+- The guidance says a structural beat is a job, not a scene mandate.
 
-Each chapter carries a structural job. You don't need a pre-planned arc to know this —
-the beats are inherent to story structure:
+Suggested role language to adapt:
 
-- Ch1 (Hook + Escalation): Establish the pressure, teach the world through conflict,
-  end with a complication that commits the PC.
-- Ch2 (Rising Action): Deepen what Ch1 established. New allies, new costs, the scope
-  of the problem becomes clear.
-- Ch3 (Midpoint Reversal): Something the PC believed flips. A trusted source betrays,
-  a hidden truth surfaces, the real enemy is revealed, or the PC's own success
-  creates the next problem. This is NOT "more of the same but harder."
-- Ch4 (Crisis): The consequences of everything prior converge. The PC must choose
-  between irreconcilable goods or face the cost of prior choices.
-- Ch5 (Resolution): The arc resolves through the PC's accumulated choices. Not every
-  thread closes — but the central pressure reaches a landing.
-
-Honor the beat. A Ch3 that just "deepens the conflict" has failed its structural job.
+```text
+Each chapter carries a structural job. You do not need a preplanned arc to know it.
+Ch1 establishes the pressure and commits the PC.
+Ch2 deepens cost and scope.
+Ch3 reverses a belief, loyalty, source, or apparent enemy.
+Ch4 converges consequences into crisis.
+Ch5 lands the central pressure through accumulated choices.
 ```
 
-3. For Ch2+, the Author already gets `renderStructuralBeatForChapter` output plus chapter-meaning's `transition_seed`. The structural beat tells it what kind of chapter to write; the transition seed tells it what material to work with.
+## Surfaces
 
-## Files
+- `lib/sf2/author/prompt.ts`
+- `lib/sf2/structural-beats.ts`
+- existing prompt-surface replay fixtures
+- `fixtures/sf2/replay/`
 
-- `lib/sf2/author/prompt.ts:19-77` — `buildAuthorRole` (add structural beat awareness)
-- `lib/sf2/author/prompt.ts:180-193` — `buildAuthorSituation` Ch1 branch (call `renderStructuralBeatForChapter`)
-- `lib/sf2/structural-beats.ts` — already exists, already used for Ch2+
+## Implementation Notes
 
-## Notes
+- Do not duplicate the full `structural-beats.ts` text in multiple places if a renderer can be reused cleanly.
+- Avoid adding dynamic chapter-specific content to cached role text. Generic Ch1-Ch5 descriptions can live in the cached role; current target chapter details belong in `buildAuthorSituation`.
+- If snapshot fixtures exist for Author prompt surfaces, update them deliberately.
 
-The Arc Author's `chapterFunctionMap` entries were things like "Ch4: The hidden cost becomes personal" — specific enough to sound authored but vague enough to be ignored. The structural beat descriptions above are more honest about what each chapter's job actually is, and they don't require 10k tokens of LLM planning to produce.
+## Acceptance Criteria
+
+- [ ] Author role includes generic five-chapter structural beat awareness.
+- [ ] Ch1 Author situation includes Ch1 structural beat guidance.
+- [ ] Ch2+ Author situation still includes target chapter structural beat guidance.
+- [ ] Existing ArcPlan-backed behavior still works.
+- [ ] No prompt text says Arc Author is the only source of chapter structural purpose.
+
+## Fixture Expectations
+
+Add or update prompt/author fixtures that assert:
+
+- Ch1 no-arc situation includes Ch1 beat guidance.
+- Ch3 continuation situation includes midpoint/reversal guidance even when no ArcPlan exists.
+- ArcPlan-backed fixtures do not lose structural guidance.
+
+Suggested fixture names:
+
+```bash
+fixtures/sf2/replay/author-structural-beat-ch1.json
+fixtures/sf2/replay/author-structural-beat-ch3-no-arc.json
+```
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/author-structural-beat-ch1.json
+npm run sf2:replay -- fixtures/sf2/replay/author-structural-beat-ch3-no-arc.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+None - can start immediately.
+
+## Out Of Scope
+
+- Changing chapter close timing.
+- Deleting ArcPlan or Arc Author.
+- Rewriting the Author schema.

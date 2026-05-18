@@ -1,36 +1,82 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
-# "The world moves without the player"
+# The world moves without the player
 
-## Problem
+## Parent
 
-V1 had explicit minimums for offscreen agency (`lib/system-prompt.ts:310-312`):
+`.scratch/sf2-v1-narrative-regression/README.md`
 
-> Things happen offscreen. NPCs pursue their own agendas. Clocks advance. Threats develop. The player is the center of the story, not the center of the world. Each chapter, at minimum: one thread worsens (even if the player isn't engaging with it), the antagonist makes one move (preferably through absence — a clock ticking, a contact going dark, a third party warning), and one deferred promise gets mentioned by an NPC.
+## What to build
 
-This created living-world texture — the feeling that the universe doesn't pause when the player stops pushing.
+Restore V1's living-world pressure principle in SF2 Narrator craft: NPCs and factions pursue agendas offscreen, threads can worsen without the player engaging them, and deferred promises/obligations surface through observable play.
 
-SF2 has thread pressure mechanics (code-driven escalation from failed rolls), but no equivalent narrator instruction for *unprompted* world motion. The pressure system only fires when a roll fails. If the player succeeds at everything, or avoids certain threads, those threads sit inert.
+This should make the world feel alive without violating SF2's hidden-information and role-ownership rules.
 
-## Why this matters
+## Required Behavior
 
-The best moments in V1 playthroughs came from offscreen motion — an NPC the player hadn't talked to in three turns suddenly showing up with consequences. The antagonist making a move through absence (a contact going dark) is more threatening than a direct confrontation. Deferred promises getting mentioned by NPCs creates accountability texture.
+- Narrator role includes a world-motion principle.
+- Offscreen motion must appear through observable traces the PC can perceive now: a message, absence, changed object state, rumor, visible consequence, later NPC response, or a scene arrival.
+- The Narrator must not reveal hidden offscreen thoughts, plans, or facts via hidden-camera prose.
+- The Narrator may narrate pressure cues; Archivist records durable thread/faction/NPC changes after the prose.
+- The principle should mention at chapter scale, not demand a dramatic world move every turn.
+- It should complement existing pressure runtime and fail-forward mechanics, not replace them.
 
-Without this, SF2 worlds feel reactive — they only move when the player pushes. That's a theme park, not a world.
+## Surfaces
 
-## Fix
+- `lib/sf2/narrator/prompt/role.ts`
+- `lib/system-prompt.ts` as V1 reference
+- `lib/sf2/pressure/runtime.ts` for context, likely no edit
+- `lib/sf2/retrieval/scene-packet.ts` for existing thread/faction pressure context, likely no edit
+- prompt-surface fixtures under `fixtures/sf2/replay/`
 
-Add a "World motion" section to the SF2 narrator craft or role prompt. Port the V1 minimums adapted for SF2's architecture:
+## Implementation Notes
 
-- Per chapter: at least one thread worsens without player engagement (the pressure system handles roll-driven escalation; this covers the gap when rolls don't fire on a thread)
-- Antagonist presence through absence — observable traces, not direct confrontation
-- Deferred promises/obligations surface through NPC dialogue
-- The player should never feel the universe is waiting for them
+- This is a prompt/craft restoration slice. Do not add code-owned thread worsening unless a fixture proves prompt-only guidance cannot be measured.
+- Keep the hidden-camera ban stronger than the world-motion rule.
+- Good examples: a contact goes dark, a third party warns the PC, a faction's proxy appears, an owed promise is mentioned by an NPC.
+- Bad examples: "unseen, Tael decides to file..." or "elsewhere, the buyer realizes..."
+- Do not force pressure when the scene needs aftermath or quiet recovery.
 
-This intersects with the pressure system but doesn't replace it. Code-driven pressure handles roll consequences. Narrator-driven world motion handles the space between rolls.
+## Acceptance Criteria
 
-## Files
+- [ ] Narrator role includes a world-motion principle adapted to SF2.
+- [ ] The principle explicitly requires observable traces instead of hidden-camera narration.
+- [ ] The principle does not grant Narrator durable state-write ownership.
+- [ ] Prompt fixture confirms the new guidance renders.
+- [ ] Existing replay suite passes.
 
-- `lib/sf2/narrator/prompt/role.ts` — narrator role (edit target)
-- `lib/system-prompt.ts:310-312` — V1 world-moves section (reference)
-- `lib/sf2/pressure/runtime.ts` — existing pressure system (context)
+## Fixture Expectations
+
+Add or update a prompt fixture, and if a suitable replay helper exists, add a scene-packet fixture showing dormant/offscreen pressure context.
+
+Suggested fixture name:
+
+```bash
+fixtures/sf2/replay/narrator-world-motion-principle.json
+```
+
+It should assert:
+
+- rendered role includes offscreen agency/world motion
+- rendered role includes observable-trace guard
+- hidden-camera ban remains present
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/narrator-world-motion-principle.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+- Recommended after `03-narrator-core-identity.md`, but not technically blocked.
+
+## Out Of Scope
+
+- Adding deterministic offscreen pressure engines.
+- Changing Archivist schema.
+- Forcing every turn to include offscreen motion.

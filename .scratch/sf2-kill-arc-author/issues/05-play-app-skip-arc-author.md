@@ -1,60 +1,94 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # play-app skip arc-author call
 
-## Problem
+## Parent
 
-`components/sf2/play-app.tsx` orchestrates the Arc Author call at campaign start (lines 689-756). The flow:
+`.scratch/sf2-kill-arc-author/README.md`
 
-1. `ensureArcAuthored` checks `isArcAuthored(currentState)` — if arc plan exists, skip
-2. If not, fetch `/api/sf2/arc-author` with the AuthorInputSeed
-3. Wait for response, transform via `transformArcAuthorResponse`
-4. Persist arc plan to state
-5. Then proceed to Author for Ch1
+## What to build
 
-## Change
+Change `/play` startup orchestration so a new SF2 campaign can skip the Arc Author call and go directly from setup selection to Chapter Author.
 
-Add a feature flag or mode that skips the arc-author call entirely. The Author for Ch1 then runs in hookDirect mode (#01).
+This is the Phase 1 product switch. The old Arc Author path must remain available as a fallback until no-arc playthroughs validate.
 
-### Option A: Feature flag (recommended for Phase 1)
+## Required Behavior
 
-```typescript
-const SKIP_ARC_AUTHOR = true // Phase 1 experiment
+- New campaigns can start without calling `/api/sf2/arc-author`.
+- Chapter 1 generation calls `/api/sf2/author` with no `campaign.arcPlan`.
+- Diagnostics record whether startup used `arc-author` or `hook-direct`.
+- Existing saves with an already-authored arc plan continue to load and play.
+- A temporary fallback flag can re-enable Arc Author for comparison.
 
-async function ensureArcAuthored(currentState: Sf2State): Promise<Sf2State> {
-  if (SKIP_ARC_AUTHOR) return currentState
-  if (isArcAuthored(currentState)) return currentState
-  // ... existing arc-author call
-}
+## Feature Flag Decision
+
+Use an explicit public client flag so AFK runs and browser smoke can choose the path without editing code:
+
+```text
+NEXT_PUBLIC_SF2_USE_ARC_AUTHOR=1
 ```
 
-The Author's `buildAuthorSituation` already has a null check for `state?.campaign?.arcPlan`. When null, it currently says "missing arc plan — this is invalid." Change that message to trigger hookDirect mode (#01).
+Recommended Phase 1 behavior:
 
-### Option B: Remove the call (Phase 2)
+- default: skip Arc Author
+- if `NEXT_PUBLIC_SF2_USE_ARC_AUTHOR=1`: use the old Arc Author path
 
-Delete `ensureArcAuthored` and the arc-author fetch entirely. Remove the `/api/sf2/arc-author` route. This is cleaner but harder to revert.
+This makes the kill-track behavior visible by default while preserving an opt-in comparison path.
 
-## Orchestration flow after change
+## Surfaces
 
-Current: Setup → Arc Author → Author Ch1 → Narrator
-New:     Setup → Author Ch1 (hookDirect) → Narrator
+- `components/sf2/play-app.tsx`
+- `lib/sf2/game-data.ts` if `isArcAuthored` assumptions need a helper wrapper
+- `app/api/sf2/author/route.ts` only if integration reveals an Author route gap missed by tickets 01/03
+- diagnostics/session export surfaces if they currently assume an arc-author role call
+- browser smoke/export docs under `.scratch/` as needed
 
-The Author for Ch1 receives the AuthorInputSeed (which `compileSf2SetupSeed` already builds from the setup selection) directly, without an intermediate arc plan.
+## Implementation Notes
 
-## Files
+- Do not delete `generateArcIfNeeded` in Phase 1; make it conditional.
+- Keep loading old saves intact.
+- Do not alter streaming timing or roll pause behavior.
+- Avoid calling `setIsGeneratingChapter` twice in a way that changes perceived loading state.
+- If a no-arc startup fails, diagnostics should name the no-arc mode and the failing role.
 
-- `components/sf2/play-app.tsx:689-756` — `ensureArcAuthored` (skip or delete)
-- `components/sf2/play-app.tsx:16` — `isArcAuthored` import (unused in Phase 1)
-- `lib/sf2/author/prompt.ts:184-193` — Ch1 branch null check (hookDirect trigger)
+## Acceptance Criteria
 
-## Test approach
+- [ ] With default env, a fresh `/play` campaign does not call `/api/sf2/arc-author`.
+- [ ] With `NEXT_PUBLIC_SF2_USE_ARC_AUTHOR=1`, the old Arc Author startup path still works.
+- [ ] Fresh no-arc campaign reaches Chapter Author and Narrator opening.
+- [ ] Diagnostics/session export identify `hook-direct` startup.
+- [ ] Existing saved campaigns with `campaign.arcPlan` still load without reauthoring or deleting the arc plan.
+- [ ] No streaming UX or roll pause behavior changes.
 
-1. Start a new campaign with SKIP_ARC_AUTHOR = true
-2. Verify Author Ch1 produces valid output without arc plan
-3. Play through Ch1, verify narrator quality
-4. Transition to Ch2, verify chapter-meaning fires and Author Ch2 works without arc plan
-5. Compare narrative quality against a run with arc plan on the same hook
+## Fixture And Smoke Expectations
 
-## Rollback
+Add a focused helper or integration fixture if possible, but this ticket likely also needs browser smoke because the behavior lives in `components/sf2/play-app.tsx`.
 
-Set SKIP_ARC_AUTHOR = false. The existing arc-author code path remains intact during Phase 1.
+Suggested checks:
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/author-hook-direct-ch1-no-arc.json
+npm run sf2:replay -- fixtures/sf2/replay/author-continuation-no-arc-transition-seed.json
+npm run build
+```
+
+Browser smoke:
+
+- start fresh `/play`
+- confirm diagnostics contain no `arc-author` token usage in default mode
+- confirm diagnostics contain `hook-direct` startup marker
+- set `NEXT_PUBLIC_SF2_USE_ARC_AUTHOR=1`, rebuild/restart, confirm old path still emits `arc-author`
+
+## Blocked By
+
+- `01-author-hook-direct-ch1.md`
+- `03-author-continuation-without-arc.md`
+- `04-narrator-situation-without-arc.md`
+
+## Out Of Scope
+
+- Removing Arc Author endpoint or lib.
+- Cleaning `Sf2ArcPlan` types.
+- Changing setup UI.

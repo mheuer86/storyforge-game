@@ -1,61 +1,90 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Author continuation mode without arc plan
 
-## Problem
+## Parent
 
-The Ch2+ Author situation (`buildAuthorSituation` lines 196-302) is heavily structured around the arc plan:
+`.scratch/sf2-kill-arc-author/README.md`
 
-- "Stable ArcPlan" block rendered via `renderArcPlan` (~30 lines of arc context)
-- `arc_link.thread_links` required — each chapter thread must link to an arc thread
-- `arc_link.chapterFunction` derived from `chapterFunctionMap`
-- `arc_link.playerStanceRead` derived from `playerStanceAxes`
-- Continuation rules say "honor the ArcPlan's selected scenario shape"
+## What to build
 
-Without the arc plan, the Ch2+ Author needs to derive arc coherence from what actually happened — chapter-meaning + campaign state.
+Allow Chapter Author to open Ch2+ when `campaign.arcPlan` is absent by deriving continuity from Chapter Meaning, campaign state, structural beat guidance, active threads, NPCs, factions, and chapter opening continuity.
 
-## Change
+The no-arc continuation path should make `priorChapterMeaning.transitionSeed` the primary arc-forward mechanism.
 
-The Ch2+ Author situation already includes everything it needs without the arc plan:
+## Required Behavior
 
-**Already present (keep as-is):**
-- Prior chapter retrospective (5-element meaning: situation, tension, ticking, question, closer)
-- Closing resolution and how to respond to it (clean/costly/failure/catastrophic/unresolved)
-- Transition seed (prior_chapter_meant, earned_consequence, pressure_owner_candidate, worsened_detail, unresolved_question, do_not_restage, procedure_residue)
-- Dramatic handoff
-- Active carry-forward threads with tension/pressure data
-- Live NPCs with disposition and dormancy
-- Chapter opening continuity
-- Structural beat for next chapter
+- If `state.history.turns.length > 0`, no `campaign.arcPlan` exists, and `priorChapterMeaning` exists, Author route proceeds.
+- Ch2+ situation does not render a "Stable ArcPlan" section when no arc plan exists.
+- Ch2+ situation promotes transition seed and dramatic handoff above active carry-forward threads.
+- Continuation instructions say to derive the new chapter from prior chapter meaning and carried state, not ArcPlan.
+- `arc_promoted` is not required or suggested when there is no arc plan.
+- `arc_link` validation skips real arc-thread checks when `state.campaign.arcPlan` is absent.
+- The Author still audits active threads and emits thread transitions/successors when prior chapter meaning resolved a thread.
 
-**Remove:**
-- "Stable ArcPlan" block — the rendered arc plan
-- `arc_link` requirement in Author contract — chapter threads no longer link to arc threads
-- References to "honor the ArcPlan's selected scenario shape"
+## Surfaces
 
-**Add:**
-- Campaign forces context: render any `campaign.forces` (if we add this to campaign state from #01) so the Author knows what institutional/faction forces are in play
-- Stronger transition seed emphasis: the transition seed becomes the primary arc-forward mechanism. Promote it from "supporting" to primary context.
+- `app/api/sf2/author/route.ts`
+- `lib/sf2/author/prompt.ts`
+- `lib/sf2/author/payload.ts`
+- `lib/sf2/author/contract.ts`
+- `lib/sf2/author/retry.ts`
+- `lib/sf2/chapter-meaning/*`
+- `fixtures/sf2/replay/`
 
-The key insight: the Ch2+ Author's `buildAuthorSituation` already has ~120 lines of chapter-meaning, thread state, NPC state, and continuity context. The arc plan block adds ~30 lines of redundant context that duplicates what campaign state already carries. Removing it simplifies the prompt and removes the "derive from the plan" instruction that constrains creative freedom.
+## Implementation Notes
 
-## Author prompt rule changes
+- Keep ArcPlan support for old saves. This is an alternate no-arc path, not a deletion.
+- If `priorChapterMeaning` is absent on no-arc continuation, fail clearly or fall back to a state-derived continuation only if an existing helper already provides enough context. Do not silently produce a weak continuation.
+- Do not remove continuation moves. They are still needed.
+- Replace references like "Derive from the ArcPlan..." with conditional wording that uses ArcPlan only when present.
+- In no-arc mode, forbid `driver_kind: "arc_promoted"` unless there is a real arc thread to promote.
 
-- Rule 1 currently: "Honor the hook's invariant pressure, but honor the ArcPlan's selected scenario shape." Change to: "Honor the prior chapter's meaning and the campaign's accumulated pressure. The story discovers its shape through play."
-- Rule 36 (`buildAuthorRole` line 36): references ArcPlan. Rewrite to reference chapter-meaning transition seed.
-- Author contract: `arc_link` fields become optional or removed.
+## Acceptance Criteria
 
-## Files
+- [ ] Ch2+ Author requests without `campaign.arcPlan` and with `priorChapterMeaning` can validate.
+- [ ] No-arc Ch2+ situation has no "missing arc plan" text.
+- [ ] No-arc Ch2+ situation places prior meaning, transition seed, and dramatic handoff before operational continuity.
+- [ ] No-arc Ch2+ output does not need real arc thread links.
+- [ ] ArcPlan-backed continuation still works for old saves.
+- [ ] If no-arc continuation is attempted without Chapter Meaning, diagnostics explain the missing prerequisite.
 
-- `lib/sf2/author/prompt.ts:196-302` — `buildAuthorSituation` Ch2+ branch (remove arc plan block, promote transition seed)
-- `lib/sf2/author/prompt.ts:19-77` — `buildAuthorRole` rules referencing ArcPlan
-- `lib/sf2/author/contract.ts` — `arc_link` validation (make optional)
-- `lib/sf2/author/prompt.ts:289-310` — continuation chapter rules at bottom (remove arc thread linking requirement)
+## Fixture Expectations
 
-## Depends on
+Add a focused fixture for a Ch2 transition without arc plan.
 
-- #02 (structural beats) — Author needs beat awareness for Ch2+ without chapterFunctionMap
+Suggested fixture name:
 
-## Risk
+```bash
+fixtures/sf2/replay/author-continuation-no-arc-transition-seed.json
+```
 
-If chapter-meaning produces a weak transition seed, the Ch2+ Author has less to work with than it did with the arc plan. Mitigation: chapter-meaning already runs on Sonnet 4.6 (per the cost note in its prompt) and the transition seed is well-designed. The real risk is if chapter-meaning fails entirely (API error) — in that case the Author still has carry-forward threads, NPCs, and campaign state.
+It should assert:
+
+- input state has no `campaign.arcPlan`
+- prior chapter meaning has a transition seed
+- Author situation/payload honors `doNotRestage`
+- procedure residue marked background/discard does not become the opening choice
+- successor/new-pressure thread works without arc thread links
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/author-continuation-no-arc-transition-seed.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+- `01-author-hook-direct-ch1.md`
+- `02-structural-beats-in-author-role.md`
+
+## Out Of Scope
+
+- Client orchestration skip.
+- Removing Arc Author endpoint.
+- Changing Chapter Meaning schema.
+- Replacing campaign thread model.

@@ -1,44 +1,80 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Narrator situation without arc context
 
-## Problem
+## Parent
 
-The Narrator's situation prompt (`lib/sf2/narrator/prompt/situation.ts`) includes an "Arc context" block (lines 42-49) when an arc plan exists:
+`.scratch/sf2-kill-arc-author/README.md`
 
+## What to build
+
+Verify and harden the Narrator's prompt/packet path when no `campaign.arcPlan` exists. The Narrator should be driven by chapter setup, scene packet, current pressure, and pacing contract rather than Arc context.
+
+The current arc block in `lib/sf2/narrator/prompt/situation.ts` is already conditional. This ticket makes the no-arc path intentionally covered and ensures the lost arc-question/chapter-function signal is replaced by existing chapter fields.
+
+## Required Behavior
+
+- No-arc Narrator situation renders without empty or invalid arc placeholders.
+- Chapter frame, chapter objective, central tension, active pressure, and `pacing_contract.chapterQuestion` remain prominent.
+- Retrieval chapter packet works when `chapter.arc` is undefined.
+- If no-arc mode loses a useful "what this chapter tests" sentence, surface `pacing_contract.chapterQuestion` more clearly before adding a new schema field.
+- No Narrator instructions should tell the model to recover an ArcPlan or invent arc metadata.
+
+## Surfaces
+
+- `lib/sf2/narrator/prompt/situation.ts`
+- `lib/sf2/retrieval/packets/chapter.ts`
+- `lib/sf2/retrieval/scene-packet.ts`
+- `lib/sf2/narrator/messages.ts`
+- `fixtures/sf2/replay/`
+
+## Implementation Notes
+
+- Prefer fixture coverage over prompt churn. If the no-arc situation already renders correctly, keep the code change minimal.
+- Do not add a new `chapter_dramatic_thesis` field unless existing `pacing_contract.chapterQuestion` is insufficient in fixtures.
+- Do not remove arc rendering for old saves; keep it conditional.
+
+## Acceptance Criteria
+
+- [ ] Narrator situation renders cleanly with no `campaign.arcPlan`.
+- [ ] Chapter packet renders cleanly with no arc block.
+- [ ] No-arc Narrator situation includes enough chapter-level purpose to replace arc question/chapter function.
+- [ ] Old ArcPlan-backed narrator situation still renders its arc context.
+- [ ] No prompt text says an arc plan is required for narration.
+
+## Fixture Expectations
+
+Add or update a no-arc narrator prompt/scene-packet fixture.
+
+Suggested fixture name:
+
+```bash
+fixtures/sf2/replay/narrator-situation-no-arc.json
 ```
-### Arc context
-- Arc: ${arc.title}
-- Scenario shape for GM use: ${arc.scenarioShape.mode} — ${arc.scenarioShape.premise}
-- Arc question: ${arc.arcQuestion}
-- Chapter function: ${arcLink?.chapterFunction}
-- Player stance read: ${arcLink?.playerStanceRead}
-- Chapter threads advancing arc: [thread links]
+
+It should assert:
+
+- no `campaign.arcPlan`
+- no "missing arc" text in rendered situation or packet
+- chapter question/objective/central tension are present
+- suggested actions and roll discipline remain unaffected
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/narrator-situation-no-arc.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
 ```
 
-The chapter packet (`lib/sf2/retrieval/packets/chapter.ts`) also includes an `arc` block with title, scenario, question, and chapter function.
+## Blocked By
 
-## Change
+- `01-author-hook-direct-ch1.md`
 
-**Narrator situation:** The arc context block is already conditional (`${arc ? ... : ''}`). When no arc plan exists, it's simply absent. No code change needed — but verify the narrator still functions well without it.
+## Out Of Scope
 
-What the narrator loses:
-- Arc title — cosmetic, not load-bearing
-- Scenario shape label — was mainly anti-procedure guidance ("don't rebuild the rejected default"). With the genre bible fixes, this is less critical.
-- Arc question — e.g. "What does loyalty cost when the institution you serve is the threat?" This IS useful. Consider having the Author generate a `chapter_question` that fills this role.
-- Chapter function — replaced by structural beat awareness
-- Player stance read — this told the narrator where the PC sits on stance axes. Could be derived from decisions/thread state instead.
-
-**Chapter packet:** The `arc` block in `buildChapterPacket` (lines 29-37) is already conditional. When no arc plan exists, `arc` is `undefined`.
-
-**What to add instead:** The Author's `pacing_contract.chapterQuestion` already exists and serves a similar role to arc question. Ensure this is surfaced prominently in the narrator situation. The Author could also emit a `chapter_dramatic_thesis` — one sentence about what this chapter is testing — that replaces both arc question and chapter function.
-
-## Files
-
-- `lib/sf2/narrator/prompt/situation.ts:42-49` — arc context block (already conditional)
-- `lib/sf2/retrieval/packets/chapter.ts:29-37` — arc block in chapter packet (already conditional)
-- `lib/sf2/author/prompt.ts` — Author could emit `chapter_dramatic_thesis` as replacement
-
-## Effort
-
-Low. The conditional guards already exist. Main work is verifying narrator quality without the arc context and potentially adding a replacement `chapter_dramatic_thesis` field.
+- Deleting arc packet support for old saves.
+- Rewriting Narrator role prompt.
+- Changing streaming event shape.

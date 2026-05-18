@@ -1,35 +1,66 @@
 Status: blocked-by-06
+Labels: enhancement, blocked
+Type: AFK-after-validation
 
 # Clean up arc plan type references
 
-Phase 2 — execute after Arc Author endpoint is removed.
+## Parent
+
+`.scratch/sf2-kill-arc-author/README.md`
+
+## What to build
+
+After Arc Author is removed, clean up the remaining ArcPlan type and compatibility surface without breaking old saves.
+
+## Required Preconditions
+
+- Ticket 06 has landed.
+- No runtime endpoint or client path creates new `Sf2ArcPlan`.
+- Old-save handling strategy is chosen: preserve legacy optional field or migrate it into inert legacy metadata.
 
 ## Scope
 
-Make `Sf2ArcPlan` optional or remove it from the type system. Clean up all references:
+Review and clean:
 
-- `lib/sf2/types.ts:165-238` — `Sf2ArcPlan` interface (delete or mark deprecated)
-- `lib/sf2/types.ts:2010` — `arcPlan?: Sf2ArcPlan` on campaign (remove)
-- `lib/sf2/author/prompt.ts` — all `renderArcPlan` calls and arc plan references
-- `lib/sf2/author/contract.ts` — `arc_link` validation (remove arc thread linking)
-- `lib/sf2/narrator/prompt/situation.ts:7-8,42-49` — arc context rendering
-- `lib/sf2/retrieval/packets/chapter.ts:16,29-37` — arc block in chapter packet
-- `lib/sf2/state-indexes.ts` — arc plan indexing
-- `lib/sf2/persistence/normalize.ts` — arc plan normalization
-- `lib/sf2/chapter-meaning/digest.ts` — may reference arc plan
-- `lib/sf2/instrumentation/session-summary.ts` — arc plan in session summary
-- `lib/sf2/game-data.ts` — seed registry arc plan references
+- `lib/sf2/types.ts` - `Sf2ArcPlan` and `campaign.arcPlan`
+- `lib/sf2/author/prompt.ts` - `renderArcPlan`, `renderArcThreads`, `renderLatentQuestionPacket`
+- `lib/sf2/author/contract.ts` - `arc_link` validation and arc promotion checks
+- `lib/sf2/narrator/prompt/situation.ts` - arc context block
+- `lib/sf2/retrieval/packets/chapter.ts` - chapter packet arc block
+- `lib/sf2/state-indexes.ts`
+- `lib/sf2/persistence/normalize.ts`
+- `lib/sf2/chapter-meaning/digest.ts`
+- `lib/sf2/instrumentation/session-summary.ts`
+- `lib/sf2/game-data.ts`
+- docs and fixtures that still describe active ArcPlan behavior
 
-## Migration
+## Implementation Notes
 
-Existing saved campaigns may have `arcPlan` in their persisted state. The persistence/normalize layer should handle missing arc plans gracefully (it likely already does since `arcPlan` is optional). Verify that loading an old save with an arc plan doesn't break, and that the Author/Narrator work correctly whether or not `arcPlan` exists in state.
+- Do not remove old-save compatibility in the same stroke as type cleanup unless replay fixtures cover old saves.
+- If keeping `campaign.arcPlan` as a deprecated optional legacy field is simpler and safer, document that choice.
+- Remove arc thread linking only after chapter thread continuity has no-arc fixture coverage.
 
-Some arc plan concepts may migrate to campaign-level state:
-- `durableForces` → `campaign.forces` (created by Ch1 Author, carried forward)
-- `stanceAxes` → could emerge as a chapter-meaning output or Author output per chapter
-- `arcThreadIds` → unnecessary; threads at campaign level are just threads
+## Acceptance Criteria
 
-## Depends on
+- [ ] New campaigns do not create ArcPlan state.
+- [ ] Runtime Author/Narrator paths do not require `campaign.arcPlan`.
+- [ ] Old saves with `campaign.arcPlan` load without crashing.
+- [ ] Type references are either removed or explicitly marked legacy.
+- [ ] Arc promotion/latent question code is removed or converted to a non-ArcPlan mechanism with fixtures.
 
-- #06 (endpoint removed)
-- Validation that no runtime code path requires `arcPlan` to be present
+## Verification
+
+```bash
+rg "Sf2ArcPlan|arcPlan|arc_link|arc_promoted|latentArcQuestions|chapterFunctionMap" app lib components docs fixtures
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+- `06-remove-arc-author-endpoint.md`
+
+## Out Of Scope
+
+- Changing narrative behavior beyond deleting legacy ArcPlan dependency.
+- Adding a replacement campaign-planning role.

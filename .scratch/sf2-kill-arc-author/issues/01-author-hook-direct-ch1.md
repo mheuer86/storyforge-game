@@ -1,70 +1,96 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Author hookDirect mode for Ch1
 
-## Problem
+## Parent
 
-The Author for Ch1 currently receives: "derive Chapter 1 from the ArcPlan, not directly from the raw hook." The raw hook (premise, crucible, objective, firstEpisode) is treated as palette, not the driver. The ArcPlan is the driver — and the ArcPlan is where procedural shapes originate.
+`.scratch/sf2-kill-arc-author/README.md`
 
-## Change
+## What to build
 
-When no arc plan exists, `buildAuthorSituation` should produce a Ch1 context that gives the Author creative freedom to interpret the hook directly.
+Make Chapter Author capable of authoring Chapter 1 directly from the selected `AuthorInputSeed` when `state.campaign.arcPlan` is absent.
 
-The Author gets:
-- The full hook (premise, crucible, objective, firstEpisode)
-- The AuthorInputSeed (worldRules, toneRules, npcRules, onboardingRules, pcCapabilities)
-- Genre guidance from the genre bible
-- Structural beat guidance for Ch1 (from `structural-beats.ts`)
+Current behavior rejects the Author request before the prompt is built:
 
-The Author creates:
-- Everything it creates today (chapter frame, opening scene spec, NPCs, threads, pressure ladder, antagonist field, human stakes, pacing contract)
-- **New:** `campaign_forces` — 2-3 durable forces this chapter establishes (replaces arc plan's `durableForces`). These persist in campaign state for future chapters.
-- **New:** `stance_seeds` — 1-2 stance axes the opening chapter reveals (replaces arc plan's `playerStanceAxes`). Optional — may emerge from play instead.
+- `app/api/sf2/author/route.ts` returns `missing_arc_plan`.
+- `lib/sf2/author/prompt.ts` tells Author the missing arc plan is invalid.
+- The Ch1 situation says the ArcPlan is the stable pressure field and the raw seed is only palette.
 
-The Author does NOT create:
-- A 5-chapter arc plan
-- Pre-committed arc threads (chapter threads are the threads; arc-level identity emerges from chapter-meaning)
-- Latent arc questions (these can be planted by chapter-meaning when the fiction earns them)
-- Scenario shape metadata (rejectedDefaultShape, whatThisIsNot)
+The new Ch1 mode should treat the selected hook as the source of playable pressure. The Author remains a structured chapter setup role, not a prose narrator and not a five-chapter planner.
 
-## Key prompt changes
+## Required Behavior
 
-In `buildAuthorSituation` (Ch1 branch, currently lines 184-193):
+- If `state.history.turns.length === 0` and `state.campaign.arcPlan` is absent, Author route proceeds.
+- The Ch1 Author situation is labeled as direct hook interpretation, not missing-arc fallback.
+- The Ch1 situation includes `renderStructuralBeatForChapter(1, undefined)` or equivalent Ch1 beat guidance.
+- The Author receives the existing `AuthorInputSeed` user message from `compileAuthorInputSeed`.
+- The prompt tells Author to choose opening camera, visible NPCs, first pressure, and chapter test from the hook.
+- The prompt explicitly says the hook fixes pressure facts, not plot.
+- `arc_link` remains schema-compatible for Phase 1. If the tool requires it, allow a non-empty compatibility value such as `arc_id: "hook_direct"` and a meaningful `chapter_function`; skip arc-thread validation when no `campaign.arcPlan` exists.
+- Do not introduce new campaign state such as `campaignForces` in this slice unless the existing hydration path already supports it. Use existing factions, NPCs, threads, antagonist field, and chapter setup outputs.
 
-Replace the "derive from ArcPlan" framing with:
+## Surfaces
 
+- `app/api/sf2/author/route.ts`
+- `lib/sf2/author/prompt.ts`
+- `lib/sf2/author/contract.ts`
+- `lib/sf2/author/retry.ts` if validation retry text still assumes ArcPlan
+- `lib/sf2/author/tools.ts` only if schema descriptions make no-arc output impossible
+- `lib/sf2/types.ts` only if a compatibility field is unavoidable
+- `fixtures/sf2/replay/`
+
+## Implementation Notes
+
+- Keep the old Arc Author path working. This ticket only makes the Author route valid without an arc plan for Chapter 1.
+- Preserve the old ArcPlan path for existing saves and for the Phase 1 fallback flag.
+- Do not make `state.campaign.arcPlan` required in any new helper.
+- Avoid a broad refactor of Author contract parsing. Make the smallest compatibility change that lets no-arc Ch1 validate.
+- Any no-arc compatibility `arc_link` values must not create fake durable arc threads.
+
+## Acceptance Criteria
+
+- [ ] A Chapter 1 Author request with no `campaign.arcPlan` no longer returns `missing_arc_plan`.
+- [ ] The built Author situation for no-arc Ch1 does not include "missing arc plan" or "derive from ArcPlan".
+- [ ] The Ch1 direct-hook situation includes structural beat guidance.
+- [ ] The Author contract accepts no-arc Ch1 output without requiring real arc thread links.
+- [ ] The existing ArcPlan-backed Ch1 path still works for old saves or forced fallback.
+- [ ] Diagnostics or fixture metadata make the no-arc Author mode visible.
+
+## Fixture Expectations
+
+Add or update a focused fixture that exercises the pure Author contract without a live Anthropic call. Prefer a helper/contract fixture over a live route fixture.
+
+Suggested fixture name:
+
+```bash
+fixtures/sf2/replay/author-hook-direct-ch1-no-arc.json
 ```
-This is the opening chapter of a new campaign. You are the creative interpreter
-of the hook — your job is to find the strongest playable shape for this
-premise and this PC.
 
-The hook fixes pressure facts, not plot. The same hook played by a different PC
-or opened from a different camera would be a different chapter. Your choices:
-which angle to enter from, who is on stage, what the first pressure is, and
-what the chapter tests.
+It should assert:
+
+- no `campaign.arcPlan` in input state
+- Ch1 setup validates
+- active thread count remains the Ch1 expected count
+- no real arc-thread links are required
+- opening scene has a playable human pressure, not a mechanism-only objective
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/author-hook-direct-ch1-no-arc.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
 ```
 
-Include the hook fields, AuthorInputSeed worldRules/toneRules/npcRules, pcCapabilities, and the Ch1 structural beat.
+## Blocked By
 
-## Anti-procedure guardrails
+None - can start immediately.
 
-Port the existing anti-procedure rules from the Author prompt (rule 5: personify institutional pressure, rule 6: pressure through one dangerous person) but remove the ArcPlan references. Add:
+## Out Of Scope
 
-- "The hook's crucible names a human cost, not a procedure. Your chapter setup must make that cost walk into a room as a person."
-- The genre bible's "pressure lives in people" principle applies to every field you author.
-
-## Files
-
-- `lib/sf2/author/prompt.ts:180-193` — `buildAuthorSituation` Ch1 branch (rewrite)
-- `lib/sf2/author/prompt.ts:408-452` — `renderArcPlan` (no longer called for Ch1)
-- `lib/sf2/author/contract.ts` — `arc_link` validation (make optional for hookDirect)
-- `lib/sf2/types.ts` — may need `campaignForces` and `stanceSeeds` on chapter setup or campaign level
-
-## Depends on
-
-- #02 (structural beats in Author role) — Author needs beat awareness without chapterFunctionMap
-- #05 (play-app skip) — orchestration must skip arc-author call
-
-## Test approach
-
-Run the same hook (e.g. "Forty Thousand" space opera) with and without arc plan. Compare Ch1 Author output for procedural language, NPC quality, and opening scene quality. The replay fixture suite should pass with hookDirect mode producing valid Author output.
+- Skipping the client Arc Author call. That is ticket 05.
+- Removing the Arc Author endpoint. That is Phase 2.
+- Adding a new campaign forces state model.
+- Changing streaming behavior.

@@ -1,34 +1,92 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # SF2 Narrator core identity
 
-## Problem
+## Parent
 
-V1's GM identity (`lib/system-prompt.ts:107-148`) is a full creative worldview:
+`.scratch/sf2-v1-narrative-regression/README.md`
 
-> You are the Game Master of Storyforge — a solo text RPG that takes its players seriously. You are not the player's adversary. You are not their cheerleader. You are the impartial intelligence that makes the world feel alive enough to push back on them when they push on it.
+## What to build
 
-Three explicit roles (Narrator, Referee, World custodian), plus rules about not explaining mechanics in narrative, not telegraphing hidden state, honoring player intelligence, never punishing for unknowable information.
+Restore a stronger Storyforge creative identity to SF2's shared core prompt while preserving SF2's state authority and role boundaries.
 
-SF2's core (`lib/sf2/narrator/prompt/core.ts:3-7`) is:
+Current `SF2_CORE` is mostly an architecture note: typed state is authoritative, bounded packets, role-owned tools. V1's GM prompt gave the model a creative posture: impartial intelligence, world alive enough to push back, not adversary, not cheerleader, not a mechanics narrator.
 
-> Across roles, typed state is authoritative. The model does not carry campaign memory alone; it reads bounded packets, writes through role-owned tools, and preserves the campaign graph the code validates.
+SF2 should have both.
 
-This reads like a technical architecture note, not a creative brief. The narrator has no stated posture toward the player, no identity beyond "you are part of a system."
+## Critical Constraint
 
-## Why this matters
+`SF2_CORE` is shared by multiple roles, not just the Narrator. Do not put Narrator-only tool instructions, prose-length rules, or per-turn behavior into `SF2_CORE`. Keep role-specific rules in role prompts.
 
-The core block is the first thing the model sees and it shapes every downstream interpretation. A narrator that thinks of itself as "part of a collaborative fiction system that reads bounded packets" writes differently than one that thinks "I am the impartial intelligence that makes the world feel alive enough to push back."
+## Required Behavior
 
-V1's identity creates a narrator with pride in craft. SF2's creates a narrator that follows instructions.
+- `SF2_CORE` gives Storyforge a creative identity, not only an implementation identity.
+- It preserves typed state authority and role-owned write boundaries.
+- It says the system honors player intelligence and agency.
+- It says the world pushes back through coherent consequence, not hidden punishment.
+- It keeps hidden information hidden; no telegraphing unseen facts.
+- It does not weaken Archivist/Author/Narrator ownership boundaries.
 
-## Fix
+## Surfaces
 
-Rewrite `SF2_CORE` to give the narrator a creative identity. Port the V1 posture (impartial intelligence, pride in prose, three responsibilities) and the key guardrails (no mechanics in narrative, no telegraphing hidden state, honor player intelligence) while keeping the SF2-specific technical contract (bounded packets, role-owned tools, campaign graph).
+- `lib/sf2/narrator/prompt/core.ts`
+- `lib/system-prompt.ts` as V1 reference
+- `lib/sf2/prompt/compose.ts` only to verify cache/dynamic assumptions, not to edit
+- prompt-surface fixtures under `fixtures/sf2/replay/`
 
-The technical architecture note can stay, but it shouldn't be the *identity*.
+## Implementation Notes
 
-## Files
+- Keep the core world-independent and cache-safe.
+- Aim for a compact creative brief, not a long manifesto.
+- Do not mention a specific genre.
+- Do not duplicate detailed roll/fail-forward rules already in Narrator role.
+- If there are prompt snapshot fixtures, update them intentionally and explain the behavioral reason.
 
-- `lib/sf2/narrator/prompt/core.ts` — SF2 core (rewrite target)
-- `lib/system-prompt.ts:107-148` — V1 GM identity (reference)
+## Acceptance Criteria
+
+- [ ] `SF2_CORE` includes a clear creative Storyforge identity.
+- [ ] `SF2_CORE` still states typed state and role-owned tools are authoritative.
+- [ ] No role-specific dynamic content is added to the cached core.
+- [ ] Rendered prompt fixtures reflect the new identity.
+- [ ] No existing SF2 replay fixture fails due to prompt composition or dynamic leak assertions.
+
+## Fixture Expectations
+
+Add or update a prompt-surface fixture that renders the shared core through a Narrator call.
+
+Suggested fixture name:
+
+```bash
+fixtures/sf2/replay/narrator-core-identity.json
+```
+
+It should assert presence of:
+
+- creative Storyforge identity
+- state authority
+- player agency / world pushback
+
+And absence of:
+
+- per-turn dynamic facts
+- Narrator-only tool details inside the core
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/narrator-core-identity.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+None - can start immediately.
+
+## Out Of Scope
+
+- Rewriting full Narrator craft rules.
+- Changing Author, Archivist, or Chapter Meaning role prompts beyond what the shared core naturally affects.
+- Changing model routing.

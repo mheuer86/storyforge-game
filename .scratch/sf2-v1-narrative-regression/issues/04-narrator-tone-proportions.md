@@ -1,35 +1,77 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Narrator tone proportions
 
-## Problem
+## Parent
 
-V1 gives the narrator per-genre tone mixes — e.g. Space Opera:
+`.scratch/sf2-v1-narrative-regression/README.md`
 
-> Epic (60%): Grand stakes, heroic moments, the weight of the galaxy.
-> Gritty (30%): Real costs, hard choices, consequences that linger.
-> Witty (10%): Dry humor, sharp banter, moments of levity that make the grit bearable.
+## What to build
 
-Each genre overrides this via `toneOverride` in genre config. The narrator sees it in every turn's system block.
+Give the SF2 Narrator access to each genre's tone mix/proportions. V1 gave the GM per-genre tone guidance such as epic/gritty/witty ratios. SF2 currently compiles tone rules for Author seed, but the Narrator role that writes prose does not receive an explicit tone mix.
 
-SF2's narrator gets zero tone guidance. The compile-seed *does* extract `toneMix` from genre config (`compile-seed.ts:305`) and feeds it to the Author seed, but the Author doesn't write prose — the Narrator does, and the Narrator never sees it.
+## Required Behavior
 
-## Why this matters
+- Narrator prompt surface includes genre tone proportions or equivalent tone mix.
+- The tone guidance is genre-specific.
+- Tone guidance complements the genre bible rather than replacing it.
+- Author seed tone rules remain intact.
+- No per-turn dynamic content is added to cached role/core blocks.
 
-Without tone proportions, the narrator defaults to whatever register the model finds easiest for the genre. For Space Opera that's often procedural-serious. For Grimdark that's relentless bleakness without the dark humor that makes Abercrombie work. The tone mix is what creates tonal variety within a genre — the 10% wit that keeps grit from becoming monotone.
+## Surfaces
 
-## Fix
+- `lib/genres/*.ts` for V1/genre config tone source
+- `lib/sf2/setup/compile-seed.ts` for existing Author `toneRules`
+- `lib/sf2/genre-profile/profiles.ts`
+- `lib/sf2/genre-profile/index.ts`
+- `lib/sf2/narrator/prompt/role.ts`
+- prompt-surface fixtures under `fixtures/sf2/replay/`
 
-Pass genre tone mix to the Narrator. Two options:
+## Implementation Notes
 
-Option A: Include `toneMix` in the scene packet or narrator system block (the per-genre data the narrator already receives from the genre profile). Cleanest — the narrator sees it every turn.
+- Prefer a single genre-profile helper that can render tone guidance for the Narrator role.
+- Avoid duplicating the same tone data in two unrelated places if it can be derived from existing genre config.
+- If importing genre config into genre-profile creates circular dependency risk, use a small mapping local to genre-profile and document why.
+- Keep the rendered text compact: tone mix should guide prose, not dominate the prompt.
 
-Option B: Add tone guidance to the genre bible's narrative craft section. We just rewrote those; could add a "Tone" subsection. Slightly redundant with the existing `toneOverride` in genre config.
+## Acceptance Criteria
 
-## Files
+- [ ] Rendered Narrator role/prompt includes tone guidance for Space Opera.
+- [ ] At least one other genre fixture proves the guidance changes by genre.
+- [ ] Tone guidance includes proportions or clear relative weights, not just adjectives.
+- [ ] Author seed tone rules still compile.
+- [ ] No prompt cache/dynamic leak assertion fails.
 
-- `lib/sf2/narrator/prompt/role.ts` — narrator role (receives genre examples but not tone)
-- `lib/sf2/genre-profile/profiles.ts` — genre bibles (could add tone section)
-- `lib/sf2/genre-profile/index.ts` — genre example extraction
-- `lib/sf2/setup/compile-seed.ts:302-314` — `buildToneRules` (feeds Author, not Narrator)
-- `lib/genres/space-opera.ts` (and others) — V1 `toneOverride` definitions
+## Fixture Expectations
+
+Add or update prompt-surface fixtures.
+
+Suggested fixture names:
+
+```bash
+fixtures/sf2/replay/narrator-tone-space-opera.json
+fixtures/sf2/replay/narrator-tone-grimdark.json
+```
+
+They should assert that the rendered Narrator prompt contains the correct tone proportions for the selected genre.
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/narrator-tone-space-opera.json
+npm run sf2:replay -- fixtures/sf2/replay/narrator-tone-grimdark.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+None - can start immediately.
+
+## Out Of Scope
+
+- Rebalancing the actual tone ratios.
+- Rewriting genre bibles.
+- Changing setup data model unless necessary to expose existing tone data.

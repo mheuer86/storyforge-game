@@ -1,38 +1,79 @@
-Status: proposed
+Status: ready-for-agent
+Labels: enhancement, ready-for-agent
+Type: AFK
 
 # Narrator prose philosophy
 
-## Problem
+## Parent
 
-V1 had explicit prose craft philosophy (`lib/system-prompt.ts:341-345`):
+`.scratch/sf2-v1-narrative-regression/README.md`
 
-> Present tense, second person. Scene transitions get a heading: "## [Location] — [Time]". Keep headings short. Blank lines between dialogue, italic text, and narrative blocks. End with an implicit or explicit "what do you do?"
+## What to build
 
-> **Response length:** Most turns: 100-200 words. Pivotal moments: 300-500 words. The rule is honest density, not word count — if a scene needs space to land, give it space. If it doesn't, don't pad.
+Restore V1's prose philosophy to SF2 Narrator craft: honest density, silence as a tool, readable formatting rhythm, and scene transitions that breathe.
 
-> **Silence is a tool.** Not every beat needs words. Let dialogue land. Let moments sit. Trust the player to read the gaps.
+SF2 currently has word targets and strong mechanical rules, but less permission to be spare, let dialogue land, or vary density by dramatic moment.
 
-SF2's narrator has word targets ("150-250 words per turn target, 400 word cap") but none of the craft philosophy about:
-- When to breathe (silence as tool)
-- Formatting rhythm (blank lines between dialogue, italic text, narrative)
-- Density over word count ("honest density, not word count")
-- Scene transitions as headings
+## Required Behavior
 
-## Why this matters
+- Narrator craft includes "honest density, not word count" framing.
+- Narrator craft explicitly permits short turns when a beat should land.
+- Narrator craft tells the model to use blank lines between dialogue, italic text, and narrative blocks where helpful for readability.
+- Scene transitions should use short headings only when location/time meaningfully changes.
+- Existing 150-250 word target and 400 word cap remain as guardrails, but are framed as subordinate to density and dramatic need.
+- The turn still ends with pressure, a beat, or an actionable question.
 
-The V1 prose philosophy gave the narrator permission to be spare. "Silence is a tool" means a two-line turn after a devastating reveal is not just allowed but preferred. Without this, the narrator defaults to filling its word budget every turn, producing uniform-density prose that flattens dramatic rhythm.
+## Surfaces
 
-The formatting rules (blank lines, italic text discipline) also matter for readability and pacing feel.
+- `lib/sf2/narrator/prompt/role.ts`
+- `lib/system-prompt.ts` as V1 reference
+- prompt-surface fixtures under `fixtures/sf2/replay/`
 
-## Fix
+## Implementation Notes
 
-Add a prose philosophy subsection to the SF2 narrator craft block in `role.ts`. Port the V1 principles that are compatible with SF2's architecture:
-- Silence/breathing permission
-- Formatting rhythm rules
-- Density philosophy (replace the bare word cap with the "honest density" framing)
-- Scene transition headings
+- Keep the prose philosophy in cached Narrator role text; it is generic and world-independent.
+- Do not add Markdown features the renderer cannot support.
+- Do not weaken fail-forward, hidden-camera, or state-authority rules.
+- Avoid adding examples that are too genre-specific.
 
-## Files
+## Acceptance Criteria
 
-- `lib/sf2/narrator/prompt/role.ts:3-78` — `SF2_NARRATOR_CRAFT` (edit target)
-- `lib/system-prompt.ts:338-345` — V1 tone/formatting/silence rules (reference)
+- [ ] Narrator role contains density/silence guidance.
+- [ ] Narrator role retains word target/cap but with density framing.
+- [ ] Narrator role includes formatting rhythm guidance.
+- [ ] Prompt-surface fixture confirms the text renders.
+- [ ] No existing replay fixture fails due to prompt composition.
+
+## Fixture Expectations
+
+Add or update a Narrator prompt fixture.
+
+Suggested fixture name:
+
+```bash
+fixtures/sf2/replay/narrator-prose-philosophy.json
+```
+
+It should assert the rendered role includes:
+
+- "Silence" or equivalent breath permission
+- "honest density" or equivalent density-over-count rule
+- formatting rhythm guidance
+
+## Verification
+
+```bash
+npm run sf2:replay -- fixtures/sf2/replay/narrator-prose-philosophy.json
+npm run sf2:replay -- fixtures/sf2/replay
+npm run build
+```
+
+## Blocked By
+
+None - can start immediately.
+
+## Out Of Scope
+
+- Changing streaming renderer.
+- Changing markdown parsing.
+- Rewriting all Narrator craft.
