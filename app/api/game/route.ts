@@ -5,6 +5,7 @@ import { buildSystemPrompt, buildClosePrompt, buildClosePhasePrompt, buildAuditP
 import { gameTools, auditTools, metaTools, setupTools, chapterLedgerTools, chapterSeedTools } from '@/lib/tools'
 import { isAuthenticated } from '@/lib/auth'
 import { getGenreConfig, type Genre } from '@/lib/genre-config'
+import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { ApiRound, GameState, StreamEvent, RollRecord, ToolCallResult, TurnFrame, V15CacheClass, V15RequestKind } from '@/lib/types'
 import { TurnTimer, ChapterTimer, contextFromState, ensureInstrumentation, emitLine } from '@/lib/instrumentation'
 import { emitWriteLines } from '@/lib/instrumentation/write-attribution'
@@ -120,11 +121,11 @@ const RETRY_DELAYS_MS = [5_000, 10_000, 20_000] // exponential backoff
 
 function isOverloaded(error: unknown): boolean {
   if (error instanceof Anthropic.APIError) {
-    return error.status === 529 || error.status === 503 || error.status === 502
+    return error.status === 529 || error.status === 503 || error.status === 502 || error.status === 500
   }
   if (error instanceof Error) {
     const msg = error.message.toLowerCase()
-    return msg.includes('overload') || msg.includes('529') || msg.includes('503')
+    return msg.includes('overload') || msg.includes('529') || msg.includes('503') || msg.includes('500') || msg.includes('internal server error')
   }
   return false
 }
@@ -1214,7 +1215,7 @@ export async function POST(req: NextRequest) {
         finish(loopResult.toolResults)
       } catch (error) {
         if (!isOverloaded(error)) {
-          send({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' })
+          send({ type: 'error', message: normalizeAnthropicErrorMessage(error instanceof Error ? error.message : 'Unknown error') })
           controller.close()
           return
         }
@@ -1266,7 +1267,7 @@ export async function POST(req: NextRequest) {
             break
           } catch (retryError) {
             if (!isOverloaded(retryError) || attempt === MAX_RETRIES - 1) {
-              send({ type: 'error', message: retryError instanceof Error ? retryError.message : 'Unknown error' })
+              send({ type: 'error', message: normalizeAnthropicErrorMessage(retryError instanceof Error ? retryError.message : 'Unknown error') })
               controller.close()
               return
             }

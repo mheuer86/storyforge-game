@@ -4,6 +4,7 @@ import type {
   Sf2NarratorRollModifierType,
   Sf2NarratorStreamEvent,
 } from './events'
+import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { Sf2WorkingSet } from '@/lib/sf2/types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -178,7 +179,10 @@ export function parseSf2NarratorStreamEvent(value: unknown): Sf2NarratorStreamEv
       }
 
     case 'error':
-      return { type: 'error', message: String(value.message ?? 'Narrator stream failed') }
+      return {
+        type: 'error',
+        message: normalizeAnthropicErrorMessage(String(value.message ?? 'Narrator stream failed')),
+      }
 
     case 'done':
       return { type: 'done' }

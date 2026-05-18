@@ -3,6 +3,7 @@ import { drainDbg, type StatChange } from './tool-processor'
 import { runRulesEngine } from './rules-engine'
 import { ensureInstrumentation, pushRejection } from './instrumentation'
 import { applyInstrumentEvent } from './instrumentation/counters'
+import { normalizeAnthropicErrorMessage } from './anthropic-error'
 
 // ─── Debug context dedup ─────────────────────────────────────────────
 // The static system block is ~2200 tokens and changes only when the
@@ -172,7 +173,7 @@ export function processStreamEvent(
   }
 
   if (event.type === 'error') {
-    callbacks.onError(event.message)
+    callbacks.onError(normalizeAnthropicErrorMessage(event.message))
     return s
   }
 
