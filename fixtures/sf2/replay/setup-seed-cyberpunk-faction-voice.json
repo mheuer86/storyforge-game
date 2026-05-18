@@ -1,0 +1,54 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "setup seed cyberpunk faction voice is character driven",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure Ch1 AuthorInputSeed coverage: Cyberpunk factionVoiceRules should route systems and surveillance through bodies, handlers, fixers, crews, and residents."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "setupSelection": {
+          "genreId": "cyberpunk",
+          "originId": "operative",
+          "playbookId": "netrunner",
+          "hookId": "blackout-11811jl"
+        },
+        "genreId": "cyberpunk",
+        "originId": "operative",
+        "playbookId": "netrunner",
+        "currentChapter": 1
+      }
+    },
+    "playerInput": "(unused - setup seed fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "seedJsonIncludes": [
+        "Corporate reps are smooth and careful; junior ones fear their bosses",
+        "Fixers sound relaxed while pricing urgency",
+        "Netrunners speak in twitchy shorthand because part of their attention is always somewhere the room cannot see",
+        "Residents speak with the anger of people whose power, locks, and lives are collateral"
+      ],
+      "seedJsonExcludes": [
+        "Corporate voices speak in liability, assets, risk, and brand-safe threats",
+        "Every system records someone and erases someone else"
+      ]
+    }
+  }
+}

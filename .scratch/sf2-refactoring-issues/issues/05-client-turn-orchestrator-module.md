@@ -1,7 +1,17 @@
 # Client Turn Orchestrator Module
 
-Status: needs-triage
+Status: implemented-by-08
 Type: HITL
+
+## Implementation status
+
+Implemented as extra scope during the Ticket 08 landing. The browser Narrator stream loop now lives in:
+
+- `lib/sf2/runtime/client-turn-orchestrator.ts`
+
+The page wrapper in `app/play/v2/page.tsx` passes fetch, roll-modal, React state, and diagnostics adapters into `runSf2ClientNarratorTurn(...)`.
+
+This ticket should not be assigned as open. Any future work should be written as a residual ticket against the current implementation, for example focused client-orchestrator unit coverage or a narrower UI-flow cleanup.
 
 ## What to build
 

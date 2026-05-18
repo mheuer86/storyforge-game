@@ -1,0 +1,38 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator tone mix prompt surface: grimdark",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verify the Narrator receives genre-specific tone proportions and that Grimdark differs from Space Opera."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "grimdark"
+      }
+    },
+    "playerInput": "(unused - prompt fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on rendered system prompt)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "(unused - prompt fixture)",
+      "systemContainsAll": [
+        "## Genre tone mix",
+        "Gritty 60%, Epic 25%, Witty 15%. Hunger, ash, hard competence, and dry fatalism around choices that still matter."
+      ],
+      "systemContainsNone": [
+        "Epic 40%, Gritty 30%, Witty 30%. Vast distance"
+      ]
+    }
+  }
+}

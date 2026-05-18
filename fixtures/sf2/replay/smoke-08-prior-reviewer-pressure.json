@@ -1,0 +1,2695 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "smoke-08-prior-reviewer-pressure",
+  "source": {
+    "sessionFile": "sf2-replay-camp_1778926556020-2026-05-16T10-25-31.json",
+    "turnIndex": 2,
+    "exportedAt": "2026-05-16T10:26:17.421Z",
+    "campaignId": "camp_1778926556020"
+  },
+  "input": {
+    "turnIndex": 2,
+    "stateBefore": {
+      "meta": {
+        "campaignId": "camp_1778926556020",
+        "createdAt": "2026-05-16T10:15:56.020Z",
+        "updatedAt": "2026-05-16T10:22:44.294Z",
+        "schemaVersion": "3.2.0",
+        "seedId": "epic-scifi/warden/the-tithe",
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service",
+        "currentChapter": 1,
+        "currentSceneId": "scene_1_1",
+        "currentTimeLabel": "opening"
+      },
+      "player": {
+        "name": "Ren",
+        "species": "Human",
+        "origin": {
+          "id": "imperial-service",
+          "name": "Imperial Service"
+        },
+        "class": {
+          "id": "warden",
+          "name": "Warden"
+        },
+        "level": 1,
+        "hp": {
+          "current": 14,
+          "max": 14
+        },
+        "ac": 14,
+        "credits": 200,
+        "stats": {
+          "STR": 17,
+          "DEX": 12,
+          "CON": 15,
+          "INT": 11,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "proficiencies": [
+          "Athletics",
+          "Intimidation",
+          "Perception",
+          "Heavy Weapons"
+        ],
+        "inventory": [
+          {
+            "name": "Imperial writ of authority",
+            "qty": 1,
+            "tags": [
+              "credential"
+            ]
+          },
+          {
+            "name": "Warden sidearm",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Heavy pattern blade",
+            "qty": 1,
+            "tags": [
+              "weapon"
+            ]
+          },
+          {
+            "name": "Compliance cord",
+            "qty": 2,
+            "tags": [
+              "restraint"
+            ]
+          }
+        ],
+        "traits": [
+          {
+            "name": "Martial Authority",
+            "uses": {
+              "current": 2,
+              "max": 2
+            }
+          }
+        ],
+        "tempModifiers": [],
+        "inspiration": 0,
+        "exhaustion": 0
+      },
+      "campaign": {
+        "arcPlan": {
+          "id": "arc_the_tithe",
+          "status": "active",
+          "title": "The Tithe",
+          "sourceHook": {
+            "title": "The Tithe",
+            "premise": "A frontier settlement is short on its annual Resonant tithe. The Synod does not care why. If the tithe is not met, replacement children will be selected.",
+            "crucible": "The Synod will take children if the numbers are not met.",
+            "firstEpisode": "The Warden arrives at the frontier settlement under Throne mandate to audit the shortage before the Synod's collection vessel makes berth."
+          },
+          "scenarioShape": {
+            "mode": "underground_network",
+            "premise": "A Warden sent to enforce a tithe shortfall discovers the missing Resonants moved through a hidden extraction network — and must decide whose mandate they actually serve.",
+            "whyThisRun": "The shortage is a symptom; the underground is the pressure source that makes every institution's claim on the Warden's loyalty collapse simultaneously.",
+            "whatThisIsNot": "This is not a missing-persons search, an audit of settlement records, or a single family hiding one child.",
+            "selectionRationale": "Underground_network forces the Warden's institutional authority into direct conflict with covert human loyalty chains — investigation or protection modes would let the PC operate without choosing a side, which is the arc's whole pressure.",
+            "rejectedDefaultShape": "Procedural_contest was rejected; auditing records would make the Synod's bureaucratic logic the protagonist rather than the people inside the network."
+          },
+          "arcQuestion": "Will the Warden use their mandate to protect the network, expose it, or burn their authority to ashes trying to split the difference?",
+          "coreCrucible": "Every child the Warden does not account for becomes a child the Synod takes from someone else. Silence is not neutrality.",
+          "invariantFacts": [
+            "The Synod's collection is scheduled and will not be delayed; the shortfall must be resolved in numbers, not arguments.",
+            "The underground route exists and has already moved Resonants out of official allocation before this tithe cycle.",
+            "The Warden's Imperial writ grants authority over both settlement and Synod agents on-site — a power that cuts every direction."
+          ],
+          "variableTruthsForThisRun": [
+            "The network's current handler is someone who once operated inside Imperial Service — a shared institutional past the Warden cannot pretend away.",
+            "The settlement's leadership knows the network exists and has been quietly counting on the Warden to look the other way, which is why they requested a Warden specifically."
+          ],
+          "durableForces": [
+            {
+              "id": "force_synod",
+              "factionId": "faction_the_synod_collection_office",
+              "name": "The Synod Collection Office",
+              "agenda": "Close the shortfall by any means; doctrine is nonnegotiable.",
+              "leverage": "Holds legal authority to conduct supplementary selection from any cohort.",
+              "fear": "That a Throne-mandated Warden will formally contest their count, creating precedent.",
+              "pressureStyle": "Procedural and righteous; reframes seizure as care, delay as heresy."
+            },
+            {
+              "id": "force_house_claimant",
+              "factionId": "faction_house_verath_regional_patron_house",
+              "name": "House Verath (Regional Patron House)",
+              "agenda": "Secure favorable Resonant allocation before the next Conclave cycle.",
+              "leverage": "Holds transit authority over the settlement's supply lane; can strangle or reward.",
+              "fear": "That the underground network, if exposed, implicates their retainers and voids their allocation petition.",
+              "pressureStyle": "Formally cordial; every offer contains a debt the PC will pay later."
+            },
+            {
+              "id": "force_undrift_network",
+              "factionId": "faction_the_unrecorded_route",
+              "name": "The Unrecorded Route",
+              "agenda": "Move children out of Synod reach before each tithe cycle; survive discovery.",
+              "leverage": "Knows which names are already off the official rolls — information that can shield or indict anyone.",
+              "fear": "Exposure collapses the route and strands children already in transit who cannot be returned safely.",
+              "pressureStyle": "Cautious, specific, earned-trust only; asks for action, not promises."
+            }
+          ],
+          "durableNpcSeeds": [
+            {
+              "id": "npc_handler",
+              "role": "Underground Network Handler",
+              "affiliation": "The Unrecorded Route (former Imperial Service)",
+              "dramaticFunction": "Forces the Warden to recognize complicity as a choice, not an accident.",
+              "privatePressure": "Has a Resonant sibling already expended; runs the network to pay a debt the system made.",
+              "reuseGuidance": "Appear when the Warden's institutional loyalty is being tested; embody the cost of compliance."
+            },
+            {
+              "id": "npc_synod_auditor",
+              "role": "Synod Compliance Auditor",
+              "affiliation": "The Synod Collection Office",
+              "dramaticFunction": "Weaponizes procedure; makes the Warden's delay look like obstruction or heresy.",
+              "privatePressure": "Knows the count is wrong but needs the shortfall closed before their superior's review.",
+              "reuseGuidance": "Escalate when the Warden stalls; humanize briefly when their own position becomes untenable."
+            },
+            {
+              "id": "npc_settlement_elder",
+              "role": "Settlement Compact Elder",
+              "affiliation": "Frontier settlement leadership",
+              "dramaticFunction": "Holds the community's survival logic; will sacrifice individuals to protect the majority.",
+              "privatePressure": "Their own grandchild is in the cohort being counted; objectivity is performance.",
+              "reuseGuidance": "Appear at moments of collective decision; their silence or speech changes who is exposed."
+            }
+          ],
+          "arcThreadIds": [
+            "thread_shortfall_exposure",
+            "thread_network_survival",
+            "thread_warden_mandate"
+          ],
+          "latentArcQuestions": [
+            {
+              "id": "latent_who_requested_warden",
+              "question": "Why did the settlement specifically request a Warden rather than a House arbitration officer?",
+              "whyItMatters": "The answer determines whether the Warden was summoned as protection or as cover.",
+              "answerImpactAxis": "The Warden's standing as an independent agent versus a managed asset changes entirely.",
+              "activationTags": [
+                "repeated_clue",
+                "trust_break"
+              ],
+              "status": "open",
+              "createdChapter": 1
+            },
+            {
+              "id": "latent_house_network_overlap",
+              "question": "How much does House Verath know about the underground route, and what do they want from it?",
+              "whyItMatters": "If the House is complicit, exposing the network hands them leverage; protecting it hands them the same.",
+              "answerImpactAxis": "The faction a player ally-forged with becomes a danger or a shield depending on the answer.",
+              "activationTags": [
+                "faction_heat",
+                "owner_exposure"
+              ],
+              "status": "open",
+              "createdChapter": 1
+            },
+            {
+              "id": "latent_handler_past",
+              "question": "What did the handler do inside Imperial Service, and who in the Synod remembers them?",
+              "whyItMatters": "The Warden's trust in the handler is either a bond or a vulnerability the Synod can pull on.",
+              "answerImpactAxis": "The PC's loyalty to a person shifts moral weight between institutional duty and personal obligation.",
+              "activationTags": [
+                "identity_pressure",
+                "trust_break",
+                "repeated_clue"
+              ],
+              "status": "open",
+              "createdChapter": 1
+            }
+          ],
+          "playerStanceAxes": [
+            {
+              "id": "axis_mandate_vs_protection",
+              "axis": "Institutional Mandate vs. Human Protection",
+              "poleA": "Enforce",
+              "poleB": "Shield",
+              "signalsA": [
+                "PC formally closes gaps in the tally using their writ",
+                "PC reports network contact to the Synod auditor"
+              ],
+              "signalsB": [
+                "PC withholds information the Synod requests",
+                "PC uses their authority to slow or misdirect Synod agents"
+              ],
+              "ifAHardens": "The Synod gains ground; the network fractures; the settlement pays in names.",
+              "ifBHardens": "The writ loses institutional credibility; the Warden becomes a fugitive-adjacent figure."
+            },
+            {
+              "id": "axis_trust_vs_suspicion",
+              "axis": "Trust the Network vs. Suspect Its Motives",
+              "poleA": "Trust",
+              "poleB": "Suspect",
+              "signalsA": [
+                "PC accepts handler's account without demanding proof",
+                "PC moves to protect network nodes before confirming their safety"
+              ],
+              "signalsB": [
+                "PC demands names and routes before acting",
+                "PC frames the network as a heresy risk in any official communication"
+              ],
+              "ifAHardens": "The network opens further; the PC gains leverage but loses deniability.",
+              "ifBHardens": "The network goes cold; the PC is alone with institutional tools that cut the wrong way."
+            },
+            {
+              "id": "axis_throne_vs_conscience",
+              "axis": "Throne Loyalty vs. Personal Conscience",
+              "poleA": "Serve the Throne",
+              "poleB": "Act on Conscience",
+              "signalsA": [
+                "PC defers to institutional hierarchy when pressured by the network or settlement",
+                "PC preserves the mandate's clean record even at personal cost"
+              ],
+              "signalsB": [
+                "PC violates chain of command to act unilaterally for people, not process",
+                "PC destroys or alters official record to protect someone the Throne would not"
+              ],
+              "ifAHardens": "House Verath and the Synod treat the Warden as manageable; the network writes them off.",
+              "ifBHardens": "The network trusts the Warden completely; the Throne's next Warden comes with a correction mandate."
+            }
+          ],
+          "chapterFunctionMap": [
+            {
+              "chapter": 1,
+              "function": "ESTABLISH — The Warden's authority lands in a settlement that has already made a choice, and the pressure of the tithe becomes a person, not a number.",
+              "pressureQuestion": "What is the Warden being asked to see, and what are they being asked not to notice?",
+              "possibleEndStates": [
+                "PC accepts the settlement's framing and begins a formal compliance review",
+                "PC perceives the gap between the official account and observable reality",
+                "PC makes early contact with a network-adjacent figure before understanding what they are touching"
+              ]
+            },
+            {
+              "chapter": 2,
+              "function": "COMPLICATE — The Warden commits to a line of action that exposes the underground route, and the Synod applies its first real institutional pressure before the PC can reverse course.",
+              "pressureQuestion": "Now that the network's existence is no longer deniable, who does the Warden protect first — and what does that cost the others?",
+              "possibleEndStates": [
+                "PC uses their writ to buy time, drawing Synod scrutiny onto themselves",
+                "PC makes contact with the handler, gaining network trust but becoming formally complicit",
+                "PC reports partial information to the Synod, inadvertently exposing a node and fracturing settlement trust"
+              ]
+            },
+            {
+              "chapter": 3,
+              "function": "PIVOT — A revelation reframes the network not as heresy but as the only reason the settlement has survived prior tithe cycles; the Warden realizes they were sent here to close a hole the Throne already knew about.",
+              "pressureQuestion": "If the Throne knew, and sent a Warden anyway, what was the Warden actually sent to do?",
+              "possibleEndStates": [
+                "PC turns the writ's authority against the Synod auditor, buying the network a transit window",
+                "PC confronts the settlement elder with the truth and demands a choice be made openly rather than hidden",
+                "PC goes cold on the network and returns to compliance, understanding exactly what that means for the children in the count"
+              ]
+            },
+            {
+              "chapter": 4,
+              "function": "ESCALATE — House Verath makes their move, the Synod schedules collection, and the cost of every choice the PC made in Ch3 becomes visible and immediate.",
+              "pressureQuestion": "The Warden's mandate is almost spent — who gets the last of it, and who pays because they did not?",
+              "possibleEndStates": [
+                "PC burns the writ in open defiance, protecting the network's final transit while the Synod files a correction mandate against them",
+                "PC brokers a coerced deal with House Verath that closes the shortfall artificially but leaves the network intact under House control",
+                "PC delivers a name to the Synod — not a child's, but the handler's — to close the count and preserve the route's structure at personal moral cost"
+              ]
+            },
+            {
+              "chapter": 5,
+              "function": "RESOLVE — The arc question locks in: the Warden's choice about whose mandate they served is now a permanent fact in the record, and the people who paid for it are visible.",
+              "pressureQuestion": "When the settlement remembers what happened here, is the Warden a Warden, a traitor, or something the Throne has no word for?",
+              "possibleEndStates": [
+                "The network survives; the Warden is formally censured or hunted, but the route still runs",
+                "The shortfall is closed by institutional means; the Warden returns to service with full mandate intact and the knowledge of what that cost",
+                "The Warden's intervention creates a documented fracture between Throne authority and Synod doctrine — a precedent no one wanted and no one can easily erase"
+              ]
+            }
+          ],
+          "possibleEndgames": [
+            "The Warden voids their mandate to protect the network; the Unrecorded Route survives one more cycle, and the Throne sends a correction.",
+            "The Warden closes the tithe through institutional means; the supplementary selection is averted but the underground is destroyed, and the settlement knows who ended it.",
+            "The Warden finds a third path that satisfies neither the Synod nor the network cleanly — a fracture in the record that will be someone else's crisis at the next tithe."
+          ]
+        },
+        "procedures": {},
+        "arcs": {
+          "arc_the_tithe": {
+            "id": "arc_the_tithe",
+            "title": "The Tithe",
+            "category": "arc",
+            "status": "active",
+            "chapterCreated": 1,
+            "retrievalCue": "underground_network: Will the Warden use their mandate to protect the network, expose it, or burn their authority to ashes trying to split the difference?",
+            "threadIds": [
+              "thread_shortfall_exposure",
+              "thread_network_survival",
+              "thread_warden_mandate"
+            ],
+            "spansChapters": 5,
+            "noSingleResolvingAction": true,
+            "stakesDefinition": "Every child the Warden does not account for becomes a child the Synod takes from someone else. Silence is not neutrality."
+          }
+        },
+        "threads": {
+          "thread_shortfall_exposure": {
+            "id": "thread_shortfall_exposure",
+            "title": "Shortfall Accountability",
+            "chapterCreated": 1,
+            "category": "thread",
+            "retrievalCue": "The number that is wrong, the ledger that lies, and who signs below it.",
+            "status": "active",
+            "owner": {
+              "kind": "faction",
+              "id": "faction_the_synod_collection_office"
+            },
+            "stakeholders": [
+              {
+                "kind": "faction",
+                "id": "faction_the_unrecorded_route"
+              },
+              {
+                "kind": "faction",
+                "id": "faction_house_verath_regional_patron_house"
+              }
+            ],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "The shortfall is officially closed, formally contested under Throne writ, or attributed to a named party the Synod accepts.",
+            "failureMode": "The Synod conducts supplementary selection; replacement children are taken from the next cohort.",
+            "anchoredArcId": "arc_the_tithe",
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [
+              {
+                "id": "progress_1_1",
+                "turn": 1,
+                "summary": "The ledger presented by Elder Sova contains deliberate alterations—entries have been subtracted before filing. The discrepancy is visible and intentional, not arithmetic.",
+                "evidenceQuote": "The final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong.",
+                "gateIds": [
+                  "gate_writ_understood"
+                ],
+                "satisfiedGateIds": [],
+                "failedGateIds": [],
+                "waivedGateIds": []
+              },
+              {
+                "id": "progress_2_1",
+                "turn": 2,
+                "summary": "Warden pressed for line-by-line account. Sova read entries aloud with calculated precision, demonstrating she knows exactly how to present access without disclosure. The arithmetic discrepancy persists — entries sound correct but don't sum to the filed total. Sova deflected by invoking 'clerical variance' in the Synod's count.",
+                "evidenceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+                "gateIds": [],
+                "satisfiedGateIds": [],
+                "failedGateIds": [],
+                "waivedGateIds": []
+              }
+            ],
+            "tensionHistory": [],
+            "lastAdvancedTurn": 2
+          },
+          "thread_network_survival": {
+            "id": "thread_network_survival",
+            "title": "Network Exposure",
+            "chapterCreated": 1,
+            "category": "thread",
+            "retrievalCue": "Davan's caution; the missing names; the truth behind the wrong ledger.",
+            "status": "active",
+            "owner": {
+              "kind": "faction",
+              "id": "faction_the_unrecorded_route"
+            },
+            "stakeholders": [
+              {
+                "kind": "faction",
+                "id": "faction_the_synod_collection_office"
+              },
+              {
+                "kind": "faction",
+                "id": "faction_house_verath_regional_patron_house"
+              }
+            ],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "The route stays operational, is disbanded by choice, or is absorbed into a new protection arrangement by chapter's end.",
+            "failureMode": "Exposure collapses the route; children in transit are stranded and recovered by Synod agents.",
+            "anchoredArcId": "arc_the_tithe",
+            "loadBearing": false,
+            "resolutionGates": [
+              {
+                "id": "gate_route_known",
+                "label": "Route existence confirmed",
+                "condition": "The Warden learns the route is real and operational, not just a gap in the ledger.",
+                "required": true,
+                "status": "open"
+              },
+              {
+                "id": "gate_route_fate_decided",
+                "label": "Route fate chosen",
+                "condition": "The Warden makes an active choice — protect, expose, or redirect — that determines the route's survival.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": [
+              {
+                "id": "progress_1_1",
+                "turn": 1,
+                "summary": "The ledger's deliberate subtraction indicates a real network operating parallel to official records. The route is not a gap in counting—it is a deliberate cover maintained by someone with access to settlement administration.",
+                "evidenceQuote": "Someone subtracted children before the page was ever sent to the Synod.",
+                "gateIds": [
+                  "gate_route_known"
+                ],
+                "satisfiedGateIds": [],
+                "failedGateIds": [],
+                "waivedGateIds": []
+              }
+            ],
+            "tensionHistory": [
+              {
+                "chapter": 1,
+                "turn": 0,
+                "value": 5
+              },
+              {
+                "chapter": 1,
+                "turn": 1,
+                "value": 6
+              }
+            ],
+            "lastAdvancedTurn": 1
+          },
+          "thread_warden_mandate": {
+            "id": "thread_warden_mandate",
+            "title": "Mandate Loyalty",
+            "chapterCreated": 1,
+            "category": "thread",
+            "retrievalCue": "Imperial writ; the one thing Prenn cannot override and everyone in the room knows it.",
+            "status": "active",
+            "owner": {
+              "kind": "faction",
+              "id": "faction_house_verath_regional_patron_house"
+            },
+            "stakeholders": [
+              {
+                "kind": "faction",
+                "id": "faction_the_synod_collection_office"
+              },
+              {
+                "kind": "faction",
+                "id": "faction_the_unrecorded_route"
+              }
+            ],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "The writ is deployed, withheld, traded, or contested — and that choice is on the record.",
+            "failureMode": "The writ is spent on institutional compliance; the Warden becomes a tool of the machine they were meant to check.",
+            "anchoredArcId": "arc_the_tithe",
+            "loadBearing": true,
+            "resolutionGates": [
+              {
+                "id": "gate_writ_understood",
+                "label": "Writ scope recognized",
+                "condition": "The Warden reads the writ's formal scope against Prenn's count authority.",
+                "required": true,
+                "status": "open"
+              },
+              {
+                "id": "gate_writ_deployed",
+                "label": "Writ invoked or withheld",
+                "condition": "The Warden makes a deliberate choice to invoke, trade, or refuse to deploy the writ.",
+                "required": true,
+                "status": "open"
+              }
+            ],
+            "progressEvents": [
+              {
+                "id": "progress_2_1",
+                "turn": 2,
+                "summary": "Warden asserted authority by placing the ledger on the table and demanding line-by-line account, establishing Warden office as the arbiter of the count. Writ not yet formally invoked, but the underlying power structure is now visible and acknowledged.",
+                "evidenceQuote": "You set the ledger on the table between you — not a request, a placement.",
+                "gateIds": [
+                  "gate_writ_understood"
+                ],
+                "satisfiedGateIds": [],
+                "failedGateIds": [],
+                "waivedGateIds": []
+              }
+            ],
+            "tensionHistory": [],
+            "lastAdvancedTurn": 2
+          }
+        },
+        "engines": {},
+        "decisions": {},
+        "promises": {},
+        "obligations": {},
+        "clues": {},
+        "beats": {
+          "beat_0": {
+            "id": "beat_0",
+            "title": "Elder Sova's rehearsed stillness—she knows the Warden has seen the altered ledge",
+            "chapterCreated": 1,
+            "category": "emotional_beat",
+            "retrievalCue": "Elder Sova's rehearsed stillness—she knows the Warden has seen the altered ledger",
+            "text": "Elder Sova's rehearsed stillness—she knows the Warden has seen the altered ledger, and her refusal to explain it is itself an answer.",
+            "participants": [
+              "npc_elder_sova",
+              "pc"
+            ],
+            "anchoredTo": [
+              "thread_network_survival",
+              "thread_shortfall_exposure"
+            ],
+            "emotionalTags": [
+              "vulnerability",
+              "restraint",
+              "evasion"
+            ],
+            "salience": 0.6,
+            "turn": 1
+          },
+          "beat_1": {
+            "id": "beat_1",
+            "title": "Sova demonstrates she can give the Warden complete access to the ledger while re",
+            "chapterCreated": 1,
+            "category": "emotional_beat",
+            "retrievalCue": "Sova demonstrates she can give the Warden complete access to the ledger",
+            "text": "Sova demonstrates she can give the Warden complete access to the ledger while revealing nothing — a precise, rehearsed performance of cooperation that shows she already knows exactly what needs to stay hidden.",
+            "participants": [
+              "npc_elder_sova"
+            ],
+            "anchoredTo": [
+              "thread_shortfall_exposure"
+            ],
+            "emotionalTags": [
+              "mask_slipped",
+              "restraint"
+            ],
+            "salience": 0.7,
+            "turn": 2
+          }
+        },
+        "temporalAnchors": {},
+        "npcs": {
+          "npc_elder_sova": {
+            "id": "npc_elder_sova",
+            "name": "Elder Sova",
+            "affiliation": "Frontier settlement leadership",
+            "role": "Settlement Compact Elder; the community's survival logic in one person.",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": [],
+              "voice": {
+                "note": "Never answers the question asked; answers the one underneath it instead.",
+                "register": "Measured, formal, with long pauses that do more work than the words."
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "The Elder with the wrong ledger who already knows what the Warden will find.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 2,
+            "signatureLines": [],
+            "tempLoadTag": "uneasy_under_scrutiny"
+          },
+          "npc_auditor_prenn": {
+            "id": "npc_auditor_prenn",
+            "name": "Auditor Prenn",
+            "affiliation": "The Synod Collection Office",
+            "role": "Synod Compliance Auditor; institutional deadline with a face.",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "keyFacts": [],
+              "voice": {
+                "note": "Cites doctrine the way someone else might cite a drawn weapon.",
+                "register": "Procedural, self-righteous, clipped at moments of confrontation."
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "The auditor who arrived a day early and already has his own count running.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          },
+          "npc_handler_davan": {
+            "id": "npc_handler_davan",
+            "name": "Davan",
+            "affiliation": "The Unrecorded Route (former Imperial Service)",
+            "role": "Underground network handler; the cost of compliance made human.",
+            "status": "alive",
+            "disposition": "hostile",
+            "identity": {
+              "keyFacts": [],
+              "voice": {
+                "note": "Speaks only what is necessary; the rest lives in what he doesn't say.",
+                "register": "Cautious, specific, economical — earns silence the same way others earn speech."
+              },
+              "relations": []
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Former Imperial Service contact who already knows the Warden's face and history.",
+            "chapterCreated": 1,
+            "lastSeenTurn": 0,
+            "signatureLines": []
+          }
+        },
+        "factions": {
+          "faction_the_synod_collection_office": {
+            "id": "faction_the_synod_collection_office",
+            "name": "The Synod Collection Office",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": [
+              "thread_shortfall_exposure"
+            ],
+            "retrievalCue": "Close the shortfall by any means; doctrine is nonnegotiable.; leverage: Holds legal authority to conduct supplementary selection from any cohort."
+          },
+          "faction_house_verath_regional_patron_house": {
+            "id": "faction_house_verath_regional_patron_house",
+            "name": "House Verath (Regional Patron House)",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": [
+              "thread_warden_mandate"
+            ],
+            "retrievalCue": "Secure favorable Resonant allocation before the next Conclave cycle.; leverage: Holds transit authority over the settlement's supply lane; can strangle or reward."
+          },
+          "faction_the_unrecorded_route": {
+            "id": "faction_the_unrecorded_route",
+            "name": "The Unrecorded Route",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": [
+              "thread_network_survival"
+            ],
+            "retrievalCue": "Move children out of Synod reach before each tithe cycle; survive discovery.; leverage: Knows which names are already off the official rolls — information that can shield or indict anyone."
+          },
+          "faction_frontier_settlement_leadership": {
+            "id": "faction_frontier_settlement_leadership",
+            "name": "Frontier settlement leadership",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": [],
+            "retrievalCue": ""
+          },
+          "faction_the_unrecorded_route_former_imperial_service": {
+            "id": "faction_the_unrecorded_route_former_imperial_service",
+            "name": "The Unrecorded Route (former Imperial Service)",
+            "stance": "neutral",
+            "heat": "none",
+            "heatReasons": [],
+            "ownedThreadIds": [],
+            "retrievalCue": ""
+          }
+        },
+        "locations": {
+          "loc_opening": {
+            "id": "loc_opening",
+            "name": "The settlement's compact hall, a low-ceilinged administrative space smelling of recycled air and old paperwork.",
+            "description": "Elder Sova stands at the far end of a scarred table with a ledger open in front of her, waiting with the particular stillness of someone who has rehearsed this meeting.",
+            "atmosphericConditions": [
+              "Dim overhead strips, one flickering; settlement noise just outside."
+            ],
+            "chapterCreated": 1,
+            "locked": false
+          }
+        },
+        "documents": {},
+        "pressureEvents": [
+          {
+            "id": "pressure_event_2_1",
+            "turn": 2,
+            "source": "npc_agenda",
+            "targetThreadIds": [
+              "thread_shortfall_exposure"
+            ],
+            "scope": "canonical_thread",
+            "evidenceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+            "humanConsequence": {
+              "whoPays": "the PC",
+              "whatGetsHarder": "Obtaining the actual reason for the shortfall — Sova has shown she can read entries aloud without revealing anything actionable",
+              "whatIsAtRisk": "The time window before Prenn demands a resolution or escalates to supplementary selection",
+              "visiblePressure": "Sova's calculated cooperation: full access to the ledger without any actual transparency about the discrepancy."
+            },
+            "idempotencyKey": "turn_2:npc_agenda:thread_shortfall_exposure:sova_calculated_cooperation",
+            "amount": 1,
+            "severity": "standard"
+          }
+        ],
+        "floatingClueIds": [],
+        "pivotalSceneIds": [],
+        "lexicon": []
+      },
+      "chapter": {
+        "number": 1,
+        "title": "What the Count Omits",
+        "setup": {
+          "chapter": 1,
+          "title": "What the Count Omits",
+          "frame": {
+            "title": "What the Count Omits",
+            "premise": "A Warden arrives to close a tithe shortfall in a frontier settlement where the missing children are not missing — they were moved. The settlement already made its choice. The Warden must decide whether to see it.",
+            "activePressure": "The Synod's auditor has a deadline; every hour the count stays open is a new heresy.",
+            "centralTension": "The Warden's writ can shield the settlement or serve the Synod — not both.",
+            "objective": "Determine what actually happened to the missing cohort before the auditor closes the count.",
+            "crucible": "Every child unaccounted for becomes one the Synod pulls from the next cohort instead.",
+            "outcomeSpectrum": {
+              "clean": "Elder Sova's silence holds; Davan stays free; the Warden's name stays off Prenn's writ.",
+              "costly": "The count closes but Sova now owns the Warden a debt, and Davan knows the Warden saw the route.",
+              "failure": "Prenn files supplementary selection; replacement children are named; the Elder loses the settlement's trust permanently.",
+              "catastrophic": "The route is exposed; Davan is taken by Synod agents; the Warden's writ is on record as the instrument that enabled it."
+            }
+          },
+          "antagonistField": {
+            "sourceFactionLabel": "The Synod Collection Office",
+            "corePressure": "The shortfall must be closed before the auditor's review cycle ends — doctrine does not accommodate exceptions.",
+            "defaultFace": {
+              "id": "face_auditor_prenn",
+              "name": "Auditor Prenn",
+              "role": "Synod Compliance Auditor",
+              "pressureStyle": "Procedural and righteous; reframes Warden hesitation as obstruction."
+            },
+            "currentPrimaryFace": {
+              "id": "face_auditor_prenn",
+              "name": "Auditor Prenn",
+              "role": "Synod Compliance Auditor",
+              "pressureStyle": "Procedural and righteous; reframes Warden hesitation as obstruction."
+            },
+            "escalationLogic": "Prenn is the opening face; Sova hardens into an obstacle if the Warden presses inward; House Verath activates only if the writ looks like precedent."
+          },
+          "startingNpcIds": [
+            "npc_elder_sova",
+            "npc_auditor_prenn",
+            "npc_handler_davan"
+          ],
+          "activeThreadIds": [
+            "thread_warden_mandate",
+            "thread_shortfall_exposure",
+            "thread_network_survival"
+          ],
+          "spineThreadId": "thread_warden_mandate",
+          "loadBearingThreadIds": [
+            "thread_warden_mandate",
+            "thread_shortfall_exposure"
+          ],
+          "carriedThreadIds": [],
+          "successorThreadIds": [],
+          "newPressureThreadIds": [],
+          "editorializedLore": [
+            {
+              "item": "Supplementary selection: administrative language for seizing the next cohort.",
+              "relevanceNow": "Prenn will use this phrase as a deadline; the Warden must recognize it as a threat, not a process.",
+              "deliveryMethod": "Prenn drops the term casually in his first formal statement to the Warden."
+            },
+            {
+              "item": "The Warden's writ outranks Synod field authority but cannot erase a filed count.",
+              "relevanceNow": "The writ's power is a window, not a shield; once Prenn files, it closes permanently.",
+              "deliveryMethod": "Elder Sova references it obliquely when explaining why she waited for the Warden instead of Prenn."
+            }
+          ],
+          "openingSceneSpec": {
+            "location": "The settlement's compact hall, a low-ceilinged administrative space smelling of recycled air and old paperwork.",
+            "atmosphericCondition": "Dim overhead strips, one flickering; settlement noise just outside.",
+            "initialState": "Elder Sova stands at the far end of a scarred table with a ledger open in front of her, waiting with the particular stillness of someone who has rehearsed this meeting.",
+            "firstPlayerFacing": "Sova offers the Warden a seat and the official cohort ledger simultaneously — the numbers are already wrong, and she knows the Warden can see it.",
+            "doNotRestage": [],
+            "noStartingCombat": true,
+            "noExpositionDump": true,
+            "visibleNpcIds": [
+              "npc_elder_sova"
+            ],
+            "withheldPremiseFacts": [
+              "Sova's grandchild is listed in the cohort and is already gone through the route.",
+              "Auditor Prenn arrived a day ahead of the Warden and has already begun an independent count.",
+              "At least one settlement retainer is connected to the extraction network and is watching the compact hall right now."
+            ]
+          },
+          "pressureLadder": [
+            {
+              "id": "pressure_prenn_demands_cosign",
+              "pressure": "Prenn formally demands the Warden co-sign his tally, making the shortfall a shared Throne-Synod document.",
+              "triggerCondition": "When npc_auditor_prenn demands a cost from the PC, making The Warden's signature on Prenn's count legally ratifies supplementary selection as the remedy..",
+              "narrativeEffect": "The count is no longer Prenn's problem alone; the Warden is now on the writ and cannot claim distance.",
+              "severity": "standard",
+              "fired": false
+            },
+            {
+              "id": "pressure_elder_betrays_davan",
+              "pressure": "Elder Sova names a network contact to Prenn to protect the majority, sacrificing a name to close the count.",
+              "triggerCondition": "When npc_elder_sova betrays npc_handler_davan, making Davan's exposure collapses the route; children in transit lose their path forward..",
+              "narrativeEffect": "The Warden must act immediately or Davan is taken — the network's survival is now a live human problem, not a ledger gap.",
+              "severity": "standard",
+              "fired": false
+            },
+            {
+              "id": "pressure_synod_files_selection",
+              "pressure": "The count deadline passes unresolved; the Synod files supplementary selection against the next cohort.",
+              "triggerCondition": "When thread_shortfall_exposure remains unresolved late and faction_the_synod_collection_office uses that delay to raise the cost.",
+              "narrativeEffect": "The chapter question becomes inescapable: the Warden's hesitation now has a child's name on a writ.",
+              "severity": "hard",
+              "fired": false
+            }
+          ],
+          "humanStakes": [
+            {
+              "whoPays": "npc_elder_sova",
+              "costSurface": "loyalty",
+              "whatIsLost": "If the count closes against the settlement, Sova's standing as protector collapses — her silence was the community's only armor.",
+              "triggeringPressure": "thread_shortfall_exposure"
+            },
+            {
+              "whoPays": "npc_handler_davan",
+              "costSurface": "safety",
+              "whatIsLost": "Davan is taken by Synod agents if the route is exposed; the network he built to repay an impossible debt ends with him.",
+              "triggeringPressure": "thread_network_survival"
+            },
+            {
+              "whoPays": "the PC",
+              "costSurface": "reputation",
+              "whatIsLost": "The Warden's name on Prenn's writ makes them a Synod instrument on the record — future Throne authority carries that shadow.",
+              "triggeringPressure": "thread_warden_mandate"
+            }
+          ],
+          "threadPressure": {
+            "thread_warden_mandate": {
+              "threadId": "thread_warden_mandate",
+              "role": "new",
+              "openingFloor": 6,
+              "localEscalation": 0,
+              "maxThisChapter": 6,
+              "cooledAtOpen": false
+            },
+            "thread_shortfall_exposure": {
+              "threadId": "thread_shortfall_exposure",
+              "role": "new",
+              "openingFloor": 7,
+              "localEscalation": 0,
+              "maxThisChapter": 7,
+              "cooledAtOpen": false
+            },
+            "thread_network_survival": {
+              "threadId": "thread_network_survival",
+              "role": "new",
+              "openingFloor": 5,
+              "localEscalation": 0,
+              "maxThisChapter": 5,
+              "cooledAtOpen": false
+            }
+          },
+          "threadInitialTensions": {
+            "thread_warden_mandate": 6,
+            "thread_shortfall_exposure": 7,
+            "thread_network_survival": 5
+          },
+          "arcLink": {
+            "arcId": "arc_the_tithe",
+            "chapterFunction": "ESTABLISH — the Warden lands inside a choice the settlement already made; pressure becomes a person, not a number.",
+            "playerStanceRead": "How the Warden handles the wrong ledger reveals which stance axis they lean on first.",
+            "arcThreadIds": [
+              "thread_warden_mandate",
+              "thread_shortfall_exposure",
+              "thread_network_survival"
+            ],
+            "promotedLatentQuestionIds": []
+          },
+          "pacingContract": {
+            "targetTurns": {
+              "min": 18,
+              "max": 25
+            },
+            "chapterQuestion": "Will the Warden use their authority to see what the ledger hides — and what will seeing it cost?",
+            "acceptableResolutions": [
+              "Warden invokes the writ to contest the count and shields the settlement from supplementary selection.",
+              "Warden closes the count on Prenn's terms; shortfall attributed to the settlement; network survives undetected.",
+              "Warden confronts Davan and learns the route exists; neither exposes nor protects it; count closes ambiguously.",
+              "Warden formally contests the Synod count, creating a record that draws House Verath's attention into the next chapter."
+            ],
+            "earlyPressure": "Sova's ledger is wrong in a way that cannot be accidental; Prenn is already counting independently.",
+            "middlePressure": "Davan surfaces; the Warden must decide whether knowing the route means closing it.",
+            "latePressure": "Prenn's deadline arrives; the writ is the only instrument that can hold the count open — spending it changes the record permanently.",
+            "closeWhenAny": [
+              "The Warden's writ is formally invoked, traded, or explicitly refused.",
+              "The shortfall is officially closed under any attribution.",
+              "The network's existence is protected or exposed by a deliberate Warden choice.",
+              "Prenn files supplementary selection — the worst outcome becomes a fact in the record."
+            ],
+            "avoidExtendingFor": [
+              "Additional ledger cross-referencing that produces no new human stakes.",
+              "Procedural negotiation with Prenn that neither side can resolve this chapter.",
+              "Settlement geography exploration without a live pressure attached."
+            ]
+          },
+          "surfaceThreads": [],
+          "surfaceNpcIds": []
+        },
+        "scaffolding": {
+          "chapter": 1,
+          "npcHiddenPressures": {
+            "npc_elder_sova": "Her grandchild is already through the route; her objectivity is performance.",
+            "npc_auditor_prenn": "Knows his own tally is off; needs the shortfall closed before his superior reviews the district figures.",
+            "npc_handler_davan": "Has a sibling already expended by the Synod; runs the route to pay a debt the system created."
+          },
+          "antagonistFaces": [
+            {
+              "id": "face_auditor_prenn",
+              "name": "Auditor Prenn",
+              "role": "Synod Compliance Auditor",
+              "pressureStyle": "Weaponizes procedure; treats delay as institutional heresy.",
+              "becomesPrimaryWhen": "The Warden stalls the count or contests Prenn's authority directly.",
+              "active": true
+            },
+            {
+              "id": "face_house_verath_liaison",
+              "name": "House Verath Liaison (off-stage)",
+              "role": "Regional Patron House representative",
+              "pressureStyle": "Formally cordial; every offer carries a debt.",
+              "becomesPrimaryWhen": "The Warden's writ threatens precedent touching House Verath's allocation petition.",
+              "active": false
+            },
+            {
+              "id": "face_settlement_elder",
+              "name": "Elder Sova",
+              "role": "Settlement Compact Elder",
+              "pressureStyle": "Silence and deflection as survival; will sacrifice a name to protect the majority.",
+              "becomesPrimaryWhen": "The Warden pushes past the ledger toward the community's actual choices.",
+              "active": false
+            }
+          ],
+          "possibleRevelations": [
+            {
+              "id": "reveal_elder_grandchild",
+              "statement": "Elder Sova's grandchild is already through the route — her defense of the settlement is also self-preservation.",
+              "heldBy": "npc_elder_sova",
+              "emergenceCondition": "The Warden presses Sova about who in the cohort she knows personally, or finds the grandchild's name absent from the ledger.",
+              "recontextualizes": "Every deflection and silence from Sova becomes personal protection, not community stewardship — her authority is compromised.",
+              "revealed": false,
+              "hintPhrases": [
+                "the way she holds the ledger's corner closed",
+                "a name she skips without pausing",
+                "her eyes going still when the cohort's youngest are named"
+              ],
+              "playerTopicKeys": [
+                "grandchild",
+                "Sova's family",
+                "who she's protecting",
+                "personal stake",
+                "cohort names"
+              ],
+              "cashConditions": {
+                "playerPressesTopic": true,
+                "requiresContext": [
+                  "private_pressure",
+                  "accusation"
+                ]
+              },
+              "hintsRequired": 2,
+              "hintsDelivered": 1,
+              "hintEvidence": [
+                {
+                  "phraseMatched": "a name she skips without pausing",
+                  "phraseEmitted": "a name she skips without pausing",
+                  "turn": 2,
+                  "proseExcerpt": "You're watching for the hesitation, the slight rearrangement of breath before a name she has to manage. You don't find it. The ledger flows — children listed by attunement classification... All present. All accounted for."
+                }
+              ],
+              "validRevealContexts": [
+                "private_pressure",
+                "confession",
+                "accusation",
+                "forced_disclosure"
+              ],
+              "invalidRevealContexts": [
+                "inadvertent"
+              ]
+            },
+            {
+              "id": "reveal_prenn_count_wrong",
+              "statement": "Prenn already knows his own count is inaccurate but needs the shortfall closed before his superior's district review catches the discrepancy.",
+              "heldBy": "npc_auditor_prenn",
+              "emergenceCondition": "The Warden challenges Prenn's figures directly, or Prenn refuses to allow a second independent count.",
+              "recontextualizes": "Prenn's righteous urgency is not doctrine — it is a man covering his own exposure by burying the settlement's.",
+              "revealed": false,
+              "hintPhrases": [
+                "the speed at which he refuses to slow down",
+                "a figure he re-reads before answering",
+                "naming his superior's review as a deadline rather than a check"
+              ],
+              "playerTopicKeys": [
+                "Prenn's figures",
+                "audit accuracy",
+                "district review",
+                "Prenn's superior",
+                "count discrepancy"
+              ],
+              "cashConditions": {
+                "playerPressesTopic": true,
+                "minTension": {
+                  "threadId": "thread_shortfall_exposure",
+                  "value": 7
+                }
+              },
+              "hintsRequired": 2,
+              "hintsDelivered": 1,
+              "hintEvidence": [
+                {
+                  "phraseMatched": "a figure he re-reads before answering",
+                  "phraseEmitted": "a figure he re-reads before answering",
+                  "turn": 2,
+                  "proseExcerpt": "Except the total on the third page still doesn't match. That fact hasn't changed. But she has read the entries to you with such deliberate evenness that the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack..."
+                }
+              ],
+              "validRevealContexts": [
+                "accusation",
+                "forced_disclosure",
+                "documentary_surface",
+                "crisis_of_trust"
+              ],
+              "invalidRevealContexts": [
+                "inadvertent"
+              ]
+            }
+          ],
+          "moralFaultLines": [
+            {
+              "id": "fault_mandate_vs_protection",
+              "tension": "Closing the count preserves the Warden's authority; contesting it shields the next cohort.",
+              "sideA": "Institutional mandate keeps future wardens viable.",
+              "sideB": "Using the writ now shields children the mandate would otherwise take.",
+              "whyItHurts": "The Warden cannot spend the writ twice; one choice forecloses the other permanently."
+            },
+            {
+              "id": "fault_community_vs_individual",
+              "tension": "The settlement's survival logic sacrifices one name to protect the majority.",
+              "sideA": "Sova's calculus has kept this settlement alive through three tithe cycles.",
+              "sideB": "The name being sacrificed belongs to a person, not a liability column.",
+              "whyItHurts": "The Warden witnessing the trade makes them complicit whether they act or refuse."
+            }
+          ],
+          "escalationOptions": [
+            {
+              "id": "esc_prenn_files_early",
+              "type": "institutional",
+              "condition": "The Warden formally contests the count without invoking the writ.",
+              "consequence": "Prenn files under transit authority, treating Warden obstruction as a heresy-adjacent delay on record.",
+              "used": false
+            },
+            {
+              "id": "esc_settlement_fractures",
+              "type": "social",
+              "condition": "Two settlement factions disagree publicly about whether to confess the shortfall's cause.",
+              "consequence": "One faction names the network before the Warden can act; Davan's position is exposed before trust is established.",
+              "used": false
+            },
+            {
+              "id": "esc_retainer_identified",
+              "type": "physical",
+              "condition": "Prenn's accompanying Synod conscript identifies a settlement retainer connected to the network.",
+              "consequence": "The Warden must physically interpose or the conscript detains the retainer as a material witness.",
+              "used": false
+            }
+          ]
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "Sova offers the Warden a seat and the official cohort ledger simultaneously — the numbers are already wrong, and she knows the Warden can see it.",
+            "openingPressure": "The Synod's auditor has a deadline; every hour the count stays open is a new heresy.",
+            "chapterObjective": "Determine what actually happened to the missing cohort before the auditor closes the count.",
+            "chapterCrucible": "Every child unaccounted for becomes one the Synod pulls from the next cohort instead.",
+            "humanStakes": [
+              {
+                "whoPays": "npc_elder_sova",
+                "costSurface": "loyalty",
+                "whatIsLost": "If the count closes against the settlement, Sova's standing as protector collapses — her silence was the community's only armor.",
+                "triggeringPressure": "thread_shortfall_exposure"
+              },
+              {
+                "whoPays": "npc_handler_davan",
+                "costSurface": "safety",
+                "whatIsLost": "Davan is taken by Synod agents if the route is exposed; the network he built to repay an impossible debt ends with him.",
+                "triggeringPressure": "thread_network_survival"
+              },
+              {
+                "whoPays": "the PC",
+                "costSurface": "reputation",
+                "whatIsLost": "The Warden's name on Prenn's writ makes them a Synod instrument on the record — future Throne authority carries that shadow.",
+                "triggeringPressure": "thread_warden_mandate"
+              }
+            ],
+            "visibleNpcIds": [
+              "npc_elder_sova"
+            ],
+            "visibleThreadIds": [
+              "thread_warden_mandate",
+              "thread_shortfall_exposure",
+              "thread_network_survival"
+            ],
+            "loreForOpening": [
+              {
+                "item": "Supplementary selection: administrative language for seizing the next cohort.",
+                "renderedHint": "Prenn drops the term casually in his first formal statement to the Warden."
+              },
+              {
+                "item": "The Warden's writ outranks Synod field authority but cannot erase a filed count.",
+                "renderedHint": "Elder Sova references it obliquely when explaining why she waited for the Warden instead of Prenn."
+              }
+            ],
+            "sceneWarnings": [
+              "Do not open with exposition.",
+              "Use visible procedure and role behavior to teach the world.",
+              "Keep the current pressure face live without implying it is permanent."
+            ],
+            "withheldPremiseFacts": [
+              "Sova's grandchild is listed in the cohort and is already gone through the route.",
+              "Auditor Prenn arrived a day ahead of the Warden and has already begun an independent count.",
+              "At least one settlement retainer is connected to the extraction network and is watching the compact hall right now."
+            ]
+          }
+        },
+        "sceneSummaries": [
+          {
+            "sceneId": "",
+            "chapter": 1,
+            "summary": "",
+            "leadsTo": null
+          }
+        ],
+        "currentSceneId": "scene_1_1"
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "The settlement's compact hall, a low-ceilinged administrative space smelling of recycled air and old paperwork.",
+          "description": "Elder Sova stands at the far end of a scarred table with a ledger open in front of her, waiting with the particular stillness of someone who has rehearsed this meeting.",
+          "atmosphericConditions": [
+            "Dim overhead strips, one flickering; settlement noise just outside."
+          ],
+          "chapterCreated": 1,
+          "locked": false
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "The settlement's compact hall, a low-ceilinged administrative space smelling of recycled air and old paperwork.",
+            "description": "Elder Sova stands at the far end of a scarred table with a ledger open in front of her, waiting with the particular stillness of someone who has rehearsed this meeting.",
+            "atmosphericConditions": [
+              "Dim overhead strips, one flickering; settlement noise just outside."
+            ],
+            "chapterCreated": 1,
+            "locked": false
+          },
+          "presentNpcIds": [
+            "npc_elder_sova"
+          ],
+          "currentInterlocutorIds": [
+            "npc_elder_sova"
+          ],
+          "timeLabel": "opening",
+          "established": [
+            "Ledger placed on table by Warden — authority implied, writ not yet formally invoked",
+            "Sova read entries aloud with deliberate evenness; closed ledger before arithmetic gap could be pressed",
+            "Sova's deflection: 'clerical variance in the Synod's parallel tally'"
+          ],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "opening",
+        "sceneBundleCache": {
+          "sceneId": "scene_1_1",
+          "bundleText": "## Scene opening — chapter 1: What the Count Omits · scene_1_1\n\n### Scene\n- Location: The settlement's compact hall, a low-ceilinged administrative space smelling of recycled air and old paperwork. — Elder Sova stands at the far end of a scarred table with a ledger open in front of her, waiting with the particular stillness of someone who has rehearsed this meeting.\n- Atmosphere: Dim overhead strips, one flickering; settlement noise just outside., forms sorted by consequence rather than name, wax seals cooling beside the copy press, clerks speaking in numbered clauses, thin light over petition counters\n- Intent: Sova offers the Warden a seat and the official cohort ledger simultaneously — the numbers are already wrong, and she knows the Warden can see it.\n\n### Chapter\n- Objective: Determine what actually happened to the missing cohort before the auditor closes the count.\n- Crucible: Every child unaccounted for becomes one the Synod pulls from the next cohort instead.\n- Pressure face (at scene open): Auditor Prenn (Synod Compliance Auditor) — Procedural and righteous; reframes Warden hesitation as obstruction.\n- Pressure step: \"Prenn formally demands the Warden co-sign his tally, making the shortfall a shared Throne-Synod document.\" (The count is no longer Prenn's problem alone; the Warden is now on the writ and cannot claim distance.)\n- Arc: The Tithe — scenario shape for GM use: underground_network: A Warden sent to enforce a tithe shortfall discovers the missing Resonants moved through a hidden extraction network — and must decide whose mandate they actually serve. (do not use this label as diegetic wording)\n- Arc question: Will the Warden use their mandate to protect the network, expose it, or burn their authority to ashes trying to split the difference?\n- Chapter function: ESTABLISH — the Warden lands inside a choice the settlement already made; pressure becomes a person, not a number.\n- Active arc threads: Mandate Loyalty 6/10: Imperial writ; the one thing Prenn cannot override and everyone in the room knows it. | Shortfall Accountability 7/10: The number that is wrong, the ledger that lies, and who signs below it. | Network Exposure 5/10: Davan's caution; the missing names; the truth behind the wrong ledger.\n- Pacing target: resolve \"Will the Warden use their authority to see what the ledger hides — and what will seeing it cost?\" in 18-25 turns\n\n### Human stakes (pressure targets)\n- thread_shortfall_exposure: npc_elder_sova risks loyalty — If the count closes against the settlement, Sova's standing as protector collapses — her silence was the community's only armor.\n- thread_network_survival: npc_handler_davan risks safety — Davan is taken by Synod agents if the route is exposed; the network he built to repay an impossible debt ends with him.\n- thread_warden_mandate: the PC risks reputation — The Warden's name on Prenn's writ makes them a Synod instrument on the record — future Throne authority carries that shadow.\n\n### Cast on-stage (identity — stable within scene)\n- **Elder Sova** (npc_elder_sova) — Frontier settlement leadership\n  voice: Never answers the question asked; answers the one underneath it instead.\n  relation: Frontier settlement leadership · wary\n\nMutable state (disposition, tempLoad, agenda) is provided fresh each turn in the per-turn block — do not treat identity and mutable state as the same.\n\n### Chapter cast — off-stage (authored for this chapter)\nThese NPCs exist in the chapter but are not on-stage right now. When the player pursues one of these roles, or the fiction calls for one of them to come into scene, use the authored id and name — do NOT invent a parallel character. Invent new NPCs only when no entry below fits the fiction's needs.\n- **Auditor Prenn** (npc_auditor_prenn) — The Synod Collection Office · Synod Compliance Auditor; institutional deadline with a face. — The auditor who arrived a day early and already has his own count running.\n- **Davan** (npc_handler_davan) — The Unrecorded Route (former Imperial Service) · Underground network handler; the cost of compliance made human. — Former Imperial Service contact who already knows the Warden's face and history.\n\n### Threads in scope (identity — stable within scene)\n- **Mandate Loyalty** (thread_warden_mandate)\n  why: Imperial writ; the one thing Prenn cannot override and everyone in the room knows it.\n  owner: House Verath (Regional Patron House) (stance: neutral, heat: none)\n  gates: gate_writ_understood:open — The Warden reads the writ's formal scope against Prenn's count authority. | gate_writ_deployed:open — The Warden makes a deliberate choice to invoke, trade, or refuse to deploy the writ.\n\nTension values shift turn-by-turn — they're provided in the per-turn block, not here.",
+          "builtAtTurn": 0
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The air in the compact hall smells like recycled breath and old seal-wax. Overhead, one fluorescent strip flickers in a slow, patient rhythm — as if it has been counting something for years and isn't close to stopping.\n\nThe room is built for administration, not comfort. A scarred table dominates the center, flanked by standing shelves of sorted forms. A copy press occupies the far corner, two cooling seals visible beside it. Petition counters line one wall, each marked with a numbered clause in faded stencil. Nobody who works here named the forms by content. They named them by consequence.\n\n**Elder Sova** stands at the far end of the table — the settlement's chief administrative authority, the one person whose signature appears on every formal record this community has filed with the Throne in the last twelve years. She is here because she has to be, and because she has rehearsed every word of this meeting. She does not come forward. She gestures to a chair with the particular economy of movement that means *sit or don't, I will still say the same things*.\n\nThe cohort ledger is open on the table in front of her.\n\nYou see the numbers before she says a word. The columns are clean, the handwriting careful — but the final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong. Someone subtracted children before the page was ever sent to the Synod.\n\nSova watches you read it.\n\n\"Warden,\" she says. Her tone is civic. Neutral. The kind of neutral that costs something to maintain.\n\nShe does not explain the numbers.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_elder_sova"
+                ],
+                "threadsTouched": [
+                  "thread_shortfall_exposure",
+                  "thread_warden_mandate"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Ledger entries do not sum to the stated total — the discrepancy is deliberate, not arithmetic",
+                  "Sova has rehearsed this meeting and does not volunteer anything"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Set the ledger on the table between you and ask Sova to walk you through the count — not the total, the entries. [Perception]",
+                "Say nothing about the numbers yet. Ask instead who else has seen this ledger since the cohort was filed. [Intimidation]",
+                "Name the discrepancy directly: you see the subtraction, and she knows you see it. Give her the chance to explain it before anyone else enters this room.",
+                "Step to the copy press and check whether a duplicate set of these pages has already been run."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Set the ledger on the table between you and ask Sova to walk you through the count — not the total, the entries. [Perception]",
+                "Say nothing about the numbers yet. Ask instead who else has seen this ledger since the cohort was filed. [Intimidation]",
+                "Name the discrepancy directly: you see the subtraction, and she knows you see it. Give her the chance to explain it before anyone else enters this room.",
+                "Step to the copy press and check whether a duplicate set of these pages has already been run."
+              ],
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "npc_elder_sova"
+                ],
+                "threads_touched": [
+                  "thread_shortfall_exposure",
+                  "thread_warden_mandate"
+                ],
+                "clues_dropped": [
+                  "Ledger entries do not sum to the stated total — the discrepancy is deliberate, not arithmetic",
+                  "Sova has rehearsed this meeting and does not volunteer anything"
+                ],
+                "decisions_implied": [],
+                "promises_implied": []
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "scene_id": "scene_1_1",
+                    "location_id": "settlement_compact_hall",
+                    "time_label": "opening",
+                    "present_npc_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "current_interlocutor_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "established": [
+                      "Low-ceilinged hall, recycled air, wax seals cooling by the copy press",
+                      "Petition counters numbered by consequence along one wall",
+                      "Ledger open on the scarred table — entries subtracted before filing",
+                      "Sova stands at far end of table, has not moved to greet the Warden"
+                    ],
+                    "locked": false
+                  }
+                }
+              ],
+              "authorial_moves": {
+                "pivot_signaled": false
+              }
+            },
+            "timestamp": "2026-05-16T10:20:42.870Z",
+            "archivistPatchApplied": {
+              "turnIndex": 1,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The cohort ledger's final tally does not match the sum of entries above it. Entries appear deliberately subtracted before the page was filed with the Synod—not an arithmetic error, a deliberate alteration.",
+                    "evidence_question": "How many children from this cohort are actually missing, and who altered the count?",
+                    "evidence_kind": "document",
+                    "anchored_to": [
+                      "thread_shortfall_exposure",
+                      "thread_network_survival"
+                    ],
+                    "retrieval_cue": "Ledger entries do not sum to stated total"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Elder Sova has rehearsed this meeting. She maintains civic, costly neutrality when confronted with the ledger discrepancy and does not volunteer explanation.",
+                    "evidence_question": "What does Sova know about the missing children, and how is she protecting that knowledge?",
+                    "evidence_kind": "testimony",
+                    "anchored_to": [
+                      "thread_network_survival"
+                    ],
+                    "retrieval_cue": "Sova's rehearsed neutrality when the ledger is read"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She does not come forward. She gestures to a chair with the particular economy of movement that means *sit or don't, I will still say the same things*... She watches you read it... She does not explain the numbers."
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_elder_sova",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load_tag": "vulnerable",
+                    "last_seen_turn": 1
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She is here because she has to be, and because she has rehearsed every word of this meeting... the particular stillness of someone who has rehearsed this meeting"
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_shortfall_exposure",
+                  "changes": {
+                    "tension": 7,
+                    "last_advanced_turn": 1,
+                    "progress": [
+                      {
+                        "summary": "The ledger presented by Elder Sova contains deliberate alterations—entries have been subtracted before filing. The discrepancy is visible and intentional, not arithmetic.",
+                        "gate_id": "gate_writ_understood"
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_network_survival",
+                  "changes": {
+                    "tension": 6,
+                    "last_advanced_turn": 1,
+                    "progress": [
+                      {
+                        "summary": "The ledger's deliberate subtraction indicates a real network operating parallel to official records. The route is not a gap in counting—it is a deliberate cover maintained by someone with access to settlement administration.",
+                        "gate_ids": [
+                          "gate_route_known"
+                        ]
+                      }
+                    ]
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "Someone subtracted children before the page was ever sent to the Synod."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "sceneResult": {
+                "sceneId": "",
+                "chapter": 0,
+                "summary": "",
+                "leadsTo": null
+              },
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": null,
+                "tensionDeltasByThreadId": {
+                  "thread_shortfall_exposure": 0,
+                  "thread_network_survival": 1,
+                  "thread_warden_mandate": 1
+                }
+              },
+              "flags": [],
+              "emotionalBeats": [
+                {
+                  "text": "Elder Sova's rehearsed stillness—she knows the Warden has seen the altered ledger, and her refusal to explain it is itself an answer.",
+                  "participants": [
+                    "npc_elder_sova",
+                    "pc"
+                  ],
+                  "anchoredTo": [
+                    "thread_network_survival",
+                    "thread_shortfall_exposure"
+                  ],
+                  "emotionalTags": [
+                    "vulnerability",
+                    "restraint",
+                    "evasion"
+                  ],
+                  "salience": 0.6
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": null,
+              "tensionDeltasByThreadId": {
+                "thread_shortfall_exposure": 0,
+                "thread_network_survival": 1,
+                "thread_warden_mandate": 1
+              }
+            },
+            "stateDiff": [
+              {
+                "kind": "thread",
+                "label": "Network Exposure +1",
+                "tone": "loss",
+                "entityId": "thread_network_survival",
+                "from": 5,
+                "to": 6,
+                "value": 1
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Set the ledger on the table and ask Sova to walk through the entries line by line. If she hesitates, press the discrepancy with my office. [Perception]",
+            "narratorProse": "You set the ledger on the table between you — not a request, a placement. The cover makes a flat sound against the scarred wood.\n\n\"Line by line,\" you say. \"Start with the first entry.\"\n\nSova's eyes move to the ledger. Then back to you. She doesn't reach for it.\n\n\"The count is what it is, Warden. I filed the numbers the district requires.\"\n\n\"The numbers don't sum.\" You let the weight of your office sit behind that. Not a threat. Not yet. A statement of what is already true and already yours to act on.\n\nSomething in her stillness shifts — not much, but she draws a breath that takes slightly longer than the last one. She pulls the ledger toward her side of the table with two fingers, like she's correcting a misalignment, and opens to the third page.\n\n\"I can read you the entries,\" she says. Careful. \"I cannot account for clerical variance in the Synod's parallel tally.\"\n\n*Clerical variance.* She said it without flinching. You watch her hands as she turns the page — the way her thumb lands at the column header rather than the first entry, the way her gaze moves not down the list, but briefly sideways, toward the edge of the page she is *not* showing you yet.She reads cleanly. Entry after entry, names and numbers in her careful civic voice, and you track every syllable. You're watching for the hesitation, the slight rearrangement of breath before a name she has to manage.\n\nYou don't find it. The ledger flows — children listed by attunement classification, transit date, manifest number, and Synod receipt. All present. All accounted for.\n\nExcept the total on the third page still doesn't match. That fact hasn't changed. But she has read the entries to you with such deliberate evenness that the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack she has walked you to the edge of without letting you look down.\n\n\"As recorded,\" Sova says, and closes the ledger. Her thumb is on the cover. Her eyes are back on you.\n\n\"If the Synod auditor has a different sum, Warden, that is between his instruments and mine. I have filed what I filed.\"\n\nOutside, beyond the petition counters, someone presses a seal into hot wax. The sound carries.\n\nShe is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_elder_sova"
+                ],
+                "threadsTouched": [
+                  "thread_shortfall_exposure"
+                ],
+                "decisionsImplied": [
+                  "The Warden placed the ledger on the table and pressed for a line-by-line account — asserting Warden authority without yet invoking the writ formally."
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Sova walked the ledger entries with deliberate evenness — entries sound correct, but the final tally still doesn't match, and she closed the ledger before the Warden could press the discrepancy further.",
+                  "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection — framing the discrepancy as a Synod instrumentation problem, not a ledger problem."
+                ]
+              },
+              "authorialMoves": {},
+              "suggestedActions": [
+                "Demand she account for the arithmetic — the entries she read don't add to the total she filed, and her office requires she explain the gap. [Intimidation]",
+                "Ask, plainly, who else has reviewed this ledger before you arrived — put the question to her without invoking rank yet.",
+                "Let the silence sit after her last word and watch what she does with it. [Perception]",
+                "Set your writ on the table without comment. Let her decide what it means."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Demand she account for the arithmetic — the entries she read don't add to the total she filed, and her office requires she explain the gap. [Intimidation]",
+                "Ask, plainly, who else has reviewed this ledger before you arrived — put the question to her without invoking rank yet.",
+                "Let the silence sit after her last word and watch what she does with it. [Perception]",
+                "Set your writ on the table without comment. Let her decide what it means."
+              ],
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "npc_elder_sova"
+                ],
+                "threads_touched": [
+                  "thread_shortfall_exposure"
+                ],
+                "clues_dropped": [
+                  "Sova walked the ledger entries with deliberate evenness — entries sound correct, but the final tally still doesn't match, and she closed the ledger before the Warden could press the discrepancy further.",
+                  "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection — framing the discrepancy as a Synod instrumentation problem, not a ledger problem."
+                ],
+                "decisions_implied": [
+                  "The Warden placed the ledger on the table and pressed for a line-by-line account — asserting Warden authority without yet invoking the writ formally."
+                ]
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "scene_id": "scene_1_1",
+                    "location_id": "settlement_compact_hall",
+                    "time_label": "opening",
+                    "present_npc_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "current_interlocutor_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "established": [
+                      "Ledger placed on table by Warden — authority implied, writ not yet formally invoked",
+                      "Sova read entries aloud with deliberate evenness; closed ledger before arithmetic gap could be pressed",
+                      "Sova's deflection: 'clerical variance in the Synod's parallel tally'"
+                    ],
+                    "locked": false
+                  }
+                }
+              ]
+            },
+            "turnResolution": {
+              "turnIndex": 1,
+              "action": {
+                "rawInput": "Set the ledger on the table and ask Sova to walk through the entries line by line. If she hesitates, press the discrepancy with my office. [Perception]",
+                "actionType": "pressure_npc",
+                "targetEntityIds": [
+                  "npc_elder_sova"
+                ],
+                "subjectEntityIds": [],
+                "resolvedReferences": [
+                  {
+                    "surface": "Sova",
+                    "resolvedToEntityId": "npc_elder_sova",
+                    "confidence": "high",
+                    "basis": "explicit name/alias in present scene"
+                  }
+                ],
+                "sourceEntityId": "pc",
+                "forbiddenTargetSubstitutions": [
+                  "npc_auditor_prenn",
+                  "npc_handler_davan"
+                ]
+              },
+              "targetThreadIds": [],
+              "rollRecords": [
+                {
+                  "turn": 1,
+                  "proseOffset": 1171,
+                  "skill": "Perception",
+                  "intendedSkill": "Perception",
+                  "intendedSkills": [
+                    "Perception"
+                  ],
+                  "requestedSkill": "Perception",
+                  "dc": 15,
+                  "effectiveDc": 15,
+                  "rollResult": 6,
+                  "modifier": 3,
+                  "outcome": "failure",
+                  "consequenceSummary": "Sova maintains clean control of the walkthrough; the Warden hears the numbers without catching the tells, and Sova finishes with her cover intact."
+                }
+              ],
+              "consequenceEvents": [],
+              "driftFindings": []
+            },
+            "timestamp": "2026-05-16T10:22:28.402Z",
+            "archivistPatchApplied": {
+              "turnIndex": 2,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Sova read the ledger entries aloud with deliberate evenness, managing her breath and gaze precisely. She avoided hesitation on any name. The entries she read sound correct, but the final tally on the third page still does not match the entries she listed — a mathematical discrepancy she closed off before the Warden could press further. She closed the ledger with deliberate control.",
+                    "evidence_question": "What is the actual structure of the shortfall — is it arithmetic error, deliberate falsification, or something else entirely?",
+                    "evidence_kind": "contradiction",
+                    "anchored_to": [
+                      "thread_shortfall_exposure"
+                    ],
+                    "retrieval_cue": "Sova's even reading; ledger entries sound correct but don't sum to her filed total"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She reads cleanly. Entry after entry... the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack she has walked you to the edge of without letting you look down."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection when the Warden noted the count doesn't sum. She framed the discrepancy as a Synod instrumentation problem, not a settlement ledger problem — a direct challenge to Prenn's authority disguised as administrative cooperation.",
+                    "evidence_question": "Does Sova know Prenn's count is inaccurate, or is she misdirecting the Warden to protect something else?",
+                    "evidence_kind": "testimony",
+                    "anchored_to": [
+                      "thread_shortfall_exposure"
+                    ],
+                    "retrieval_cue": "Sova's deflection: 'clerical variance in the Synod's parallel tally'"
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "'I cannot account for clerical variance in the Synod's parallel tally.'"
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_elder_sova",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load_tag": "uneasy_under_scrutiny",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Something in her stillness shifts — not much, but she draws a breath that takes slightly longer than the last one."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_shortfall_exposure",
+                  "changes": {
+                    "tension": 7,
+                    "last_advanced_turn": 2,
+                    "progress_events": [
+                      {
+                        "summary": "Warden pressed for line-by-line account. Sova read entries aloud with calculated precision, demonstrating she knows exactly how to present access without disclosure. The arithmetic discrepancy persists — entries sound correct but don't sum to the filed total. Sova deflected by invoking 'clerical variance' in the Synod's count.",
+                        "gate_ids": []
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_warden_mandate",
+                  "changes": {
+                    "tension": 6,
+                    "last_advanced_turn": 2,
+                    "progress_events": [
+                      {
+                        "summary": "Warden asserted authority by placing the ledger on the table and demanding line-by-line account, establishing Warden office as the arbiter of the count. Writ not yet formally invoked, but the underlying power structure is now visible and acknowledged.",
+                        "gate_ids": [
+                          "gate_writ_understood"
+                        ]
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "You set the ledger on the table between you — not a request, a placement."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": null,
+                "tensionDeltasByThreadId": {
+                  "thread_shortfall_exposure": 1,
+                  "thread_network_survival": 0,
+                  "thread_warden_mandate": 1
+                }
+              },
+              "pressureEvents": [
+                {
+                  "id": "pressure_event_2_1",
+                  "turn": 2,
+                  "source": "npc_agenda",
+                  "targetThreadIds": [
+                    "thread_shortfall_exposure"
+                  ],
+                  "scope": "canonical_thread",
+                  "evidenceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+                  "humanConsequence": {
+                    "whoPays": "the PC",
+                    "whatGetsHarder": "Obtaining the actual reason for the shortfall — Sova has shown she can read entries aloud without revealing anything actionable",
+                    "whatIsAtRisk": "The time window before Prenn demands a resolution or escalates to supplementary selection",
+                    "visiblePressure": "Sova's calculated cooperation: full access to the ledger without any actual transparency about the discrepancy."
+                  },
+                  "idempotencyKey": "turn_2:npc_agenda:thread_shortfall_exposure:sova_calculated_cooperation",
+                  "amount": 1,
+                  "severity": "standard"
+                }
+              ],
+              "flags": [],
+              "emotionalBeats": [
+                {
+                  "text": "Sova demonstrates she can give the Warden complete access to the ledger while revealing nothing — a precise, rehearsed performance of cooperation that shows she already knows exactly what needs to stay hidden.",
+                  "participants": [
+                    "npc_elder_sova",
+                    "the PC"
+                  ],
+                  "anchoredTo": [
+                    "thread_shortfall_exposure"
+                  ],
+                  "emotionalTags": [
+                    "mask_slipped",
+                    "restraint"
+                  ],
+                  "salience": 0.7
+                }
+              ],
+              "revelationHintsDelivered": [
+                {
+                  "revelationId": "reveal_elder_grandchild",
+                  "phraseMatched": "a name she skips without pausing",
+                  "proseExcerpt": "You're watching for the hesitation, the slight rearrangement of breath before a name she has to manage. You don't find it. The ledger flows — children listed by attunement classification... All present. All accounted for."
+                },
+                {
+                  "revelationId": "reveal_prenn_count_wrong",
+                  "phraseMatched": "a figure he re-reads before answering",
+                  "proseExcerpt": "Except the total on the third page still doesn't match. That fact hasn't changed. But she has read the entries to you with such deliberate evenness that the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack..."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": null,
+              "tensionDeltasByThreadId": {
+                "thread_shortfall_exposure": 1,
+                "thread_network_survival": 0,
+                "thread_warden_mandate": 1
+              }
+            }
+          }
+        ],
+        "rollLog": [
+          {
+            "turn": 1,
+            "proseOffset": 1171,
+            "skill": "Perception",
+            "intendedSkill": "Perception",
+            "intendedSkills": [
+              "Perception"
+            ],
+            "requestedSkill": "Perception",
+            "dc": 15,
+            "effectiveDc": 15,
+            "rollResult": 6,
+            "modifier": 3,
+            "outcome": "failure",
+            "consequenceSummary": "Sova maintains clean control of the walkthrough; the Warden hears the numbers without catching the tells, and Sova finishes with her cover intact."
+          }
+        ],
+        "recentTurns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "",
+            "narratorProse": "The air in the compact hall smells like recycled breath and old seal-wax. Overhead, one fluorescent strip flickers in a slow, patient rhythm — as if it has been counting something for years and isn't close to stopping.\n\nThe room is built for administration, not comfort. A scarred table dominates the center, flanked by standing shelves of sorted forms. A copy press occupies the far corner, two cooling seals visible beside it. Petition counters line one wall, each marked with a numbered clause in faded stencil. Nobody who works here named the forms by content. They named them by consequence.\n\n**Elder Sova** stands at the far end of the table — the settlement's chief administrative authority, the one person whose signature appears on every formal record this community has filed with the Throne in the last twelve years. She is here because she has to be, and because she has rehearsed every word of this meeting. She does not come forward. She gestures to a chair with the particular economy of movement that means *sit or don't, I will still say the same things*.\n\nThe cohort ledger is open on the table in front of her.\n\nYou see the numbers before she says a word. The columns are clean, the handwriting careful — but the final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong. Someone subtracted children before the page was ever sent to the Synod.\n\nSova watches you read it.\n\n\"Warden,\" she says. Her tone is civic. Neutral. The kind of neutral that costs something to maintain.\n\nShe does not explain the numbers.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_elder_sova"
+                ],
+                "threadsTouched": [
+                  "thread_shortfall_exposure",
+                  "thread_warden_mandate"
+                ],
+                "decisionsImplied": [],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Ledger entries do not sum to the stated total — the discrepancy is deliberate, not arithmetic",
+                  "Sova has rehearsed this meeting and does not volunteer anything"
+                ]
+              },
+              "authorialMoves": {
+                "pivot_signaled": false
+              },
+              "suggestedActions": [
+                "Set the ledger on the table between you and ask Sova to walk you through the count — not the total, the entries. [Perception]",
+                "Say nothing about the numbers yet. Ask instead who else has seen this ledger since the cohort was filed. [Intimidation]",
+                "Name the discrepancy directly: you see the subtraction, and she knows you see it. Give her the chance to explain it before anyone else enters this room.",
+                "Step to the copy press and check whether a duplicate set of these pages has already been run."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Set the ledger on the table between you and ask Sova to walk you through the count — not the total, the entries. [Perception]",
+                "Say nothing about the numbers yet. Ask instead who else has seen this ledger since the cohort was filed. [Intimidation]",
+                "Name the discrepancy directly: you see the subtraction, and she knows you see it. Give her the chance to explain it before anyone else enters this room.",
+                "Step to the copy press and check whether a duplicate set of these pages has already been run."
+              ],
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "npc_elder_sova"
+                ],
+                "threads_touched": [
+                  "thread_shortfall_exposure",
+                  "thread_warden_mandate"
+                ],
+                "clues_dropped": [
+                  "Ledger entries do not sum to the stated total — the discrepancy is deliberate, not arithmetic",
+                  "Sova has rehearsed this meeting and does not volunteer anything"
+                ],
+                "decisions_implied": [],
+                "promises_implied": []
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "scene_id": "scene_1_1",
+                    "location_id": "settlement_compact_hall",
+                    "time_label": "opening",
+                    "present_npc_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "current_interlocutor_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "established": [
+                      "Low-ceilinged hall, recycled air, wax seals cooling by the copy press",
+                      "Petition counters numbered by consequence along one wall",
+                      "Ledger open on the scarred table — entries subtracted before filing",
+                      "Sova stands at far end of table, has not moved to greet the Warden"
+                    ],
+                    "locked": false
+                  }
+                }
+              ],
+              "authorial_moves": {
+                "pivot_signaled": false
+              }
+            },
+            "timestamp": "2026-05-16T10:20:42.870Z",
+            "archivistPatchApplied": {
+              "turnIndex": 1,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "The cohort ledger's final tally does not match the sum of entries above it. Entries appear deliberately subtracted before the page was filed with the Synod—not an arithmetic error, a deliberate alteration.",
+                    "evidence_question": "How many children from this cohort are actually missing, and who altered the count?",
+                    "evidence_kind": "document",
+                    "anchored_to": [
+                      "thread_shortfall_exposure",
+                      "thread_network_survival"
+                    ],
+                    "retrieval_cue": "Ledger entries do not sum to stated total"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Elder Sova has rehearsed this meeting. She maintains civic, costly neutrality when confronted with the ledger discrepancy and does not volunteer explanation.",
+                    "evidence_question": "What does Sova know about the missing children, and how is she protecting that knowledge?",
+                    "evidence_kind": "testimony",
+                    "anchored_to": [
+                      "thread_network_survival"
+                    ],
+                    "retrieval_cue": "Sova's rehearsed neutrality when the ledger is read"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She does not come forward. She gestures to a chair with the particular economy of movement that means *sit or don't, I will still say the same things*... She watches you read it... She does not explain the numbers."
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_elder_sova",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load_tag": "vulnerable",
+                    "last_seen_turn": 1
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She is here because she has to be, and because she has rehearsed every word of this meeting... the particular stillness of someone who has rehearsed this meeting"
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_shortfall_exposure",
+                  "changes": {
+                    "tension": 7,
+                    "last_advanced_turn": 1,
+                    "progress": [
+                      {
+                        "summary": "The ledger presented by Elder Sova contains deliberate alterations—entries have been subtracted before filing. The discrepancy is visible and intentional, not arithmetic.",
+                        "gate_id": "gate_writ_understood"
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "The final tally at the bottom of the third page does not match the sum of the entries above it. It is not an arithmetic error. The entries are wrong."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_network_survival",
+                  "changes": {
+                    "tension": 6,
+                    "last_advanced_turn": 1,
+                    "progress": [
+                      {
+                        "summary": "The ledger's deliberate subtraction indicates a real network operating parallel to official records. The route is not a gap in counting—it is a deliberate cover maintained by someone with access to settlement administration.",
+                        "gate_ids": [
+                          "gate_route_known"
+                        ]
+                      }
+                    ]
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "Someone subtracted children before the page was ever sent to the Synod."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "sceneResult": {
+                "sceneId": "",
+                "chapter": 0,
+                "summary": "",
+                "leadsTo": null
+              },
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": null,
+                "tensionDeltasByThreadId": {
+                  "thread_shortfall_exposure": 0,
+                  "thread_network_survival": 1,
+                  "thread_warden_mandate": 1
+                }
+              },
+              "flags": [],
+              "emotionalBeats": [
+                {
+                  "text": "Elder Sova's rehearsed stillness—she knows the Warden has seen the altered ledger, and her refusal to explain it is itself an answer.",
+                  "participants": [
+                    "npc_elder_sova",
+                    "pc"
+                  ],
+                  "anchoredTo": [
+                    "thread_network_survival",
+                    "thread_shortfall_exposure"
+                  ],
+                  "emotionalTags": [
+                    "vulnerability",
+                    "restraint",
+                    "evasion"
+                  ],
+                  "salience": 0.6
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": null,
+              "tensionDeltasByThreadId": {
+                "thread_shortfall_exposure": 0,
+                "thread_network_survival": 1,
+                "thread_warden_mandate": 1
+              }
+            },
+            "stateDiff": [
+              {
+                "kind": "thread",
+                "label": "Network Exposure +1",
+                "tone": "loss",
+                "entityId": "thread_network_survival",
+                "from": 5,
+                "to": 6,
+                "value": 1
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "Set the ledger on the table and ask Sova to walk through the entries line by line. If she hesitates, press the discrepancy with my office. [Perception]",
+            "narratorProse": "You set the ledger on the table between you — not a request, a placement. The cover makes a flat sound against the scarred wood.\n\n\"Line by line,\" you say. \"Start with the first entry.\"\n\nSova's eyes move to the ledger. Then back to you. She doesn't reach for it.\n\n\"The count is what it is, Warden. I filed the numbers the district requires.\"\n\n\"The numbers don't sum.\" You let the weight of your office sit behind that. Not a threat. Not yet. A statement of what is already true and already yours to act on.\n\nSomething in her stillness shifts — not much, but she draws a breath that takes slightly longer than the last one. She pulls the ledger toward her side of the table with two fingers, like she's correcting a misalignment, and opens to the third page.\n\n\"I can read you the entries,\" she says. Careful. \"I cannot account for clerical variance in the Synod's parallel tally.\"\n\n*Clerical variance.* She said it without flinching. You watch her hands as she turns the page — the way her thumb lands at the column header rather than the first entry, the way her gaze moves not down the list, but briefly sideways, toward the edge of the page she is *not* showing you yet.She reads cleanly. Entry after entry, names and numbers in her careful civic voice, and you track every syllable. You're watching for the hesitation, the slight rearrangement of breath before a name she has to manage.\n\nYou don't find it. The ledger flows — children listed by attunement classification, transit date, manifest number, and Synod receipt. All present. All accounted for.\n\nExcept the total on the third page still doesn't match. That fact hasn't changed. But she has read the entries to you with such deliberate evenness that the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack she has walked you to the edge of without letting you look down.\n\n\"As recorded,\" Sova says, and closes the ledger. Her thumb is on the cover. Her eyes are back on you.\n\n\"If the Synod auditor has a different sum, Warden, that is between his instruments and mine. I have filed what I filed.\"\n\nOutside, beyond the petition counters, someone presses a seal into hot wax. The sound carries.\n\nShe is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+            "narratorAnnotation": {
+              "mechanicalEffects": [],
+              "hintedEntities": {
+                "npcsMentioned": [
+                  "npc_elder_sova"
+                ],
+                "threadsTouched": [
+                  "thread_shortfall_exposure"
+                ],
+                "decisionsImplied": [
+                  "The Warden placed the ledger on the table and pressed for a line-by-line account — asserting Warden authority without yet invoking the writ formally."
+                ],
+                "promisesImplied": [],
+                "cluesDropped": [
+                  "Sova walked the ledger entries with deliberate evenness — entries sound correct, but the final tally still doesn't match, and she closed the ledger before the Warden could press the discrepancy further.",
+                  "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection — framing the discrepancy as a Synod instrumentation problem, not a ledger problem."
+                ]
+              },
+              "authorialMoves": {},
+              "suggestedActions": [
+                "Demand she account for the arithmetic — the entries she read don't add to the total she filed, and her office requires she explain the gap. [Intimidation]",
+                "Ask, plainly, who else has reviewed this ledger before you arrived — put the question to her without invoking rank yet.",
+                "Let the silence sit after her last word and watch what she does with it. [Perception]",
+                "Set your writ on the table without comment. Let her decide what it means."
+              ]
+            },
+            "narratorAnnotationRaw": {
+              "suggested_actions": [
+                "Demand she account for the arithmetic — the entries she read don't add to the total she filed, and her office requires she explain the gap. [Intimidation]",
+                "Ask, plainly, who else has reviewed this ledger before you arrived — put the question to her without invoking rank yet.",
+                "Let the silence sit after her last word and watch what she does with it. [Perception]",
+                "Set your writ on the table without comment. Let her decide what it means."
+              ],
+              "hinted_entities": {
+                "npcs_mentioned": [
+                  "npc_elder_sova"
+                ],
+                "threads_touched": [
+                  "thread_shortfall_exposure"
+                ],
+                "clues_dropped": [
+                  "Sova walked the ledger entries with deliberate evenness — entries sound correct, but the final tally still doesn't match, and she closed the ledger before the Warden could press the discrepancy further.",
+                  "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection — framing the discrepancy as a Synod instrumentation problem, not a ledger problem."
+                ],
+                "decisions_implied": [
+                  "The Warden placed the ledger on the table and pressed for a line-by-line account — asserting Warden authority without yet invoking the writ formally."
+                ]
+              },
+              "mechanical_effects": [
+                {
+                  "kind": "set_scene_snapshot",
+                  "snapshot": {
+                    "scene_id": "scene_1_1",
+                    "location_id": "settlement_compact_hall",
+                    "time_label": "opening",
+                    "present_npc_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "current_interlocutor_ids": [
+                      "npc_elder_sova"
+                    ],
+                    "established": [
+                      "Ledger placed on table by Warden — authority implied, writ not yet formally invoked",
+                      "Sova read entries aloud with deliberate evenness; closed ledger before arithmetic gap could be pressed",
+                      "Sova's deflection: 'clerical variance in the Synod's parallel tally'"
+                    ],
+                    "locked": false
+                  }
+                }
+              ]
+            },
+            "turnResolution": {
+              "turnIndex": 1,
+              "action": {
+                "rawInput": "Set the ledger on the table and ask Sova to walk through the entries line by line. If she hesitates, press the discrepancy with my office. [Perception]",
+                "actionType": "pressure_npc",
+                "targetEntityIds": [
+                  "npc_elder_sova"
+                ],
+                "subjectEntityIds": [],
+                "resolvedReferences": [
+                  {
+                    "surface": "Sova",
+                    "resolvedToEntityId": "npc_elder_sova",
+                    "confidence": "high",
+                    "basis": "explicit name/alias in present scene"
+                  }
+                ],
+                "sourceEntityId": "pc",
+                "forbiddenTargetSubstitutions": [
+                  "npc_auditor_prenn",
+                  "npc_handler_davan"
+                ]
+              },
+              "targetThreadIds": [],
+              "rollRecords": [
+                {
+                  "turn": 1,
+                  "proseOffset": 1171,
+                  "skill": "Perception",
+                  "intendedSkill": "Perception",
+                  "intendedSkills": [
+                    "Perception"
+                  ],
+                  "requestedSkill": "Perception",
+                  "dc": 15,
+                  "effectiveDc": 15,
+                  "rollResult": 6,
+                  "modifier": 3,
+                  "outcome": "failure",
+                  "consequenceSummary": "Sova maintains clean control of the walkthrough; the Warden hears the numbers without catching the tells, and Sova finishes with her cover intact."
+                }
+              ],
+              "consequenceEvents": [],
+              "driftFindings": []
+            },
+            "timestamp": "2026-05-16T10:22:28.402Z",
+            "archivistPatchApplied": {
+              "turnIndex": 2,
+              "creates": [
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Sova read the ledger entries aloud with deliberate evenness, managing her breath and gaze precisely. She avoided hesitation on any name. The entries she read sound correct, but the final tally on the third page still does not match the entries she listed — a mathematical discrepancy she closed off before the Warden could press further. She closed the ledger with deliberate control.",
+                    "evidence_question": "What is the actual structure of the shortfall — is it arithmetic error, deliberate falsification, or something else entirely?",
+                    "evidence_kind": "contradiction",
+                    "anchored_to": [
+                      "thread_shortfall_exposure"
+                    ],
+                    "retrieval_cue": "Sova's even reading; ledger entries sound correct but don't sum to her filed total"
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She reads cleanly. Entry after entry... the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack she has walked you to the edge of without letting you look down."
+                },
+                {
+                  "kind": "clue",
+                  "payload": {
+                    "content": "Sova invoked 'clerical variance in the Synod's parallel tally' as her deflection when the Warden noted the count doesn't sum. She framed the discrepancy as a Synod instrumentation problem, not a settlement ledger problem — a direct challenge to Prenn's authority disguised as administrative cooperation.",
+                    "evidence_question": "Does Sova know Prenn's count is inaccurate, or is she misdirecting the Warden to protect something else?",
+                    "evidence_kind": "testimony",
+                    "anchored_to": [
+                      "thread_shortfall_exposure"
+                    ],
+                    "retrieval_cue": "Sova's deflection: 'clerical variance in the Synod's parallel tally'"
+                  },
+                  "confidence": "medium",
+                  "sourceQuote": "'I cannot account for clerical variance in the Synod's parallel tally.'"
+                }
+              ],
+              "updates": [
+                {
+                  "entityKind": "npc",
+                  "entityId": "npc_elder_sova",
+                  "changes": {
+                    "disposition": "wary",
+                    "temp_load_tag": "uneasy_under_scrutiny",
+                    "last_seen_turn": 2
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "Something in her stillness shifts — not much, but she draws a breath that takes slightly longer than the last one."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_shortfall_exposure",
+                  "changes": {
+                    "tension": 7,
+                    "last_advanced_turn": 2,
+                    "progress_events": [
+                      {
+                        "summary": "Warden pressed for line-by-line account. Sova read entries aloud with calculated precision, demonstrating she knows exactly how to present access without disclosure. The arithmetic discrepancy persists — entries sound correct but don't sum to the filed total. Sova deflected by invoking 'clerical variance' in the Synod's count.",
+                        "gate_ids": []
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything."
+                },
+                {
+                  "entityKind": "thread",
+                  "entityId": "thread_warden_mandate",
+                  "changes": {
+                    "tension": 6,
+                    "last_advanced_turn": 2,
+                    "progress_events": [
+                      {
+                        "summary": "Warden asserted authority by placing the ledger on the table and demanding line-by-line account, establishing Warden office as the arbiter of the count. Writ not yet formally invoked, but the underlying power structure is now visible and acknowledged.",
+                        "gate_ids": [
+                          "gate_writ_understood"
+                        ]
+                      }
+                    ]
+                  },
+                  "confidence": "high",
+                  "sourceQuote": "You set the ledger on the table between you — not a request, a placement."
+                }
+              ],
+              "transitions": [],
+              "attachments": [],
+              "pacingClassification": {
+                "worldInitiated": true,
+                "sceneEndLeadsTo": null,
+                "tensionDeltasByThreadId": {
+                  "thread_shortfall_exposure": 1,
+                  "thread_network_survival": 0,
+                  "thread_warden_mandate": 1
+                }
+              },
+              "pressureEvents": [
+                {
+                  "id": "pressure_event_2_1",
+                  "turn": 2,
+                  "source": "npc_agenda",
+                  "targetThreadIds": [
+                    "thread_shortfall_exposure"
+                  ],
+                  "scope": "canonical_thread",
+                  "evidenceQuote": "She is not done offering you this cooperation. But she has just demonstrated, very precisely, that she knows how to give you access to everything without giving you anything.",
+                  "humanConsequence": {
+                    "whoPays": "the PC",
+                    "whatGetsHarder": "Obtaining the actual reason for the shortfall — Sova has shown she can read entries aloud without revealing anything actionable",
+                    "whatIsAtRisk": "The time window before Prenn demands a resolution or escalates to supplementary selection",
+                    "visiblePressure": "Sova's calculated cooperation: full access to the ledger without any actual transparency about the discrepancy."
+                  },
+                  "idempotencyKey": "turn_2:npc_agenda:thread_shortfall_exposure:sova_calculated_cooperation",
+                  "amount": 1,
+                  "severity": "standard"
+                }
+              ],
+              "flags": [],
+              "emotionalBeats": [
+                {
+                  "text": "Sova demonstrates she can give the Warden complete access to the ledger while revealing nothing — a precise, rehearsed performance of cooperation that shows she already knows exactly what needs to stay hidden.",
+                  "participants": [
+                    "npc_elder_sova",
+                    "the PC"
+                  ],
+                  "anchoredTo": [
+                    "thread_shortfall_exposure"
+                  ],
+                  "emotionalTags": [
+                    "mask_slipped",
+                    "restraint"
+                  ],
+                  "salience": 0.7
+                }
+              ],
+              "revelationHintsDelivered": [
+                {
+                  "revelationId": "reveal_elder_grandchild",
+                  "phraseMatched": "a name she skips without pausing",
+                  "proseExcerpt": "You're watching for the hesitation, the slight rearrangement of breath before a name she has to manage. You don't find it. The ledger flows — children listed by attunement classification... All present. All accounted for."
+                },
+                {
+                  "revelationId": "reveal_prenn_count_wrong",
+                  "phraseMatched": "a figure he re-reads before answering",
+                  "proseExcerpt": "Except the total on the third page still doesn't match. That fact hasn't changed. But she has read the entries to you with such deliberate evenness that the numbers she said aloud feel correct, and the discrepancy now sits in the arithmetic like a crack..."
+                }
+              ]
+            },
+            "pacingClassification": {
+              "worldInitiated": true,
+              "sceneEndLeadsTo": null,
+              "tensionDeltasByThreadId": {
+                "thread_shortfall_exposure": 1,
+                "thread_network_survival": 0,
+                "thread_warden_mandate": 1
+              }
+            }
+          }
+        ]
+      },
+      "derived": {
+        "workingSet": {
+          "fullEntityIds": [
+            "npc_elder_sova",
+            "thread_warden_mandate",
+            "thread_shortfall_exposure",
+            "thread_network_survival",
+            "faction_house_verath_regional_patron_house"
+          ],
+          "stubEntityIds": [],
+          "excludedEntityIds": [],
+          "emotionalBeatIds": [
+            "beat_0"
+          ],
+          "reasonsByEntityId": {
+            "npc_elder_sova": [
+              "+5 present in scene",
+              "+3 mentioned in last narrator turn"
+            ],
+            "thread_warden_mandate": [
+              "+3 chapter spine",
+              "+1 load-bearing",
+              "+3 mentioned in last narrator turn"
+            ],
+            "faction_house_verath_regional_patron_house": [
+              "+1 faction owner of scene thread \"Mandate Loyalty\""
+            ],
+            "thread_shortfall_exposure": [
+              "+3 mentioned in last narrator turn",
+              "+2 advanced in last 2 turns"
+            ],
+            "thread_network_survival": [
+              "+2 advanced in last 2 turns"
+            ],
+            "beat_0": [
+              "salience 0.60",
+              "+2 participant in scope",
+              "+2 anchor in scope",
+              "+5 recent"
+            ]
+          },
+          "computedAtTurn": 1
+        },
+        "workingSetTelemetry": [
+          {
+            "turn": 0,
+            "chapter": 1,
+            "fullCount": 3,
+            "stubCount": 0,
+            "excludedCount": 0,
+            "fullTokensApprox": 538,
+            "stubTokensApprox": 0,
+            "referencedInProse": [
+              "npc_elder_sova"
+            ],
+            "referencedByAlias": [
+              "npc_elder_sova"
+            ],
+            "referencedByRole": [],
+            "mutatedByArchivist": [
+              "npc_elder_sova",
+              "thread_shortfall_exposure",
+              "thread_network_survival"
+            ],
+            "excludedButReferenced": [],
+            "fullButUnreferenced": [
+              "thread_warden_mandate",
+              "faction_house_verath_regional_patron_house"
+            ],
+            "stubButMutated": [],
+            "reasonsByEntityId": {
+              "npc_elder_sova": [
+                "+5 present in scene"
+              ],
+              "thread_warden_mandate": [
+                "+3 chapter spine",
+                "+1 load-bearing"
+              ],
+              "faction_house_verath_regional_patron_house": [
+                "+1 faction owner of scene thread \"Mandate Loyalty\""
+              ]
+            }
+          },
+          {
+            "turn": 1,
+            "chapter": 1,
+            "fullCount": 5,
+            "stubCount": 0,
+            "excludedCount": 0,
+            "fullTokensApprox": 1311,
+            "stubTokensApprox": 0,
+            "referencedInProse": [
+              "npc_elder_sova"
+            ],
+            "referencedByAlias": [
+              "npc_elder_sova"
+            ],
+            "referencedByRole": [],
+            "mutatedByArchivist": [
+              "npc_elder_sova",
+              "thread_shortfall_exposure",
+              "thread_warden_mandate"
+            ],
+            "excludedButReferenced": [],
+            "fullButUnreferenced": [
+              "thread_network_survival",
+              "faction_house_verath_regional_patron_house"
+            ],
+            "stubButMutated": [],
+            "reasonsByEntityId": {
+              "npc_elder_sova": [
+                "+5 present in scene",
+                "+3 mentioned in last narrator turn"
+              ],
+              "thread_warden_mandate": [
+                "+3 chapter spine",
+                "+1 load-bearing",
+                "+3 mentioned in last narrator turn"
+              ],
+              "faction_house_verath_regional_patron_house": [
+                "+1 faction owner of scene thread \"Mandate Loyalty\""
+              ],
+              "thread_shortfall_exposure": [
+                "+3 mentioned in last narrator turn",
+                "+2 advanced in last 2 turns"
+              ],
+              "thread_network_survival": [
+                "+2 advanced in last 2 turns"
+              ],
+              "beat_0": [
+                "salience 0.60",
+                "+2 participant in scope",
+                "+2 anchor in scope",
+                "+5 recent"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "playerInput": "Ask plainly who else reviewed this ledger before I arrived, without invoking rank yet.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The ledger is closed between you. Sova's thumb hasn't moved off the cover.\n\n\"Before I arrived,\" you say. Even. No rank in it yet. \"Who else reviewed this?\"\n\nShe doesn't answer immediately. Her gaze holds yours the way a door holds a frame — present, functional, giving nothing about what's on the other side. One finger traces the ledger's corner without lifting.The silence that follows is not the silence of someone considering.\n\nIt is the silence of someone deciding you just showed your hand too early.\n\n\"The ledger was reviewed by the office that filed it.\" Her voice hasn't changed pitch. It doesn't need to. \"If there are process concerns, the district review cycle is the correct channel. That is how this office operates, Warden.\"\n\nShe lifts her hand from the ledger. Steps back from the table — one clean step, like a door swinging closed.\n\n\"I will note that your arrival preceded the auditor's formal tally by less than a day. If you have questions about the count's provenance, I would recommend raising them with Auditor Prenn. He has been thorough.\" A pause, deliberate as punctuation. \"He arrived early too.\"\n\nThe implication doesn't need elaboration. She is telling you she knows exactly what kind of visit this is — and that she has already mapped the room, including where you and Prenn stand in it relative to each other. The cooperative register she offered before is still technically present. But her weight has shifted back. The ledger stays on the table between you, and she has just made it Prenn's property by name.\n\nThe flickering strip overhead cuts out for a full second, then catches again.\n\nYou are not going to get a name from her this way.",
+      "annotation": {
+        "suggested_actions": [
+          "Invoke your writ directly — cite the Throne mandate that supersedes Prenn's tally and demand she name the prior reviewers on record. [Intimidation]",
+          "Step back from the ledger and shift your angle: ask Sova what she knows about Prenn's count, specifically — let her suspicion of him work for you. [Insight]",
+          "Let the silence sit and watch where her attention goes — what she looks at when she thinks you're not pressing. [Perception]",
+          "Request to see the transit manifests separately from the ledger — a different document, a different surface, harder to have rehearsed."
+        ],
+        "hinted_entities": {
+          "npcs_mentioned": [
+            "npc_elder_sova",
+            "npc_auditor_prenn"
+          ],
+          "threads_touched": [
+            "thread_shortfall_exposure",
+            "thread_warden_mandate"
+          ],
+          "clues_dropped": [
+            "Sova knows Prenn arrived early and is running his own count — she's mapped the room including the Warden's position relative to Prenn",
+            "Sova redirected all accountability to 'the office that filed it' and 'district review cycle' — institutional deflection, no name given",
+            "Sova made the ledger Prenn's property by naming him — she may be using Prenn as a shield or a pressure point"
+          ],
+          "decisions_implied": [
+            "Warden chose not to invoke rank on the question about prior reviewers"
+          ]
+        },
+        "mechanical_effects": [
+          {
+            "kind": "set_scene_snapshot",
+            "snapshot": {
+              "scene_id": "scene_1_1",
+              "location_id": "settlement_compact_hall",
+              "present_npc_ids": [
+                "npc_elder_sova"
+              ],
+              "current_interlocutor_ids": [
+                "npc_elder_sova"
+              ],
+              "established": [
+                "Ledger closed on table between Warden and Sova",
+                "Sova stepped back from table after deflecting — distance increased",
+                "Sova named Prenn explicitly, framing the count as his domain",
+                "Warden has not yet invoked writ or rank"
+              ],
+              "time_label": "opening",
+              "locked": false
+            }
+          }
+        ],
+        "authorial_moves": {
+          "pivot_signaled": false
+        }
+      },
+      "mechanicalEffects": [
+        {
+          "kind": "set_scene_snapshot",
+          "snapshot": {
+            "scene_id": "scene_1_1",
+            "location_id": "settlement_compact_hall",
+            "present_npc_ids": [
+              "npc_elder_sova"
+            ],
+            "current_interlocutor_ids": [
+              "npc_elder_sova"
+            ],
+            "established": [
+              "Ledger closed on table between Warden and Sova",
+              "Sova stepped back from table after deflecting — distance increased",
+              "Sova named Prenn explicitly, framing the count as his domain",
+              "Warden has not yet invoked writ or rank"
+            ],
+            "time_label": "opening",
+            "locked": false
+          }
+        }
+      ]
+    },
+    "archivist": {
+      "patch": {
+        "turnIndex": 3,
+        "creates": [
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Sova knows Prenn arrived early and is conducting his own count independently. She has mapped the room's power positions: the Warden arrived before Prenn's formal tally, and she named Prenn explicitly to redirect accountability to his domain.",
+              "evidence_question": "What does Sova know about Prenn's authority and timeline, and how does she position the Warden relative to him?",
+              "evidence_kind": "testimony",
+              "anchored_to": [
+                "thread_shortfall_exposure",
+                "thread_warden_mandate"
+              ],
+              "retrieval_cue": "Sova deflects to Prenn, signals he arrived early too"
+            },
+            "confidence": "high",
+            "sourceQuote": "He arrived early too."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Sova uses institutional language to deflect: 'the office that filed it,' 'district review cycle,' 'how this office operates.' She names no prior reviewer, no person. She transferred the ledger's ownership to Prenn by naming him as the proper auditor, not herself.",
+              "evidence_question": "Is Sova using Prenn as a shield to protect the settlement, or using him as pressure to force the Warden's hand?",
+              "evidence_kind": "testimony",
+              "anchored_to": [
+                "thread_shortfall_exposure"
+              ],
+              "retrieval_cue": "Sova deflects authority to 'the office,' avoids naming individuals"
+            },
+            "confidence": "high",
+            "sourceQuote": "The ledger was reviewed by the office that filed it... If there are process concerns, the district review cycle is the correct channel."
+          },
+          {
+            "kind": "clue",
+            "payload": {
+              "content": "Sova's body language shifts when the Warden presses the ledger review question. Her initial cooperative register hardens. She steps back from the table. Her silence before answering is 'not the silence of someone considering'—it is deliberate, a decision. She reads the Warden's question as premature exposure of purpose.",
+              "evidence_question": "What specific leverage or knowledge does Sova have that makes her confident enough to refuse direct answers?",
+              "evidence_kind": "trace",
+              "anchored_to": [
+                "thread_network_survival"
+              ],
+              "retrieval_cue": "Sova's posture shift and deliberate silence when questioned about reviewers"
+            },
+            "confidence": "medium",
+            "sourceQuote": "The silence that follows is not the silence of someone considering. It is the silence of someone deciding you just showed your hand too early."
+          }
+        ],
+        "updates": [
+          {
+            "entityKind": "npc",
+            "entityId": "npc_elder_sova",
+            "changes": {
+              "disposition": "wary",
+              "temp_load_tag": "uneasy_under_scrutiny"
+            },
+            "confidence": "high",
+            "sourceQuote": "Her weight has shifted back... she has just made it Prenn's property by name."
+          },
+          {
+            "entityKind": "thread",
+            "entityId": "thread_shortfall_exposure",
+            "changes": {
+              "tension": 8,
+              "progress_events": [
+                {
+                  "summary": "Warden pressed Sova on prior ledger review without invoking writ or rank. Sova refused to name reviewers, deflected to institutional process and Prenn's authority instead. Her register hardened; she repositioned away from the table. The Warden's early arrival is now noted as suspicious.",
+                  "gate_ids": []
+                }
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "Before I arrived... Who else reviewed this?"
+          },
+          {
+            "entityKind": "thread",
+            "entityId": "thread_warden_mandate",
+            "changes": {
+              "tension": 7,
+              "progress_events": [
+                {
+                  "summary": "Sova explicitly noted that the Warden arrived before Prenn's formal tally by less than a day. The implication: the Warden's independence is already in question, and Sova has mapped where both the Warden and Prenn stand. The writ has not yet been invoked.",
+                  "gate_ids": []
+                }
+              ]
+            },
+            "confidence": "high",
+            "sourceQuote": "He arrived early too."
+          }
+        ],
+        "transitions": [],
+        "attachments": [],
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": null,
+          "tensionDeltasByThreadId": {
+            "thread_shortfall_exposure": 1,
+            "thread_network_survival": 0,
+            "thread_warden_mandate": 1
+          }
+        },
+        "pressureEvents": [
+          {
+            "id": "turn_3_sova_hardens",
+            "turn": 3,
+            "source": "npc_agenda",
+            "targetThreadIds": [
+              "thread_shortfall_exposure"
+            ],
+            "scope": "canonical_thread",
+            "evidenceQuote": "Her weight has shifted back. The ledger stays on the table between you, and she has just made it Prenn's property by name.",
+            "humanConsequence": {
+              "whoPays": "the PC",
+              "whoGainsLeverage": "npc_auditor_prenn",
+              "whatGetsHarder": "Getting Sova to name prior reviewers or confirm the ledger's accuracy. She has shut the cooperative register down and repositioned behind institutional channels.",
+              "whatIsAtRisk": "Direct path to the ledger's truth. Sova now routes all accountability to Prenn and the district review cycle.",
+              "visiblePressure": "Sova steps back from the table, hardened register, refusal to name individuals, tactical naming of Prenn as the proper auditor."
+            },
+            "idempotencyKey": "turn_3:npc_agenda:thread_shortfall_exposure:sova_hardens_and_names_prenn",
+            "severity": "standard"
+          }
+        ],
+        "flags": [],
+        "emotionalBeats": [
+          {
+            "text": "Sova reads the Warden's early question as exposing purpose, and deliberately hardens her register—a strategic repositioning disguised as institutional deflection.",
+            "participants": [
+              "npc_elder_sova",
+              "the PC"
+            ],
+            "anchoredTo": [
+              "thread_shortfall_exposure",
+              "thread_warden_mandate"
+            ],
+            "emotionalTags": [
+              "mask_slipped",
+              "evasion",
+              "decision_revealed"
+            ],
+            "salience": 0.7
+          }
+        ],
+        "revelationHintsDelivered": [
+          {
+            "revelationId": "reveal_elder_grandchild",
+            "phraseMatched": "a name she skips without pausing",
+            "proseExcerpt": "You are not going to get a name from her this way."
+          },
+          {
+            "revelationId": "reveal_prenn_count_wrong",
+            "phraseMatched": "naming his superior's review as a deadline rather than a check",
+            "proseExcerpt": "If there are process concerns, the district review cycle is the correct channel... the correct channel."
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "presentNpcIdsIncludes": ["npc_elder_sova"],
+    "scenePacketCastIncludes": ["npc_elder_sova"],
+    "scenePacketCastExcludes": ["npc_auditor_prenn", "npc_handler_davan"],
+    "castPacketIncludes": [
+      {
+        "npcId": "npc_elder_sova",
+        "tempLoadTag": "uneasy_under_scrutiny"
+      }
+    ],
+    "threadsInclude": [
+      {
+        "threadId": "thread_shortfall_exposure",
+        "status": "active",
+        "tension": 8,
+        "peakTension": 8,
+        "progressEventsInclude": [
+          {
+            "summaryIncludes": "refused to name reviewers"
+          }
+        ]
+      },
+      {
+        "threadId": "thread_warden_mandate",
+        "status": "active",
+        "tension": 7,
+        "peakTension": 7,
+        "progressEventsInclude": [
+          {
+            "summaryIncludes": "before Prenn's formal tally"
+          }
+        ]
+      }
+    ],
+    "currentSceneId": "scene_1_1",
+    "currentTimeLabel": "opening",
+    "currentLocationId": "loc_opening",
+    "sceneKernel": {
+      "sceneId": "scene_1_1",
+      "presentEntityIdsEquals": ["npc_elder_sova"],
+      "currentInterlocutorIdsEquals": ["npc_elder_sova"]
+    },
+    "cluesCount": 0,
+    "pressureEventsCount": 2,
+    "pressureEventsInclude": [
+      {
+        "idempotencyKey": "turn_3:npc_agenda:thread_shortfall_exposure:sova_hardens_and_names_prenn",
+        "source": "npc_agenda",
+        "targetThreadIdsInclude": ["thread_shortfall_exposure"],
+        "whoPays": "the PC",
+        "visiblePressureIncludes": "tactical naming of Prenn"
+      }
+    ],
+    "beatsCount": 3,
+    "beatsInclude": [
+      {
+        "textIncludes": "hardens her register",
+        "tagsInclude": ["mask_slipped", "evasion", "decision_revealed"],
+        "participantsInclude": ["npc_elder_sova"]
+      }
+    ],
+    "displaySentinel": {
+      "findingsAbsent": true
+    },
+    "archivistAcceptedRefs": [
+      "updates[0]",
+      "updates[1]",
+      "updates[2]",
+      "pressureEvents[0]"
+    ],
+    "archivistRejectedRefs": ["creates[0]", "creates[1]", "creates[2]"]
+  }
+}

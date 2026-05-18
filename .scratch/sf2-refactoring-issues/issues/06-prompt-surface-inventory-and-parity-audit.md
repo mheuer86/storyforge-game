@@ -1,7 +1,17 @@
 # Prompt Surface Inventory And Parity Audit
 
-Status: needs-triage
+Status: implemented
 Type: HITL->AFK
+
+## Implementation status
+
+Implemented. Do not assign this ticket again. The artifact exists at:
+
+- `.scratch/sf2-refactoring-issues/artifacts/prompt-surface-inventory-and-parity-audit.md`
+
+It has also been reconciled after Tickets 07 and 08, including current ownership for `lib/sf2/genre-profile/` and `lib/sf2/narrator/prompt/`.
+
+Any remaining prompt behavior decisions should become new tickets from the artifact's **Prompt Edit Decision Queue** rather than reopening this audit.
 
 ## What to build
 
@@ -158,15 +168,15 @@ The audit artifact must include:
 
 ## Acceptance criteria
 
-- [ ] The artifact exists at `.scratch/sf2-refactoring-issues/artifacts/prompt-surface-inventory-and-parity-audit.md`.
-- [ ] Every current SF2 prompt and prompt-adjacent surface listed above is classified.
-- [ ] The artifact separates cached system content from dynamic per-turn content.
-- [ ] The artifact includes an approximate size baseline.
-- [ ] The artifact includes a V1 -> SF2 parity table for the listed load-bearing concepts.
-- [ ] The artifact identifies duplicate, stale, or code-owned candidates without changing code.
-- [ ] Every recommended prompt deletion or restoration is marked with a decision state.
-- [ ] The artifact explicitly feeds `08-narrator-prompt-surface-module.md` by naming safe extraction work versus blocked prompt-content decisions.
-- [ ] No source code or prompt text changes are made, except optionally adding documentation artifacts under `.scratch/`.
+- [x] The artifact exists at `.scratch/sf2-refactoring-issues/artifacts/prompt-surface-inventory-and-parity-audit.md`.
+- [x] Every current SF2 prompt and prompt-adjacent surface listed above is classified.
+- [x] The artifact separates cached system content from dynamic per-turn content.
+- [x] The artifact includes an approximate size baseline.
+- [x] The artifact includes a V1 -> SF2 parity table for the listed load-bearing concepts.
+- [x] The artifact identifies duplicate, stale, or code-owned candidates without changing code.
+- [x] Every recommended prompt deletion or restoration is marked with a decision state.
+- [x] The artifact explicitly feeds `08-narrator-prompt-surface-module.md` by naming safe extraction work versus blocked prompt-content decisions.
+- [x] No source code or prompt text changes were made by this audit ticket, except documentation artifacts under `.scratch/`.
 
 ## Verification
 

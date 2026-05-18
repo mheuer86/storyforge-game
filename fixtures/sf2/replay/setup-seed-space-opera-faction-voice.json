@@ -1,0 +1,54 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "setup seed space opera faction voice is character driven",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure Ch1 AuthorInputSeed coverage: Space Opera factionVoiceRules should align with the current genre bible and avoid old procedure-first station language."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "setupSelection": {
+          "genreId": "space-opera",
+          "originId": "human",
+          "playbookId": "operative",
+          "hookId": "forty-thousand-1edr632"
+        },
+        "genreId": "space-opera",
+        "originId": "human",
+        "playbookId": "operative",
+        "currentChapter": 1
+      }
+    },
+    "playerInput": "(unused - setup seed fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "seedJsonIncludes": [
+        "Station hands and dock bosses are tired, competent, opinionated people",
+        "Corporate representatives sound smooth and transactional, but fear travels through them",
+        "Remnant officers carry the cadence of a law that used to mean something",
+        "Back-channel brokers say less than they know and price information by urgency"
+      ],
+      "seedJsonExcludes": [
+        "Station officials speak in berth priority, safety codes, route permission, and liability",
+        "Route access, docking, permits, reputation, debt, and cargo all become human leverage"
+      ]
+    }
+  }
+}

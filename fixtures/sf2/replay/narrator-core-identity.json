@@ -1,0 +1,43 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator core identity prompt surface",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protect the shared SF2 core prompt identity while preserving typed state authority, role ownership, player agency, and hidden-information boundaries."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera"
+      }
+    },
+    "playerInput": "(unused - prompt fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on rendered system prompt)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "(unused - prompt fixture)",
+      "systemContainsAll": [
+        "Storyforge is a solo text RPG that takes the player and the fiction seriously.",
+        "The world should feel coherent enough to push back when the player pushes on it.",
+        "typed state is authoritative",
+        "Each role stays inside its ownership boundary",
+        "Honor player intelligence and agency.",
+        "The world pushes back through observable, coherent consequence, not hidden punishment or unseen facts revealed from outside the character's reach."
+      ],
+      "systemContainsNone": [
+        "## CURRENT GAME STATE",
+        "CURRENT TURN"
+      ]
+    }
+  }
+}

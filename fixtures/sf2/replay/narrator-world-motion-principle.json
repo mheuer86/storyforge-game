@@ -1,0 +1,39 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator world motion principle prompt surface",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protect the Narrator living-world principle and its hidden-camera/state-ownership guardrails."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera"
+      }
+    },
+    "playerInput": "(unused - prompt fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on rendered system prompt)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "(unused - prompt fixture)",
+      "systemContainsAll": [
+        "### World motion without hidden-camera prose",
+        "The world moves without waiting for the player at chapter scale.",
+        "Show offscreen agency only through observable traces the PC can perceive now",
+        "Do not cut away to hidden thoughts, private plans, or unseen decisions elsewhere.",
+        "You do not gain durable state-write ownership from this principle",
+        "No hidden-camera narration."
+      ]
+    }
+  }
+}

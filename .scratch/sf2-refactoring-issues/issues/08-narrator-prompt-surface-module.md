@@ -1,7 +1,29 @@
 # Narrator Prompt Surface Module
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Implementation status
+
+Implemented and reviewed on 2026-05-16.
+
+Primary target landed:
+
+- `lib/sf2/narrator/prompt.ts` is the public facade.
+- `lib/sf2/narrator/prompt/core.ts` owns `SF2_CORE`.
+- `lib/sf2/narrator/prompt/role.ts` owns `buildNarratorRole(...)` and `SF2_NARRATOR_ROLE`.
+- `lib/sf2/narrator/prompt/situation.ts` owns `buildNarratorSituation(...)`.
+- `lib/sf2/narrator/prompt/README.md` documents the cache/dynamic boundary.
+
+The implementation also absorbed work originally planned for 05 and 10. Do not use this ticket's old follow-up section as live sequencing guidance; see the backlog README for the current state.
+
+Verification observed after landing:
+
+- focused prompt-surface fixtures passed
+- `npm run sf2:replay -- fixtures/sf2/replay` passed: 225/225
+- `npm run sf2:check-prompt-genre-leaks` passed
+- `npm run build` passed
+- browser smoke artifacts are saved under `.scratch/sf2-refactoring-issues/artifacts/smoke-08/`
 
 ## What to build
 
@@ -234,5 +256,5 @@ If picked up on a branch where ticket 06 or ticket 07 has not landed, complete t
 
 ## Follow-ups intentionally split out
 
-- `09-narrator-prompt-facade-import-cleanup.md`: standardize imports around the public facade.
-- `10-narrator-turn-context-orchestrator-cleanup.md`: refactor turn-context orchestration after this prompt module exists.
+- `09-narrator-prompt-facade-import-cleanup.md`: satisfied by the landed implementation.
+- `10-narrator-turn-context-orchestrator-cleanup.md`: implemented as extra scope during this landing.

@@ -1,0 +1,38 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator prose philosophy prompt surface",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protect Narrator guidance for honest density, silence, readable rhythm, scene headings, and word-count guardrails."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera"
+      }
+    },
+    "playerInput": "(unused - prompt fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on rendered system prompt)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "(unused - prompt fixture)",
+      "systemContainsAll": [
+        "Honest density over word count.",
+        "Silence is allowed.",
+        "Use readable blank-line rhythm between dialogue, italic text, and narrative blocks",
+        "Use a short scene heading only when location or time meaningfully changes.",
+        "150-250 words per turn target, 400 word cap. Honest density and dramatic need outrank filling the target"
+      ]
+    }
+  }
+}

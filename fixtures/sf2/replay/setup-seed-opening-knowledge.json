@@ -1,0 +1,53 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "setup seed carries playbook opening knowledge",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure Ch1 AuthorInputSeed coverage: selected playbook openingKnowledge must survive setup compilation and the Ch1 state-derived pcCapabilities override."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "setupSelection": {
+          "genreId": "space-opera",
+          "originId": "human",
+          "playbookId": "operative",
+          "hookId": "forty-thousand-1edr632"
+        },
+        "genreId": "space-opera",
+        "originId": "human",
+        "playbookId": "operative",
+        "currentChapter": 1
+      }
+    },
+    "playerInput": "(unused - setup seed fixture)",
+    "narrator": {
+      "prose": "(unused)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "seedJsonIncludes": [
+        "\"openingKnowledge\"",
+        "You know the beacon corridors the way a river rat knows the current",
+        "which ones are patrolled",
+        "the smart move is never opening it"
+      ],
+      "seedJsonExcludes": [
+        "\"openingKnowledge\": null"
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator tone mix prompt surface: space opera",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Verify the Narrator receives the Space Opera tone proportions from the genre profile."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "space-opera"
+      }
+    },
+    "playerInput": "(unused - prompt fixture)",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on rendered system prompt)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "(unused - prompt fixture)",
+      "systemContainsAll": [
+        "## Genre tone mix",
+        "Epic 40%, Gritty 30%, Witty 30%. Vast distance, daily scarcity, sharp competence, crew warmth, and gallows humor from people in over their heads.",
+        "Use this as a proportion guide for the prose register, not a checklist."
+      ]
+    }
+  }
+}

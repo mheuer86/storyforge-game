@@ -1,7 +1,19 @@
 # Narrator Prompt Facade Import Cleanup
 
-Status: needs-triage
+Status: satisfied-by-08
 Type: AFK
+
+## Implementation status
+
+Satisfied by the Ticket 08 landing. `lib/sf2/narrator/prompt.ts` is the public facade and current route/script/application callers use it rather than deep-importing prompt internals.
+
+Review command:
+
+```bash
+rg "narrator/prompt/" app lib scripts fixtures
+```
+
+No accidental public deep imports were found. Do not assign this ticket as open unless future work introduces import drift.
 
 ## What to build
 
@@ -95,4 +107,3 @@ npm run build
 ```
 
 The `rg` command should only show internal implementation imports or intentional focused tests/fixtures.
-

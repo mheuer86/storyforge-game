@@ -1,7 +1,15 @@
 # SF2 Genre Narrative Profile Module
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Implementation status
+
+Implemented. The SF2 genre narrative profile module now lives under:
+
+- `lib/sf2/genre-profile/`
+
+`lib/sf2/genre-examples.ts` remains as a compatibility shim, and `lib/sf2/narrator/prompt.ts` keeps compatibility re-exports for current prompt callers.
 
 ## What to build
 

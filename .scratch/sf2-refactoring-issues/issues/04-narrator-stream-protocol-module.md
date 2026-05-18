@@ -1,7 +1,19 @@
 # Narrator Stream Protocol Module
 
-Status: needs-triage
+Status: implemented
 Type: AFK
+
+## Implementation status
+
+Implemented. The shared protocol now lives under:
+
+- `lib/sf2/narrator/stream-protocol/events.ts`
+- `lib/sf2/narrator/stream-protocol/parse.ts`
+- `lib/sf2/narrator/stream-protocol/index.ts`
+
+The parser preserves the old browser-side soft defaults for malformed stream payloads. `app/play/v2/page.tsx` now consumes the parser indirectly through `lib/sf2/runtime/client-turn-orchestrator.ts`.
+
+Do not pick this ticket up as open unless a future review finds a new protocol gap.
 
 ## What to build
 

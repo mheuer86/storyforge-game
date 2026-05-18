@@ -1,7 +1,20 @@
 # Narrator Turn Context Orchestrator Cleanup
 
-Status: needs-triage
+Status: implemented-by-08
 Type: AFK
+
+## Implementation status
+
+Implemented as extra scope during the Ticket 08 landing. `buildNarratorTurnContext(...)` remains the route-facing coordinator in `lib/sf2/narrator/turn-context.ts`, while internal responsibilities now live in named helpers:
+
+- `lib/sf2/narrator/system-blocks.ts`
+- `lib/sf2/narrator/roll-resume.ts`
+- `lib/sf2/narrator/roll-result.ts`
+- `lib/sf2/narrator/diagnostics.ts`
+- `lib/sf2/narrator/sentinel-context.ts`
+- `lib/sf2/narrator/replay-metadata.ts`
+
+This ticket should not be assigned as open. Any further work should be written as a residual ticket against the current files.
 
 ## What to build
 
@@ -142,4 +155,3 @@ Run focused new/changed fixtures first, then:
 npm run sf2:replay -- fixtures/sf2/replay
 npm run build
 ```
-
