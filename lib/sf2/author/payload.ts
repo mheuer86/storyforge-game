@@ -82,6 +82,7 @@ function derivePcCapabilities(state: Sf2State): AuthorInputSeed['pcCapabilities'
       .filter((item) => item.tags?.includes('weapon') || item.tags?.includes('credential') || item.tags?.includes('signature'))
       .slice(0, 5)
       .map((item) => ({ name: item.name })),
+    ...(playbook?.openingKnowledge ? { openingKnowledge: playbook.openingKnowledge } : {}),
     playbookProfile: playbook?.playbookProfile,
   }
 }

@@ -1,5 +1,5 @@
-Status: ready-for-agent
-Labels: enhancement, ready-for-agent
+Status: implemented
+Labels: enhancement, implemented
 Type: AFK
 
 # Narrator prose philosophy
@@ -38,11 +38,19 @@ SF2 currently has word targets and strong mechanical rules, but less permission 
 
 ## Acceptance Criteria
 
-- [ ] Narrator role contains density/silence guidance.
-- [ ] Narrator role retains word target/cap but with density framing.
-- [ ] Narrator role includes formatting rhythm guidance.
-- [ ] Prompt-surface fixture confirms the text renders.
-- [ ] No existing replay fixture fails due to prompt composition.
+- [x] Narrator role contains density/silence guidance.
+- [x] Narrator role retains word target/cap but with density framing.
+- [x] Narrator role includes formatting rhythm guidance.
+- [x] Prompt-surface fixture confirms the text renders.
+- [x] No existing replay fixture fails due to prompt composition.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Added honest-density, silence, readable blank-line rhythm, and meaningful-heading guidance to Narrator craft.
+- Kept the existing word target and cap as guardrails under dramatic need.
+- Covered by `fixtures/sf2/replay/narrator-prose-philosophy.json`.
 
 ## Fixture Expectations
 

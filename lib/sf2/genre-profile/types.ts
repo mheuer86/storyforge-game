@@ -10,5 +10,6 @@ export interface Sf2GenreExamples {
 export interface Sf2GenreNarrativeProfile {
   id: string
   bible: string
+  toneGuidance: string
   examples: Sf2GenreExamples
 }

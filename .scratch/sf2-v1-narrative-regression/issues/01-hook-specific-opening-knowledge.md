@@ -1,5 +1,5 @@
-Status: ready-for-agent, low priority
-Labels: enhancement, ready-for-agent, low-priority
+Status: implemented, low priority
+Labels: enhancement, implemented, low-priority
 Type: AFK
 
 # Hook-specific opening knowledge
@@ -39,10 +39,18 @@ This ticket is intentionally narrow. Do not design new hook-specific opening lor
 
 ## Acceptance Criteria
 
-- [ ] Existing playbook `openingKnowledge` is available in the compiled SF2 seed.
-- [ ] The field is optional and does not break genres/playbooks that omit it.
-- [ ] Ch1 Author seed fixtures show the knowledge for at least one Space Opera playbook.
-- [ ] No existing seed compilation behavior regresses.
+- [x] Existing playbook `openingKnowledge` is available in the compiled SF2 seed.
+- [x] The field is optional and does not break genres/playbooks that omit it.
+- [x] Ch1 Author seed fixtures show the knowledge for at least one Space Opera playbook.
+- [x] No existing seed compilation behavior regresses.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Added optional `openingKnowledge` to `AuthorInputSeed.pcCapabilities`.
+- Passed through playbook opening knowledge from setup seed compilation and Author payload derivation.
+- Covered by `fixtures/sf2/replay/setup-seed-opening-knowledge.json`.
 
 ## Fixture Expectations
 

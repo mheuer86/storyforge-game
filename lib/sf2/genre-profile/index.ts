@@ -9,4 +9,5 @@ export {
   getSf2BibleForGenre,
   getSf2GenreExamples,
   getSf2GenreNarrativeProfile,
+  getSf2GenreToneGuidance,
 } from './profiles'

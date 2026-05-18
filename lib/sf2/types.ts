@@ -1259,6 +1259,7 @@ export interface AuthorInputSeed {
     proficiencies: string[]
     traits: Array<{ name: string; description?: string }>
     signatureInventory: Array<{ name: string; description?: string }>
+    openingKnowledge?: string
     playbookProfile?: {
       naturalMoves: string[]
       naturalDomains: string[]

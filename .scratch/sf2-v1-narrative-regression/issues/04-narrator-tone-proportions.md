@@ -1,5 +1,5 @@
-Status: ready-for-agent
-Labels: enhancement, ready-for-agent
+Status: implemented
+Labels: enhancement, implemented
 Type: AFK
 
 # Narrator tone proportions
@@ -38,11 +38,19 @@ Give the SF2 Narrator access to each genre's tone mix/proportions. V1 gave the G
 
 ## Acceptance Criteria
 
-- [ ] Rendered Narrator role/prompt includes tone guidance for Space Opera.
-- [ ] At least one other genre fixture proves the guidance changes by genre.
-- [ ] Tone guidance includes proportions or clear relative weights, not just adjectives.
-- [ ] Author seed tone rules still compile.
-- [ ] No prompt cache/dynamic leak assertion fails.
+- [x] Rendered Narrator role/prompt includes tone guidance for Space Opera.
+- [x] At least one other genre fixture proves the guidance changes by genre.
+- [x] Tone guidance includes proportions or clear relative weights, not just adjectives.
+- [x] Author seed tone rules still compile.
+- [x] No prompt cache/dynamic leak assertion fails.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Added genre-profile tone guidance derived from each genre bible's `## Tone` section.
+- Rendered compact tone mix guidance in the Narrator role prompt.
+- Covered by `fixtures/sf2/replay/narrator-tone-space-opera.json` and `fixtures/sf2/replay/narrator-tone-grimdark.json`.
 
 ## Fixture Expectations
 

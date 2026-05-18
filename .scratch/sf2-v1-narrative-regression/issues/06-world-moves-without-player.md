@@ -1,5 +1,5 @@
-Status: ready-for-agent
-Labels: enhancement, ready-for-agent
+Status: implemented
+Labels: enhancement, implemented
 Type: AFK
 
 # The world moves without the player
@@ -41,11 +41,20 @@ This should make the world feel alive without violating SF2's hidden-information
 
 ## Acceptance Criteria
 
-- [ ] Narrator role includes a world-motion principle adapted to SF2.
-- [ ] The principle explicitly requires observable traces instead of hidden-camera narration.
-- [ ] The principle does not grant Narrator durable state-write ownership.
-- [ ] Prompt fixture confirms the new guidance renders.
-- [ ] Existing replay suite passes.
+- [x] Narrator role includes a world-motion principle adapted to SF2.
+- [x] The principle explicitly requires observable traces instead of hidden-camera narration.
+- [x] The principle does not grant Narrator durable state-write ownership.
+- [x] Prompt fixture confirms the new guidance renders.
+- [x] Existing replay suite passes.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Added world-motion guidance to Narrator craft at chapter scale.
+- Required observable traces and preserved the hidden-camera ban.
+- Kept durable thread, faction, NPC, promise, and clue persistence with Archivist plus validation.
+- Covered by `fixtures/sf2/replay/narrator-world-motion-principle.json`.
 
 ## Fixture Expectations
 

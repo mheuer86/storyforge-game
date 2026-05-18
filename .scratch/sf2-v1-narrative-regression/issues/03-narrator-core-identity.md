@@ -1,5 +1,5 @@
-Status: ready-for-agent
-Labels: enhancement, ready-for-agent
+Status: implemented
+Labels: enhancement, implemented
 Type: AFK
 
 # SF2 Narrator core identity
@@ -46,11 +46,19 @@ SF2 should have both.
 
 ## Acceptance Criteria
 
-- [ ] `SF2_CORE` includes a clear creative Storyforge identity.
-- [ ] `SF2_CORE` still states typed state and role-owned tools are authoritative.
-- [ ] No role-specific dynamic content is added to the cached core.
-- [ ] Rendered prompt fixtures reflect the new identity.
-- [ ] No existing SF2 replay fixture fails due to prompt composition or dynamic leak assertions.
+- [x] `SF2_CORE` includes a clear creative Storyforge identity.
+- [x] `SF2_CORE` still states typed state and role-owned tools are authoritative.
+- [x] No role-specific dynamic content is added to the cached core.
+- [x] Rendered prompt fixtures reflect the new identity.
+- [x] No existing SF2 replay fixture fails due to prompt composition or dynamic leak assertions.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Strengthened `SF2_CORE` with Storyforge creative identity, player agency, hidden-information boundaries, and coherent consequence language.
+- Preserved typed state authority and role-owned write boundaries.
+- Covered by `fixtures/sf2/replay/narrator-core-identity.json`.
 
 ## Fixture Expectations
 

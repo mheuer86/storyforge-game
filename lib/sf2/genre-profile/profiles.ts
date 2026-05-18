@@ -512,9 +512,11 @@ export function getSf2GenreNarrativeProfile(
   genreId?: string
 ): Sf2GenreNarrativeProfile {
   const id = resolveGenreId(genreId)
+  const bible = BIBLES_BY_GENRE[id]
   return {
     id,
-    bible: BIBLES_BY_GENRE[id],
+    bible,
+    toneGuidance: extractToneGuidance(bible),
     examples: EXAMPLES_BY_GENRE[id],
   }
 }
@@ -525,4 +527,13 @@ export function getSf2BibleForGenre(genreId?: string): string {
 
 export function getSf2GenreExamples(genreId?: string): Sf2GenreExamples {
   return getSf2GenreNarrativeProfile(genreId).examples
+}
+
+export function getSf2GenreToneGuidance(genreId?: string): string {
+  return getSf2GenreNarrativeProfile(genreId).toneGuidance
+}
+
+function extractToneGuidance(bible: string): string {
+  const match = bible.match(/## Tone\s*\n([\s\S]*?)(?:\n## |\s*$)/)
+  return match?.[1]?.trim() || 'Epic 40%, Gritty 40%, Witty 20%. Keep the genre identity specific, playable, and consequence-bearing.'
 }

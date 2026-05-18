@@ -1,6 +1,6 @@
 # SF2 V1 narrative regression - remaining gaps
 
-Status: ready-for-agent plan
+Status: implemented
 Source: 2026-05-18 narrative regression review after genre bible fixes, Arc Author pressure-style validation, and Narrator forbidden-manifestation hardening.
 
 ## Thesis
@@ -27,12 +27,22 @@ These tickets restore V1's narrative strengths without weakening SF2's role boun
 
 | # | Title | Type | Status | Blocked by | Notes |
 |---|---|---|---|---|---|
-| 01 | Hook-specific opening knowledge | AFK | ready-for-agent, low priority | None | Narrow pass-through of existing playbook knowledge; do not design new hook lore. |
-| 02 | Rewrite compile-seed factionVoiceRules | AFK | ready-for-agent | None | Align Author seed voice with fixed genre bibles. |
-| 03 | SF2 Narrator core identity | AFK | ready-for-agent | None | Restore V1 creative posture while preserving SF2 state authority. |
-| 04 | Narrator tone proportions | AFK | ready-for-agent | None | Give Narrator the tone mix Author already sees. |
-| 05 | Narrator prose philosophy | AFK | ready-for-agent | None | Restore silence, density, formatting rhythm, and breath. |
-| 06 | The world moves without the player | AFK | ready-for-agent | 03 recommended | Restore offscreen agency as observable traces, not hidden-camera prose. |
+| 01 | Hook-specific opening knowledge | AFK | implemented, low priority | None | Narrow pass-through of existing playbook knowledge; do not design new hook lore. |
+| 02 | Rewrite compile-seed factionVoiceRules | AFK | implemented | None | Align Author seed voice with fixed genre bibles. |
+| 03 | SF2 Narrator core identity | AFK | implemented | None | Restore V1 creative posture while preserving SF2 state authority. |
+| 04 | Narrator tone proportions | AFK | implemented | None | Give Narrator the tone mix Author already sees. |
+| 05 | Narrator prose philosophy | AFK | implemented | None | Restore silence, density, formatting rhythm, and breath. |
+| 06 | The world moves without the player | AFK | implemented | 03 recommended | Restore offscreen agency as observable traces, not hidden-camera prose. |
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Low-thinking implementation agents built tickets 01-02 and 03-06 in parallel.
+- Code review found no blocking implementation issues after integration.
+- `npm run sf2:replay -- fixtures/sf2/replay` passed all 254 replay fixtures.
+- `npm run build` passed.
+- `npm run lint` could not run because `eslint` is not installed in this workspace.
 
 ## Shared Implementation Rules
 

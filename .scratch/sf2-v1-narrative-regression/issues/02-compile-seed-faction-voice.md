@@ -1,5 +1,5 @@
-Status: ready-for-agent
-Labels: enhancement, ready-for-agent
+Status: implemented
+Labels: enhancement, implemented
 Type: AFK
 
 # Rewrite compile-seed factionVoiceRules to match fixed genre bibles
@@ -38,10 +38,18 @@ Current compile-seed voice rules often describe institutional registers and mech
 
 ## Acceptance Criteria
 
-- [ ] Each genre's `factionVoiceRules` aligns with its `profiles.ts` faction voice.
-- [ ] No `factionVoiceRules` line is purely a list of procedures, documents, permissions, or codes.
-- [ ] Compile-seed output for at least Space Opera and one non-space genre includes character-driven faction voice.
-- [ ] Existing setup seed fields still compile.
+- [x] Each genre's `factionVoiceRules` aligns with its `profiles.ts` faction voice.
+- [x] No `factionVoiceRules` line is purely a list of procedures, documents, permissions, or codes.
+- [x] Compile-seed output for at least Space Opera and one non-space genre includes character-driven faction voice.
+- [x] Existing setup seed fields still compile.
+
+## Completion Evidence
+
+Completed on 2026-05-18.
+
+- Rewrote compile-seed faction voice rules around people, stakes, pressure, and choices.
+- Adjusted procedure-first social pressure lines that reintroduced old framing.
+- Covered by `fixtures/sf2/replay/setup-seed-space-opera-faction-voice.json` and `fixtures/sf2/replay/setup-seed-cyberpunk-faction-voice.json`.
 
 ## Fixture Expectations
 
