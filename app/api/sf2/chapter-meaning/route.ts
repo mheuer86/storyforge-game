@@ -14,10 +14,10 @@ import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import { PROCEDURE_NONE } from '@/lib/sf2/procedure'
 import { validateChapterMeaningTransitionSeed } from '@/lib/sf2/chapter-meaning/validation'
 
-// Chapter-meaning synthesis defaults to Haiku for low-cost v2 test runs.
-// Override via SF2_CHAPTER_MEANING_MODEL when a higher-quality close read is needed.
+// Chapter-meaning synthesis is taste-heavy literary synthesis feeding chapter transitions.
+// Default to Sonnet, while allowing SF2_CHAPTER_MEANING_MODEL to override for experiments.
 const CHAPTER_MEANING_MODEL =
-  process.env.SF2_CHAPTER_MEANING_MODEL || 'claude-haiku-4-5-20251001'
+  process.env.SF2_CHAPTER_MEANING_MODEL || 'claude-sonnet-4-6'
 
 function resolveClient(req: NextRequest): Anthropic {
   const byokKey = req.headers.get('x-anthropic-key')?.trim()
