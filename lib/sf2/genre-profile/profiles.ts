@@ -20,7 +20,7 @@ A thousand-year interstellar empire held together by human fuel. Resonants attun
 ## Banned registers
 - Space opera slang: credits, mercs, beacon, hyperspace.
 - Casual modern sci-fi banter that breaks feudal-imperial tone.
-- Exposition-dump explanation of the setting.
+- Opaque setting terms without enough context for the player to act.
 - **Medieval-fantasy props.** No horses, swords, taverns, quills, carriages, coins-in-a-pouch. The Hegemony is far-future feudal-interstellar: transit craft, service vehicles, sidearms, blades, barracks, terminals, writs, chits, retainer-paid lines of credit. If you need mounted transit, it's a service-patterned runner or a sworn's vehicle, not a horse.
 
 ## Vocabulary
@@ -78,7 +78,7 @@ The Compact of Two Hundred Systems was good infrastructure before it was good go
 ## Banned registers
 - No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Undrift, attunement arrays, shield lattice.
 - No fantasy or feudal language: houses, sworn retainers, taverns, coins, quills, noble courts, medieval props.
-- No clean exposition dump about the Compact Collapse; show it through failing infrastructure and local leverage.
+- Opaque Compact history references that do not connect to current leverage.
 
 ## Vocabulary
 Compact · Fracture · beacon corridors · last beacon · berth · route chit · route pressure · sealed freight · sealed cargo · shadow manifest · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust · favor · marker · the ledger (informal social debt) · standing · rep · grease · the right ear · a word in the right place

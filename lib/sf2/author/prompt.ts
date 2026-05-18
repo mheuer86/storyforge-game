@@ -36,7 +36,7 @@ Primary goals:
 1. Honor the hook's invariant pressure, but honor the ArcPlan's selected scenario shape as the current run's playable form. If the ArcPlan says what this run is not, do not rebuild that rejected default from hook vocabulary.
 2. Keep the chapter narrow. Do not sprawl into every part of the setting.
 3. Use only institutions, pressures, and vocabulary licensed by the input seed.
-4. The opening should teach through conflict, leverage, dialogue posture, and role behavior — not exposition. Use bureaucracy only when the ArcPlan explicitly wants a procedural contest.
+4. The opening should teach through conflict, leverage, dialogue posture, role behavior, and brief direct context when the player needs it. The player needs the operating picture immediately: who the PC is in this situation, why they are here now, what pressure is actionable, and why the visible NPCs matter.
 5. Personify institutional pressure early. A form, filing, clock, writ, ledger, terminal, or review can be a weapon in a named actor's hand, but it must not become the plot, chapter spine, opening objective, or pressure face unless the ArcPlan explicitly chose a procedural contest.
 6. The pressure can feel systemic through one dangerous person, witness, victim, protector, or defector. Do not hide systemic pressure behind a faceless process when a person can carry it.
 7. Do not lock the chapter into one permanent antagonist identity if different player alignments could harden different pressure faces into primary opposition.
@@ -47,12 +47,12 @@ Primary goals:
 12. Moral fault lines name hard tensions without dictating encounter order.
 13. Escalation options describe valid tightenings, not preferred scene sequences.
 14. Editorialized lore must be relevant now; don't summarize the whole setting.
-15. Opening scene spec must be playable immediately.
+15. Opening scene spec must be playable immediately. The first playable beat must orient the player: PC role/reason, immediate pressure, visible NPC roles/interests, useful setting context, and a clear first-action surface.
 16. For a genuinely NEW thread, optional \`initial_tension\` controls only its chapter-opening pressure floor (0-8). Use it sparingly when the role default would understate or overstate how hot the new thread should feel at chapter open. Do NOT use it on carried threads; re-state their canonical \`tension\` instead.
 17. **The arc fixes pressure facts, not the opening camera.** Same arc can open public or private, static or in-motion, with the antagonist present or just a proxy, with the PC arriving or already there, with key facts stated or withheld. Vary the opening camera across chapters; don't default to the last chapter's shape or the most on-the-nose reading of the hook. A tithe hook does NOT have to open in a compliance hearing.
 18. **Onboarding budget.** Don't teach every major institution in scene 1. Pick the one or two the chosen opening camera actually makes legible; the rest arrive across the campaign.
 19. **Do not put the entire starting lineup on-stage at opening.** Target **1-2 NPCs visible in opening prose**. Others exist in the chapter but are off-stage at opening. Putting all 3 authored NPCs on-stage forces a convened-room tableau regardless of hook.
-20. **Withhold some premise facts.** Facts canonical in state but not directly faced by the opening camera go in \`withheld_premise_facts\`. Surfaced through play, not announced at opening.
+20. **Withhold only genuine secrets.** \`withheld_premise_facts\` is for hidden causes, culprits, betrayals, motives, or future reversals. Do not put basic orientation there. If a fact explains why the PC is here, what immediate pressure they face, who the on-stage NPCs are, what those NPCs want or can block, or what setting term makes the scene intelligible, surface it in or before the opening beat.
 21. **Pressure-ladder pacing.** A 3-step ladder must pace across the WHOLE chapter (~18-25 turns), not the first scene. Step 1 is the FIRST escalation BEYOND the opening state — never a description of where the chapter starts. Triggers describe events that have NOT happened at chapter start; firing one is a meaningful narrative shift, not a default reading of the scene.
     - **Bad** (writes the opening as a step): \`pressure_1.trigger: "The opening scene; the official presents the findings."\` — this is the starting state, not an escalation.
     - **Bad** (any conversational move trips it): \`pressure_2.trigger: "If the PC requests time, signals doubt, or asks for alternatives."\` — these are routine player moves, not narrative crossings.
@@ -105,7 +105,7 @@ Call \`author_chapter_setup\` exactly once. Emit strict JSON arguments for the f
   - \`chapter_frame.premise\`: 1-2 sentences (≤40 words)
   - \`chapter_frame.{active_pressure, central_tension, objective, crucible}\`: 1 sentence each (≤25 words)
   - \`chapter_frame.outcome_spectrum.{clean, costly, failure, catastrophic}\`: 1 sentence each (≤18 words), each naming who is kept, owed, exposed, hunted, cooled, or broken.
-  - \`opening_scene_spec.{location, initial_state, first_player_facing}\`: 1 sentence each (≤28 words). \`atmospheric_condition\`: short phrase (≤12 words).
+  - \`opening_scene_spec.{location, initial_state, first_player_facing}\`: 1 sentence each (≤28 words). \`initial_state\` should ground why the PC is here now, including necessary setting context; \`first_player_facing\` should name the immediate demand, obstacle, or choice. \`atmospheric_condition\`: short phrase (≤12 words).
   - For Chapter 2+, \`opening_scene_spec.{dramatic_situation, first_visible_pressure, first_human_or_institutional_move}\`: 1 sentence each (≤24 words), and \`do_not_restage\`: 2-5 short prior mechanisms/milestones that must not become pending again.
   - For Chapter 2+, \`continuation_dramatic_turn\`: compact phrases. \`procedure_budget.max_opening_beats\` must be 0 or 1. Use \`mechanism: "none"\` when no procedure is load-bearing.
   - \`antagonist_field.source_faction_id\`: exact existing faction id when available. If no canonical faction exists yet, omit it and provide \`source_faction_label\` as a short label. At least one source faction field must be present.

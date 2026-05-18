@@ -1,0 +1,207 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator opening orientation floor",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protect the chapter-opening prompt contract that prevents mystery-forward openings from leaving the player unclear on who they are, why they are present, who is on-stage, and what pressure is actionable."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "genreId": "epic-scifi",
+        "playbookId": "warden",
+        "originId": "imperial-service"
+      },
+      "player": {
+        "name": "Replay Warden",
+        "origin": { "id": "imperial-service", "name": "Imperial Service" },
+        "class": { "id": "warden", "name": "Warden" }
+      },
+      "campaign": {
+        "threads": {
+          "thread_lockdown_shortage": {
+            "id": "thread_lockdown_shortage",
+            "title": "The sealed granary",
+            "chapterCreated": 1,
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_factor_marro" },
+            "stakeholders": ["npc_speaker_ireth"],
+            "tension": 6,
+            "peakTension": 6,
+            "resolutionCriteria": "The Warden identifies who can lawfully open the stores before the settlement turns on itself.",
+            "failureMode": "The lockdown converts shortage into public violence.",
+            "retrievalCue": "The settlement is locked down and running out of stores.",
+            "loadBearing": true,
+            "spineForChapter": 1,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        },
+        "npcs": {
+          "npc_factor_marro": {
+            "id": "npc_factor_marro",
+            "name": "Factor Marro",
+            "affiliation": "settlement stores office",
+            "role": "factor controlling the ration ledger",
+            "status": "alive",
+            "disposition": "wary",
+            "identity": {
+              "pronoun": "he/him",
+              "keyFacts": ["controls ration release"],
+              "profileFacts": ["controls ration release"],
+              "voice": { "note": "counts clauses before names", "register": "procedural" },
+              "relations": []
+            },
+            "agenda": {
+              "pursuing": "Keep the ledger closed until blame moves away from him.",
+              "methods": ["delays", "requests signatures"],
+              "currentMove": "waits for the Warden to name who takes responsibility"
+            },
+            "ownedThreadIds": ["thread_lockdown_shortage"],
+            "retrievalCue": "Marro controls the ration ledger and wants responsibility displaced.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          },
+          "npc_speaker_ireth": {
+            "id": "npc_speaker_ireth",
+            "name": "Speaker Ireth",
+            "affiliation": "village assembly",
+            "role": "public speaker for locked-in families",
+            "status": "alive",
+            "disposition": "favorable",
+            "identity": {
+              "pronoun": "she/her",
+              "keyFacts": ["speaks for locked-in families"],
+              "profileFacts": ["speaks for locked-in families"],
+              "voice": { "note": "warm until numbers are mentioned", "register": "public advocate" },
+              "relations": []
+            },
+            "agenda": {
+              "pursuing": "Force the stores open before families run out.",
+              "methods": ["public pressure", "names witnesses"],
+              "currentMove": "asks the Warden to make Marro answer in public"
+            },
+            "ownedThreadIds": [],
+            "retrievalCue": "Ireth wants stores opened before locked-in families turn desperate.",
+            "chapterCreated": 1,
+            "signatureLines": []
+          }
+        }
+      },
+      "chapter": {
+        "title": "The Closed Stores",
+        "setup": {
+          "chapter": 1,
+          "title": "The Closed Stores",
+          "frame": {
+            "title": "The Closed Stores",
+            "premise": "A locked-down settlement is running out of stores while two local offices push responsibility at each other.",
+            "activePressure": "The stores stay sealed until someone accepts lawful blame.",
+            "centralTension": "Procedure keeps order and starves families at the same time.",
+            "objective": "Find who can open the stores before the lockdown becomes violence.",
+            "crucible": "The Warden must decide whether to spend authority against procedure or public fear.",
+            "outcomeSpectrum": {
+              "clean": "The stores open without breaking Ireth's public standing.",
+              "costly": "The stores open, but Marro records the Warden as the cause.",
+              "failure": "The stores stay closed and the crowd turns on the speaker.",
+              "catastrophic": "The lockdown becomes a riot no record can sanitize."
+            }
+          },
+          "antagonistField": {
+            "sourceFactionLabel": "Settlement Stores Office",
+            "sourceFactionId": "faction_registry",
+            "corePressure": "Procedure can keep food sealed longer than fear can stay orderly.",
+            "defaultFace": {
+              "id": "npc_factor_marro",
+              "name": "Factor Marro",
+              "role": "factor controlling the ration ledger",
+              "pressureStyle": "ledger-bound delay"
+            },
+            "currentPrimaryFace": {
+              "id": "npc_factor_marro",
+              "name": "Factor Marro",
+              "role": "factor controlling the ration ledger",
+              "pressureStyle": "ledger-bound delay"
+            },
+            "escalationLogic": "Every delayed answer moves blame from office to crowd."
+          },
+          "startingNpcIds": ["npc_factor_marro", "npc_speaker_ireth"],
+          "activeThreadIds": ["thread_lockdown_shortage"],
+          "spineThreadId": "thread_lockdown_shortage",
+          "loadBearingThreadIds": ["thread_lockdown_shortage"],
+          "openingSceneSpec": {
+            "location": "settlement ration vestibule",
+            "atmosphericCondition": "barred doors, sour grain dust",
+            "initialState": "The Warden arrives because the stores are sealed and the lockdown crowd has started counting meals.",
+            "firstPlayerFacing": "Marro wants a lawful signature; Ireth wants the stores opened before families panic.",
+            "noStartingCombat": true,
+            "visibleNpcIds": ["npc_factor_marro", "npc_speaker_ireth"],
+            "withheldPremiseFacts": ["Marro knows the seal order is no longer valid."]
+          }
+        },
+        "artifacts": {
+          "opening": {
+            "sceneIntent": "Marro and Ireth force the Warden to decide who carries the risk of opening sealed stores.",
+            "openingPressure": "The lockdown has made food a public fuse.",
+            "chapterObjective": "Find who can open the stores before the lockdown becomes violence.",
+            "chapterCrucible": "Authority spent against procedure may keep families alive and mark the Warden forever.",
+            "visibleNpcIds": ["npc_factor_marro", "npc_speaker_ireth"],
+            "visibleThreadIds": ["thread_lockdown_shortage"],
+            "loreForOpening": [],
+            "sceneWarnings": ["Establish the playable situation with enough context for the player to choose."],
+            "withheldPremiseFacts": ["Marro knows the seal order is no longer valid."]
+          }
+        }
+      },
+      "world": {
+        "currentLocation": {
+          "id": "loc_opening",
+          "name": "settlement ration vestibule",
+          "description": "The Warden arrives because the stores are sealed and the lockdown crowd has started counting meals.",
+          "atmosphericConditions": ["barred doors, sour grain dust"],
+          "chapterCreated": 1
+        },
+        "sceneSnapshot": {
+          "sceneId": "scene_1_1",
+          "location": {
+            "id": "loc_opening",
+            "name": "settlement ration vestibule",
+            "description": "The Warden arrives because the stores are sealed and the lockdown crowd has started counting meals.",
+            "atmosphericConditions": ["barred doors, sour grain dust"],
+            "chapterCreated": 1
+          },
+          "presentNpcIds": ["npc_factor_marro", "npc_speaker_ireth"],
+          "timeLabel": "opening",
+          "established": ["The Warden has been called because stores are sealed under lockdown."],
+          "firstTurnIndex": 0
+        },
+        "currentTimeLabel": "opening"
+      }
+    },
+    "playerInput": "",
+    "isInitial": true,
+    "narrator": {
+      "prose": "(unused - fixture asserts on buildNarratorTurnContext output)",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": true,
+      "playerInput": "",
+      "userMessageContainsAll": [
+        "Opening orientation floor",
+        "who the PC is in this situation",
+        "why the PC is here now",
+        "what immediate pressure/problem the PC is dealing with",
+        "what each on-stage NPC wants, can block, can grant, or stands to lose"
+      ]
+    }
+  }
+}

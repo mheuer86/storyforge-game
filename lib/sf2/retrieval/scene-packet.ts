@@ -423,6 +423,12 @@ export function renderPerTurnDelta(
     lines.push(
       `**Establishment turn.** Open the chapter from the opening scene spec. Establish the room, the atmosphere, and introduce on-stage NPCs with enough role grounding that the player knows who each one is and why they matter — name + role/affiliation + the one thing that makes their presence here pressure-bearing, before you move to body language. The player has not acted yet. Write the first beat that invites player action. End with narrate_turn including 3-4 suggested_actions.`
     )
+    lines.push(
+      `\n### Opening orientation floor`
+    )
+    lines.push(
+      `Make the playable situation legible in the first 1-2 paragraphs through visible pressure, dialogue, a concrete demand, or brief direct context: who the PC is in this situation; why the PC is here now; what immediate pressure/problem the PC is dealing with; what each on-stage NPC wants, can block, can grant, or stands to lose; any setting terms the player needs to understand the stakes; and what kind of action could improve the PC's position. This is the minimum operating picture the player needs before making the first meaningful choice.`
+    )
     if (opts.withheldPremiseFacts && opts.withheldPremiseFacts.length > 0) {
       lines.push(`\n### Withheld premise facts (TRUE in state — NOT stated in opening prose)`)
       for (const f of opts.withheldPremiseFacts) {

@@ -42,7 +42,7 @@ const SETUP_RULES_BY_GENRE: Partial<Record<Genre, SetupRulesAdapter>> = {
     bannedRegisters: [
       'casual space-opera slang that breaks feudal-imperial tone',
       'generic cyberpunk corps, netruns, drones, and neon street language',
-      'clean exposition about the Hegemony before an NPC or institution makes it matter',
+      'opaque Hegemony terms introduced without enough context to act',
     ],
     likelyAffiliations: [
       'The Synod',
@@ -80,7 +80,7 @@ const SETUP_RULES_BY_GENRE: Partial<Record<Genre, SetupRulesAdapter>> = {
     bannedRegisters: [
       'fantasy props such as taverns, coins, nobles, quills, oaths, and spell language',
       'Hegemony-specific Synod, Resonant, tithe, allocation, and Drift doctrine',
-      'exposition-dump explanation of the Compact Collapse',
+      'opaque Compact history references without actionable context',
     ],
     likelyAffiliations: [
       'station-route authority',
@@ -154,7 +154,7 @@ const SETUP_RULES_BY_GENRE: Partial<Record<Genre, SetupRulesAdapter>> = {
     bannedRegisters: [
       'fantasy, feudal, or space-opera institutional language',
       'clean heroic prophecy or chosen-one framing',
-      'exposition about corporate history before a system or person makes it matter',
+      'opaque corporate-history references before a system or person makes them actionable',
     ],
     likelyAffiliations: [
       'megacorp division',
@@ -326,10 +326,10 @@ function buildNpcRules(config: GenreConfig): AuthorInputSeed['npcRules'] {
 function buildOnboardingRules(config: GenreConfig, hookTitle: string): AuthorInputSeed['onboardingRules'] {
   return {
     playerKnowledgeAssumption:
-      `The player may not know ${config.name} yet. Teach it through behavior, pressure, and consequences from "${hookTitle}", not through a lore lecture.`,
+      `The player may not know ${config.name} yet. Give enough direct context, behavior, pressure, and consequence from "${hookTitle}" that the first choice is intelligible.`,
     avoidEarly: [
       'combat as the opening move unless the authored chapter pressure makes it unavoidable',
-      'direct exposition dump before a person, place, or procedure makes the information matter',
+      'assuming the player already understands setting terms, institutions, or why the PC is involved',
       `generic opening beats detached from ${config.name}'s genre pressure`,
     ],
   }

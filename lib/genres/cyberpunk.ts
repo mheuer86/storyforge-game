@@ -716,7 +716,7 @@ Heat falls from: time (1 tier per 2 quiet chapters), fixer intervention (trade f
 
 **Short declarative sentences.** Subject. Verb. Object. Let each sentence land before the next one starts. Reserve longer, more complex sentences for moments of reflection. The contrast between clipped action and expanded interiority creates rhythm.
 
-**Silence between characters.** What people don't say matters more than what they do. "She didn't confirm it. She didn't have to." Let dialogue sit. Let characters read each other through stillness, not exposition.
+**Silence between characters.** What people don't say matters more than what they do. "She didn't confirm it. She didn't have to." Let dialogue sit. Let characters read each other through stillness while keeping the immediate pressure legible.
 
 **Institutional language as dehumanization.** Militech doesn't enslave — it deploys asset retention hardware. The Hegemony doesn't kidnap — it conducts supplementary selection. Use the clean corporate phrase, then let the reader feel its weight.`,
     buildAssetState: (ship, _shipName) => {

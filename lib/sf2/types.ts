@@ -954,18 +954,15 @@ export interface Sf2OpeningSceneSpec {
   firstHumanOrInstitutionalMove?: string
   doNotRestage?: string[]
   noStartingCombat: boolean
-  noExpositionDump: boolean
   // NPCs visible in the opening prose. A subset of startingNPCs (1-2 is the
   // target). Other startingNPCs exist in the chapter but are off-stage at
   // opening — they arrive, get referenced secondhand, or are discovered
   // later. If empty/omitted, transform falls back to all startingNPCs
   // (legacy behavior, produces the convened-room default).
   visibleNpcIds?: Sf2EntityId[]
-  // Canonical premise facts the Author is DELIBERATELY withholding from the
-  // opening prose. Held back so the player discovers them through play.
-  // Opening prose must not state these facts even though they are true in
-  // state. They emerge through play — question, contradiction, investigation,
-  // NPC slip.
+  // Canonical premise facts the Author is deliberately keeping secret at
+  // opening. Use only for hidden causes, culprits, betrayals, motives, or
+  // future reversals — not for basic player orientation.
   withheldPremiseFacts?: string[]
 }
 

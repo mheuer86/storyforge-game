@@ -187,7 +187,8 @@ export function transformAuthorSetup(
       renderedHint: item.deliveryMethod,
     })),
     sceneWarnings: [
-      'Do not open with exposition.',
+      'Establish the playable situation with enough context for the player to choose.',
+      'Make PC role, reason for presence, immediate pressure, relevant setting terms, and visible NPC stakes legible.',
       'Use visible procedure and role behavior to teach the world.',
       'Keep the current pressure face live without implying it is permanent.',
     ],

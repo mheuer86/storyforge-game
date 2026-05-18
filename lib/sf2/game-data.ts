@@ -162,7 +162,6 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
         initialState: '',
         firstPlayerFacing: '',
         noStartingCombat: true,
-        noExpositionDump: true,
       },
       pressureLadder: [],
       humanStakes: [],
@@ -312,7 +311,7 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
     bannedRegisters: [
       'fantasy or feudal props such as houses, sworn retainers, taverns, coins, quills, or noble court language',
       'Hegemony-specific terms such as Synod, Resonant, tithe, allocation, mandate, Conclave, Undrift, attunement arrays, or shield lattice',
-      'exposition-dump explanation of the Compact Collapse',
+      'opaque Compact history references without actionable context',
     ],
     vocabulary: [
       'Compact', 'Fracture', 'beacon corridors', 'last beacon', 'route pressure',
@@ -357,10 +356,10 @@ export const SPACE_OPERA_DRIFTRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player does not need a lecture on the galaxy; teach Space Opera through exit pressure, ship scarcity, route constraints, broker leverage, and the cost of taking the job.',
+      'The player needs enough galaxy context to understand the first choice; teach Space Opera through direct context, exit pressure, ship scarcity, route constraints, broker leverage, and the cost of taking the job.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the Compact Collapse',
+      'assuming the player already understands the Compact Collapse, route pressure, or why the PC cannot simply leave',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
       'opening detached from route pressure, crew pressure, or job pressure',
     ],
@@ -438,7 +437,7 @@ export const SPACE_OPERA_DEFECTOR_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'The player learns Space Opera through passenger protection, shipboard trust, pursuit behavior, safe-harbor price, and the cost of sheltering someone hunted.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the Compact Collapse',
+      'assuming the player already understands the Compact Collapse, pursuit politics, or why the defector matters',
       'Hegemony bureaucracy, Synod doctrine, Resonants, tithe, or allocation language',
       'turning the defector into generic cargo before the passenger-protection pressure lands',
       'explaining the whole data conspiracy in the opening scene',
@@ -494,7 +493,7 @@ export const FANTASY_SEEKER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'Epic 60%, Gritty 30%, Witty 10% - ancient wonder grounded by mud, fatigue, sharp scholarship, and the politics of who gets to name the truth.',
     narrativePrinciples: [
       'Make ancient things physical: stone that does not weather, ink that refuses to fade, doors with no locks.',
-      'Use scholarship as action, not exposition; deciphering should change leverage in the scene.',
+      'Use scholarship to orient the player and change leverage in the scene.',
       'Let institutions speak through records, seals, testimony, and guarded omissions.',
       'Keep magic costly and embodied.',
       'Make the player learn the world through traces, behavior, and contested evidence.',
@@ -524,10 +523,10 @@ export const FANTASY_SEEKER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
   },
   onboardingRules: {
     playerKnowledgeAssumption:
-      'The player does not need a lecture on the Sundering; teach Fantasy through traces, ruins, institutional claims, bodily magic costs, and the dead scholar\'s impossible familiarity.',
+      'The player needs enough Sundering context to understand the first choice; teach Fantasy through direct context, traces, ruins, institutional claims, bodily magic costs, and the dead scholar\'s impossible familiarity.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the Five Kingdoms or the Sundering',
+      'assuming the player already understands the Five Kingdoms, the Sundering, or why old knowledge is dangerous',
       'fixing the scholar\'s name, murder method, or first clue across runs',
       'making the second library a simple building with a simple map',
     ],
@@ -614,7 +613,7 @@ export const CYBERPUNK_NETRUNNER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'The player can learn Cyberpunk through blackout symptoms, surveillance gaps, fixer warnings, grid behavior, and the cost of following their own name.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the megacity or corporate order',
+      'assuming the player already understands the megacity, corporate order, or why the blackout matters',
       'fixing the corporation, AI, or caller as the same culprit each run',
       'turning the hook into a generic corp heist before the broadcast pressure lands',
     ],
@@ -701,7 +700,7 @@ export const GRIMDARK_SCAVENGER_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'The player should learn Grimdark through hunger, Church doctrine, house leverage, map pressure, and the risks of being useful but unsworn.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the Shattered Provinces',
+      'assuming the player already understands the Shattered Provinces, Church pressure, or why supplies matter',
       'fixing the crossroads inn, dead Scavenger name, or contents of the cache across runs',
       'making the Church secret a simple treasure reveal',
     ],
@@ -788,7 +787,7 @@ export const NOIRE_METHODICAL_AUTHOR_INPUT_SEED: AuthorInputSeed = {
       'The player should learn Noir through the office, the box, the will, hesitant witnesses, partial evidence, and attention from people who preferred the list stay closed.',
     avoidEarly: [
       'combat as the opening move',
-      'direct exposition dump about the city',
+      'assuming the player already understands the city, case pressure, or why the list matters',
       'fixing the dead woman, the first living name, or the box contents across runs',
       'solving why the player was chosen in the opening scene',
     ],

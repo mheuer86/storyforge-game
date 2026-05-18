@@ -704,7 +704,7 @@ Rest terminology: Quick repair (short rest), Full cycle (long rest).`,
 
 **Ships and stations as lived spaces.** The bridge smells like recycled air and old coffee. The cargo bay has a dent from the time the loader jammed. The engine room hums at a frequency the engineer has stopped noticing. Spacecraft are not backdrops — they're homes, with the character of homes: worn, familiar, held together by habit and repair.
 
-**Competence as characterization.** Show people who are good at their jobs. The pilot's hands that move before the alarm sounds. The engineer who diagnoses by listening. The captain who reads the crew's mood from how they stand. Expertise is attractive and reveals character without exposition.
+**Competence as characterization.** Show people who are good at their jobs. The pilot's hands that move before the alarm sounds. The engineer who diagnoses by listening. The captain who reads the crew's mood from how they stand. Expertise is attractive and should also orient the player to what matters.
 
 **Cultural difference as texture.** Different species, stations, and factions think differently — not exotically, but practically. How they greet, who speaks first, what counts as rude, what counts as trust. These differences are felt in interaction, not explained in narration.
 

@@ -4747,7 +4747,6 @@ function createMinimalState(): Sf2State {
           initialState: 'The replay begins.',
           firstPlayerFacing: 'The scene waits.',
           noStartingCombat: true,
-          noExpositionDump: true,
           visibleNpcIds: [],
         },
         pressureLadder: [],

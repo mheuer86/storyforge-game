@@ -488,7 +488,6 @@ export function normalizeAuthorSetup(raw: Record<string, unknown>): AuthorChapte
       firstHumanOrInstitutionalMove: stringField(opening, 'first_human_or_institutional_move', 'firstHumanOrInstitutionalMove') || undefined,
       doNotRestage: stringArray(opening, 'do_not_restage', 'doNotRestage'),
       noStartingCombat: Boolean(valueField(opening, 'no_starting_combat', 'noStartingCombat')),
-      noExpositionDump: Boolean(valueField(opening, 'no_exposition_dump', 'noExpositionDump')),
       visibleNpcIds: Array.isArray(valueField(opening, 'visible_npc_ids', 'visibleNpcIds'))
         ? (valueField(opening, 'visible_npc_ids', 'visibleNpcIds') as unknown[]).map(String).filter((s) => s.length > 0)
         : undefined,

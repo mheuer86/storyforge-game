@@ -37,7 +37,6 @@ const openingSceneSpecSchema = {
       description: 'Ch2+ required. Prior chapter mechanisms/milestones that must not be replayed as pending.',
     },
     no_starting_combat: { type: 'boolean' as const },
-    no_exposition_dump: { type: 'boolean' as const },
     visible_npc_ids: {
       type: 'array' as const,
       items: { type: 'string' as const },
@@ -55,7 +54,6 @@ const openingSceneSpecSchema = {
     'initial_state',
     'first_player_facing',
     'no_starting_combat',
-    'no_exposition_dump',
     'visible_npc_ids',
     'withheld_premise_facts',
   ],

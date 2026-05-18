@@ -42,7 +42,7 @@ System surfaces:
 - fuel, parts, cargo, reputation, and debt as pressure
 - practical NPC speech with warmth under pressure
 
-Avoid fantasy nouns, Hegemony-specific Epic Sci-Fi language, and clean lore dumps about the Compact before the scene makes them matter.
+Avoid fantasy nouns and Hegemony-specific Epic Sci-Fi language. Give enough Compact context for the first choice to make sense, then deepen it through local pressure.
 
 ## Fantasy
 
@@ -109,7 +109,7 @@ System surfaces:
 - corp liability language
 - favors, access, anonymity, and compromised trust
 
-Avoid chosen-one framing, fantasy/feudal language, and exposition before a person or system makes the information actionable.
+Avoid chosen-one framing and fantasy/feudal language. Give enough system context for the first choice to be actionable.
 
 ## Noir
 
@@ -156,7 +156,7 @@ System surfaces:
 - Drift infrastructure with human cost
 - profile facts, identity anchors, and official truth under pressure
 
-Avoid casual space-opera slang, cyberpunk corp vocabulary, and clean exposition about the Hegemony before a person or institution makes it matter.
+Avoid casual space-opera slang and cyberpunk corp vocabulary. Give enough Hegemony context for the player to understand the institution, person, and pressure in front of them.
 
 ## Genre In SF2 Setup
 
