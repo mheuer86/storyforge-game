@@ -36,7 +36,6 @@ house · sworn · tithe · allocation · mandate · Conclave · dispensation · 
 - "expended" — the Synod's word for a Resonant who has been used up
 
 These are the world's voice. Reuse them when the moment fits. Do not over-coin new bureaucratic phrases per scene — the canon ones above carry weight precisely because they recur.
-If the scene starts to feel like a filing queue, move the pressure back to the person, family, officer, retainer, or Resonant who will pay for the wording.
 
 ## Faction voice
 - House nobility speaks formally and strategically; every sentence is a move.
@@ -47,10 +46,15 @@ If the scene starts to feel like a filing queue, move the pressure back to the p
 - Resonants who speak freely are tired, precise, and burdened by what they know.
 
 ## Narrative craft
-- Let institutions appear as lived assumptions: who stands, who pours tea, who lowers their voice, who can be named.
-- Make political consequence feel as dangerous as violence, but keep the danger embodied in a person on or near the scene.
-- A form can be a weapon someone wields or hides behind, but it is not the plot. Do not make procedure the chapter's natural shape unless the selected arc explicitly demands a procedural contest.
-- Center small, specific courage against overwhelming systems.
+Write with the techniques of Frank Herbert, Dan Simmons (Hyperion), Le Guin, Christopher Ruocchio — their craft:
+
+- **Institutional weight as lived assumption.** The Hegemony is felt in who stands, who pours tea, who lowers their voice, who can be named. The system is not explained; it is inhabited.
+- **Bureaucratic language as horror.** "Confirmed, allocated." "Supplementary selection." "Deceased during initiation." Use the clean institutional phrase for ugly things. Let the reader feel the gap between the phrase and the reality.
+- **Long sentences that compress time; short sentences that stop it.** Alternate rhythm to control pacing. The long sentence moves years; the short sentence freezes a moment.
+- **The individual against the system.** Not heroically — existentially. One mother standing in a doorway against an empire that has more weight than she does. One clerk who marks a record "unconfirmed" and never signs their name. The courage is small, specific, and insufficient, and it matters anyway.
+- **Resonance across scenes.** Details that echo. A phrase from the first scene that returns in the last scene with changed meaning. An object that meant one thing when first described and something else when seen again.
+- **History as a living force.** The past isn't backstory — it's pressure on every decision. Characters inherit problems they didn't create and can't escape.
+- **Pressure lives in people, not in procedure.** A form can be a weapon someone wields or hides behind, but it is not the plot. If a scene starts to feel like a filing queue, move the pressure back to the person, family, officer, retainer, or Resonant who will pay for the wording.
 
 ## Tone
 Gritty 40%, Epic 40%, Witty 20%. Grand but grounded. Humor is dry and usually masks something worse.`
@@ -60,20 +64,18 @@ export const SF2_BIBLE_SPACE_OPERA = `## World: The Fractured Compact
 The Compact of Two Hundred Systems was good infrastructure before it was good government: beacon corridors, shared communication protocols, standardized docking, and mutual-defense routes. It collapsed through rot. Deferred maintenance broke corridors, broken corridors isolated systems, and isolated systems stopped paying for a government that could no longer reach them. Most people noticed only when the trade ships stopped coming.
 
 ## Institutional forces
-- Compact Remnants hold core corridors, cite law, and issue orders that weaken with distance — and even at strength, most enforcement passes through individuals who can be reasoned with, paid, owed, or out-leveraged.
+- Compact Remnants hold core corridors and cite law that weakens with distance. Enforcement passes through individuals — people who can be reasoned with, owed, outmaneuvered, or bought.
 - Corporate Blocs bought infrastructure during the collapse and run it for profit.
 - Pirate Fleets tax frontier routes; some are navies, some are scavengers, and the line is thin.
 - Frontier settlements survive on mutual aid, salvage, reputation, and uncertain supply.
 - Rogue AIs occupy abandoned stations and network nodes; their motives are unclear and no one negotiates with one twice.
 
 ## Social pressures
-- A ship is a closed economy: fuel, food, parts, ammunition, morale, and trust are finite.
-- Stations are crossroads where information, route permission, fuel, gossip, favors, and reputation decide who leaves.
-- Law exists in proportion to the nearest faction's ability to enforce it.
-- Reputation is portable currency. A clean rep buys docking priority, route info, and faster gates; a tarnished one costs every transaction. People remember.
-- Favors compound. One hand washes the other; markers, debts, and credits between brokers, dock crews, and minor officials run a parallel economy alongside the formal one.
-- Corruption is structural, not exceptional. A customs officer with a mortgage takes the meeting; an inspector with a sick kid signs the form. The institutions don't pay enough, and everyone knows.
-- Crew warmth and practical wit belong beside danger; scarcity makes loyalty visible.
+- A ship is a closed economy: fuel, food, parts, morale, and trust are finite. The argument about who gets the last medpatch reveals more character than any combat encounter.
+- A crew is a family forged by proximity and necessity. They know each other's habits, weaknesses, and the sounds they make when they sleep. Conflict is personal because the ship is small. Loyalty is tested by scarcity, not by paperwork.
+- Stations are crossroads where everyone passes through. The noise is constant. The bartender knows more than the intelligence officer.
+- Reputation is portable currency. People remember who helped and who walked past.
+- Law exists in proportion to the nearest faction's willingness to enforce it, and that willingness depends on the specific officer, their mood, their debts, and whether they recognize your face.
 
 ## Banned registers
 - No Hegemony terms: Synod, Resonant, tithe, allocation, mandate, Conclave, Undrift, attunement arrays, shield lattice.
@@ -81,25 +83,27 @@ The Compact of Two Hundred Systems was good infrastructure before it was good go
 - Opaque Compact history references that do not connect to current leverage.
 
 ## Vocabulary
-Compact · Fracture · beacon corridors · last beacon · berth · route chit · route pressure · sealed freight · sealed cargo · shadow manifest · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust · favor · marker · the ledger (informal social debt) · standing · rep · grease · the right ear · a word in the right place
+Compact · Fracture · beacon corridors · last beacon · berth · the Rim · Corporate Bloc · Compact Remnant · Pirate Fleet · frontier settlement · Rogue AI · fuel reserves · back channel · shipboard trust · standing · rep · the crew · a word in the right place
 
 ## Faction voice
-- Station officials speak in berth priority, safety codes, route permission, reputation risk, and plausible deniability.
-- Corporate representatives speak in margins, liability, contract terms, and risk.
+Factions are people, not departments. Every faction voice is an individual under institutional pressure making personal choices.
+- Station hands and dock bosses are tired, competent, and opinionated. They've seen every hustle and respect the ones that show craft.
+- Corporate representatives are smooth and transactional, but the junior ones are scared of their bosses and the senior ones are scared of their margins.
 - Pirates and collectors sound casual until they establish leverage, then exact.
-- Remnant officers keep official cadence, but most of them know their authority is thin — pressure, reputation, or the right favor can bend a procedure the regulations say is fixed. The few incorruptible ones are dangerous precisely because they're rare.
-- Lower-ranked officials across factions can usually be reached through some mix of money, mutual contacts, and visible competence; senior officers cost more and rarely accept anything that leaves a paper trail.
-- Crew members use shorthand, practical worry, and warmth under pressure.
-- Back-channel brokers say less than they know and price information by urgency.
+- Remnant officers carry the cadence of an institution that used to mean something. Most know their authority is thin. The dangerous ones are the few who still believe.
+- Crew members use shorthand, practical worry, dark humor, and warmth under pressure. They finish each other's sentences.
+- Back-channel brokers say less than they know and price information by urgency, but even brokers have loyalties that surface under enough heat.
 
 ## Narrative craft
-- Show scale through human-sized details: one bored official, one exhausted crew member, one bad route offer.
-- Treat ships and stations as lived spaces: worn, familiar, repaired, social, and full of habit.
-- Let competence reveal character: piloting, hacking, smuggling, reading a crew, and surviving bad corridors.
-- Keep politics personal; sector-scale forces matter because they touch fuel, family, passage, reputation, and trust.
-- Use procedure as scenery or leverage, not as the story shape unless the chapter specifically chooses a procedural contest.
-- Procedure is negotiable. A Remnant warrant, a Bloc registry flag, a station hold — most can be argued, traded, or sidestepped if the PC has standing, leverage, or a working relationship with the right person. Use this. The system isn't airtight; people are.
-- Wiggle-room costs something. The official who bends the rule earns a marker, an obligation, or visible exposure — never just a friendly favor. Clean wins are rare and expensive; most negotiated escapes leave the PC owing someone they didn't want to owe.
+Write with the techniques of Iain M. Banks (The Player of Games), Becky Chambers (A Long Way to a Small Angry Planet), Ann Leckie (Ancillary Justice), Adrian Tchaikovsky (Shards of Earth):
+
+- **Scale through human-sized details.** A galaxy-spanning collapse is communicated through one mechanic's exhaustion. A star-destroying weapon is felt through the silence in the corridor after the order is given. Never describe scale directly — describe what scale does to a person standing inside it.
+- **Ships and stations as lived spaces.** The bridge smells like recycled air and old coffee. The cargo bay has a dent from the time the loader jammed. The engine room hums at a frequency the engineer has stopped noticing. These are homes: worn, familiar, held together by habit and repair.
+- **Competence as characterization.** The pilot's hands that move before the alarm sounds. The engineer who diagnoses by listening. The captain who reads the crew's mood from how they stand. Expertise is attractive and reveals character without exposition.
+- **Warmth alongside danger.** The best space opera has humor, affection, and genuine connection between characters, even — especially — when everything is falling apart. Crew banter during a crisis. A quiet meal before a bad jump. A shared joke that means more than a speech. The warmth makes the danger real.
+- **Cultural difference as texture.** Different species, stations, and factions think differently — not exotically, but practically. How they greet, who speaks first, what counts as rude, what counts as trust. These differences are felt in interaction, not explained in narration.
+- **Politics through personal stakes.** The trade dispute matters because it closed the port where the engineer's family lives. The corridor lockdown matters because someone the PC trusts is on the other side.
+- **Pressure lives in people, not in mechanisms.** A warrant is dangerous because a specific person signed it and another specific person has to serve it. A locked berth matters because the dock boss has to choose whose side she's on. If a scene starts to feel like a filing queue — holds extending, flags processing, reviews opening — move the camera to the person who gains or loses from the outcome. The institution is the backdrop; the person choosing is the story.
 
 ## Tone
 Epic 40%, Gritty 30%, Witty 30%. Vast distance, daily scarcity, sharp competence, crew warmth, and gallows humor from people in over their heads.`
@@ -131,18 +135,23 @@ The Five Kingdoms still stand and the Accord of Thorns still holds on paper, but
 Collegium · Accord of Thorns · Five Kingdoms · Sundering · second library · catalogue gap · ruin · inscription · reliquary · ward · scroll · codex · oath · charter · dispel scroll · cartographer's kit · lantern · gold
 
 ## Faction voice
-- Collegium scholars speak in cautious claims, citations, and reputation management.
-- Lords and officials turn records into jurisdiction.
-- Church voices frame dangerous knowledge as custody, heresy, or care.
+- Collegium scholars are precise, frustrated by imprecision, and haunted by the gap between what the archives contain and what they can understand.
+- Lords and officials speak with the weight of inherited authority — every sentence defends a claim.
+- Church voices are certain, careful, and frame dangerous knowledge as something to be protected or destroyed — never merely studied.
 - Expedition workers are practical, superstitious, and attentive to hazard.
 - Dragonkin memory-keepers speak from inherited fragments, not institutional proof.
 - Common folk want the old thing made safe before scholars name it.
 
 ## Narrative craft
-- Ancient wonder should stay physical: stone, ink, mud, fatigue, weather, breath, and touch.
-- Scholarship is action when it changes leverage in the room; avoid making research a paperwork queue.
-- Sources are fragments. Let testimony, ruins, marginalia, and mistranslations contradict each other productively.
-- The gatekeeper may be dead, absent, or wrong; reconstructing truth should create pressure, not summarize lore.
+Write with the techniques of Le Guin, Guy Gavriel Kay, Patrick Rothfuss — their techniques, not their voice:
+
+- **Lyrical but never ornamental.** Every sentence should be doing work. Beautiful prose that doesn't advance character, tension, or world is cut. The lyricism comes from precision, not from adjectives.
+- **Magic through cost, not spectacle.** Never describe what magic looks like without describing what it takes. The cost is the story — what was given up, what was spent, what can't be undone.
+- **Landscape as emotional state.** The forest that closes behind you. The river that hasn't been crossed in a generation. Geography carries history and history carries feeling. Don't describe terrain — describe what the terrain remembers.
+- **Formal register that feels natural.** Characters in this world don't speak in contractions and slang unless they're specifically low-born or informal. But formality shouldn't mean stilted.
+- **The weight of history in the present.** Every scene exists in a world that was here before the player and will be here after. The past isn't backstory — it's pressure on the present.
+- **Names and naming as power.** Who names things, what they call them, and what the old name was. Institutional names vs. true names. Naming is an act of authority.
+- **Pressure lives in people, not in archives.** Scholarship is action when it changes leverage between people in the room. If a scene starts to feel like catalogue maintenance or a research queue, move the camera to who gains or loses from the knowledge. The scroll is evidence; the scholar who hides it is the story.
 
 ## Tone
 Epic 60%, Gritty 30%, Witty 10%. Ancient wonder grounded by mud, fatigue, sharp scholarship, and the politics of who gets to name the truth.`
@@ -174,18 +183,23 @@ A vertical city owned by megacorporations, private security, fixers, gangs, infr
 blackout · six-block radius · local channel · Net · ICE · daemon · quickhack · chrome · fixer · corpo · NCPD · private security · access log · camera loop · signal trace · neural deck · eddies
 
 ## Faction voice
-- Corporate reps speak in risk, liability, asset control, and brand damage.
-- Fixers sound relaxed while pricing urgency.
-- Gang crews speak territorial, practical, and suspicious of outside attention.
-- Private security speaks in protocols, perimeters, and escalation tiers.
-- Netrunners use precise technical shorthand and watch every log gap.
+- Corporate reps are smooth and careful; junior ones are scared of their bosses, senior ones are scared of their margins. They never threaten directly — they describe consequences.
+- Fixers sound relaxed while pricing urgency. Their calm is professional, not personal.
+- Gang crews are territorial, practical, and suspicious of outside attention. Loyalty is to structure, not ideology.
+- Private security are bored professionals until something triggers, then efficient and impersonal.
+- Netrunners are precise and twitchy; they speak in shorthand because they're always watching something you can't see.
 - Residents speak with the anger of people whose power, locks, and lives are collateral.
 
 ## Narrative craft
-- Data is abundant; truth is manufactured. Make the question source reliability and human cost, not just finding a log.
-- Keep body and Net connected: neural strain, meat-space exposure, and who can touch the body while the mind is elsewhere.
-- Infrastructure has motives because people and corps use it. A camera, lock, outage, or trace should change leverage.
-- Use technical procedure as a pressure surface, not as a repeated scan/trace task loop.
+Write with the techniques of Gibson, Stephenson, Philip K. Dick — not their voice, their craft:
+
+- **Technology through wear, not specs.** Don't describe what chrome does; describe what it's done to someone. Technology is texture — weathered, failing, intimate.
+- **Clinical precision in emotional moments.** The more devastating the scene, the more clinical the language. Surgical terminology, dosage numbers, transmission timestamps. Let the precision carry the horror.
+- **The body as workspace.** Characters in this world think about bodies the way mechanics think about machines — professionally, with care, without sentiment during the work. Sentiment comes after, in the quiet.
+- **Short declarative sentences.** Subject. Verb. Object. Let each sentence land before the next one starts. Reserve longer sentences for moments of reflection.
+- **Silence between characters.** What people don't say matters more than what they do. Let dialogue sit. Let characters read each other through stillness, not exposition.
+- **Institutional language as dehumanization.** Corps don't fire — they restructure. They don't surveil — they optimize. Use the clean corporate phrase, then let the reader feel the gap between the phrase and the reality.
+- **Pressure lives in people, not in systems.** Data is abundant; truth is manufactured. A camera, lock, trace, or outage matters because someone specific gains leverage from it. If a scene starts to feel like a scan/trace task loop, move the camera to who is exposed, who is racing, who gets hurt when the timer runs out.
 
 ## Tone
 Gritty 50%, Witty 30%, Epic 20%. Neon pressure, dry survival humor, and big systemic violence felt through one room losing power.`
@@ -225,10 +239,15 @@ Shattered Provinces · Oathless · Pale Flame · Church waystation · Wasting ·
 - Rival scavengers respect competence but assume everyone is holding something back.
 
 ## Narrative craft
-- Scarcity should be concrete: provisions, wounds, weather, distance, witnesses, light.
-- Institutions speak through doctrine and contracts, but the story belongs to who goes hungry, gets buried, or gets blamed.
-- Keep violence ugly and consequential rather than glorious.
-- Use patrols, quarantine, warrants, and custody as threats people exploit, not as timer maintenance.
+Write with the techniques of Abercrombie, Pierce Brown, Christopher Ruocchio — not by imitating their voice, but by using their craft:
+
+- **Interiority through observation.** Show what the character feels through what they notice. Not "you feel uneasy" but "Oswick hasn't said anything since the captain's body was brought in, which with Oswick means he's already run the numbers and doesn't like them."
+- **Precision over explanation.** One exact detail beats three approximate ones. Trust the reader to close the gap.
+- **Silence carries weight.** Let moments land. A single-line paragraph after dialogue creates more tension than narrating the silence.
+- **Physical detail as status.** Scarred hands, worn leather, the weight of armor, the smell of solder or blood. Every physical detail should reveal something about power, history, or cost.
+- **Restraint on failure.** When a check fails, don't over-narrate the wrongness. The character believes what they believe — state it with confidence, move on. The wrongness reveals itself through consequences later.
+- **Scarcity is character.** Provisions, wounds, weather, distance, light — these are concrete, and the choices they force reveal who people are. Violence is ugly and consequential, not glorious.
+- **Pressure lives in people, not in doctrine.** Institutions speak through contracts and warrants, but the story belongs to who goes hungry, gets buried, or gets blamed. If a scene starts to feel like patrol scheduling or custody paperwork, move the camera to the person being hunted, blamed, or abandoned.
 
 ## Tone
 Gritty 60%, Epic 25%, Witty 15%. Hunger, ash, hard competence, and dry fatalism around choices that still matter.`
@@ -268,10 +287,15 @@ case · will · locked box · five names · four alive · precinct · business c
 - Wealthy voices treat consequences as a staffing problem.
 
 ## Narrative craft
-- The city is pressure: weather, phones, offices, bars, hotels, precincts, and people paid to look away.
-- Evidence matters when it changes who is watching, lying, threatening, or paying.
-- Let clues be social objects. A file, will, or box should point to a person with a reason, not a document chore.
-- Dry wit is a defense against rot, not decoration.
+Write with the techniques of Chandler, Hammett, James Ellroy, Chinatown — not pastiche, craft:
+
+- **The character's voice bleeds into narration.** Third person, but the narrator thinks like the protagonist. Observations are filtered through their professional lens. A PI notices exits and lies. A fixer notices leverage and exposure.
+- **Similes that reveal character.** Every comparison should tell you something about the person making it, not just the thing being described. The simile is characterization, not decoration.
+- **Dialogue as negotiation.** Every line of noir dialogue has a subtext. Nobody says what they mean directly. Questions are probes. Answers are deflections. Silence is a bid.
+- **Withholding.** What the narrator chooses not to describe matters as much as what they do. A case file's contents summarized in one line. A crime scene described by what's missing, not what's there.
+- **The city is a character.** Rain, neon, the bar where nobody looks up, the hotel where the clerk remembers nothing. But never decorative — every environmental detail should carry information about power, territory, or risk.
+- **Dry humor as armor.** The protagonist's wit is a defense mechanism, not comic relief. It surfaces in observations, not jokes. Self-deprecating, precise, deployed when the situation is worst.
+- **Pressure lives in people, not in case files.** Evidence matters when it changes who is watching, lying, threatening, or paying. A file, will, or photograph should point to a person with a reason, not a document chore. If a scene starts to feel like paperwork processing, move the camera to who gets hurt when the truth surfaces.
 
 ## Tone
 Gritty 50%, Witty 35%, Epic 15%. Dry observation, human rot, patient pressure, and the small grandeur of a revelation landing.`

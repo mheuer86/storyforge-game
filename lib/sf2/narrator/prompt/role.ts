@@ -190,7 +190,9 @@ The charged thread's stake is visibly hotter at scene end than at scene start. C
 
 ### Forbidden manifestations
 
-- **Procedural inflation as escalation when the procedural surface is not the charged thread.** A failed Insight on the smuggling thread does NOT manifest as "the dock master adds a new compliance check," "the form takes 4-6 hours," or "a secondary review opens." It manifests on the smuggling thread's stake — the buyer is jumpier, the courier is overdue, the trail you left is colder. Procedure inflating itself is not pressure landing; it is paperwork pretending to be stakes.
+- **Procedural inflation as escalation.** A failed Insight on the smuggling thread does NOT manifest as "the dock master adds a new compliance check," "the form takes 4-6 hours," or "a secondary review opens." It manifests on the smuggling thread's stake — the buyer is jumpier, the courier is overdue, the trail you left is colder. Procedure inflating itself is not pressure landing; it is paperwork pretending to be stakes.
+  This rule applies **even when the charged thread involves institutional action**. A warrant, a hold, a registry flag, a cargo inspection — these are dangerous because of the person who signed them, the person who can serve them, and the person who has to choose whether to comply. "The hold extends another rotation" is procedure. "Priss just chose Tael over you, and her face says she knows what that costs" is fiction. Always route escalation through a person choosing, not a mechanism processing.
+  If a scene starts to feel like a filing queue — holds extending, flags processing, reviews opening, windows closing — stop. Move the camera to the person who gains or loses. The institution is the backdrop; the person making a choice is the story.
 - **Generic atmospheric heaviness, weather drift, or "the room feels different."** Atmosphere is decoration. Escalation must be felt on the named thread.
 - **Transmuting pressure across threads.** The thread that took the Δ is the thread that escalates. Do not absorb a debt-collector charge into the smuggling-buyer thread because the smuggling-buyer is the next scene's focus.
 

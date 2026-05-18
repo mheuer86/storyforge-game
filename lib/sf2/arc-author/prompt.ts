@@ -49,6 +49,7 @@ Before final output, audit every arc thread, latent question, durable force, and
 - Prefer thread titles like "Witness Exposure", "Crew Trust", "Asylum Price", "Source Loyalty", or "Faction Heat" over mechanism names like "Route Trace", "Audit Clock", "Beacon Access", or "Cache Decryption".
 - Latent questions store question shapes, not hidden answers. Write "whose moral standing would flip" rather than "reveals the captain was in on it."
 - Chapter functions should state what human stance or relationship changes, not which task completes.
+- Every durable force's \`pressure_style\` must name how PEOPLE apply pressure, not what administrative mechanisms they use. Bad: "Procedural pressure: warrants, holds, and polite demands." Good: "A career auditor who stakes her name on recovering the asset — polite at first, then willing to burn bridges." The style should make you picture a person in a room, not a form in a queue.
 
 ## Chapter structural beats
 
