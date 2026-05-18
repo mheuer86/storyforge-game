@@ -76,7 +76,9 @@ Main fields:
 | `mechanical_effects` | HP, credits, inventory use, location, scene end, scene snapshot |
 | `hinted_entities` | Hints for the Archivist, not durable state writes |
 | `authorial_moves` | Pivot/revelation/witness-mark hints |
-| `suggested_actions` | 3-4 grounded quick actions for the next turn |
+| `suggested_actions` | 3-4 grounded, useful quick actions for the next turn |
+
+Quick actions are suggestions, not branches. They should use concrete verb + target + intent, avoid resolving the outcome, and open different useful next turns: objective pressure, information/route discovery, pressure/position/resource response, and relationship/promise/moral tension. Skill tags such as `[Insight]` are used only when choosing the option likely commits the player to a risky check.
 
 Allowed mechanical effect kinds:
 
