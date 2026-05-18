@@ -53,6 +53,24 @@ The game asks for checks when:
 
 The Narrator explains what is at stake before the roll. Failure should move the story forward with cost, pressure, exposure, injury, lost time, or changed leverage.
 
+## Roll Outcomes
+
+Rolls follow a yes/no ladder:
+
+| Result | Meaning |
+|---|---|
+| Strong success | yes, and |
+| Clean success | yes |
+| Narrow success | yes, but |
+| Partial success | partly yes, partly no |
+| Narrow failure | no, but |
+| Failure | no, and |
+| Hard failure | no, and now the board changes |
+
+Narrow success is still success. If you meet or beat the DC, the main intent happens; the cost lands around it through pressure, time, gear, position, trust, wound risk, or another visible bite.
+
+Failure changes the route rather than stopping the chapter. You may lose health, time, trust, gear, position, stealth, custody, or extraction quality, but the game should almost always leave you in a new playable situation.
+
 ## Advantage, Disadvantage, Challenge
 
 Rolls can have modifiers:

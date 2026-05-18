@@ -69,6 +69,18 @@ The Narrator can request:
 
 The browser resolves the die. Code applies stat/proficiency modifiers, advantage/disadvantage, challenge, and inspiration rerolls. The result is sent back to the Narrator as `rollResolution`, and the Narrator continues from the paused moment.
 
+The `rollResolution` message keeps the UI-facing result enum small (`critical`, `success`, `failure`, `fumble`) but adds narration guidance from the margin:
+
+| Posture | Core rule | Narration contract |
+|---|---|---|
+| Strong success | yes, and | Intent succeeds plus leverage, extra intel, pressure relief, better position, or saved resources. |
+| Clean success | yes | Intent succeeds as stated. |
+| Narrow success | yes, but | Intent succeeds; cost lands around the success. Do not downgrade to partial recovery. |
+| Partial success | partly yes, partly no | Use for divisible goals, not as the default close-success outcome. |
+| Narrow failure | no, but | Clean result fails, but the attempt reveals a new playable route or opening. |
+| Failure | no, and | Goal fails and pressure, risk, loss, or enemy position worsens. |
+| Hard failure | no, and now the board changes | Major setback, still playable: wound, capture, split party, forced retreat, shifted custody, or aftermath consequence. |
+
 Failed rolls can also create pressure. Current deterministic pressure recovery applies local escalation to target threads: ordinary failure is +2, critical failure is +3.
 
 ## Social Modifiers

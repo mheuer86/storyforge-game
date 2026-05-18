@@ -1,0 +1,69 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrator roll resume: narrow success remains success",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protects the roll-outcome contract that meeting the DC is still success: the Narrator gets yes-but guidance without being invited to downgrade the main objective into partial recovery."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Force the service hatch before the patrol reaches the bay.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "(unused - fixture asserts on buildNarratorTurnContext output)",
+      "annotation": null
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "Force the service hatch before the patrol reaches the bay.",
+      "rollResolution": {
+        "toolUseId": "toolu_narrow_success_fixture",
+        "skill": "Athletics",
+        "dc": 15,
+        "d20": 12,
+        "modifier": 3,
+        "total": 15,
+        "result": "success",
+        "originalInput": "Force the service hatch before the patrol reaches the bay.",
+        "priorMessages": [
+          {
+            "role": "user",
+            "content": "Pre-roll scene packet and current turn delta."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_narrow_success_fixture",
+                "name": "request_roll",
+                "input": {
+                  "skill": "Athletics",
+                  "dc": 15,
+                  "why": "Force the hatch before the patrol reaches visual range.",
+                  "consequence_on_fail": "The patrol gets a clean look before the route opens."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "messageCountEquals": 3,
+      "assistantMessageCountEquals": 1,
+      "workingSetEventAbsent": true,
+      "sceneBundleEventAbsent": true,
+      "pacingEventAbsent": true,
+      "userMessageContainsAll": [
+        "Roll result — Athletics vs DC 15: rolled d20=12 + 3 = 15.",
+        "Success. Narrate the outcome.",
+        "Narrow success — yes, but.",
+        "The PC gets the stated intent",
+        "Do NOT downgrade this into partial recovery"
+      ]
+    }
+  }
+}
