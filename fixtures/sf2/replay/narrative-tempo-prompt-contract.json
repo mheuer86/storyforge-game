@@ -1,0 +1,51 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrative tempo prompt contract",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Protect the Narrator tempo contract: seven modes, hidden annotation, non-micro deltas, and no quick-action skill tags."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I wait until morning for the registry window to open.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Morning arrives with the registry shutters already half-open.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "I wait until morning for the registry window to open.",
+      "systemContainsAll": [
+        "## Narrative tempo",
+        "micro_scene",
+        "compression_turn",
+        "time_jump",
+        "montage",
+        "aftermath",
+        "downtime",
+        "chapter_turn",
+        "In `micro_scene`, each turn should change one thing",
+        "Non-micro tempo may change several visible things",
+        "Do not append bracketed skill tags or internal tempo labels"
+      ],
+      "userMessageContainsAll": [
+        "## Narrative tempo (private)",
+        "Recommended mode: time_jump",
+        "Required delta: time advances"
+      ],
+      "narrativeTempoModeEquals": "time_jump",
+      "narrativeTempoRequiredDeltaIncludes": "time advances"
+    },
+    "perTurnDeltaIncludes": [
+      "## Narrative tempo (private)",
+      "Recommended mode: time_jump",
+      "Broad-goal handling"
+    ]
+  }
+}

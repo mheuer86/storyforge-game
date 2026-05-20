@@ -3,6 +3,7 @@
 // design doc commits us to.
 
 import type { Sf2State } from '../types'
+import { computeNarrativeTempoMetrics, type Sf2NarrativeTempoMetrics } from '../narrative-tempo'
 
 export interface DebugEvent {
   kind: string
@@ -46,6 +47,12 @@ export interface SessionSummaryMetrics {
   pacing: {
     advisoriesFired: number
     breakdown: { reactivity: number; sceneLink: number; stagnation: number; arcDormant: number }
+    tempo: Sf2NarrativeTempoMetrics
+    tempoDiagnostics: {
+      observed: number
+      matched: number
+      mismatched: number
+    }
   }
   cost: {
     narratorTokens: { in: number; out: number; cacheWrite: number; cacheRead: number }
@@ -214,7 +221,15 @@ export function computeSessionSummary(
   // Pacing breakdown
   let pacingAdvisoriesFired = 0
   const pacingBreakdown = { reactivity: 0, sceneLink: 0, stagnation: 0, arcDormant: 0 }
+  const tempoDiagnostics = { observed: 0, matched: 0, mismatched: 0 }
   for (const ev of debug) {
+    if (ev.kind === 'tempo_diagnostic') {
+      const d = ev.data as { matched?: boolean }
+      tempoDiagnostics.observed += 1
+      if (d.matched) tempoDiagnostics.matched += 1
+      else tempoDiagnostics.mismatched += 1
+      continue
+    }
     if (ev.kind !== 'pacing_advisory') continue
     const d = ev.data as {
       tripped?: boolean
@@ -555,6 +570,8 @@ export function computeSessionSummary(
     pacing: {
       advisoriesFired: pacingAdvisoriesFired,
       breakdown: pacingBreakdown,
+      tempo: computeNarrativeTempoMetrics(state),
+      tempoDiagnostics,
     },
     cost: {
       narratorTokens,

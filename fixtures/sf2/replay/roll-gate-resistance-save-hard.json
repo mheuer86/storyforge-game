@@ -1,0 +1,33 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate resistance save is hard when resisting harm",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Save-like resistance should remain a hard roll gate when the player is actively resisting immediate harm or compulsion."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "I brace against the vacuum blast and keep control.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "resistance_save",
+      "binding": "hard",
+      "skillsInclude": ["Athletics", "Insight"],
+      "reasonIncludes": "save-like resistance"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private hard roll gate (never mention)",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

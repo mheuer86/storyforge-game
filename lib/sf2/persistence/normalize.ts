@@ -43,6 +43,7 @@ import {
 import { compactRetrievalCue } from '../retrieval-cues'
 import { isActiveSf2Procedure, normalizeProcedureRuntime } from '../procedure'
 import type { Sf2SetupSelection } from '../setup/types'
+import { clampSf2SetupCalibrationAnswers } from '../setup/calibration'
 import { getGenreConfig, type CharacterClass, type Genre } from '../../genre-config'
 
 const RECENT_TURNS_LIMIT = 6
@@ -245,12 +246,30 @@ function setupSelectionOr(value: unknown): Sf2SetupSelection | undefined {
   const hookId = stringOr(record.hookId, '')
   if (!genreId || !originId || !playbookId || !hookId) return undefined
   const characterName = stringOr(record.characterName, undefined)
+  const calibrationAnswers = clampSf2SetupCalibrationAnswers(Array.isArray(record.calibrationAnswers)
+    ? record.calibrationAnswers
+        .map((entry) => {
+          const answer = asRecord(entry)
+          if (!answer) return null
+          const question = stringOr(answer.question, '').trim()
+          const response = stringOr(answer.answer, '').trim()
+          const theme = stringOr(answer.theme, undefined)
+          if (!question || !response) return null
+          return {
+            question,
+            answer: response,
+            ...(theme ? { theme } : {}),
+          }
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    : [])
   return {
     genreId,
     originId,
     playbookId,
     hookId,
     ...(characterName ? { characterName } : {}),
+    ...(calibrationAnswers.length > 0 ? { calibrationAnswers } : {}),
   }
 }
 

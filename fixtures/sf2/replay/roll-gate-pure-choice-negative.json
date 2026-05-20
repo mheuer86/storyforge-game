@@ -20,8 +20,8 @@
     },
     "narratorMessages": {
       "userMessageContainsNone": [
-        "### Private roll gate (mandatory, never mention)",
-        "### Skill-tag binding (mandatory)",
+        "### Private roll advisory (expected, never mention)",
+        "### Private hard roll gate (never mention)",
         "You MUST call `request_roll` before resolving"
       ]
     }

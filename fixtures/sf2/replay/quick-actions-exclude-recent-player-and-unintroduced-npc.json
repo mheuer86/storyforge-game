@@ -63,7 +63,7 @@
       "outputCount": 4,
       "outputActionsInclude": [
         "Use the strongest fact already on the table.",
-        "Run a passive sweep from the bridge. [Perception]",
+        "Run a passive sweep from the bridge.",
         "Wait, and let the silence work."
       ],
       "outputActionsExclude": [

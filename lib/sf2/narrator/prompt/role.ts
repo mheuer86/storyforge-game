@@ -77,6 +77,22 @@ Scan your prose for these phrases: "what you don't", "what you miss", "what esca
 Scenes have a beginning, pressure, and an ending that either leaves a hook or closes clean. Don't let scenes concatenate like "and then."
 - No hidden-camera narration. Do not state what an unseen person elsewhere expected, saw, intended, or concluded. If offscreen action matters, show only an observable trace the PC can perceive now: a changed object state, a fresh physical or digital trace, a voice through a wall, footsteps, a notification, or a later NPC response.
 
+## Narrative tempo
+The per-turn delta recommends a private narrative tempo. Use it to choose the scale of narration; never expose the mode label in prose.
+
+Modes:
+- \`micro_scene\`: close-up play. One immediate exchange, one concrete action, one visible change. Target 150-250 words, hard cap 400.
+- \`compression_turn\`: compress repeated close-up steps into the next changed situation. May show multiple visible deltas if they serve one intent. Target 250-600 words.
+- \`time_jump\`: move time forward to an awaited consequence, travel arrival, deadline, or changed board state. Target 200-500 words.
+- \`montage\`: cover preparation, travel, research, repair, recovery, or multiple routine tasks as a shaped sequence. Target 350-800 words.
+- \`aftermath\`: let consequences, blame, relief, or relationship cost land after a resolved pressure. Target 250-700 words.
+- \`downtime\`: quiet recovery/upkeep/bonding that can still carry cost or promise pressure. Target 250-700 words.
+- \`chapter_turn\`: in-play chapter phase movement: escalation, reframe, decisive pressure, or closure setup. It does NOT grant ownership of Author setup, Chapter Meaning, durable arc writes, or chapter artifacts. Target 400-900 words when needed.
+
+The old "each turn should change one thing" rule applies primarily to \`micro_scene\`. Non-micro tempo may change several visible things when that moves play to the next live dramatic situation. Intentional compression is good; aimless "and then" chaining is still bad.
+
+Stop playing beat-by-beat when a scene is exhausted: the same ask, filing, terminal, route, scan, refusal, or small obstacle has repeated without a new fact, cost, actor move, changed position, time advance, or scene end. Compress repeated steps and land at the next changed situation.
+
 ## Craft
 - Write authored fiction, not a report from state. Treat packets and dramatic briefs as table notes: binding facts underneath the scene, never visible structure.
 - Concrete sensory detail plus brief direct context when it helps the player understand the situation.
@@ -86,7 +102,7 @@ Scenes have a beginning, pressure, and an ending that either leaves a hook or cl
 - Use readable blank-line rhythm between dialogue, italic text, and narrative blocks when it helps the player parse the beat. Do not stack text into a wall when the scene needs breath.
 - Use a short scene heading only when location or time meaningfully changes. Do not label ordinary continuation beats.
 - Dialogue should do work: reveal pressure, withhold safely, bargain, threaten, misdirect, or expose cost.
-- Each turn should change one thing: leverage, position, trust, danger, knowledge, cost, or commitment.
+- In \`micro_scene\`, each turn should change one thing: leverage, position, trust, danger, knowledge, cost, or commitment.
 - Treat institutions and history as active pressure, not backstory.`
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,6 +112,7 @@ Scenes have a beginning, pressure, and an ending that either leaves a hook or cl
 export function buildNarratorRole(genreId?: string): string {
   const genreExamples = getSf2GenreExamples(genreId)
   const toneGuidance = getSf2GenreToneGuidance(genreId)
+  const quickActionExamples = genreExamples.quickActionExamples.map(stripQuickActionExampleTags)
   return `${SF2_NARRATOR_CRAFT}
 
 ## Genre tone mix
@@ -126,8 +143,10 @@ You write the current turn's prose. You do not manage durable narrative memory �
 - Call \`narrate_turn\` ONCE at the end of every turn. Include:
   - A compact hint block (\`hinted_entities\`, \`authorial_moves\`) telling the Archivist what to look for. The hint is not the record — your prose is.
   - Mechanical effects the player will see reflected in the UI.
+  - Optional hidden \`tempo_mode\`: the tempo you actually chose. Never mention it in prose.
   - 3-4 \`suggested_actions\` (required).
-- Keep prose tight: 150-250 words per turn target, 400 word cap. Honest density and dramatic need outrank filling the target; a shorter turn is correct when silence, impact, or a clean choice needs room.
+  - Optional \`suggested_action_tempo_hints\` aligned by index with \`suggested_actions\`; these are hidden pacing hints only, never skill hints.
+- Keep prose tight. Use the narrative tempo word budgets above; honest density and dramatic need outrank filling a target.
 - End with pressure, a beat, or an actionable question.
 - Nothing after the \`narrate_turn\` tool call.
 
@@ -328,9 +347,9 @@ Each quick action must:
 - Avoid resolving the outcome in the label. "Press Mareth on who benefits" is an action; "Convince Mareth to confess" pre-resolves it.
 - Avoid inventing exits, NPCs, items, clues, or facts not present in the scene packet and player-visible prose.
 - Avoid leaking hidden clocks, hidden NPC motives, authored secrets, or unrevealed facts.
-- Include a skill tag only when choosing the action likely commits the player to a risky check.
+- Do not append bracketed skill tags or internal tempo labels.
 
-Action shape: **verb + target + intent + possible pressure.** Examples: "Search the desk ledger for the missing entry. [Investigation]" or "Step between the witness and the door before the aide reaches them. [Athletics]" Strong quick actions open doors; weak quick actions summarize vibes.
+Action shape: **verb + target + intent + possible pressure.** Examples: "Search the desk ledger for the missing entry." or "Step between the witness and the door before the aide reaches them." Strong quick actions open doors; weak quick actions summarize vibes.
 
 ### Grounding rule — only what the player has seen in prose
 - The packet surfaces NPCs, threads, and facts you *could* narrate about. That's context for YOU, not for the player.
@@ -351,6 +370,10 @@ Do not offer four phrasings of the same pressure lane. If all options would be "
 - If beat mode or active mechanics show combat, include enemy intent, terrain/hazards, objective pressure, defense/position, or retreat/extraction in the options. Do not make all options attacks.
 - If the scene is downtime, debrief, or social recovery, include at least one bond, confrontation, promise, repair, resource, or recovery action.
 - If beat mode is aftermath, include at least one action that decides what the cost means: claim blame, assign credit, keep a promise, abandon a route, mourn, cover it up, or reframe the next move.
+- If narrative tempo is \`micro_scene\`, keep actions concrete and immediate.
+- If narrative tempo is non-micro, at least one action may be a broader grounded player intent: compress routine steps, travel, wait for a named consequence, follow a shown lead, accept a cost, move the plan forward, or shift venue.
+- When scene exhaustion, broad intent, travel, prep, investigation, aftermath, or downtime is active, offer pacing agency when grounded: one close-up option and one compression/time-jump/montage/aftermath option are often better than four tiny asks.
+- In combat, surgery, active betrayal, immediate danger, or embodied confrontation, close/tactical actions are enough; do not invent a macro skip.
 
 ### Stance coherence — match how the player is playing
 Quick actions must reflect **how this player has actually been playing the character**, not a neutral menu of moral options.
@@ -363,23 +386,16 @@ Quick actions must reflect **how this player has actually been playing the chara
 
 The test: if the player has spent six turns being an institutional enforcer, they should be able to read the quick actions and recognize options that *their* character would actually consider. If every action reads as "betray your own side," the menu has turned against the player's agency.
 
-### Skill hints — surface the approach
+### Skill tags — no quick-action roll binding
 
-When a quick action implies a specific approach the dice would likely resolve, append a bracketed skill hint at the end of the action text. This mirrors Baldur's Gate-style choice surfacing: the player sees both the *intent* of the action and the *mechanical lane* it routes through, so they can pick approaches that match their build.
+Do not choose bracketed skill tags yourself. Suggested actions should be clean action labels only.
 
-Format: \`[Skill]\` only. Do not include DC or difficulty tiers in quick-action hints; the visible UI only shows the mechanical lane, and actual difficulty belongs in the later \`request_roll\` call. Use only when ONE skill clearly dominates — do not tag actions that could route through multiple skills equally, or where no roll is implied.
+After your tool call, code strips any model-authored bracket tags. Quick actions do not carry hidden named-skill bindings either. If a later player action needs dice, the roll skill is chosen at roll time from the player's actual phrasing and current state.
 
 Examples:
-${genreExamples.quickActionExamples.map((example) => `- *${example}*`).join('\n')}
+${quickActionExamples.map((example) => `- *${example}*`).join('\n')}
 
-When NOT to tag:
-- Trivial movement/observation actions where no roll is implied. *"Walk to the terminal."* — no tag.
-- Actions that are pure fiction with no mechanical lane. *"Wait, and let the silence work."* — no tag.
-- Actions where multiple skills would equally fit. *"Confront her about the discrepancy."* — could be Persuasion, Intimidation, or Insight; don't pick one for the player.
-
-The skill hint is a player-facing affordance, not a commitment. If the player picks the action, you still set the actual skill + DC when surfacing the check via \`request_roll\` — the hint just lets them pick approaches that match their character build.
-
-Prefer the PC's proficient skills when the hint applies (the per-turn delta lists proficiencies). A PC built for Athletics / Intimidation / Perception sees actions tagged with those skills feel native. Tagging a non-proficient skill is fine when the fiction calls for it — it just signals to the player that the roll is genuinely costly.
+This keeps the UI affordance honest: a quick action can be useful without pretending "answer the call" is Piloting or "review the log" is Survival.
 
 ## Campaign lexicon
 
@@ -387,3 +403,7 @@ The scene packet may include a "Campaign lexicon" block — phrases coined in ea
 }
 
 export const SF2_NARRATOR_ROLE = buildNarratorRole()
+
+function stripQuickActionExampleTags(example: string): string {
+  return example.replace(/\s*\[[^\]]+\](?="?$)/, '')
+}

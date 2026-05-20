@@ -30,6 +30,7 @@ import { evaluateRevelationDue, normalizeRevelationTopic } from '../retrieval/re
 import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
 import { applySf2RollResourceSpends } from '../rolls/resolve'
+import { isSf2NarrativeTempoMode } from '../narrative-tempo'
 
 export type Sf2TurnPipelineEvent =
   | Sf2ReplayInvariantEvent
@@ -429,6 +430,10 @@ export function normalizeNarratorAnnotationForHistory(
   const hinted = (input.hinted_entities ?? input.hintedEntities ?? {}) as Record<string, unknown>
   const authorial = (input.authorial_moves ?? input.authorialMoves ?? {}) as Record<string, unknown>
   const suggested = input.suggested_actions ?? input.suggestedActions
+  const tempoMode = input.tempo_mode ?? input.tempoMode
+  const tempoHints = arrayOfTempoHints(
+    input.suggested_action_tempo_hints ?? input.suggestedActionTempoHints
+  )
   return {
     // Mechanical effects are executed by code and preserved in
     // narratorAnnotationRaw/replay frames. The compact history annotation keeps
@@ -443,6 +448,8 @@ export function normalizeNarratorAnnotationForHistory(
     },
     authorialMoves: authorial as Sf2NarratorAnnotation['authorialMoves'],
     suggestedActions: arrayOfStrings(suggested),
+    ...(isSf2NarrativeTempoMode(tempoMode) ? { tempoMode } : {}),
+    ...(tempoHints.length > 0 ? { suggestedActionTempoHints: tempoHints } : {}),
   }
 }
 
@@ -701,6 +708,16 @@ function formatCoherenceNotes(findings: Sf2CoherenceFinding[]): string[] {
 
 function arrayOfStrings(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String) : []
+}
+
+function arrayOfTempoHints(value: unknown): NonNullable<Sf2NarratorAnnotation['suggestedActionTempoHints']> {
+  if (!Array.isArray(value)) return []
+  const allowed = new Set(['close', 'compression', 'time_jump', 'montage', 'aftermath', 'downtime', 'chapter_turn'])
+  return value
+    .map(String)
+    .filter((hint): hint is NonNullable<Sf2NarratorAnnotation['suggestedActionTempoHints']>[number] =>
+      allowed.has(hint)
+    )
 }
 
 export function observeActorFirewallWrite(

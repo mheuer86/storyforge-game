@@ -101,6 +101,7 @@ export function buildMessagesForNarrator(
   turnIndex: number
 ): {
   messages: Anthropic.MessageParam[]
+  packet: ReturnType<typeof buildScenePacket>['packet']
   workingSet: ReturnType<typeof buildScenePacket>['workingSet']
   advisoryText: string
   bundleRebuilt: {
@@ -243,5 +244,5 @@ export function buildMessagesForNarrator(
     }
   }
 
-  return { messages, workingSet, advisoryText, bundleRebuilt }
+  return { messages, packet, workingSet, advisoryText, bundleRebuilt }
 }

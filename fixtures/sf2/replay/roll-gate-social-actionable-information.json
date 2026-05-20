@@ -48,15 +48,16 @@
       "exists": true,
       "source": "npc_information",
       "kind": "npc_information",
+      "binding": "expected",
       "sourceId": "npc_mareth",
       "skillsInclude": ["Persuasion", "Insight"],
       "reasonIncludes": "actionable information"
     },
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll gate (mandatory, never mention)",
+        "### Private roll advisory (expected, never mention)",
         "actionable information extraction",
-        "substantive answer until the roll result returns"
+        "fail forward"
       ]
     }
   }

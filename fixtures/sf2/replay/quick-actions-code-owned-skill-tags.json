@@ -1,0 +1,52 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions strip model-authored skill tags",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "Quick actions are player-facing intents, not hidden roll bindings. Code strips model-authored bracket tags and leaves roll skill selection to request_roll time."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 3,
+    "playerInput": "What are my options?",
+    "narrator": {
+      "prose": "The clerk lets the comm keep chiming while the ledger stays open between you.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "playerProficiencies": ["Intimidation"],
+      "inputActions": [
+        "Answer the comm call. [Piloting]",
+        "Review the maintenance logs for the missing interval. [Survival]",
+        "Press the clerk for the withheld answer. [Persuasion]",
+        "Walk to the terminal."
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Answer the comm call.",
+        "Review the maintenance logs for the missing interval.",
+        "Press the clerk for the withheld answer.",
+        "Walk to the terminal."
+      ],
+      "outputActionsExclude": [
+        "Answer the comm call. [Piloting]",
+        "Review the maintenance logs for the missing interval. [Survival]",
+        "Press the clerk for the withheld answer. [Persuasion]",
+        "Walk to the terminal. [Investigation]"
+      ],
+      "notesInclude": ["stripped 3 quick action bracket tags"]
+    }
+  }
+}

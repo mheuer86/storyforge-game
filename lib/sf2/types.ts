@@ -1251,6 +1251,14 @@ export interface AuthorInputSeed {
     creativeAngle?: string
     avoidModes?: Sf2ArcScenarioMode[]
   }
+  playerCalibration?: {
+    answers: Array<{
+      question: string
+      answer: string
+      theme?: string
+    }>
+    summary: string
+  }
   // PC capability surface — surfaced to the Author so the chapter's pressure
   // ladder can include steps the PC's natural moves engage. See
   // [[2604270855 Storyforge V2 Playbook Fit]] for design. Only the player's
@@ -1559,8 +1567,49 @@ export interface Sf2PendingCheck {
   consequenceOnFail: string
 }
 
+export const SF2_NARRATIVE_TEMPO_MODES = [
+  'micro_scene',
+  'compression_turn',
+  'time_jump',
+  'montage',
+  'aftermath',
+  'downtime',
+  'chapter_turn',
+] as const
+
+export type Sf2NarrativeTempoMode = typeof SF2_NARRATIVE_TEMPO_MODES[number]
+
+export type Sf2SetupCalibrationTheme =
+  | 'oath'
+  | 'belief'
+  | 'debt'
+  | 'fear'
+  | 'relationship'
+  | 'tone'
+  | 'opening_pressure'
+
+export type Sf2SuggestedActionTempoHint =
+  | 'close'
+  | 'compression'
+  | 'time_jump'
+  | 'montage'
+  | 'aftermath'
+  | 'downtime'
+  | 'chapter_turn'
+
+export interface Sf2NarrativeTempoRecommendation {
+  mode: Sf2NarrativeTempoMode
+  reason: string
+  remedy: string
+  requiredDelta?: string
+  forbiddenRepeat?: string
+  sceneExhausted?: boolean
+  broadGoal?: boolean
+}
+
 export interface Sf2NarratorAnnotation {
   pendingCheck?: Sf2PendingCheck
+  tempoMode?: Sf2NarrativeTempoMode
   mechanicalEffects: Array<
     | { kind: 'hp_delta'; value: number; reason: string }
     | { kind: 'credits_delta'; value: number; reason: string }
@@ -1582,6 +1631,7 @@ export interface Sf2NarratorAnnotation {
     pivotSignaled?: boolean
   }
   suggestedActions: string[]
+  suggestedActionTempoHints?: Sf2SuggestedActionTempoHint[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1920,6 +1970,9 @@ export interface Sf2PacingAdvisory {
   sceneLinkTripped: boolean
   stagnantThreadIds: Sf2EntityId[]
   arcDormantIds: Sf2EntityId[]
+  recommendedTempoMode?: Sf2NarrativeTempoMode
+  requiredDelta?: string
+  forbiddenRepeat?: string
 }
 
 export interface Sf2NarratorScenePacket {
@@ -1942,6 +1995,7 @@ export interface Sf2NarratorScenePacket {
   operationPlan?: Sf2OperationPlan
   recentContext: Sf2RecentContextPacket
   pacing: Sf2PacingAdvisory
+  narrativeTempo: Sf2NarrativeTempoRecommendation
   passiveAwareness: Sf2PassiveAwarenessEvaluation
   playerInput: {
     text: string
@@ -1982,6 +2036,11 @@ export interface Sf2CampaignMeta {
     playbookId: string
     hookId: string
     characterName?: string
+    calibrationAnswers?: Array<{
+      question: string
+      answer: string
+      theme?: Sf2SetupCalibrationTheme
+    }>
   }
   hookId?: string
   hookTitle?: string

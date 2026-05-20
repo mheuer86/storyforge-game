@@ -1,0 +1,36 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate resistance save requires verb and harm context",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Words such as fire/blast/vacuum must not trigger a hard resistance-save gate unless the player is actually resisting harm or compulsion."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "I fire up the terminal and review the departure logs.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "technical_system",
+      "binding": "expected",
+      "skillsInclude": ["Investigation", "Arcana"],
+      "reasonIncludes": "system interaction"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private roll advisory (expected, never mention)"
+      ],
+      "userMessageContainsNone": [
+        "### Private hard roll gate (never mention)",
+        "save-like resistance"
+      ]
+    }
+  }
+}

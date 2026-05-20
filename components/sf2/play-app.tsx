@@ -19,7 +19,7 @@ import {
 import {
   listSf2SetupHooks,
 } from '@/lib/sf2/setup/options'
-import type { Sf2SetupSelection } from '@/lib/sf2/setup/types'
+import type { Sf2SetupCalibrationAnswer, Sf2SetupSelection } from '@/lib/sf2/setup/types'
 import { applyAuthorChapterOpening } from '@/lib/sf2/author/chapter-opening'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
 import {
@@ -330,6 +330,8 @@ export function Sf2PlayApp() {
     species: Species
     characterClass: CharacterClass
     gender: 'he' | 'she' | 'they'
+    hookId?: string
+    calibrationAnswers?: Sf2SetupCalibrationAnswer[]
   }) {
     let hooks: ReturnType<typeof listSf2SetupHooks> = []
     try {
@@ -341,13 +343,19 @@ export function Sf2PlayApp() {
       setSetupError('No SF2 opening hook is available for that origin and playbook yet.')
       return
     }
-    const hook = hooks[Math.min(Math.floor(Math.random() * hooks.length), hooks.length - 1)]
+    const hook =
+      hooks.find((candidate) => candidate.id === data.hookId) ??
+      hooks[Math.min(Math.floor(Math.random() * hooks.length), hooks.length - 1)]
+    const calibrationAnswers = (data.calibrationAnswers ?? []).filter((answer) =>
+      answer.question.trim() && answer.answer.trim()
+    ).slice(0, 5)
     const setupSelection: Sf2SetupSelection = {
       genreId: setupData.genre,
       originId: data.species.id,
       playbookId: data.characterClass.id,
       hookId: hook.id,
       characterName: data.name,
+      ...(calibrationAnswers.length > 0 ? { calibrationAnswers } : {}),
     }
     const next = createInitialSf2State({
       campaignId: `camp_${Date.now()}`,
@@ -378,6 +386,12 @@ export function Sf2PlayApp() {
         setupSelection,
         setupSurface: 'v1_wizard',
         hookTitle: hook.title,
+        calibrationStatus: calibrationAnswers.length === 0
+          ? 'skipped'
+          : calibrationAnswers.length >= 5
+            ? 'completed'
+            : 'answered',
+        calibrationAnswerCount: calibrationAnswers.length,
       },
     })
     persist(next)

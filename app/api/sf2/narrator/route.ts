@@ -17,6 +17,7 @@ import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { Sf2NarratorStreamEvent } from '@/lib/sf2/narrator/stream-protocol'
 import type { Sf2State } from '@/lib/sf2/types'
+import { isSf2NarrativeTempoMode } from '@/lib/sf2/narrative-tempo'
 
 const NARRATOR_MODEL = process.env.SF2_NARRATOR_MODEL || 'claude-sonnet-4-6'
 
@@ -103,6 +104,27 @@ function bindRequiredRollGateSkill(
   }
 }
 
+function isHardRollGate(gate: Sf2NarratorTurnContext['requiredRollGate']): boolean {
+  return gate?.binding === 'hard'
+}
+
+function rollGateDiagnosticFields(gate: NonNullable<Sf2NarratorTurnContext['requiredRollGate']>) {
+  return {
+    required: isHardRollGate(gate),
+    binding: gate.binding,
+    source: gate.source,
+    kind: gate.kind,
+    skills: gate.skills,
+    reason: gate.reason,
+    sourceId: gate.sourceId,
+  }
+}
+
+function normalizeTempoModeFromToolInput(input: Record<string, unknown>) {
+  const raw = input.tempo_mode ?? input.tempoMode
+  return isSf2NarrativeTempoMode(raw) ? raw : undefined
+}
+
 function dropUndefinedFields<T extends Record<string, unknown>>(value: T): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined))
 }
@@ -150,7 +172,8 @@ function recoverNarrateTurnInput(
   state: Sf2State,
   failedSkill?: string,
   playerInput?: string,
-  visibleProse?: string
+  visibleProse?: string,
+  tempoContext?: Pick<Sf2NarratorTurnContext, 'narrativeTempo'>
 ): { input: Record<string, unknown>; recoveryNotes: string[] } {
   const recoveryNotes: string[] = []
   const next = { ...raw }
@@ -217,7 +240,14 @@ function recoverNarrateTurnInput(
 
   const repairedActions = repairSuggestedActions(
     Array.isArray(next.suggested_actions) ? (next.suggested_actions as string[]) : [],
-    { state, failedSkill, playerInput, visibleProse }
+    {
+      state,
+      failedSkill,
+      playerInput,
+      visibleProse,
+      recommendedTempoMode: tempoContext?.narrativeTempo?.mode,
+      sceneExhausted: tempoContext?.narrativeTempo?.sceneExhausted,
+    }
   )
   if (repairedActions.notes.length > 0) {
     next.suggested_actions = repairedActions.actions
@@ -274,7 +304,8 @@ async function repairMissingNarrateTurn(args: {
     completedContent
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
       .map((b) => b.text)
-      .join('')
+      .join(''),
+    { narrativeTempo: turnContext.narrativeTempo }
   )
 
   return {
@@ -370,12 +401,7 @@ export async function POST(req: NextRequest) {
       if (turnContext.requiredRollGate) {
         send({
           type: 'roll_gate_diagnostic',
-          required: true,
-          source: turnContext.requiredRollGate.source,
-          kind: turnContext.requiredRollGate.kind,
-          skills: turnContext.requiredRollGate.skills,
-          reason: turnContext.requiredRollGate.reason,
-          sourceId: turnContext.requiredRollGate.sourceId,
+          ...rollGateDiagnosticFields(turnContext.requiredRollGate),
           action: 'none',
           repair: 'not_needed',
         })
@@ -418,7 +444,7 @@ export async function POST(req: NextRequest) {
             const text = event.delta.text.replace(/<\/s>/g, '')
             if (text) {
               if (ttftMs === undefined) ttftMs = apiTimer.elapsed()
-              if (turnContext.requiredRollGate) {
+              if (turnContext.requiredRollGate && isHardRollGate(turnContext.requiredRollGate)) {
                 gatedTextBuffer += text
               } else {
                 visibleTextSent = true
@@ -502,7 +528,7 @@ export async function POST(req: NextRequest) {
         // separate slice). Skip when this turn is interrupted by a roll
         // request — the prose is partial and the kernel doesn't reflect the
         // post-roll state.
-        if (!rollUse && !turnContext.requiredRollGate) {
+        if (!rollUse && !isHardRollGate(turnContext.requiredRollGate)) {
           if (proseText.trim().length > 0) {
             const metaHit = detectNarratorMetaQuestion(proseText)
             if (metaHit) {
@@ -562,12 +588,7 @@ export async function POST(req: NextRequest) {
           if (turnContext.requiredRollGate) {
             send({
               type: 'roll_gate_diagnostic',
-              required: true,
-              source: turnContext.requiredRollGate.source,
-              kind: turnContext.requiredRollGate.kind,
-              skills: turnContext.requiredRollGate.skills,
-              reason: turnContext.requiredRollGate.reason,
-              sourceId: turnContext.requiredRollGate.sourceId,
+              ...rollGateDiagnosticFields(turnContext.requiredRollGate),
               action: 'request_roll',
               repair: 'narrator_complied',
             })
@@ -633,34 +654,46 @@ export async function POST(req: NextRequest) {
             ...buildSf2RollPromptIntentResume(turnContext.intentQueue),
           })
         } else if (narrateUse) {
-          if (turnContext.requiredRollGate) {
+          if (turnContext.requiredRollGate && isHardRollGate(turnContext.requiredRollGate)) {
             console.warn('[sf2/narrator] blocked narrate_turn missing required request_roll', {
               gate: turnContext.requiredRollGate,
               turnIndex: state.history.turns.length,
             })
             send({
               type: 'roll_gate_diagnostic',
-              required: true,
-              source: turnContext.requiredRollGate.source,
-              kind: turnContext.requiredRollGate.kind,
-              skills: turnContext.requiredRollGate.skills,
-              reason: turnContext.requiredRollGate.reason,
-              sourceId: turnContext.requiredRollGate.sourceId,
+              ...rollGateDiagnosticFields(turnContext.requiredRollGate),
               action: 'block_narrate_turn',
-              repair: 'blocked_missing_request_roll',
+              repair: 'hard_gate_missing_request_roll',
             })
             send({
               type: 'error',
-              message: `required_roll_gate_missing_request_roll:${turnContext.requiredRollGate.kind}`,
+              message: 'This action needs a roll before it can resolve. Please retry the action.',
             })
             return
+          } else if (turnContext.requiredRollGate) {
+            console.warn('[sf2/narrator] allowed narrate_turn after missed expected roll advisory', {
+              gate: turnContext.requiredRollGate,
+              turnIndex: state.history.turns.length,
+            })
+            send({
+              type: 'roll_gate_diagnostic',
+              ...rollGateDiagnosticFields(turnContext.requiredRollGate),
+              action: 'none',
+              repair: 'missed_expected_roll_allowed',
+            })
+            if (gatedTextBuffer) {
+              visibleTextSent = true
+              send({ type: 'text', content: gatedTextBuffer })
+              gatedTextBuffer = ''
+            }
           }
           const recovered = recoverNarrateTurnInput(
             narrateUse.input as Record<string, unknown>,
             state,
             turnContext.failedRollSkill,
             playerInput,
-            proseText
+            proseText,
+            { narrativeTempo: turnContext.narrativeTempo }
           )
           if (recovered.recoveryNotes.length > 0) {
             console.warn('[sf2/narrator] narrate_turn input recovered', {
@@ -673,29 +706,55 @@ export async function POST(req: NextRequest) {
               turnIndex: state.history.turns.length,
             })
           }
+          if (turnContext.narrativeTempo) {
+            const chosenTempoMode = normalizeTempoModeFromToolInput(recovered.input)
+            send({
+              type: 'tempo_diagnostic',
+              recommendedTempoMode: turnContext.narrativeTempo.mode,
+              chosenTempoMode,
+              matched: chosenTempoMode === turnContext.narrativeTempo.mode,
+              reason: turnContext.narrativeTempo.reason,
+              remedy: turnContext.narrativeTempo.remedy,
+              requiredDelta: turnContext.narrativeTempo.requiredDelta,
+              forbiddenRepeat: turnContext.narrativeTempo.forbiddenRepeat,
+              sceneExhausted: turnContext.narrativeTempo.sceneExhausted,
+              broadGoal: turnContext.narrativeTempo.broadGoal,
+            })
+          }
           send({ type: 'narrate_turn', input: recovered.input })
         } else if (completed.stop_reason !== 'max_tokens' && proseText.trim().length > 0) {
-          if (turnContext.requiredRollGate) {
+          if (turnContext.requiredRollGate && isHardRollGate(turnContext.requiredRollGate)) {
             console.warn('[sf2/narrator] blocked commit repair missing required request_roll', {
               gate: turnContext.requiredRollGate,
               turnIndex: state.history.turns.length,
             })
             send({
               type: 'roll_gate_diagnostic',
-              required: true,
-              source: turnContext.requiredRollGate.source,
-              kind: turnContext.requiredRollGate.kind,
-              skills: turnContext.requiredRollGate.skills,
-              reason: turnContext.requiredRollGate.reason,
-              sourceId: turnContext.requiredRollGate.sourceId,
+              ...rollGateDiagnosticFields(turnContext.requiredRollGate),
               action: 'block_narrate_turn',
-              repair: 'blocked_missing_request_roll',
+              repair: 'hard_gate_missing_request_roll',
             })
             send({
               type: 'error',
-              message: `required_roll_gate_missing_request_roll:${turnContext.requiredRollGate.kind}`,
+              message: 'This action needs a roll before it can resolve. Please retry the action.',
             })
             return
+          } else if (turnContext.requiredRollGate) {
+            console.warn('[sf2/narrator] allowed commit repair after missed expected roll advisory', {
+              gate: turnContext.requiredRollGate,
+              turnIndex: state.history.turns.length,
+            })
+            send({
+              type: 'roll_gate_diagnostic',
+              ...rollGateDiagnosticFields(turnContext.requiredRollGate),
+              action: 'none',
+              repair: 'missed_expected_roll_allowed',
+            })
+            if (gatedTextBuffer) {
+              visibleTextSent = true
+              send({ type: 'text', content: gatedTextBuffer })
+              gatedTextBuffer = ''
+            }
           }
           const repaired = await repairMissingNarrateTurn({
             client,
@@ -736,6 +795,21 @@ export async function POST(req: NextRequest) {
             turnIndex: state.history.turns.length,
           })
           if (repaired.input) {
+            if (turnContext.narrativeTempo) {
+              const chosenTempoMode = normalizeTempoModeFromToolInput(repaired.input)
+              send({
+                type: 'tempo_diagnostic',
+                recommendedTempoMode: turnContext.narrativeTempo.mode,
+                chosenTempoMode,
+                matched: chosenTempoMode === turnContext.narrativeTempo.mode,
+                reason: turnContext.narrativeTempo.reason,
+                remedy: turnContext.narrativeTempo.remedy,
+                requiredDelta: turnContext.narrativeTempo.requiredDelta,
+                forbiddenRepeat: turnContext.narrativeTempo.forbiddenRepeat,
+                sceneExhausted: turnContext.narrativeTempo.sceneExhausted,
+                broadGoal: turnContext.narrativeTempo.broadGoal,
+              })
+            }
             send({ type: 'narrate_turn', input: repaired.input })
           } else {
             send({ type: 'error', message: 'narrate_turn missing and commit repair failed' })

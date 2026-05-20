@@ -1,4 +1,4 @@
-import type { Sf2State } from '../types'
+import type { Sf2NarrativeTempoMode, Sf2State } from '../types'
 
 export type QuickActionCategory = 'direct' | 'observe' | 'pivot_scene' | 'leverage_state' | 'wait'
 
@@ -7,6 +7,8 @@ export interface QuickActionRepairContext {
   failedSkill?: string
   playerInput?: string
   visibleProse?: string
+  recommendedTempoMode?: Sf2NarrativeTempoMode
+  sceneExhausted?: boolean
 }
 
 export interface QuickActionRepairResult {
@@ -15,7 +17,7 @@ export interface QuickActionRepairResult {
 }
 
 const FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }> = [
-  { action: 'Examine the scene before responding. [Perception]', category: 'observe' },
+  { action: 'Examine the scene before responding.', category: 'observe' },
   { action: 'Use the strongest fact already on the table.', category: 'leverage_state' },
   { action: 'Change the venue before pressing further.', category: 'pivot_scene' },
   { action: 'Wait, and let the silence work.', category: 'wait' },
@@ -24,8 +26,14 @@ const FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }>
 const SHIPBOARD_FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }> = [
   { action: "Check the ship's current position and immediate options from the bridge.", category: 'observe' },
   { action: 'Talk to the on-board crew about the next constraint.', category: 'direct' },
-  { action: 'Inspect the passenger and cargo situation from where you are. [Perception]', category: 'observe' },
+  { action: 'Inspect the passenger and cargo situation from where you are.', category: 'observe' },
   { action: 'Use the strongest fact already on the table.', category: 'leverage_state' },
+]
+
+const MACRO_FALLBACK_ACTIONS: Array<{ action: string; category: QuickActionCategory }> = [
+  { action: 'Spend time following the known lead until the situation changes.', category: 'pivot_scene' },
+  { action: 'Let the named pressure arrive and see who moves first.', category: 'wait' },
+  { action: 'Compress the routine steps and push to the next live obstacle.', category: 'leverage_state' },
 ]
 
 const SKILL_KEYWORDS: Record<string, readonly string[]> = {
@@ -51,7 +59,7 @@ export function repairSuggestedActions(
     .map((a) => a.trim())
     .filter((a) => a.length > 0)
     .filter((a) => {
-      const key = a.toLowerCase()
+      const key = normalizeActionText(a)
       if (seen.has(key)) return false
       seen.add(key)
       return true
@@ -112,7 +120,46 @@ export function repairSuggestedActions(
     notes.push('filled missing quick action with deterministic fallback')
   }
 
+  let strippedSkillTags = 0
+  for (let i = 0; i < actions.length; i++) {
+    const normalized = stripTrailingBracketTags(actions[i]).trim()
+    if (normalized !== actions[i]) {
+      actions[i] = normalized
+      strippedSkillTags += 1
+    }
+  }
+  if (strippedSkillTags > 0) {
+    notes.push(`stripped ${strippedSkillTags} quick action bracket tag${strippedSkillTags === 1 ? '' : 's'}`)
+  }
+
+  if (shouldEnsureMacroAction(context) && !actions.some(isMacroAction)) {
+    const replacement = firstUnusedFallback(actions, new Set(categoriesFor(actions)), MACRO_FALLBACK_ACTIONS)
+    if (replacement && actions.length > 0) {
+      actions[actions.length - 1] = replacement.action
+      notes.push('replaced one micro quick action with deterministic tempo fallback')
+    }
+  }
+
   return { actions: actions.slice(0, 4), notes }
+}
+
+function stripTrailingBracketTags(action: string): string {
+  let text = action.trim()
+  while (/\s*\[[^\]]+\]\s*$/.test(text)) {
+    text = text.replace(/\s*\[[^\]]+\]\s*$/, '').trim()
+  }
+  return text
+}
+
+function shouldEnsureMacroAction(context: QuickActionRepairContext): boolean {
+  if (context.sceneExhausted) return true
+  const mode = context.recommendedTempoMode
+  return Boolean(mode && mode !== 'micro_scene')
+}
+
+function isMacroAction(action: string): boolean {
+  const lower = action.toLowerCase()
+  return /\b(spend (?:the )?(?:next|time|hour|day)|wait (?:to|for|until)|let .+ arrive|follow (?:the|that) lead|move the plan forward|compress|skip ahead|travel to|journey to|return to|go to the next|shift venue|regroup|debrief|recover|downtime)\b/.test(lower)
 }
 
 function repeatsPlayerInput(action: string, playerInput: string): boolean {

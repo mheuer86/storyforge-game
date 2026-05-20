@@ -1,9 +1,12 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { buildMessagesForNarrator } from './messages'
-import { computePacingAdvisory } from '../pacing/signals'
-import { deriveSf2BeatMode } from '../beat-mode'
 import type { ScanDisplayOutputOptions } from '../sentinel/display'
-import type { Sf2State, Sf2WorkingSet } from '../types'
+import type {
+  Sf2NarrativeTempoMode,
+  Sf2NarrativeTempoRecommendation,
+  Sf2State,
+  Sf2WorkingSet,
+} from '../types'
 import type { Sf2RequiredRollGate } from './roll-gates'
 import {
   parseSf2NarratorIntentQueue,
@@ -70,6 +73,9 @@ export interface Sf2NarratorPacingEventPayload {
   sceneLinkTripped: boolean
   stagnantThreadIds: string[]
   arcDormantIds: string[]
+  recommendedTempoMode?: Sf2NarrativeTempoMode
+  requiredDelta?: string
+  forbiddenRepeat?: string
 }
 
 export interface Sf2NarratorSceneBundleEventPayload {
@@ -91,6 +97,7 @@ export interface Sf2NarratorTurnContext {
   sentinelContext: ScanDisplayOutputOptions
   failedRollSkill?: string
   requiredRollGate: Sf2RequiredRollGate | null
+  narrativeTempo: Sf2NarrativeTempoRecommendation | null
   intentQueue: Sf2NarratorIntentQueue
   replayMetadata: {
     turnIndex: number
@@ -130,6 +137,7 @@ export function buildNarratorTurnContext(input: {
       sentinelContext,
       failedRollSkill,
       requiredRollGate,
+      narrativeTempo: null,
       intentQueue,
       replayMetadata: buildReplayMetadata('roll_resume', turnIndex, messages, null, null),
     }
@@ -137,9 +145,8 @@ export function buildNarratorTurnContext(input: {
 
   const currentPlayerInput = intentQueue.current.text || playerInput
   const built = buildMessagesForNarrator(state, currentPlayerInput, isInitial, turnIndex)
-  const pacing = computePacingAdvisory(state)
-  const beatMode = deriveSf2BeatMode(state, playerInput)
   const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
+  const beatMode = built.packet.mechanics.beatMode?.mode ?? 'social'
 
   return {
     mode: 'normal',
@@ -149,11 +156,12 @@ export function buildNarratorTurnContext(input: {
     diagnostics: {
       workingSet: buildWorkingSetEventPayload(built.workingSet),
       sceneBundleBuilt: built.bundleRebuilt,
-      pacingAdvisory: beatMode === 'meta' ? null : buildPacingEventPayload(pacing),
+      pacingAdvisory: beatMode === 'meta' ? null : buildPacingEventPayload(built.packet.pacing),
     },
     sentinelContext,
     failedRollSkill,
     requiredRollGate,
+    narrativeTempo: beatMode === 'meta' ? null : built.packet.narrativeTempo,
     intentQueue,
     replayMetadata: buildReplayMetadata('normal', turnIndex, messages, built.workingSet, built.bundleRebuilt),
   }

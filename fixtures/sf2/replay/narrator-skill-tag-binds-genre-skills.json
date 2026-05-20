@@ -20,6 +20,7 @@
       "exists": true,
       "source": "skill_tag",
       "kind": "skill_tag",
+      "binding": "expected",
       "skillsInclude": ["Piloting", "Hacking", "Sleight of Hand"]
     },
     "narratorMessages": {
@@ -27,7 +28,7 @@
       "isInitial": false,
       "playerInput": "Kick the ship into a dirty drift, spoof the dock sensors, and palm the customs chit. [Piloting or Hacking, Sleight of Hand]",
       "userMessageContainsAll": [
-        "Skill-tag binding (mandatory)",
+        "Private roll advisory (expected, never mention)",
         "Piloting",
         "Hacking",
         "Sleight of Hand",

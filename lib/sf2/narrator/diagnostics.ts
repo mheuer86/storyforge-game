@@ -42,5 +42,8 @@ export function buildPacingEventPayload(
     sceneLinkTripped: pacing.sceneLinkTripped,
     stagnantThreadIds: pacing.stagnantThreadIds,
     arcDormantIds: pacing.arcDormantIds,
+    recommendedTempoMode: pacing.recommendedTempoMode,
+    requiredDelta: pacing.requiredDelta,
+    forbiddenRepeat: pacing.forbiddenRepeat,
   }
 }

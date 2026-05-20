@@ -17,7 +17,7 @@
   "expected": {
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll gate (mandatory, never mention)",
+        "### Private roll advisory (expected, never mention)",
         "technical, magical, or system interaction with an uncertain result",
         "`Investigation` or `Arcana`"
       ]

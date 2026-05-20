@@ -162,6 +162,36 @@
             "hookArcNameEquals": "The Defector's Data",
             "hookFirstEpisodeEquals": "Put the defector's first data against her pursuers before passage becomes their contract"
           }
+        },
+        {
+          "name": "space opera calibration preservation",
+          "selection": {
+            "genreId": "space-opera",
+            "originId": "human",
+            "playbookId": "operative",
+            "hookTitle": "Forty Thousand",
+            "characterName": "Ren",
+            "calibrationAnswers": [
+              {
+                "theme": "oath",
+                "question": "What promise has Driftrunner made?",
+                "answer": "Never leave crew debt on someone else's ledger."
+              },
+              {
+                "theme": "tone",
+                "question": "What should intensity lean toward?",
+                "answer": "Moral cost before spectacle."
+              }
+            ]
+          },
+          "expect": {
+            "hookTitle": "Forty Thousand",
+            "playerCalibrationAnswerCount": 2,
+            "playerCalibrationSummaryIncludes": [
+              "Never leave crew debt",
+              "Moral cost before spectacle"
+            ]
+          }
         }
       ]
     }

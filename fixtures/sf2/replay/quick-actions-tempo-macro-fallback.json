@@ -1,0 +1,46 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "quick actions include macro option for non-micro tempo",
+  "source": {
+    "kind": "synthetic",
+    "purpose": "When tempo recommendation is non-micro or the scene is exhausted, quick-action repair should preserve close options while ensuring at least one pacing/transition choice."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 6,
+    "playerInput": "Keep checking the registry files.",
+    "narrator": {
+      "prose": "The same file stack keeps pointing back to the same clerk.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "quickActionRepair": {
+      "recommendedTempoMode": "compression_turn",
+      "sceneExhausted": true,
+      "inputActions": [
+        "Ask the clerk one more direct question.",
+        "Check the same ledger again.",
+        "Press the stamp mark for a clue.",
+        "Look under the counter."
+      ],
+      "outputCount": 4,
+      "outputActionsInclude": [
+        "Spend time following the known lead until the situation changes."
+      ],
+      "notesInclude": [
+        "deterministic tempo fallback"
+      ]
+    }
+  }
+}

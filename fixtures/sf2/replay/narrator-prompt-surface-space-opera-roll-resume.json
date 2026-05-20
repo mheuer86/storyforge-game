@@ -107,7 +107,7 @@
         "## Your role: Narrator",
         "Examples:",
         "Nara Quell",
-        "Press Nara on who really bought the route. [Persuasion]",
+        "Press Nara on who really bought the route.",
         "## Chapter 1: Forty Thousand"
       ],
       "userMessageContainsAll": [

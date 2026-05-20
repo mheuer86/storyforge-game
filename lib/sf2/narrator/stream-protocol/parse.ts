@@ -1,11 +1,13 @@
 import type {
   Sf2NarratorDisplaySentinelEvent,
+  Sf2NarratorRollGateRepair,
   Sf2NarratorWorkingSetEvent,
   Sf2NarratorRollModifierType,
   Sf2NarratorStreamEvent,
 } from './events'
 import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
-import type { Sf2WorkingSet } from '@/lib/sf2/types'
+import type { Sf2NarrativeTempoMode, Sf2WorkingSet } from '@/lib/sf2/types'
+import { isSf2NarrativeTempoMode } from '@/lib/sf2/narrative-tempo'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -23,6 +25,20 @@ function optionalString(value: unknown): string | undefined {
 
 function normalizeRollModifierType(value: unknown): Sf2NarratorRollModifierType | undefined {
   return value === 'advantage' || value === 'disadvantage' || value === 'challenge'
+    ? value
+    : undefined
+}
+
+function normalizeTempoMode(value: unknown): Sf2NarrativeTempoMode | undefined {
+  return isSf2NarrativeTempoMode(value) ? value : undefined
+}
+
+function normalizeRollGateRepair(value: unknown): Sf2NarratorRollGateRepair | undefined {
+  return value === 'not_needed' ||
+    value === 'narrator_complied' ||
+    value === 'blocked_missing_request_roll' ||
+    value === 'missed_expected_roll_allowed' ||
+    value === 'hard_gate_missing_request_roll'
     ? value
     : undefined
 }
@@ -88,6 +104,9 @@ export function parseSf2NarratorStreamEvent(value: unknown): Sf2NarratorStreamEv
         sceneLinkTripped: value.sceneLinkTripped === true,
         stagnantThreadIds: stringArray(value.stagnantThreadIds),
         arcDormantIds: stringArray(value.arcDormantIds),
+        recommendedTempoMode: normalizeTempoMode(value.recommendedTempoMode),
+        requiredDelta: optionalString(value.requiredDelta),
+        forbiddenRepeat: optionalString(value.forbiddenRepeat),
       }
 
     case 'scene_bundle_built':
@@ -133,6 +152,7 @@ export function parseSf2NarratorStreamEvent(value: unknown): Sf2NarratorStreamEv
       return {
         type: 'roll_gate_diagnostic',
         required: value.required === true,
+        binding: optionalString(value.binding),
         source: optionalString(value.source),
         kind: optionalString(value.kind),
         skills: Array.isArray(value.skills) ? value.skills.map(String) : undefined,
@@ -142,12 +162,21 @@ export function parseSf2NarratorStreamEvent(value: unknown): Sf2NarratorStreamEv
           value.action === 'request_roll' || value.action === 'block_narrate_turn'
             ? value.action
             : 'none',
-        repair:
-          value.repair === 'narrator_complied' || value.repair === 'blocked_missing_request_roll'
-            ? value.repair
-            : value.repair === 'not_needed'
-              ? 'not_needed'
-              : undefined,
+        repair: normalizeRollGateRepair(value.repair),
+      }
+
+    case 'tempo_diagnostic':
+      return {
+        type: 'tempo_diagnostic',
+        recommendedTempoMode: normalizeTempoMode(value.recommendedTempoMode) ?? 'micro_scene',
+        chosenTempoMode: normalizeTempoMode(value.chosenTempoMode),
+        matched: value.matched === true,
+        reason: String(value.reason ?? ''),
+        remedy: String(value.remedy ?? ''),
+        requiredDelta: optionalString(value.requiredDelta),
+        forbiddenRepeat: optionalString(value.forbiddenRepeat),
+        sceneExhausted: value.sceneExhausted === true,
+        broadGoal: value.broadGoal === true,
       }
 
     case 'display_sentinel': {

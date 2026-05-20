@@ -36,7 +36,7 @@
       "isInitial": false,
       "playerInput": "Turn to Kess and demand the truth about the missing Resonant. [Persuasion or Intimidation]",
       "userMessageContainsAll": [
-        "Skill-tag binding (mandatory)",
+        "Private roll advisory (expected, never mention)",
         "Persuasion",
         "Intimidation",
         "request_roll"

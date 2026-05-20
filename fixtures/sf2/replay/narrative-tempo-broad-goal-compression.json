@@ -1,0 +1,46 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "narrative tempo recommends compression for broad goal",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Broad investigative intents should recommend compression_turn, preserve a soft roll advisory, and instruct the Narrator to land a material delta instead of replaying the same check."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I investigate the registry discrepancy until I find who changed the count.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The count stops looking like an error and starts looking like a person with access.",
+      "annotation": null,
+      "mechanicalEffects": []
+    },
+    "archivist": { "patch": null }
+  },
+  "expected": {
+    "narratorMessages": {
+      "stateBefore": "fixture-stateBefore",
+      "isInitial": false,
+      "playerInput": "I investigate the registry discrepancy until I find who changed the count.",
+      "userMessageContainsAll": [
+        "Recommended mode: compression_turn",
+        "Broad-goal handling: resolve at goal scale after one meaningful roll if a roll is needed.",
+        "### Private roll advisory (expected, never mention)",
+        "For broad goals, resolve at goal scale after at most one meaningful roll"
+      ],
+      "narrativeTempoModeEquals": "compression_turn",
+      "narrativeTempoRequiredDeltaIncludes": "new named fact"
+    },
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "investigation_search",
+      "binding": "expected",
+      "skillsInclude": ["Investigation"]
+    },
+    "perTurnDeltaIncludes": [
+      "Recommended mode: compression_turn",
+      "Required delta: new named fact",
+      "Broad-goal handling"
+    ]
+  }
+}

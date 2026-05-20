@@ -267,6 +267,12 @@ export async function runSf2ClientNarratorTurn(
             case 'pacing_advisory':
               effects.onDiagnostic({ kind: 'pacing_advisory', at: Date.now(), data: event })
               break
+            case 'tempo_diagnostic':
+              effects.onDiagnostic({ kind: 'tempo_diagnostic', at: Date.now(), data: event })
+              break
+            case 'roll_gate_diagnostic':
+              effects.onDiagnostic({ kind: 'roll_gate_diagnostic', at: Date.now(), data: event })
+              break
             case 'narrator_meta_observed':
               effects.onDiagnostic({
                 kind: 'narrator_meta_observed',

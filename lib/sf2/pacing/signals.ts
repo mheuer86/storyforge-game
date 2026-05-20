@@ -9,6 +9,7 @@
 // - arc dormant: active arc with zero advancement this chapter
 
 import type { Sf2EntityId, Sf2PacingAdvisory, Sf2State } from '../types'
+import { deriveRepeatedProceduralSurface } from '../narrative-tempo'
 
 const REACTIVITY_WINDOW = 8
 const REACTIVITY_THRESHOLD = 0.2
@@ -101,6 +102,22 @@ export function computePacingAdvisory(state: Sf2State): Sf2PacingAdvisory {
     }
   }
 
+  const forbiddenRepeat = deriveRepeatedProceduralSurface(state)
+  const recommendedTempoMode: Sf2PacingAdvisory['recommendedTempoMode'] = arcDormantIds.length > 0
+    ? 'chapter_turn'
+    : stagnantThreadIds.length > 0 || reactivityTripped || sceneLinkTripped
+      ? 'compression_turn'
+      : undefined
+  const requiredDelta = arcDormantIds.length > 0
+    ? 'Advance a constituent arc thread or force a chapter-scale pressure turn.'
+    : stagnantThreadIds.length > 0
+      ? 'Create a concrete revelation, decision point, deterioration, or rest the thread.'
+      : reactivityTripped
+        ? 'Make an NPC, faction, clock, or off-stage pressure initiate visible change.'
+        : sceneLinkTripped
+          ? 'End with a forward hook instead of clean closure.'
+          : undefined
+
   return {
     reactivityRatio,
     reactivityTripped,
@@ -108,6 +125,9 @@ export function computePacingAdvisory(state: Sf2State): Sf2PacingAdvisory {
     sceneLinkTripped,
     stagnantThreadIds,
     arcDormantIds,
+    recommendedTempoMode,
+    requiredDelta,
+    forbiddenRepeat,
   }
 }
 
@@ -121,7 +141,7 @@ export function renderPacingAdvisories(
 
   if (advisory.reactivityTripped) {
     advisories.push(
-      `**Reactivity low (${(advisory.reactivityRatio * 100).toFixed(0)}% world-initiated).** You have been responding to player moves; the world is not pushing back. This turn, let an NPC act without being asked, or let an off-stage pressure (the courier window, an institutional clock, a faction move) intrude visibly.`
+      `**Reactivity low (${(advisory.reactivityRatio * 100).toFixed(0)}% world-initiated).** Recommended tempo: \`compression_turn\`. Required delta: make an NPC, faction, clock, or off-stage pressure initiate visible change, then carry play to the consequence. Do not only let an NPC react to the player's last sentence.`
     )
   }
 
@@ -136,7 +156,7 @@ export function renderPacingAdvisories(
       .map((tid) => state.campaign.threads[tid]?.title ?? tid)
       .join(', ')
     advisories.push(
-      `**Stagnant threads:** ${titles}. These threads have been touched repeatedly across the last ${STAGNATION_WINDOW} turns without moving. Either advance them concretely this turn (revelation, decision-point, deterioration) or let them rest by not surfacing them.`
+      `**Stagnant threads:** ${titles}. Recommended tempo: \`compression_turn\`. These threads have been touched repeatedly across the last ${STAGNATION_WINDOW} turns without moving. Either advance them concretely this turn (revelation, decision-point, deterioration) or let them rest by not surfacing them. Required delta: ${advisory.requiredDelta ?? 'concrete state change or rest the thread.'}`
     )
   }
 
@@ -145,8 +165,12 @@ export function renderPacingAdvisories(
       .map((aid) => state.campaign.arcs[aid]?.title ?? aid)
       .join(', ')
     advisories.push(
-      `**Arc dormant in this chapter:** ${titles}. The arc has not advanced via any constituent thread. The chapter is drifting from its arc spine. Re-engage at least one constituent thread before close.`
+      `**Arc dormant in this chapter:** ${titles}. Recommended tempo: \`chapter_turn\` or \`compression_turn\`. The arc has not advanced via any constituent thread. Re-engage at least one constituent thread before close through a named fact, faction move, relationship cost, or decisive pressure turn.`
     )
+  }
+
+  if (advisory.forbiddenRepeat) {
+    advisories.push(`**Forbidden repeat:** ${advisory.forbiddenRepeat}.`)
   }
 
   if (advisories.length === 0) return ''

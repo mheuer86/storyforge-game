@@ -28,6 +28,8 @@ export interface DebugEntry {
     | 'face_shift'
     | 'ladder_fired'
     | 'pacing_advisory'
+    | 'tempo_diagnostic'
+    | 'roll_gate_diagnostic'
     | 'scene_bundle_built'
     | 'sf2.coherence.finding'
     | 'sf2.coherence.clean_turn'

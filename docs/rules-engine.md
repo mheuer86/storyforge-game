@@ -42,19 +42,23 @@ The rules engine is distributed because each rule belongs near the state it prot
 
 Roll gates protect uncertainty. A roll is required when the player action has meaningful risk and the outcome should not be chosen by the GM.
 
-Detected gates include:
+Detected hard gates include:
 
 - explicit roll/check language
 - attack or combat action
+- save-like resistance against immediate harm or compulsion
+
+Expected roll advisories include:
+
 - investigation/search/examination
 - NPC information extraction
 - social pressure or coercion
 - technical/system intrusion
 - risky movement or physical contest
 - constrained departure from a dangerous scene
-- quick actions with bracketed skill tags, such as `[Insight]`
+- player-authored bracketed skill hints, such as `[Insight]`
 
-Skill tags from suggested actions are treated as binding hints for the next player action. If a hard gate is required and the Narrator emits `narrate_turn` without first calling `request_roll`, the Narrator route blocks the turn with a diagnostic instead of letting the model skip the mechanic.
+The Narrator emits clean quick-action labels; code strips model-authored bracket tags instead of creating hidden skill bindings. Expected advisories strongly prefer `request_roll`, but the route can allow `narrate_turn` if the Narrator resolves decisively, lands a visible delta, and logs a diagnostic. If a hard gate is required and the Narrator emits `narrate_turn` without first calling `request_roll`, the Narrator route blocks the turn with a diagnostic instead of letting the model skip the mechanic.
 
 ## Roll Resolution
 
@@ -135,6 +139,8 @@ This differs from older V1 docs that described 10-18 turn chapters and a turn-20
 | Arc dormancy | Arc threads receive no progress for several current-chapter turns |
 
 These are advisories, not automatic prose. They give the Narrator a state-derived reason to push, link, or reframe.
+
+Pacing advisories can also recommend a narrative tempo mode and required delta. The current modes are `micro_scene`, `compression_turn`, `time_jump`, `montage`, `aftermath`, `downtime`, and `chapter_turn`. Non-micro modes tell the Narrator to compress routine steps and move state, not replay the same small obstacle.
 
 ## Patch Validation
 

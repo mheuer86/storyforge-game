@@ -66,15 +66,16 @@
       "exists": true,
       "source": "active_procedure_constraint",
       "kind": "constrained_departure",
+      "binding": "expected",
       "sourceId": "procedure_void_seal_departure",
       "skillsInclude": ["Piloting"],
       "reasonIncludes": "departure"
     },
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll gate (mandatory, never mention)",
+        "### Private roll advisory (expected, never mention)",
         "Gate source: active_procedure_constraint",
-        "You MUST call `request_roll` before resolving"
+        "You SHOULD call `request_roll` before resolving"
       ]
     }
   }

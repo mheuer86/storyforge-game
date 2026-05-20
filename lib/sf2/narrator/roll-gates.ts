@@ -20,7 +20,10 @@ export type Sf2RollGateKind =
   | 'physical_contest'
   | 'constrained_departure'
   | 'combat_attack'
+  | 'resistance_save'
   | 'explicit_roll'
+
+export type Sf2RollGateBinding = 'advisory' | 'expected' | 'hard'
 
 export interface Sf2RequiredRollGate {
   required: true
@@ -28,7 +31,7 @@ export interface Sf2RequiredRollGate {
   source: Sf2RollGateSource
   skills: string[]
   reason: string
-  binding: 'hard' | 'heuristic'
+  binding: Sf2RollGateBinding
   sourceId?: string
 }
 
@@ -43,6 +46,7 @@ const GATE_SKILLS: Record<Exclude<Sf2RollGateKind, 'skill_tag'>, string[]> = {
   physical_contest: ['Athletics', 'Acrobatics'],
   constrained_departure: ['Piloting', 'Investigation', 'Athletics'],
   combat_attack: ['Athletics', 'Acrobatics'],
+  resistance_save: ['Athletics', 'Acrobatics', 'Insight'],
   explicit_roll: ['Investigation', 'Perception', 'Persuasion'],
 }
 
@@ -97,8 +101,8 @@ export function computeRequiredRollGate(state: Sf2State, playerInput: string): S
       kind: 'skill_tag',
       source: 'skill_tag',
       skills: taggedSkills,
-      reason: 'player chose a skill-tagged quick action',
-      binding: 'hard',
+      reason: 'player included a bracketed skill hint',
+      binding: 'expected',
     }
   }
 
@@ -110,6 +114,9 @@ export function computeRequiredRollGate(state: Sf2State, playerInput: string): S
 
   const combatGate = detectCombatGate(state, input)
   if (combatGate) return combatGate
+
+  const resistanceGate = detectResistanceGate(input)
+  if (resistanceGate) return resistanceGate
 
   const npcGate = detectNpcInformationGate(state, input)
   if (npcGate) return npcGate
@@ -158,25 +165,34 @@ export function computeRequiredRollGate(state: Sf2State, playerInput: string): S
 
 export function renderRollGateBlock(gate: Sf2RequiredRollGate | null): string {
   if (!gate) return ''
-  if (gate.source === 'skill_tag') {
-    const skillList = gate.skills.length === 1
-      ? `\`${gate.skills[0]}\``
-      : gate.skills.map((s) => `\`${s}\``).join(' or ')
-    return `\n\n---\n\n### Skill-tag binding (mandatory)\nThe player chose a quick action tagged with ${skillList}. That tag is a binding commitment, not advisory. **You MUST call \`request_roll\` with one of those skills this turn before resolving the action's outcome.** Pick the skill that best fits the moment, set an appropriate DC, and pause narration at the point of uncertainty per the standard roll-flow rules. The roll-frequency heuristic does not apply when a tag is present — surface the check even if you've already rolled this scene.`
+  const skillList = gate.skills.length === 1
+    ? `\`${gate.skills[0]}\``
+    : gate.skills.map((skill) => `\`${skill}\``).join(' or ')
+  if (gate.binding === 'hard') {
+    return `\n\n---\n\n### Private hard roll gate (never mention)\nThe player's action pushes against immediate mandatory uncertainty: ${gate.reason}. Gate source: ${gate.source}. **You MUST call \`request_roll\` before resolving the action's outcome.** Use ${skillList}, choosing the skill that best fits the fiction and PC approach. Pause at the uncertainty point; do not narrate success, failure, or the target's substantive answer until the roll result returns.`
   }
-  const skillList = gate.skills.map((skill) => `\`${skill}\``).join(' or ')
-  return `\n\n---\n\n### Private roll gate (mandatory, never mention)\nThe player's action pushes against meaningful uncertainty: ${gate.reason}. Gate source: ${gate.source}. **You MUST call \`request_roll\` before resolving the action's outcome.** Use ${skillList}, choosing the skill that best fits the fiction and PC approach. Pause at the uncertainty point; do not narrate success, failure, or the target's substantive answer until the roll result returns.`
+  if (gate.source === 'skill_tag') {
+    return `\n\n---\n\n### Private roll advisory (expected, never mention)\nThe player included a bracketed skill hint for ${skillList}. Treat that hint as a strong expectation, not a hard binding. Prefer calling \`request_roll\` with one of those skills if the action has meaningful uncertainty. If the fiction is already resolved or the current tempo asks for compression, you may continue without a roll; resolve naturally, land a visible delta, and do not expose the tag or this advisory.`
+  }
+  return `\n\n---\n\n### Private roll advisory (expected, never mention)\nThe player's action pushes against meaningful uncertainty: ${gate.reason}. Gate source: ${gate.source}. You SHOULD call \`request_roll\` before resolving the action's outcome, using ${skillList}. If you continue without a roll, still resolve the action decisively: fail forward, reveal partial information, advance time, add cost, or let an antagonist move. For broad goals, resolve at goal scale after at most one meaningful roll; failure means progress arrives late, publicly, through the wrong person, with a cost, or alongside an antagonist move, not that nothing happens. Do not convert a broad goal into repeated requests, document checks, or refusal loops.`
 }
 
 function detectExplicitRoll(input: string): Sf2RequiredRollGate | null {
   if (!/\b(roll|check|skill check)\b/.test(input)) return null
-  return buildGate('explicit_roll', 'explicit_player_request', 'the player explicitly requested a check')
+  return buildGate('explicit_roll', 'explicit_player_request', 'the player explicitly requested a check', 'hard')
 }
 
 function detectCombatGate(state: Sf2State, input: string): Sf2RequiredRollGate | null {
   if (!state.world.combat?.active) return null
   if (!matchesAny(input, [/\b(attack|shoot|strike|stab|slash|punch|kick|cast|blast|fire|aim|swing|hit)\b/])) return null
-  return buildGate('combat_attack', 'combat_state', 'combat attack or consequential combat maneuver')
+  return buildGate('combat_attack', 'combat_state', 'combat attack or consequential combat maneuver', 'hard')
+}
+
+function detectResistanceGate(input: string): Sf2RequiredRollGate | null {
+  const resistanceVerb = /\b(resist|endure|hold steady|keep control|shake off|fight through|brace(?: myself| yourself| against)?|withstand|push through)\b/.test(input)
+  const harmContext = /\b(poison|compulsion|panic|terror|charm|stun|collapse|blast|fire|vacuum|radiation|possession|pain|fear|smoke|heat|cold|pressure)\b/.test(input)
+  if (!resistanceVerb || !harmContext) return null
+  return buildGate('resistance_save', 'free_text', 'save-like resistance against immediate harm or compulsion', 'hard')
 }
 
 function detectConstrainedDepartureGate(state: Sf2State, input: string): Sf2RequiredRollGate | null {
@@ -229,8 +245,13 @@ function detectNpcInformationGate(state: Sf2State, input: string): Sf2RequiredRo
   }
 }
 
-function buildGate(kind: Exclude<Sf2RollGateKind, 'skill_tag'>, source: Sf2RollGateSource, reason: string): Sf2RequiredRollGate {
-  return { required: true, kind, source, reason, skills: GATE_SKILLS[kind], binding: source === 'skill_tag' ? 'hard' : 'heuristic' }
+function buildGate(
+  kind: Exclude<Sf2RollGateKind, 'skill_tag'>,
+  source: Sf2RollGateSource,
+  reason: string,
+  binding: Sf2RollGateBinding = 'expected'
+): Sf2RequiredRollGate {
+  return { required: true, kind, source, reason, skills: GATE_SKILLS[kind], binding }
 }
 
 function normalizeRollGateText(value: string): string {

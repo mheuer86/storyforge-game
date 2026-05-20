@@ -18,6 +18,10 @@ import { buildRecentContextPacket } from './packets/recent-context'
 import { buildThreadPackets } from './packets/tensions'
 import { buildWorkingSet } from './working-set'
 import { renderBeatModeBlock } from '../beat-mode'
+import {
+  deriveNarrativeTempoRecommendation,
+  renderNarrativeTempoRecommendation,
+} from '../narrative-tempo'
 import { evaluateRevelationDue } from './revelation-due'
 import { buildAtmosphericConditions } from '../atmosphere'
 import { evaluatePassiveAwareness } from '../passive-awareness/evaluate'
@@ -29,6 +33,14 @@ export function buildScenePacket(
 ): { packet: Sf2NarratorScenePacket; workingSet: Sf2WorkingSet; advisoryText: string } {
   const workingSet = buildWorkingSet(state, playerInput, turnIndex)
   const resolvedAction = resolvePlayerAction(state, playerInput)
+  const mechanics = buildMechanicsPacket(state, playerInput)
+  const pacing = computePacingAdvisory(state)
+  const narrativeTempo = deriveNarrativeTempoRecommendation({
+    state,
+    playerInput,
+    beatMode: mechanics.beatMode?.mode ?? 'social',
+    pacing,
+  })
 
   const sceneLocation: Sf2SceneLocationPacket = {
     id: state.world.currentLocation.id,
@@ -62,10 +74,11 @@ export function buildScenePacket(
     revelationProgress: buildRevelationProgressPackets(state, playerInput, turnIndex),
     temporalAnchors: buildTemporalAnchorPackets(state),
     chapter: buildChapterPacket(state),
-    mechanics: buildMechanicsPacket(state, playerInput),
+    mechanics,
     operationPlan: state.campaign.operationPlan,
     recentContext: buildRecentContextPacket(state),
-    pacing: computePacingAdvisory(state),
+    pacing,
+    narrativeTempo,
     passiveAwareness: evaluatePassiveAwareness({
       state,
       sceneId: state.world.sceneSnapshot.sceneId,
@@ -361,6 +374,10 @@ export function renderPerTurnDelta(
 
   if (packet.mechanics.beatMode) {
     lines.push(`\n${renderBeatModeBlock(packet.mechanics.beatMode.mode)}`)
+  }
+
+  if (packet.mechanics.beatMode?.mode !== 'meta') {
+    lines.push(`\n${renderNarrativeTempoRecommendation(packet.narrativeTempo)}`)
   }
 
   if (packet.passiveAwareness.advisoryText) {

@@ -17,7 +17,8 @@
   "expected": {
     "narratorMessages": {
       "userMessageContainsNone": [
-        "### Private roll gate (mandatory, never mention)"
+        "### Private roll advisory (expected, never mention)",
+        "### Private hard roll gate (never mention)"
       ]
     }
   }

@@ -13,6 +13,10 @@ import {
   getSf2SetupOrigin,
   getSf2SetupPlaybook,
 } from './options'
+import {
+  clampSf2SetupCalibrationAnswers,
+  renderSf2SetupCalibrationSummary,
+} from './calibration'
 import type { Sf2SetupSelection } from './types'
 
 type SetupRulesAdapter = {
@@ -395,6 +399,8 @@ function resolveSetup(selection: Sf2SetupSelection): {
 export function compileSf2SetupSeed(selection: Sf2SetupSelection): AuthorInputSeed {
   const { config, originName, playbook, hook } = resolveSetup(selection)
   const title = deriveTitle(config, hook)
+  const calibrationAnswers = clampSf2SetupCalibrationAnswers(selection.calibrationAnswers)
+  const calibrationSummary = renderSf2SetupCalibrationSummary(calibrationAnswers)
   return {
     genreId: config.id,
     genreName: config.name,
@@ -415,6 +421,14 @@ export function compileSf2SetupSeed(selection: Sf2SetupSelection): AuthorInputSe
     npcRules: buildNpcRules(config),
     onboardingRules: buildOnboardingRules(config, title),
     pcCapabilities: compilePcCapabilities(playbook),
+    ...(calibrationAnswers.length > 0 && calibrationSummary
+      ? {
+          playerCalibration: {
+            answers: calibrationAnswers,
+            summary: calibrationSummary,
+          },
+        }
+      : {}),
   }
 }
 

@@ -49,7 +49,7 @@ The game asks for checks when:
 - you pressure, deceive, persuade, or read someone
 - you move through risk
 - you try a technical or specialized action
-- a suggested action has a bracketed skill hint, such as `[Insight]`
+- you explicitly ask for a check or include your own bracketed skill hint, such as `[Insight]`
 
 The Narrator explains what is at stake before the roll. Failure should move the story forward with cost, pressure, exposure, injury, lost time, or changed leverage.
 
@@ -97,13 +97,7 @@ The Narrator should not silently deduct resources in prose. Mechanical changes n
 
 After each turn, the game offers 3-4 suggested actions. These are not commands. They are grounded options from the current scene.
 
-Some suggestions include a skill hint in brackets:
-
-```text
-Watch who avoids the magistrate's seal. [Insight]
-```
-
-If you pick or paraphrase that action, the game treats the hint as a strong roll binding.
+Suggested actions do not carry hidden skill bindings. If an option leads to a roll, the Narrator chooses the skill at the moment of uncertainty and the browser resolves the die.
 
 ## Chapters
 

@@ -91,10 +91,12 @@ Roll gates come from two places:
 
 | Gate source | Example |
 |---|---|
-| Quick action skill tag | A suggested action ending in `[Insight]` binds the next roll to Insight |
-| Heuristic detector | Explicit roll language, attacks, risky movement, social pressure, investigation, technical systems, constrained exits |
+| Hard detector | Explicit roll language, attacks, combat maneuvers, and save-like resistance must pause for `request_roll` |
+| Expected advisory | Risky movement, social pressure, investigation, technical systems, constrained exits, and player-authored bracket hints should usually roll but can resolve forward with diagnostics |
 
 If code decides a hard gate is required and the Narrator tries to finish with `narrate_turn` anyway, `/api/sf2/narrator` blocks that turn instead of letting the check disappear.
+
+Quick actions are clean player-facing intents. The Narrator does not append bracketed skill tags, and code strips any model-authored tags that slip through. A quick action can still lead to a roll, but the skill is chosen when the Narrator calls `request_roll`.
 
 ## 4. Chapter System
 
@@ -165,6 +167,7 @@ Caps keep the packet small: 6 full entities, 8 stubs, 5 full threads, and the to
 | Mechanics | Player stats, active procedure/combat, inventory, HP |
 | Memory | Recent turns, scene summaries, pivotal context |
 | Pacing | Advisories, close readiness, revelation progress |
+| Narrative tempo | Recommended mode and required delta for this turn |
 | Operation plan | Current plan/procedure if active |
 | Delta | Mutable per-turn facts: player input, HP, credits, current pressure, action constraints |
 

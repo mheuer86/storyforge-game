@@ -1,5 +1,5 @@
 import type { Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
-import type { Sf2WorkingSet } from '@/lib/sf2/types'
+import type { Sf2NarrativeTempoMode, Sf2WorkingSet } from '@/lib/sf2/types'
 
 export type Sf2NarratorRollModifierType = 'advantage' | 'disadvantage' | 'challenge'
 
@@ -9,6 +9,8 @@ export type Sf2NarratorRollGateRepair =
   | 'not_needed'
   | 'narrator_complied'
   | 'blocked_missing_request_roll'
+  | 'missed_expected_roll_allowed'
+  | 'hard_gate_missing_request_roll'
 
 export interface Sf2NarratorTextEvent {
   type: 'text'
@@ -57,6 +59,9 @@ export interface Sf2NarratorPacingAdvisoryEvent {
   sceneLinkTripped: boolean
   stagnantThreadIds: string[]
   arcDormantIds: string[]
+  recommendedTempoMode?: Sf2NarrativeTempoMode
+  requiredDelta?: string
+  forbiddenRepeat?: string
 }
 
 export interface Sf2NarratorSceneBundleBuiltEvent {
@@ -91,6 +96,7 @@ export interface Sf2NarratorTruncationWarningEvent {
 export interface Sf2NarratorRollGateDiagnosticEvent {
   type: 'roll_gate_diagnostic'
   required: boolean
+  binding?: string
   source?: string
   kind?: string
   skills?: string[]
@@ -98,6 +104,19 @@ export interface Sf2NarratorRollGateDiagnosticEvent {
   sourceId?: string
   action: Sf2NarratorRollGateAction
   repair?: Sf2NarratorRollGateRepair
+}
+
+export interface Sf2NarratorTempoDiagnosticEvent {
+  type: 'tempo_diagnostic'
+  recommendedTempoMode: Sf2NarrativeTempoMode
+  chosenTempoMode?: Sf2NarrativeTempoMode
+  matched: boolean
+  reason: string
+  remedy: string
+  requiredDelta?: string
+  forbiddenRepeat?: string
+  sceneExhausted?: boolean
+  broadGoal?: boolean
 }
 
 export interface Sf2NarratorDisplaySentinelFinding {
@@ -152,6 +171,7 @@ export type Sf2NarratorStreamEvent =
   | Sf2NarratorLatencyEvent
   | Sf2NarratorTruncationWarningEvent
   | Sf2NarratorRollGateDiagnosticEvent
+  | Sf2NarratorTempoDiagnosticEvent
   | Sf2NarratorDisplaySentinelEvent
   | Sf2NarratorMetaObservedEvent
   | Sf2NarratorOutputRecoveredEvent

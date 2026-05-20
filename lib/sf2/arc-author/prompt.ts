@@ -111,5 +111,8 @@ ${seed.arcVariantSeed ? JSON.stringify(seed.arcVariantSeed, null, 2) : '(none su
 ### PC capability surface
 ${seed.pcCapabilities ? JSON.stringify(seed.pcCapabilities, null, 2) : '(none supplied)'}
 
+### Player-authored calibration
+${seed.playerCalibration?.summary ?? '(none supplied)'}
+
 Read the AuthorInputSeed in the user message. Call \`author_arc_setup\` once.`
 }

@@ -4,6 +4,7 @@
 // via the firewall actor rule.
 
 import type Anthropic from '@anthropic-ai/sdk'
+import { SF2_NARRATIVE_TEMPO_MODES } from '../types'
 
 export const NARRATOR_TOOL_NAME = 'narrate_turn' as const
 export const REQUEST_ROLL_TOOL_NAME = 'request_roll' as const
@@ -136,11 +137,26 @@ export const narrateTurnTool: Anthropic.Tool = {
           pivot_signaled: { type: 'boolean' },
         },
       },
+      tempo_mode: {
+        type: 'string',
+        enum: SF2_NARRATIVE_TEMPO_MODES,
+        description:
+          'Optional hidden diagnostic annotation: the narrative tempo you chose for this turn. Use the private recommendation as guidance, choose silently, and never mention the mode label in prose.',
+      },
       suggested_actions: {
         type: 'array',
         description:
-          "Exactly 3-4 quick actions for the next player input. They are suggestions, not branches: freeform input is always allowed. Each action should use a concrete verb + visible target + clear intent, and should either press the objective, open information/routes, answer active pressure, change position, create leverage, spend/preserve a resource, move a relationship/beat, force a hard choice, or close/retreat/reframe the scene. Prefer a mixed set: objective, discovery/route, pressure/position/resource, and NPC/promise/moral tension. Avoid resolving the outcome in the label. If a single risky check clearly dominates the action, append a bracketed skill hint, e.g. [Insight]; do not include DC or difficulty tiers. **Grounding rule: only reference people, places, or facts the player has actually seen in prose this chapter.** An NPC appearing in the scene packet's cast list is NOT sufficient — the player must have been shown them in the Narrator's prose. Never invent exits, NPCs, items, clues, facts, hidden clocks, motives, or unrevealed secrets for suggested_actions.",
+          "Exactly 3-4 quick actions for the next player input. They are suggestions, not branches: freeform input is always allowed. Each action should use a concrete verb + visible target + clear intent, and should either press the objective, open information/routes, answer active pressure, change position, create leverage, spend/preserve a resource, move a relationship/beat, force a hard choice, or close/retreat/reframe the scene. Prefer a mixed set: objective, discovery/route, pressure/position/resource, and NPC/promise/moral tension. Avoid resolving the outcome in the label. Do not append bracketed skill tags; code owns roll-affordance tagging after validating the action text. **Grounding rule: only reference people, places, or facts the player has actually seen in prose this chapter.** An NPC appearing in the scene packet's cast list is NOT sufficient — the player must have been shown them in the Narrator's prose. Never invent exits, NPCs, items, clues, facts, hidden clocks, motives, or unrevealed secrets for suggested_actions.",
         items: { type: 'string' },
+      },
+      suggested_action_tempo_hints: {
+        type: 'array',
+        description:
+          'Optional hidden tempo metadata aligned by index with suggested_actions. Use only pacing hints, never skill names or roll bindings. Do not put these labels in suggested action text.',
+        items: {
+          type: 'string',
+          enum: ['close', 'compression', 'time_jump', 'montage', 'aftermath', 'downtime', 'chapter_turn'],
+        },
       },
     },
     required: ['suggested_actions'],

@@ -34,7 +34,7 @@
       "isInitial": false,
       "playerInput": "Walk away from the table without signing. [No roll — a pure choice]",
       "userMessageContainsNone": [
-        "Skill-tag binding (mandatory)"
+        "Private roll advisory (expected, never mention)"
       ]
     }
   }

@@ -86,6 +86,7 @@ import {
   type Sf2ArchivistPatch,
   type Sf2ChapterMeaning,
   type Sf2CoherenceFinding,
+  type Sf2NarrativeTempoMode,
   type Sf2RollRecord,
   type Sf2State,
   type ThreadRole,
@@ -252,6 +253,9 @@ interface ReplayFixture {
       failedSkill?: string
       playerInput?: string
       visibleProse?: string
+      recommendedTempoMode?: Sf2NarrativeTempoMode
+      sceneExhausted?: boolean
+      playerProficiencies?: string[]
       inputActions: string[]
       outputActionsInclude?: string[]
       outputActionsExclude?: string[]
@@ -303,6 +307,8 @@ interface ReplayFixture {
           playerInventoryIncludes?: string[]
           playerTraitEquals?: string
           pcNaturalMovesInclude?: string[]
+          playerCalibrationAnswerCount?: number
+          playerCalibrationSummaryIncludes?: string[]
         }
       }>
       hookFilters?: Array<{
@@ -634,11 +640,16 @@ interface ReplayFixture {
       userMessageContainsAll?: string[]
       userMessageContainsNone?: string[]
       requiredRollGateExists?: boolean
+      narrativeTempoModeEquals?: Sf2NarrativeTempoMode
+      narrativeTempoRequiredDeltaIncludes?: string
+      pacingRecommendedTempoModeEquals?: Sf2NarrativeTempoMode
+      pacingRequiredDeltaIncludes?: string
     }
     requiredRollGate?: {
       exists: boolean
       source?: string
       kind?: string
+      binding?: string
       sourceId?: string
       skillsInclude?: string[]
       reasonIncludes?: string
@@ -807,6 +818,9 @@ interface ReplayFixture {
       arcAdvancementStatus?: string
       arcAdvancementNotYetEvaluableChapters?: number[]
       arcAdvancementFailedChapters?: number[]
+      tempoConsecutiveMicroTurns?: number
+      tempoRepeatedProceduralSurface?: boolean
+      tempoExcessiveMicroNoDelta?: boolean
       perChapter?: Array<{
         chapter: number
         arcAdvancementStatus?: string
@@ -1432,6 +1446,30 @@ function assertSessionSummary(
       expected.arcAdvancementFailedChapters,
       'sessionSummary.arcAdvancementFailedChapters',
       failures
+    )
+  }
+  if (
+    expected.tempoConsecutiveMicroTurns !== undefined &&
+    summary.pacing.tempo.consecutiveMicroTurns !== expected.tempoConsecutiveMicroTurns
+  ) {
+    failures.push(
+      `sessionSummary.pacing.tempo.consecutiveMicroTurns: expected ${expected.tempoConsecutiveMicroTurns}, got ${summary.pacing.tempo.consecutiveMicroTurns}`
+    )
+  }
+  if (
+    expected.tempoRepeatedProceduralSurface !== undefined &&
+    summary.pacing.tempo.guards.repeatedProceduralSurface !== expected.tempoRepeatedProceduralSurface
+  ) {
+    failures.push(
+      `sessionSummary.pacing.tempo.guards.repeatedProceduralSurface: expected ${expected.tempoRepeatedProceduralSurface}, got ${summary.pacing.tempo.guards.repeatedProceduralSurface}`
+    )
+  }
+  if (
+    expected.tempoExcessiveMicroNoDelta !== undefined &&
+    summary.pacing.tempo.guards.excessiveMicroNoDelta !== expected.tempoExcessiveMicroNoDelta
+  ) {
+    failures.push(
+      `sessionSummary.pacing.tempo.guards.excessiveMicroNoDelta: expected ${expected.tempoExcessiveMicroNoDelta}, got ${summary.pacing.tempo.guards.excessiveMicroNoDelta}`
     )
   }
   for (const chapterExpected of expected.perChapter ?? []) {
@@ -2637,6 +2675,38 @@ function assertNarratorMessages(
       `narrator context: expected requiredRollGateExists=${expected.requiredRollGateExists}, got ${context.requiredRollGate ? `${context.requiredRollGate.kind} from ${context.requiredRollGate.source}` : 'none'}`
     )
   }
+  if (
+    expected.narrativeTempoModeEquals !== undefined &&
+    context.narrativeTempo?.mode !== expected.narrativeTempoModeEquals
+  ) {
+    failures.push(
+      `narrator context: narrativeTempo.mode expected ${expected.narrativeTempoModeEquals}, got ${context.narrativeTempo?.mode ?? 'unset'}`
+    )
+  }
+  if (
+    expected.narrativeTempoRequiredDeltaIncludes !== undefined &&
+    !context.narrativeTempo?.requiredDelta?.includes(expected.narrativeTempoRequiredDeltaIncludes)
+  ) {
+    failures.push(
+      `narrator context: narrativeTempo.requiredDelta missing "${expected.narrativeTempoRequiredDeltaIncludes}"`
+    )
+  }
+  if (
+    expected.pacingRecommendedTempoModeEquals !== undefined &&
+    context.diagnostics.pacingAdvisory?.recommendedTempoMode !== expected.pacingRecommendedTempoModeEquals
+  ) {
+    failures.push(
+      `narrator context: pacing recommended tempo expected ${expected.pacingRecommendedTempoModeEquals}, got ${context.diagnostics.pacingAdvisory?.recommendedTempoMode ?? 'unset'}`
+    )
+  }
+  if (
+    expected.pacingRequiredDeltaIncludes !== undefined &&
+    !context.diagnostics.pacingAdvisory?.requiredDelta?.includes(expected.pacingRequiredDeltaIncludes)
+  ) {
+    failures.push(
+      `narrator context: pacing requiredDelta missing "${expected.pacingRequiredDeltaIncludes}"`
+    )
+  }
 }
 
 function assertRequiredRollGate(
@@ -2668,6 +2738,9 @@ function assertRequiredRollGate(
   }
   if (expected.kind !== undefined && gate.kind !== expected.kind) {
     failures.push(`requiredRollGate.kind: expected ${expected.kind}, got ${gate.kind}`)
+  }
+  if (expected.binding !== undefined && gate.binding !== expected.binding) {
+    failures.push(`requiredRollGate.binding: expected ${expected.binding}, got ${gate.binding}`)
   }
   if (expected.sourceId !== undefined && gate.sourceId !== expected.sourceId) {
     failures.push(`requiredRollGate.sourceId: expected ${expected.sourceId}, got ${gate.sourceId ?? 'unset'}`)
@@ -3018,6 +3091,7 @@ function resolveSetupSelectionByTitle(
     playbookId: selection.playbookId,
     hookId: hook.id,
     ...(selection.characterName ? { characterName: selection.characterName } : {}),
+    ...(selection.calibrationAnswers ? { calibrationAnswers: selection.calibrationAnswers } : {}),
   }
 }
 
@@ -3661,11 +3735,15 @@ function assertExpected(
   }
   if (expected.quickActionRepair) {
     const qr = expected.quickActionRepair
+    const repairState = structuredClone(stateBefore)
+    if (qr.playerProficiencies) repairState.player.proficiencies = qr.playerProficiencies
     const repaired = repairSuggestedActions(qr.inputActions, {
-      state: stateBefore,
+      state: repairState,
       failedSkill: qr.failedSkill,
       playerInput: qr.playerInput,
       visibleProse: qr.visibleProse,
+      recommendedTempoMode: qr.recommendedTempoMode,
+      sceneExhausted: qr.sceneExhausted,
     })
     if (qr.outputCount !== undefined && repaired.actions.length !== qr.outputCount) {
       failures.push(`quickActionRepair.outputCount expected ${qr.outputCount}, got ${repaired.actions.length}`)
@@ -3910,8 +3988,29 @@ function assertExpected(
           failures.push(`${label}.pcCapabilities.playbookProfile.naturalMoves missing ${naturalMove}`)
         }
       }
+      if (
+        expect.playerCalibrationAnswerCount !== undefined &&
+        (seed.playerCalibration?.answers.length ?? 0) !== expect.playerCalibrationAnswerCount
+      ) {
+        failures.push(
+          `${label}.playerCalibration.answerCount expected ${expect.playerCalibrationAnswerCount}, got ${seed.playerCalibration?.answers.length ?? 0}`
+        )
+      }
+      for (const snippet of expect.playerCalibrationSummaryIncludes ?? []) {
+        if (!seed.playerCalibration?.summary.includes(snippet)) {
+          failures.push(`${label}.playerCalibration.summary missing "${snippet}"`)
+        }
+      }
       if (created.meta.setupSelection?.hookId !== selection.hookId) {
         failures.push(`${label}.meta.setupSelection hook id was not persisted`)
+      }
+      if (
+        expect.playerCalibrationAnswerCount !== undefined &&
+        (created.meta.setupSelection?.calibrationAnswers?.length ?? 0) !== expect.playerCalibrationAnswerCount
+      ) {
+        failures.push(
+          `${label}.meta.setupSelection calibration count expected ${expect.playerCalibrationAnswerCount}, got ${created.meta.setupSelection?.calibrationAnswers?.length ?? 0}`
+        )
       }
       if (created.meta.hookTitle !== seed.hook.title) {
         failures.push(`${label}.meta.hookTitle expected ${seed.hook.title}, got ${created.meta.hookTitle ?? 'unset'}`)

@@ -10,6 +10,12 @@ import {
 } from '@/lib/game-data'
 import { getGenreConfig, type Genre, type Species, type CharacterClass } from '@/lib/genre-config'
 import { WizardNav } from './wizard-nav'
+import { listSf2SetupHooks } from '@/lib/sf2/setup/options'
+import {
+  getNextSf2SetupCalibrationQuestion,
+  MAX_SF2_SETUP_CALIBRATION_ANSWERS,
+} from '@/lib/sf2/setup/calibration'
+import type { Sf2SetupCalibrationAnswer, Sf2SetupHookOption } from '@/lib/sf2/setup/types'
 
 // Portrait paths: /portraits/{genre}/{species-id}.png
 // Falls back to letter placeholder if image doesn't exist
@@ -59,7 +65,14 @@ function SpeciesPortrait({ genre, speciesId, speciesName, isSelected }: {
 interface CharacterSetupProps {
   genre: Genre
   onBack: () => void
-  onStart: (data: { name: string; species: Species; characterClass: CharacterClass; gender: 'he' | 'she' | 'they' }) => void
+  onStart: (data: {
+    name: string
+    species: Species
+    characterClass: CharacterClass
+    gender: 'he' | 'she' | 'they'
+    hookId?: string
+    calibrationAnswers?: Sf2SetupCalibrationAnswer[]
+  }) => void
 }
 
 export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) {
@@ -70,13 +83,185 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(null)
   const [selectedGender, setSelectedGender] = useState<'he' | 'she' | 'they'>('they')
+  const [selectedHook, setSelectedHook] = useState<Sf2SetupHookOption | null>(null)
+  const [isCalibrating, setIsCalibrating] = useState(false)
+  const [calibrationAnswers, setCalibrationAnswers] = useState<Sf2SetupCalibrationAnswer[]>([])
+  const [calibrationDraft, setCalibrationDraft] = useState('')
 
   // When playbooks exist for the selected origin, use those; otherwise fall back to universal classes
   const availableClasses = (selectedSpecies && config.playbooks?.[selectedSpecies.id]) || config.classes
 
   const canStart = characterName.trim() && selectedSpecies && selectedClass
 
-  const stepLabels = ['World', 'Identity']
+  const stepLabels = ['World', 'Identity', 'Tone']
+  const calibrationSelection = selectedSpecies && selectedClass && selectedHook
+    ? {
+        genreId: genre,
+        originId: selectedSpecies.id,
+        playbookId: selectedClass.id,
+        hookId: selectedHook.id,
+      }
+    : null
+  const nextCalibrationQuestion = calibrationSelection
+    ? getNextSf2SetupCalibrationQuestion(calibrationSelection, calibrationAnswers)
+    : null
+
+  function resetCalibration() {
+    setSelectedHook(null)
+    setIsCalibrating(false)
+    setCalibrationAnswers([])
+    setCalibrationDraft('')
+  }
+
+  function chooseOpeningHook(): Sf2SetupHookOption | null {
+    if (!selectedSpecies || !selectedClass) return null
+    try {
+      const hooks = listSf2SetupHooks(genre, selectedSpecies.id, selectedClass.id)
+      if (hooks.length === 0) return null
+      return hooks[Math.min(Math.floor(Math.random() * hooks.length), hooks.length - 1)]
+    } catch {
+      return null
+    }
+  }
+
+  function beginCalibration() {
+    if (!canStart) return
+    const hook = chooseOpeningHook()
+    if (!hook) {
+      startCampaign()
+      return
+    }
+    setSelectedHook(hook)
+    setIsCalibrating(true)
+  }
+
+  function commitCalibrationAnswer(): Sf2SetupCalibrationAnswer[] {
+    if (!nextCalibrationQuestion || !calibrationDraft.trim()) return calibrationAnswers
+    const nextAnswers = [
+      ...calibrationAnswers,
+      {
+        question: nextCalibrationQuestion.question,
+        answer: calibrationDraft.trim(),
+        theme: nextCalibrationQuestion.theme,
+      },
+    ].slice(0, MAX_SF2_SETUP_CALIBRATION_ANSWERS)
+    setCalibrationAnswers(nextAnswers)
+    setCalibrationDraft('')
+    return nextAnswers
+  }
+
+  function startCampaign(answers = calibrationAnswers) {
+    if (!canStart) return
+    track('campaign_started', { genre, class: selectedClass!.id })
+    onStart({
+      name: characterName.trim(),
+      species: selectedSpecies!,
+      characterClass: selectedClass!,
+      gender: selectedGender,
+      hookId: selectedHook?.id,
+      calibrationAnswers: answers,
+    })
+  }
+
+  if (isCalibrating && selectedSpecies && selectedClass && selectedHook) {
+    const canAnswer = Boolean(nextCalibrationQuestion && calibrationDraft.trim())
+    const questionCount = calibrationAnswers.length
+
+    return (
+      <div className="flex min-h-screen flex-col items-center px-6 pt-12 pb-28">
+        <div className="w-full max-w-2xl flex flex-col gap-10">
+          <div className="text-center flex flex-col gap-4">
+            <div className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground/60">
+              storyforge
+            </div>
+            <div className="flex items-center justify-center gap-6">
+              {stepLabels.map((label, i) => (
+                <span
+                  key={label}
+                  className={cn(
+                    'text-[10px] font-medium uppercase tracking-[0.15em] transition-colors',
+                    i === 2 ? 'text-primary' : 'text-muted-foreground/40'
+                  )}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/15 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border-b border-border/10">
+              <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70">
+                Opening pressure
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground/60">
+                {questionCount}/{MAX_SF2_SETUP_CALIBRATION_ANSWERS}
+              </span>
+            </div>
+            <div className="p-5">
+              <div className="text-lg font-heading tracking-wider text-foreground">
+                {selectedHook.title}
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{selectedHook.premise}</p>
+            </div>
+          </div>
+
+          {nextCalibrationQuestion && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-primary/70 mb-3">
+                  Calibration
+                </div>
+                <p className="text-xl font-heading tracking-wide text-foreground">
+                  {nextCalibrationQuestion.question}
+                </p>
+              </div>
+              <textarea
+                value={calibrationDraft}
+                onChange={(e) => setCalibrationDraft(e.target.value)}
+                className="min-h-32 w-full resize-none rounded-xl border border-border/20 bg-secondary/5 p-4 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground/30 focus:border-primary/40"
+                placeholder="A sentence or two is enough."
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={() => commitCalibrationAnswer()}
+                  disabled={!canAnswer}
+                  className={cn(
+                    'rounded-lg border px-4 py-2 text-xs font-medium transition-colors',
+                    canAnswer
+                      ? 'border-primary/35 bg-primary/10 text-primary hover:bg-primary/15'
+                      : 'border-border/10 text-muted-foreground/30'
+                  )}
+                >
+                  Answer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {calibrationAnswers.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {calibrationAnswers.map((answer, index) => (
+                <div key={`${answer.theme}-${index}`} className="border-l-2 border-primary/25 pl-3">
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-primary/60">{answer.theme}</div>
+                  <div className="mt-1 text-xs leading-relaxed text-foreground/60">{answer.answer}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <WizardNav
+          onBack={() => setIsCalibrating(false)}
+          onNext={() => {
+            const answers = canAnswer ? commitCalibrationAnswer() : calibrationAnswers
+            startCampaign(answers)
+          }}
+          nextLabel="Start Campaign"
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center px-6 pt-12 pb-28">
@@ -158,7 +343,10 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
                   onClick={() => {
                     setSelectedSpecies(s)
                     // Clear class selection when origin changes — available classes may differ per origin (playbooks)
-                    if (selectedSpecies?.id !== s.id) setSelectedClass(null)
+                    if (selectedSpecies?.id !== s.id) {
+                      setSelectedClass(null)
+                      resetCalibration()
+                    }
                   }}
                   className="snap-start min-w-[200px] w-[200px] shrink-0 group/species text-left"
                 >
@@ -190,7 +378,10 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
               return (
                 <button
                   key={c.id}
-                  onClick={() => setSelectedClass(c)}
+                  onClick={() => {
+                    setSelectedClass(c)
+                    resetCalibration()
+                  }}
                   className={cn(
                     'relative flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-all duration-300',
                     isSelected
@@ -318,16 +509,7 @@ export function CharacterSetup({ genre, onBack, onStart }: CharacterSetupProps) 
       {/* Fixed bottom nav */}
       <WizardNav
         onBack={onBack}
-        onNext={() => {
-          if (!canStart) return
-          track('campaign_started', { genre, class: selectedClass!.id })
-          onStart({
-            name: characterName.trim(),
-            species: selectedSpecies!,
-            characterClass: selectedClass!,
-            gender: selectedGender,
-          })
-        }}
+        onNext={beginCalibration}
         nextLabel="Begin Campaign"
         nextDisabled={!canStart}
       />

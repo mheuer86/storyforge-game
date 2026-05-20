@@ -35,8 +35,8 @@
       ],
       "outputCount": 4,
       "outputActionsInclude": [
-        "Intimidate the clerk harder. [Intimidation]",
-        "Read the room before you commit. [Insight]"
+        "Intimidate the clerk harder.",
+        "Read the room before you commit."
       ],
       "outputActionsExclude": [
         "Threaten to write him up. [Intimidation]",

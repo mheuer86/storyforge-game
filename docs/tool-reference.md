@@ -77,8 +77,10 @@ Main fields:
 | `hinted_entities` | Hints for the Archivist, not durable state writes |
 | `authorial_moves` | Pivot/revelation/witness-mark hints |
 | `suggested_actions` | 3-4 grounded, useful quick actions for the next turn |
+| `tempo_mode` | Hidden narrative tempo annotation for diagnostics |
+| `suggested_action_tempo_hints` | Hidden pacing hints such as compression, time jump, aftermath, downtime, or chapter turn |
 
-Quick actions are suggestions, not branches. They should use concrete verb + target + intent, avoid resolving the outcome, and open different useful next turns: objective pressure, information/route discovery, pressure/position/resource response, and relationship/promise/moral tension. Skill tags such as `[Insight]` are used only when choosing the option likely commits the player to a risky check.
+Quick actions are suggestions, not branches. They should use concrete verb + target + intent, avoid resolving the outcome, and open different useful next turns: objective pressure, information/route discovery, pressure/position/resource response, and relationship/promise/moral tension. The Narrator should emit clean labels without bracketed skill tags; code strips model-authored tags and does not create hidden named-skill bindings from quick actions. Roll skill selection happens at `request_roll` time.
 
 Allowed mechanical effect kinds:
 

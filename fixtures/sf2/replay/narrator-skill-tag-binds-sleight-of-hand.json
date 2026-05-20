@@ -34,7 +34,7 @@
       "isInitial": false,
       "playerInput": "Slip the chit into your sleeve before he turns back. [Sleight of Hand]",
       "userMessageContainsAll": [
-        "Skill-tag binding (mandatory)",
+        "Private roll advisory (expected, never mention)",
         "Sleight of Hand",
         "request_roll"
       ]
