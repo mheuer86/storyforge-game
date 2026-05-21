@@ -318,9 +318,9 @@ const GENERIC_EXAMPLES: Sf2GenreExamples = {
     body: 'Mira keeps one hand on the chair back and answers only after checking who else can hear.',
   },
   quickActionExamples: [
-    '"Press Mira on who benefits from her silence. [Persuasion]"',
-    '"Track the witness who keeps watching the exit. [Perception]"',
-    '"Step between the witness and the enforcer. [Athletics]"',
+    '"Press Mira on who benefits from her silence."',
+    '"Track the witness who keeps watching the exit."',
+    '"Step between the witness and the enforcer."',
     '"Let the silence make the liar fill it."',
   ],
   continuationEscalationExample:
@@ -348,10 +348,10 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Mareth bows correctly, but his eyes stay on the servant who will pay if the wording changes.',
     },
     quickActionExamples: [
-      '"Press Mareth on who pays for the amended writ. [Intimidation]"',
-      '"Read which servant everyone avoids naming. [Perception]"',
-      '"Put your oath-body between the Synod aide and the witness. [Athletics]"',
-      '"Cite the dispensation clause and watch who flinches. [History]"',
+      '"Press Mareth on who pays for the amended writ."',
+      '"Read which servant everyone avoids naming."',
+      '"Put your oath-body between the Synod aide and the witness."',
+      '"Cite the dispensation clause and watch who flinches."',
     ],
   },
   'space-opera': {
@@ -373,10 +373,10 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Nara smiles like the price is funny and keeps her thumb over the name on the route chit.',
     },
     quickActionExamples: [
-      '"Press Nara on who really bought the route. [Persuasion]"',
-      '"Watch the dock crew before you name your ship. [Perception]"',
-      '"Force the stuck cargo clamp before security turns. [Athletics]"',
-      '"Slip the route chit under your sleeve. [Sleight of Hand]"',
+      '"Press Nara on who really bought the route."',
+      '"Watch the dock crew before you name your ship."',
+      '"Force the stuck cargo clamp before security turns."',
+      '"Slip the route chit under your sleeve."',
     ],
     continuationEscalationExample:
       'Ch1 surfaced a bad route; Ch2 names the hidden fleet buyer, exposes a mole in the crew channel, and gives a hunter the transponder trail.',
@@ -400,10 +400,10 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Elian keeps two fingers on the cracked folio and never looks at the page everyone wants named.',
     },
     quickActionExamples: [
-      '"Press Elian on who first owned the folio. [Persuasion]"',
-      '"Read which scholar avoids the inscription. [Perception]"',
-      '"Hold the bridge stones steady while the ward shakes. [Athletics]"',
-      '"Recall the treaty name hidden in the margin. [History]"',
+      '"Press Elian on who first owned the folio."',
+      '"Read which scholar avoids the inscription."',
+      '"Hold the bridge stones steady while the ward shakes."',
+      '"Recall the treaty name hidden in the margin."',
     ],
     continuationEscalationExample:
       'Ch1 recovered a fragment; Ch2 names the patron who buried it, strains a scholar who vouched for the PC, and wakes a rival claim to the ruin.',
@@ -427,10 +427,10 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Jax keeps the med-scanner running loud enough to blur the room mics and answers with his eyes on the exit feed.',
     },
     quickActionExamples: [
-      '"Press Jax on who paid for the wipe. [Intimidation]"',
-      '"Read the security feed before the loop resets. [Perception]"',
-      '"Jam the closing lift doors with your shoulder. [Athletics]"',
-      '"Ghost the clinic terminal before the trace pings back. [Stealth]"',
+      '"Press Jax on who paid for the wipe."',
+      '"Read the security feed before the loop resets."',
+      '"Jam the closing lift doors with your shoulder."',
+      '"Ghost the clinic terminal before the trace pings back."',
     ],
     continuationEscalationExample:
       'Ch1 exposed a dirty trace; Ch2 names the handler behind it, makes a clinic ally liable, and puts a bounty scanner on the PC.',
@@ -454,9 +454,9 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Hale wipes the same knife clean twice and counts the bandages before he answers.',
     },
     quickActionExamples: [
-      '"Press Hale on who was denied treatment. [Intimidation]"',
-      '"Read which guard watches the food line too closely. [Perception]"',
-      '"Drag the barricade brace back into place. [Athletics]"',
+      '"Press Hale on who was denied treatment."',
+      '"Read which guard watches the food line too closely."',
+      '"Drag the barricade brace back into place."',
       '"Give up your share before anyone asks."',
     ],
     continuationEscalationExample:
@@ -481,9 +481,9 @@ const EXAMPLES_BY_GENRE: Record<string, Sf2GenreExamples> = {
       body: 'Lena taps ash into an empty glass and smiles only after the piano stops covering the room.',
     },
     quickActionExamples: [
-      '"Press Lena on who paid for the alibi. [Persuasion]"',
-      '"Read which table stops talking when the photo appears. [Perception]"',
-      '"Force the office window before the siren turns the corner. [Athletics]"',
+      '"Press Lena on who paid for the alibi."',
+      '"Read which table stops talking when the photo appears."',
+      '"Force the office window before the siren turns the corner."',
       '"Let the lie hang until someone needs to fill it."',
     ],
     continuationEscalationExample:

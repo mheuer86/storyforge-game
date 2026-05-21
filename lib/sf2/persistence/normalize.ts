@@ -49,6 +49,7 @@ import { compactRetrievalCue } from '../retrieval-cues'
 import { isActiveSf2Procedure, normalizeProcedureRuntime } from '../procedure'
 import type { Sf2SetupSelection } from '../setup/types'
 import { clampSf2SetupCalibrationAnswers } from '../setup/calibration'
+import { normalizeSuggestedActionLabels } from '../suggested-action-labels'
 import { getGenreConfig, type CharacterClass, type Genre } from '../../genre-config'
 
 const RECENT_TURNS_LIMIT = 6
@@ -649,6 +650,16 @@ function normalizeWorld(state: Sf2State, repairs: string[]): void {
 function normalizeHistory(state: Sf2State, repairs: string[]): void {
   state.history.turns = Array.isArray(state.history.turns) ? state.history.turns : []
   state.history.rollLog = Array.isArray(state.history.rollLog) ? state.history.rollLog : []
+  for (const turn of state.history.turns) {
+    const annotation = turn.narratorAnnotation
+    if (!annotation?.suggestedActions) continue
+    const normalized = normalizeSuggestedActionLabels(annotation.suggestedActions)
+    if (normalized.length !== annotation.suggestedActions.length ||
+      normalized.some((action, index) => action !== annotation.suggestedActions[index])) {
+      annotation.suggestedActions = normalized
+      repairs.push(`history.turns.${turn.index}.suggestedActions:normalized`)
+    }
+  }
   const recentTurns = state.history.turns.slice(-RECENT_TURNS_LIMIT)
   if (!Array.isArray(state.history.recentTurns) || state.history.recentTurns.length !== recentTurns.length) {
     repairs.push('history.recentTurns:recomputed')

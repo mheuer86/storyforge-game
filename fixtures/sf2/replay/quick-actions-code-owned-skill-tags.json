@@ -47,6 +47,80 @@
         "Walk to the terminal. [Investigation]"
       ],
       "notesInclude": ["stripped 3 quick action bracket tags"]
+    },
+    "quickActionLabelNormalization": {
+      "inputActions": [
+        "Answer the comm call. [Piloting]",
+        "Answer the comm call.",
+        "Review the maintenance logs for the missing interval. [Survival]",
+        "Press the clerk for the withheld answer. [Persuasion]"
+      ],
+      "outputActionsEquals": [
+        "Answer the comm call.",
+        "Review the maintenance logs for the missing interval.",
+        "Press the clerk for the withheld answer."
+      ],
+      "outputActionsExclude": [
+        "Answer the comm call. [Piloting]",
+        "Review the maintenance logs for the missing interval. [Survival]",
+        "Press the clerk for the withheld answer. [Persuasion]"
+      ]
+    },
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_quick_action_tags",
+          "seedId": "space-opera/human/operative/forty-thousand",
+          "createdAt": "2026-05-21T00:00:00.000Z",
+          "updatedAt": "2026-05-21T00:00:00.000Z"
+        },
+        "player": {
+          "name": "Ren"
+        },
+        "history": {
+          "turns": [
+            {
+              "index": 0,
+              "chapter": 1,
+              "playerInput": "",
+              "narratorProse": "The clerk lets the comm keep chiming while the ledger stays open between you.",
+              "narratorAnnotation": {
+                "mechanicalEffects": [],
+                "hintedEntities": {
+                  "npcsMentioned": [],
+                  "threadsTouched": [],
+                  "decisionsImplied": [],
+                  "promisesImplied": [],
+                  "cluesDropped": []
+                },
+                "authorialMoves": {},
+                "suggestedActions": [
+                  "Answer the comm call. [Piloting]",
+                  "Review the maintenance logs for the missing interval. [Survival]",
+                  "Press the clerk for the withheld answer. [Persuasion]"
+                ]
+              },
+              "timestamp": "2026-05-21T00:00:00.000Z"
+            }
+          ],
+          "rollLog": [],
+          "recentTurns": []
+        }
+      },
+      "expect": {
+        "recentTurnsCountEquals": 1,
+        "statePathEquals": [
+          {
+            "path": "history.turns.0.narratorAnnotation.suggestedActions",
+            "value": [
+              "Answer the comm call.",
+              "Review the maintenance logs for the missing interval.",
+              "Press the clerk for the withheld answer."
+            ]
+          }
+        ],
+        "repairsInclude": ["suggestedActions:normalized"]
+      }
     }
   }
 }

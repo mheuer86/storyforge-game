@@ -25,6 +25,7 @@ import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
+import { normalizeSuggestedActionLabels } from '../lib/sf2/suggested-action-labels'
 import { compileAuthorInputSeed } from '../lib/sf2/author/payload'
 import { buildAuthorSituation } from '../lib/sf2/author/prompt'
 import { compileSf2SetupSeed } from '../lib/sf2/setup/compile-seed'
@@ -263,6 +264,11 @@ interface ReplayFixture {
       outputCount?: number
       categoryCountAtLeast?: number
       notesInclude?: string[]
+    }
+    quickActionLabelNormalization?: {
+      inputActions: string[]
+      outputActionsEquals?: string[]
+      outputActionsExclude?: string[]
     }
     authorInputSeed?: {
       priorChapterMeaning?: Record<string, unknown> | null
@@ -3852,6 +3858,22 @@ function assertExpected(
     for (const note of qr.notesInclude ?? []) {
       if (!repaired.notes.some((n) => n.includes(note))) {
         failures.push(`quickActionRepair notes missing "${note}"`)
+      }
+    }
+  }
+  if (expected.quickActionLabelNormalization) {
+    const qn = expected.quickActionLabelNormalization
+    const normalized = normalizeSuggestedActionLabels(qn.inputActions)
+    if (qn.outputActionsEquals) {
+      const got = JSON.stringify(normalized)
+      const want = JSON.stringify(qn.outputActionsEquals)
+      if (got !== want) {
+        failures.push(`quickActionLabelNormalization expected ${want}, got ${got}`)
+      }
+    }
+    for (const unexpectedAction of qn.outputActionsExclude ?? []) {
+      if (normalized.includes(unexpectedAction)) {
+        failures.push(`quickActionLabelNormalization output unexpectedly includes "${unexpectedAction}"`)
       }
     }
   }

@@ -19,6 +19,7 @@ import {
 import {
   listSf2SetupHooks,
 } from '@/lib/sf2/setup/options'
+import { normalizeSuggestedActionLabels } from '@/lib/sf2/suggested-action-labels'
 import type { Sf2SetupCalibrationAnswer, Sf2SetupSelection } from '@/lib/sf2/setup/types'
 import { applyAuthorChapterOpening } from '@/lib/sf2/author/chapter-opening'
 import { computeSessionSummary } from '@/lib/sf2/instrumentation/session-summary'
@@ -194,7 +195,7 @@ export function Sf2PlayApp() {
     pendingRollResourceSpendsRef.current = []
     setSelectedRollActionId(null)
     const lastTurn = loaded.history.turns[loaded.history.turns.length - 1]
-    setSuggestedActions(lastTurn?.narratorAnnotation?.suggestedActions ?? [])
+    setSuggestedActions(normalizeSuggestedActionLabels(lastTurn?.narratorAnnotation?.suggestedActions))
     try {
       applyGenreTheme(loaded.meta.genreId as Genre)
     } catch {
@@ -525,7 +526,7 @@ export function Sf2PlayApp() {
       effects: {
         onStreamingChange: setIsStreaming,
         onProse: setProse,
-        onSuggestedActions: setSuggestedActions,
+        onSuggestedActions: (actions) => setSuggestedActions(normalizeSuggestedActionLabels(actions)),
         onPendingCheck: (check) => {
           setPendingCheck(check)
           setSelectedRollActionId(null)

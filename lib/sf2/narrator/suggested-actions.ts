@@ -1,3 +1,4 @@
+import { stripSuggestedActionBracketTags } from '../suggested-action-labels'
 import type { Sf2NarrativeTempoMode, Sf2State } from '../types'
 
 export type QuickActionCategory = 'direct' | 'observe' | 'pivot_scene' | 'leverage_state' | 'wait'
@@ -122,7 +123,7 @@ export function repairSuggestedActions(
 
   let strippedSkillTags = 0
   for (let i = 0; i < actions.length; i++) {
-    const normalized = stripTrailingBracketTags(actions[i]).trim()
+    const normalized = stripSuggestedActionBracketTags(actions[i]).trim()
     if (normalized !== actions[i]) {
       actions[i] = normalized
       strippedSkillTags += 1
@@ -141,14 +142,6 @@ export function repairSuggestedActions(
   }
 
   return { actions: actions.slice(0, 4), notes }
-}
-
-function stripTrailingBracketTags(action: string): string {
-  let text = action.trim()
-  while (/\s*\[[^\]]+\]\s*$/.test(text)) {
-    text = text.replace(/\s*\[[^\]]+\]\s*$/, '').trim()
-  }
-  return text
 }
 
 function shouldEnsureMacroAction(context: QuickActionRepairContext): boolean {

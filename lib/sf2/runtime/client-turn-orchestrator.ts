@@ -6,6 +6,7 @@ import { extractAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { DebugEntry, TokenUsage } from '@/lib/sf2/diagnostics-store'
 import type { Sf2TurnPipelineEvent } from '@/lib/sf2/runtime/turn-pipeline'
 import { applySf2RollResourceSpends } from '@/lib/sf2/rolls/resolve'
+import { normalizeSuggestedActionLabels } from '@/lib/sf2/suggested-action-labels'
 import type {
   Sf2RollDiceMode,
   Sf2RollResolutionKind,
@@ -229,7 +230,7 @@ export async function runSf2ClientNarratorTurn(
               annotation = event.input
               sawNarrateTurn = true
               effects.onDiagnostic({ kind: 'narrate_turn', at: Date.now(), data: annotation })
-              effects.onSuggestedActions((annotation?.suggested_actions as string[] | undefined) ?? [])
+              effects.onSuggestedActions(normalizeSuggestedActionLabels(annotation?.suggested_actions as string[] | undefined))
               effects.onAnnotation?.(annotation)
               break
             }

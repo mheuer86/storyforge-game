@@ -31,6 +31,7 @@ import type { ApplyPatchResult } from '../validation/apply-patch'
 import { formatDeferredWrites } from '../validation/format-deferred'
 import { applySf2RollResourceSpends } from '../rolls/resolve'
 import { isSf2NarrativeTempoMode } from '../narrative-tempo'
+import { normalizeSuggestedActionLabels } from '../suggested-action-labels'
 
 export type Sf2TurnPipelineEvent =
   | Sf2ReplayInvariantEvent
@@ -447,7 +448,7 @@ export function normalizeNarratorAnnotationForHistory(
       cluesDropped: arrayOfStrings(hinted.clues_dropped ?? hinted.cluesDropped),
     },
     authorialMoves: authorial as Sf2NarratorAnnotation['authorialMoves'],
-    suggestedActions: arrayOfStrings(suggested),
+    suggestedActions: normalizeSuggestedActionLabels(arrayOfStrings(suggested)),
     ...(isSf2NarrativeTempoMode(tempoMode) ? { tempoMode } : {}),
     ...(tempoHints.length > 0 ? { suggestedActionTempoHints: tempoHints } : {}),
   }
@@ -527,9 +528,10 @@ function logNarratedTurn(
       }))
     }
 
-    const suggestedActions = input.narrator.annotation.suggested_actions
-      ?? input.narrator.annotation.suggestedActions
-    if (Array.isArray(suggestedActions) && suggestedActions.length > 0) {
+    const suggestedActions = normalizeSuggestedActionLabels(
+      arrayOfStrings(input.narrator.annotation.suggested_actions ?? input.narrator.annotation.suggestedActions)
+    )
+    if (suggestedActions.length > 0) {
       invariantEvents.push(observeActorFirewallWrite(next, {
         actor: 'narrator',
         writeKind: 'suggested_actions',

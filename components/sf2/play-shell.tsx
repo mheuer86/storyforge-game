@@ -26,6 +26,7 @@ import {
 import { useIsMobile } from '@/components/ui/use-mobile'
 import { cn } from '@/lib/utils'
 import { applyGenreTheme, getGenreConfig, type Genre } from '@/lib/genre-config'
+import { normalizeSuggestedActionLabels, stripSuggestedActionBracketTags } from '@/lib/sf2/suggested-action-labels'
 import type { Sf2SaveSlotData, Sf2SaveSlotNumber } from '@/lib/sf2/persistence/types'
 import type { ChapterPressureProjection } from '@/lib/sf2/pressure/runtime'
 import type {
@@ -1983,17 +1984,6 @@ function HistoryRollCard({ roll }: { roll: Sf2State['history']['rollLog'][number
   )
 }
 
-function parseSuggestedAction(action: string) {
-  const match = action.match(/\s*\[([^\]]+)\]\s*$/)
-  if (!match) return { text: action, rollType: null as string | null }
-  const rollType = match[1].split(',')[0]?.trim() || match[1].trim()
-
-  return {
-    text: action.slice(0, match.index).trim(),
-    rollType,
-  }
-}
-
 function ActionSurface(props: {
   state: Sf2State
   suggestedActions: string[]
@@ -2020,6 +2010,7 @@ function ActionSurface(props: {
     onCloseChapter,
   } = props
   const initialTurn = chapterTurnCount === 0
+  const cleanSuggestedActions = normalizeSuggestedActionLabels(suggestedActions).slice(0, 4)
 
   return (
     <div className="mx-auto w-full max-w-[720px] space-y-2 pb-[max(0px,env(safe-area-inset-bottom))]">
@@ -2056,26 +2047,26 @@ function ActionSurface(props: {
         </div>
       )}
 
-      {!hasActiveRoll && suggestedActions.length > 0 && !busy && !initialTurn && (
+      {!hasActiveRoll && cleanSuggestedActions.length > 0 && !busy && !initialTurn && (
         <div className="space-y-1.5">
-          {suggestedActions.map((action, index) => {
-            const parsed = parseSuggestedAction(action)
+          {cleanSuggestedActions.map((action, index) => {
+            const cleanAction = stripSuggestedActionBracketTags(action)
 
             return (
               <button
                 key={`${action}-${index}`}
                 type="button"
-                onClick={() => onPendingInputChange(action)}
+                onClick={() => onPendingInputChange(cleanAction)}
                 className="sf2-action-enter grid w-full grid-cols-[92px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/50 bg-card/75 px-3 py-2.5 text-left transition-[background-color,border-color,transform] hover:border-primary/55 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/65 active:scale-[0.96] md:grid-cols-[104px_minmax(0,1fr)] md:px-5"
                 style={{ '--sf2-action-delay': `${index * 70}ms` } as CSSProperties}
               >
                 <span className={cn(
                   'line-clamp-2 font-mono text-[10px] uppercase leading-snug tracking-[0.16em] [overflow-wrap:anywhere]',
-                  parsed.rollType ? 'text-primary/75' : 'text-muted-foreground/55',
+                  'text-muted-foreground/55',
                 )}>
-                  {parsed.rollType ?? 'Action'}
+                  Action
                 </span>
-                <span className="text-[14px] leading-snug text-foreground">{parsed.text}</span>
+                <span className="text-[14px] leading-snug text-foreground">{cleanAction}</span>
               </button>
             )
           })}
