@@ -32,6 +32,7 @@ import {
   resolveSf2Roll,
 } from '@/lib/sf2/rolls/resolve'
 import type { Sf2RollResourceSpend, Sf2State } from '@/lib/sf2/types'
+import { renderMarkdown } from '@/components/game/chat-message'
 import { cn } from '@/lib/utils'
 import {
   appendSf2PrototypeCommittedTurn,
@@ -654,9 +655,9 @@ export function Sf2PrototypePlayApp({
   ].filter((part) => part.trim()).join('\n\n')
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[270px_minmax(0,1fr)_370px]">
-        <aside className="space-y-3 rounded-lg border border-border/70 bg-card/70 p-4">
+    <main className="h-screen overflow-hidden bg-background text-foreground">
+      <div className="mx-auto grid h-full w-full max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[270px_minmax(0,1fr)_370px]">
+        <aside className="space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-card/70 p-4">
           <Button
             variant="ghost"
             size="sm"
@@ -686,7 +687,7 @@ export function Sf2PrototypePlayApp({
           <ListBlock items={latestSnapshot?.npcs ?? []} empty="Archivist has not recorded NPCs yet." />
         </aside>
 
-        <section className="flex min-h-[calc(100vh-2rem)] flex-col rounded-lg border border-border/70 bg-card/60">
+        <section className="flex min-h-0 flex-col rounded-lg border border-border/70 bg-card/60">
           <div className="border-b border-border/70 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -720,8 +721,8 @@ export function Sf2PrototypePlayApp({
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             {displayProse ? (
-              <article className="prose prose-invert max-w-none whitespace-pre-wrap font-serif text-[18px] leading-8 text-foreground">
-                {displayProse}
+              <article className="max-w-none font-serif text-[18px] leading-8 text-foreground">
+                {renderMarkdown(displayProse)}
               </article>
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -780,7 +781,7 @@ export function Sf2PrototypePlayApp({
           </div>
         </section>
 
-        <aside className="space-y-3 rounded-lg border border-border/70 bg-card/70 p-4">
+        <aside className="space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-card/70 p-4">
           <div className="flex items-center justify-between gap-3">
             <PanelTitle title="Diagnostics" compact />
             <Button variant="outline" size="sm" onClick={() => setDiagnosticsOpen((open) => !open)}>
