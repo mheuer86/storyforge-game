@@ -61,3 +61,5 @@ A social beat can be either `micro_scene` or `compression_turn`. An exploration 
 ## Deferred
 
 The larger Conductor / Chapter Meaning / Owed Questions architecture remains plausible, but this milestone should land first. A Conductor will be easier to shape once the Narrator already understands narrative scale.
+
+2026-05-21 refinement: the stronger next shape is GM handover briefs plus the V3 Story Surface/scope layer rather than a generic Conductor first. See `.scratch/sf2-gm-handover/` for the follow-up direction: setup and chapter close produce readable GM prep artifacts; those artifacts render into Current Story Surface, Owed Questions, embodied pressure, do-not-restage, and shadow scope telemetry; the Narrator opens from them behind reversible gates before Arc Author / Chapter Author are demoted. Roughdraft decisions: ask setup questions after hook selection, integrate handover compilation into Chapter Meaning first, keep the full handover available as reference/cached prep where useful, and use terminal-run artifacts as early evidence.

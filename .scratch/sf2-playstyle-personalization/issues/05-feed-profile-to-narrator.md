@@ -28,3 +28,5 @@ The Narrator must use this as GM technique guidance, not player-facing content. 
 ## Comments
 
 Added a private per-turn Narrator guidance block, gated by the live profile switch and kept out of cached system content. Display sentinel coverage now catches obvious private playstyle label leaks.
+
+Refinement from 2026-05-21 handover review: this remains the durable live consumer direction. The GM handover path should feed the Narrator readable prep plus compact private playstyle guidance, while still preventing player-facing leakage.

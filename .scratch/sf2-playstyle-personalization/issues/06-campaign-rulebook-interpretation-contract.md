@@ -31,3 +31,5 @@ This is related to playstyle personalization but not the same thing. Playstyle p
 ## Comments
 
 Added campaign-local rulebook interpretation types, normalization, and separate Author/Narrator prompt rendering. Prompt guidance/enforcement requires setup rationale or play evidence, and fixtures cover separate rendering plus omission.
+
+Refinement from 2026-05-21 handover review: campaign-local rule readings belong in the GM handover family as a distinct section. They should travel with the session brief/quick reference when relevant, but remain separate from human-player playstyle notes.

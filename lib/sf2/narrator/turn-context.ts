@@ -1,5 +1,10 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import { buildMessagesForNarrator } from './messages'
+import {
+  buildMessagesForNarrator,
+  buildProseFirstNarratorMessages,
+  type Sf2ProseFirstNarratorMessagesInput,
+  type Sf2ProseFirstNarratorTranscriptTurn,
+} from './messages'
 import type { ScanDisplayOutputOptions } from '../sentinel/display'
 import type {
   Sf2NarrativeTempoMode,
@@ -108,16 +113,43 @@ export interface Sf2NarratorTurnContext {
   }
 }
 
+export interface Sf2ProseFirstNarratorContextInput {
+  systemPrompt: string
+  systemPromptLabel?: string
+  transcript: Sf2ProseFirstNarratorTranscriptTurn[]
+  recentInventoryChanges?: string[]
+  recentEquipmentChanges?: string[]
+}
+
+function buildProseFirstInput(
+  proseFirst: Sf2ProseFirstNarratorContextInput,
+  state: Sf2State,
+  playerInput: string,
+  transcript: Sf2ProseFirstNarratorTranscriptTurn[]
+): Sf2ProseFirstNarratorMessagesInput {
+  return {
+    enabled: true,
+    brief: { text: proseFirst.systemPrompt, label: proseFirst.systemPromptLabel },
+    transcript,
+    playerInput,
+    mechanicalSnapshot: {
+      state,
+      recentInventoryChanges: proseFirst.recentInventoryChanges,
+      recentEquipmentChanges: proseFirst.recentEquipmentChanges,
+    },
+  }
+}
+
 export function buildNarratorTurnContext(input: {
   state: Sf2State
   playerInput: string
   isInitial: boolean
   turnIndex: number
   rollResolution?: Sf2NarratorRollResolution
+  proseFirst?: Sf2ProseFirstNarratorContextInput
 }): Sf2NarratorTurnContext {
   const { state, playerInput, isInitial, turnIndex, rollResolution } = input
   const intentQueue = parseSf2NarratorIntentQueue(state, playerInput, rollResolution)
-  const system = buildNarratorSystemBlocks(state)
   const cachedTools = buildCachedNarratorTools()
   const sentinelContext = buildNarratorSentinelContext(state)
   const failedRollSkill =
@@ -128,9 +160,14 @@ export function buildNarratorTurnContext(input: {
 
   if (rollResolution) {
     const messages = buildRollResumeMessages(state, intentQueue, rollResolution)
+    const proseFirstResumeSystem = input.proseFirst
+      ? buildProseFirstNarratorMessages(
+          buildProseFirstInput(input.proseFirst, state, 'Continue from the roll result.', [])
+        )?.system
+      : null
     return {
       mode: 'roll_resume',
-      system,
+      system: proseFirstResumeSystem ?? buildNarratorSystemBlocks(state),
       messages,
       cachedTools,
       diagnostics: buildEmptyNarratorDiagnostics(),
@@ -144,13 +181,36 @@ export function buildNarratorTurnContext(input: {
   }
 
   const currentPlayerInput = intentQueue.current.text || playerInput
+  if (input.proseFirst) {
+    const built = buildProseFirstNarratorMessages(
+      buildProseFirstInput(input.proseFirst, state, currentPlayerInput, input.proseFirst.transcript)
+    )
+    if (!built) {
+      throw new Error('Prose-first narrator context was enabled but did not build.')
+    }
+    const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
+    return {
+      mode: 'normal',
+      system: built.system,
+      messages,
+      cachedTools,
+      diagnostics: buildEmptyNarratorDiagnostics(),
+      sentinelContext,
+      failedRollSkill,
+      requiredRollGate,
+      narrativeTempo: null,
+      intentQueue,
+      replayMetadata: buildReplayMetadata('normal', turnIndex, messages, null, null),
+    }
+  }
+
   const built = buildMessagesForNarrator(state, currentPlayerInput, isInitial, turnIndex)
   const messages = appendIntentQueueBlock(built.messages, renderSf2IntentQueueBlock(intentQueue))
   const beatMode = built.packet.mechanics.beatMode?.mode ?? 'social'
 
   return {
     mode: 'normal',
-    system,
+    system: buildNarratorSystemBlocks(state),
     messages,
     cachedTools,
     diagnostics: {

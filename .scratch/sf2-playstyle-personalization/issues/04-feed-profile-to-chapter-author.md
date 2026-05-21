@@ -28,3 +28,5 @@ This is one of two live consumers. The Narrator also receives the profile in a s
 ## Comments
 
 Added a dynamic Author prompt block sourced from the campaign-local rolling profile and kept it outside cached system text. Replay fixtures cover enabled and disabled rendering.
+
+Refinement from 2026-05-21 handover review: if Chapter Author is demoted or bypassed, this consumer should move to the GM handover compiler and Narrator opening context. Do not treat Chapter Author as the permanent owner of playstyle guidance.

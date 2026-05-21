@@ -1,7 +1,7 @@
 # SF2 Setup Calibration Reshape
 
-Status: shaping
-Source: user playtest feedback on 2026-05-21 plus `Oaths tested in burning worlds.md`
+Status: shaping-refined
+Source: user playtest feedback on 2026-05-21 plus `Oaths tested in burning worlds.md`, `pale flame gm memory.md`, `pale flame ch2 session brief.md`, and `pale flame luther reference.md`
 
 ## Problem
 
@@ -16,6 +16,18 @@ The reference interaction worked because the GM did four things the wizard does 
 
 The current UI says "Calibration", shows a 0/5 counter, renders the opening hook as a card, and asks static playbook-shaped questions. That makes the player feel processed, not read.
 
+The later Pale Flame handover examples sharpen the real target: the setup conversation should not merely produce extra seed text for hidden Author roles. It should become the first campaign handover artifact. The best cross-chapter coherence came from readable GM prep documents that preserved judgment, not just facts: player style, PC interpretation, craft lessons, error memory, active clocks, opening conditions, and a one-glance play reference.
+
+The V3 PRD adds the live-use layer: handovers should compile into a Current Story Surface, Owed Questions, embodied pressure, do-not-restage constraints, and lightweight chapter motion targets. Those are what let the Narrator run from the handover without turning it into unprioritized transcript memory.
+
+Roughdraft decisions:
+
+- Ask setup questions after hook selection: character setup -> hook selection -> questions -> campaign start.
+- Keep the full handover available as texture-rich GM prep/reference material; use Current Story Surface as the priority live layer.
+- Integrate handover compilation into Chapter Meaning first; split a Continuity Editor only if the model/tool becomes overloaded.
+
+Refined thesis: **the handover is the author**. Setup should author the first handover; chapter close should update the handover. The Narrator can then run from that artifact without making the player wait through a separate Arc Author / Chapter Author invention step.
+
 ## Requirements
 
 | Req | Requirement | Status |
@@ -24,10 +36,10 @@ The current UI says "Calibration", shows a 0/5 counter, renders the opening hook
 | R1 | The first questions must create identity pressure: oath/commitment, anchor/belief, owed relationships, and opening complication. | Must-have |
 | R2 | Each next prompt should respond to the player's prior answer by reflecting, sharpening ambiguity, or asking for the missing edge. | Must-have |
 | R3 | The flow must remain optional and skippable, with a deterministic fail-open path into campaign start. | Must-have |
-| R4 | The answers must remain setup seed material, not transcript turns and not durable state writes before Arc Author / Author validation. | Must-have |
+| R4 | The answers must remain setup seed / handover material, not transcript turns and not durable campaign-graph writes before validation. | Must-have |
 | R5 | The UI must not expose internal terms such as calibration, seed, hook id, theme, or question count as the main experience. | Must-have |
 | R6 | The flow must work across all SF2 genres and playbooks without hand-authoring a full bespoke setup script per genre. | Must-have |
-| R7 | The result should give Arc Author / Chapter Author compact, structured player-authored facts and tensions. | Must-have |
+| R7 | The result should produce compact player-authored facts plus a first-session GM handover / Narrator start packet, with Author roles only as fallback while the new path proves out. | Must-have |
 | R8 | The implementation must preserve low-friction local play: no fragile setup dead-end if a setup model call fails. | Must-have |
 
 ## Shapes
@@ -77,30 +89,43 @@ This is more reliable than a model call, but the reflection will feel shallow ex
 
 This reduces setup friction, but it mixes meta-creation with in-fiction play and risks polluting transcript/history with pre-campaign negotiation.
 
+## E: GM Handover As Campaign Start Artifact
+
+| Part | Mechanism |
+|---|---|
+| E1 | Use the adaptive setup conversation from B as the player-facing authoring moment. |
+| E2 | Compile the hook, selected setup, and answers into a first-session handover artifact: campaign GM memory, Chapter 1 session brief, quick reference, and a live Current Story Surface. |
+| E3 | Feed the first-session brief to the Narrator for the opening scene behind a reversible gate, bypassing Arc Author / Chapter Author for Chapter 1 when the brief path is enabled. |
+| E4 | Keep durable entity/state writes out of setup. The handover can name candidate tensions, clocks, and NPC debt surfaces, but Archivist/code still decide what persists after visible play. |
+| E5 | Preserve the existing Author path as fallback and comparison data until replay/playtest evidence says the handover path is stronger. |
+
+This incorporates the handover-document lesson directly. It treats setup as active play and turns the hidden "authoring wait" into a useful one-time campaign prep conversation.
+
 ## Fit Check
 
-| Req | Requirement | Status | A | B | C | D |
-|---|---|---|---|---|---|---|
-| R0 | Setup must feel like the GM discovering the character with the player, not like a form or preference survey. | Core goal | ❌ | ✅ | ❌ | ✅ |
-| R1 | The first questions must create identity pressure: oath/commitment, anchor/belief, owed relationships, and opening complication. | Must-have | ✅ | ✅ | ✅ | ✅ |
-| R2 | Each next prompt should respond to the player's prior answer by reflecting, sharpening ambiguity, or asking for the missing edge. | Must-have | ❌ | ✅ | ❌ | ✅ |
-| R3 | The flow must remain optional and skippable, with a deterministic fail-open path into campaign start. | Must-have | ✅ | ✅ | ✅ | ✅ |
-| R4 | The answers must remain setup seed material, not transcript turns and not durable state writes before Arc Author / Author validation. | Must-have | ✅ | ✅ | ✅ | ❌ |
-| R5 | The UI must not expose internal terms such as calibration, seed, hook id, theme, or question count as the main experience. | Must-have | ✅ | ✅ | ✅ | ✅ |
-| R6 | The flow must work across all SF2 genres and playbooks without hand-authoring a full bespoke setup script per genre. | Must-have | ✅ | ✅ | ✅ | ✅ |
-| R7 | The result should give Arc Author / Chapter Author compact, structured player-authored facts and tensions. | Must-have | ✅ | ✅ | ✅ | ❌ |
-| R8 | The implementation must preserve low-friction local play: no fragile setup dead-end if a setup model call fails. | Must-have | ✅ | ✅ | ✅ | ✅ |
+| Req | Requirement | Status | A | B | C | D | E |
+|---|---|---|---|---|---|---|---|
+| R0 | Setup must feel like the GM discovering the character with the player, not like a form or preference survey. | Core goal | ❌ | ✅ | ❌ | ✅ | ✅ |
+| R1 | The first questions must create identity pressure: oath/commitment, anchor/belief, owed relationships, and opening complication. | Must-have | ✅ | ✅ | ✅ | ✅ | ✅ |
+| R2 | Each next prompt should respond to the player's prior answer by reflecting, sharpening ambiguity, or asking for the missing edge. | Must-have | ❌ | ✅ | ❌ | ✅ | ✅ |
+| R3 | The flow must remain optional and skippable, with a deterministic fail-open path into campaign start. | Must-have | ✅ | ✅ | ✅ | ✅ | ✅ |
+| R4 | The answers must remain setup seed / handover material, not transcript turns and not durable campaign-graph writes before validation. | Must-have | ✅ | ✅ | ✅ | ❌ | ✅ |
+| R5 | The UI must not expose internal terms such as calibration, seed, hook id, theme, or question count as the main experience. | Must-have | ✅ | ✅ | ✅ | ✅ | ✅ |
+| R6 | The flow must work across all SF2 genres and playbooks without hand-authoring a full bespoke setup script per genre. | Must-have | ✅ | ✅ | ✅ | ✅ | ✅ |
+| R7 | The result should produce compact player-authored facts plus a first-session GM handover / Narrator start packet, with Author roles only as fallback while the new path proves out. | Must-have | ❌ | ❌ | ❌ | ❌ | ✅ |
+| R8 | The implementation must preserve low-friction local play: no fragile setup dead-end if a setup model call fails. | Must-have | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **Notes:**
 - A fails the feel problem; it is the current implementation with better clothes.
 - C fails the adaptive-reflection requirement; deterministic reflection is likely to feel canned.
 - D fails the SF2 ownership boundary by letting setup negotiation enter live play.
+- B now fails R7 because it still assumes Arc Author / Chapter Author are the main consumers.
 
 ## Selected Direction
 
-Select **B: GM Setup Conversation Before Campaign Creation**.
+Select **E: GM Handover As Campaign Start Artifact**.
 
-Keep the storage and seed compiler from the current implementation, but replace the player-facing setup interaction. The code-owned deterministic helper becomes fallback, not the primary experience.
+Use B's adaptive setup conversation as the interaction model, but change the output target. The conversation should compile a first-session handover artifact that the Narrator can open from directly. Keep the current storage, seed compiler, and Author path as fallback/comparison surfaces while the brief-driven path proves itself.
 
 ## Breadboard
 
@@ -110,19 +135,23 @@ Keep the storage and seed compiler from the current implementation, but replace 
 | Player answer | Textarea or command input styled like play input. Primary button says "Answer". Secondary says "Begin without this". | Append answer to local setup conversation state; do not mutate campaign state yet. |
 | GM reflection and next question | Render a short GM response above the next question. Reflection may name the tension the player just created. | New `/api/sf2/setup-calibration` route or helper calls a small setup role. Input: setup selection, hook, prior answers, latest answer. Output: reflection, nextQuestion, done, compiledNotes. |
 | Stop condition | After 2-4 useful answers, GM offers "Begin the opening" with a short confirmation of destination / why now / pressure. Player can also stop earlier. | Model returns `done: true` when core anchors are sufficient; code hard-caps at 5 answers and fail-opens on errors. |
-| Campaign start | Start campaign from compiled setup material. | `Sf2SetupSelection.calibrationAnswers` persists raw Q/A; `playerCalibration.summary` receives compact compiled notes. |
+| Compile first handover | Convert setup answers into GM memory, Chapter 1 session brief, quick reference, and Current Story Surface. | New handover compiler consumes setup selection, hook, answer list, and optional compiled notes; persists a campaign-start artifact separate from transcript history. |
+| Campaign start | Start campaign from compiled setup material. | `Sf2SetupSelection.calibrationAnswers` persists raw Q/A; the first-session handover becomes Narrator opening context behind a gate, with `playerCalibration.summary` retained for Author fallback. |
+| First scene | Let the Narrator open directly from the first-session brief when enabled. | Bypass Arc Author / Chapter Author for Chapter 1 behind a reversible flag; fall back to the current Author path on failure. |
 | Fallback | If setup model fails, show one deterministic question or let the player begin immediately. | Reuse `getNextSf2SetupCalibrationQuestion` as fallback; diagnostics record `failed_open`. |
 
 ## Implementation Slices
 
 1. Replace visible wizard calibration copy with a conversation shell and hide internal counters/labels.
 2. Add setup-conversation role/tool/API returning reflection, next question, done flag, and compiled notes.
-3. Preserve current persistence/seed path, adding optional compiled setup summary if needed.
-4. Add fixtures for answer clamping, fail-open fallback, and compiled summary reaching Arc Author seed.
-5. Browser-smoke setup flow across one desktop and one mobile viewport.
+3. Add a first-session handover compiler with GM memory, Chapter 1 session brief, and quick reference sections.
+4. Feed the first-session brief to Narrator for the Chapter 1 opening behind a reversible gate; keep Author fallback.
+5. Extend chapter close to compile/update the same handover family from Chapter Meaning, playstyle, rulebook interpretation, and state.
+6. Add fixtures for answer clamping, fail-open fallback, compiled handover persistence, and brief presence in Narrator initial context.
+7. Browser-smoke setup flow across one desktop and one mobile viewport.
 
 ## Open Questions
 
-- Should the first question happen before or after the opening hook is chosen? The reference chooses identity pressure first, then uses it to shape destination. Current SF2 picks hook first. This may need flipping: identity anchors first, then select or adapt hook.
+- How much of the full handover should be included/cached for live Narrator calls versus shown only in diagnostics/export?
 - Should the setup role be live-model only, or should deterministic fallback always ask the first oath/anchor question before any model call?
 - Do we want a visible "GM reflection" transcript saved for diagnostics only, or discarded after compiling the seed?

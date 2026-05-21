@@ -6,6 +6,7 @@ import cyberpunkConfig from './cyberpunk'
 import grimdarkConfig from './grimdark'
 import noireConfig from './noire'
 import epicSciFiConfig from './epic-scifi'
+import coldWarConfig from './cold-war'
 
 // ─── Genre Config Interfaces ────────────────────────────────────────
 
@@ -247,7 +248,7 @@ function makeStub(
 const westernConfig     = makeStub('western',       'Western',       'The frontier doesn\'t ask where you came from.',                 'dollars', '$',   'Camp')
 const zombieConfig      = makeStub('zombie',        'Zombie Apocalypse', 'The dead keep moving. The living keep making it worse.',    'supplies', 'sup', 'Enclave')
 const wastelandConfig   = makeStub('wasteland',     'Post-Atomic Wasteland', 'The bombs fell. Something stranger rose in their place.', 'caps',    'ƈ',   'Settlement')
-const coldWarConfig     = makeStub('cold-war',      'Cold War',      'No shots fired. Everyone\'s already compromised.',              'dollars', '$',   'Safe House')
+// cold-war: imported from ./cold-war.ts (no longer a stub)
 
 // ─── Registry ───────────────────────────────────────────────────────
 

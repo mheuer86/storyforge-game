@@ -30,3 +30,5 @@ None - can start immediately
 ## Comments
 
 Implemented `POST /api/sf2/playstyle` with a forced single Anthropic tool call, evidence-backed normalization, fail-open chapter-close integration, and focused replay coverage in `playstyle-artifact-normalization-evidence.json`.
+
+Refinement from 2026-05-21 handover review: this artifact is one part of a broader GM Memory surface. Future GM handover work should preserve player-style calibration as a campaign-local "how to run this player/PC" section, not only as a private prompt block.

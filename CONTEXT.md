@@ -78,6 +78,27 @@ Tension, local escalation, ladder fires, close readiness, stagnation, scene-link
 
 The campaign graph is authoritative. Transcript history is useful for rendering continuity and replay, but durable memory lives in typed entities: arcs, threads, NPCs, factions, decisions, promises, obligations, clues, beats, documents, procedures, pressure events, and temporal anchors.
 
+### Playstyle Personalization
+
+Playstyle personalization is GM calibration about the human player after observed play: how they reason, choose, read implication, tolerate opacity, and respond to pacing or consequences.
+
+It is distinct from PC stance, setup backstory, and campaign facts. It should tune how future chapters are run, not rewrite what happened in the fiction.
+
+Current decisions:
+
+- Roll it out live by default, with diagnostics/export visibility so it can be turned off or trimmed if playtest evidence shows overfitting or weak guidance.
+- Keep it campaign-local only. A campaign may turn toward the player's demonstrated style over time, but future campaigns may deliberately want a different pace, register, or action bias.
+- Do not add normal player-facing UI in the first implementation.
+- Keep it separate from Chapter Meaning. Chapter Meaning owns literary transition and next-chapter consequence; playstyle personalization owns evidence-backed GM calibration.
+- Use six canonical knobs first: information economy, decision architecture, consequence timing, emotional register, NPC legibility, and error tolerance, plus compact worked-pattern and avoid-pattern lists.
+- Persist both chapter-close calibration artifacts for audit and a compact rolling campaign-local personalization profile for live Author/Narrator use.
+
+### Campaign Rulebook Interpretation
+
+Campaign rulebook interpretation is the campaign-local reading of generic rules into specific triggers, costs, permissions, taboos, and consequences for this PC, genre, and campaign context.
+
+It is distinct from playstyle personalization: playstyle personalization tunes GM technique for the human player; campaign rulebook interpretation tunes how the rulebook applies inside the fiction. A generic rulebook category should not be treated as the whole answer when a campaign has sharper local moral, social, or genre pressure. For example, a grimdark corruption/Stain-like rule should not rely only on generic categories such as torture, betrayal, or killing surrendered enemies. For an oath-driven or Church-shaped PC, deceiving someone trusted or using a person the way an abuser once used them may be a stronger violation than generic violence. The same principle applies beyond Stain: rolls, costs, advantage/disadvantage, consequences, resource pressure, vows, taboos, factions, and social fallout should be interpreted through the campaign's established context. These interpretations should be explicit, campaign-local, and revisable as play reveals what the campaign is actually about.
+
 ### Genre Identity Over Visual Cohesion
 
 Font contrast between narrative, UI, and system text is intentional. Each genre keeps its palette, institutions, vocabulary, and consequence language. Do not sand the edges to make all genres feel uniform.

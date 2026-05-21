@@ -7,6 +7,8 @@ Area: SF2 / setup / campaign seed
 
 ## What to build
 
+Note: this ticket describes the completed 2026-05-20 setup-calibration persistence slice. The 2026-05-21 refinement keeps that work but changes the next product target from "feed hidden Author roles" to "compile a first GM handover artifact"; see the comments and `.scratch/sf2-gm-handover/`.
+
 Add an optional narrative calibration step to the initial SF2 campaign setup flow.
 
 After the player selects world, origin, playbook, name, and the system chooses an opening hook, but before `createInitialSf2State` builds the campaign, allow the setup model to ask up to 5 concise narrative calibration questions. The answers should tune the opening seed, first arc pressure, owed relationships, and first-scene emotional stakes.
@@ -79,6 +81,15 @@ Built 2026-05-20:
 - Rendered player-authored calibration into Arc Author input.
 - Covered clamp/preservation/seed behavior through SF2 replay fixture expectations.
 - Verified with the full SF2 replay suite and production build.
+
+Refined 2026-05-21 after handover-doc review:
+
+- The built persistence/seed slice remains useful, but the product target changed. Setup should not only feed Arc Author / Chapter Author; it should become the one-time interactive campaign setup that produces the first GM handover artifact.
+- The reference shape is now broader than "calibration questions": use the adaptive setup conversation to compile GM memory, a Chapter 1 session brief, and a quick reference, following the Pale Flame handover pattern.
+- The V3 PRD adds the live-use layer: the first handover should also compile an initial Current Story Surface, Owed Questions, embodied pressure, do-not-restage constraints, and lightweight chapter motion targets.
+- Setup order decision: keep hook selection before the interactive questions, so answers tailor a concrete campaign opening.
+- Keep `playerCalibration` as Author fallback input, but future slices should make the first-session brief available to Narrator directly behind a reversible gate.
+- Follow-up issue set: `.scratch/sf2-gm-handover/`.
 
 Read `CLAUDE.md`, `CONTEXT.md`, `docs/prompt-composition.md`, and the SF2 setup files first.
 

@@ -54,11 +54,24 @@ const rollResolutionSchema = z.object({
   remainingIntents: z.array(z.string()).optional(),
 })
 
+const proseFirstSchema = z.object({
+  enabled: z.boolean().default(false),
+  systemPrompt: z.string().min(1).max(120000),
+  systemPromptLabel: z.string().max(200).optional(),
+  transcript: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().min(1).max(60000),
+  })).default([]),
+  recentInventoryChanges: z.array(z.string().max(500)).optional(),
+  recentEquipmentChanges: z.array(z.string().max(500)).optional(),
+})
+
 const requestSchema = z.object({
   state: z.record(z.unknown()),
   playerInput: z.string().max(8000),
   isInitial: z.boolean().default(false),
   rollResolution: rollResolutionSchema.optional(),
+  proseFirst: proseFirstSchema.optional(),
 })
 
 // Observation-only meta-question detector. Fires when the Narrator's prose
@@ -347,6 +360,9 @@ export async function POST(req: NextRequest) {
       isInitial,
       turnIndex,
       rollResolution,
+      proseFirst: parsed.data.proseFirst?.enabled
+        ? (({ enabled: _, ...rest }) => rest)(parsed.data.proseFirst)
+        : undefined,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown_error'

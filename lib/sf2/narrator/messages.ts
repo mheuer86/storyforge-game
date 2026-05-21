@@ -15,6 +15,189 @@ import {
 } from '../personalization/prompt-blocks'
 import { computeRequiredRollGate, renderRollGateBlock } from './roll-gates'
 
+export type Sf2ProseFirstNarratorTranscriptRole = 'user' | 'assistant'
+
+export interface Sf2ProseFirstNarratorTranscriptTurn {
+  role: Sf2ProseFirstNarratorTranscriptRole
+  content: string
+}
+
+export interface Sf2ProseFirstNarratorBriefInput {
+  /**
+   * Stable private GM brief or chapter handover text. This is intentionally
+   * prose-shaped and does not include scene bundles or working-set packets.
+   */
+  text: string
+  label?: string
+}
+
+export interface Sf2ProseFirstMechanicalSnapshotInput {
+  state: Sf2State
+  recentInventoryChanges?: string[]
+  recentEquipmentChanges?: string[]
+}
+
+export interface Sf2ProseFirstNarratorMessagesInput {
+  enabled: boolean
+  brief: Sf2ProseFirstNarratorBriefInput
+  transcript: Sf2ProseFirstNarratorTranscriptTurn[]
+  playerInput: string
+  mechanicalSnapshot: Sf2ProseFirstMechanicalSnapshotInput
+}
+
+export interface Sf2ProseFirstNarratorMessages {
+  system: Anthropic.TextBlockParam[]
+  messages: Anthropic.MessageParam[]
+  mechanicalSnapshotText: string
+  transcript: Sf2ProseFirstNarratorTranscriptTurn[]
+}
+
+const PROSE_FIRST_NARRATOR_PROTOCOL = `## Storyforge live narration protocol
+
+You are the live GM/Narrator. The campaign brief or handover above is private GM prep, not player-visible text.
+
+Write the next player-facing prose naturally. Ask the brief's character creation questions at campaign start when they have not been answered yet. Once play is underway, run scenes from the growing transcript and the private mechanical snapshot.
+
+Use the available tools exactly as the app contract requires:
+- Call request_roll only when there is meaningful uncertainty. State the stakes in prose before the tool call, then stop so the harness can roll.
+- After any roll result is returned, continue from that result and fail forward on a miss.
+- Call narrate_turn exactly once at the end of every complete turn with suggested_actions and any player-visible mechanical effects.
+
+The harness owns dice, arithmetic, persistence, and validation. Do not output state patches, JSON, hidden notes, or the brief itself in player-facing prose.`
+
+function asCacheableTextBlock(text: string): Anthropic.TextBlockParam {
+  return {
+    type: 'text' as const,
+    text,
+    cache_control: { type: 'ephemeral' as const },
+  }
+}
+
+function asCacheableMessage(role: 'user' | 'assistant', text: string): Anthropic.MessageParam {
+  return {
+    role,
+    content: [
+      {
+        type: 'text' as const,
+        text,
+        cache_control: { type: 'ephemeral' as const },
+      },
+    ],
+  }
+}
+
+function normalizeTranscriptTurn(
+  turn: Sf2ProseFirstNarratorTranscriptTurn
+): Sf2ProseFirstNarratorTranscriptTurn | null {
+  const content = turn.content.trim()
+  if (!content) return null
+  return { role: turn.role, content }
+}
+
+function renderClockDisplay(state: Sf2State): string[] {
+  const activeThreads = Object.values(state.campaign.threads)
+    .filter((thread) => thread.status === 'active')
+    .sort((a, b) => b.tension - a.tension)
+    .slice(0, 8)
+
+  return activeThreads.map((thread) => {
+    const owner =
+      thread.owner.kind === 'npc'
+        ? state.campaign.npcs[thread.owner.id]?.name
+        : state.campaign.factions[thread.owner.id]?.name
+    const ownerText = owner ? `; owner: ${owner}` : ''
+    return `- ${thread.title}: tension ${thread.tension}/10${ownerText}; ${thread.retrievalCue}`
+  })
+}
+
+function renderRecentChangeLines(label: string, changes: string[] | undefined): string[] {
+  const clean = (changes ?? []).map((change) => change.trim()).filter(Boolean)
+  if (clean.length === 0) return [`- ${label}: no recent changes recorded.`]
+  return [`- ${label}:`, ...clean.map((change) => `  - ${change}`)]
+}
+
+export function renderProseFirstMechanicalSnapshot(input: Sf2ProseFirstMechanicalSnapshotInput): string {
+  const { state, recentInventoryChanges, recentEquipmentChanges } = input
+  const player = state.player
+  const inventory = player.inventory.length
+    ? player.inventory.map((item) => `${item.name} x${item.qty}`).join(', ')
+    : 'none'
+  const activeModifiers = player.tempModifiers.length
+    ? player.tempModifiers.map((mod) => `${mod.source}: ${mod.effect}`).join('; ')
+    : 'none'
+  const activeWounds = player.exhaustion > 0 ? [`exhaustion ${player.exhaustion}`] : []
+  const clocks = renderClockDisplay(state)
+
+  return [
+    '## Private mechanical snapshot',
+    'Use this as code-owned truth for the next response. Do not quote this block or describe it as a system note.',
+    '',
+    `- PC: ${player.name || 'unnamed'}; level ${player.level}; AC ${player.ac}; inspiration ${player.inspiration}`,
+    `- HP: ${player.hp.current}/${player.hp.max}`,
+    `- Active wounds: ${activeWounds.length ? activeWounds.join(', ') : 'none recorded'}`,
+    `- Credits: ${player.credits}`,
+    `- Inventory: ${inventory}`,
+    `- Temporary modifiers: ${activeModifiers}`,
+    ...renderRecentChangeLines('Recent inventory changes', recentInventoryChanges),
+    ...renderRecentChangeLines('Recent equipment changes', recentEquipmentChanges),
+    '- Tension clocks:',
+    ...(clocks.length ? clocks : ['  - none active']),
+  ].join('\n')
+}
+
+export function buildProseFirstNarratorMessages(
+  input: Sf2ProseFirstNarratorMessagesInput
+): Sf2ProseFirstNarratorMessages | null {
+  if (!input.enabled) return null
+
+  const briefText = input.brief.text.trim()
+  if (!briefText) {
+    throw new Error('Prose-first narrator messages require a non-empty brief or handover text.')
+  }
+
+  const stablePrefix = [
+    input.brief.label ? `# ${input.brief.label}` : '# Storyforge narrator brief',
+    briefText,
+    PROSE_FIRST_NARRATOR_PROTOCOL,
+  ].join('\n\n')
+  const mechanicalSnapshotText = renderProseFirstMechanicalSnapshot(input.mechanicalSnapshot)
+  const system: Anthropic.TextBlockParam[] = [
+    asCacheableTextBlock(stablePrefix),
+    {
+      type: 'text' as const,
+      text: mechanicalSnapshotText,
+    },
+  ]
+  const transcript = input.transcript
+    .map(normalizeTranscriptTurn)
+    .filter((turn): turn is Sf2ProseFirstNarratorTranscriptTurn => Boolean(turn))
+  const messages: Anthropic.MessageParam[] = transcript.map((turn) => ({
+    role: turn.role,
+    content: turn.content,
+  }))
+
+  if (messages.length > 0) {
+    const lastStableIndex = messages.length - 1
+    const last = messages[lastStableIndex]
+    if (typeof last.content === 'string') {
+      messages[lastStableIndex] = asCacheableMessage(last.role, last.content)
+    }
+  }
+
+  const currentInput = input.playerInput.trim()
+  messages.push({
+    role: 'user',
+    content: currentInput || 'Begin from the private campaign brief. Ask the embedded character creation questions or open the next chapter as instructed.',
+  })
+
+  return {
+    system,
+    messages,
+    mechanicalSnapshotText,
+    transcript,
+  }
+}
+
 // Playbook preference block — soft directive injecting the PC's strongest
 // applicable skills into the per-turn delta. When the Narrator has multiple
 // plausible checks to surface, prefer the PC's strengths. Player skill-tag
