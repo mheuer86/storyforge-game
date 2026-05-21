@@ -655,9 +655,9 @@ export function Sf2PrototypePlayApp({
   ].filter((part) => part.trim()).join('\n\n')
 
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <div className="mx-auto grid h-full w-full max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[270px_minmax(0,1fr)_370px]">
-        <aside className="space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-card/70 p-4">
+    <main className="min-h-dvh overflow-x-hidden bg-background text-foreground lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto grid min-h-dvh w-full max-w-7xl gap-3 px-3 py-3 lg:h-full lg:grid-cols-[270px_minmax(0,1fr)_370px] lg:gap-4 lg:px-4 lg:py-4">
+        <aside className="order-2 min-w-0 space-y-3 overflow-visible rounded-lg border border-border/70 bg-card/70 p-3 sm:p-4 lg:order-none lg:overflow-y-auto">
           <Button
             variant="ghost"
             size="sm"
@@ -669,7 +669,7 @@ export function Sf2PrototypePlayApp({
             Briefs
           </Button>
           <PanelTitle title="Character" />
-          <div className="text-sm text-muted-foreground">
+          <div className="min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere]">
             <div className="font-medium text-foreground">{state.player.name}</div>
             <div>{state.player.origin.name} {state.player.class.name}</div>
             <div>HP {state.player.hp.current}/{state.player.hp.max} · AC {state.player.ac}</div>
@@ -687,19 +687,20 @@ export function Sf2PrototypePlayApp({
           <ListBlock items={latestSnapshot?.npcs ?? []} empty="Archivist has not recorded NPCs yet." />
         </aside>
 
-        <section className="flex min-h-0 flex-col rounded-lg border border-border/70 bg-card/60">
-          <div className="border-b border-border/70 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        <section className="order-1 flex min-h-[calc(100dvh-1.5rem)] min-w-0 flex-col rounded-lg border border-border/70 bg-card/60 lg:order-none lg:min-h-0">
+          <div className="border-b border-border/70 p-3 sm:p-4">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground [overflow-wrap:anywhere] sm:text-[11px] sm:tracking-[0.16em]">
                   Chapter {state.meta.currentChapter} · {session.brief.genre} / {session.brief.hook}
                 </p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-normal">{session.brief.title}</h1>
+                <h1 className="mt-1 break-words text-xl font-semibold tracking-normal sm:text-2xl">{session.brief.title}</h1>
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => void closeChapter()}
                 disabled={busy || pendingCheck !== null || session.transcript.length === 0}
               >
@@ -708,9 +709,9 @@ export function Sf2PrototypePlayApp({
               </Button>
             </div>
             {statusMessage ? (
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {statusMessage}
+              <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                <span className="min-w-0 break-words">{statusMessage}</span>
               </div>
             ) : null}
             {session.lastError ? (
@@ -719,9 +720,9 @@ export function Sf2PrototypePlayApp({
               </div>
             ) : null}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
             {displayProse ? (
-              <article className="max-w-none font-serif text-[18px] leading-8 text-foreground">
+              <article className="max-w-none font-serif text-[17px] leading-7 text-foreground [overflow-wrap:anywhere] sm:text-[18px] sm:leading-8">
                 {renderMarkdown(displayProse)}
               </article>
             ) : (
@@ -739,15 +740,16 @@ export function Sf2PrototypePlayApp({
               onRoll={resolvePendingCheck}
             />
           ) : null}
-          <div className="border-t border-border/70 p-4">
+          <div className="border-t border-border/70 p-3 sm:p-4">
             {session.suggestedActions.length > 0 ? (
-              <div className="mb-3 flex flex-wrap gap-2">
+              <div className="mb-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                 {session.suggestedActions.map((action) => (
                   <Button
                     key={action}
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-auto min-h-8 max-w-full shrink whitespace-normal px-3 py-2 text-left leading-snug"
                     onClick={() => setPendingInput(action)}
                     disabled={busy || pendingCheck !== null}
                   >
@@ -756,7 +758,7 @@ export function Sf2PrototypePlayApp({
                 ))}
               </div>
             ) : null}
-            <div className="flex gap-2">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
               <Textarea
                 value={pendingInput}
                 onChange={(event) => setPendingInput(event.target.value)}
@@ -766,14 +768,14 @@ export function Sf2PrototypePlayApp({
                   }
                 }}
                 placeholder={pendingCheck ? 'Resolve the roll to continue.' : 'Answer the setup question or take your next action.'}
-                className="min-h-20 resize-none"
+                className="min-h-20 min-w-0 resize-none"
                 disabled={busy || pendingCheck !== null}
               />
               <Button
                 type="button"
                 onClick={() => void sendTurn()}
                 disabled={!pendingInput.trim() || busy || pendingCheck !== null}
-                className="h-20 w-14 shrink-0"
+                className="h-11 w-full shrink-0 sm:h-20 sm:w-14"
               >
                 {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
@@ -781,7 +783,7 @@ export function Sf2PrototypePlayApp({
           </div>
         </section>
 
-        <aside className="space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-card/70 p-4">
+        <aside className="order-3 min-w-0 space-y-3 overflow-visible rounded-lg border border-border/70 bg-card/70 p-3 sm:p-4 lg:order-none lg:overflow-y-auto">
           <div className="flex items-center justify-between gap-3">
             <PanelTitle title="Diagnostics" compact />
             <Button variant="outline" size="sm" onClick={() => setDiagnosticsOpen((open) => !open)}>
@@ -836,11 +838,11 @@ function KeyValueBlock({ value }: { value: Record<string, number | string> }) {
   const entries = Object.entries(value)
   if (entries.length === 0) return <p className="text-sm text-muted-foreground">No stats yet.</p>
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {entries.map(([key, entry]) => (
-        <div key={key} className="rounded border border-border/50 bg-background/35 p-2">
-          <div className="text-xs text-muted-foreground">{key}</div>
-          <div className="font-mono text-sm text-foreground">{entry}</div>
+        <div key={key} className="min-w-0 rounded border border-border/50 bg-background/35 p-2">
+          <div className="break-words text-xs text-muted-foreground">{key}</div>
+          <div className="break-words font-mono text-sm text-foreground">{entry}</div>
         </div>
       ))}
     </div>
@@ -849,7 +851,11 @@ function KeyValueBlock({ value }: { value: Record<string, number | string> }) {
 
 function ListBlock({ items, empty }: { items: string[]; empty: string }) {
   if (items.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>
-  return <ul className="space-y-1 text-sm text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul>
+  return (
+    <ul className="min-w-0 space-y-1 text-sm text-muted-foreground [overflow-wrap:anywhere]">
+      {items.map((item) => <li key={item}>{item}</li>)}
+    </ul>
+  )
 }
 
 function RollPanel({
@@ -868,8 +874,8 @@ function RollPanel({
   const latestRoll = liveRolls.at(-1)
   return (
     <div className="border-t border-border/70 bg-background/45 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0 [overflow-wrap:anywhere]">
           <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-primary">Roll requested</div>
           <div className="mt-1 text-sm text-foreground">{pendingCheck.skill} vs DC {resolution?.effectiveDc ?? pendingCheck.dc}</div>
           <div className="mt-1 text-xs leading-5 text-muted-foreground">{pendingCheck.why}</div>
@@ -877,16 +883,16 @@ function RollPanel({
             <div className="mt-1 text-xs leading-5 text-muted-foreground">Failure: {pendingCheck.consequenceOnFail}</div>
           ) : null}
         </div>
-        <Button type="button" onClick={onRoll}>
+        <Button type="button" className="w-full sm:w-auto" onClick={onRoll}>
           <Dice5 className="h-4 w-4" />
           Roll d20 {formatSigned(resolution?.modifier ?? 0)}
         </Button>
       </div>
       {resolution ? (
         <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="rounded border border-border/50 bg-card/70 px-2 py-1">{resolution.diceMode}</span>
+          <span className="max-w-full rounded border border-border/50 bg-card/70 px-2 py-1 break-words">{resolution.diceMode}</span>
           {resolution.sourceBreakdown.slice(0, 5).map((source, index) => (
-            <span key={index} className="rounded border border-border/50 bg-card/70 px-2 py-1">
+            <span key={index} className="max-w-full rounded border border-border/50 bg-card/70 px-2 py-1 break-words">
               {source.label}
             </span>
           ))}
@@ -903,8 +909,8 @@ function RollPanel({
 
 function DiagnosticSection({ title, value }: { title: string; value: string }) {
   return (
-    <details className="rounded border border-border/60 bg-background/30 p-3">
-      <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{title}</summary>
+    <details className="min-w-0 rounded border border-border/60 bg-background/30 p-3">
+      <summary className="cursor-pointer break-words font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground [overflow-wrap:anywhere]">{title}</summary>
       <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-muted-foreground">{value}</pre>
     </details>
   )
