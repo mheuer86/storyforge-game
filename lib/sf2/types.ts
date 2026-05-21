@@ -1158,6 +1158,106 @@ export interface Sf2ChapterTransitionSeed {
   }
 }
 
+export type Sf2PlaystyleKnobId =
+  | 'information_economy'
+  | 'decision_architecture'
+  | 'consequence_timing'
+  | 'emotional_register'
+  | 'npc_legibility'
+  | 'error_tolerance'
+
+export type Sf2PlaystyleEvidenceKind = 'turn' | 'scene_summary' | 'chapter_artifact' | 'setup_rationale'
+
+export interface Sf2PlaystyleEvidenceRef {
+  kind: Sf2PlaystyleEvidenceKind
+  chapter: Sf2ChapterNumber
+  turnIndex?: number
+  sceneId?: Sf2EntityId
+  summaryIndex?: number
+  excerpt: string
+  note?: string
+}
+
+export interface Sf2PlaystyleKnobCalibration {
+  value: string
+  guidance: string
+  confidence: Sf2PatchConfidence
+  evidence: Sf2PlaystyleEvidenceRef[]
+}
+
+export interface Sf2PlaystylePattern {
+  pattern: string
+  guidance: string
+  evidence: Sf2PlaystyleEvidenceRef[]
+}
+
+export interface Sf2ChapterPlaystyleArtifact {
+  chapter: Sf2ChapterNumber
+  synthesizedAtTurn: number
+  summary: string
+  informationEconomy: Sf2PlaystyleKnobCalibration
+  decisionArchitecture: Sf2PlaystyleKnobCalibration
+  consequenceTiming: Sf2PlaystyleKnobCalibration
+  emotionalRegister: Sf2PlaystyleKnobCalibration
+  npcLegibility: Sf2PlaystyleKnobCalibration
+  errorTolerance: Sf2PlaystyleKnobCalibration
+  workedPatterns: Sf2PlaystylePattern[]
+  avoidPatterns: Sf2PlaystylePattern[]
+}
+
+export interface Sf2CampaignPlaystyleProfile {
+  updatedAtChapter: Sf2ChapterNumber
+  updatedAtTurn: number
+  evidenceChapters: Sf2ChapterNumber[]
+  informationEconomy: string
+  decisionArchitecture: string
+  consequenceTiming: string
+  emotionalRegister: string
+  npcLegibility: string
+  errorTolerance: string
+  workedPatterns: string[]
+  avoidPatterns: string[]
+  revisionNotes: string[]
+}
+
+export type Sf2PlaystylePersonalizationStatus =
+  | 'enabled'
+  | 'disabled'
+  | 'skipped'
+  | 'failed_open'
+
+export interface Sf2PlaystylePersonalizationState {
+  // Single internal live gate. Chapter-close synthesis still runs when false;
+  // Author/Narrator prompt consumption does not.
+  liveEnabled: boolean
+  artifacts: Sf2ChapterPlaystyleArtifact[]
+  rollingProfile?: Sf2CampaignPlaystyleProfile
+  lastStatus?: {
+    status: Sf2PlaystylePersonalizationStatus
+    chapter?: Sf2ChapterNumber
+    turn?: number
+    reason?: string
+  }
+}
+
+export interface Sf2CampaignRulebookInterpretation {
+  id: Sf2EntityId
+  ruleId: string
+  ruleName: string
+  genericRuleCategory: string
+  campaignSpecificReading: string
+  triggers: string[]
+  costs: string[]
+  permissions: string[]
+  taboos: string[]
+  excludedExamples: string[]
+  setupRationale?: string
+  playEvidence: Sf2PlaystyleEvidenceRef[]
+  revisionNotes: string[]
+  promptGuidanceEnabled: boolean
+  enforcementEnabled: boolean
+}
+
 export interface Sf2ContinuationDramaticTurn {
   priorChapterMeant: string
   largerPatternRevealed: string
@@ -1198,6 +1298,7 @@ export interface Sf2ChapterMeaning {
 export interface Sf2ChapterArtifacts {
   opening: Sf2OpeningScenePacketSeed
   meaning?: Sf2ChapterMeaning
+  playstyle?: Sf2ChapterPlaystyleArtifact
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2085,6 +2186,8 @@ export interface Sf2Campaign {
   floatingClueIds: Sf2EntityId[]
   pivotalSceneIds: Sf2EntityId[]
   lexicon: Sf2LexiconEntry[]
+  playstylePersonalization?: Sf2PlaystylePersonalizationState
+  rulebookInterpretations?: Sf2CampaignRulebookInterpretation[]
   // Writes the Archivist logged at low confidence (not applied). Surfaced to
   // the Narrator on the NEXT turn as "re-establish if still relevant" cues,
   // then cleared. The recovery path the v2 design calls load-bearing for

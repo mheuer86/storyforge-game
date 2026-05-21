@@ -1,0 +1,205 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer retains playstyle artifacts profile and rulebook interpretations",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Save-shape coverage for campaign-local playstyle personalization artifacts/profile and separate rulebook interpretation data."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_playstyle_persist",
+          "createdAt": "2026-05-02T00:00:00.000Z",
+          "updatedAt": "2026-05-02T00:05:00.000Z",
+          "schemaVersion": "3.2.0",
+          "setupSelection": {
+            "genreId": "epic-scifi",
+            "originId": "imperial-service",
+            "playbookId": "warden",
+            "hookId": "the-tithe-9pebyb",
+            "characterName": "Ren"
+          },
+          "genreId": "epic-scifi",
+          "originId": "imperial-service",
+          "playbookId": "warden",
+          "currentChapter": 3
+        },
+        "player": { "name": "Ren" },
+        "campaign": {
+          "threads": {},
+          "npcs": {},
+          "factions": {},
+          "playstylePersonalization": {
+            "liveEnabled": true,
+            "artifacts": [
+              {
+                "chapter": 2,
+                "synthesizedAtTurn": 14,
+                "summary": "Player probes moral cost before acting.",
+                "informationEconomy": {
+                  "value": "implication plus concrete tell",
+                  "guidance": "Prefer implication with one concrete tell before explicit explanation.",
+                  "confidence": "medium",
+                  "evidence": [
+                    { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                  ]
+                },
+                "decisionArchitecture": {
+                  "value": "costly vectors",
+                  "guidance": "Offer two costly vectors instead of a neutral menu.",
+                  "confidence": "medium",
+                  "evidence": [
+                    { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                  ]
+                },
+                "consequenceTiming": {
+                  "value": "visible next beat",
+                  "guidance": "Let social costs become visible within the next beat.",
+                  "confidence": "medium",
+                  "evidence": [
+                    { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                  ]
+                },
+                "emotionalRegister": {
+                  "value": "intimate dread",
+                  "guidance": "Keep dread intimate, not panoramic.",
+                  "confidence": "low",
+                  "evidence": [
+                    { "kind": "scene_summary", "chapter": 2, "summaryIndex": 1, "excerpt": "The oath cost stays personal." }
+                  ]
+                },
+                "npcLegibility": {
+                  "value": "behavioral tells",
+                  "guidance": "Make guarded NPC motives inferable through behavior.",
+                  "confidence": "medium",
+                  "evidence": [
+                    { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                  ]
+                },
+                "errorTolerance": {
+                  "value": "one committed action",
+                  "guidance": "Clarify misreads only after one committed action.",
+                  "confidence": "low",
+                  "evidence": [
+                    { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                  ]
+                },
+                "workedPatterns": [
+                  {
+                    "pattern": "Concrete implication before exposition",
+                    "guidance": "Lead with a tell, then name the stake.",
+                    "evidence": [
+                      { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                    ]
+                  }
+                ],
+                "avoidPatterns": [
+                  {
+                    "pattern": "Safe/unsafe labels",
+                    "guidance": "Do not flatten choices into safe/unsafe labels.",
+                    "evidence": [
+                      { "kind": "turn", "chapter": 2, "turnIndex": 14, "excerpt": "I ask what the silence costs before I choose." }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "rollingProfile": {
+              "updatedAtChapter": 2,
+              "updatedAtTurn": 14,
+              "evidenceChapters": [2],
+              "informationEconomy": "Prefer implication with one concrete tell before explicit explanation.",
+              "decisionArchitecture": "Offer two costly vectors instead of a neutral menu.",
+              "consequenceTiming": "Let social costs become visible within the next beat.",
+              "emotionalRegister": "Keep dread intimate, not panoramic.",
+              "npcLegibility": "Make guarded NPC motives inferable through behavior.",
+              "errorTolerance": "Clarify misreads only after one committed action.",
+              "workedPatterns": ["Concrete implication before exposition"],
+              "avoidPatterns": ["Do not flatten choices into safe/unsafe labels"],
+              "revisionNotes": ["Chapter 2: Player probes moral cost before acting."]
+            }
+          },
+          "rulebookInterpretations": [
+            {
+              "id": "rule_oath_stain_trusted_deception",
+              "ruleId": "grimdark.stain",
+              "ruleName": "Stain",
+              "genericRuleCategory": "corruption",
+              "campaignSpecificReading": "For this oath-bound PC, using a trusted person as a disposable instrument can trigger Stain even without violence.",
+              "triggers": ["deceives a trusted ward to make them absorb danger"],
+              "costs": ["mark Stain or owe a public confession"],
+              "permissions": ["strategic lies to hostile officials remain ordinary risk"],
+              "taboos": ["repeating the abuser's instrumental logic"],
+              "excludedExamples": ["withholding a plan from an enemy"],
+              "playEvidence": [
+                { "kind": "turn", "chapter": 2, "turnIndex": 9, "excerpt": "I will not make her carry what broke me." }
+              ],
+              "promptGuidanceEnabled": true
+            }
+          ]
+        },
+        "chapter": {
+          "number": 3,
+          "title": "The Trusted Knife",
+          "setup": {
+            "chapter": 3,
+            "title": "The Trusted Knife",
+            "activeThreadIds": [],
+            "loadBearingThreadIds": [],
+            "pressureLadder": []
+          }
+        },
+        "world": {
+          "currentLocation": {
+            "id": "loc_chapel",
+            "name": "ruined chapel",
+            "description": "Black candles gutter under a cracked saint."
+          },
+          "sceneSnapshot": {
+            "sceneId": "scene_chapel",
+            "location": {
+              "id": "loc_chapel",
+              "name": "ruined chapel",
+              "description": "Black candles gutter under a cracked saint."
+            },
+            "presentNpcIds": [],
+            "timeLabel": "after vespers",
+            "established": ["Ren stands below the cracked saint."]
+          }
+        },
+        "history": { "turns": [], "rollLog": [] }
+      },
+      "expect": {
+        "schemaVersionEquals": "3.2.0",
+        "statePathEquals": [
+          {
+            "path": "campaign.playstylePersonalization.rollingProfile.informationEconomy",
+            "value": "Prefer implication with one concrete tell before explicit explanation."
+          },
+          {
+            "path": "campaign.playstylePersonalization.artifacts.0.informationEconomy.evidence.0.excerpt",
+            "value": "I ask what the silence costs before I choose."
+          },
+          {
+            "path": "campaign.rulebookInterpretations.0.campaignSpecificReading",
+            "value": "For this oath-bound PC, using a trusted person as a disposable instrument can trigger Stain even without violence."
+          },
+          {
+            "path": "campaign.rulebookInterpretations.0.promptGuidanceEnabled",
+            "value": true
+          }
+        ],
+        "repairsAbsent": [
+          "playstylePersonalization",
+          "rulebookInterpretations"
+        ]
+      }
+    }
+  }
+}

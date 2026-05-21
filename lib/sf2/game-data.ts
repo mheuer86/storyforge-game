@@ -234,6 +234,12 @@ export function createInitialSf2State(inputs: NewCampaignInputs): Sf2State {
       floatingClueIds: [],
       pivotalSceneIds: [],
       lexicon: [],
+      playstylePersonalization: {
+        liveEnabled: true,
+        artifacts: [],
+        lastStatus: { status: 'enabled' },
+      },
+      rulebookInterpretations: [],
     },
     chapter: emptyChapter,
     // `loc_pending` is a placeholder. The Author endpoint replaces it on first

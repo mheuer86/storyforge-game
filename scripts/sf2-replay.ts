@@ -52,6 +52,7 @@ import { NARRATOR_MECHANICAL_EFFECT_KINDS, NARRATOR_TOOL_NAME, NARRATOR_TOOLS } 
 import { createInitialSf2State, isArcAuthored, isChapterAuthored } from '../lib/sf2/game-data'
 import { evaluateWrite, recordObservation } from '../lib/sf2/firewall/actor'
 import { validateChapterMeaningTransitionSeed } from '../lib/sf2/chapter-meaning/validation'
+import { normalizePlaystyleArtifact } from '../lib/sf2/playstyle/normalize'
 import { buildAccessExplorationPacket } from '../lib/sf2/procedure-access-exploration'
 import {
   derivePlanningRollSupport,
@@ -547,6 +548,10 @@ interface ReplayFixture {
         chapterArcThreadIdsEquals?: string[]
         chapterThreadLinksEquals?: Array<{ activeThreadId: string; arcThreadId: string; relation?: string }>
         repairsInclude?: string[]
+        repairsAbsent?: string[]
+        statePathEquals?: Array<{ path: string; value: unknown }>
+        statePathAbsent?: string[]
+        statePathExists?: string[]
       }
     }
     authorHydration?: {
@@ -779,6 +784,12 @@ interface ReplayFixture {
       meaning: Sf2ChapterMeaning
       findingCount?: number
       findingsInclude?: Array<{ field?: string; messageIncludes?: string; severity?: string }>
+    }
+    playstyleArtifactValidation?: {
+      rawArtifact: Record<string, unknown>
+      findingCount?: number
+      findingsInclude?: Array<{ field?: string; messageIncludes?: string; severity?: string }>
+      artifactPathEquals?: Array<{ path: string; value: unknown }>
     }
     archivistSchemaParity?: {
       assertContract?: boolean
@@ -1072,6 +1083,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertArcValidation(fixture, failures)
   assertLatentArcQuestions(fixture, stateBefore, failures)
   assertChapterMeaningValidation(fixture, stateBefore, failures)
+  assertPlaystyleArtifactValidation(fixture, stateBefore, failures)
   assertArchivistSchemaParity(fixture, failures)
   assertArchivistExtraction(fixture, stateBefore, failures)
   assertRoleSchemaParity(fixture, failures)
@@ -1747,6 +1759,38 @@ function assertChapterMeaningValidation(
   }
 }
 
+function assertPlaystyleArtifactValidation(
+  fixture: ReplayFixture,
+  stateBefore: Sf2State,
+  failures: string[]
+): void {
+  const expected = fixture.expected?.playstyleArtifactValidation
+  if (!expected) return
+  const { artifact, validationFindings } = normalizePlaystyleArtifact(expected.rawArtifact, stateBefore)
+  if (typeof expected.findingCount === 'number' && validationFindings.length !== expected.findingCount) {
+    failures.push(`playstyleArtifactValidation.findingCount expected ${expected.findingCount}, got ${validationFindings.length}`)
+  }
+  for (const include of expected.findingsInclude ?? []) {
+    const match = validationFindings.find((finding) => {
+      if (include.field && finding.field !== include.field) return false
+      if (include.severity && finding.severity !== include.severity) return false
+      if (include.messageIncludes && !finding.message.toLowerCase().includes(include.messageIncludes.toLowerCase())) return false
+      return true
+    })
+    if (!match) {
+      failures.push(`playstyleArtifactValidation missing ${JSON.stringify(include)} in ${JSON.stringify(validationFindings)}`)
+    }
+  }
+  for (const assertion of expected.artifactPathEquals ?? []) {
+    const value = getJsonPath(artifact, assertion.path)
+    if (JSON.stringify(value) !== JSON.stringify(assertion.value)) {
+      failures.push(
+        `playstyleArtifactValidation.${assertion.path}: expected ${JSON.stringify(assertion.value)}, got ${JSON.stringify(value)}`
+      )
+    }
+  }
+}
+
 function buildLocationContinuityText(state: Sf2State): string {
   return [
     state.world.currentLocation?.name,
@@ -2265,6 +2309,47 @@ function assertPersistenceNormalize(fixture: ReplayFixture, failures: string[]):
       failures.push(`persistenceNormalize.repairs: expected repair containing "${fragment}", got [${normalized.repairs.join('; ') || 'none'}]`)
     }
   }
+  for (const fragment of e.repairsAbsent ?? []) {
+    if (normalized.repairs.some((repair) => repair.includes(fragment))) {
+      failures.push(`persistenceNormalize.repairs: unexpected repair containing "${fragment}", got [${normalized.repairs.join('; ') || 'none'}]`)
+    }
+  }
+  for (const path of e.statePathExists ?? []) {
+    const value = getJsonPath(state, path)
+    if (value === undefined) {
+      failures.push(`persistenceNormalize.${path}: expected value to exist`)
+    }
+  }
+  for (const path of e.statePathAbsent ?? []) {
+    const value = getJsonPath(state, path)
+    if (value !== undefined) {
+      failures.push(`persistenceNormalize.${path}: expected absent, got ${JSON.stringify(value)}`)
+    }
+  }
+  for (const assertion of e.statePathEquals ?? []) {
+    const value = getJsonPath(state, assertion.path)
+    if (JSON.stringify(value) !== JSON.stringify(assertion.value)) {
+      failures.push(
+        `persistenceNormalize.${assertion.path}: expected ${JSON.stringify(assertion.value)}, got ${JSON.stringify(value)}`
+      )
+    }
+  }
+}
+
+function getJsonPath(value: unknown, path: string): unknown {
+  let current: unknown = value
+  for (const part of path.split('.')) {
+    if (!part) return undefined
+    if (Array.isArray(current)) {
+      const index = Number(part)
+      if (!Number.isInteger(index)) return undefined
+      current = current[index]
+      continue
+    }
+    if (!current || typeof current !== 'object') return undefined
+    current = (current as Record<string, unknown>)[part]
+  }
+  return current
 }
 
 function assertLocationAreaNodes(

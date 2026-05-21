@@ -176,11 +176,18 @@ import {
   deriveChapterOpeningContinuity,
   renderChapterOpeningContinuity,
 } from './payload'
+import {
+  renderAuthorPersonalizationBlock,
+  renderAuthorRulebookInterpretationsBlock,
+} from '../personalization/prompt-blocks'
 
 export function buildAuthorSituation(
   state: Sf2State | null,
   priorChapterMeaning: Sf2ChapterMeaning | null
 ): string {
+  const personalizationBlock = renderAuthorPersonalizationBlock(state)
+  const rulebookInterpretationsBlock = renderAuthorRulebookInterpretationsBlock(state)
+
   if (!state || state.history.turns.length === 0) {
     const arc = state?.campaign?.arcPlan
     return `## Chapter setup context
@@ -188,6 +195,7 @@ export function buildAuthorSituation(
 This is the opening chapter of a new campaign. No prior chapters exist. The ArcPlan below is the stable pressure field — derive Chapter 1 from it, not directly from the raw hook.
 The raw seed's concrete surfaces are palette, not a scene mandate. If the ArcPlan's "what this is not" or rejected default names a creditor negotiation, paper trail, mechanism-control problem, berth-lock standoff, or similar over-literal surface, do not make the chapter objective, opening scene, pressure ladder, or spine thread revolve around that surface. Treat the exit pressure as the inciting condition and move into the selected scenario shape.
 Playbook names are role labels, not in-world entity names. For Space Opera, Driftrunner means the PC's job, not the ship's default name; if a vessel needs a name, author a fresh variable truth or leave it unnamed.
+${personalizationBlock}${rulebookInterpretationsBlock}
 
 ### Stable ArcPlan
 ${arc && state ? renderArcPlan(state, 1, priorChapterMeaning) : '_(missing arc plan — this is invalid for new SF2 campaigns)_'}`
@@ -286,6 +294,7 @@ ${activeNpcs || '_(none)_'}
 
 ### Chapter opening continuity
 ${renderChapterOpeningContinuity(openingContinuity)}
+${personalizationBlock}${rulebookInterpretationsBlock}
 
 Use this as a binding continuity constraint for \`opening_scene_spec\`. A continuation chapter may time-jump or relocate, but only as a consequence of the continuity above. If the prior chapter ended on a specific door, room, corridor, body, vehicle, or silent interlocutor, the new opening must either start there, open at a place explicitly traveled to from there, or encode the justified jump in \`opening_scene_spec.initial_state\` / \`first_player_facing\`. Do not open at an unrelated annex, office, or hearing room just because it suits the next premise.
 

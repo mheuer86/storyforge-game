@@ -1,0 +1,63 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prompt surfaces omit playstyle and rulebook blocks when absent or disabled",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Covers the disabled/absent side of the playstyle personalization and campaign rulebook interpretation prompt contract without model calls."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "setupSelection": {
+          "genreId": "epic-scifi",
+          "originId": "imperial-service",
+          "playbookId": "warden",
+          "hookId": "the-tithe-9pebyb",
+          "characterName": "Ren"
+        },
+        "genreId": "epic-scifi",
+        "originId": "imperial-service",
+        "playbookId": "warden"
+      },
+      "campaign": {
+        "playstylePersonalization": {
+          "liveEnabled": false,
+          "rollingProfile": {
+            "informationEconomy": "Player probes moral cost before acting.",
+            "workedPatterns": ["Concrete implication before exposition"],
+            "avoidPatterns": ["Do not flatten choices into safe/unsafe labels"]
+          }
+        },
+        "rulebookInterpretations": []
+      }
+    },
+    "playerInput": "Ask what the oath would cost.",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "authorSituationExcludes": [
+        "Playstyle personalization",
+        "Player probes moral cost before acting.",
+        "Campaign-local rulebook interpretations"
+      ],
+      "seedJsonExcludes": [
+        "playstylePersonalization",
+        "rulebookInterpretations"
+      ]
+    },
+    "narratorMessages": {
+      "systemContainsNone": [
+        "Playstyle personalization",
+        "Player probes moral cost before acting.",
+        "Campaign-local rulebook interpretations"
+      ],
+      "userMessageContainsNone": [
+        "Playstyle personalization",
+        "Player probes moral cost before acting.",
+        "Campaign-local rulebook interpretations"
+      ]
+    }
+  }
+}

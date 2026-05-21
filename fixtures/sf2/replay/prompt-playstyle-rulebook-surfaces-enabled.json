@@ -1,0 +1,79 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prompt surfaces render playstyle and rulebook blocks separately when enabled",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Covers Author/Narrator prompt rendering for campaign-local playstyle guidance and separate rulebook interpretations without model calls."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "setupSelection": {
+          "genreId": "epic-scifi",
+          "originId": "imperial-service",
+          "playbookId": "warden",
+          "hookId": "the-tithe-9pebyb",
+          "characterName": "Ren"
+        },
+        "genreId": "epic-scifi",
+        "originId": "imperial-service",
+        "playbookId": "warden"
+      },
+      "campaign": {
+        "playstylePersonalization": {
+          "liveEnabled": true,
+          "rollingProfile": {
+            "updatedAtChapter": 2,
+            "updatedAtTurn": 18,
+            "evidenceChapters": [2],
+            "informationEconomy": "Player probes moral cost before acting.",
+            "decisionArchitecture": "Offer two costly vectors instead of a neutral menu.",
+            "consequenceTiming": "Let social costs become visible within the next beat.",
+            "emotionalRegister": "Keep dread intimate, not panoramic.",
+            "npcLegibility": "Make guarded NPC motives inferable through behavior.",
+            "errorTolerance": "Clarify misreads only after one committed action.",
+            "workedPatterns": ["Concrete implication before exposition"],
+            "avoidPatterns": ["Do not flatten choices into safe/unsafe labels"]
+          }
+        },
+        "rulebookInterpretations": [
+          {
+            "id": "rule_oath_stain_trusted_deception",
+            "ruleId": "grimdark.stain",
+            "ruleName": "Stain",
+            "genericRuleCategory": "corruption",
+            "interpretation": "Using a trusted person as a disposable instrument can trigger Stain even without violence.",
+            "campaignSpecificReading": "Using a trusted person as a disposable instrument can trigger Stain even without violence.",
+            "triggers": ["deceives a trusted ward to make them absorb danger"],
+            "costs": ["mark Stain or owe a public confession"],
+            "permissions": ["strategic lies to hostile officials remain ordinary risk"],
+            "taboos": ["repeating the abuser's instrumental logic"],
+            "setupRationale": "The campaign premise binds oath harm to trust, not only violence.",
+            "promptGuidanceEnabled": true
+          }
+        ]
+      }
+    },
+    "playerInput": "Ask what the oath would cost.",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "authorInputSeed": {
+      "authorSituationIncludes": [
+        "Campaign-local playstyle guidance",
+        "Player probes moral cost before acting.",
+        "Campaign-local rulebook interpretations",
+        "Using a trusted person as a disposable instrument can trigger Stain even without violence."
+      ]
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "Private campaign-local playstyle guidance",
+        "Player probes moral cost before acting.",
+        "Private campaign-local rulebook interpretations",
+        "Using a trusted person as a disposable instrument can trigger Stain even without violence."
+      ]
+    }
+  }
+}

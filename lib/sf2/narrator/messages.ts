@@ -9,6 +9,10 @@ import {
   evaluateSocialModifierAdvisories,
   renderSocialModifierAdvisories,
 } from '../social-modifiers/evaluate'
+import {
+  renderNarratorPersonalizationBlock,
+  renderNarratorRulebookInterpretationsBlock,
+} from '../personalization/prompt-blocks'
 import { computeRequiredRollGate, renderRollGateBlock } from './roll-gates'
 
 // Playbook preference block — soft directive injecting the PC's strongest
@@ -179,6 +183,8 @@ export function buildMessagesForNarrator(
     })
   )
   const locationContinuityGuardBlock = buildLocationContinuityGuardBlock(state)
+  const personalizationBlock = renderNarratorPersonalizationBlock(state)
+  const rulebookInterpretationsBlock = renderNarratorRulebookInterpretationsBlock(state)
 
   const openingSeed = state.chapter.artifacts.opening
   const perTurnDeltaText = renderPerTurnDelta(packet, {
@@ -186,7 +192,7 @@ export function buildMessagesForNarrator(
     isInitial,
     playerInput,
     withheldPremiseFacts: isInitial ? openingSeed?.withheldPremiseFacts : undefined,
-  }) + roleAliasBlock + rollGateBlock + playbookPrefBlock + socialModifierBlock + locationContinuityGuardBlock + recoveryBlock + coherenceBlock
+  }) + roleAliasBlock + rollGateBlock + playbookPrefBlock + socialModifierBlock + locationContinuityGuardBlock + personalizationBlock + rulebookInterpretationsBlock + recoveryBlock + coherenceBlock
 
   // Cache marker strategy:
   //   Anthropic allows at most 4 cache_control markers per request. We already

@@ -40,6 +40,10 @@ import {
   createIndexedDbPersistence,
 } from '@/lib/sf2/persistence/indexeddb'
 import {
+  applyChapterPlaystyleArtifact,
+  markPlaystylePersonalizationStatus,
+} from '@/lib/sf2/playstyle/profile'
+import {
   commitSf2Turn,
   observeActorFirewallWrite,
   type Sf2TurnPipelineEvent,
@@ -79,6 +83,7 @@ const API_ENDPOINTS = {
   arcAuthor: '/api/sf2/arc-author',
   author: '/api/sf2/author',
   chapterMeaning: '/api/sf2/chapter-meaning',
+  playstyle: '/api/sf2/playstyle',
 }
 
 interface LatencyPayload {
@@ -1039,6 +1044,94 @@ export function Sf2PlayApp() {
         try { body = await meaningRes.json() } catch {}
         diagnosticsStore.pushDebug({ kind: 'error', at: Date.now(), data: { status: meaningRes.status, source: 'chapter-meaning', body } })
         // Proceed without priorChapterMeaning — Author will fall back to state-derived hook.
+      }
+
+      try {
+        const playstyleRes = await fetch(API_ENDPOINTS.playstyle, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ state: authorBaseState }),
+        })
+        if (playstyleRes.ok) {
+          const playstyleData = (await playstyleRes.json()) as {
+            artifact: NonNullable<Sf2State['chapter']['artifacts']['playstyle']>
+            validationFindings?: unknown[]
+            usage: TokenUsage
+            latency?: LatencyPayload
+          }
+          authorBaseState = structuredClone(authorBaseState)
+          applyChapterPlaystyleArtifact(authorBaseState, playstyleData.artifact)
+          authorBaseState.meta.updatedAt = new Date().toISOString()
+          diagnosticsStore.pushDebug({
+            kind: 'playstyle',
+            at: Date.now(),
+            data: {
+              status: authorBaseState.campaign.playstylePersonalization?.lastStatus?.status ?? 'enabled',
+              artifact: playstyleData.artifact,
+              rollingProfile: authorBaseState.campaign.playstylePersonalization?.rollingProfile,
+              validationFindings: playstyleData.validationFindings ?? [],
+            },
+          })
+          diagnosticsStore.pushDebug({ kind: 'token_usage', at: Date.now(), data: { role: 'playstyle', ...playstyleData.usage } })
+          if (playstyleData.latency) {
+            diagnosticsStore.pushDebug({ kind: 'latency', at: Date.now(), data: { role: 'playstyle', ...playstyleData.latency } })
+          }
+          setState(authorBaseState)
+          await persist(authorBaseState)
+        } else {
+          let body: unknown = null
+          try { body = await playstyleRes.json() } catch {}
+          authorBaseState = structuredClone(authorBaseState)
+          markPlaystylePersonalizationStatus(authorBaseState, 'failed_open', `status ${playstyleRes.status}`)
+          diagnosticsStore.pushDebug({
+            kind: 'playstyle',
+            at: Date.now(),
+            data: {
+              status: 'failed_open',
+              source: 'playstyle',
+              httpStatus: playstyleRes.status,
+              body,
+            },
+          })
+          setState(authorBaseState)
+          await persist(authorBaseState)
+          // Proceed without personalization input updates; Author still opens the next chapter.
+        }
+      } catch (error) {
+        authorBaseState = structuredClone(authorBaseState)
+        markPlaystylePersonalizationStatus(authorBaseState, 'failed_open', error instanceof Error ? error.message : 'playstyle request failed')
+        diagnosticsStore.pushDebug({
+          kind: 'playstyle',
+          at: Date.now(),
+          data: {
+            status: 'failed_open',
+            source: 'playstyle',
+            message: error instanceof Error ? error.message : 'playstyle request failed',
+          },
+        })
+        setState(authorBaseState)
+        await persist(authorBaseState)
+      }
+
+      const persistence = persistenceRef.current
+      if (persistence) {
+        try {
+          await persistence.saveChapterArtifact({
+            campaignId: authorBaseState.meta.campaignId,
+            chapter: authorBaseState.chapter.number,
+            artifacts: authorBaseState.chapter.artifacts,
+            storedAt: new Date().toISOString(),
+          })
+        } catch (error) {
+          diagnosticsStore.pushDebug({
+            kind: 'error',
+            at: Date.now(),
+            data: {
+              source: 'chapter-artifact-persistence',
+              message: error instanceof Error ? error.message : 'artifact persistence failed',
+            },
+          })
+        }
       }
 
       const arcPlan = authorBaseState.campaign.arcPlan

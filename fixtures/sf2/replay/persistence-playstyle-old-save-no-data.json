@@ -1,0 +1,93 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "persistence normalizer leaves old saves without playstyle data valid",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Covers migration-safe loading for saves created before playstyle personalization and campaign rulebook interpretation existed."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "(unused - pure-function fixture, no model call)",
+    "narrator": { "prose": "(unused)", "annotation": null }
+  },
+  "expected": {
+    "persistenceNormalize": {
+      "rawState": {
+        "meta": {
+          "campaignId": "camp_no_playstyle_legacy",
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "updatedAt": "2026-05-01T00:05:00.000Z",
+          "schemaVersion": "3.2.0",
+          "setupSelection": {
+            "genreId": "epic-scifi",
+            "originId": "imperial-service",
+            "playbookId": "warden",
+            "hookId": "the-tithe-9pebyb",
+            "characterName": "Ren"
+          },
+          "genreId": "epic-scifi",
+          "originId": "imperial-service",
+          "playbookId": "warden",
+          "currentChapter": 2
+        },
+        "player": { "name": "Ren" },
+        "campaign": {
+          "threads": {},
+          "npcs": {},
+          "factions": {}
+        },
+        "chapter": {
+          "number": 2,
+          "title": "Ash Ledger",
+          "setup": {
+            "chapter": 2,
+            "title": "Ash Ledger",
+            "activeThreadIds": [],
+            "loadBearingThreadIds": [],
+            "pressureLadder": []
+          }
+        },
+        "world": {
+          "currentLocation": {
+            "id": "loc_chapel",
+            "name": "ruined chapel",
+            "description": "Black candles gutter under a cracked saint."
+          },
+          "sceneSnapshot": {
+            "sceneId": "scene_chapel",
+            "location": {
+              "id": "loc_chapel",
+              "name": "ruined chapel",
+              "description": "Black candles gutter under a cracked saint."
+            },
+            "presentNpcIds": [],
+            "timeLabel": "after vespers",
+            "established": ["Ren stands below the cracked saint."]
+          }
+        },
+        "history": { "turns": [], "rollLog": [] }
+      },
+      "expect": {
+        "schemaVersionEquals": "3.2.0",
+        "statePathEquals": [
+          {
+            "path": "campaign.playstylePersonalization.liveEnabled",
+            "value": true
+          },
+          {
+            "path": "campaign.playstylePersonalization.artifacts",
+            "value": []
+          },
+          {
+            "path": "campaign.playstylePersonalization.lastStatus.status",
+            "value": "enabled"
+          },
+          {
+            "path": "campaign.rulebookInterpretations",
+            "value": []
+          }
+        ]
+      }
+    }
+  }
+}

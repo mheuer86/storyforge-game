@@ -1,0 +1,118 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "playstyle artifact normalization validates evidence-backed fields",
+  "source": {
+    "kind": "synthetic-deterministic",
+    "purpose": "Pure-helper coverage for chapter-close playstyle artifact normalization and evidence validation."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 0,
+    "playerInput": "Ask what the oath would cost before choosing.",
+    "narrator": {
+      "prose": "The oath has a visible cost.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": {
+        "pacingClassification": {
+          "worldInitiated": false,
+          "sceneEndLeadsTo": "not_applicable",
+          "tensionDeltasByThreadId": {}
+        }
+      }
+    }
+  },
+  "expected": {
+    "playstyleArtifactValidation": {
+      "rawArtifact": {
+        "summary": "The player asks for moral cost before selecting a path.",
+        "informationEconomy": {
+          "value": "concrete implication",
+          "guidance": "Lead with one concrete tell, then let the player ask for the larger meaning.",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "kind": "turn",
+              "chapter": 1,
+              "turnIndex": 0,
+              "excerpt": "Ask what the oath would cost before choosing.",
+              "note": "Player asks for cost clarity before choosing."
+            }
+          ]
+        },
+        "decisionArchitecture": {
+          "value": "cost-first choices",
+          "guidance": "Frame choices by what each option risks, not as neutral menu items.",
+          "confidence": "medium",
+          "evidence": [
+            { "kind": "turn", "chapter": 1, "turnIndex": 0, "excerpt": "Ask what the oath would cost before choosing." }
+          ]
+        },
+        "consequenceTiming": {
+          "value": "visible soon",
+          "guidance": "Let the first cost surface in the next beat instead of delaying it for many turns.",
+          "confidence": "low",
+          "evidence": [
+            { "kind": "turn", "chapter": 1, "turnIndex": 0, "excerpt": "Ask what the oath would cost before choosing." }
+          ]
+        },
+        "emotionalRegister": {
+          "value": "intimate pressure",
+          "guidance": "Keep pressure personal and relational.",
+          "confidence": "low",
+          "evidence": [
+            { "kind": "chapter_artifact", "chapter": 1, "excerpt": "The oath has a visible cost." }
+          ]
+        },
+        "npcLegibility": {
+          "value": "behavioral tells",
+          "guidance": "Make NPC motives readable through behavior before naming them.",
+          "confidence": "medium",
+          "evidence": [
+            { "kind": "turn", "chapter": 1, "turnIndex": 0, "excerpt": "Ask what the oath would cost before choosing." }
+          ]
+        },
+        "errorTolerance": {
+          "value": "clarify after commitment",
+          "guidance": "Allow one clarifying correction after an ambiguous command."
+        },
+        "workedPatterns": [
+          {
+            "pattern": "Cost before path",
+            "guidance": "Offer the cost surface before asking for commitment.",
+            "evidence": [
+              { "kind": "turn", "chapter": 1, "turnIndex": 0, "excerpt": "Ask what the oath would cost before choosing." }
+            ]
+          }
+        ],
+        "avoidPatterns": [
+          {
+            "pattern": "Neutral menu",
+            "guidance": "Do not hide moral cost behind equivalent action labels.",
+            "evidence": [
+              { "kind": "turn", "chapter": 1, "turnIndex": 0, "excerpt": "Ask what the oath would cost before choosing." }
+            ]
+          }
+        ]
+      },
+      "findingsInclude": [
+        {
+          "field": "errorTolerance.evidence",
+          "messageIncludes": "no usable evidence",
+          "severity": "warning"
+        }
+      ],
+      "artifactPathEquals": [
+        {
+          "path": "summary",
+          "value": "The player asks for moral cost before selecting a path."
+        },
+        {
+          "path": "informationEconomy.evidence.0.excerpt",
+          "value": "Ask what the oath would cost before choosing."
+        }
+      ]
+    }
+  }
+}

@@ -25,6 +25,7 @@ export interface DebugEntry {
     | 'error'
     | 'working_set'
     | 'author'
+    | 'playstyle'
     | 'face_shift'
     | 'ladder_fired'
     | 'pacing_advisory'

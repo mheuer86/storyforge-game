@@ -12,6 +12,8 @@ import {
 } from '../locations'
 import {
   SF2_SCHEMA_VERSION,
+  type Sf2CampaignRulebookInterpretation,
+  type Sf2ChapterPlaystyleArtifact,
   type Sf2CampaignMeta,
   type Sf2ChapterNumber,
   type Sf2DispositionTier,
@@ -29,6 +31,9 @@ import {
   type Sf2ClueEvidenceKind,
   type Sf2PassiveAwarenessCue,
   type Sf2PassiveAwarenessKind,
+  type Sf2PatchConfidence,
+  type Sf2PlaystyleEvidenceRef,
+  type Sf2PlaystylePersonalizationState,
   type Sf2ThreadResolutionMode,
   type Sf2ThreadStatus,
 } from '../types'
@@ -74,6 +79,7 @@ const PASSIVE_AWARENESS_KINDS: Sf2PassiveAwarenessKind[] = [
   'npc_tell',
   'procedure_affordance',
 ]
+const PATCH_CONFIDENCES: Sf2PatchConfidence[] = ['high', 'medium', 'low']
 
 export interface Sf2PersistenceNormalizeReport {
   state: Sf2State
@@ -293,6 +299,14 @@ function normalizeCampaign(state: Sf2State, repairs: string[]): void {
   campaign.floatingClueIds = stringArray(campaign.floatingClueIds)
   campaign.pivotalSceneIds = stringArray(campaign.pivotalSceneIds)
   campaign.lexicon = Array.isArray(campaign.lexicon) ? campaign.lexicon : []
+  campaign.playstylePersonalization = normalizePlaystylePersonalization(
+    campaign.playstylePersonalization,
+    repairs
+  )
+  campaign.rulebookInterpretations = normalizeRulebookInterpretations(
+    campaign.rulebookInterpretations,
+    repairs
+  )
   if (campaign.pendingRecoveryNotes !== undefined) campaign.pendingRecoveryNotes = stringArray(campaign.pendingRecoveryNotes)
   if (campaign.pendingCoherenceNotes !== undefined) campaign.pendingCoherenceNotes = stringArray(campaign.pendingCoherenceNotes)
   normalizeArcPlanShape(campaign.arcPlan, repairs)
@@ -443,6 +457,12 @@ function normalizeChapter(state: Sf2State, repairs: string[]): void {
     ? state.chapter.artifacts.opening.loreForOpening
     : []
   state.chapter.artifacts.opening.sceneWarnings = stringArray(state.chapter.artifacts.opening.sceneWarnings)
+  if (state.chapter.artifacts.playstyle !== undefined) {
+    state.chapter.artifacts.playstyle = normalizeChapterPlaystyleArtifact(
+      state.chapter.artifacts.playstyle,
+      repairs
+    )
+  }
 }
 
 function normalizeChapterSetupShape(state: Sf2State, repairs: string[]): void {
@@ -808,6 +828,223 @@ function normalizeClue(
   clue.chapterCreated = positiveInt(clue.chapterCreated, currentChapter) as Sf2ChapterNumber
   clue.turn = numberOr(clue.turn, 0)
   return clue
+}
+
+function normalizePlaystylePersonalization(
+  raw: unknown,
+  repairs: string[]
+): Sf2PlaystylePersonalizationState {
+  const record = asRecord(raw)
+  if (!record) {
+    repairs.push('campaign.playstylePersonalization:defaulted')
+    return { liveEnabled: true, artifacts: [], lastStatus: { status: 'enabled' } }
+  }
+  const artifacts = Array.isArray(record.artifacts)
+    ? record.artifacts.map((artifact) => normalizeChapterPlaystyleArtifact(artifact, repairs))
+    : []
+  const rollingProfile = normalizePlaystyleRollingProfile(
+    record.rollingProfile ?? record.rolling_profile ?? record.profile
+  )
+  const statusRecord = asRecord(record.lastStatus ?? record.last_status)
+  const liveEnabled = record.liveEnabled === false || record.enabled === false ? false : true
+  const status = oneOf(
+    statusRecord?.status,
+    ['enabled', 'disabled', 'skipped', 'failed_open'] as const,
+    liveEnabled ? 'enabled' : 'disabled'
+  )
+  return {
+    liveEnabled,
+    artifacts,
+    ...(rollingProfile ? { rollingProfile } : {}),
+    lastStatus: {
+      status,
+      chapter: statusRecord?.chapter === undefined
+        ? undefined
+        : positiveInt(statusRecord.chapter, 0) as Sf2ChapterNumber,
+      turn: statusRecord?.turn === undefined ? undefined : positiveInt(statusRecord.turn, 0),
+      reason: stringOr(statusRecord?.reason, undefined),
+    },
+  }
+}
+
+function normalizeChapterPlaystyleArtifact(
+  raw: unknown,
+  repairs: string[]
+): Sf2ChapterPlaystyleArtifact {
+  const record = asRecord(raw)
+  if (!record) {
+    repairs.push('playstyleArtifact:defaulted-invalid')
+  }
+  const source = record ?? {}
+  const rawKnobs = asRecord(source.knobs) ?? source
+  const artifactEvidence = source.evidence
+  const chapter = positiveInt(source.chapter, 0) as Sf2ChapterNumber
+  return {
+    chapter,
+    synthesizedAtTurn: positiveInt(source.synthesizedAtTurn ?? source.synthesized_at_turn, 0),
+    summary: stringOr(source.summary, ''),
+    informationEconomy: normalizePlaystyleKnob(rawKnobs.informationEconomy ?? rawKnobs.information_economy, chapter, artifactEvidence),
+    decisionArchitecture: normalizePlaystyleKnob(rawKnobs.decisionArchitecture ?? rawKnobs.decision_architecture, chapter, artifactEvidence),
+    consequenceTiming: normalizePlaystyleKnob(rawKnobs.consequenceTiming ?? rawKnobs.consequence_timing, chapter, artifactEvidence),
+    emotionalRegister: normalizePlaystyleKnob(rawKnobs.emotionalRegister ?? rawKnobs.emotional_register, chapter, artifactEvidence),
+    npcLegibility: normalizePlaystyleKnob(rawKnobs.npcLegibility ?? rawKnobs.npc_legibility, chapter, artifactEvidence),
+    errorTolerance: normalizePlaystyleKnob(rawKnobs.errorTolerance ?? rawKnobs.error_tolerance, chapter, artifactEvidence),
+    workedPatterns: normalizePlaystylePatterns(source.workedPatterns ?? source.worked_patterns, chapter),
+    avoidPatterns: normalizePlaystylePatterns(source.avoidPatterns ?? source.avoid_patterns, chapter),
+  }
+}
+
+function normalizePlaystyleKnob(
+  raw: unknown,
+  chapter: Sf2ChapterNumber,
+  fallbackEvidence?: unknown
+): Sf2ChapterPlaystyleArtifact['informationEconomy'] {
+  if (typeof raw === 'string') {
+    return {
+      value: raw,
+      guidance: raw,
+      confidence: 'low',
+      evidence: normalizePlaystyleEvidence(fallbackEvidence, chapter),
+    }
+  }
+  const record = asRecord(raw)
+  if (!record) {
+    return { value: '', guidance: '', confidence: 'low', evidence: [] }
+  }
+  return {
+    value: stringOr(record.value ?? record.summary, ''),
+    guidance: stringOr(record.guidance ?? record.summary, ''),
+    confidence: oneOf(record.confidence, PATCH_CONFIDENCES, 'low'),
+    evidence: normalizePlaystyleEvidence(record.evidence ?? fallbackEvidence, chapter),
+  }
+}
+
+function normalizePlaystylePatterns(raw: unknown, chapter: Sf2ChapterNumber): Sf2ChapterPlaystyleArtifact['workedPatterns'] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((entry) => {
+      const record = asRecord(entry)
+      if (!record) return null
+      const pattern = stringOr(record.pattern, '').trim()
+      const guidance = stringOr(record.guidance, '').trim()
+      if (!pattern || !guidance) return null
+      return {
+        pattern,
+        guidance,
+        evidence: normalizePlaystyleEvidence(record.evidence, chapter),
+      }
+    })
+    .filter((entry): entry is Sf2ChapterPlaystyleArtifact['workedPatterns'][number] => Boolean(entry))
+    .slice(0, 6)
+}
+
+function normalizePlaystyleEvidence(raw: unknown, fallbackChapter: Sf2ChapterNumber): Sf2PlaystyleEvidenceRef[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((entry) => {
+      const record = asRecord(entry)
+      if (!record) return null
+      const excerpt = stringOr(record.excerpt ?? record.quote, '').trim()
+      if (!excerpt) return null
+      const evidence: Sf2PlaystyleEvidenceRef = {
+        kind: oneOf(
+          record.kind,
+          ['turn', 'scene_summary', 'chapter_artifact', 'setup_rationale'] as const,
+          'turn'
+        ),
+        chapter: positiveInt(record.chapter, fallbackChapter) as Sf2ChapterNumber,
+        excerpt: excerpt.slice(0, 240),
+      }
+      if (record.turnIndex !== undefined || record.turn_index !== undefined) {
+        evidence.turnIndex = positiveInt(record.turnIndex ?? record.turn_index, 0)
+      }
+      const sceneId = stringOr(record.sceneId ?? record.scene_id, undefined)
+      if (sceneId) evidence.sceneId = sceneId
+      if (record.summaryIndex !== undefined || record.summary_index !== undefined) {
+        evidence.summaryIndex = positiveInt(record.summaryIndex ?? record.summary_index, 0)
+      }
+      const note = stringOr(record.note, undefined)
+      if (note) evidence.note = note
+      return evidence
+    })
+    .filter((entry): entry is Sf2PlaystyleEvidenceRef => Boolean(entry))
+    .slice(0, 12)
+}
+
+function normalizePlaystyleRollingProfile(raw: unknown): Sf2PlaystylePersonalizationState['rollingProfile'] {
+  const record = asRecord(raw)
+  if (!record) return undefined
+  return {
+    updatedAtChapter: positiveInt(record.updatedAtChapter ?? record.updated_at_chapter, 0) as Sf2ChapterNumber,
+    updatedAtTurn: positiveInt(record.updatedAtTurn ?? record.updated_at_turn, 0),
+    evidenceChapters: stringArray(record.evidenceChapters ?? record.evidence_chapters)
+      .map((value) => positiveInt(value, 0) as Sf2ChapterNumber)
+      .filter((chapter) => chapter > 0),
+    informationEconomy: stringOr(record.informationEconomy ?? record.information_economy, ''),
+    decisionArchitecture: stringOr(record.decisionArchitecture ?? record.decision_architecture, ''),
+    consequenceTiming: stringOr(record.consequenceTiming ?? record.consequence_timing, ''),
+    emotionalRegister: stringOr(record.emotionalRegister ?? record.emotional_register, ''),
+    npcLegibility: stringOr(record.npcLegibility ?? record.npc_legibility, ''),
+    errorTolerance: stringOr(record.errorTolerance ?? record.error_tolerance, ''),
+    workedPatterns: stringArray(record.workedPatterns ?? record.worked_patterns).slice(0, 8),
+    avoidPatterns: stringArray(record.avoidPatterns ?? record.avoid_patterns).slice(0, 8),
+    revisionNotes: stringArray(record.revisionNotes ?? record.revision_notes).slice(0, 8),
+  }
+}
+
+function normalizeRulebookInterpretations(
+  raw: unknown,
+  repairs: string[]
+): Sf2CampaignRulebookInterpretation[] {
+  if (raw === undefined) return []
+  const rawRecord = asRecord(raw)
+  const rawEntries = Array.isArray(raw)
+    ? raw
+    : Array.isArray(rawRecord?.entries)
+      ? rawRecord.entries as unknown[]
+      : null
+  if (!rawEntries) {
+    repairs.push('campaign.rulebookInterpretations:[]')
+    return []
+  }
+  return rawEntries
+    .map((entry, index) => {
+      const record = asRecord(entry)
+      if (!record) return null
+      const ruleId = stringOr(record.ruleId ?? record.rule_id, '').trim()
+      const ruleName = stringOr(record.ruleName ?? record.rule_name, ruleId).trim()
+      const reading = stringOr(
+        record.campaignSpecificReading ?? record.campaign_specific_reading ?? record.campaignReading,
+        ''
+      ).trim()
+      if (!ruleId || !ruleName || !reading) {
+        repairs.push(`campaign.rulebookInterpretations.${index}:dropped-missing-contract`)
+        return null
+      }
+      const setupRationale = stringOr(record.setupRationale ?? record.setup_rationale, undefined)
+      const playEvidence = normalizePlaystyleEvidence(record.playEvidence ?? record.play_evidence ?? record.evidence, 0)
+      const hasRationale = Boolean(setupRationale?.trim()) || playEvidence.length > 0
+      return {
+        id: stringOr(record.id, `rule_interp_${slug(ruleId || ruleName)}`),
+        ruleId,
+        ruleName,
+        genericRuleCategory: stringOr(record.genericRuleCategory ?? record.generic_rule_category ?? record.genericCategory, ''),
+        campaignSpecificReading: reading,
+        triggers: stringArray(record.triggers).slice(0, 8),
+        costs: stringArray(record.costs).slice(0, 8),
+        permissions: stringArray(record.permissions).slice(0, 8),
+        taboos: stringArray(record.taboos).slice(0, 8),
+        excludedExamples: stringArray(record.excludedExamples ?? record.excluded_examples).slice(0, 8),
+        ...(setupRationale ? { setupRationale } : {}),
+        playEvidence,
+        revisionNotes: stringArray(record.revisionNotes ?? record.revision_notes).slice(0, 8),
+        promptGuidanceEnabled: (record.promptGuidanceEnabled ?? record.prompt_guidance_enabled) === false
+          ? false
+          : hasRationale,
+        enforcementEnabled: Boolean(record.enforcementEnabled ?? record.enforcement_enabled) && hasRationale,
+      }
+    })
+    .filter((entry): entry is Sf2CampaignRulebookInterpretation => Boolean(entry))
 }
 
 function normalizePassiveAwarenessCues(
