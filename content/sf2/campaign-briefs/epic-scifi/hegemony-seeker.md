@@ -166,14 +166,14 @@ Each domain has a primary stat and secondary stats.
 
 ### Stats
 
-|Stat  |Domain        |                                                       |
-|------|--------------|-------------------------------------------------------|
-|FORCE |Physical      |Raw strength, close combat, carrying, breaking         |
-|REFLEX|Physical      |Speed, precision, ranged combat, dodging               |
-|WILL  |Drift + Social|Attunement control, mental resistance, command presence|
-|SENSE |Drift + Social|Drift detection, reading people, spatial awareness     |
-|ACUITY|Social        |Analysis, deduction, knowledge, technical              |
-|FRAME |Physical      |Endurance, pain tolerance, resisting physical effects  |
+|Stat|Domain| |
+|---|---|---|
+|STR (Strength)|Physical|Raw strength, close combat, carrying, breaking|
+|DEX (Dexterity)|Physical|Speed, precision, ranged combat, dodging|
+|CHA (Charisma)|Drift + Social|Attunement control, mental resistance, command presence|
+|WIS (Wisdom)|Drift + Social|Drift detection, reading people, spatial awareness|
+|INT (Intelligence)|Social|Analysis, deduction, knowledge, technical|
+|CON (Constitution)|Physical|Endurance, pain tolerance, resisting physical effects|
 
 Stat array: **16, 15, 14, 12, 10, 8** — assign to stats.
 
@@ -195,7 +195,7 @@ The Seeker has a pool of **Drift Dice (d6s)**. Starting pool: **4 dice.**
 
 Drift abilities cost Drift Dice. The pool refreshes with rest — but not completely, and not quickly, and the refresh rate decreases as the Dimming progresses.
 
-When the pool hits zero: the Seeker can still attempt Drift use, but must roll WILL DC 14 or suffer a **Surge** — uncontrolled Drift expression, visible, dangerous, potentially harmful to themselves or others.
+When the pool hits zero: the Seeker can still attempt Drift use, but must roll CHA DC 14 or suffer a **Surge** — uncontrolled Drift expression, visible, dangerous, potentially harmful to themselves or others.
 
 ### The Dimming Track
 
@@ -240,13 +240,13 @@ Fracture does not make the Seeker weaker. It makes them *different.*
 
 Same principle as Pale Flame. HP = stamina. Wounds = damage that matters.
 
-**Starting HP:** 10 + FRAME modifier.
+**Starting HP:** 10 + CON modifier.
 
 Wounds:
 
 - **Burned** (Drift overload) — Disadvantage on all Drift rolls until treated
-- **Struck** (physical) — Disadvantage on REFLEX and FORCE
-- **Shaken** (mental/social) — Disadvantage on WILL and ACUITY
+- **Struck** (physical) — Disadvantage on DEX and STR
+- **Shaken** (mental/social) — Disadvantage on CHA and INT
 - **Marked** (visible damage) — Social consequences; people know you’ve been in something
 
 ### Tension Clocks
@@ -354,15 +354,15 @@ The Drift feels different here. Not wrong. Dense. Like something is very present
 
 **Governor Essa Threnn**
 Eleven years in post. House Veth appointed but not House Veth loyal — she went native, as administrators sometimes do. Sharp, composed, genuinely beloved. Playing the longest game anyone on this moon has ever played. Her tell: she asks questions she already knows the answers to, to see if you’ll lie.
-*WILL +4, ACUITY +4, REFLEX +1. Not a fighter. Extraordinarily dangerous anyway.*
+*CHA +4, INT +4, DEX +1. Not a fighter. Extraordinarily dangerous anyway.*
 
 **Docent-Local Pars Ivel**
 The Synod’s resident representative on Caul-9. Twenty-three years in post, which means he arrived before Threnn. Pars Ivel has been filing inaccurate attunement survey reports for six years. He is terrified. He is also the Seeker’s nominal support contact, which means the Seeker has to interface with him without revealing how compromised he is before understanding why he is.
-*ACUITY +3, WILL +2. Breaking point: if the Seeker makes clear they know.*
+*INT +3, CHA +2. Breaking point: if the Seeker makes clear they know.*
 
 **Kael Mourne**
 Head of colony security. Former Hegemony military, retired to Veth service. Big, quiet, loyal to Threnn personally rather than institutionally. Has not been told about the network — Threnn kept him insulated deliberately. He is going to find out, and when he does, his loyalty will be tested in a direction nobody has predicted.
-*FORCE +4, REFLEX +3, SENSE +2.*
+*STR +4, DEX +3, WIS +2.*
 
 **Sev**
 Twelve years old. Has lived off-ledger her entire life — born to Undrift parents who died in a mining accident three years ago, absorbed into the network’s care. She can feel the Seeker in the Drift the way you can feel a hot coal in a dark room. She has decided she wants to talk to them. The network’s inner circle has told her absolutely not. She has agreed. She has not agreed.

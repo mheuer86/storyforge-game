@@ -12,7 +12,7 @@ import {
   ScrollText,
   Send,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import type { Sf2PrototypeHandoverExample } from '@/app/play/prototype/page'
@@ -55,6 +55,7 @@ import {
   toProseFirstTranscript,
   type Sf2PrototypeBrief,
   type Sf2PrototypeDiagnosticEntry,
+  type Sf2PrototypeTranscriptRoll,
   type Sf2PrototypeSession,
 } from './prototype-session'
 
@@ -96,6 +97,7 @@ export function Sf2PrototypePlayApp({
   const rollResolverRef = useRef<((outcome: RollOutcome) => void) | null>(null)
   const pendingRollResourceSpendsRef = useRef<Sf2RollResourceSpend[]>([])
   const slotPersistenceRef = useRef<Sf2PrototypeSlotPersistence | null>(null)
+  const liveRollsRef = useRef<Sf2ClientLiveRollView[]>([])
 
   const busy = isStreaming || isArchiving || Boolean(startingBriefId)
   const hasSavedPrototypeSlots = saveSlots.some(Boolean)
@@ -189,6 +191,7 @@ export function Sf2PrototypePlayApp({
     setActivePlayerInput('')
     setLiveProse('')
     setLiveRolls([])
+    liveRollsRef.current = []
     setRollResult(null)
     setPendingCheck(null)
     rollResolverRef.current = null
@@ -205,6 +208,7 @@ export function Sf2PrototypePlayApp({
     setActivePlayerInput('')
     setLiveProse('')
     setLiveRolls([])
+    liveRollsRef.current = []
     setRollResult(null)
     setPendingCheck(null)
     pendingRollResourceSpendsRef.current = []
@@ -245,6 +249,7 @@ export function Sf2PrototypePlayApp({
     setActivePlayerInput(isInitial ? '' : playerInput)
     setLiveProse('')
     setLiveRolls([])
+    liveRollsRef.current = []
     setRollResult(null)
     setPendingCheck(null)
     pendingRollResourceSpendsRef.current = []
@@ -288,7 +293,10 @@ export function Sf2PrototypePlayApp({
           },
           onPendingCheck: setPendingCheck,
           onRollResult: setRollResult,
-          onLiveRollAdded: (roll) => setLiveRolls((cards) => [...cards, roll]),
+          onLiveRollAdded: (roll) => {
+            liveRollsRef.current = [...liveRollsRef.current, roll]
+            setLiveRolls(liveRollsRef.current)
+          },
           onInspirationOffer: () => {},
           onResetPendingInspirationSpend: () => {
             pendingRollResourceSpendsRef.current = []
@@ -309,6 +317,7 @@ export function Sf2PrototypePlayApp({
       setActivePlayerInput('')
       setLiveProse('')
       setLiveRolls([])
+      liveRollsRef.current = []
       setRollResult(null)
       setPendingCheck(null)
       setStatusMessage(null)
@@ -328,6 +337,7 @@ export function Sf2PrototypePlayApp({
       setActivePlayerInput('')
       setLiveProse('')
       setLiveRolls([])
+      liveRollsRef.current = []
       setRollResult(null)
       setStatusMessage(null)
       pendingRollResourceSpendsRef.current = []
@@ -363,6 +373,7 @@ export function Sf2PrototypePlayApp({
       nextTurnIndex: committedTurn.nextTurnIndex,
       playerInput: isInitial ? '' : playerInput,
       narratorProse: narratorResult.prose,
+      rollRecords: buildPrototypeTranscriptRolls(narratorResult.rollRecords, liveRollsRef.current),
       archivistReplay: committedTurn.archivistReplay,
       suggestedActions,
       diagnostics: [
@@ -377,6 +388,7 @@ export function Sf2PrototypePlayApp({
     setActivePlayerInput('')
     setLiveProse('')
     setLiveRolls([])
+    liveRollsRef.current = []
     setRollResult(null)
     setPendingCheck(null)
     setStatusMessage(null)
@@ -628,7 +640,9 @@ export function Sf2PrototypePlayApp({
       }
       const targetIndex = pendingIndex >= 0 ? pendingIndex : cards.length - 1
       if (targetIndex < 0) return cards
-      return cards.map((card, index) => index === targetIndex ? { ...card, outcome } : card)
+      const nextCards = cards.map((card, index) => index === targetIndex ? { ...card, outcome } : card)
+      liveRollsRef.current = nextCards
+      return nextCards
     })
   }
 
@@ -767,11 +781,8 @@ export function Sf2PrototypePlayApp({
   const currentRollResolution = pendingCheck
     ? resolveSf2Roll(stateWithPendingRollSpends(state), pendingCheck)
     : null
-  const displayProse = [
-    session.prose,
-    activePlayerInput ? `> ${activePlayerInput}` : '',
-    liveProse,
-  ].filter((part) => part.trim()).join('\n\n')
+  const hasNarrativeContent =
+    session.transcript.length > 0 || activePlayerInput.trim().length > 0 || liveProse.trim().length > 0
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground lg:h-screen lg:overflow-hidden">
@@ -840,10 +851,24 @@ export function Sf2PrototypePlayApp({
             ) : null}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-            {displayProse ? (
-              <article className="max-w-none font-serif text-[17px] leading-7 text-foreground [overflow-wrap:anywhere] sm:text-[18px] sm:leading-8">
-                {renderMarkdown(displayProse)}
-              </article>
+            {hasNarrativeContent ? (
+              <div className="mx-auto flex w-full max-w-3xl flex-col space-y-5">
+                {session.transcript.map((entry) => (
+                  entry.speaker === 'player' ? (
+                    <PlayerMessage key={entry.id}>{entry.content}</PlayerMessage>
+                  ) : entry.speaker === 'narrator' ? (
+                    <NarratorProse key={entry.id} rolls={entry.rolls}>
+                      {renderMarkdown(entry.content)}
+                    </NarratorProse>
+                  ) : null
+                ))}
+                {activePlayerInput ? <PlayerMessage>{activePlayerInput}</PlayerMessage> : null}
+                {liveProse ? (
+                  <NarratorProse trailing={isStreaming ? <span className="animate-pulse text-primary"> |</span> : undefined}>
+                    {renderMarkdown(liveProse)}
+                  </NarratorProse>
+                ) : null}
+              </div>
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 Waiting for the live narrator...
@@ -961,6 +986,102 @@ export function Sf2PrototypePlayApp({
 
 function PanelTitle({ title, compact = false }: { title: string; compact?: boolean }) {
   return <h2 className={cn('font-mono text-[11px] uppercase tracking-[0.16em] text-primary', compact ? 'mt-0' : 'mt-4 first:mt-0')}>{title}</h2>
+}
+
+function PlayerMessage({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="ml-auto max-w-[92%] whitespace-pre-wrap rounded-l-lg border-r border-primary/35 bg-primary/15 py-3 pl-5 pr-5 text-foreground shadow-[0_0_22px_-12px] shadow-primary/20 md:max-w-[82%] md:py-4 md:pl-6 md:pr-6"
+      style={{ fontFamily: 'var(--font-narrative)', lineHeight: 1.65 }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function NarratorProse({
+  children,
+  rolls,
+  trailing,
+}: {
+  children: ReactNode
+  rolls?: Sf2PrototypeTranscriptRoll[]
+  trailing?: ReactNode
+}) {
+  return (
+    <article className="max-w-none font-serif text-[17px] leading-7 text-foreground [overflow-wrap:anywhere] sm:text-[18px] sm:leading-8">
+      {children}
+      {trailing}
+      {rolls?.length ? (
+        <div className="mt-4 space-y-3">
+          {rolls.map((roll, index) => (
+            <RollResultCard key={`${roll.turn}-${roll.proseOffset ?? index}-${index}`} roll={roll} />
+          ))}
+        </div>
+      ) : null}
+    </article>
+  )
+}
+
+function RollResultCard({ roll }: { roll: Sf2PrototypeTranscriptRoll }) {
+  const tone = rollToneForPrototypeRoll(roll.outcome)
+  const dc = roll.effectiveDc ?? roll.dc
+  const total = roll.total ?? (roll.rollResult !== undefined ? roll.rollResult + roll.modifier : dc)
+
+  return (
+    <div className={cn(
+      'rounded-lg border p-3 font-mono text-sm leading-normal shadow-sm',
+      tone === 'critical' && 'border-primary/60 bg-primary/15 text-primary',
+      tone === 'success' && 'border-success/55 bg-success/10 text-success',
+      tone === 'failure' && 'border-warning/55 bg-warning/10 text-warning',
+      tone === 'fumble' && 'border-severe/60 bg-severe/10 text-severe',
+    )}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{roll.skill} vs DC {dc}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{rollOutcomeLabel(roll.outcome)}</span>
+      </div>
+      <div className="mt-2 text-xs text-foreground/80">
+        {roll.rollResult !== undefined ? `d20(${roll.rollResult})` : roll.resolutionKind ?? 'auto'} {formatSigned(roll.modifier)} = {total}
+      </div>
+      {roll.why ? (
+        <div className="mt-2 text-xs leading-5 text-foreground/75">{roll.why}</div>
+      ) : null}
+      {roll.consequenceSummary ? (
+        <div className="mt-2 text-xs leading-5 text-foreground/75">{roll.consequenceSummary}</div>
+      ) : roll.consequenceOnFail ? (
+        <div className="mt-2 text-xs leading-5 text-foreground/75">Failure: {roll.consequenceOnFail}</div>
+      ) : null}
+    </div>
+  )
+}
+
+function buildPrototypeTranscriptRolls(
+  rollRecords: Sf2State['history']['rollLog'],
+  liveRolls: Sf2ClientLiveRollView[]
+): Sf2PrototypeTranscriptRoll[] {
+  return rollRecords.map((roll, index) => {
+    const liveRoll = liveRolls[index]
+      ?? liveRolls.find((candidate) => candidate.proseOffset === roll.proseOffset)
+    return {
+      ...roll,
+      why: liveRoll?.check.why,
+      consequenceOnFail: liveRoll?.check.consequenceOnFail,
+    }
+  })
+}
+
+function rollToneForPrototypeRoll(outcome: Sf2State['history']['rollLog'][number]['outcome']) {
+  if (outcome === 'critical_success') return 'critical'
+  if (outcome === 'critical_failure') return 'fumble'
+  if (outcome === 'success') return 'success'
+  return 'failure'
+}
+
+function rollOutcomeLabel(outcome: Sf2State['history']['rollLog'][number]['outcome']) {
+  if (outcome === 'critical_success') return 'Critical'
+  if (outcome === 'critical_failure') return 'Fumble'
+  if (outcome === 'success') return 'Success'
+  return 'Failure'
 }
 
 function KeyValueBlock({ value }: { value: Record<string, number | string> }) {

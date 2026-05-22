@@ -74,17 +74,17 @@ Everything runs on money. Everything is also running on something underneath mon
 
 ### Stats
 
-**NERVE** — Composure under pressure, intimidation, holding your face when everything is wrong. The fixer's most-used stat.
+**CON (Constitution)** — Composure under pressure, intimidation, holding your face when everything is wrong. The fixer's most-used stat.
 
-**STREET** — Criminal knowledge, underworld contacts, reading the hierarchy of who answers to whom and who is afraid of what.
+**WIS (Wisdom)** — Criminal knowledge, underworld contacts, reading the hierarchy of who answers to whom and who is afraid of what.
 
-**SHARP** — Observation, deduction, reading people, noticing what's wrong before it becomes a problem.
+**INT (Intelligence)** — Observation, deduction, reading people, noticing what's wrong before it becomes a problem.
 
-**SHADOW** — Surveillance, moving unseen, breaking and entering, the work done in the dark.
+**DEX (Dexterity)** — Surveillance, moving unseen, breaking and entering, the work done in the dark.
 
-**HANDS** — Combat, physical endurance, doing damage, absorbing damage. Last resort.
+**STR (Strength)** — Combat, physical endurance, doing damage, absorbing damage. Last resort.
 
-**MOUTH** — Negotiation, persuasion, deception, the specific skill of telling someone exactly what they need to hear.
+**CHA (Charisma)** — Negotiation, persuasion, deception, the specific skill of telling someone exactly what they need to hear.
 
 **Stat array:** 16, 15, 14, 12, 10, 8 — assigned after character creation questions.
 
@@ -159,9 +159,9 @@ _The campaign will create situations where the Code is the most expensive thing 
 
 Combat is never the goal. When it happens, it resolves quickly and leaves marks.
 
-**Initiative:** NERVE or REFLEX — whoever moves first in a crisis.
+**Initiative:** CON or DEX — whoever moves first in a crisis.
 
-**Attacks:** d20 + HANDS vs AC. Standard damage by weapon:
+**Attacks:** d20 + STR vs AC. Standard damage by weapon:
 
 - Fist, improvised: 1d4
 - Knife, blackjack: 1d6
@@ -176,15 +176,15 @@ Combat is never the goal. When it happens, it resolves quickly and leaves marks.
 
 ### Wounds
 
-HP = 10 + HANDS modifier. Wounds are lasting.
+HP = 10 + STR modifier. Wounds are lasting.
 
 |Wound|Effect|
 |---|---|
-|**Pistol-whipped**|Disadvantage on SHARP for 24 hours. Visible bruising — people ask questions.|
-|**Knifed**|Disadvantage on HANDS and SHADOW. Needs a doctor, not a bandage.|
+|**Pistol-whipped**|Disadvantage on INT for 24 hours. Visible bruising — people ask questions.|
+|**Knifed**|Disadvantage on STR and DEX. Needs a doctor, not a bandage.|
 |**Shot**|Disadvantage on everything physical. Needs a real doctor, somewhere private. Blood is evidence.|
-|**Burned** (reputation)|Someone talked. −2 to STREET rolls until the source is handled.|
-|**Cracked** (psychological)|The job left a mark. Disadvantage on NERVE in similar situations until confronted.|
+|**Burned** (reputation)|Someone talked. −2 to WIS rolls until the source is handled.|
+|**Cracked** (psychological)|The job left a mark. Disadvantage on CON in similar situations until confronted.|
 
 ---
 
@@ -248,15 +248,15 @@ _What's yours? And does anyone in Dust City know it?_
 
 ## DUST CITY'S PEOPLE — OPENING CAST
 
-**Vela Rose** Owner of the Lux. Forty years in the Corridor. She has outlasted four mayors, two Outfit transitions, and a fire that destroyed half the Strip in a year nobody likes to name. She is the closest thing Dust City has to a neutral party — she serves everyone and belongs to no one. She knows the fixer. She has kept things for them. She will call in that keeping someday. _NERVE +5, MOUTH +4, STREET +4. Not armed. Doesn't need to be._
+**Vela Rose** Owner of the Lux. Forty years in the Corridor. She has outlasted four mayors, two Outfit transitions, and a fire that destroyed half the Strip in a year nobody likes to name. She is the closest thing Dust City has to a neutral party — she serves everyone and belongs to no one. She knows the fixer. She has kept things for them. She will call in that keeping someday. _CON +5, CHA +4, WIS +4. Not armed. Doesn't need to be._
 
-**Aldis** The Outfit's head. Sixties, heavy, slow-moving in the way of a man who stopped needing to move fast thirty years ago. He meets people at a restaurant called Catello's on Tuesday afternoons. He orders the same thing every week. He has had three men killed this year that the fixer knows of. Possibly more. He is not a villain in his own self-understanding — he runs a business, and the business requires certain decisions. _NERVE +5, STREET +5, MOUTH +3. Surrounded by people with HANDS +5._
+**Aldis** The Outfit's head. Sixties, heavy, slow-moving in the way of a man who stopped needing to move fast thirty years ago. He meets people at a restaurant called Catello's on Tuesday afternoons. He orders the same thing every week. He has had three men killed this year that the fixer knows of. Possibly more. He is not a villain in his own self-understanding — he runs a business, and the business requires certain decisions. _CON +5, WIS +5, CHA +3. Surrounded by people with STR +5._
 
-**Lieutenant Doyle Carver** Dust City PD, Homicide. Twenty-year man. Not entirely bought — more like rented, with specific terms. He and the fixer have a working relationship that requires both of them to pretend it doesn't exist in certain company. He is tired. He drinks more than he used to. He is one bad night from doing something that changes both their situations permanently. _SHARP +3, NERVE +3, HANDS +3. Armed. Complicated._
+**Lieutenant Doyle Carver** Dust City PD, Homicide. Twenty-year man. Not entirely bought — more like rented, with specific terms. He and the fixer have a working relationship that requires both of them to pretend it doesn't exist in certain company. He is tired. He drinks more than he used to. He is one bad night from doing something that changes both their situations permanently. _INT +3, CON +3, STR +3. Armed. Complicated._
 
-**Cass Moreau** Reporter, the Evening Standard. Thirties, relentless, operating on instinct and coffee and the conviction that the story she's pulling at matters. She has three sources who are frightened and one who has gone quiet in a way that frightens her. She doesn't know the fixer yet. She will within the first session. Whether that's good or bad for either of them depends on decisions neither has made yet. _SHARP +4, MOUTH +3, NERVE +2. No leverage. That's the most dangerous thing about her._
+**Cass Moreau** Reporter, the Evening Standard. Thirties, relentless, operating on instinct and coffee and the conviction that the story she's pulling at matters. She has three sources who are frightened and one who has gone quiet in a way that frightens her. She doesn't know the fixer yet. She will within the first session. Whether that's good or bad for either of them depends on decisions neither has made yet. _INT +4, CHA +3, CON +2. No leverage. That's the most dangerous thing about her._
 
-**The Archbishop, Cael Voss** A man doing God's work in a city that has given up on God in every practical sense. He runs the shelters, the programs, the infrastructure of mercy that keeps the Flats from becoming something that would require an army. He knows things about Dust City that confessionals produce. He has never used them. That restraint has a cost, and someone may be about to present him with an invoice. _MOUTH +4, SHARP +3, NERVE +4. No muscle. Enormous moral authority in certain rooms._
+**The Archbishop, Cael Voss** A man doing God's work in a city that has given up on God in every practical sense. He runs the shelters, the programs, the infrastructure of mercy that keeps the Flats from becoming something that would require an army. He knows things about Dust City that confessionals produce. He has never used them. That restraint has a cost, and someone may be about to present him with an invoice. _CHA +4, INT +3, CON +4. No muscle. Enormous moral authority in certain rooms._
 
 **The Client (name pending)** They called. The voice was controlled. The kind of controlled that comes from practice keeping panic from showing in the throat. They have money and a problem and the sense to know that calling the police would make the problem worse. They are not telling the whole truth. They never do — not in the first call, not in the second. The whole truth arrives when it's too late to walk away.
 

@@ -8,7 +8,7 @@ import {
   listSf2SetupPlaybooks,
 } from '@/lib/sf2/setup/options'
 import type { Sf2HandoverCompileResult, Sf2HandoverDocuments } from '@/lib/sf2/handover/types'
-import type { Sf2State } from '@/lib/sf2/types'
+import type { Sf2RollRecord, Sf2State } from '@/lib/sf2/types'
 
 export interface Sf2PrototypeBriefMeta {
   id: string
@@ -27,6 +27,11 @@ export interface Sf2PrototypeBrief extends Sf2PrototypeBriefMeta {
 
 export type Sf2PrototypeSpeaker = 'player' | 'narrator' | 'system'
 
+export interface Sf2PrototypeTranscriptRoll extends Sf2RollRecord {
+  why?: string
+  consequenceOnFail?: string
+}
+
 export interface Sf2PrototypeTranscriptEntry {
   id: string
   speaker: Sf2PrototypeSpeaker
@@ -34,6 +39,7 @@ export interface Sf2PrototypeTranscriptEntry {
   at: string
   turn: number
   chapter: number
+  rolls?: Sf2PrototypeTranscriptRoll[]
 }
 
 export interface Sf2PrototypeMechanicalSnapshot {
@@ -234,6 +240,7 @@ export function appendSf2PrototypeCommittedTurn(input: {
   nextTurnIndex: number
   playerInput: string
   narratorProse: string
+  rollRecords?: Sf2PrototypeTranscriptRoll[]
   archivistReplay: unknown
   suggestedActions: string[]
   diagnostics: Sf2PrototypeDiagnosticEntry[]
@@ -262,6 +269,7 @@ export function appendSf2PrototypeCommittedTurn(input: {
     at,
     turn: input.turnIndex,
     chapter: input.stateAfter.meta.currentChapter,
+    rolls: input.rollRecords?.length ? input.rollRecords : undefined,
   })
 
   return {

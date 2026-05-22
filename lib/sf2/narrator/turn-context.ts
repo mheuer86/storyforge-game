@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 import {
   buildMessagesForNarrator,
   buildProseFirstNarratorMessages,
+  prependMechanicalSnapshotToUserContent,
   type Sf2ProseFirstNarratorMessagesInput,
   type Sf2ProseFirstNarratorTranscriptTurn,
 } from './messages'
@@ -159,15 +160,21 @@ export function buildNarratorTurnContext(input: {
   const requiredRollGate = isInitial ? null : intentQueue.current.requiredRollGate
 
   if (rollResolution) {
-    const messages = buildRollResumeMessages(state, intentQueue, rollResolution)
-    const proseFirstResumeSystem = input.proseFirst
+    let messages = buildRollResumeMessages(state, intentQueue, rollResolution)
+    const proseFirstResume = input.proseFirst
       ? buildProseFirstNarratorMessages(
           buildProseFirstInput(input.proseFirst, state, 'Continue from the roll result.', [])
-        )?.system
+        )
       : null
+    if (proseFirstResume) {
+      messages = prependMechanicalSnapshotToLastUserMessage(
+        messages,
+        proseFirstResume.mechanicalSnapshotText
+      )
+    }
     return {
       mode: 'roll_resume',
-      system: proseFirstResumeSystem ?? buildNarratorSystemBlocks(state),
+      system: proseFirstResume?.system ?? buildNarratorSystemBlocks(state),
       messages,
       cachedTools,
       diagnostics: buildEmptyNarratorDiagnostics(),
@@ -253,5 +260,38 @@ function appendIntentQueueBlock(messages: Anthropic.MessageParam[], block: strin
       }),
     }
   }
+  return next
+}
+
+function prependMechanicalSnapshotToLastUserMessage(
+  messages: Anthropic.MessageParam[],
+  mechanicalSnapshotText: string
+): Anthropic.MessageParam[] {
+  const lastIndex = messages.length - 1
+  const last = messages[lastIndex]
+  if (!last || last.role !== 'user') return messages
+
+  const next = [...messages]
+  if (typeof last.content === 'string') {
+    next[lastIndex] = {
+      ...last,
+      content: prependMechanicalSnapshotToUserContent(last.content, mechanicalSnapshotText),
+    }
+    return next
+  }
+
+  if (Array.isArray(last.content)) {
+    next[lastIndex] = {
+      ...last,
+      content: [
+        ...last.content,
+        {
+          type: 'text' as const,
+          text: `<mechanical-snapshot>\n${mechanicalSnapshotText}\n</mechanical-snapshot>`,
+        },
+      ],
+    }
+  }
+
   return next
 }

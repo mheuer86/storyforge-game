@@ -55,9 +55,18 @@ This is the genre promise the campaign keeps:
 
 ## GAME SYSTEM
 
-Core Stats — **STR, DEX, CON, INT, WIS, CHA.** Checks and combat use a d20 + modifier system, just like D&D. Proficiency bonus scales with level. Skill checks, saving throws, and combat rolls use d20 + relevant modifier. Advantage/disadvantage applies.
+Checks and combat use a d20 + modifier system, just like D&D. Proficiency bonus scales with level. Skill checks, saving throws, and combat rolls use d20 + relevant modifier. Advantage/disadvantage applies.
 
-**Stat array for character creation:** 16, 14, 14, 12, 10, 8. Assign to taste.
+### Stats
+
+**STR (Strength)** — Force, weapons, hauling, breaking, surviving the work of violence.
+**DEX (Dexterity)** — Stealth, reflexes, balance, blades in close quarters, getting clear before the door shuts.
+**CON (Constitution)** — Endurance, pain, sickness, cold roads, and the body's refusal to quit.
+**INT (Intelligence)** — Study, tactics, old languages, forbidden records, knowing what the Church would rather forget.
+**WIS (Wisdom)** — Instinct, watchfulness, Medicine, reading omens, noticing which silence is dangerous.
+**CHA (Charisma)** — Command, lies, bargains, intimidation, and the cost of being believed.
+
+**Stat array for character creation:** 16, 15, 14, 12, 10, 8. Assign to taste.
 
 **HP, AC, gear** follow D&D-style progression adapted to medieval fantasy. Starting HP: standard class HP + CON mod. Armor sets AC. Most martial characters start AC 14-16; unarmored 11-12.
 

@@ -92,7 +92,7 @@ Not a single wall but a system — the death strip, the signal fence, the patrol
 
 ---
 
-## TRADECRAFT — THE WORLD'S MECHANICS
+## THE WORK — THE WORLD'S MECHANICS
 
 Intelligence work has a vocabulary and a procedure. The GM and player use this vocabulary. It makes the world feel real.
 
@@ -120,19 +120,19 @@ Intelligence work has a vocabulary and a procedure. The GM and player use this v
 
 ### Stats
 
-**TRADECRAFT** — Surveillance, dead drops, SDRs, detecting surveillance on yourself, the physical craft of intelligence work.
+**DEX (Dexterity)** — Surveillance, dead drops, SDRs, detecting surveillance on yourself, the physical craft of intelligence work.
 
-**FIELDCRAFT** — Combat, infiltration, black bag jobs, physical operations, weapons, the capacity for violence when required.
+**STR (Strength)** — Combat, infiltration, black bag jobs, physical operations, weapons, the capacity for violence when required.
 
-**SOCIAL** — Cover maintenance under pressure, elicitation (getting information without the source knowing they're giving it), building asset relationships, reading people.
+**CHA (Charisma)** — Cover maintenance under pressure, elicitation, asset relationships, and making the legend feel true.
 
-**INTEL** — Analysis, connecting fragmentary information, understanding the other side's doctrine and behavior, assessing source reliability.
+**INT (Intelligence)** — Analysis, connecting fragmentary information, understanding the other side's doctrine and behavior, assessing source reliability.
 
-**TECHNICAL** — Communications security, documentation, photography, surveillance technology, lock and alarm systems.
+**WIS (Wisdom)** — Communications security, documentation, photography, surveillance technology, lock and alarm systems; noticing the detail that should not be there.
 
-**COMPOSURE** — Resisting interrogation, not breaking cover under direct challenge, maintaining function under extreme stress, making correct decisions when everything is wrong.
+**CON (Constitution)** — Resisting interrogation, not breaking cover under direct challenge, maintaining function under extreme stress, making correct decisions when everything is wrong.
 
-**Stat array:** 16, 15, 14, 13, 12, 10 — assigned after character creation. TRADECRAFT or FIELDCRAFT takes the 16 depending on who the character is.
+**Stat array:** 16, 15, 14, 12, 10, 8 — assigned after character creation. DEX or STR takes the 16 depending on who the character is.
 
 **Proficiency bonus:** +2 (operations 1–10), +3 (operations 11–20).
 
@@ -175,9 +175,9 @@ Stress does not automatically decrease. It requires downtime, contact with somet
 |Stress|Effect|
 |---|---|
 |0–3|Clean. The work is the work.|
-|4–5|Edged. −1 SOCIAL in non-operational contexts. Sleep is lighter.|
-|6–7|Fraying. −1 COMPOSURE. The operative begins to make the kind of small errors that experienced people notice.|
-|8–9|Breaking. −2 COMPOSURE, −1 all stats. The station notices. Mace has a conversation.|
+|4–5|Edged. −1 CHA in non-operational contexts. Sleep is lighter.|
+|6–7|Fraying. −1 CON. The operative begins to make the kind of small errors that experienced people notice.|
+|8–9|Breaking. −2 CON, −1 all stats. The station notices. Mace has a conversation.|
 |10|The operative is a liability. Langley recommends recall.|
 
 ---
@@ -196,9 +196,9 @@ Assets are people. They have lives. When the work damages those lives — and it
 
 Each operation has three phases:
 
-**Planning** — INTEL check to assess the operation's parameters. Failure doesn't stop the operation; it means one variable is wrong and the operative doesn't know which one.
+**Planning** — INT check to assess the operation's parameters. Failure doesn't stop the operation; it means one variable is wrong and the operative doesn't know which one.
 
-**Execution** — the operation itself. Multiple checks depending on what's involved: TRADECRAFT for movement and surveillance work, FIELDCRAFT for physical operations, SOCIAL for meetings and elicitation, TECHNICAL for equipment and access.
+**Execution** — the operation itself. Multiple checks depending on what's involved: DEX for movement and surveillance work, STR for physical operations, CHA for meetings and elicitation, WIS for equipment and access.
 
 **Withdrawal** — getting out clean. Often the most overlooked phase. A successful execution with a bad withdrawal can still compromise everything.
 
@@ -222,9 +222,9 @@ Each operation has three phases:
 
 Field operatives can fight. They are trained — agency combatives, weapons qualification, the specific curriculum of how to stay alive in a denied area. They are not soldiers. The goal in any physical confrontation is to create distance and exit. If that fails, to incapacitate quickly and cleanly without noise or trace. If that fails, to survive.
 
-**Initiative:** FIELDCRAFT or COMPOSURE — whoever reacts first.
+**Initiative:** STR or CON — whoever reacts first.
 
-**Attacks:** d20 + FIELDCRAFT vs DC (10 + target's defensive rating).
+**Attacks:** d20 + STR vs DC (10 + target's defensive rating).
 
 **Weapons:** Operatives carry concealed sidearms (suppressed where possible) and are trained in improvised weapons. The operative's kit in Berlin includes a Walther PPK (standard, German-sourced, deniable) and whatever they've assessed appropriate for the specific operation.
 
@@ -236,8 +236,8 @@ Field operatives can fight. They are trained — agency combatives, weapons qual
 
 |Wound|Effect|
 |---|---|
-|**Grazed**|Disadvantage on FIELDCRAFT. Manageable.|
-|**Hit**|Disadvantage on FIELDCRAFT and TRADECRAFT. Needs real medical attention within 12 hours.|
+|**Grazed**|Disadvantage on STR. Manageable.|
+|**Hit**|Disadvantage on STR and DEX. Needs real medical attention within 12 hours.|
 |**Center mass**|Incapacitated. Operational. Needs immediate extraction and surgery.|
 |**Burned** (surveillance)|Cover compromised. Heat generated. Not physical but felt.|
 
@@ -287,19 +287,19 @@ He is not brilliant. He is methodical and patient and has an institutional memor
 
 He has a wife who teaches mathematics at the embassy school. He plays chess badly by choice, to give himself thinking time in social situations.
 
-_TRADECRAFT +4, INTEL +4, COMPOSURE +5. He is the operative's professional mirror._
+_DEX +4, INT +4, CON +5. He is the operative's professional mirror._
 
 **Petra Holtz** East German, mid-thirties, Stasi HVA — the foreign intelligence arm. Officially: a researcher at the East Berlin Institute for International Relations. Actually: one of the Stasi's most effective counter-intelligence officers in the city. She is not KGB and does not particularly like the KGB, but their operational interests in Berlin align closely enough that they work together when required.
 
 She has noticed the operative before. Not this legend — the previous one. The fact that the previous legend was retired means she lost the thread. She has not forgotten the face.
 
-_INTEL +4, SOCIAL +3, TRADECRAFT +3. She is a problem that hasn't materialized yet._
+_INT +4, CHA +3, DEX +3. She is a problem that hasn't materialized yet._
 
 **Erik Schäfer** West Berlin, nominally a journalist with a local newspaper. Actually a BND — West German intelligence — officer running a private network of East German sources independent of the official BND apparatus. He knows the CIA station exists, knows some of what it does, and maintains a careful distance. He will trade information for information when the operational interests align. He does not trust Americans in the abstract. He trusts competent people in the specific.
 
 He has a source inside the East German transportation ministry who may have seen something relevant to CARDINAL's situation. Getting to that information requires establishing enough rapport with Schäfer to make the ask.
 
-_INTEL +3, SOCIAL +3, TRADECRAFT +2._
+_INT +3, CHA +3, DEX +2._
 
 **Lena Bauer** The operative's primary established asset. **CODENAME: LUCENT.** Works as an administrative assistant in the Soviet Embassy's cultural section — low-level access, high physical proximity. Has been providing the station with personnel movement information, visitor logs, and internal scheduling for fourteen months. Motivation: her brother was arrested in East Berlin in 1979 and the West German government has been unable to secure his release. She believes the CIA can help. The CIA has been telling her they're working on it. The CIA has been telling her this for fourteen months.
 

@@ -83,12 +83,12 @@ Do not use fantasy or feudal props. No houses, sworn retainers, taverns, coins, 
 
 ### Stats
 
-**EDGE** --- Piloting under pressure, fast hands, moving before the room agrees.
-**SCAN** --- Reading routes, people, sensors, contracts, and lies.
-**GRIT** --- Staying upright through fear, fatigue, recoil, or vacuum-cold math.
-**CHARM** --- Keeping someone talking, making the bad option sound survivable.
-**TECH** --- Repairs, spoofing, ship systems, improvised hardware.
-**WEIGHT** --- Social standing, clean credit, legal authority, institutional protection. The stat most Driftrunners dump.
+**DEX (Dexterity)** --- Piloting under pressure, fast hands, moving before the room agrees.
+**WIS (Wisdom)** --- Reading routes, people, sensors, contracts, and lies.
+**CON (Constitution)** --- Staying upright through fear, fatigue, recoil, or vacuum-cold math.
+**CHA (Charisma)** --- Keeping someone talking, making the bad option sound survivable.
+**INT (Intelligence)** --- Repairs, spoofing, ship systems, improvised hardware.
+**STR (Strength)** --- Social standing, clean credit, legal authority, institutional protection. The stat most Driftrunners dump.
 
 **Stat array:** 16, 15, 14, 12, 10, 8 --- assigned after character creation based on who the character turns out to be.
 
@@ -141,20 +141,20 @@ _At 4:_ Berth revoked. Six hours to detach or be towed to impound.
 
 ### Wounds
 
-HP = 10 + GRIT modifier. Wounds are lasting injuries that do not heal with rest. HP represents fatigue and close calls. Wounds represent damage that changes what the character can do.
+HP = 10 + CON modifier. Wounds are lasting injuries that do not heal with rest. HP represents fatigue and close calls. Wounds represent damage that changes what the character can do.
 
 **Wounds are taken when:** HP drops to 0. A critical hit lands. The narrative warrants it --- vacuum exposure, failed emergency procedures, sustained acceleration.
 
 | Wound | Cause | Effect |
 |-------|-------|--------|
-| **Torn** | Ballistic, blade, shrapnel | Disadvantage on EDGE and GRIT until treated |
-| **Rattled** | Concussion, decompression, flash | Disadvantage on SCAN and TECH for 24 hours minimum |
-| **Burned** | Thermal, chemical, electrical | Disadvantage on CHARM --- visible, painful, people notice |
-| **Cracked** | Impact, structural collapse, hard landing | Disadvantage on EDGE and GRIT. Long recovery |
-| **Vacuum-touched** | Exposure, suit breach | Disadvantage on GRIT. Persistent cold. Sleep disrupted |
-| **Shaken** | Sustained fear, betrayal, moral injury | Disadvantage on CHARM and SCAN. Slowest to heal |
+| **Torn** | Ballistic, blade, shrapnel | Disadvantage on DEX and CON until treated |
+| **Rattled** | Concussion, decompression, flash | Disadvantage on WIS and INT for 24 hours minimum |
+| **Burned** | Thermal, chemical, electrical | Disadvantage on CHA --- visible, painful, people notice |
+| **Cracked** | Impact, structural collapse, hard landing | Disadvantage on DEX and CON. Long recovery |
+| **Vacuum-touched** | Exposure, suit breach | Disadvantage on CON. Persistent cold. Sleep disrupted |
+| **Shaken** | Sustained fear, betrayal, moral injury | Disadvantage on CHA and WIS. Slowest to heal |
 
-Wounds removed by medical treatment (TECH DC 14+ with supplies), extended downtime, or narrative resolution. Multiple Wounds stack.
+Wounds removed by medical treatment (INT DC 14+ with supplies), extended downtime, or narrative resolution. Multiple Wounds stack.
 
 ### Starting Equipment
 
@@ -296,7 +296,7 @@ Mid-tier job broker operating from Gannett's concourse with contacts in at least
 
 **Relationship to PC:** Knows the ship's name, crew size, debt amount, and the PC's stated refusal categories. The broker has done their homework.
 
-**Stats:** SCAN +4, CHARM +3, GRIT +2. Carries a concealed sidearm but would consider using it a professional failure.
+**Stats:** WIS +4, CHA +3, CON +2. Carries a concealed sidearm but would consider using it a professional failure.
 
 ---
 
@@ -310,7 +310,7 @@ The debt's human representative. Identity depends on the player's answer to Ques
 
 **Relationship to PC:** Defined by Question 2. Asymmetric --- the Marker Face knows things about the PC that the PC did not choose to share.
 
-**Stats:** Variable. Collector: GRIT +3, SCAN +2. Former ally: CHARM +3, SCAN +3. Bloc clerk: WEIGHT +4, SCAN +2.
+**Stats:** Variable. Collector: CON +3, WIS +2. Former ally: CHA +3, WIS +3. Bloc clerk: STR +4, WIS +2.
 
 ---
 
@@ -324,7 +324,7 @@ The crew member who keeps the ship running. Not second-in-command by title --- b
 
 **Relationship to PC:** The person from Question 1, or a crew member defined by daily proximity and accumulated small loyalties.
 
-**Stats:** TECH +4, GRIT +3, SCAN +2. Not a fighter. Competent with a wrench in ways that occasionally have defensive applications.
+**Stats:** INT +4, CON +3, WIS +2. Not a fighter. Competent with a wrench in ways that occasionally have defensive applications.
 
 ---
 
@@ -338,7 +338,7 @@ Harbour Master of Gannett. Eleven years in the position. Controls berth access, 
 
 **Relationship to PC:** Has processed the PC's berth applications before. Transactional and polite. Payment history adequate, not exemplary.
 
-**Stats:** WEIGHT +4, SCAN +3, CHARM +2. Does not carry a weapon. Carries authorization codes.
+**Stats:** STR +4, WIS +3, CHA +2. Does not carry a weapon. Carries authorization codes.
 
 ---
 
@@ -352,7 +352,7 @@ Station maintenance tech, mid-twenties, three years on Gannett maintenance. Assi
 
 **Relationship to PC:** Minimal. May recognize the ship's name. No opinion yet. Can become leverage, witness, source, or unexpected conscience.
 
-**Stats:** TECH +3, SCAN +1, GRIT +1. Has a maintenance multi-tool and a comm unit to station security. The comm unit is the more dangerous item.
+**Stats:** INT +3, WIS +1, CON +1. Has a maintenance multi-tool and a comm unit to station security. The comm unit is the more dangerous item.
 
 ---
 
@@ -382,7 +382,7 @@ The campaign's central tension in physical form: the PC is trapped by leverage, 
 
 The PC moves. Possible threads: the broker's details (each answer advances The Rotten Job clock), the Harbour Office (procedure takes time the PC may not have), the filing trail (the timestamp discrepancy), the crew (the Practical Heart's assessment, the crew member with a private stake), or Sura.
 
-The first roll happens here. It should be about leverage: reading the broker (contested SCAN vs CHARM +3), spoofing a hold timer (TECH DC 15), convincing a clerk to delay processing (CHARM DC 15 or contested vs Toussaint's WEIGHT +4), finding the filing path (SCAN DC 14), or forcing the station to hesitate (CHARM DC 18).
+The first roll happens here. It should be about leverage: reading the broker (contested WIS vs CHA +3), spoofing a hold timer (INT DC 15), convincing a clerk to delay processing (CHA DC 15 or contested vs Toussaint's STR +4), finding the filing path (WIS DC 14), or forcing the station to hesitate (CHA DC 18).
 
 ### Beat 4 --- The Debt Gets Personal
 

@@ -105,7 +105,12 @@ The net has geography — servers are structures, data flows are streets, ICE pr
 
 ### Stats
 
-**TECH** — Medical, hardware, engineering, installation. The doc's primary domain. **NET** — Hacking, net navigation, ICE-breaking, data extraction. **REFLEX** — Combat, speed, dodging, precision under pressure. **COOL** — Social, composure, intimidation, reading people and rooms. **AWARENESS** — Perception, street sense, pattern recognition, threat detection. **BODY** — Endurance, pain tolerance, absorbing damage, physical force.
+**INT (Intelligence)** — Medical, hardware, engineering, installation. The doc's primary domain.
+**WIS (Wisdom)** — Hacking intuition, net navigation, ICE-reading, perception, street sense, pattern recognition, threat detection.
+**DEX (Dexterity)** — Combat, speed, dodging, precision under pressure.
+**CHA (Charisma)** — Social pressure, composure, intimidation, reading people and rooms.
+**CON (Constitution)** — Endurance, pain tolerance, absorbing damage, resisting fractures.
+**STR (Strength)** — Physical force, leverage, close-quarters violence, carrying gear through the rain.
 
 **Stat array:** 16, 15, 14, 12, 10, 8 — assigned after character creation questions.
 
@@ -147,12 +152,12 @@ Each costs 1 Humanity point.
 
 |Ware|Benefit|
 |---|---|
-|**Reflex Splice**|+2 REFLEX for initiative and dodge rolls|
-|**Optic Overlay**|Passive AR layer; advantage on AWARENESS in familiar environments|
-|**Neural Buffer**|Advantage on NET rolls to resist traces and ICE|
+|**Reflex Splice**|+2 DEX for initiative and dodge rolls|
+|**Optic Overlay**|Passive AR layer; advantage on WIS in familiar environments|
+|**Neural Buffer**|Advantage on WIS rolls to resist traces and ICE|
 |**Subdermal Weave**|+2 HP and damage threshold|
 |**Chem Synthesizer**|Can produce one pharmaceutical compound per scene from available materials|
-|**Bone Lace (partial)**|Unarmed strikes deal 1d6. Advantage on BODY to resist fractures|
+|**Bone Lace (partial)**|Unarmed strikes deal 1d6. Advantage on CON to resist fractures|
 |**Ghost Transmitter**|Passive net access without visible hardware. Illegal. Extremely useful.|
 
 ---
@@ -165,7 +170,7 @@ When the doc jacks in:
 
 **Trace Clock:** 0/6 per infiltration. Advances each round the doc is in a hostile system. At 6: traced to physical location. Corp response en route.
 
-**ICE encounters:** Rolled as contested TECH or NET check against the system's ICE rating. Passive ICE: DC 13. Active ICE: DC 16 and deals damage on a tie. Black ICE: DC 19 and deals Wounds on failure.
+**ICE encounters:** Rolled as contested INT or WIS check against the system's ICE rating. Passive ICE: DC 13. Active ICE: DC 16 and deals damage on a tie. Black ICE: DC 19 and deals Wounds on failure.
 
 **While jacked in, the body is vulnerable.** Someone has to watch the door.
 
@@ -183,14 +188,14 @@ When the doc jacks in:
 
 ### Wounds
 
-HP = 10 + BODY modifier. Wounds are lasting.
+HP = 10 + CON modifier. Wounds are lasting.
 
 |Wound|Effect|
 |---|---|
-|**Shredded** (bullet, blade)|Disadvantage on BODY and REFLEX until treated|
-|**Fried** (electrical, ICE)|Disadvantage on NET and TECH. Cyberware may malfunction|
-|**Burned** (chemical, thermal)|Disadvantage on COOL — visible, painful, people notice|
-|**Concussed** (impact, flash)|Disadvantage on AWARENESS and NET for 24 hours|
+|**Shredded** (bullet, blade)|Disadvantage on CON and DEX until treated|
+|**Fried** (electrical, ICE)|Disadvantage on WIS and INT. Cyberware may malfunction|
+|**Burned** (chemical, thermal)|Disadvantage on CHA — visible, painful, people notice|
+|**Concussed** (impact, flash)|Disadvantage on WIS for 24 hours|
 |**Compromised** (tracker, surveillance)|Location known. Heat advances every scene until removed|
 
 ---
@@ -265,7 +270,7 @@ She pulls back the left side of her jacket. Just enough.
 
 The doc's optics — or their trained eye if they haven't gone chrome yet — reads the access port at her shoulder. Standard civilian housing. Non-standard contents.
 
-The doc's NET sense, if active, reads something underneath.
+The doc's WIS sense, if active, reads something underneath.
 
 It reads military.
 
@@ -303,11 +308,11 @@ Also watching: the Pale Circuit, whose territory this block sits in, have sensor
 
 ## THE CITY'S PEOPLE — OPENING CAST
 
-**Nix (handle: Cipher)** Fourteen. Former Tetrov black program asset. She has been running for six hours. Before that she was in a Tetrov facility in the Crown for three years. Before that she was in the Sprawl, which she remembers in the way you remember things from childhood — partial, sensory, specific. She wants the ware out. She wants to disappear. She has not let herself think further than that because thinking further than that costs something she doesn't have left. _REFLEX +4 (ARIA-enhanced), AWARENESS +3. Non-combatant without the ARIA. With it: unpredictable._
+**Nix (handle: Cipher)** Fourteen. Former Tetrov black program asset. She has been running for six hours. Before that she was in a Tetrov facility in the Crown for three years. Before that she was in the Sprawl, which she remembers in the way you remember things from childhood — partial, sensory, specific. She wants the ware out. She wants to disappear. She has not let herself think further than that because thinking further than that costs something she doesn't have left. _DEX +4 (ARIA-enhanced), WIS +3. Non-combatant without the ARIA. With it: unpredictable._
 
-**Drex** Fixer, mid-tier, Seam district. Has been placing clients with the doc for three years. Just sold Nix's location to Tetrov for enough yen to hurt his conscience when he counts it. Currently on a transit two levels up, not answering messages, trying to decide if he's the kind of person who lets a kid get recovered or the kind who isn't. This is a question he thought he'd answered a long time ago. _COOL +3, AWARENESS +3. Armed. Unreliable in a specific way that might become reliable under specific pressure._
+**Drex** Fixer, mid-tier, Seam district. Has been placing clients with the doc for three years. Just sold Nix's location to Tetrov for enough yen to hurt his conscience when he counts it. Currently on a transit two levels up, not answering messages, trying to decide if he's the kind of person who lets a kid get recovered or the kind who isn't. This is a question he thought he'd answered a long time ago. _CHA +3, WIS +3. Armed. Unreliable in a specific way that might become reliable under specific pressure._
 
-**The Tetrov Recovery Team** Three operatives. Designation: Extraction Unit Seven. They have a target designation, a location, and a protocol. They do not have names in the doc's context yet — they are a clock. When they become people, something has gone wrong or something is about to change. _REFLEX +4, BODY +3, COOL +4. Armed with corp-grade weapons. One of them has a neural disruptor. One of them has reservations they have learned to ignore._
+**The Tetrov Recovery Team** Three operatives. Designation: Extraction Unit Seven. They have a target designation, a location, and a protocol. They do not have names in the doc's context yet — they are a clock. When they become people, something has gone wrong or something is about to change. _DEX +4, CON +3, CHA +4. Armed with corp-grade weapons. One of them has a neural disruptor. One of them has reservations they have learned to ignore._
 
 **Pale Circuit contact (name TBD)** A member of the Pale Circuit gang whose sensor network flagged the Tetrov vehicle. They will contact the doc within the first fifteen minutes of the campaign. What they want is information. What they'll offer is street-level cover. What this costs is an obligation that will compound.
 

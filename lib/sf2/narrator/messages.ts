@@ -86,6 +86,13 @@ function asCacheableMessage(role: 'user' | 'assistant', text: string): Anthropic
   }
 }
 
+export function prependMechanicalSnapshotToUserContent(
+  content: string,
+  mechanicalSnapshotText: string
+): string {
+  return `<mechanical-snapshot>\n${mechanicalSnapshotText}\n</mechanical-snapshot>\n\n${content}`
+}
+
 function normalizeTranscriptTurn(
   turn: Sf2ProseFirstNarratorTranscriptTurn
 ): Sf2ProseFirstNarratorTranscriptTurn | null {
@@ -163,10 +170,6 @@ export function buildProseFirstNarratorMessages(
   const mechanicalSnapshotText = renderProseFirstMechanicalSnapshot(input.mechanicalSnapshot)
   const system: Anthropic.TextBlockParam[] = [
     asCacheableTextBlock(stablePrefix),
-    {
-      type: 'text' as const,
-      text: mechanicalSnapshotText,
-    },
   ]
   const transcript = input.transcript
     .map(normalizeTranscriptTurn)
@@ -185,9 +188,11 @@ export function buildProseFirstNarratorMessages(
   }
 
   const currentInput = input.playerInput.trim()
+  const currentContent = currentInput ||
+    'Begin from the private campaign brief. Ask the embedded character creation questions or open the next chapter as instructed.'
   messages.push({
     role: 'user',
-    content: currentInput || 'Begin from the private campaign brief. Ask the embedded character creation questions or open the next chapter as instructed.',
+    content: prependMechanicalSnapshotToUserContent(currentContent, mechanicalSnapshotText),
   })
 
   return {
