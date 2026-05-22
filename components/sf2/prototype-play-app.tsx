@@ -1242,6 +1242,26 @@ function PrototypeSaveSlotsPanel({
   )
 }
 
+type DiceRollTone = 'idle' | 'success' | 'failure' | 'critical' | 'fumble'
+
+function diceRollTone(result?: RollOutcome['result']): DiceRollTone {
+  if (result === 'critical') return 'critical'
+  if (result === 'fumble') return 'fumble'
+  if (result === 'success') return 'success'
+  if (result === 'failure') return 'failure'
+  return 'idle'
+}
+
+function diceRollLabel(tone: DiceRollTone) {
+  switch (tone) {
+    case 'critical': return 'Critical'
+    case 'success': return 'Success'
+    case 'failure': return 'Failure'
+    case 'fumble': return 'Fumble'
+    default: return ''
+  }
+}
+
 function RollPanel({
   pendingCheck,
   resolution,
@@ -1255,38 +1275,128 @@ function RollPanel({
   liveRolls: Sf2ClientLiveRollView[]
   onRoll: () => void
 }) {
+  const [isRolling, setIsRolling] = useState(false)
+  const [display, setDisplay] = useState<number | null>(null)
   const latestRoll = liveRolls.at(-1)
+  const result = rollResult ?? latestRoll?.outcome ?? null
+  const tone = diceRollTone(result?.result)
+  const resolved = tone !== 'idle'
+  const dc = resolution?.effectiveDc ?? pendingCheck.dc
+  const modifier = resolution?.modifier ?? 0
+
+  useEffect(() => {
+    if (result?.d20 !== undefined) {
+      setDisplay(result.d20)
+      setIsRolling(false)
+    }
+  }, [result?.d20])
+
+  function handleRoll() {
+    if (isRolling) return
+    const prefersReducedMotion = typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) {
+      onRoll()
+      return
+    }
+    setIsRolling(true)
+    const interval = window.setInterval(() => {
+      setDisplay(1 + Math.floor(Math.random() * 20))
+    }, 45)
+    window.setTimeout(() => {
+      window.clearInterval(interval)
+      onRoll()
+    }, 720)
+  }
+
+  const dieValue = display ?? (resolved ? result?.d20 : 'd20')
+
   return (
     <div className="border-t border-border/70 bg-background/45 p-4">
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="min-w-0 [overflow-wrap:anywhere]">
-          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-primary">Roll requested</div>
-          <div className="mt-1 text-sm text-foreground">{pendingCheck.skill} vs DC {resolution?.effectiveDc ?? pendingCheck.dc}</div>
-          <div className="mt-1 text-xs leading-5 text-muted-foreground">{pendingCheck.why}</div>
-          {pendingCheck.consequenceOnFail ? (
-            <div className="mt-1 text-xs leading-5 text-muted-foreground">Failure: {pendingCheck.consequenceOnFail}</div>
-          ) : null}
+      <div className={cn(
+        'mx-auto max-w-[760px] rounded-xl px-4 py-4 transition-[background-color,border-color] duration-200',
+        !resolved && 'border border-primary/45',
+        tone === 'success' && 'bg-success/10',
+        tone === 'failure' && 'bg-warning/10',
+        tone === 'critical' && 'bg-warning/15',
+        tone === 'fumble' && 'bg-severe/10',
+      )}>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5">
+          <div className="min-w-0 [overflow-wrap:anywhere]">
+            {resolved ? (
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65">
+                {pendingCheck.skill} Check
+              </div>
+            ) : null}
+            <div className={cn(
+              'font-mono leading-none [text-wrap:balance]',
+              resolved
+                ? cn('text-[26px] font-bold md:text-[30px]',
+                    tone === 'critical' && 'text-warning',
+                    tone === 'success' && 'text-success',
+                    tone === 'failure' && 'text-warning',
+                    tone === 'fumble' && 'text-severe',
+                  )
+                : 'text-[18px] font-semibold text-primary md:text-[20px]',
+            )}>
+              {resolved ? diceRollLabel(tone) : `${pendingCheck.skill} Check`}
+            </div>
+            {resolved && result && (
+              <div className="mt-2 font-mono text-[12px] tabular-nums text-foreground/75 md:text-[13px]">
+                {result.d20} {formatSigned(modifier)} = {(result.d20 ?? 0) + modifier} vs DC {dc}
+              </div>
+            )}
+            {resolution && !resolved ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {resolution.sourceBreakdown.slice(0, 5).map((source, index) => (
+                  <span key={index} className="rounded border border-border/40 bg-card/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/65">
+                    {source.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {pendingCheck.why ? (
+              <p className="mt-3 max-w-[32rem] text-sm font-normal leading-snug text-foreground/85 [text-wrap:pretty]" style={{ fontFamily: 'var(--font-narrative)' }}>
+                {pendingCheck.why}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 flex-col items-center gap-2 md:items-end">
+            <div
+              className={cn(
+                'flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border font-mono text-[30px] font-bold tabular-nums leading-none transition-[background-color,border-color,color,box-shadow] duration-200 md:h-24 md:w-24 md:text-[34px]',
+                !resolved && 'border-primary/45 text-primary',
+                tone === 'success' && 'border-success/65 bg-success/20 text-success',
+                tone === 'failure' && 'border-warning/65 bg-warning/20 text-warning',
+                tone === 'critical' && 'border-warning/80 bg-warning/25 text-warning shadow-[0_0_30px_-6px_currentColor]',
+                tone === 'fumble' && 'border-severe/75 bg-severe/20 text-severe shadow-[0_0_30px_-6px_currentColor]',
+                isRolling && 'shadow-[0_0_22px_-10px_currentColor]',
+              )}
+            >
+              <span className={cn(isRolling && 'animate-pulse')}>{dieValue}</span>
+            </div>
+            <div className={cn(
+              'font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums',
+              resolved ? 'text-foreground/55' : 'text-foreground/70',
+            )}>
+              vs DC {dc}
+            </div>
+          </div>
         </div>
-        <Button type="button" className="w-full sm:w-auto" onClick={onRoll}>
-          <Dice5 className="h-4 w-4" />
-          Roll d20 {formatSigned(resolution?.modifier ?? 0)}
-        </Button>
+
+        {!resolved && (
+          <button
+            type="button"
+            onClick={handleRoll}
+            disabled={isRolling}
+            className="mt-3 flex w-full min-h-10 items-center justify-center gap-2 rounded-md border border-primary/40 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-primary transition-colors hover:bg-primary/10 active:scale-[0.97] disabled:opacity-55 md:mx-auto md:w-[64%]"
+          >
+            <Dice5 className="h-4 w-4" />
+            Roll d20 {formatSigned(modifier)}
+          </button>
+        )}
       </div>
-      {resolution ? (
-        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="max-w-full rounded border border-border/50 bg-card/70 px-2 py-1 break-words">{resolution.diceMode}</span>
-          {resolution.sourceBreakdown.slice(0, 5).map((source, index) => (
-            <span key={index} className="max-w-full rounded border border-border/50 bg-card/70 px-2 py-1 break-words">
-              {source.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {rollResult ?? latestRoll?.outcome ? (
-        <div className="mt-3 rounded border border-border/60 bg-card/70 p-3 text-sm">
-          {formatRollOutcome(rollResult ?? latestRoll?.outcome)}
-        </div>
-      ) : null}
     </div>
   )
 }
