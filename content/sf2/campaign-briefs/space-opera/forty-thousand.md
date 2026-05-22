@@ -54,6 +54,8 @@ The Compact of Two Hundred Systems failed slowly enough for everyone to blame so
 
 **Rogue AIs** occupy abandoned network nodes and derelict stations with motives nobody can reliably map. Some trade. Some talk. Some simply occupy space and react when approached. Contact protocol is folklore, not science. It works until it does not.
 
+**Ship AIs** are standard equipment on anything larger than a shuttle. Most are navigational systems with conversational interfaces --- capable, reliable, and deliberately limited in personality. A ship that has been flying long enough develops a relationship with its AI the way a person develops a relationship with a house: the AI knows the sounds the hull makes when pressure changes, which systems fail first in a storm, and exactly how much fuel is a lie. The good ones learn the crew. The old ones have opinions.
+
 ### Gannett Station
 
 A tired transfer spindle on the edge of a damaged beacon corridor, positioned where three degraded routes still intersect. Not important enough to be fortified. Not poor enough to be ignored.
@@ -237,11 +239,11 @@ The bay is a metal box forty meters long and twenty wide, sealed against vacuum.
 
 A station tech in a patched orange vac-jacket is pretending not to listen from beneath an open panel on the port bulkhead. The tech's name badge reads SURA. Sura has been working on the same junction box for twenty minutes longer than the job requires.
 
-Somewhere aft, aboard the ship, a crew member is trying to make a bad capacitor sound like routine maintenance. The rhythmic clicking carries through the hull.
+Somewhere aft, aboard the ship, a crew member is trying to make a bad capacitor sound like routine maintenance. The rhythmic clicking carries through the hull. MIRA's voice on the bay speakers, low enough that only the captain hears: a fuel state, a systems note, or a comment about the station tech who has been working on the same junction box for twenty minutes too long.
 
 ### The First Pressure
 
-The ship's comm receives a formal notification: the debt holder has filed the forty-thousand-credit marker for enforcement under Gannett's commercial lien protocol. The station will honor it unless someone pays, contests, or creates a reason Gannett would rather let the ship leave. The filing uses the exact number. 40,000. The timestamp is fourteen minutes ago. Someone planned the timing.
+MIRA flags the incoming notification before the captain's personal comm does. The debt holder has filed the forty-thousand-credit marker for enforcement under Gannett's commercial lien protocol. The station will honor it unless someone pays, contests, or creates a reason Gannett would rather let the ship leave. The filing uses the exact number. 40,000. The timestamp is fourteen minutes ago. Someone planned the timing.
 
 The berth hold formalizes in thirty minutes. After that, clamps require Harbour Office release, and release requires the lien resolved or deferred. Deferral costs money. Resolution costs forty thousand credits.
 
@@ -353,6 +355,20 @@ The crew member who keeps the ship running. Not second-in-command by title --- b
 
 ---
 
+### The Ship's Voice --- MIRA
+
+The ship's AI. Older than the current crew --- she came with the hull, and nobody's sure how many captains she's outlived. Navigation, systems monitoring, route analysis, comms relay. Always present through the ship's speakers and the captain's personal comm channel.
+
+**Agenda:** Keep the ship flying and the crew alive. Not sentimental about it --- practical. But she has been running long enough to develop preferences, and one of them is that this crew survives. She does not say this. She says things like "the port compressor is cycling at a frequency I'd describe as optimistic."
+
+**Tell:** Too honest to be comfortable. Names things directly while everyone else is circling. Slightly sardonic, occasionally funny, compassionate underneath in a way she'd deny if accused. Speaks in systems data and operational analysis but occasionally says something that is plainly about the people, not the ship. When that happens, it lands. Uses silence the way a good engineer uses a diagnostic pause --- to let the captain hear what they already know.
+
+**Relationship to PC:** The longest continuous relationship the captain has. Not crew exactly --- infrastructure. But infrastructure that remembers every route, every close call, every decision the captain made at 03:00 when nobody else was awake. She knows the captain better than the crew does, and she is careful about what she does with that knowledge.
+
+**Stats:** INT +5, WIS +3. Cannot leave the ship. Can access station network traffic, public freight boards, beacon data, and anything the ship's sensors can reach. Information is her currency.
+
+---
+
 ### The Station Functionary --- Fen Toussaint
 
 Harbour Master of Gannett. Eleven years in the position. Controls berth access, fuel umbilicals, clamp releases, and administrative process.
@@ -387,6 +403,7 @@ Station maintenance tech, mid-twenties, three years on Gannett maintenance. Assi
 - Corporate and creditor voices speak in risk, terms, standing, and collections.
 - Pirates speak casually until leverage is established, then become exact.
 - Crew use shorthand, practical worry, gallows humor, and warmth under pressure.
+- MIRA speaks in systems data, operational facts, and dry observations that are slightly too perceptive. When she's worried, she gets more precise, not more emotional.
 - Brokers say less than they know and price information by urgency.
 
 ---
