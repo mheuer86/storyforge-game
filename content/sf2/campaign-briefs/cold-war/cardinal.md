@@ -321,6 +321,11 @@ The operative has an official cover identity in Berlin and a separate NOC legend
 
 _What is the official cover — what does the operative pretend to do at the consulate? And what is the NOC legend's name and profession — the deeper identity they wear when the work requires disappearing entirely?_
 
+Quick-start answers:
+- "Cultural attaché — I coordinate visiting American artists and academics. Boring enough to be invisible. The NOC is 'Karl Bremer,' a West German technical writer for an engineering firm. Karl has a apartment in Kreuzberg and a library card."
+- "Consular affairs officer — visa processing, passport services. I see every American who walks through the door, which is the point. The NOC is 'Peter Holt,' a Canadian journalist freelancing for European trade magazines."
+- "Economic analyst — I read trade reports and write cables about West German manufacturing output. Nobody reads them. The NOC is 'Markus Engel,' an Austrian antiquarian bookseller who attends estate sales on both sides of the Wall."
+
 ---
 
 ### Question 2 — The Before
@@ -328,6 +333,11 @@ _What is the official cover — what does the operative pretend to do at the con
 CIA field operatives don't come from nowhere. Military, DIA, HUMINT training at the Farm, a specific path that led here. The before shapes what the operative does instinctively when things go wrong.
 
 _What is the background — where did they come from before the Agency? And what did that background give them that the Farm's training didn't?_
+
+Quick-start answers:
+- "Army intelligence, three years in West Germany before the Agency recruited me. The Army taught me to read terrain — who controls what ground, who's watching, who's pretending not to watch. The Farm didn't teach that. Experience did."
+- "Navy, then DIA. Two years as a naval attaché in Helsinki — that's where I learned to handle a long-term asset without blowing their life up. The Farm teaches tradecraft. Helsinki taught me patience."
+- "Police detective, Chicago. Six years in homicide before a recruiter noticed I was good at getting people to talk. The Farm teaches you to run agents. Being a cop taught me that everyone is lying, including the people on your side."
 
 ---
 
@@ -337,6 +347,11 @@ Every field operative has made a decision about an asset that they know was wron
 
 _Who was this asset? What happened? And does the operative think about them when they look at LUCENT?_
 
+Quick-start answers:
+- "A secretary in the East German Trade Ministry. SPARROW. She was compromised — I saw the signs — and I kept running her for three more months because her product was too good. She survived, barely. Yes, I think about her when I look at LUCENT."
+- "A Polish naval officer I recruited in Gdansk. ANCHOR. Langley ordered the termination of his case when the risk profile changed. I didn't do it. I kept him active on my own authority for four months. He's still alive. I still don't know if that was mercy or selfishness."
+- "A journalist in Vienna who gave me access to Eastern Bloc press circles. MIRROR. Not a spy — a source who didn't fully understand what she was sourcing. I never told her the truth about who I was. She thinks we're friends. We probably are. That's the problem."
+
 ---
 
 ### Question 4 — The Disagreement
@@ -345,6 +360,11 @@ The operative disagrees with the Station Chief about something operationally sig
 
 _What is the disagreement? And has it been spoken or does it live in the way the operative executes their orders?_
 
+Quick-start answers:
+- "Mace believes assets are replaceable. I believe every asset is a person who trusted us with their life. It hasn't been spoken — it lives in the way I run my cases longer and harder than he'd like."
+- "Mace thinks the mole hunt is a distraction — background noise from Langley's paranoia. I think the pattern in the blown operations is real and someone in this station is feeding Moscow. I haven't said it out loud because saying it changes everything."
+- "Mace runs the station like a military operation — objectives, timelines, acceptable losses. I think intelligence work is a relationship business and you can't schedule trust. It lives in the margins of my reports, where I consistently recommend more time than he allots."
+
 ---
 
 ### Question 5 — The Reason
@@ -352,6 +372,11 @@ _What is the disagreement? And has it been spoken or does it live in the way the
 Intelligence work is voluntary at the level the operative operates. They could have a different life. They have made choices that have foreclosed significant parts of that different life, and they will make more.
 
 _Why are they still here? And is the reason the same as it was when they started, or has it quietly changed into something they haven't named yet?_
+
+Quick-start answers:
+- "I started because I believed the work mattered — that someone had to stand between what the Soviets wanted and what the world needed. I'm still here because I'm good at it. Those aren't the same reason, and I know it."
+- "I stay because of the people on the other side of the Wall who are counting on us. Not the Agency, not the policy — the specific people. CARDINAL is one of them. The reason hasn't changed. What's changed is how much it costs."
+- "Honestly? I don't know how to do anything else anymore. The skills I have are useful in exactly one profession. The reason I started — patriotism, duty, whatever I called it at twenty-five — has been replaced by something simpler: this is what I am."
 
 ---
 

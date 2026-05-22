@@ -212,6 +212,11 @@ Nobody uses their real name below the Mid. The doc has a street handle — proba
 
 _What do people call you? And does anyone still know the name on your original medical license?_
 
+Quick-start answers:
+- "Stitch. Because that's what I do — put things back together that shouldn't have come apart. The license says Dr. Maren Voss. The license expired three years ago."
+- "Zero. Because I zero out the corp firmware before installing gray-market chrome. My real name is in a MedFac database I haven't accessed since the fall."
+- "Doc Keel. Not a nickname — a warning. Keel over. As in: what happens if you don't hold still. Only my supplier Juno still calls me by my first name."
+
 ---
 
 ### Question 2 — The Fall
@@ -219,6 +224,11 @@ _What do people call you? And does anyone still know the name on your original m
 The doc had a legitimate career once. They're in a basement clinic in the Seam because something happened. Could be dramatic. Could be mundane. The most interesting answer is usually complicated.
 
 _What happened? And did it feel like a choice at the time, or like the only thing left to do?_
+
+Quick-start answers:
+- "I reported a batch of defective neural implants that were killing people. The manufacturer's response was to end my career instead of the product line. It felt like the only thing to do. It still does."
+- "I installed unlicensed chrome for a friend's kid who couldn't afford MedFac rates. The kid lived. My career didn't. It felt like a choice — the first real one I'd made in years."
+- "I got good at something I wasn't supposed to be good at. Corp neural architecture. The kind they don't teach in civilian programs. Someone noticed. Then someone decided I knew too much to work topside."
 
 ---
 
@@ -228,6 +238,11 @@ Everyone in the gray market owes someone. The doc has at least one debt with wei
 
 _Who holds the doc's debt? What do they want that the doc isn't sure they can give?_
 
+Quick-start answers:
+- "A fixer named Lao. She set me up in this clinic — lease, supply chain, the first six months of protection. She wants access to my skills when she needs them, no questions. The jobs are getting harder to not ask about."
+- "The Kessler Street Saints. They kept the Pale Circuit from stripping my clinic for parts in the first year. They want me on call for their people — free, fast, and quiet. The problem is what 'quiet' covers."
+- "A data broker named Ghost. She wiped my MedFac records when I went underground. She wants favors — small ones, so far. But the favors are getting less small."
+
 ---
 
 ### Question 4 — The Rule
@@ -236,6 +251,11 @@ One thing the doc doesn't do. Not for any money, not under any pressure. The lin
 
 _What is the rule? And is it already under pressure the moment the girl walks in?_
 
+Quick-start answers:
+- "I don't install compliance ware. Anything that overrides free will — behavioral governors, loyalty circuits, pain-compliance systems. A girl with unknown tech in her spine is already testing the edges of that rule."
+- "I don't work on kids. Not since the last one. A fourteen-year-old with military-grade chrome just walked through my door."
+- "I don't sell patient data. Not to corps, not to fixers, not to anyone. The girl's tech is worth more as information than as hardware, and someone will figure that out."
+
 ---
 
 ### Question 5 — The Chrome
@@ -243,6 +263,11 @@ _What is the rule? And is it already under pressure the moment the girl walks in
 Two pieces of cyberware from the starting list. Installed by their own hand, because they trust no one else.
 
 _What did they replace, and what do they tell themselves they didn't lose?_
+
+Quick-start answers:
+- "Optic Overlay and Neural Buffer. I tell myself the original eyes weren't that good anyway. The buffer — I tell myself I didn't lose anything, I just added a layer. Both times, my hands shook after."
+- "Reflex Splice and Ghost Transmitter. The splice cost me the natural rhythm of my own nervous system. The transmitter means I'm never really offline. I tell myself that's an upgrade."
+- "Chem Synthesizer and Subdermal Weave. I replaced soft tissue with something harder and added a pharmacy to my bloodstream. I tell myself a doc should be their own best patient."
 
 ---
 

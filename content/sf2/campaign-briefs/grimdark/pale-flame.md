@@ -199,32 +199,32 @@ These define the character more than stats.
 
 **1. What did you swear, and to whom?**
 
-This is your oath — the thing you bound yourself to. Examples:
+This is your oath — the thing you bound yourself to. **Whatever you swore will be tested in this campaign. That is the point.**
 
-- Knight of a House (specify which).
-- Sworn-sword of a lord, now dead.
-- Initiate of the Pale Flame (lapsed or active).
-- Hedge wizard apprenticed to a now-burnt master.
-- Sellsword under a company’s banner.
-- Oathless (you swore to break all oaths — paradox by design).
-- Bastard of a House, secretly acknowledged.
-- Defrocked priest of an older, suppressed faith.
-- Other (with GM agreement).
-
-**Whatever you swore will be tested in this campaign. That is the point.**
+Quick-start answers:
+- "Knight of House Valaren — I swore to the old lord before the succession. The new lord hasn’t called on me, and the silence says everything."
+- "Initiate of the Pale Flame, lapsed. I walked away after the burning at Hallow’s Reach. The Order considers lapsed initiates unfinished business."
+- "Sworn-sword of a lord now dead. His last command was to carry something south. I haven’t opened it."
+- "Oathless. I swore to break all oaths — the paradox is the point, and it gets heavier every year."
 
 **2. What do you still believe in, even now?**
 
 One thing. Not abstract — concrete. A person, a code, a debt, a place, a grudge. This is your anchor. It is what the world will eventually demand you give up.
 
-Examples: *a sister in a town three weeks east. a teacher’s grave in unholy ground. a debt to the man who pulled you from the river. the small theology of doing what you said you would. revenge against one specific person, named.*
+Quick-start answers:
+- "A sister in a town three weeks east. I haven’t written in two years. She doesn’t know what I’ve become."
+- "The small theology of doing what you said you would. Not honor — just the stubborn refusal to be someone who doesn’t."
+- "A teacher’s grave in unholy ground. Someone moved the body. I will find out who."
+- "Revenge against one specific person, named. I know where they were last winter. That’s enough to start."
 
 **3. Who do you owe, and who owes you?**
 
 Two names. These become the first NPCs.
 
-- Someone you owe — could find you, could call in the debt at any time.
-- Someone who owes you — may or may not honor it. May not be findable. May be dead.
+Quick-start answers:
+- "I owe a quartermaster named Bren who let me walk when I should have hanged. A merchant named Terris owes me for a job in the Ash Marches — last I heard, he was prospering."
+- "I owe the woman who hid me from the Flame’s inquisitors — she asked nothing, which means the debt has no ceiling. A young lord named Caelen owes me his life, and pretends not to remember."
+- "I owe the dead — a unit I left behind at the Vane River crossing. A healer named Soraya owes me three months’ pay for keeping her clinic safe from the Companies."
 
 ### Stat Array
 

@@ -176,11 +176,21 @@ _What is the ship called, and who aboard still says the name like it means home?
 
 Establishes the ship as a place with emotional weight and introduces the first crew member by relationship rather than role.
 
+Quick-start answers:
+- "The Endurance. Khe'Voz, our Thoran engineer — says the name like a prayer every time she patches the hull."
+- "The Last Margin. Slink, the youngest aboard — picked him up at seventeen. The ship's the first home he ever chose."
+- "The Quiet Professional. Fen, the pilot — named it herself the night she decided to stop running from things."
+
 ### Question 2 --- The Debt
 
 _Who owns the forty-thousand-credit marker tonight: a creditor, a collector, a former ally, a corporate desk, or someone worse?_
 
 Names the antagonist's human face. The answer determines whether the debt is institutional, personal, criminal, or complicated.
+
+Quick-start answers:
+- "Thorane, a crime lord from Titan. A run I did for her fell through and she's pinning the loss on me. The runner is always responsible."
+- "A Compact Remnant administrator. The debt started as a docking fee, then got absorbed into a lien portfolio, then got sold to someone I've never met."
+- "My former first mate. We split bad, she kept the receipts, and now those receipts have a legal number attached."
 
 ### Question 3 --- The Secret
 
@@ -188,17 +198,32 @@ _What did you do to keep your crew flying that you still have not told them?_
 
 Plants a secret in the PC's history that will surface through play. The crew does not know. Someone else might.
 
+Quick-start answers:
+- "Sold our flight recorder data from a route to a competitor. The crew thinks the nav logs corrupted naturally."
+- "One of the crew has a warrant I found and buried. If I tell them I know, I lose them. If the wrong person finds out I helped, I lose the ship."
+- "The run that created the debt — I could have saved the cargo. I chose to save the crew instead. But I told them the choice was made for us."
+
 ### Question 4 --- The Line
 
 _What kind of cargo, passenger, data, route, or claim would you normally refuse on sight?_
 
 Defines the PC's moral boundary. Whatever they refuse is what the broker's job will ask them to carry. The line exists to be tested.
 
+Quick-start answers:
+- "Weapons — especially the ones that wreak havoc on settlements. Bio, chemical, anything with a blast radius that doesn't care about civilians."
+- "People. Not passengers — cargo. Anyone being moved somewhere they didn't choose to go."
+- "Stolen medical supplies. Settlements out here need those more than black-market buyers do."
+
 ### Question 5 --- The Name
 
 _When everything goes bad, what name do station people use for you: captain, courier, smuggler, pilot, liar, or something more personal?_
 
 Establishes the PC's reputation. The gap between how the world sees them and how they see themselves is where dramatic friction lives.
+
+Quick-start answers:
+- "Captain. Said flat, like a job title — the kind of respect earned by showing up reliably, not dramatically."
+- "Rix — short for Richards. The name people use when they've decided you're real."
+- "Ghost. You've made it through corridors where other ships didn't, and nobody's entirely sure how."
 
 After the questions, assign the 16/15/14/12/10/8 array based on who the character turned out to be. The labels move. The values do not.
 

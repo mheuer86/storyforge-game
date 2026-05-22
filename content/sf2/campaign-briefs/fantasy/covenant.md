@@ -307,6 +307,11 @@ The mage has a name and a specialty. The school shapes what their magic looks li
 
 _What is your name? Which school did you specialize in, and what does your magic look like when you use it — color, sound, sensation?_
 
+Quick-start answers:
+- "Elara Thorne. Abjuration — my wards appear as faintly luminous geometry, cool blue-white, with a sound like a tuning fork struck underwater."
+- "Voss. Divination — when I scry, the air thickens with the smell of rain and the edges of my vision fill with branching paths, gold on black."
+- "Maren Ashwick. Evocation — my fire burns white, silent at the center. The heat arrives a half-second before the light."
+
 ---
 
 ### Question 2 — The Oath's Weight
@@ -314,6 +319,11 @@ _What is your name? Which school did you specialize in, and what does your magic
 Every Covenant mage swears the same three pledges. But pledges land differently depending on what you bring to them. One of the three means more to this mage than the others — not because they ignore the rest, but because of something in their history.
 
 _Which pledge weighs heaviest, and why?_
+
+Quick-start answers:
+- "Service to the realm and its people. I grew up in a village that needed a mage and didn't have one. I know what that absence costs."
+- "Holding the seals of the Unmaking. My mentor spent her life repairing one. I watched what leaked through the cracks before she finished."
+- "To teach what I have learned. My mentor died before she could pass on her last working. I know what it means when knowledge is lost because I carry the gap."
 
 ---
 
@@ -323,6 +333,11 @@ Seven years of training means a mentor. Someone who taught them most of what the
 
 _Who was your mentor? What did they give you that you still carry?_
 
+Quick-start answers:
+- "Magister Dorren — patient, precise, and retired from field work after losing three fingers to a ward breach. He gave me a brass astrolabe that hums faintly near old seals."
+- "Yara Silke — a Diviner who laughed too loud and drank too much and was right about things she shouldn't have been. She gave me a piece of advice: 'The future is always plural. Pick the one worth protecting.'"
+- "Aldric Vane — brilliant, cold, and gone. Left the Covenant under circumstances no one will explain to a junior mage. He left me his field journal. Half the pages are in a cipher I haven't cracked."
+
 ---
 
 ### Question 4 — The Horizon Spell
@@ -331,6 +346,11 @@ There is one spell the mage can't cast yet. Something in the next tier of their 
 
 _What is the Horizon Spell — and why does it matter to you beyond the mechanics?_
 
+Quick-start answers:
+- "True Ward — a permanent seal that holds without concentration. My mentor could do it. I can hold a ward for hours, but the moment I sleep, it falls. The difference between those two things is the difference between protection and presence."
+- "Far Sight — seeing a place I've never been as clearly as if I were standing in it. Right now my scrying only works on places I've already touched. The Silence in Ashford is somewhere I've never been."
+- "Counterspell at a distance. Right now I can only unravel a working if I'm close enough to touch the threads. That's a problem when the thing casting is something you don't want to be near."
+
 ---
 
 ### Question 5 — The Reason
@@ -338,6 +358,11 @@ _What is the Horizon Spell — and why does it matter to you beyond the mechanic
 People with magical ability don't all join the Covenant. The Thornwood Principalities don't. Wild mages don't. The choice to train formally, to swear, to become part of an institution — that's a specific choice that comes from somewhere.
 
 _Why the Covenant? And now that you're sworn and posted and on the road alone for the first time — does the reason still hold?_
+
+Quick-start answers:
+- "Because wild magic killed my mother. Untrained, unsworn, and she couldn't control what she had. The Covenant is the difference between power and competence. The reason holds. It holds harder every year."
+- "Because a Covenant mage came through my village when I was twelve and fixed the well. Just fixed it. No price, no politics. I wanted to be the person who does that. On the road alone for the first time, I'm finding out if I actually am."
+- "Because the alternative was the Thornwood Principalities, and I saw what their mages become. The Covenant isn't perfect but it has limits, and limits are what keep power from eating the person who holds it."
 
 ---
 

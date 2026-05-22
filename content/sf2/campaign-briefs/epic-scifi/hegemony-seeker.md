@@ -282,6 +282,11 @@ Every Resonant has a designation number given by the Synod at identification. So
 
 *What do people call you, and do you still remember the name you had before the Synod took you?*
 
+Quick-start answers:
+- "Seeker Fourteen-Seven. The Synod calls me that. I still remember ‘Kael’ — my mother’s name for me before they came. I don’t use it. Using it would mean admitting it still belongs to me."
+- "Thirty-One. Just the number. The name I had before is gone — not suppressed, genuinely lost. Seven is young enough to forget. I’ve wondered if the Synod helps that process along."
+- "They call me Wren. Not my number, not my birth name — a word a child on my third colony gave me because I reminded her of a bird she’d seen in a book. I kept it. The Synod hasn’t objected, which worries me."
+
 -----
 
 ### Question 2 — The Count
@@ -289,6 +294,11 @@ Every Resonant has a designation number given by the Synod at identification. So
 This is not the Seeker’s first colony. It is not their fifth. They have delivered children to the Synod many times. They know what happens to those children because they are one of those children.
 
 *How many tithes have you collected? And what was the one that almost broke you before this?*
+
+Quick-start answers:
+- "Eleven. The eighth. A girl on Valen-3 who tested positive and looked at me like she already knew what it meant. Her mother didn’t fight — she just went quiet, the way people go quiet when they’ve been expecting something terrible and it finally arrives."
+- "Nineteen. The fourteenth — twins on a mining station. Their father tried to bribe me. Then he tried to fight me. Then he begged. I took them because that’s the function. I filed the report. I didn’t sleep for a week."
+- "Seven. Every one. But the fifth was the one where I realized I’d stopped feeling it, and that was worse than the feeling."
 
 -----
 
@@ -298,6 +308,11 @@ The Seeker is in Stage One. The Graying. They feel it — not dramatically, not 
 
 *Do they have a name for it, privately? And have they told anyone?*
 
+Quick-start answers:
+- "The fog. Like something between me and the Drift that wasn’t there before. I haven’t told anyone. Telling someone would make it real, and real means reassignment, and reassignment means the Ashen Wards."
+- "I call it the debt. What the Drift takes back. I told my handler once, carefully, framed as a question about normal variation. The pause before she answered told me everything."
+- "I don’t name it. Naming gives it power. But I track it — privately, in a cipher the Synod can’t read. The intervals between the clear moments are growing. No one knows."
+
 -----
 
 ### Question 4 — The Handler
@@ -306,6 +321,11 @@ Every Seeker has a Synod contact — someone they report to, someone who debrief
 
 *Who is this person? Do they know the Seeker is cracking — and if so, are they protecting them or waiting for them to fail?*
 
+Quick-start answers:
+- "Synod Liaison Voss. Precise, unhurried, never warm. She’s been my handler for four years — long enough to notice the Graying in my reports. I think she’s protecting me, but I can’t tell if it’s loyalty or investment."
+- "Prelate Dain. A true believer — or at least someone who has never let the mask slip. He reads my reports the way a physician reads a chart: looking for symptoms, not stories. He knows. He’s waiting to see what I do about it."
+- "A voice on a Drift-channel I’ve never met in person. Designation NINE-ARCH. Efficient, impersonal, and the only person who would notice if I didn’t file. I don’t think they know about the Graying. I don’t think they’d care if they did."
+
 -----
 
 ### Question 5 — The Contradiction
@@ -313,6 +333,11 @@ Every Seeker has a Synod contact — someone they report to, someone who debrief
 The Seeker believes something that contradicts their function. Not openly. But it’s there, and it gets harder to suppress with each colony.
 
 *What is the thing they almost believe?*
+
+Quick-start answers:
+- "That the children would be better off hidden. That the colonies who evade the tithe aren’t committing heresy — they’re protecting their own. I don’t believe it yet. But I’ve stopped arguing against it in my own head."
+- "That the Dimming isn’t sacred completion. That the Ashen Wards are not what the Synod says they are. I’ve never seen one. No one has. That’s the part I can’t stop thinking about."
+- "That a Resonant who refused — who simply said no, put down the function, and walked into a colony as a person instead of an instrument — would not be struck down by the Drift. That the theological justification for the tithe is a story the Synod tells itself."
 
 -----
 

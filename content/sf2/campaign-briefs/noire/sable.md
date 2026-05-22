@@ -212,6 +212,11 @@ The fixer has a name people use and possibly a name people know them by. In Dust
 
 _What do people call you? And is there a story attached to the name — or is the name the story?_
 
+Quick-start answers:
+- "Sable. Like the color. Like the animal. People hear it and decide for themselves which one I am."
+- "Mr. Fix. Said with a straight face by people who don't think it's funny and a crooked smile by people who do. My mother named me James. Nobody calls me James."
+- "The Closer. Because I close things — jobs, doors, mouths. The name is the story."
+
 ---
 
 ### Question 2 — The Before
@@ -219,6 +224,11 @@ _What do people call you? And is there a story attached to the name — or is th
 Nobody starts as a fixer. The fixer used to be something else — a cop, a soldier, a lawyer, a criminal with ambitions, a man who worked an honest trade until the trade stopped being honest. What they were before explains what they're willing to do now and what they refuse to become.
 
 _What were you before? And what was the job, the moment, or the decision that made you this instead?_
+
+Quick-start answers:
+- "A cop. Homicide, second precinct. The moment was a case I solved and a conviction that didn't happen. I learned who owns the justice system. Then I stopped pretending I didn't know."
+- "A defense attorney. I was good at it. The decision was a client I got acquitted who went on to do something I can't talk about at three in the morning. I decided to work on the other side of the problem."
+- "A soldier. The job was clean until it wasn't. The decision was refusing an order. The army decided what I was after that. I decided what I'd become."
 
 ---
 
@@ -228,6 +238,11 @@ Every noir protagonist has one. Booze is classic. Gambling, women, the specific 
 
 _What is it? And how much has it already cost?_
 
+Quick-start answers:
+- "Bourbon. Good bourbon, specifically — the kind I couldn't afford when I needed it and can afford now that I shouldn't have it. It's cost me two relationships and one clean shot I should have made."
+- "Gambling. Not the money — the moment. The instant before the card turns. It's cost me enough to fill this room and I'd do it again tonight."
+- "The wrong kind of loyalty. I stay too long with people who are going to get me killed. It's not a substance — it's worse. It's a character flaw that looks like a virtue."
+
 ---
 
 ### Question 4 — The Code
@@ -236,6 +251,11 @@ One rule. Non-negotiable. Arrived at through experience, not principle.
 
 _What is it? And is there a specific moment — a specific job, a specific face — that made it the rule?_
 
+Quick-start answers:
+- "No women, no children. Not original, but I arrived at it the hard way. A job in the Hollows, six years ago. A face I still see when I close my eyes at the wrong time of night."
+- "I don't fix a fix. If someone hires me to clean up another fixer's mess, the answer is no. I learned this from a man named Grieves, who took that job and is no longer with us."
+- "Whoever pays me, I finish the job. Even when the job changes shape. Even when the client turns ugly. My word is the only currency I have that doesn't depreciate."
+
 ---
 
 ### Question 5 — The Price
@@ -243,6 +263,11 @@ _What is it? And is there a specific moment — a specific job, a specific face 
 Everyone has one. The fixer knows this.
 
 _What's yours? And does anyone in Dust City know it?_
+
+Quick-start answers:
+- "My daughter. She lives upstate with her mother. She thinks I work in insurance. One person in Dust City knows, and that person is the reason I can never fully retire."
+- "A quiet bar on the east side of the river where nobody knows what I do. It's the only place I go where I'm just a man drinking coffee. If someone found it, I'd have to leave the city."
+- "The truth about what happened to Leo Vance. Everyone thinks he left town. I know where he is. That knowledge is worth exactly as much as my silence, and someone in this city is going to figure that out."
 
 ---
 
