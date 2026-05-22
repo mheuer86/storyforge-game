@@ -857,16 +857,12 @@ export function Sf2PrototypePlayApp({
                   entry.speaker === 'player' ? (
                     <PlayerMessage key={entry.id}>{entry.content}</PlayerMessage>
                   ) : entry.speaker === 'narrator' ? (
-                    <NarratorProse key={entry.id} rolls={entry.rolls}>
-                      {renderMarkdown(entry.content)}
-                    </NarratorProse>
+                    <NarratorProse key={entry.id} prose={entry.content} rolls={entry.rolls} />
                   ) : null
                 ))}
                 {activePlayerInput ? <PlayerMessage>{activePlayerInput}</PlayerMessage> : null}
                 {liveProse ? (
-                  <NarratorProse trailing={isStreaming ? <span className="animate-pulse text-primary"> |</span> : undefined}>
-                    {renderMarkdown(liveProse)}
-                  </NarratorProse>
+                  <NarratorProse prose={liveProse} trailing={isStreaming ? <span className="animate-pulse text-primary"> |</span> : undefined} />
                 ) : null}
               </div>
             ) : (
@@ -1000,22 +996,77 @@ function PlayerMessage({ children }: { children: ReactNode }) {
 }
 
 function NarratorProse({
-  children,
+  prose,
   rolls,
   trailing,
+  children,
 }: {
-  children: ReactNode
+  prose?: string
   rolls?: Sf2PrototypeTranscriptRoll[]
   trailing?: ReactNode
+  children?: ReactNode
 }) {
+  const articleClass = "max-w-none font-serif text-[17px] leading-7 text-foreground [overflow-wrap:anywhere] sm:text-[18px] sm:leading-8"
+
+  // If no rolls with offsets, render simply
+  const rollsWithOffsets = rolls?.filter((r) => typeof r.proseOffset === 'number') ?? []
+  if (!prose || rollsWithOffsets.length === 0) {
+    return (
+      <article className={articleClass}>
+        {prose ? renderMarkdown(prose) : children}
+        {trailing}
+        {rolls?.length ? (
+          <div className="mt-4 space-y-3">
+            {rolls.map((roll, index) => (
+              <RollResultCard key={`${roll.turn}-${roll.proseOffset ?? index}-${index}`} roll={roll} />
+            ))}
+          </div>
+        ) : null}
+      </article>
+    )
+  }
+
+  // Split prose at roll offsets and interleave roll cards
+  const sorted = [...rollsWithOffsets].sort((a, b) => (a.proseOffset ?? 0) - (b.proseOffset ?? 0))
+  const nodes: ReactNode[] = []
+  let cursor = 0
+
+  sorted.forEach((roll, index) => {
+    const offset = Math.max(cursor, Math.min(prose.length, roll.proseOffset!))
+    const before = prose.slice(cursor, offset)
+    if (before.trim()) {
+      nodes.push(
+        <div key={`prose-${index}`}>{renderMarkdown(before)}</div>
+      )
+    }
+    nodes.push(
+      <div key={`roll-${index}`} className="my-4">
+        <RollResultCard roll={roll} />
+      </div>
+    )
+    cursor = offset
+  })
+
+  const after = prose.slice(cursor)
+  if (after.trim() || trailing) {
+    nodes.push(
+      <div key="prose-final">
+        {after.trim() ? renderMarkdown(after) : null}
+        {trailing}
+      </div>
+    )
+  }
+
+  // Any rolls without offsets go at the end
+  const rollsWithoutOffsets = rolls?.filter((r) => typeof r.proseOffset !== 'number') ?? []
+
   return (
-    <article className="max-w-none font-serif text-[17px] leading-7 text-foreground [overflow-wrap:anywhere] sm:text-[18px] sm:leading-8">
-      {children}
-      {trailing}
-      {rolls?.length ? (
+    <article className={articleClass}>
+      {nodes}
+      {rollsWithoutOffsets.length ? (
         <div className="mt-4 space-y-3">
-          {rolls.map((roll, index) => (
-            <RollResultCard key={`${roll.turn}-${roll.proseOffset ?? index}-${index}`} roll={roll} />
+          {rollsWithoutOffsets.map((roll, index) => (
+            <RollResultCard key={`no-offset-${index}`} roll={roll} />
           ))}
         </div>
       ) : null}
