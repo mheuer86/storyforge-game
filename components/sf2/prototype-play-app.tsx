@@ -6,16 +6,24 @@ import {
   Copy,
   Dice5,
   FileDown,
+  FolderOpen,
   Loader2,
+  Save,
   ScrollText,
   Send,
 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import type { Sf2PrototypeHandoverExample } from '@/app/play/prototype/page'
 import { apiHeaders } from '@/lib/api-key'
 import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
+import {
+  createSf2PrototypeSlotPersistence,
+  type Sf2PrototypeSaveSlotData,
+  type Sf2PrototypeSaveSlotNumber,
+  type Sf2PrototypeSlotPersistence,
+} from '@/lib/sf2/prototype-persistence'
 import {
   runSf2ClientNarratorTurn,
   type Sf2ClientLiveRollView,
@@ -56,6 +64,7 @@ const API_ENDPOINTS = {
   handover: '/api/sf2/handover',
 }
 const PROTOTYPE_HANDOVER_TIMEOUT_MS = 150_000
+const EMPTY_PROTOTYPE_SAVE_SLOTS: (Sf2PrototypeSaveSlotData | null)[] = [null, null, null]
 
 type PendingCheck = Sf2ClientPendingCheck
 type RollOutcome = Sf2ClientRollOutcome
@@ -81,10 +90,15 @@ export function Sf2PrototypePlayApp({
   const [rollResult, setRollResult] = useState<RollOutcome | null>(null)
   const [liveRolls, setLiveRolls] = useState<Sf2ClientLiveRollView[]>([])
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(true)
+  const [saveSlots, setSaveSlots] = useState<(Sf2PrototypeSaveSlotData | null)[]>(() => [...EMPTY_PROTOTYPE_SAVE_SLOTS])
+  const [saveSlotStatus, setSaveSlotStatus] = useState<string | null>(null)
+  const [loadingSaveSlots, setLoadingSaveSlots] = useState(true)
   const rollResolverRef = useRef<((outcome: RollOutcome) => void) | null>(null)
   const pendingRollResourceSpendsRef = useRef<Sf2RollResourceSpend[]>([])
+  const slotPersistenceRef = useRef<Sf2PrototypeSlotPersistence | null>(null)
 
   const busy = isStreaming || isArchiving || Boolean(startingBriefId)
+  const hasSavedPrototypeSlots = saveSlots.some(Boolean)
   const handoverForSession = session
     ? handoverExamples.find((example) => example.briefId === session.brief.id)
     : null
@@ -96,6 +110,91 @@ export function Sf2PrototypePlayApp({
     }
     return base
   }, [session, handoverForSession])
+
+  useEffect(() => {
+    const persistence = createSf2PrototypeSlotPersistence()
+    slotPersistenceRef.current = persistence
+    let cancelled = false
+
+    async function bootSaveSlots() {
+      try {
+        const slots = await persistence.listSaveSlots()
+        if (!cancelled) setSaveSlots(slots)
+      } catch (error) {
+        if (!cancelled) {
+          setSaveSlotStatus(error instanceof Error ? error.message : 'Could not load prototype save slots')
+        }
+      } finally {
+        if (!cancelled) setLoadingSaveSlots(false)
+      }
+    }
+
+    void bootSaveSlots()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  function setTransientSaveStatus(message: string, durationMs = 3000) {
+    setSaveSlotStatus(message)
+    window.setTimeout(() => setSaveSlotStatus(null), durationMs)
+  }
+
+  async function refreshSaveSlots() {
+    const persistence = slotPersistenceRef.current
+    if (!persistence) return
+    try {
+      setSaveSlots(await persistence.listSaveSlots())
+    } catch {
+      setSaveSlots([...EMPTY_PROTOTYPE_SAVE_SLOTS])
+    }
+  }
+
+  async function persistIfSavedSlot(nextSession: Sf2PrototypeSession) {
+    const persistence = slotPersistenceRef.current
+    if (!persistence) return
+    try {
+      const slots = await persistence.listSaveSlots()
+      const matchingSlot = slots.find((slot) => slot?.campaignId === nextSession.state.meta.campaignId)
+      if (matchingSlot) {
+        await persistence.saveToSlot(matchingSlot.slot, nextSession)
+        setSaveSlots(await persistence.listSaveSlots())
+      } else {
+        setSaveSlots(slots)
+      }
+    } catch {
+      // Prototype saves are a convenience layer; never interrupt the live turn loop.
+    }
+  }
+
+  async function savePrototypeToSlot(slot: Sf2PrototypeSaveSlotNumber) {
+    if (!session) return
+    const persistence = slotPersistenceRef.current
+    if (!persistence) return
+    try {
+      await persistence.saveToSlot(slot, session)
+      await refreshSaveSlots()
+      setTransientSaveStatus(`Saved slot ${slot}`)
+    } catch (error) {
+      setTransientSaveStatus(error instanceof Error ? error.message : 'Save failed', 5000)
+    }
+  }
+
+  function loadPrototypeSaveSlot(slot: Sf2PrototypeSaveSlotData) {
+    if (busy) return
+    setSession(slot.session)
+    setStartError(null)
+    setStatusMessage(null)
+    setPendingInput('')
+    setActivePlayerInput('')
+    setLiveProse('')
+    setLiveRolls([])
+    setRollResult(null)
+    setPendingCheck(null)
+    rollResolverRef.current = null
+    pendingRollResourceSpendsRef.current = []
+    setTransientSaveStatus(`Loaded slot ${slot.slot}`)
+  }
 
   async function start(briefId: string) {
     if (busy) return
@@ -273,6 +372,7 @@ export function Sf2PrototypePlayApp({
     })
 
     setSession(nextSession)
+    void persistIfSavedSlot(nextSession)
     setPendingInput('')
     setActivePlayerInput('')
     setLiveProse('')
@@ -493,6 +593,7 @@ export function Sf2PrototypePlayApp({
     }
 
     if (continuationSession) {
+      void persistIfSavedSlot(continuationSession)
       await runPrototypeTurn(continuationSession, '', true)
     }
   }
@@ -600,6 +701,24 @@ export function Sf2PrototypePlayApp({
               </div>
             ) : null}
           </div>
+          {loadingSaveSlots || hasSavedPrototypeSlots || saveSlotStatus ? (
+            <div className="mb-7">
+              {loadingSaveSlots ? (
+                <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading slots
+                </div>
+              ) : (
+                <PrototypeSaveSlotsPanel
+                  slots={saveSlots}
+                  status={saveSlotStatus}
+                  busy={busy}
+                  canSave={false}
+                  onLoadSaveSlot={loadPrototypeSaveSlot}
+                />
+              )}
+            </div>
+          ) : null}
           {briefCards.length === 0 ? (
             <div className="rounded-lg border border-border/70 bg-card/80 p-5 text-sm leading-6 text-muted-foreground">
               No active SF2 campaign briefs could be loaded.
@@ -791,6 +910,16 @@ export function Sf2PrototypePlayApp({
               {diagnosticsOpen ? 'Hide' : 'Show'}
             </Button>
           </div>
+          <PrototypeSaveSlotsPanel
+            slots={saveSlots}
+            status={saveSlotStatus}
+            busy={busy}
+            canSave
+            onSaveToSlot={(slot) => {
+              void savePrototypeToSlot(slot)
+            }}
+            onLoadSaveSlot={loadPrototypeSaveSlot}
+          />
           {diagnosticsOpen && artifact ? (
             <div className="space-y-3">
               <DiagnosticSection title="Loaded Brief" value={session.brief.brief} />
@@ -855,6 +984,89 @@ function ListBlock({ items, empty }: { items: string[]; empty: string }) {
     <ul className="min-w-0 space-y-1 text-sm text-muted-foreground [overflow-wrap:anywhere]">
       {items.map((item) => <li key={item}>{item}</li>)}
     </ul>
+  )
+}
+
+function PrototypeSaveSlotsPanel({
+  slots,
+  status,
+  busy,
+  canSave,
+  onSaveToSlot,
+  onLoadSaveSlot,
+}: {
+  slots: (Sf2PrototypeSaveSlotData | null)[]
+  status?: string | null
+  busy: boolean
+  canSave: boolean
+  onSaveToSlot?: (slot: Sf2PrototypeSaveSlotNumber) => void
+  onLoadSaveSlot: (slot: Sf2PrototypeSaveSlotData) => void
+}) {
+  return (
+    <section className="min-w-0 rounded-lg border border-border/60 bg-background/30 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-primary">Save Games</h2>
+        {status ? (
+          <span className="min-w-0 break-words text-right font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {status}
+          </span>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-2">
+        {([1, 2, 3] as const).map((slotNumber) => {
+          const slot = slots[slotNumber - 1]
+          return (
+            <div
+              key={slotNumber}
+              className={cn(
+                'grid gap-2 border-t border-border/25 pt-2 first:border-t-0 first:pt-0',
+                canSave ? 'sm:grid-cols-[minmax(0,1fr)_auto_auto]' : 'sm:grid-cols-[minmax(0,1fr)_auto]',
+              )}
+            >
+              <div className="min-w-0">
+                {slot ? (
+                  <>
+                    <div className="truncate text-sm font-semibold tracking-normal text-foreground/90">
+                      Slot {slotNumber}: {slot.title}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs leading-snug text-muted-foreground/80">
+                      {slot.playerName} / {slot.playerClass} / Ch.{slot.chapterNumber}
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/65">
+                      {timeAgo(slot.savedAt)} / {slot.turnCount} turns
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs leading-snug text-muted-foreground/75">Slot {slotNumber}: empty</div>
+                )}
+              </div>
+              {canSave ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSaveToSlot?.(slotNumber)}
+                  disabled={busy}
+                >
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => slot && onLoadSaveSlot(slot)}
+                disabled={busy || !slot}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Load
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -956,6 +1168,17 @@ function formatRollOutcome(outcome: RollOutcome | undefined): string {
   if (!outcome) return ''
   const roll = outcome.d20 === undefined ? 'auto' : `d20 ${outcome.d20}`
   return `${roll} ${formatSigned(outcome.modifier)} = ${outcome.total} vs DC ${outcome.effectiveDc ?? outcome.dc}: ${outcome.result}`
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
+  return `${days}d ago`
 }
 
 function toPrototypeDiagnostic(entry: { kind: string; at: number; data: unknown }): Sf2PrototypeDiagnosticEntry {
