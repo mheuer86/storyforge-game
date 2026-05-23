@@ -624,6 +624,7 @@ export function Sf2PrototypePlayApp({
   }
 
   function completePendingRoll(outcome: RollOutcome) {
+    setRollResult(outcome)
     rememberRollResourceSpends(outcome)
     const resolver = rollResolverRef.current
     rollResolverRef.current = null
@@ -782,19 +783,15 @@ export function Sf2PrototypePlayApp({
   const currentRollResolution = pendingCheck
     ? resolveSf2Roll(stateWithPendingRollSpends(state), pendingCheck)
     : null
+  const liveTranscriptRolls = buildLivePrototypeTranscriptRolls(liveRolls, session.currentTurn)
   const latestLiveRoll = liveRolls.at(-1)
   const activeRollPanelCheck = pendingCheck
-    ?? (rollResult || latestLiveRoll?.outcome
-      ? latestLiveRoll?.check ?? {
-          skill: rollResult?.skill ?? 'Skill',
-          dc: rollResult?.dc ?? rollResult?.effectiveDc ?? 0,
-          why: '',
-          consequenceOnFail: '',
-        }
-      : null)
   const activeRollPanelResult = rollResult ?? latestLiveRoll?.outcome ?? null
   const hasNarrativeContent =
-    session.transcript.length > 0 || activePlayerInput.trim().length > 0 || liveProse.trim().length > 0
+    session.transcript.length > 0 ||
+    activePlayerInput.trim().length > 0 ||
+    liveProse.trim().length > 0 ||
+    liveTranscriptRolls.length > 0
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground lg:h-screen lg:overflow-hidden">
@@ -873,8 +870,12 @@ export function Sf2PrototypePlayApp({
                   ) : null
                 ))}
                 {activePlayerInput ? <PlayerMessage>{activePlayerInput}</PlayerMessage> : null}
-                {liveProse ? (
-                  <NarratorProse prose={liveProse} trailing={isStreaming ? <span className="animate-pulse text-primary"> |</span> : undefined} />
+                {liveProse || liveTranscriptRolls.length > 0 ? (
+                  <NarratorProse
+                    prose={liveProse}
+                    rolls={liveTranscriptRolls}
+                    trailing={isStreaming ? <span className="animate-pulse text-primary"> |</span> : undefined}
+                  />
                 ) : null}
               </div>
             ) : (
@@ -1098,7 +1099,7 @@ function RollResultCard({ roll }: { roll: Sf2PrototypeTranscriptRoll }) {
       tone === 'success' && 'border-success/55 bg-success/10 text-success',
       tone === 'failure' && 'border-warning/55 bg-warning/10 text-warning',
       tone === 'fumble' && 'border-severe/60 bg-severe/10 text-severe',
-    )}>
+    )} data-sf2-prototype-roll-card>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{roll.skill} vs DC {dc}</span>
         <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{rollOutcomeLabel(roll.outcome)}</span>
@@ -1131,6 +1132,57 @@ function buildPrototypeTranscriptRolls(
       consequenceOnFail: liveRoll?.check.consequenceOnFail,
     }
   })
+}
+
+function buildLivePrototypeTranscriptRolls(
+  liveRolls: Sf2ClientLiveRollView[],
+  turnIndex: number
+): Sf2PrototypeTranscriptRoll[] {
+  return liveRolls.flatMap((liveRoll) => {
+    const outcome = liveRoll.outcome
+    if (!outcome) return []
+    const consequenceOnFail = liveRoll.check.consequenceOnFail.trim()
+    const failed = outcome.result === 'failure' || outcome.result === 'fumble'
+    const originalOutcome = outcome.originalRoll
+    return [{
+      turn: turnIndex,
+      proseOffset: liveRoll.proseOffset,
+      skill: outcome.skill ?? liveRoll.check.skill,
+      dc: outcome.dc,
+      effectiveDc: outcome.effectiveDc,
+      rollResult: outcome.d20,
+      rawRolls: outcome.rawRolls,
+      modifier: outcome.modifier,
+      total: outcome.total,
+      outcome: rollOutcomeForPrototypeRollResult(outcome.result),
+      resolutionKind: outcome.resolutionKind,
+      diceMode: outcome.diceMode,
+      criticalRange: outcome.criticalRange,
+      sourceBreakdown: outcome.sourceBreakdown,
+      selectedRollAction: outcome.selectedRollAction,
+      spentResources: outcome.spentResources,
+      consequenceSummary: failed && consequenceOnFail ? consequenceOnFail : undefined,
+      modifierType: outcome.modifierType,
+      modifierReason: outcome.modifierReason,
+      inspirationSpent: outcome.inspirationSpent,
+      originalRoll: originalOutcome && originalOutcome.d20 !== undefined
+        ? {
+            rollResult: originalOutcome.d20,
+            modifier: originalOutcome.modifier,
+            total: originalOutcome.total,
+            outcome: rollOutcomeForPrototypeRollResult(originalOutcome.result),
+          }
+        : undefined,
+      why: liveRoll.check.why,
+      consequenceOnFail: liveRoll.check.consequenceOnFail,
+    }]
+  })
+}
+
+function rollOutcomeForPrototypeRollResult(result: RollOutcome['result']): Sf2State['history']['rollLog'][number]['outcome'] {
+  if (result === 'critical') return 'critical_success'
+  if (result === 'fumble') return 'critical_failure'
+  return result
 }
 
 function rollToneForPrototypeRoll(outcome: Sf2State['history']['rollLog'][number]['outcome']) {
