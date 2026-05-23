@@ -69,6 +69,7 @@ const EMPTY_PROTOTYPE_SAVE_SLOTS: (Sf2PrototypeSaveSlotData | null)[] = [null, n
 
 type PendingCheck = Sf2ClientPendingCheck
 type RollOutcome = Sf2ClientRollOutcome
+type RollPanelCheck = Pick<PendingCheck, 'skill' | 'dc' | 'why' | 'consequenceOnFail'>
 
 export function Sf2PrototypePlayApp({
   briefs,
@@ -781,6 +782,17 @@ export function Sf2PrototypePlayApp({
   const currentRollResolution = pendingCheck
     ? resolveSf2Roll(stateWithPendingRollSpends(state), pendingCheck)
     : null
+  const latestLiveRoll = liveRolls.at(-1)
+  const activeRollPanelCheck = pendingCheck
+    ?? (rollResult || latestLiveRoll?.outcome
+      ? latestLiveRoll?.check ?? {
+          skill: rollResult?.skill ?? 'Skill',
+          dc: rollResult?.dc ?? rollResult?.effectiveDc ?? 0,
+          why: '',
+          consequenceOnFail: '',
+        }
+      : null)
+  const activeRollPanelResult = rollResult ?? latestLiveRoll?.outcome ?? null
   const hasNarrativeContent =
     session.transcript.length > 0 || activePlayerInput.trim().length > 0 || liveProse.trim().length > 0
 
@@ -871,11 +883,11 @@ export function Sf2PrototypePlayApp({
               </div>
             )}
           </div>
-          {pendingCheck ? (
+          {activeRollPanelCheck ? (
             <RollPanel
-              pendingCheck={pendingCheck}
+              pendingCheck={activeRollPanelCheck}
               resolution={currentRollResolution}
-              rollResult={rollResult}
+              rollResult={activeRollPanelResult}
               liveRolls={liveRolls}
               onRoll={resolvePendingCheck}
             />
@@ -1269,7 +1281,7 @@ function RollPanel({
   liveRolls,
   onRoll,
 }: {
-  pendingCheck: PendingCheck
+  pendingCheck: RollPanelCheck
   resolution: ReturnType<typeof resolveSf2Roll> | null
   rollResult: RollOutcome | null
   liveRolls: Sf2ClientLiveRollView[]
@@ -1281,8 +1293,9 @@ function RollPanel({
   const result = rollResult ?? latestRoll?.outcome ?? null
   const tone = diceRollTone(result?.result)
   const resolved = tone !== 'idle'
-  const dc = resolution?.effectiveDc ?? pendingCheck.dc
-  const modifier = resolution?.modifier ?? 0
+  const dc = resolution?.effectiveDc ?? result?.effectiveDc ?? result?.dc ?? pendingCheck.dc
+  const modifier = resolution?.modifier ?? result?.modifier ?? 0
+  const total = result?.total ?? ((result?.d20 ?? 0) + modifier)
 
   useEffect(() => {
     if (result?.d20 !== undefined) {
@@ -1343,7 +1356,7 @@ function RollPanel({
             </div>
             {resolved && result && (
               <div className="mt-2 font-mono text-[12px] tabular-nums text-foreground/75 md:text-[13px]">
-                {result.d20} {formatSigned(modifier)} = {(result.d20 ?? 0) + modifier} vs DC {dc}
+                {result.d20} {formatSigned(modifier)} = {total} vs DC {dc}
               </div>
             )}
             {resolution && !resolved ? (
