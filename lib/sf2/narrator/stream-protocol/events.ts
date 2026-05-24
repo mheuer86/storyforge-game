@@ -1,5 +1,6 @@
 import type { Sf2LatencyPayload } from '@/lib/sf2/instrumentation/latency'
 import type { Sf2NarrativeTempoMode, Sf2WorkingSet } from '@/lib/sf2/types'
+import type { Sf2NarratorProseFirstCloseLoopEventPayload } from '@/lib/sf2/narrator/turn-context'
 
 export type Sf2NarratorRollModifierType = 'advantage' | 'disadvantage' | 'challenge'
 
@@ -119,6 +120,10 @@ export interface Sf2NarratorTempoDiagnosticEvent {
   broadGoal?: boolean
 }
 
+export interface Sf2NarratorProseFirstCloseLoopEvent extends Sf2NarratorProseFirstCloseLoopEventPayload {
+  type: 'prose_first_close_loop'
+}
+
 export interface Sf2NarratorDisplaySentinelFinding {
   type: string
   severity: string
@@ -172,6 +177,7 @@ export type Sf2NarratorStreamEvent =
   | Sf2NarratorTruncationWarningEvent
   | Sf2NarratorRollGateDiagnosticEvent
   | Sf2NarratorTempoDiagnosticEvent
+  | Sf2NarratorProseFirstCloseLoopEvent
   | Sf2NarratorDisplaySentinelEvent
   | Sf2NarratorMetaObservedEvent
   | Sf2NarratorOutputRecoveredEvent

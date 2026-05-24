@@ -30,6 +30,7 @@ export interface DebugEntry {
     | 'ladder_fired'
     | 'pacing_advisory'
     | 'tempo_diagnostic'
+    | 'prose_first_close_loop'
     | 'roll_gate_diagnostic'
     | 'scene_bundle_built'
     | 'sf2.coherence.finding'

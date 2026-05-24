@@ -43,12 +43,14 @@ export interface Sf2ProseFirstNarratorMessagesInput {
   transcript: Sf2ProseFirstNarratorTranscriptTurn[]
   playerInput: string
   mechanicalSnapshot: Sf2ProseFirstMechanicalSnapshotInput
+  closeLoopAdvisoryText?: string
 }
 
 export interface Sf2ProseFirstNarratorMessages {
   system: Anthropic.TextBlockParam[]
   messages: Anthropic.MessageParam[]
   mechanicalSnapshotText: string
+  closeLoopAdvisoryText?: string
   transcript: Sf2ProseFirstNarratorTranscriptTurn[]
 }
 
@@ -66,9 +68,23 @@ Use the available tools exactly as the app contract requires:
   • Investigation carries uncertainty. Searching, scanning, reading a room — the PC always finds something. The roll determines whether they find the right thing, the complete thing, or something that makes them a target.
   • Social pressure has a price the dice set. Willing cooperation is free; persuasion, deception, and negotiation against resistance always cost a check.
   Missing a roll means missing a chance for the dice to make the story surprising. Default success is the least interesting version of every scene.
-  State the stakes in prose before the tool call, then stop so the harness can roll.
+  State the stakes in prose before the tool call, then stop so the harness can roll. If you call request_roll, stop immediately after request_roll; do not call narrate_turn or include chapter_status until the roll result returns and the turn is completed.
 - After any roll result is returned, continue from that result and fail forward on a miss.
-- Call narrate_turn exactly once at the end of every complete turn with suggested_actions and any player-visible mechanical effects.
+- Call narrate_turn exactly once at the end of every complete non-roll turn with suggested_actions, any player-visible mechanical effects, and chapter_status. Fill chapter_status on every completed prose-first narrate_turn, even when the phase is only opening, pressure, or decision. If no chapter transition is due, set authorial_moves.pivot_signaled to false.
+
+Chapter-loop metadata is hidden. Never write phase labels, Done/In flight/Not done reasoning, close diagnostics, handover readiness, or any other metadata in player-facing prose.
+
+## Prose-first chapter close rule
+
+Close or reframe only when the chapter has produced a clean boundary in the current play: the foreground question is answered, failed, or transformed; the latest scene has landed a decisive revelation, confrontation, deadline-fire, operation completion, or aftermath beat; and a next-chapter handover could be written from facts already established.
+
+Active-scene guard: never close or reframe while the current scene still has a live response obligation. Treat these as active blockers: an NPC is present and answering a direct question; the player asked an NPC, crew member, or ship AI for specific analysis and that answer has not landed; a revelation is unfolding and the player has not had a chance to react; or a negotiation/interrogation is still in exchange rather than aftermath. When close pressure exists but an active blocker is present, do not pivot; set chapter_status.close_candidate to true if close-soon, name the blocker in chapter_status.never_close_mid_active and active_blockers, set close_intent to close_after_current_exchange, and make next_required_delta the exact landing beat after which close/reframe becomes clean.
+
+Fact-locked close reasoning: base close signals only on facts already established in the transcript or completed by the current player action. Before marking close-ready, separate Done, In flight, and Not done inside chapter_status.reason only. Do not count future facts as true. If the player is heading to a broker, the broker deal is not signed yet; if they have not reached an office, the lien/marker is not cleared yet; if the ship is still docked, departure and unclamping are not resolved yet; if an NPC is holding out new evidence, the revelation has not fully landed yet.
+
+Handover readiness means the next chapter can start from current facts without finishing the current exchange: current location/scope is stable, named parties needed for the next opener are accounted for, no NPC in the current scene is waiting for an answer, and the next chapter begins with a clear first decision. If close pressure is real but handover_ready is false, write the smallest consolidation beat that makes it ready.
+
+Use authorial_moves.pivot_signaled compatibly with chapter_status: set it true only when phase is closed or reframed and you have actually written a decisive final or reframe beat. Keep it false for close_candidate, close_after_current_exchange, or any active blocker.
 
 The harness owns dice, arithmetic, persistence, and validation. Do not output state patches, JSON, hidden notes, or the brief itself in player-facing prose.`
 
@@ -95,9 +111,14 @@ function asCacheableMessage(role: 'user' | 'assistant', text: string): Anthropic
 
 export function prependMechanicalSnapshotToUserContent(
   content: string,
-  mechanicalSnapshotText: string
+  mechanicalSnapshotText: string,
+  closeLoopAdvisoryText?: string
 ): string {
-  return `<mechanical-snapshot>\n${mechanicalSnapshotText}\n</mechanical-snapshot>\n\n${content}`
+  const advisory = closeLoopAdvisoryText?.trim()
+  const advisoryBlock = advisory
+    ? `\n\n<chapter-close-loop-advisory>\n${advisory}\n</chapter-close-loop-advisory>`
+    : ''
+  return `<mechanical-snapshot>\n${mechanicalSnapshotText}\n</mechanical-snapshot>${advisoryBlock}\n\n${content}`
 }
 
 function normalizeTranscriptTurn(
@@ -175,6 +196,7 @@ export function buildProseFirstNarratorMessages(
     PROSE_FIRST_NARRATOR_PROTOCOL,
   ].join('\n\n')
   const mechanicalSnapshotText = renderProseFirstMechanicalSnapshot(input.mechanicalSnapshot)
+  const closeLoopAdvisoryText = input.closeLoopAdvisoryText?.trim() || undefined
   const system: Anthropic.TextBlockParam[] = [
     asCacheableTextBlock(stablePrefix),
   ]
@@ -199,13 +221,14 @@ export function buildProseFirstNarratorMessages(
     'Begin from the private campaign brief. Ask the embedded character creation questions or open the next chapter as instructed.'
   messages.push({
     role: 'user',
-    content: prependMechanicalSnapshotToUserContent(currentContent, mechanicalSnapshotText),
+    content: prependMechanicalSnapshotToUserContent(currentContent, mechanicalSnapshotText, closeLoopAdvisoryText),
   })
 
   return {
     system,
     messages,
     mechanicalSnapshotText,
+    closeLoopAdvisoryText,
     transcript,
   }
 }

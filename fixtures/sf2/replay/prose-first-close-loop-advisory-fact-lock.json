@@ -1,0 +1,93 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-advisory-fact-lock",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Covers the pure prose-first close-loop helper: p3 active revelation deferral, p1 Not done fact lock, malformed nested chapter_status recovery, and hard-boundary advisory wording."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I ask Slink what proof he has before we take the broker job.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Slink keeps one palm on the locker seam and answers with the kind of care that means he has been waiting to be asked.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "advisoryInput": {
+        "playerInput": "I ask Slink what proof he has before we take the broker job.",
+        "recentProse": "Slink answers the direct question and slides evidence across the berth table.",
+        "doneFacts": [
+          {
+            "id": "passenger_arrangement",
+            "text": "Davan/Kes passenger arrangement is made",
+            "aliases": ["passenger arrangement"]
+          }
+        ],
+        "inFlightFacts": [
+          {
+            "id": "broker_negotiation",
+            "text": "broker negotiation is in flight",
+            "aliases": ["broker negotiation"]
+          }
+        ],
+        "notDoneFacts": [
+          {
+            "id": "broker_deal",
+            "text": "broker deal accepted",
+            "aliases": ["broker deal"]
+          },
+          {
+            "id": "lien_cleared",
+            "text": "lien cleared",
+            "aliases": ["lien clearance"]
+          },
+          {
+            "id": "cargo_loaded",
+            "text": "cargo loaded",
+            "aliases": ["loading", "cargo loading"]
+          },
+          {
+            "id": "ship_unclamped",
+            "text": "ship unclamped",
+            "aliases": ["unclamping"]
+          },
+          {
+            "id": "departure",
+            "text": "departure complete",
+            "aliases": ["departed", "departure"]
+          }
+        ],
+        "closePressure": true
+      },
+      "advisory": {
+        "phaseEquals": "active_revelation_defer",
+        "textContainsAll": [
+          "Phase recommendation: active_revelation_defer",
+          "Required next delta: Complete the live response/revelation",
+          "Active blockers: active revelation/NPC response is live",
+          "Done: Davan/Kes passenger arrangement is made",
+          "In flight: broker negotiation is in flight",
+          "Not done: broker deal accepted; lien cleared; cargo loaded; ship unclamped; departure complete"
+        ]
+      },
+      "chapterStatus": {
+        "raw": {
+          "reason": "{\"phase\":\"close_candidate\",\"foreground_question\":\"Can the ship take the broker deal now?\",\"answered\":true,\"close_candidate\":true,\"close_intent\":\"close_this_turn\",\"handover_ready\":true,\"signals_true\":[\"broker deal accepted\"],\"never_close_mid_active\":[],\"active_blockers\":[],\"next_required_delta\":\"close\",\"should_not_do_next\":\"repeat the offer\",\"reason\":\"Done: passenger arrangement. Not done: lien cleared; cargo loaded; ship unclamped; departure complete.\"}"
+        },
+        "malformedNestedStatus": true,
+        "errorCount": 0,
+        "phaseEquals": "close_candidate"
+      },
+      "factLock": {
+        "closeClaimed": true,
+        "violationFactIdsEquals": ["broker_deal"]
+      }
+    }
+  }
+}

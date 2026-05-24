@@ -1,0 +1,97 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-genre-neutral-no-transport-locks",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Genre-neutral departure/delivery language must not receive Forty Thousand broker/lien/cargo fact locks or transport hard-boundary gates."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "seedId": "fantasy/human/envoy/sealed-letter",
+        "genreId": "fantasy",
+        "currentChapter": 1
+      },
+      "chapter": {
+        "number": 1,
+        "title": "The Sealed Letter",
+        "setup": {
+          "title": "The Sealed Letter",
+          "frame": {
+            "title": "The Sealed Letter",
+            "premise": "An envoy carries a sealed letter through a disputed pass.",
+            "activePressure": "Courtly suspicion and road danger.",
+            "centralTension": "The envoy must decide whom to trust before taking the road.",
+            "objective": "Choose the route and terms before leaving the court.",
+            "crucible": "Every patron wants the letter opened for a different reason.",
+            "outcomeSpectrum": {
+              "clean": "The envoy leaves with a clear patron and route.",
+              "costly": "The envoy leaves owing a favor.",
+              "failure": "The envoy leaves watched.",
+              "catastrophic": "The letter's secrecy is broken before departure."
+            }
+          },
+          "pacingContract": {
+            "targetTurns": { "min": 3, "max": 12 },
+            "chapterQuestion": "Who does the envoy trust before taking the road?",
+            "acceptableResolutions": [
+              "The envoy chooses a patron and route.",
+              "The envoy refuses the court pressure and leaves alone."
+            ],
+            "earlyPressure": "Patrons compete for influence.",
+            "middlePressure": "The letter becomes harder to keep sealed.",
+            "latePressure": "The road decision must be made.",
+            "closeWhenAny": [
+              "The envoy leaves the court with a chosen route."
+            ],
+            "avoidExtendingFor": [
+              "More court gossip after the departure decision is made."
+            ]
+          }
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "I read the room before answering.", "narratorProse": "The court waits for your choice.", "timestamp": "2026-04-25T00:00:00.000Z" },
+          { "index": 1, "chapter": 1, "playerInput": "I choose the north road.", "narratorProse": "The steward marks the northern pass on your map.", "timestamp": "2026-04-25T00:01:00.000Z" },
+          { "index": 2, "chapter": 1, "playerInput": "We depart at dawn to deliver the sealed letter.", "narratorProse": "Dawn puts pale light on the road outside court.", "timestamp": "2026-04-25T00:02:00.000Z" }
+        ]
+      }
+    },
+    "turnIndex": 3,
+    "playerInput": "We depart at dawn to deliver the sealed letter.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The road takes the court noise behind you.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "We depart at dawn to deliver the sealed letter."
+      },
+      "derivedInput": {
+        "hardBoundaryEquals": null,
+        "turnIndexEquals": 3,
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "compress_no_future",
+        "textContainsNone": [
+          "broker deal accepted",
+          "lien cleared",
+          "cargo loaded",
+          "ship unclamped",
+          "departure complete",
+          "hard_boundary_strict",
+          "Hard boundary:"
+        ]
+      }
+    }
+  }
+}

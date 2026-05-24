@@ -1,0 +1,47 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-boundary-negative-and-stale-blocker",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Planning/deferral language should not become a hard departure boundary, and old answered NPC prose should not keep an active blocker alive."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "Before we undock, I ask Slink what proof he has.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "Slink has already answered in the prior exchange.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "Before we undock, I ask Slink what proof he has.",
+        "transcript": [
+          {
+            "role": "assistant",
+            "content": "Slink replies with the proof and lets the answer land."
+          }
+        ]
+      },
+      "derivedInput": {
+        "hardBoundaryEquals": null,
+        "activeBlockersCount": 1
+      },
+      "advisory": {
+        "phaseEquals": "active_revelation_defer",
+        "textContainsAll": [
+          "Active blockers: active revelation/NPC response is live"
+        ],
+        "textContainsNone": [
+          "hard_boundary_strict",
+          "Hard boundary:"
+        ]
+      }
+    }
+  }
+}

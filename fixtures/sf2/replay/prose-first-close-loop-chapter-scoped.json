@@ -1,0 +1,82 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-chapter-scoped",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Chapter 2 opening should not inherit Chapter 1 departure hard-boundary pressure from global history or carried established facts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 2
+      },
+      "chapter": {
+        "number": 2,
+        "sceneSummaries": [
+          {
+            "sceneId": "scene_1_departure",
+            "chapter": 1,
+            "summary": "The ship unclamped and burned clear of the old berth.",
+            "leadsTo": "kinetic_carry"
+          }
+        ]
+      },
+      "world": {
+        "sceneSnapshot": {
+          "established": [
+            "Chapter 2 begins from compiled handover documents.",
+            "The ship unclamped and burned clear of the old berth."
+          ],
+          "firstTurnIndex": 13
+        }
+      },
+      "history": {
+        "turns": [
+          { "index": 0, "chapter": 1, "playerInput": "old turn", "narratorProse": "The berth pressure builds.", "timestamp": "2026-04-25T00:00:00.000Z" },
+          { "index": 1, "chapter": 1, "playerInput": "old turn", "narratorProse": "The broker offer remains unresolved.", "timestamp": "2026-04-25T00:01:00.000Z" },
+          { "index": 2, "chapter": 1, "playerInput": "old turn", "narratorProse": "Slink answers a question.", "timestamp": "2026-04-25T00:02:00.000Z" },
+          { "index": 3, "chapter": 1, "playerInput": "old turn", "narratorProse": "The lien still matters.", "timestamp": "2026-04-25T00:03:00.000Z" },
+          { "index": 4, "chapter": 1, "playerInput": "old turn", "narratorProse": "The cargo clock tightens.", "timestamp": "2026-04-25T00:04:00.000Z" },
+          { "index": 5, "chapter": 1, "playerInput": "old turn", "narratorProse": "The crew prepares.", "timestamp": "2026-04-25T00:05:00.000Z" },
+          { "index": 6, "chapter": 1, "playerInput": "old turn", "narratorProse": "The corridor route is named.", "timestamp": "2026-04-25T00:06:00.000Z" },
+          { "index": 7, "chapter": 1, "playerInput": "old turn", "narratorProse": "The berth starts to fall behind.", "timestamp": "2026-04-25T00:07:00.000Z" },
+          { "index": 8, "chapter": 1, "playerInput": "old turn", "narratorProse": "The clamps are ready.", "timestamp": "2026-04-25T00:08:00.000Z" },
+          { "index": 9, "chapter": 1, "playerInput": "old turn", "narratorProse": "The broker deal is framed.", "timestamp": "2026-04-25T00:09:00.000Z" },
+          { "index": 10, "chapter": 1, "playerInput": "old turn", "narratorProse": "The ship unlatches from old trouble.", "timestamp": "2026-04-25T00:10:00.000Z" },
+          { "index": 11, "chapter": 1, "playerInput": "old turn", "narratorProse": "The ship unclamped.", "timestamp": "2026-04-25T00:11:00.000Z" },
+          { "index": 12, "chapter": 1, "playerInput": "old turn", "narratorProse": "The ship burned clear toward the departure corridor.", "timestamp": "2026-04-25T00:12:00.000Z" }
+        ]
+      }
+    },
+    "turnIndex": 13,
+    "playerInput": "Begin Chapter 2 from the handover.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The new chapter opens on a different question.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "Begin Chapter 2 from the handover."
+      },
+      "derivedInput": {
+        "hardBoundaryEquals": null,
+        "turnIndexEquals": 0,
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "early_no_close",
+        "textContainsNone": [
+          "hard_boundary_strict",
+          "Hard boundary:"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-current-interlocutor-does-not-block-close",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "NPC presence/currentInterlocutorIds alone must not block chapter close when the relational beat has stabilized."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "seedId": "grimdark/pale-flame/oaths-tested",
+        "genreId": "grimdark",
+        "currentChapter": 1
+      },
+      "campaign": {
+        "threads": {
+          "thread_child": {
+            "id": "thread_child",
+            "title": "the surviving child and document case",
+            "category": "thread",
+            "status": "resolved_costly",
+            "owner": { "kind": "npc", "id": "child" },
+            "stakeholders": [],
+            "tension": 7,
+            "peakTension": 7,
+            "resolutionCriteria": "decide whether to protect the child, wait for the assessor, or risk exposure",
+            "failureMode": "the child is taken or Luther is exposed",
+            "retrievalCue": "child in root hollow, document case",
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [
+              {
+                "id": "progress_child_stabilized",
+                "turn": 12,
+                "summary": "Luther approached the child without threat, established enough trust to share the hiding place, and stabilized the immediate relationship while the document case remains a successor hook."
+              }
+            ],
+            "tensionHistory": []
+          }
+        }
+      },
+      "chapter": {
+        "number": 1,
+        "setup": {
+          "activeThreadIds": ["thread_child"],
+          "loadBearingThreadIds": ["thread_child"],
+          "spineThreadId": "thread_child"
+        }
+      },
+      "world": {
+        "sceneSnapshot": {
+          "presentNpcIds": ["child"],
+          "currentInterlocutorIds": ["child"]
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "I approach the child carefully.",
+            "narratorProse": "The child makes room in the root hollow and says someone would come.",
+            "timestamp": "2026-04-25T00:00:00.000Z"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I commit to taking the child with me at dawn.",
+            "narratorProse": "The child does not trust you yet, but stops being alone.",
+            "timestamp": "2026-04-25T00:01:00.000Z"
+          }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "I commit to taking the child with me at dawn.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The child watches the ruin beside you.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "I commit to taking the child with me at dawn."
+      },
+      "derivedInput": {
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "close_candidate_or_plan",
+        "textContainsAll": [
+          "Phase recommendation: close_candidate_or_plan",
+          "thread resolved: the surviving child and document case"
+        ],
+        "textContainsNone": [
+          "active NPC/interlocutor response is live",
+          "hard_boundary_strict",
+          "Hard boundary:"
+        ]
+      }
+    }
+  }
+}

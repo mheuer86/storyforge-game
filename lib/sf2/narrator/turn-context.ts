@@ -30,6 +30,12 @@ import {
 } from './diagnostics'
 import { buildNarratorSentinelContext } from './sentinel-context'
 import { buildReplayMetadata } from './replay-metadata'
+import {
+  buildProseFirstCloseLoopAdvisory,
+  buildProseFirstCloseLoopInputFromState,
+  type ProseFirstCloseLoopAdvisory,
+  type ProseFirstCloseLoopInput,
+} from './prose-first-close-loop'
 import type {
   Sf2RollDiceMode,
   Sf2RollResolutionKind,
@@ -90,6 +96,11 @@ export interface Sf2NarratorSceneBundleEventPayload {
   builtAtTurn: number
 }
 
+export interface Sf2NarratorProseFirstCloseLoopEventPayload {
+  input: ProseFirstCloseLoopInput
+  advisory: ProseFirstCloseLoopAdvisory
+}
+
 export interface Sf2NarratorTurnContext {
   mode: 'normal' | 'roll_resume'
   system: Anthropic.TextBlockParam[]
@@ -99,6 +110,7 @@ export interface Sf2NarratorTurnContext {
     workingSet: Sf2NarratorWorkingSetEventPayload | null
     sceneBundleBuilt: Sf2NarratorSceneBundleEventPayload | null
     pacingAdvisory: Sf2NarratorPacingEventPayload | null
+    proseFirstCloseLoop: Sf2NarratorProseFirstCloseLoopEventPayload | null
   }
   sentinelContext: ScanDisplayOutputOptions
   failedRollSkill?: string
@@ -128,6 +140,12 @@ function buildProseFirstInput(
   playerInput: string,
   transcript: Sf2ProseFirstNarratorTranscriptTurn[]
 ): Sf2ProseFirstNarratorMessagesInput {
+  const closeLoopInput = buildProseFirstCloseLoopInputFromState({
+    state,
+    playerInput,
+    transcript,
+  })
+  const closeLoopAdvisory = buildProseFirstCloseLoopAdvisory(closeLoopInput)
   return {
     enabled: true,
     brief: { text: proseFirst.systemPrompt, label: proseFirst.systemPromptLabel },
@@ -138,6 +156,23 @@ function buildProseFirstInput(
       recentInventoryChanges: proseFirst.recentInventoryChanges,
       recentEquipmentChanges: proseFirst.recentEquipmentChanges,
     },
+    closeLoopAdvisoryText: closeLoopAdvisory.text,
+  }
+}
+
+function buildProseFirstCloseLoopDiagnostics(
+  state: Sf2State,
+  playerInput: string,
+  transcript: Sf2ProseFirstNarratorTranscriptTurn[]
+): Sf2NarratorProseFirstCloseLoopEventPayload {
+  const closeLoopInput = buildProseFirstCloseLoopInputFromState({
+    state,
+    playerInput,
+    transcript,
+  })
+  return {
+    input: closeLoopInput,
+    advisory: buildProseFirstCloseLoopAdvisory(closeLoopInput),
   }
 }
 
@@ -161,6 +196,9 @@ export function buildNarratorTurnContext(input: {
 
   if (rollResolution) {
     let messages = buildRollResumeMessages(state, intentQueue, rollResolution)
+    const proseFirstCloseLoop = input.proseFirst
+      ? buildProseFirstCloseLoopDiagnostics(state, 'Continue from the roll result.', [])
+      : null
     const proseFirstResume = input.proseFirst
       ? buildProseFirstNarratorMessages(
           buildProseFirstInput(input.proseFirst, state, 'Continue from the roll result.', [])
@@ -169,7 +207,8 @@ export function buildNarratorTurnContext(input: {
     if (proseFirstResume) {
       messages = prependMechanicalSnapshotToLastUserMessage(
         messages,
-        proseFirstResume.mechanicalSnapshotText
+        proseFirstResume.mechanicalSnapshotText,
+        proseFirstResume.closeLoopAdvisoryText
       )
     }
     return {
@@ -177,7 +216,7 @@ export function buildNarratorTurnContext(input: {
       system: proseFirstResume?.system ?? buildNarratorSystemBlocks(state),
       messages,
       cachedTools,
-      diagnostics: buildEmptyNarratorDiagnostics(),
+      diagnostics: { ...buildEmptyNarratorDiagnostics(), proseFirstCloseLoop },
       sentinelContext,
       failedRollSkill,
       requiredRollGate,
@@ -189,6 +228,11 @@ export function buildNarratorTurnContext(input: {
 
   const currentPlayerInput = intentQueue.current.text || playerInput
   if (input.proseFirst) {
+    const proseFirstCloseLoop = buildProseFirstCloseLoopDiagnostics(
+      state,
+      currentPlayerInput,
+      input.proseFirst.transcript
+    )
     const built = buildProseFirstNarratorMessages(
       buildProseFirstInput(input.proseFirst, state, currentPlayerInput, input.proseFirst.transcript)
     )
@@ -201,7 +245,7 @@ export function buildNarratorTurnContext(input: {
       system: built.system,
       messages,
       cachedTools,
-      diagnostics: buildEmptyNarratorDiagnostics(),
+      diagnostics: { ...buildEmptyNarratorDiagnostics(), proseFirstCloseLoop },
       sentinelContext,
       failedRollSkill,
       requiredRollGate,
@@ -224,6 +268,7 @@ export function buildNarratorTurnContext(input: {
       workingSet: buildWorkingSetEventPayload(built.workingSet),
       sceneBundleBuilt: built.bundleRebuilt,
       pacingAdvisory: beatMode === 'meta' ? null : buildPacingEventPayload(built.packet.pacing),
+      proseFirstCloseLoop: null,
     },
     sentinelContext,
     failedRollSkill,
@@ -265,7 +310,8 @@ function appendIntentQueueBlock(messages: Anthropic.MessageParam[], block: strin
 
 function prependMechanicalSnapshotToLastUserMessage(
   messages: Anthropic.MessageParam[],
-  mechanicalSnapshotText: string
+  mechanicalSnapshotText: string,
+  closeLoopAdvisoryText?: string
 ): Anthropic.MessageParam[] {
   const lastIndex = messages.length - 1
   const last = messages[lastIndex]
@@ -275,7 +321,7 @@ function prependMechanicalSnapshotToLastUserMessage(
   if (typeof last.content === 'string') {
     next[lastIndex] = {
       ...last,
-      content: prependMechanicalSnapshotToUserContent(last.content, mechanicalSnapshotText),
+      content: prependMechanicalSnapshotToUserContent(last.content, mechanicalSnapshotText, closeLoopAdvisoryText),
     }
     return next
   }
@@ -287,7 +333,7 @@ function prependMechanicalSnapshotToLastUserMessage(
         ...last.content,
         {
           type: 'text' as const,
-          text: `<mechanical-snapshot>\n${mechanicalSnapshotText}\n</mechanical-snapshot>`,
+          text: prependMechanicalSnapshotToUserContent('', mechanicalSnapshotText, closeLoopAdvisoryText).trim(),
         },
       ],
     }

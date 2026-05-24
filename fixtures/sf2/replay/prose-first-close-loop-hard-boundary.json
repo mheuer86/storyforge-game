@@ -1,0 +1,53 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-hard-boundary",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Covers p4/p5-style strict hard-boundary close/reframe advisory wording."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "We undock and burn for the corridor.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The clamps let go and the berth falls behind the ship.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "advisoryInput": {
+        "playerInput": "We undock and burn for the corridor.",
+        "recentProse": "The ship is unclamped and past the berth boundary.",
+        "doneFacts": [
+          {
+            "id": "ship_unclamped",
+            "text": "ship unclamped"
+          }
+        ],
+        "notDoneFacts": [
+          {
+            "id": "corridor_operation_resolved",
+            "text": "corridor operation resolved"
+          }
+        ],
+        "hardBoundary": "undock/departure boundary crossed",
+        "objectiveAccepted": true,
+        "decisionCommitted": true,
+        "closePressure": true
+      },
+      "advisory": {
+        "phaseEquals": "hard_boundary_strict",
+        "textContainsAll": [
+          "Phase recommendation: hard_boundary_strict",
+          "Hard-boundary instruction: Hard boundary: undock/departure boundary crossed",
+          "Close this chapter now or explicitly reframe",
+          "Forbidden repeat: Do not add another old-objective runway beat after the boundary."
+        ]
+      }
+    }
+  }
+}

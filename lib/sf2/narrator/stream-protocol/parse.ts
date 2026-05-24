@@ -179,6 +179,13 @@ export function parseSf2NarratorStreamEvent(value: unknown): Sf2NarratorStreamEv
         broadGoal: value.broadGoal === true,
       }
 
+    case 'prose_first_close_loop':
+      return {
+        type: 'prose_first_close_loop',
+        input: (isRecord(value.input) ? value.input : {}) as never,
+        advisory: (isRecord(value.advisory) ? value.advisory : {}) as never,
+      }
+
     case 'display_sentinel': {
       const mode = String(value.mode ?? 'observe')
       const repaired = value.repaired === true

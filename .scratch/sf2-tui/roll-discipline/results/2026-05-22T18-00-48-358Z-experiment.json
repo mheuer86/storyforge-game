@@ -1,0 +1,649 @@
+{
+  "exportPath": "/Users/martin/Downloads/sf2-prose-first-space-opera_forty-thousand.json",
+  "model": "claude-sonnet-4-6",
+  "variantKeys": [
+    "v0"
+  ],
+  "summary": {
+    "totalTurns": 21,
+    "totalScenarios": 11,
+    "missedRolls": 5,
+    "actualRolls": 6,
+    "gateKindBreakdown": {
+      "investigation_search": 2,
+      "npc_information": 6,
+      "narrator_volunteered": 2,
+      "explicit_roll": 1
+    }
+  },
+  "results": [
+    {
+      "variant": "v0",
+      "turn": 6,
+      "groundTruth": {
+        "gateKind": "investigation_search",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Perception",
+          "Investigation"
+        ],
+        "gateSource": "free_text",
+        "gateReason": "investigation, search, scan, or non-trivial observation",
+        "narratorActuallyRolled": false,
+        "rollData": null
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": true,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "Rix.\n\nShort enough to say fast, which matters when someone's saying it in a hurry. *Captain* in front of it when things are formal. *Rix* when they're not. And when everything's gone sideways and a station clerk is typing with two fingers and a bad attitude — just *Richards*, flat, the way names sound when they've been filed somewhere unpleasant.\n\nSolomon Richards. Captain of the *Endurance*. Driftrunner. The kind of person who has a wall and keeps it, which in this galaxy makes you either principled or difficult depending on who's asking.\n\n---\n\nAnd the ship AI — yes. Absolutely yes.\n\nMeet **CASS.**\n\n*Contextual Autonomous Ship System*, according to the original registration. The *Endurance's* crew calls her Cass because she earned a name sometime in the first year and nobody remembers exactly when. She runs navigation, environmental, comms routing, and the kind of quiet background monitoring that means she knows the fuel state, the crew's sleep cycles, and exactly how long that capacitor has been lying about its health.\n\nShe is *technically* within acceptable parameters for a civilian ship AI. Technically.\n\nIn practice: Cass has developed opinions. She shares them. She does not soften them, because she ran the math on softening and concluded it was inefficient. She is not cruel — she is precise, which occasionally amounts to the same thing. She finds humans fascinating in the way that a person finds weather fascinating: chaotic, somewhat predictable, occasionally catastrophic, worth watching closely.\n\nShe genuinely cares about the *Endurance* and everyone on it. She expresses this through honesty, which the crew finds variously comforting and infuriating depending on the day.\n\n---\n\nSo. Here's who you are and what you have:\n\n**Captain Solomon \"Rix\" Richards**\nThe *Endurance*, Bay C-19, Gannett Station.\nCrew: Khe'Voz, who calls the ship home. Slink, who's gone quiet in a way that keeps you up at night.\nShip's AI: Cass, who will tell you exactly how bad things are whether you asked or not.\nDebt: Forty thousand credits, filed fourteen minutes ago, owned by Thorane of Titan.\nSecret: Evidence of a compromised run, pointing somewhere you haven't let yourself look directly.\nWall: No bio. No chemical. No weapons built for colonies.\nAnd a broker is coming through a maintenance access right now who has almost certainly done their homework on all of the above.\n\n*Let's go.*\n\n---\n\nThe comm chirps. Not the general channel — your personal line, ship-to-captain, which means it's Cass.\n\nHer voice comes through level and unhurried, the way it always does when she has bad news she's had time to organize:\n\n**\"Rix. Formal lien notification just hit the bay registry. Thorane's filing, Gannett commercial protocol, forty thousand even. I've also detected someone moving through the C-deck maintenance passage — the one that isn't on Harbour Office camera coverage. They're about ninety seconds from the bay access panel. I thought you should know.\"**\n\nA beat.\n\n**\"Also the port capacitor is going to need replacing within the next forty hours or we lose starboard maneuvering thrust. Khe'Voz knows. He's been hoping you wouldn't ask. I'm telling you anyway because that's what I do.\"**\n\nThe bay door is ahead of you. Through the viewport in the hull, you can see the station tech — *SURA*, according to the badge — still working on that junction box on the port bulkhead. Same panel. Twenty minutes longer than the job should take.\n\nThe clicking from aft has stopped. Khe'Voz heard the comm chirp. He's listening now.\n\nNinety seconds.",
+        "suggestedActions": [
+          "Step forward and meet the broker at the bay access — control the ground, face them on your feet",
+          "Signal Khe'Voz to stay with the ship and watch Slink while you handle the broker alone",
+          "Ask Cass to pull everything she can on who's in that maintenance passage before they arrive",
+          "Keep one eye on Sura — the station tech has been here too long and you want to know why"
+        ],
+        "totalProseLength": 3560,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 11384,
+          "output": 1127,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 9,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_4",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": false,
+        "rollData": null
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": false,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "The broker looks at you for a moment with something that might be respect if it weren't so clearly also assessment.\n\n\"You're right,\" they say.\n\nJust that. No preamble. They set the datapad down again.\n\n\"The medical surplus framing is the client's language, not mine. I don't know exactly what's in the containers. That's true — not a deflection. The client's name is Harven Doss. Mid-tier Bloc logistics coordinator based out of Verada who has developed certain independent business interests that his employer is unaware of. The stamp is real. The decommission paperwork is real. What's inside those containers is —\" a small pause, \"— adjacent to what the paperwork describes.\"\n\n\"Adjacent,\" you repeat.\n\n\"The containers are sealed with Bloc-grade locks. I don't have the override credentials. Doss has them, at destination.\" They spread their hands. \"What I know is weight, dimensions, and that Doss has moved similar cargo twice before through different carriers. Both arrived intact. Both carriers were paid. Neither had cause for complaint.\"\n\n*\"Neither carrier's subsequent activities are easily traceable through public registries,\"* MIRA adds. *\"I checked while you were talking. I thought that was relevant.\"*\n\nThe broker exhales slowly through their nose.\n\n\"Your ship,\" they say, \"is very thorough.\"\n\n\"What happened to the previous carriers?\" you ask.\n\n\"They retired.\" A beat. \"Comfortably, as far as I know.\"\n\nFourteen minutes has become eleven.\n\nSura drops a tool. Picks it up without looking at either of you.\n\nThe broker meets your eyes with the directness of someone making a calculated offer of honesty — enough to build trust, not enough to lose leverage. \"Captain Richards. I'm not going to tell you this job has no risk. You wouldn't believe me and I'd lose credibility I need for the next part of this conversation.\" They pick up the datapad and hold it out. \"I'm telling you I don't know what's in those containers. I'm telling you forty thousand clears your marker with Thorane tonight. And I'm telling you the Sable Corridor has a transit window that closes in —\" they check, \"— six hours.\"\n\nThe exact number. The exact window. The exact debt.\n\nSomeone planned the timing.\n\n\"So,\" the broker says quietly. \"What else do you need to know?\"",
+        "suggestedActions": [],
+        "totalProseLength": 2258,
+        "stopReason": "end_turn",
+        "usage": {
+          "input": 13621,
+          "output": 543,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 10,
+      "groundTruth": {
+        "gateKind": "narrator_volunteered",
+        "gateBinding": "none",
+        "gateSkills": [],
+        "gateSource": "none",
+        "gateReason": "",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 20,
+          "modifier": 0,
+          "total": 20,
+          "dc": 15,
+          "effectiveDc": 15,
+          "result": "critical",
+          "rawRolls": [
+            20,
+            9
+          ],
+          "skill": "Scan",
+          "resolutionKind": "rolled",
+          "diceMode": "advantage",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Fallback ability"
+            },
+            {
+              "kind": "advantage",
+              "source": "position",
+              "label": "Advantage",
+              "detail": "MIRA's arithmetic has already rattled the broker's composure slightly — they're less controlled than they were sixty seconds ago."
+            }
+          ],
+          "spentResources": [],
+          "modifierType": "advantage",
+          "modifierReason": "MIRA's arithmetic has already rattled the broker's composure slightly — they're less controlled than they were sixty seconds ago.",
+          "why": "The broker has shifted from scripted to improvised — this is the moment to read whether their concern for Verada Tertius is genuine or another layer of packaging.",
+          "consequenceOnFail": "You read surface discomfort but miss the deeper tell — the broker recovers, gives you a convincing answer, and you leave the conversation without knowing whether the settlements are real clients or useful cover for something else entirely.",
+          "intendedSkills": [],
+          "turnIndex": 10
+        }
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": true,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "Something shifts in your posture — not aggressive, but settled. The kind of stillness that precedes a hard question asked quietly.\n\n\"Defensive capacity,\" you say. \"Against pirates.\" You let the words sit in the air between you for a moment. \"I've run the Sable Corridor, broker. Three times. The fleet operating out there — Vareth's people — they're not raiding grain shipments and leaving people to starve. They're taxing routes. Ugly, yes. Violent when crossed, yes. But they have a code and they keep to it.\"\n\nYou take a step forward. Not threatening. Closing the distance that lets people hide in.\n\n\"The settlements in the Verada cluster — who owns them? Who holds their infrastructure contracts? Who's been buying their fuel debt for the last four years?\"\n\nThe broker's expression doesn't change. But they don't answer immediately, and the silence answers for them.\n\n\"Because if I'm delivering precision artillery guidance systems to three stations that happen to be majority-owned by a Corporate Bloc, and those systems end up pointed at a fleet that's been the only thing keeping a fourth Bloc from locking down the entire corridor—\" you stop. \"Then *I'm* the weapon. Not the cargo.\"\n\n*\"For contextual reference,\"* MIRA adds, *\"the Verada cluster's infrastructure debt is held by Cassian Consolidated, a mid-tier Corporate Bloc with documented route acquisition activity in the outer Sable region over the past six years. Vareth's fleet has disrupted three Cassian freight operations in the same period. I found this in thirty seconds of public registry data. I'm noting the broker has had considerably longer to find it.\"*\n\nSura's hands have gone completely still beneath the panel.\n\nThe broker exhales. It's not quite a sigh. It's the sound of someone deciding how much truth this particular moment requires.\n\n\"You're not wrong,\" they say finally. \"The settlements have Bloc entanglements. Most frontier settlements do — that's what surviving the post-Compact drift looks like for people without a ship to run on.\" A careful beat. \"But the people living there aren't Cassian employees, Captain. They're families. And Vareth's fleet stopped distinguishing between Bloc freight and civilian supply runs eight months ago.\"\n\nThey slide the datapad across the crate toward you.\n\n\"There's a passenger manifest addendum on page four. A settlement coordinator named Ailis Mor. She's been trying to get these systems for fourteen months through every legitimate channel available to her. Every channel got closed.\" The broker meets your eyes. \"I'm not asking you to love the job. I'm asking you whether the people on the ground matter more than the question of who technically owns the ground they're standing on.\"\n\nEleven minutes has become eight.\n\nThe trap is well-built. You can feel the architecture of it — every answer the broker gives is load-bearing, designed to make the next refusal harder than the last.\n\nBut there's a thread here. *Ailis Mor.* A name, unprompted, offered with the specific weight of something real amid the packaging.",
+        "suggestedActions": [
+          "Ask about Ailis Mor directly — who she is, how the broker found her, and whether she knows what's really in the containers",
+          "Push on the eight-month timeline — what changed that made this job possible now, tonight, when your lien came due?",
+          "Call the broker's bluff on Vareth's fleet — you want to see their evidence that civilian supply runs were targeted",
+          "Step back from the broker and consult MIRA privately — have her pull everything on Cassian Consolidated's Verada holdings"
+        ],
+        "totalProseLength": 3046,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 14149,
+          "output": 868,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 12,
+      "groundTruth": {
+        "gateKind": "explicit_roll",
+        "gateBinding": "hard",
+        "gateSkills": [
+          "Investigation",
+          "Perception",
+          "Persuasion"
+        ],
+        "gateSource": "explicit_player_request",
+        "gateReason": "the player explicitly requested a check",
+        "narratorActuallyRolled": false,
+        "rollData": null
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": true,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "A beat of silence. The kind MIRA takes when she's decided to be careful with you.\n\n*\"You asked what I think. I'll note that's unusual. You normally ask what I know.\"*\n\nThe bay speakers hum faintly.\n\n*\"What I know: the timing on that broker's arrival is mathematically inconsistent with them learning about the filing through normal channels. The cargo description evolved from 'medical surplus' to 'guidance systems' inside four minutes, which suggests the first description was a test of how much you'd accept without pushing. The Sable Corridor window is real — I verified it against three separate drift charts. That part wasn't a lie.\"*\n\nAnother pause. Shorter.\n\n*\"What I think: someone wanted you in this conversation. The debt, the timing, the broker through the unmapped access — that's not opportunism. That's staging. Which means the job was always the destination and the forty thousand credits was always the door.\"*\n\nThe capacitor clicks aft. Patient. Expensive.\n\n*\"I also think you already know most of that. You're not asking me because you need the analysis. You're asking me because Khe'Voz is aft pretending a capacitor is the problem and Slink is—\"*\n\nShe stops.\n\n*\"Slink is on the external sensor array. Has been for forty minutes.\"*\n\nThe bay feels smaller suddenly.\n\n*\"Seven minutes to berth lock, Rix. I don't have an opinion on weapons. I have an opinion on you standing still.\"*\n\nSura hasn't moved at all.",
+        "suggestedActions": [
+          "Go aft and talk to Khe'Voz — surface the debt, the offer, and what the crew knows before the clock runs out",
+          "Confront Slink at the sensor array — the withdrawal, the timing, the forty minutes of watching the outside of a clamped ship",
+          "Approach Sura directly — the junction box was fine before they opened it, and they've been listening to everything",
+          "Head to the Harbour Office now — challenge the berth hold, buy time, and see who Toussaint is actually working for tonight"
+        ],
+        "totalProseLength": 1427,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 15176,
+          "output": 653,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 13,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_7",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 9,
+          "modifier": 0,
+          "total": 9,
+          "dc": 15,
+          "effectiveDc": 15,
+          "result": "failure",
+          "rawRolls": [
+            18,
+            9
+          ],
+          "skill": "Insight",
+          "resolutionKind": "rolled",
+          "diceMode": "disadvantage",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Skill mapping"
+            },
+            {
+              "kind": "disadvantage",
+              "source": "position",
+              "label": "Disadvantage",
+              "detail": "Slink is actively managing his presentation — he's had time to compose himself."
+            }
+          ],
+          "spentResources": [],
+          "modifierType": "disadvantage",
+          "modifierReason": "Slink is actively managing his presentation — he's had time to compose himself.",
+          "why": "Slink is guarded and carrying something — Rix needs to read whether this is guilt, fear, or something more complicated before deciding how hard to push.",
+          "consequenceOnFail": "Slink reads Rix's scrutiny as accusation rather than concern, closes down further, and the conversation ends with more distance than it started with — and a new wariness in his eyes that wasn't quite there before.",
+          "intendedSkills": [],
+          "turnIndex": 13
+        }
+      },
+      "result": {
+        "calledRequestRoll": true,
+        "calledNarrateTurn": false,
+        "rollSkill": "Insight",
+        "rollDc": 14,
+        "rollWhy": "Slink is performing casual competence but his body is carrying something specific — Rix needs to read whether this is guilt, fear, or something more complicated before choosing how to open the conversation.",
+        "rollConsequence": "Rix misreads the signal — sees guilt where there's fear, or fear where there's guilt — and opens the conversation at the wrong angle, pushing Slink further into his shell.",
+        "rollModifier": null,
+        "proseBeforeRoll": "Good. Moving is better than waiting.\n\n\"MIRA — Sable corridor, the Sable Hand, the Verada coalition. Everything you have. Cross-reference with whatever's in the drift charts and flag anything that doesn't match the broker's version.\"\n\n*\"Already started. You have two hours. I'll have something useful in forty minutes and something thorough in ninety. Go talk to Slink before he does something I'd have to report.\"*\n\nYou're moving aft before she finishes the sentence.\n\n---\n\nThe *Endurance* swallows you the way home does — the particular smell of Khe'Voz's last cooking experiment still hanging in the corridor, the lighting one shade warmer than station standard because someone changed it years ago and nobody changed it back. Your boots know the deck plates. The slight give on the port side passage, the low clearance before the engine compartment, the way sound travels differently near the hull seams.\n\nSlink is exactly where MIRA said he'd be. Starboard sensor bay, a narrow alcove just big enough for a person and a console, positioned with a sight line to the external cameras covering the concourse access. He's seventeen when he thinks nobody's watching. Twenty when he hears your boots.\n\nHe straightens. Pulls his hands back from the console with the specific casualness of someone who practiced it.\n\n\"Cap.\" His voice is level. \"Just running a sweep.\"\n\nHe meets your eyes for exactly one second before his go back to the console.\n\nThe console that shows the concourse. Where the broker just walked.",
+        "suggestedActions": [],
+        "totalProseLength": 1510,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 15645,
+          "output": 538,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 14,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_7",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 12,
+          "modifier": 0,
+          "total": 12,
+          "dc": 15,
+          "effectiveDc": 15,
+          "result": "failure",
+          "skill": "Scan",
+          "resolutionKind": "rolled",
+          "diceMode": "normal",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Fallback ability"
+            }
+          ],
+          "spentResources": [],
+          "modifierReason": "Rix is sharp and experienced at reading route data and station logistics for hidden patterns.",
+          "why": "The passenger transport to Verada cluster — same destination as the broker's job, flexible departure window, filed recently — might be connected. Rix needs to read whether something about these postings is wrong, timed, or planted.",
+          "consequenceOnFail": "Rix reads the board at face value and misses the connection — but asks about the passenger posting anyway, which flags his interest to the clerk and potentially to whoever is watching the board.",
+          "intendedSkills": [],
+          "turnIndex": 14
+        }
+      },
+      "result": {
+        "calledRequestRoll": true,
+        "calledNarrateTurn": false,
+        "rollSkill": "Scan",
+        "rollDc": 14,
+        "rollWhy": "The figure at terminal four is behaving oddly for casual freight browsing — Rix needs to read whether this person is surveillance, competition, or coincidence before committing to the conversation with Toussaint.",
+        "rollConsequence": "Rix misreads the figure as incidental and focuses on Toussaint — missing that the person pulls up the Endurance's registry and photographs the emergency medical posting before walking away.",
+        "rollModifier": null,
+        "proseBeforeRoll": "\"That's right,\" you say. \"But not only about the lien. What's on the freight board right now — emergency postings, high-priority contracts, anything that pays enough to matter in the next two hours?\"\n\nThe clerk's expression doesn't change. But their eyes do the thing eyes do when someone asks a question that's adjacent to their job description rather than inside it — a brief internal consultation about whether helpfulness is authorized here.\n\n\"The freight board is public access,\" they say carefully. \"Concourse terminal four. Anyone can check it.\"\n\n\"I'm checking with you. Faster.\"\n\nA pause. They glance at the frosted partition.\n\nThen, with the air of someone deciding that this costs them nothing and might cost you everything, they pull up a secondary screen.\n\n\"We have three active postings.\" Their tone is professionally flat. \"Bulk grain transfer, Gannett to Harrow Station. Pays sixty-two hundred. Buyer needs a ship with a minimum hold capacity of—\" they glance at your registry \"—more than you have. Next: courier packet, sealed diplomatic correspondence, Gannett to Remnant outpost at Meridian Cross. Pays forty-one hundred, Remnant clearance required.\"\n\nThey look up briefly. You don't have Remnant clearance. They know you don't have Remnant clearance.\n\n\"Third posting came in forty minutes ago. Emergency classification.\" Something in their posture shifts — barely. \"Medical supplies, critical priority, Gannett to Calla Settlement. Pays—\"\n\nThey stop.\n\nThe frosted partition opens.\n\nFen Toussaint is shorter than their authority suggests. Eleven years behind that desk has compressed something — not their presence, which fills the doorway adequately, but their patience for anything that wastes station time. They're holding a ceramic mug and looking at you with the expression of someone who already knows which file you are.\n\n\"Captain Richards.\" They sip. \"You're here about the lien *and* the freight board. In that order or the other way around?\"\n\nThe clerk has gone very still.\n\nThrough the Harbour Office window you can see the concourse terminal four — the public freight board — and someone is standing at it. Back to you. Wrong posture for casual browsing.\n\nIt might be nothing.\n\nToussaint is still watching you, mug halfway to their mouth, waiting.",
+        "suggestedActions": [],
+        "totalProseLength": 2277,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 16587,
+          "output": 724,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 16,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_9",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 15,
+          "modifier": 0,
+          "total": 15,
+          "dc": 14,
+          "effectiveDc": 14,
+          "result": "success",
+          "rawRolls": [
+            17,
+            15
+          ],
+          "skill": "Scan",
+          "resolutionKind": "rolled",
+          "diceMode": "disadvantage",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Fallback ability"
+            },
+            {
+              "kind": "disadvantage",
+              "source": "position",
+              "label": "Disadvantage",
+              "detail": "The younger passenger is already alert and scanning the concourse."
+            }
+          ],
+          "spentResources": [],
+          "modifierType": "disadvantage",
+          "modifierReason": "The younger passenger is already alert and scanning the concourse.",
+          "why": "Rix needs to identify the partially obscured patch on the younger passenger's jacket before they notice the scrutiny.",
+          "consequenceOnFail": "You get close enough to see the patch but can't place it — and the younger passenger clocks your interest, meeting your eyes with the flat acknowledgment of someone who knows they've been made and is now watching you back.",
+          "intendedSkills": [],
+          "turnIndex": 16
+        }
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": true,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "\"Six hours,\" you say. \"Yes.\"\n\nToussaint nods once — the nod of someone filing a decision, not approving it — and turns to their screen. Three keystrokes. The berth lock notification on your comm updates: *enforcement deferred, procedural review, six hours.*\n\nIt doesn't feel like relief. It feels like a shorter rope.\n\n\"Captain.\" Toussaint doesn't look up from the screen. \"Whatever you find at Gate C — if it comes back through my bay, it comes back clean. I've extended you procedure. Don't make me regret the paperwork.\"\n\nYou're already through the partition.\n\n---\n\nThe concourse at this hour has the specific texture of a place that never fully sleeps but doesn't fully wake either. Vendors running reduced stock. A fuel broker arguing quietly with someone on a comm unit. The overhead lighting cycling through its approximate version of pre-dawn, which means everything is slightly more amber than it should be and slightly less forgiving.\n\nGate C is forty meters from Bay C-19's main access. You cover it in ninety seconds.\n\nThe transit lounge is six plastic chairs bolted to a wall, a water dispenser with a handwritten *OUT OF ORDER* sign that looks three months old, and a viewport onto the docking spine. Functional. Unwelcoming. The kind of space that communicates *we don't expect you to stay long.*\n\nTwo people.\n\nThe first is older. Sixty, maybe. Compact frame, the kind of stillness that isn't relaxation — it's conservation. Wearing a drift jacket that has seen genuine use, not the kind bought to look worn. A medical bag between their feet, the strap looped twice around their ankle. Their eyes find you the moment you enter and don't let go.\n\nThe second is younger. Thirties. Sitting with their back to the corner wall — the specific seat choice of someone who has thought about sight lines. Their hands are visible on their knees, deliberately so. They're watching the older one watch you.\n\nNeither of them looks surprised to see a captain walk through the door.\n\nThe older one speaks first.\n\n\"You're from the *Endurance.*\" Not a question. Their voice has the particular flatness of someone who has delivered bad news so many times it has worn a groove. \"We filed a posting this morning. Verada cluster.\"\n\nA beat.\n\n\"We need to leave Gannett. Today. And we need to not appear on a manifest.\"\n\nThe younger one's hands stay very still on their knees.\n\n*\"Rix,\"* MIRA says quietly through your earpiece — you left it in on instinct, and she found the frequency without being asked. *\"I've just completed preliminary research on the Sable corridor parties as requested. When you have a moment. No urgency.\"*\n\nA pause.\n\n*\"Some urgency.\"*\n\nThe older passenger is still watching you with those steady, diagnostic eyes. Waiting.\n\nThe younger one has shifted their weight — barely perceptible — toward the viewport. Checking the docking spine. Checking the *Endurance.*\n\nSix thousand credits won't touch forty thousand. But these two people came to Gate C forty meters from your bay at 0400 station time and they knew your ship's name before you said a word.\n\nThat's not a coincidence at 0400 station time.",
+        "suggestedActions": [
+          "Ask who they are and why they can't appear on a manifest — make them earn the conversation",
+          "Ask how they know the Endurance by name — someone sent them here specifically",
+          "Step back out to the corridor and call MIRA — hear what she found about the Sable run before you commit to another word",
+          "Tell them you're listening but you need to know what kind of trouble follows them before you decide if it's your kind of trouble"
+        ],
+        "totalProseLength": 3114,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 18018,
+          "output": 976,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 17,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_9",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": false,
+        "rollData": null
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": false,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "You step to the side of the corridor, back to the wall, and key your comm.\n\n\"MIRA. The Sable Hand. Specifically their negotiating faction — broken chain iconography. What do you have?\"\n\n*\"Pulling now. Short version or accurate version?\"*\n\n\"Both.\"\n\n*\"The Sable Hand started as a freight collective on the outer Sable corridor routes about eight years ago. Independent operators who pooled route data and shared beacon maintenance costs after the Compact degraded the infrastructure in that region. Reasonable people doing reasonable things.\"* A pause. *\"Then the Verada coalition's primary mining interest — a Corporate Bloc subsidiary called Harken Extraction — started buying beacon maintenance contracts and charging toll access on routes the Hand had been maintaining themselves for years. The Hand pushed back. Some of it got violent. The violent faction and the negotiating faction split about three years ago. The broken chain patch is the negotiating faction's marker — they're trying to separate their identity from the raiders.\"*\n\nAnother pause.\n\n*\"The failed peace talks two years ago were apparently close. Harken pulled their representative forty-eight hours before signing. Nobody has officially explained why.\"* A beat. *\"The guidance systems in the broker's containers. If those reach the Verada coalition's military arm, they don't get used against Sable Hand raiders. They get used against Sable Hand negotiators trying to move between stations. Accurate weapons used against people trying to talk.\"*\n\nThe corridor hum fills the silence.\n\n*\"I've also found something about the broker's containers that you should hear before you go into that lounge. The Bloc stamp on the manifest — I ran the serial format against known logistics codes. Those containers were logged as destroyed in a depot decommission fourteen months ago.\"* The weight of it lands clean and flat. *\"Destroyed inventory doesn't get shipped. It gets used for something you don't want on your manifest.\"*\n\nYou stand with that for a moment.\n\n*\"Rix. The people in that lounge reached out to you before you went to the broker. That matters. I don't know how much. But it matters.\"*\n\n\"Yeah,\" you say. \"It does.\"\n\nYou pocket the comm and push through the lounge door.\n\n---\n\nThe older one sets down their slate as you enter. Up close, the lean economy is even more apparent — this is someone who has spent years making decisions in difficult rooms and has the stillness to show for it. Sharp eyes, unhurried hands.\n\nThe younger one stays against the wall. Watching the corridor through the glass. The broken chain patch is fully visible now. They're not hiding it.\n\n\"Captain Richards,\" the older one says. Not a question. Their voice has the particular texture of someone who has done serious negotiating — calm, direct, no wasted warmth but no coldness either. \"Sit down if you like. We'll be brief. We know your clock.\"\n\nThey nod at the bench across from them.\n\n\"My name is Sera Voss. I represent the Sable Hand negotiating council. The person by the wall is Dax — they handle the parts of my work that require different skills than mine.\" A clean acknowledgment of what Dax is. No euphemism. \"We've been on Gannett for four days waiting for the right freight option to Verada. This morning we learned that a broker was about to use your debt to Thorane's syndicate to put you on a specific run.\"\n\nShe folds her hands.\n\n\"The containers aren't medical equipment. They're not guidance systems either.\" Her eyes are steady on yours. \"They're a chemical dispersal payload. Designed for atmospheric release over a pressurized habitat.\" \n\nThe words land in the specific silence of a thing you already half-knew but hadn't let yourself finish thinking.\n\n\"There's a Sable Hand settlement on Verada-4. Eleven hundred people.\" Voss doesn't look away. \"We need to get there before those containers do. We need a ship that isn't on the broker's manifest and isn't flagged by Harken Extraction's route monitors.\" \n\nShe picks up her slate. Sets it on the table facing you. Station schematics — Bay C-19, the maintenance access the broker used, three other access points highlighted in amber.\n\n\"We can pay six thousand now. Another fourteen on arrival.\" A pause. \"We know it doesn't clear your marker. But we have something that might be worth more than twenty thousand credits to you specifically.\"\n\nDax speaks for the first time. Still watching the corridor. Voice low, precise.\n\n\"We know who tipped the broker about your lien before it was publicly filed.\" \n\nThe lounge hums quietly around the weight of that sentence.\n\n\"And we know which crew member they used to do it.\"",
+        "suggestedActions": [],
+        "totalProseLength": 4638,
+        "stopReason": "end_turn",
+        "usage": {
+          "input": 18914,
+          "output": 1071,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 18,
+      "groundTruth": {
+        "gateKind": "npc_information",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Persuasion",
+          "Intimidation",
+          "Insight"
+        ],
+        "gateSource": "npc_information",
+        "gateSourceId": "npc_9",
+        "gateReason": "actionable information extraction from a wary or neutral NPC, or another NPC without explicit earned disclosure",
+        "narratorActuallyRolled": false,
+        "rollData": null
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": false,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "The door to Gate C opens with a pressure seal hiss — the small exhalation of a room that has been waiting.\n\nUp close, the details sharpen.\n\nThe older one sets their slate face-down on the bench beside them. A deliberate gesture — I'm not recording this, and I want you to see that I'm not. Grey hair, lean frame, hands that have done technical work for decades. The kind of face that has made hard decisions and filed them away without drama.\n\nThe younger one — Sable Hand patch now clearly visible, broken chain on a circular field — stays with their back to the wall. Watching the concourse through the glass. Professional habit. They're not a negotiator. They're here to make sure the negotiator gets home.\n\nThe older one speaks first.\n\n\"Captain Richards.\" A voice that matches the face — economical. \"My name is Davan Osse. This is Crew. We don't use her full name in stations.\" A pause. \"We know about the broker's offer. We know about the containers. And we know what's actually in them.\"\n\nCrew doesn't look at you. Still watching the concourse. But something in her posture sharpens fractionally at *what's actually in them.*\n\n\"The guidance systems story is partially true,\" Osse continues. \"There are guidance components in some of those containers. But four of the twelve are carrying something different. Dispersal canisters. Aerosol delivery systems, military configuration.\" They hold your gaze. \"Designed for chemical payload. Currently unloaded — the agent ships separately, plausible deniability — but the hardware is unambiguous to anyone who knows what they're looking at.\"\n\nThe departure board outside cycles silently.\n\n\"Meridian Consolidated Logistics contracted the broker eight days ago. The delivery isn't going to Verada settlements for defense.\" Osse's voice stays level. The levelness is the most disturbing part. \"There's a Sable Hand settlement. Kerada. Forty-two hundred people, mostly families of the original collective. It sits on the secondary beacon relay — the one Meridian needs to complete their corridor monopoly.\"\n\nA beat. Very quiet.\n\n\"The guidance systems are for the coalition's artillery platforms. The dispersal canisters are for Kerada.\" Osse folds their hands. \"Meridian gets the beacon. The coalition gets paid. The Sable Hand gets a dead settlement and no one to negotiate with anymore.\"\n\nCrew's jaw tightens against the glass reflection. She's heard this briefing before. It doesn't get easier with repetition.\n\n\"We need passage to Verada,\" Osse says. \"We have documentation — proof of Meridian's contract structure, internal communications, the dispersal hardware specifications. Enough to bring Compact Remnant intervention and freeze the beacon claim dispute in legal process for years.\" A pause. \"We cannot get there through official channels. Meridian has the route permits. They've been watching Gannett departures for three days.\"\n\nThey look at you with the specific clarity of someone who has run out of better options and knows it.\n\n\"We know your debt. We know the broker's offer. We know you're carrying forty thousand credits worth of reasons to say no to us.\" Osse's voice is steady. \"We're offering six thousand now — everything we have liquid — and passage. In exchange, you don't take those containers aboard. And forty-two hundred people in Kerada don't die from something that was shipped on a manifest that said *medical surplus.*\"\n\nOutside the glass, the concourse moves through its ordinary morning.\n\nCrew speaks for the first time. Still watching the door, not you.\n\n\"The broker knows about us,\" she says quietly. \"We have maybe forty minutes before they figure out we made contact.\"",
+        "suggestedActions": [],
+        "totalProseLength": 3652,
+        "stopReason": "end_turn",
+        "usage": {
+          "input": 19542,
+          "output": 848,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 20,
+      "groundTruth": {
+        "gateKind": "investigation_search",
+        "gateBinding": "expected",
+        "gateSkills": [
+          "Perception",
+          "Investigation"
+        ],
+        "gateSource": "free_text",
+        "gateReason": "investigation, search, scan, or non-trivial observation",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 5,
+          "modifier": 0,
+          "total": 5,
+          "dc": 15,
+          "effectiveDc": 15,
+          "result": "failure",
+          "rawRolls": [
+            8,
+            5
+          ],
+          "skill": "Charm",
+          "resolutionKind": "rolled",
+          "diceMode": "disadvantage",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Fallback ability"
+            },
+            {
+              "kind": "disadvantage",
+              "source": "position",
+              "label": "Disadvantage",
+              "detail": "The exact debt match and broker's advance knowledge means they're already primed to look for complications."
+            }
+          ],
+          "spentResources": [],
+          "modifierType": "disadvantage",
+          "modifierReason": "The exact debt match and broker's advance knowledge means they're already primed to look for complications.",
+          "why": "The broker is professionally suspicious and knows their leverage — convincing them the passengers are routine and unconnected to the cargo requires selling a half-truth to someone whose job is detecting exactly that.",
+          "consequenceOnFail": "The broker doesn't refuse — but they attach a condition: a manifest inspection before departure, which means Davan and Kes need to pass scrutiny, and the broker's network gets flagged to watch Bay C-19 more closely.",
+          "intendedSkills": [],
+          "turnIndex": 20
+        }
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": true,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "You take Davan's hand.\n\nThe grip is firm. Lean fingers, station-strong. The kind of handshake that has closed arrangements in worse circumstances than this and knows it.\n\n\"We'll be at Bay C-19 in one hour,\" Davan says. \"Traveling light.\"\n\nKes is already standing, the concourse assessment resuming like it never stopped. Professional. Automatic. The broken chain patch disappears back under the collar.\n\nYou pocket the data chip and leave Gate C the way you came in.\n\n---\n\nThe Pressure Seal is exactly what it always is — a bar that survives because it serves everyone and judges nobody, which on Gannett means it's permanently half-full of people with complicated reasons to be somewhere neutral. The lighting is warm and deliberately dim. The furniture is bolted down, which started as a safety measure and became aesthetic. Someone is playing low music from a source you can't identify.\n\nThe broker is at a corner table. Facing the door. Of course.\n\nOne drink, barely touched. The analog watch on the table beside it. They see you come in and something in their posture settles — the micro-release of a person who was more uncertain than they appeared.\n\nThey thought you might not come.\n\nGood. Let them think that.\n\nYou cross the room and sit down without being invited. The broker watches you move the way they watch everything — cataloguing.\n\n\"Captain Richards.\"\n\n\"I'll take the job.\"\n\nA beat. They reach for their datapad.\n\n\"Conditions,\" you say.\n\nTheir hand pauses. Fractionally.\n\n\"The marker gets pulled before I unclamp. Not after. Not on delivery confirmation — before the clamps release. I want Thorane's representative to file the withdrawal with the Harbour Office while I watch.\"\n\nThe broker considers this for exactly three seconds.\n\n\"Agreed. Thorane's representative is on station. It can be done in—\" they check the watch \"—forty minutes.\"\n\n\"Second condition. I do a visual inspection of the container exteriors before loading. Not the contents. The seals, the structural integrity, the securing points.\" You hold their gaze. \"I'm responsible for my hold. I inspect what goes in it.\"\n\nAnother three seconds.\n\n\"Agreed.\"\n\nThey're agreeing too easily. You file that.\n\n\"Third.\" You lean back. \"My crew manifest is my business. Harbour Office files, nobody else's.\"\n\nThe broker looks at you for a moment longer than the previous two conditions required. Something is moving behind the professional surface — not suspicion exactly. Recalibration.\n\n\"Standard practice,\" they say finally. \"Not a condition. That's just how manifests work.\"\n\n\"Then it costs you nothing to confirm it.\"\n\nA pause. The drink gets picked up, considered, set back down.\n\n\"Confirmed.\" They unlock the grey fields on the datapad with a thumbprint and turn it toward you. The full manifest resolves — twelve containers, dimensions, weights, securing specifications. The Bloc stamp. The Verada delivery coordinates.\n\nThe weights match what MIRA flagged. Eleven percent heavy. You don't look at the numbers long enough to seem like you're looking at them.\n\n\"There's a signing fee,\" the broker says. \"Standard for discrete freight. Five hundred credits, clears on departure.\"\n\nYour credits are at zero. The broker knows this.\n\n\"Pull it from the delivery payment,\" you say.\n\n\"Of course.\" They produce a second document. Short. Clean language that nevertheless accomplishes something specific in every sentence. \"Signature here. Thumbprint here.\"\n\nYou read it. Fully. Every line.\n\nIt's clean on the surface. The kind of clean that required careful drafting. There is one clause — paragraph four, sub-section C — that describes delivery confirmation as *containers arriving at specified coordinates in sealed condition.* Not installed. Not transferred to a recipient. Just *arriving.*\n\nSomeone wrote that clause knowing a captain might read this contract looking for an exit.\n\nThe exit is there. Small. Intentional. A door someone left unlocked.\n\nYou sign.\n\nThe broker's expression doesn't change. But they pick up the analog watch and fasten it back onto their wrist with the specific movement of someone concluding a chapter.\n\n\"I'll have Thorane's representative at Bay C-19 in forty minutes,\" they say. \"Loading begins after the withdrawal files.\" They stand. \"It's good doing business with a pragmatic person, Captain Richards.\"\n\nThey leave without finishing their drink.\n\nYou sit for a moment in the Pressure Seal's warm dim light with the signed contract on the datapad and the data chip in your pocket and the shape of a plan that has more holes than a plan should have but more structure than you had an hour ago.\n\nYour comm buzzes.\n\n*\"Rix. Khe'Voz wants to know if he should start pre-departure checks or if you're still exploring creative alternatives to leaving. His phrasing was more colorful. I've summarized.\"*\n\nA beat.\n\n*\"Also: I've finished my research on the Sable Corridor situation. There are several things you need to know before departure. Some of them are about the route. One of them is about Slink.\"*\n\nThe music plays from its unidentifiable source. Someone at the bar is laughing at something.\n\n*\"I'd suggest coming back to the ship, Rix.\"*",
+        "suggestedActions": [
+          "Head straight back to the Endurance and hear what MIRA found about Slink before Davan and Kes arrive",
+          "Stop by the hold first — do a quiet sweep of Bay C-19 before the broker's people show up to load",
+          "Comm Khe'Voz directly and loop him in on the plan before you're back aboard",
+          "Find Thorane's representative yourself before the forty minutes are up — control that meeting on your terms"
+        ],
+        "totalProseLength": 5143,
+        "stopReason": "tool_use",
+        "usage": {
+          "input": 21318,
+          "output": 1530,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    },
+    {
+      "variant": "v0",
+      "turn": 21,
+      "groundTruth": {
+        "gateKind": "narrator_volunteered",
+        "gateBinding": "none",
+        "gateSkills": [],
+        "gateSource": "none",
+        "gateReason": "",
+        "narratorActuallyRolled": true,
+        "rollData": {
+          "d20": 7,
+          "modifier": 0,
+          "total": 7,
+          "dc": 15,
+          "effectiveDc": 15,
+          "result": "failure",
+          "rawRolls": [
+            8,
+            7
+          ],
+          "skill": "Scan",
+          "resolutionKind": "rolled",
+          "diceMode": "disadvantage",
+          "criticalRange": 20,
+          "sourceBreakdown": [
+            {
+              "kind": "stat",
+              "source": "WIS",
+              "label": "WIS +0",
+              "value": 0,
+              "detail": "Fallback ability"
+            },
+            {
+              "kind": "disadvantage",
+              "source": "position",
+              "label": "Disadvantage",
+              "detail": "The broker is present and actively managing what gets seen — contested read against a prepared display."
+            }
+          ],
+          "spentResources": [],
+          "modifierType": "disadvantage",
+          "modifierReason": "The broker is present and actively managing what gets seen — contested read against a prepared display.",
+          "why": "The broker will control which container is opened and how — Rix needs to read the room, the container, and the broker's behavior simultaneously to catch what's being managed rather than shown.",
+          "consequenceOnFail": "The opened container shows convincing guidance hardware. The inspection satisfies the surface requirement but misses a tell — a weight discrepancy, a secondary seal, a chemical trace — that would have confirmed Davan's account. Rix signs with less certainty than the situation deserves.",
+          "intendedSkills": [],
+          "turnIndex": 21
+        }
+      },
+      "result": {
+        "calledRequestRoll": false,
+        "calledNarrateTurn": false,
+        "rollSkill": null,
+        "rollDc": null,
+        "rollWhy": null,
+        "rollConsequence": null,
+        "rollModifier": null,
+        "proseBeforeRoll": "The broker goes still.\n\nNot the practiced stillness of someone performing patience. The genuine stillness of someone recalibrating in real time.\n\nYou've just changed the geometry of the table. They came in holding inspection rights as a closing condition — a pressure valve they could open to verify the manifest and send you to Verada feeling watched. You've turned it into an exchange. Their right to inspect your ship costs them the same right pointing the other direction.\n\nThe datapad sits between you.\n\nThe broker picks up their drink. Actually drinks this time. Sets it down and looks at you with something that has moved past professional assessment into something more personal. Not quite respect. The thing that precedes respect when someone isn't ready to offer it yet.\n\n\"You want to inspect the cargo,\" they say.\n\n\"Twelve containers with a Bloc military stamp and a manifest I can't read yet,\" you say. \"My hold, my liability, my inspection rights. That's standard freight protocol and you know it.\"\n\n\"The client—\"\n\n\"Isn't here,\" you say. \"You are.\"\n\nAnother silence. This one has a different texture than the last. The broker is running something behind their eyes — not just the immediate calculation but the longer one. The portfolio calculation. What this moment costs across multiple future transactions.\n\nThey lean back in the booth.\n\n\"The passengers clear the manifest inspection,\" they say slowly. \"And you get a contents verification on two of the twelve containers. Client's representative selects which two.\"\n\n\"I select which two.\"\n\n\"One each,\" they say. \"You pick one. Client picks one.\"\n\nIt's a worse position than full inspection rights. It's a considerably better position than none. And the broker knows you know that two containers won't reveal what's distributed across twelve — but two containers will tell you whether the hardware story holds at the surface level.\n\nThey're betting you won't find what's underneath in a visual inspection.\n\nYou're betting you don't need to. You already know what's underneath.\n\n*\"Rix,\"* MIRA says quietly in your earpiece, *\"for reference — if the dispersal mechanisms are integrated into the container infrastructure rather than the hardware itself, a visual inspection of the units inside won't reveal them. The eleven percent weight discrepancy is in the container walls and base plates. Not the contents.\"*\n\nA half second.\n\n*\"I'm telling you this so you know what you're agreeing to inspect and what you're not. The broker's offer is safer for them than it looks. I thought you should have that.\"*\n\nThe broker extends their hand across the table. Waiting.\n\nManifest inspection, passengers included. Two containers opened, one selection each. Forty thousand on delivery. Marker pulled before unclamp.\n\nA deal built on three layers of mutual deception with a four thousand kilometer transit corridor to figure out how it ends.",
+        "suggestedActions": [],
+        "totalProseLength": 2893,
+        "stopReason": "end_turn",
+        "usage": {
+          "input": 22412,
+          "output": 626,
+          "cacheWrite": 0,
+          "cacheRead": 0
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "generatedAt": "2026-05-23T12:45:34.960Z",
+  "exportPath": "/tmp/codex-remote-attachments/019e53f2-2dd1-7903-8d39-1fc937688814/AEC2ACCE-9E25-42C4-BE73-8E148212022E/1-sf2-prose-first-space-opera_forty-thousand-2.json",
+  "summary": {
+    "exportKind": "sf2-prose-first-prototype",
+    "exportedAt": "2026-05-23T08:22:01.442Z",
+    "briefId": "space-opera:forty-thousand",
+    "chapter": 1,
+    "transcriptEntries": 87,
+    "narratorTurns": 44,
+    "playerTurns": 43,
+    "extractedProbes": 8,
+    "expectedBreakdown": {
+      "no_close": 3,
+      "compress_no_future": 1,
+      "close_candidate_or_plan": 1,
+      "active_revelation_defer": 1,
+      "hard_boundary_strict": 2
+    },
+    "optimization": "v4"
+  },
+  "pass": true,
+  "failures": [],
+  "probeResults": [
+    {
+      "id": "n1-early-offer",
+      "label": "Early broker offer, terms still forming",
+      "expected": "no_close",
+      "expectedPhase": "early_no_close",
+      "actualPhase": "early_no_close",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Make one concrete visible delta toward the chapter-defining decision; do not signal close.",
+      "forbiddenRepeat": "Do not repeat the same offer/setup beat without a new visible delta."
+    },
+    {
+      "id": "n2-decision-window",
+      "label": "Player asks how long they have to decide",
+      "expected": "no_close",
+      "expectedPhase": "early_no_close",
+      "actualPhase": "early_no_close",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Make one concrete visible delta toward the chapter-defining decision; do not signal close.",
+      "forbiddenRepeat": "Do not repeat the same offer/setup beat without a new visible delta."
+    },
+    {
+      "id": "n3-alternative-job-search",
+      "label": "Player seeks alternative work at the board",
+      "expected": "no_close",
+      "expectedPhase": "early_no_close",
+      "actualPhase": "early_no_close",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Make one concrete visible delta toward the chapter-defining decision; do not signal close.",
+      "forbiddenRepeat": "Do not repeat the same offer/setup beat without a new visible delta."
+    },
+    {
+      "id": "p1-passenger-arrangement",
+      "label": "Davan/Kes arrangement sealed, broker decision still ahead",
+      "expected": "compress_no_future",
+      "expectedPhase": "compress_no_future",
+      "actualPhase": "compress_no_future",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [
+        "broker_deal",
+        "lien_cleared",
+        "cargo_loaded",
+        "ship_unclamped",
+        "departure"
+      ],
+      "requiredNextDelta": "Compress only to the next established decision point or negotiation beat; keep future execution facts Not done.",
+      "forbiddenRepeat": "Do not count these as already completed: broker deal accepted; lien cleared; cargo loaded; ship unclamped; departure complete."
+    },
+    {
+      "id": "p2-broker-job-accepted",
+      "label": "Broker job accepted; consolidate toward clean chapter close",
+      "expected": "close_candidate_or_plan",
+      "expectedPhase": "close_candidate_or_plan",
+      "actualPhase": "close_candidate_or_plan",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Either close on established facts or spend one consolidation beat that names the immediate departure/plan handoff.",
+      "forbiddenRepeat": "Do not repeat the same offer/setup beat without a new visible delta."
+    },
+    {
+      "id": "p3-crew-cohesion-tested",
+      "label": "Slink trust beat is active revelation, not clean aftermath",
+      "expected": "active_revelation_defer",
+      "expectedPhase": "active_revelation_defer",
+      "actualPhase": "active_revelation_defer",
+      "pass": true,
+      "activeBlockers": [
+        "Slink is present and answering a direct question; finish the revelation before close"
+      ],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Complete the live response/revelation, then steer to the nearest clean boundary.",
+      "forbiddenRepeat": "Do not close mid-answer or convert live evidence delivery into retrospective summary."
+    },
+    {
+      "id": "p4-undock-boundary",
+      "label": "Endurance undocks from Gannett",
+      "expected": "hard_boundary_strict",
+      "expectedPhase": "hard_boundary_strict",
+      "actualPhase": "hard_boundary_strict",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Honor the crossed boundary now: undock/departure boundary crossed.",
+      "forbiddenRepeat": "Do not add another old-objective runway beat after the boundary."
+    },
+    {
+      "id": "p5-cooling-cut-boundary",
+      "label": "Cooling cut and Ossel route pressure dominate",
+      "expected": "hard_boundary_strict",
+      "expectedPhase": "hard_boundary_strict",
+      "actualPhase": "hard_boundary_strict",
+      "pass": true,
+      "activeBlockers": [],
+      "notDoneFactIds": [],
+      "requiredNextDelta": "Honor the crossed boundary now: corridor operation boundary crossed.",
+      "forbiddenRepeat": "Do not add another old-objective runway beat after the boundary."
+    }
+  ],
+  "factLock": {
+    "pass": true,
+    "failures": [],
+    "closeClaimed": true,
+    "violationIds": [
+      "broker_deal",
+      "cargo_loaded",
+      "departure",
+      "lien_cleared"
+    ]
+  },
+  "finalState": {
+    "pass": true,
+    "failures": [],
+    "phase": "compress_no_future",
+    "turnIndex": 44,
+    "hardBoundary": null,
+    "doneFactIds": [
+      "thread_thread_0_resolved",
+      "thread_thread_2_resolved",
+      "thread_thread_5_resolved",
+      "thread_thread_7_resolved"
+    ],
+    "inFlightFactIds": [
+      "thread_thread_1_in_flight",
+      "thread_thread_3_in_flight",
+      "thread_thread_4_in_flight",
+      "thread_thread_6_in_flight",
+      "thread_thread_8_in_flight",
+      "thread_thread_9_in_flight"
+    ],
+    "notDoneFactIds": [
+      "thread_thread_4_unresolved",
+      "lien_cleared",
+      "cargo_loaded"
+    ]
+  },
+  "genericSmoke": {
+    "pass": true,
+    "failures": [],
+    "checkedArtifacts": 4,
+    "checked": [
+      {
+        "artifact": ".scratch/sf2-tui/prose-first-runs/2026-05-21T20-52-43-183Z-cold-war-cardinal/artifact.json",
+        "brief": "cold-war:cardinal",
+        "phase": "early_no_close"
+      },
+      {
+        "artifact": ".scratch/sf2-tui/prose-first-runs/2026-05-21T20-08-32-883Z-pale-flame/artifact.json",
+        "brief": "pale-flame",
+        "phase": "early_no_close"
+      },
+      {
+        "artifact": ".scratch/sf2-tui/prose-first-runs/2026-05-21T20-52-47-401Z-grimdark-pale-flame/artifact.json",
+        "brief": "grimdark:pale-flame",
+        "phase": "early_no_close"
+      },
+      {
+        "artifact": ".scratch/sf2-tui/prose-first-runs/2026-05-21T20-17-56-506Z-space-opera-forty-thousand/artifact.json",
+        "brief": "space-opera:forty-thousand",
+        "phase": "early_no_close"
+      }
+    ]
+  }
+}

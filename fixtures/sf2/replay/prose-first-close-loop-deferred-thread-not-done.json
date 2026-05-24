@@ -1,0 +1,72 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-deferred-thread-not-done",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Deferred threads are not active blockers, but they must not be rendered as resolved/done facts."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "currentChapter": 1
+      },
+      "campaign": {
+        "threads": {
+          "thread_deferred_child": {
+            "id": "thread_deferred_child",
+            "title": "the surviving child and document case",
+            "category": "thread",
+            "status": "deferred",
+            "owner": { "kind": "npc", "id": "child" },
+            "stakeholders": [],
+            "tension": 5,
+            "peakTension": 5,
+            "resolutionCriteria": "decide whether to protect the child, wait for the assessor, or risk exposure",
+            "failureMode": "the child is taken or Luther is exposed",
+            "retrievalCue": "child in root hollow, document case",
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      },
+      "chapter": {
+        "number": 1,
+        "setup": {
+          "activeThreadIds": ["thread_deferred_child"],
+          "loadBearingThreadIds": ["thread_deferred_child"]
+        }
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "I keep watching the assessor from the treeline.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The assessor keeps searching the ruin.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "I keep watching the assessor from the treeline."
+      },
+      "derivedInput": {
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "early_no_close",
+        "textContainsNone": [
+          "thread resolved: the surviving child and document case",
+          "thread unresolved: the surviving child and document case"
+        ]
+      }
+    }
+  }
+}

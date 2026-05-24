@@ -22,6 +22,13 @@ import {
   renderSocialModifierAdvisories,
 } from '../lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '../lib/sf2/narrator/commit-repair'
+import {
+  buildProseFirstCloseLoopAdvisory,
+  buildProseFirstCloseLoopInputFromState,
+  detectProseFirstFactLockViolations,
+  normalizeProseFirstChapterStatus,
+  type ProseFirstCloseLoopFact,
+} from '../lib/sf2/narrator/prose-first-close-loop'
 import { buildSceneKernel } from '../lib/sf2/scene-kernel/build'
 import { formatFinding, repairVisibleLeaks, scanDisplayOutput } from '../lib/sf2/sentinel/display'
 import { classifyQuickAction, repairSuggestedActions } from '../lib/sf2/narrator/suggested-actions'
@@ -735,6 +742,45 @@ interface ReplayFixture {
       assistantMessageContainsAll?: string[]
       messageCountAtLeast?: number
     }
+    proseFirstCloseLoop?: {
+      advisoryInput?: {
+        turnIndex?: number
+        playerInput?: string
+        recentProse?: string
+        doneFacts?: ProseFirstCloseLoopFact[]
+        inFlightFacts?: ProseFirstCloseLoopFact[]
+        notDoneFacts?: ProseFirstCloseLoopFact[]
+        activeBlockers?: string[]
+        hardBoundary?: string | null
+        objectiveAccepted?: boolean
+        decisionCommitted?: boolean
+        closePressure?: boolean
+      }
+      stateInput?: {
+        playerInput?: string
+        transcript?: Array<{ role: 'user' | 'assistant'; content: string }>
+      }
+      advisory?: {
+        phaseEquals?: string
+        textContainsAll?: string[]
+        textContainsNone?: string[]
+      }
+      derivedInput?: {
+        hardBoundaryEquals?: string | null
+        turnIndexEquals?: number
+        activeBlockersCount?: number
+      }
+      chapterStatus?: {
+        raw: unknown
+        malformedNestedStatus?: boolean
+        errorCount?: number
+        phaseEquals?: string
+      }
+      factLock?: {
+        violationFactIdsEquals?: string[]
+        closeClaimed?: boolean
+      }
+    }
     archivistTurnMessage?: {
       containsAll?: string[]
       containsNone?: string[]
@@ -1079,6 +1125,7 @@ async function runFixturePath(path: string): Promise<ReplayResult> {
   assertRequiredRollGate(fixture, stateBefore, failures)
   assertNarratorMessages(fixture, stateBefore, stateAfter, failures)
   assertNarratorCommitRepair(fixture, stateBefore, failures)
+  assertProseFirstCloseLoop(fixture, stateBefore, failures)
   assertDispositionDerivation(fixture, failures)
   assertAuthorContract(fixture, stateBefore, failures)
   assertAuthorHydration(fixture, stateBefore, failures)
@@ -3151,6 +3198,114 @@ function assertNarratorCommitRepair(
   for (const fragment of expected.assistantMessageContainsAll ?? []) {
     if (!assistantTexts.some((text) => text.includes(fragment))) {
       failures.push(`narratorCommitRepair assistant messages missing required fragment "${fragment.slice(0, 80)}"`)
+    }
+  }
+}
+
+function assertProseFirstCloseLoop(fixture: ReplayFixture, stateBefore: Sf2State, failures: string[]): void {
+  const expected = fixture.expected?.proseFirstCloseLoop
+  if (!expected) return
+
+  let advisoryInput = expected.advisoryInput
+  if (expected.stateInput) {
+    try {
+      advisoryInput = buildProseFirstCloseLoopInputFromState({
+        state: stateBefore,
+        playerInput: expected.stateInput.playerInput ?? fixture.input.playerInput,
+        transcript: expected.stateInput.transcript,
+      })
+    } catch (error) {
+      failures.push(`buildProseFirstCloseLoopInputFromState threw: ${error instanceof Error ? error.message : String(error)}`)
+      return
+    }
+  }
+  if (!advisoryInput) {
+    failures.push('proseFirstCloseLoop requires advisoryInput or stateInput')
+    return
+  }
+
+  let advisory: ReturnType<typeof buildProseFirstCloseLoopAdvisory>
+  try {
+    advisory = buildProseFirstCloseLoopAdvisory(advisoryInput)
+  } catch (error) {
+    failures.push(`buildProseFirstCloseLoopAdvisory threw: ${error instanceof Error ? error.message : String(error)}`)
+    return
+  }
+
+  if (expected.derivedInput?.hardBoundaryEquals !== undefined) {
+    const actual = advisoryInput.hardBoundary ?? null
+    if (actual !== expected.derivedInput.hardBoundaryEquals) {
+      failures.push(`proseFirstCloseLoop.derivedInput.hardBoundary expected ${expected.derivedInput.hardBoundaryEquals}, got ${actual}`)
+    }
+  }
+  if (
+    expected.derivedInput?.turnIndexEquals !== undefined &&
+    advisoryInput.turnIndex !== expected.derivedInput.turnIndexEquals
+  ) {
+    failures.push(`proseFirstCloseLoop.derivedInput.turnIndex expected ${expected.derivedInput.turnIndexEquals}, got ${advisoryInput.turnIndex ?? 'unset'}`)
+  }
+  if (
+    expected.derivedInput?.activeBlockersCount !== undefined &&
+    advisory.activeBlockers.length !== expected.derivedInput.activeBlockersCount
+  ) {
+    failures.push(`proseFirstCloseLoop.derivedInput.activeBlockersCount expected ${expected.derivedInput.activeBlockersCount}, got ${advisory.activeBlockers.length}`)
+  }
+
+  if (expected.advisory?.phaseEquals !== undefined && advisory.phase !== expected.advisory.phaseEquals) {
+    failures.push(`proseFirstCloseLoop.advisory.phase expected ${expected.advisory.phaseEquals}, got ${advisory.phase}`)
+  }
+
+  for (const fragment of expected.advisory?.textContainsAll ?? []) {
+    if (!advisory.text.includes(fragment)) {
+      failures.push(`proseFirstCloseLoop.advisory.text missing "${fragment.slice(0, 80)}"`)
+    }
+  }
+  for (const fragment of expected.advisory?.textContainsNone ?? []) {
+    if (advisory.text.includes(fragment)) {
+      failures.push(`proseFirstCloseLoop.advisory.text unexpectedly contains "${fragment.slice(0, 80)}"`)
+    }
+  }
+
+  let normalized: ReturnType<typeof normalizeProseFirstChapterStatus> | null = null
+  if (expected.chapterStatus) {
+    normalized = normalizeProseFirstChapterStatus(expected.chapterStatus.raw)
+    if (
+      expected.chapterStatus.malformedNestedStatus !== undefined &&
+      normalized.malformedNestedStatus !== expected.chapterStatus.malformedNestedStatus
+    ) {
+      failures.push(
+        `proseFirstCloseLoop.chapterStatus.malformedNestedStatus expected ${expected.chapterStatus.malformedNestedStatus}, got ${normalized.malformedNestedStatus}`
+      )
+    }
+    if (
+      typeof expected.chapterStatus.errorCount === 'number' &&
+      normalized.errors.length !== expected.chapterStatus.errorCount
+    ) {
+      failures.push(`proseFirstCloseLoop.chapterStatus.errors expected ${expected.chapterStatus.errorCount}, got ${normalized.errors.length}: ${normalized.errors.join('; ')}`)
+    }
+    if (
+      expected.chapterStatus.phaseEquals !== undefined &&
+      normalized.status?.phase !== expected.chapterStatus.phaseEquals
+    ) {
+      failures.push(`proseFirstCloseLoop.chapterStatus.phase expected ${expected.chapterStatus.phaseEquals}, got ${normalized.status?.phase ?? 'unset'}`)
+    }
+  }
+
+  if (expected.factLock) {
+    const factLock = detectProseFirstFactLockViolations({
+      status: normalized?.status ?? null,
+      notDoneFacts: advisoryInput.notDoneFacts ?? [],
+    })
+    if (
+      expected.factLock.closeClaimed !== undefined &&
+      factLock.closeClaimed !== expected.factLock.closeClaimed
+    ) {
+      failures.push(`proseFirstCloseLoop.factLock.closeClaimed expected ${expected.factLock.closeClaimed}, got ${factLock.closeClaimed}`)
+    }
+    if (expected.factLock.violationFactIdsEquals) {
+      const actual = factLock.violations.map((violation) => violation.factId).sort().join(',')
+      const want = [...expected.factLock.violationFactIdsEquals].sort().join(',')
+      if (actual !== want) failures.push(`proseFirstCloseLoop.factLock.violations expected [${want}], got [${actual}]`)
     }
   }
 }

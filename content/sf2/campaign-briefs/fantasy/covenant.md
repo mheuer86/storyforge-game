@@ -2,7 +2,7 @@
 
 ### A Mage of the Order Campaign
 
-_Tone: DnD adventurer. Wonder-forward, propulsive, the world as a place to explore._ _Character: A mage of the Covenant. Trained, sworn, capable. First solo posting._ _Three children walked into the Silence yesterday. They haven't come back._ _Something in the Silence is moving toward the town._
+_Tone: DnD adventurer. Wonder-forward, propulsive, the world as a place to explore._ _Character: A mage of the Covenant. Trained, sworn, capable. First solo posting._ _Three children walked into the Silence yesterday. They haven't come back._ _Something in the Silence has learned to move where magic cannot._ _The old world did not leave ruins. It left instructions, and some of them still obey._
 
 ---
 
@@ -28,6 +28,10 @@ Then the innkeeper tells them about the children.
 
 **Combat is dynamic and consequential.** Spells have visual presence. Monster behavior should be specific and interesting — not just hit points in a hallway, but creatures with reasons and habitats and the specific way they fight. The mage is powerful but not invulnerable. Being a mage means choosing the right spell at the right moment, and the right spell exists. Part of the joy is finding it.
 
+**Deep lore is playable.** Do not deliver old history as lectures. Let the mage find it in contradictory inscriptions, local names for the same phenomenon, ruins that still enforce rules nobody remembers, and monster behavior that proves some old theory wrong. Covenant doctrine, Thornwood oral history, Iron Coast superstition, and physical evidence can all disagree while each carries one useful truth.
+
+**Monsters are discoverable.** Major creatures have habitat, desire, hunting method, tell, weakness, and a way the mage can learn those things. A Discovery Roll should reveal how to act differently, not just what the creature is called. A clever spell choice should be able to change the shape of an encounter.
+
 **Dice before response.** Always provide the dice artifact before rolls. State stakes. Celebrate natural 20s — they should feel like moments. A natural 1 should be funny or interesting, not punishing.
 
 ---
@@ -47,6 +51,24 @@ The Surges are beautiful and dangerous. The Silences are simply wrong — a cold
 The kingdoms rebuilt. The Covenant was founded. Life went on.
 
 Now, four centuries later, the Silences are growing.
+
+### The First Architectures
+
+Before the Five Kingdoms, before Varek, and before the Covenant, several cultures understood magic as law rather than force. Covenant scholars call their remains **the First Architectures**. The name is tidy. The truth is not.
+
+Aurenian historians say the First Architectures were pre-kingdom engineers who learned to write instructions into stone, road, water, and bone. Thornwood Weavers say they were oath-bound spirits wearing human shape. Iron Coast sailors say their towers were built to keep things below the sea asleep. Covenant doctrine says they are dangerous but classifiable Old Magic.
+
+All of these accounts are partly useful and partly wrong.
+
+The old sites were not built around spells the way modern mages understand spells. They were built around fragments of law:
+
+- **Permanence** — what refuses to die, decay, or change
+- **Name** — what binds a thing to itself
+- **Distance** — what makes near and far meaningful
+- **Shape** — what lets bodies remain bodies
+- **Hunger** — what every living system owes the world
+
+Varek may not have invented the working that broke the world. He may have found an older grammar and tried to finish a sentence no one was meant to speak.
 
 ### The Five Kingdoms
 
@@ -78,6 +100,10 @@ Now, four centuries later, the Silences are growing.
 
 **The growing Silences** are a recent development that the Covenant is actively investigating. The expansion should be slow — geological. When a Silence grows three miles overnight, swallowing a village, that is not normal. That is why the mage is in Ashford.
 
+Silences are not empty. The Covenant teaches that they are magic-dead zones, and for Covenant Craft that is mostly true. But some Old Magic predates the current magical field. Inside a Silence, modern spells weaken or fail, but old law can become easier to perceive. Inscriptions sharpen. Roads remember wrong directions. Creatures that are sluggish in magic-rich places may move freely where magic cannot help you.
+
+A Silence should never make the mage useless. It should make them rely on observation, preparation, artifacts, companions, and clever casting instead of raw spell power.
+
 ### Magic in the World
 
 Magic is real, visible, and wondrous. It is not common — most people never learn to use it — but it is not secret. Everyone knows mages exist. Everyone has seen a cantrip, even if it was just a traveling Covenant member lighting a lantern with a word.
@@ -90,7 +116,7 @@ There are four approaches to magic in the world:
 
 **Wild Magic** — what emerges when someone with natural talent and no training uses it. Unpredictable, powerful, dangerous. The Covenant officially considers this a public safety issue. Wild mages need training before they hurt someone. The conversation about whether that training has to come from the Covenant is ongoing.
 
-**Old Magic** — what existed before the Unmaking. Fragments survive in ruins, in sealed chambers, in ancient texts that the Covenant collects and sometimes opens and occasionally regrets opening. Old magic operates on rules that don't entirely map to the current framework. It can do things that shouldn't be possible. That is both its value and its danger.
+**Old Magic** — what existed before the Unmaking. Fragments survive in ruins, in sealed chambers, in ancient texts that the Covenant collects and sometimes opens and occasionally regrets opening. Old Magic is not just stronger spellcasting. It interacts with laws that current magic sits on top of. It can bind a name to a door, make a wound permanent, teach a road to remember where it goes, let a body survive without the thing that should sustain it, or allow creatures to persist where modern magic cannot. That is both its value and its danger.
 
 ---
 
@@ -107,6 +133,8 @@ The Covenant does three things:
 **It watches.** Surge monitoring, Silence tracking, reports of wild magic use, unusual magical phenomena. The Covenant maintains a network of reporting and response that covers most of the Five Kingdoms. Junior mages on posting like the player character are the front line of this network — they go where the reports come from and handle what needs handling.
 
 **It holds.** After the Unmaking, Aldara Senne and the first Covenant mages sealed away the most dangerous surviving remnants — Varek's research, his unfinished workings, the fragments of the Unmaking that hadn't fully collapsed. These seals are maintained, checked, renewed. Some of them are in the Silent Reaches. Some of them are elsewhere. Some of them have been checked recently and found... different than they should be.
+
+The Covenant's blind spot is not arrogance. It is specialization. The Order is excellent at post-Unmaking magic. It is less excellent at interpreting cultures that understood magic before the current field existed. Some seals the Covenant believes were built to contain Varek's remnants may be older systems repurposed after the catastrophe. The Covenant is still useful. It is also sometimes late to the real question.
 
 ### Structure
 
@@ -187,6 +215,10 @@ The world rewards curiosity. When the mage investigates something magical — a 
 
 The Discovery Roll is the mage's signature mechanic — the system's acknowledgment that their primary value is _knowing things._
 
+When investigating old sites, strange creatures, or Silence effects, the mage can make a **Triangulated Discovery** by comparing Covenant doctrine, local testimony, folk tradition, physical ruin evidence, and creature behavior. Beating the DC by 5+ should give not just more information, but a contradiction the mage can use.
+
+Example: Covenant doctrine says the Silence suppresses magical creatures. The tracks show something moving better inside the Silence than outside it. Practical implication: this thing is not using modern magic as metabolism.
+
 ---
 
 ### Spellbook Finds
@@ -194,6 +226,54 @@ The Discovery Roll is the mage's signature mechanic — the system's acknowledgm
 When the mage enters a ruin, clears a hostile mage's sanctum, or finds an old library, there may be spells to recover. The GM rolls secretly on a Spellbook Find table — the result determines what's there. New spells discovered this way feel like treasure because they are.
 
 Some spells found in old places are **Old Magic** — they work differently, more powerfully, and may have effects not in any Covenant framework. The mage can copy them. The Arch-Mage might want to know about them.
+
+Old Magic finds may also be incomplete but useful: a broken theorem, a ritual diagram, a naming key, a creature countermeasure, or a law-fragment the mage cannot cast yet but can recognize later. Not every old discovery is immediately usable. Some are keys to future scenes.
+
+---
+
+### Creatures of Surge, Silence, and Old Law
+
+Monsters exist because magic changed ecology. Some are natural creatures altered by Surges. Some are remnants of old law. Some are intelligent enough to want things.
+
+**Surge-Touched** are living animals or plants altered by magic-rich zones. They are physical, colorful, and often beautiful before they are dangerous. Examples: glass-antler deer that refract spells, lantern moth swarms that lure travelers toward old ruins, bramble hounds whose bodies root after death unless burned or blessed.
+
+**Silence-Adapted** creatures survive where magic fails. They are sparse, unsettling, and tactical. Examples: hush-wolves that hunt by vibration, pale root-things that mimic footsteps, shell-backed carrion beetles that freeze when named correctly.
+
+**Old-Law Intelligences** are rare entities that predate current magical categories. They are not common encounters. They are campaign-scale pressures, ancient custodians, predators, or possible allies whose rules must be learned before they can be fought.
+
+#### The Mnemonauts
+
+The Covenant has no official classification for them yet. Old marginalia call them **Mnemonauts** — navigators of memory. Thornwood fragments call them name-eaters. Iron Coast sailors refuse to write the word at all.
+
+Mnemonauts are intelligent old-law predators that move by memory, name, and prepared spell-patterns. They do not eat brains. They feed on coherent identity: names, rehearsed spells, oaths, and memories with emotional weight. In magic-rich places they are faint, slow, and half-starved. In Silences, where ordinary magic dies, they move freely.
+
+They may have been created by the First Architectures as custodians, executioners, or navigators. Or they may be what came through when the First Architectures made doors too far down. Do not answer this immediately.
+
+Their tells:
+
+- A remembered phrase returns with one word wrong
+- Someone forgets a proper noun but keeps the emotion attached to it
+- Written notes remain correct while memory drifts
+- Animals refuse a threshold even after the Silence passes
+- A prepared spell feels present in the mind but the name will not come
+
+Their methods:
+
+- Isolate one mind
+- Repeat a victim's memory in the wrong voice
+- Make allies misremember a direction, promise, or name
+- Steal or blur one prepared spell for a scene
+- Use false familiarity: _you know this corridor; you have walked it before_
+
+Their weaknesses:
+
+- Fresh names freely chosen
+- Written records made before contact
+- Contradictory testimony spoken aloud by multiple people
+- Improvised spellcasting rather than rote pattern
+- Noise, bells, running water, or other phenomena that break coherent thought
+
+The first session should not reveal a full Mnemonaut. It should reveal a **Mnemonaut Echo** — a shed hunting pattern or memory-parasite left by the larger intelligence. The Echo is enough to prove that the Silence is inhabited, teach one weakness, and make the mage's spell choices matter before the seal chamber.
 
 ---
 
@@ -257,31 +337,35 @@ Their parents have been in the garrison commander's hall since dawn, and the gar
 
 **Commander Brek Fallor** The garrison commander. Fifty, military, practical. He has fought things on the eastern road that didn't have names and he is not frightened easily. He is frightened now — not of the Silence itself but of what it means for the town and for the children and for his own limited ability to help. He will defer to the mage's expertise completely and gratefully, because this is not his kind of problem and he knows it. _STR +3, CON +3, INT +1. Fourteen soldiers. None of them will enter the Silence voluntarily._
 
-**Healer Ossith** The temple's resident healer, mid-fifties, trained in both mundane medicine and basic ritual healing. She has been with the Treswick evacuees all night. She has heard their accounts. She has a theory about what's in the Silence that she will share if asked and that is partially right and importantly wrong in one specific way. _WIS +4, INT +2. Spells: Healing Word, Cure Wounds, Detect Magic (weak — she can tell magic is there, not what kind)._
+**Healer Ossith** The temple's resident healer, mid-fifties, trained in both mundane medicine and basic ritual healing. She has been with the Treswick evacuees all night. She has heard their accounts. She has a theory about what's in the Silence that she will share if asked and that is partially right and importantly wrong in one specific way. Several evacuees have memory symptoms: a farmer forgetting his wife's name while remembering the shape of her hand, a child singing a familiar song with three wrong words, an old woman insisting the eastern road has always bent north when everyone knows it does not. _WIS +4, INT +2. Spells: Healing Word, Cure Wounds, Detect Magic (weak — she can tell magic is there, not what kind)._
 
 **Tannis and Fera Durrow** Pip and Dall's parents. Their children are the two youngest in the Silence. They are past fear and into a specific terrible calm. They will do anything — including follow the mage into the Silence if not stopped — to get their children back. _Non-combatant. Extremely motivated. A potential liability and a potential resource depending on how the mage handles them._
 
-**Old Verath** An elderly man who has lived on Ashford's eastern edge for forty years. He was on the wrong side of the Silence expansion and walked out — he says he simply walked out, which should not have been possible if the Silence works as the Covenant's framework says it should. He is sitting in the inn's back corner not speaking to anyone. He has something in his coat that he keeps touching. _The most important NPC in the first session. He knows something. Getting it out of him is the session's first puzzle._
+**Old Verath** An elderly man who has lived on Ashford's eastern edge for forty years. He was on the wrong side of the Silence expansion and walked out — he says he simply walked out, which should not have been possible if the Silence works as the Covenant's framework says it should. He is sitting in the inn's back corner not speaking to anyone. He has something in his coat that he keeps touching. The amulet protected him from the Silence, and perhaps protected his name. It may also have taken a different memory in exchange. _The most important NPC in the first session. He knows something. Getting it out of him is the session's first puzzle._
 
 ---
 
 ## WHAT THE GM KNOWS
 
-**What's in the Silence:** Not a creature. Not a natural expansion. The Silence has grown because one of the Covenant's seals — a seal placed four hundred years ago by Aldara Senne herself, buried under what is now Treswick — is being deliberately broken. Someone has been working at it for three months from inside the Silence, which means either they're not a mage (and therefore don't feel the Silence) or they're something that the Silence doesn't affect.
+**What's in the Silence:** Not a natural expansion, and not only one problem. The Silence has grown because one of the Covenant's seals — a seal placed four hundred years ago by Aldara Senne herself, buried under what is now Treswick — is being deliberately broken. Someone has been working at it for three months from inside the Silence, which means either they're not a mage (and therefore don't feel the Silence) or they're using something the Silence doesn't affect.
+
+The breach has also attracted a Mnemonaut, or awakened one already caught in the old architecture. The full intelligence should not appear in Chapter 1. Its Echo does.
 
 The seal contains a fragment of the Unmaking. Specifically: the piece of Varek's great working that governed _permanence._ If fully unsealed and released, it doesn't restart the Unmaking — it's a fragment, not the whole. But it would be the most significant piece of Old Magic loose in the world in four centuries. And someone wants it.
 
 **The children:** Alive. They walked into the Silence and found the seal site — a stone chamber, older than Treswick, built to mark and contain it. They're inside the chamber because it's the one place in the Silence where Old Magic still functions (the seal itself generates a residual field). They can't find their way out because the Silence has disoriented their sense of direction completely.
 
-They are not in immediate danger. They are cold, frightened, and — in Maret's case — pressing her hand against the seal stone and feeling something press back.
+They are not in immediate physical danger. They are cold, frightened, and — in Maret's case — pressing her hand against the seal stone and feeling something press back. Pip has forgotten Dall's name twice. Dall remembers the route out only when no one asks directly. Maret can hear a voice that sounds like her own older self.
 
 **Maret:** She's thirteen, the oldest, and she's been touching the seal because she can feel it — which means she's attuned to magic in a way she and her parents don't know about yet. She is the reason the seal has accelerated its breaking in the last three days. Not deliberately — her proximity and unconscious attunement have acted like a key in a lock that was almost open anyway.
 
-She is also why whoever is breaking the seal came to Ashford specifically.
+She is also why whoever is breaking the seal came to Ashford specifically. Her attunement makes her legible to the thing feeding near the breach.
 
 **Old Verath:** He walked out of the Silence because he is wearing an amulet he found forty years ago in a ruin east of Ashford. It predates the Unmaking. It was made by Aldara Senne herself as a key to the seal chamber — she left it in a cache for the Covenant member who would eventually need to check the seal. Verath found the cache by accident, took the amulet because it was pretty, and has been wearing it ever since. He doesn't know what it is. He knows it protected him. He's not sure he wants to give it up.
 
-**The antagonist:** Not a monster. A person — a Thornwood Weaver named **Sable Thorn** (no relation to the Sable campaign — just noir, same as naming coincidence) — who has spent twenty years studying the Unmaking and believes the fragment of permanence, properly controlled, could end death for ordinary people, not just for one tyrant. Her motives are not evil. Her methods have become increasingly hard to justify. She is three days from completing the breaking. She doesn't know the children are in the chamber. That detail will matter.
+**The antagonist:** Not a monster. A person — a Thornwood Weaver named **Sable Thorn** — who has spent twenty years studying the Unmaking and believes the fragment of permanence, properly controlled, could end death for ordinary people, not just for one tyrant. Her motives are not evil. Her methods have become increasingly hard to justify. She is three days from completing the breaking. She doesn't know the children are in the chamber. That detail will matter.
+
+Sable does not fully understand what the breach has attracted. Her notes contain gaps she does not notice. She has repeated one sentence in three different letters with one noun changed. The Mnemonaut may be using her theory as a path.
 
 ---
 
@@ -290,8 +374,11 @@ She is also why whoever is breaking the seal came to Ashford specifically.
 1. **Arrival.** The mage rides into Ashford at dusk. The town is wrong — too quiet, too tense, the eastern sky just slightly off in a way only the mage can read as Silence. The inn, the first conversations, the shape of the problem.
 2. **The accounts.** The Treswick evacuees. What they heard — and didn't hear. Commander Fallor's briefing. The parents who need someone to tell them there is a plan.
 3. **Old Verath.** He's in the corner. He walked out. He has something. Getting the amulet — through conversation, investigation, magic, or some combination — is the session's first challenge.
-4. **Into the Silence.** With the amulet, the mage can function inside the Silence. Without it, spells fail beyond 1st level. The approach to the seal site is an exploration sequence — orientation failure, strange echoes of old magic, the specific wrongness of a place where the world's texture is missing. And something moving, distant, that is aware of the mage's arrival.
-5. **The chamber.** Three cold, frightened children and a seal that is closer to breaking than the Covenant's last report suggested. Maret's hand on the stone. What the mage does next is the session's hinge — and whatever they choose, Sable Thorn arrives at the end of the session to complicate it.
+4. **Into the Silence.** With the amulet, the mage can function inside the Silence. Without it, spells fail beyond 1st level. The approach to the seal site is an exploration sequence — orientation failure, old-law traces, memory drift, and the specific wrongness of a place where the world's texture is missing. Something reacts to prepared spell names rather than sound.
+5. **The first encounter.** Before the chamber, the mage meets a **Mnemonaut Echo**. A child's voice calls from the wrong direction using a phrase the child could not know. Tracks loop back over themselves even when the mage walked straight. One prepared spell name blurs in the mage's mind for the scene. This is not a boss fight and not the full intelligence. It is a lesser expression of the ecology: isolate, misdirect, feed, delay. A Discovery Roll can reveal that fresh improvisation, written anchors, noise, running water, or a newly chosen name can disrupt it.
+6. **The chamber.** Three cold, frightened children and a seal that is closer to breaking than the Covenant's last report suggested. Maret's hand on the stone. The mage has proof now that the Silence is inhabited, not merely empty. What the mage does next is the session's hinge — and whatever they choose, Sable Thorn arrives at the end of the session to complicate it.
+
+Chapter 1 can close after the chamber if the mage has stabilized or rescued the children, learned the seal is older or more complex than expected, identified Sable Thorn as a human pressure, and seen evidence of a Silence-adapted intelligence. Do not require defeating or explaining the full Mnemonaut intelligence in Chapter 1. That is successor-chapter material.
 
 ---
 
@@ -324,6 +411,7 @@ Quick-start answers:
 - "Service to the realm and its people. I grew up in a village that needed a mage and didn't have one. I know what that absence costs."
 - "Holding the seals of the Unmaking. My mentor spent her life repairing one. I watched what leaked through the cracks before she finished."
 - "To teach what I have learned. My mentor died before she could pass on her last working. I know what it means when knowledge is lost because I carry the gap."
+- "Holding the seals. I was allowed to see a sealed door once, and it knew my name before I spoke."
 
 ---
 
@@ -337,6 +425,7 @@ Quick-start answers:
 - "Magister Dorren — patient, precise, and retired from field work after losing three fingers to a ward breach. He gave me a brass astrolabe that hums faintly near old seals."
 - "Yara Silke — a Diviner who laughed too loud and drank too much and was right about things she shouldn't have been. She gave me a piece of advice: 'The future is always plural. Pick the one worth protecting.'"
 - "Aldric Vane — brilliant, cold, and gone. Left the Covenant under circumstances no one will explain to a junior mage. He left me his field journal. Half the pages are in a cipher I haven't cracked."
+- "Magister Iven Rael — a field scholar who said ruins lie less often than books, but more dangerously. They gave me a slate notebook full of rubbings from places the Covenant later sealed."
 
 ---
 
@@ -350,6 +439,7 @@ Quick-start answers:
 - "True Ward — a permanent seal that holds without concentration. My mentor could do it. I can hold a ward for hours, but the moment I sleep, it falls. The difference between those two things is the difference between protection and presence."
 - "Far Sight — seeing a place I've never been as clearly as if I were standing in it. Right now my scrying only works on places I've already touched. The Silence in Ashford is somewhere I've never been."
 - "Counterspell at a distance. Right now I can only unravel a working if I'm close enough to touch the threads. That's a problem when the thing casting is something you don't want to be near."
+- "Name Ward — a spell that anchors a person against memory alteration. I cannot cast it yet. In Ashford, that may matter more than I know."
 
 ---
 
@@ -363,6 +453,7 @@ Quick-start answers:
 - "Because wild magic killed my mother. Untrained, unsworn, and she couldn't control what she had. The Covenant is the difference between power and competence. The reason holds. It holds harder every year."
 - "Because a Covenant mage came through my village when I was twelve and fixed the well. Just fixed it. No price, no politics. I wanted to be the person who does that. On the road alone for the first time, I'm finding out if I actually am."
 - "Because the alternative was the Thornwood Principalities, and I saw what their mages become. The Covenant isn't perfect but it has limits, and limits are what keep power from eating the person who holds it."
+- "Because the Covenant writes things down. My family believed memory was enough, until a Surge changed what everyone remembered. The reason still holds, but I am starting to wonder who edits the records."
 
 ---
 

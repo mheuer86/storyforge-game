@@ -1,0 +1,47 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-stale-npc-answer-not-blocker",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "A prior NPC answer in recent prose should not remain an active close blocker when the current player input is a decision."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I accept the broker job.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The decision lands.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "advisoryInput": {
+        "playerInput": "I accept the broker job.",
+        "recentProse": "Slink replies with the evidence and answers the direct question before the room goes quiet.",
+        "notDoneFacts": [
+          {
+            "id": "cargo_loaded",
+            "text": "cargo loaded"
+          }
+        ],
+        "decisionCommitted": true,
+        "closePressure": true
+      },
+      "derivedInput": {
+        "hardBoundaryEquals": null,
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "close_candidate_or_plan",
+        "textContainsNone": [
+          "active_revelation_defer",
+          "active revelation/NPC response is live"
+        ]
+      }
+    }
+  }
+}

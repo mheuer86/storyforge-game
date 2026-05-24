@@ -105,6 +105,10 @@ export function Sf2PrototypePlayApp({
   const handoverForSession = session
     ? handoverExamples.find((example) => example.briefId === session.brief.id)
     : null
+  const closeAffordance = useMemo(() => {
+    if (!session) return null
+    return getChapterCloseAffordance(session)
+  }, [session])
   const artifact = useMemo(() => {
     if (!session) return null
     const base = exportSf2PrototypeArtifact(session)
@@ -383,8 +387,30 @@ export function Sf2PrototypePlayApp({
       ],
     })
 
-    setSession(nextSession)
-    void persistIfSavedSlot(nextSession)
+    const shouldAutoClose = shouldAutoCompileChapterHandover(narratorResult.annotation, diagnostics)
+    const finalSession = shouldAutoClose
+      ? {
+          ...nextSession,
+          diagnostics: [
+            ...nextSession.diagnostics,
+            {
+              kind: 'chapter_close_hybrid_policy',
+              at: Date.now(),
+              data: {
+                action: 'auto_handover',
+                reason: 'validated hard-boundary closed/reframed chapter_status',
+              },
+            },
+          ],
+        }
+      : nextSession
+
+    setSession(finalSession)
+    if (shouldAutoClose) {
+      await persistIfSavedSlot(finalSession)
+    } else {
+      void persistIfSavedSlot(finalSession)
+    }
     setPendingInput('')
     setActivePlayerInput('')
     setLiveProse('')
@@ -394,6 +420,10 @@ export function Sf2PrototypePlayApp({
     setPendingCheck(null)
     setStatusMessage(null)
     pendingRollResourceSpendsRef.current = []
+
+    if (shouldAutoClose) {
+      await compileChapterHandover(finalSession, 'Compiling chapter handover from chapter boundary...')
+    }
   }
 
   async function runArchivist(
@@ -488,15 +518,14 @@ export function Sf2PrototypePlayApp({
     }
   }
 
-  async function closeChapter() {
-    if (!session || busy || pendingCheck) return
-    if (session.transcript.length === 0) {
-      setSession(markSf2PrototypeError(session, 'Play at least one narrated turn before compiling a handover.'))
+  async function compileChapterHandover(sourceSession: Sf2PrototypeSession, status = 'Compiling chapter handover...') {
+    if (sourceSession.transcript.length === 0) {
+      setSession(markSf2PrototypeError(sourceSession, 'Play at least one narrated turn before compiling a handover.'))
       return
     }
 
     setIsArchiving(true)
-    setStatusMessage('Compiling chapter handover...')
+    setStatusMessage(status)
     let continuationSession: Sf2PrototypeSession | null = null
     const controller = new AbortController()
     const timeout = window.setTimeout(() => controller.abort(), PROTOTYPE_HANDOVER_TIMEOUT_MS)
@@ -504,7 +533,7 @@ export function Sf2PrototypePlayApp({
       const res = await fetch(API_ENDPOINTS.handover, {
         method: 'POST',
         headers: apiHeaders(),
-        body: JSON.stringify(buildSf2PrototypeHandoverRequest(session)),
+        body: JSON.stringify(buildSf2PrototypeHandoverRequest(sourceSession)),
         signal: controller.signal,
       })
       if (!res.ok) {
@@ -513,11 +542,11 @@ export function Sf2PrototypePlayApp({
           try { body = await res.text() } catch {}
         }
         const documents = buildSf2PrototypeFallbackHandoverDocuments(
-          session,
+          sourceSession,
           `handover route failed: HTTP ${res.status}`
         )
         continuationSession = continueSf2PrototypeWithHandover({
-          ...session,
+          ...sourceSession,
           lastHandoverResult: {
             ok: false,
             documents: null,
@@ -538,14 +567,14 @@ export function Sf2PrototypePlayApp({
         const result = await res.json() as NonNullable<Sf2PrototypeSession['lastHandoverResult']>
         if (!result.ok) {
           const documents = buildSf2PrototypeFallbackHandoverDocuments(
-            session,
+            sourceSession,
             result.message ? `compiler failed open: ${result.message}` : `compiler failed open: ${result.error}`
           )
           continuationSession = continueSf2PrototypeWithHandover({
-            ...session,
+            ...sourceSession,
             lastHandoverResult: result,
             diagnostics: [
-              ...session.diagnostics,
+              ...sourceSession.diagnostics,
               {
                 kind: 'handover_fallback',
                 at: Date.now(),
@@ -557,7 +586,7 @@ export function Sf2PrototypePlayApp({
           setStatusMessage('Opening Chapter 2 from fallback handover...')
         } else {
           continuationSession = continueSf2PrototypeWithHandover({
-            ...session,
+            ...sourceSession,
             lastHandoverResult: result,
           }, result.documents)
           setSession(continuationSession)
@@ -569,11 +598,11 @@ export function Sf2PrototypePlayApp({
       const errorName = error instanceof Error ? error.name : ''
       if (errorName === 'AbortError') {
         const documents = buildSf2PrototypeFallbackHandoverDocuments(
-          session,
+          sourceSession,
           `compiler timed out after ${PROTOTYPE_HANDOVER_TIMEOUT_MS / 1000}s`
         )
         continuationSession = continueSf2PrototypeWithHandover({
-          ...session,
+          ...sourceSession,
           lastHandoverResult: {
             ok: false,
             documents: null,
@@ -591,7 +620,7 @@ export function Sf2PrototypePlayApp({
         setStatusMessage('Opening Chapter 2 from fallback handover...')
       } else {
         setSession(markSf2PrototypeError(
-          session,
+          sourceSession,
           reason,
           [{
             kind: 'handover',
@@ -606,9 +635,14 @@ export function Sf2PrototypePlayApp({
     }
 
     if (continuationSession) {
-      void persistIfSavedSlot(continuationSession)
+      await persistIfSavedSlot(continuationSession)
       await runPrototypeTurn(continuationSession, '', true)
     }
+  }
+
+  async function closeChapter() {
+    if (!session || busy || pendingCheck) return
+    await compileChapterHandover(session)
   }
 
   function stateWithPendingRollSpends(state: Sf2State): Sf2State {
@@ -844,7 +878,7 @@ export function Sf2PrototypePlayApp({
                 disabled={busy || pendingCheck !== null || session.transcript.length === 0}
               >
                 <ScrollText className="h-4 w-4" />
-                Close Chapter
+                {closeAffordance?.kind === 'soft' ? 'Close Ready' : 'Close Chapter'}
               </Button>
             </div>
             {statusMessage ? (
@@ -1479,6 +1513,59 @@ function formatTranscript(session: Sf2PrototypeSession): string {
   return session.transcript
     .map((entry) => `[CH${entry.chapter} T${entry.turn} ${entry.speaker.toUpperCase()}] ${entry.content}`)
     .join('\n\n')
+}
+
+function latestChapterStatus(session: Sf2PrototypeSession): Record<string, unknown> | null {
+  const raw = session.state.history.turns.at(-1)?.narratorAnnotationRaw
+  const status = raw?.chapter_status ?? raw?.chapterStatus
+  return status && typeof status === 'object' && !Array.isArray(status)
+    ? status as Record<string, unknown>
+    : null
+}
+
+function getChapterCloseAffordance(session: Sf2PrototypeSession): { kind: 'soft' } | null {
+  const status = latestChapterStatus(session)
+  if (!status) return null
+  const closeCandidate = status.close_candidate === true || status.closeCandidate === true
+  const phase = typeof status.phase === 'string' ? status.phase : ''
+  const blockers = [
+    ...(Array.isArray(status.active_blockers) ? status.active_blockers : []),
+    ...(Array.isArray(status.activeBlockers) ? status.activeBlockers : []),
+  ]
+  if ((closeCandidate || phase === 'close_candidate') && blockers.length === 0) return { kind: 'soft' }
+  return null
+}
+
+function shouldAutoCompileChapterHandover(
+  annotation: Record<string, unknown> | null,
+  diagnostics: Sf2PrototypeDiagnosticEntry[]
+): boolean {
+  const rawStatus = annotation?.chapter_status ?? annotation?.chapterStatus
+  if (!rawStatus || typeof rawStatus !== 'object' || Array.isArray(rawStatus)) return false
+  const status = rawStatus as Record<string, unknown>
+  const phase = typeof status.phase === 'string' ? status.phase : ''
+  const closeIntent = typeof status.close_intent === 'string'
+    ? status.close_intent
+    : typeof status.closeIntent === 'string'
+      ? status.closeIntent
+      : ''
+  const blockers = [
+    ...(Array.isArray(status.active_blockers) ? status.active_blockers : []),
+    ...(Array.isArray(status.activeBlockers) ? status.activeBlockers : []),
+    ...(Array.isArray(status.never_close_mid_active) ? status.never_close_mid_active : []),
+    ...(Array.isArray(status.neverCloseMidActive) ? status.neverCloseMidActive : []),
+  ]
+  const hardBoundary = diagnostics.some((entry) => {
+    if (entry.kind !== 'prose_first_close_loop' || !entry.data || typeof entry.data !== 'object') return false
+    const data = entry.data as { advisory?: { phase?: unknown } }
+    return data.advisory?.phase === 'hard_boundary_strict'
+  })
+
+  return hardBoundary &&
+    blockers.length === 0 &&
+    status.handover_ready === true &&
+    (phase === 'closed' || phase === 'reframed') &&
+    (closeIntent === 'close_this_turn' || closeIntent === 'reframe_this_turn')
 }
 
 function downloadArtifact(artifact: unknown, briefId: string) {

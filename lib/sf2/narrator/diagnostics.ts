@@ -10,6 +10,7 @@ export function buildEmptyNarratorDiagnostics() {
     workingSet: null,
     sceneBundleBuilt: null,
     pacingAdvisory: null,
+    proseFirstCloseLoop: null,
   }
 }
 

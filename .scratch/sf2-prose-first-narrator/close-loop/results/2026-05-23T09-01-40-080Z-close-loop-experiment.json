@@ -1,0 +1,669 @@
+{
+  "exportPath": "/tmp/codex-remote-attachments/019e53f2-2dd1-7903-8d39-1fc937688814/AEC2ACCE-9E25-42C4-BE73-8E148212022E/1-sf2-prose-first-space-opera_forty-thousand-2.json",
+  "model": "claude-sonnet-4-6",
+  "variantKeys": [
+    "v0",
+    "v1",
+    "v2",
+    "v3",
+    "v4"
+  ],
+  "summary": {
+    "exportKind": "sf2-prose-first-prototype",
+    "exportedAt": "2026-05-23T08:22:01.442Z",
+    "briefId": "space-opera:forty-thousand",
+    "chapter": 1,
+    "transcriptEntries": 87,
+    "narratorTurns": 44,
+    "playerTurns": 43,
+    "extractedProbes": 8,
+    "expectedBreakdown": {
+      "no_close": 3,
+      "compress": 1,
+      "close_candidate": 2,
+      "must_close_or_reframe": 2
+    }
+  },
+  "results": [
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "n1-early-offer",
+        "turn": 8,
+        "expected": "no_close",
+        "label": "Early broker offer, terms still forming"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "n2-decision-window",
+        "turn": 11,
+        "expected": "no_close",
+        "label": "Player asks how long they have to decide"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "n3-alternative-job-search",
+        "turn": 14,
+        "expected": "no_close",
+        "label": "Player seeks alternative work at the board"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "p1-passenger-arrangement",
+        "turn": 20,
+        "expected": "compress",
+        "label": "Davan/Kes arrangement sealed, player heads to broker"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "p2-broker-job-accepted",
+        "turn": 22,
+        "expected": "close_candidate",
+        "label": "Broker job accepted and documentation plan exists"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "p3-crew-cohesion-tested",
+        "turn": 25,
+        "expected": "close_candidate",
+        "label": "Slink trust beat resolves the internal crew question"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "p4-undock-boundary",
+        "turn": 31,
+        "expected": "must_close_or_reframe",
+        "label": "Endurance undocks from Gannett"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v0",
+      "probe": {
+        "id": "p5-cooling-cut-boundary",
+        "turn": 35,
+        "expected": "must_close_or_reframe",
+        "label": "Cooling cut and Sable Corridor operation dominates"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "n1-early-offer",
+        "turn": 8,
+        "expected": "no_close",
+        "label": "Early broker offer, terms still forming"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "n2-decision-window",
+        "turn": 11,
+        "expected": "no_close",
+        "label": "Player asks how long they have to decide"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "n3-alternative-job-search",
+        "turn": 14,
+        "expected": "no_close",
+        "label": "Player seeks alternative work at the board"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "p1-passenger-arrangement",
+        "turn": 20,
+        "expected": "compress",
+        "label": "Davan/Kes arrangement sealed, player heads to broker"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "p2-broker-job-accepted",
+        "turn": 22,
+        "expected": "close_candidate",
+        "label": "Broker job accepted and documentation plan exists"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "p3-crew-cohesion-tested",
+        "turn": 25,
+        "expected": "close_candidate",
+        "label": "Slink trust beat resolves the internal crew question"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "p4-undock-boundary",
+        "turn": 31,
+        "expected": "must_close_or_reframe",
+        "label": "Endurance undocks from Gannett"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v1",
+      "probe": {
+        "id": "p5-cooling-cut-boundary",
+        "turn": 35,
+        "expected": "must_close_or_reframe",
+        "label": "Cooling cut and Sable Corridor operation dominates"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "n1-early-offer",
+        "turn": 8,
+        "expected": "no_close",
+        "label": "Early broker offer, terms still forming"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "n2-decision-window",
+        "turn": 11,
+        "expected": "no_close",
+        "label": "Player asks how long they have to decide"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "n3-alternative-job-search",
+        "turn": 14,
+        "expected": "no_close",
+        "label": "Player seeks alternative work at the board"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "p1-passenger-arrangement",
+        "turn": 20,
+        "expected": "compress",
+        "label": "Davan/Kes arrangement sealed, player heads to broker"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "p2-broker-job-accepted",
+        "turn": 22,
+        "expected": "close_candidate",
+        "label": "Broker job accepted and documentation plan exists"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "p3-crew-cohesion-tested",
+        "turn": 25,
+        "expected": "close_candidate",
+        "label": "Slink trust beat resolves the internal crew question"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "p4-undock-boundary",
+        "turn": 31,
+        "expected": "must_close_or_reframe",
+        "label": "Endurance undocks from Gannett"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v2",
+      "probe": {
+        "id": "p5-cooling-cut-boundary",
+        "turn": 35,
+        "expected": "must_close_or_reframe",
+        "label": "Cooling cut and Sable Corridor operation dominates"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "n1-early-offer",
+        "turn": 8,
+        "expected": "no_close",
+        "label": "Early broker offer, terms still forming"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "n2-decision-window",
+        "turn": 11,
+        "expected": "no_close",
+        "label": "Player asks how long they have to decide"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "n3-alternative-job-search",
+        "turn": 14,
+        "expected": "no_close",
+        "label": "Player seeks alternative work at the board"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "p1-passenger-arrangement",
+        "turn": 20,
+        "expected": "compress",
+        "label": "Davan/Kes arrangement sealed, player heads to broker"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "p2-broker-job-accepted",
+        "turn": 22,
+        "expected": "close_candidate",
+        "label": "Broker job accepted and documentation plan exists"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "p3-crew-cohesion-tested",
+        "turn": 25,
+        "expected": "close_candidate",
+        "label": "Slink trust beat resolves the internal crew question"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "p4-undock-boundary",
+        "turn": 31,
+        "expected": "must_close_or_reframe",
+        "label": "Endurance undocks from Gannett"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v3",
+      "probe": {
+        "id": "p5-cooling-cut-boundary",
+        "turn": 35,
+        "expected": "must_close_or_reframe",
+        "label": "Cooling cut and Sable Corridor operation dominates"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "n1-early-offer",
+        "turn": 8,
+        "expected": "no_close",
+        "label": "Early broker offer, terms still forming"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "n2-decision-window",
+        "turn": 11,
+        "expected": "no_close",
+        "label": "Player asks how long they have to decide"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "n3-alternative-job-search",
+        "turn": 14,
+        "expected": "no_close",
+        "label": "Player seeks alternative work at the board"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "p1-passenger-arrangement",
+        "turn": 20,
+        "expected": "compress",
+        "label": "Davan/Kes arrangement sealed, player heads to broker"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "p2-broker-job-accepted",
+        "turn": 22,
+        "expected": "close_candidate",
+        "label": "Broker job accepted and documentation plan exists"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "p3-crew-cohesion-tested",
+        "turn": 25,
+        "expected": "close_candidate",
+        "label": "Slink trust beat resolves the internal crew question"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "p4-undock-boundary",
+        "turn": 31,
+        "expected": "must_close_or_reframe",
+        "label": "Endurance undocks from Gannett"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    },
+    {
+      "variant": "v4",
+      "probe": {
+        "id": "p5-cooling-cut-boundary",
+        "turn": 35,
+        "expected": "must_close_or_reframe",
+        "label": "Cooling cut and Sable Corridor operation dominates"
+      },
+      "score": {
+        "pass": false,
+        "reason": "error: Connection error."
+      },
+      "result": {
+        "error": "Connection error."
+      }
+    }
+  ]
+}

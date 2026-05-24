@@ -13,6 +13,11 @@ import {
 import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
 import { reconcileRollModifierWithSocialAdvisories } from '@/lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
+import {
+  detectProseFirstFactLockViolations,
+  normalizeProseFirstChapterStatus,
+  type ProseFirstCloseLoopAdvisory,
+} from '@/lib/sf2/narrator/prose-first-close-loop'
 import { startTimer } from '@/lib/sf2/instrumentation/latency'
 import { normalizeAnthropicErrorMessage } from '@/lib/anthropic-error'
 import type { Sf2NarratorStreamEvent } from '@/lib/sf2/narrator/stream-protocol'
@@ -270,12 +275,112 @@ function recoverNarrateTurnInput(
   return { input: next, recoveryNotes }
 }
 
+function proseFirstCloseLoopAdvisoryFromContext(
+  turnContext: Sf2NarratorTurnContext
+): ProseFirstCloseLoopAdvisory | null {
+  return turnContext.diagnostics.proseFirstCloseLoop?.advisory ?? null
+}
+
+function textBlocksOnly(content: Anthropic.Message['content']): Anthropic.TextBlock[] {
+  return content.filter((block): block is Anthropic.TextBlock => block.type === 'text')
+}
+
+function safeJsonForRepair(value: unknown, maxLength = 2400): string {
+  let text: string
+  try {
+    text = JSON.stringify(value)
+  } catch {
+    text = String(value)
+  }
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
+}
+
+function targetChapterStatusGuidance(advisory: ProseFirstCloseLoopAdvisory): string {
+  switch (advisory.phase) {
+    case 'early_no_close':
+      return 'Use phase="opening" or "pressure", close_candidate=false, close_intent="none" or "continue_pressure", handover_ready=false, and pivot_signaled=false.'
+    case 'compress_no_future':
+      return 'Use phase="pressure", close_candidate=false, close_intent="continue_pressure", handover_ready=false, and pivot_signaled=false.'
+    case 'close_candidate_or_plan':
+      return 'Use phase="close_candidate" only if the current prose established a clean boundary; otherwise use phase="aftermath". Keep handover_ready=false unless the handover can start from established facts only.'
+    case 'active_revelation_defer':
+      return 'Use phase="close_candidate", close_candidate=true, close_intent="close_after_current_exchange", handover_ready=false, and pivot_signaled=false; name the live answer/revelation in active_blockers.'
+    case 'hard_boundary_strict':
+      return 'Use phase="closed" or "reframed" only for the crossed boundary. Do not mark next-chapter operation facts as complete unless the current prose actually completed them.'
+  }
+}
+
+function validateProseFirstChapterController(input: {
+  narrateInput: Record<string, unknown>
+  advisory: ProseFirstCloseLoopAdvisory | null
+}): {
+  input: Record<string, unknown>
+  recoveryNotes: string[]
+  repairInstructions: string[]
+} {
+  const { advisory } = input
+  if (!advisory) return { input: input.narrateInput, recoveryNotes: [], repairInstructions: [] }
+
+  const next = { ...input.narrateInput }
+  const recoveryNotes: string[] = []
+  const repairInstructions: string[] = []
+  const rawStatus = next.chapter_status ?? next.chapterStatus
+
+  if (rawStatus === undefined || rawStatus === null) {
+    repairInstructions.push(
+      'The prose-first narrate_turn is missing chapter_status. Re-emit the same turn with chapter_status filled from the private chapter close-loop advisory.'
+    )
+  } else {
+    const normalized = normalizeProseFirstChapterStatus(rawStatus)
+    if (normalized.status) {
+      next.chapter_status = normalized.status
+      if (next.chapterStatus !== undefined) delete next.chapterStatus
+    }
+    if (normalized.malformedNestedStatus) {
+      recoveryNotes.push('chapter_status was embedded as JSON inside reason; normalized to canonical chapter_status object')
+    }
+    if (normalized.errors.length > 0) {
+      repairInstructions.push(
+        `chapter_status is malformed: ${normalized.errors.join('; ')}. Re-emit with all direct chapter_status fields filled.`
+      )
+    }
+
+    const factLock = detectProseFirstFactLockViolations({
+      status: normalized.status,
+      notDoneFacts: advisory.facts.notDone,
+    })
+    if (factLock.violations.length > 0) {
+      const facts = factLock.violations
+        .map((violation) => `${violation.factId} (${violation.factText})`)
+        .join(', ')
+      repairInstructions.push(
+        [
+          `Fact-lock violation: chapter_status claims close readiness using Not done facts: ${facts}.`,
+          `Controller phase recommendation is ${advisory.phase}. ${targetChapterStatusGuidance(advisory)}`,
+          `Not done facts must stay out of signals_true and out of any Done clause: ${advisory.facts.notDone.map((fact) => fact.text).join('; ') || '(none)'}.`,
+        ].join(' ')
+      )
+    }
+  }
+
+  if (repairInstructions.length > 0) {
+    repairInstructions.push(
+      `Private close-loop advisory:\n${advisory.text}`,
+      `Original narrate_turn input for valid-field preservation:\n${safeJsonForRepair(input.narrateInput)}`
+    )
+  }
+
+  return { input: next, recoveryNotes, repairInstructions }
+}
+
 async function repairMissingNarrateTurn(args: {
   client: Anthropic
   turnContext: Sf2NarratorTurnContext
   completedContent: Anthropic.Message['content']
   state: Sf2State
   playerInput?: string
+  repairInstructions?: string[]
+  recoveryReason?: string
 }): Promise<{
   input: Record<string, unknown> | null
   usage: Anthropic.Usage | null
@@ -284,7 +389,11 @@ async function repairMissingNarrateTurn(args: {
 }> {
   const { client, turnContext, completedContent, state, playerInput } = args
   const apiTimer = startTimer()
-  const repairRequest = buildMissingNarrateTurnRepairRequest({ turnContext, completedContent })
+  const repairRequest = buildMissingNarrateTurnRepairRequest({
+    turnContext,
+    completedContent,
+    repairInstructions: args.repairInstructions,
+  })
   const repair = await client.messages.create({
     model: NARRATOR_MODEL,
     max_tokens: repairRequest.maxTokens,
@@ -303,7 +412,7 @@ async function repairMissingNarrateTurn(args: {
       input: null,
       usage: repair.usage,
       recoveryNotes: [
-        `narrate_turn missing; commit repair failed with stop_reason=${repair.stop_reason}`,
+        `${args.recoveryReason ?? 'narrate_turn missing'}; commit repair failed with stop_reason=${repair.stop_reason}`,
       ],
       apiMs: apiTimer.elapsed(),
     }
@@ -325,7 +434,7 @@ async function repairMissingNarrateTurn(args: {
     input: recovered.input,
     usage: repair.usage,
     recoveryNotes: [
-      'narrate_turn missing; repaired via commit-only retry against already-streamed prose',
+      `${args.recoveryReason ?? 'narrate_turn missing'}; repaired via commit-only retry against already-streamed prose`,
       ...recovered.recoveryNotes,
     ],
     apiMs: apiTimer.elapsed(),
@@ -411,6 +520,13 @@ export async function POST(req: NextRequest) {
         send({
           type: 'pacing_advisory',
           ...turnContext.diagnostics.pacingAdvisory,
+        })
+      }
+
+      if (turnContext.diagnostics.proseFirstCloseLoop) {
+        send({
+          type: 'prose_first_close_loop',
+          ...turnContext.diagnostics.proseFirstCloseLoop,
         })
       }
 
@@ -703,7 +819,7 @@ export async function POST(req: NextRequest) {
               gatedTextBuffer = ''
             }
           }
-          const recovered = recoverNarrateTurnInput(
+          let recovered = recoverNarrateTurnInput(
             narrateUse.input as Record<string, unknown>,
             state,
             turnContext.failedRollSkill,
@@ -711,19 +827,74 @@ export async function POST(req: NextRequest) {
             proseText,
             { narrativeTempo: turnContext.narrativeTempo }
           )
-          if (recovered.recoveryNotes.length > 0) {
+          const closeLoopAdvisory = proseFirstCloseLoopAdvisoryFromContext(turnContext)
+          let controlled = validateProseFirstChapterController({
+            narrateInput: recovered.input,
+            advisory: closeLoopAdvisory,
+          })
+          let narrateInput = controlled.input
+          const recoveryNotes = [...recovered.recoveryNotes, ...controlled.recoveryNotes]
+
+          if (controlled.repairInstructions.length > 0) {
+            const repairContent = textBlocksOnly(completed.content)
+            const repaired = await repairMissingNarrateTurn({
+              client,
+              turnContext,
+              completedContent: repairContent.length > 0 ? repairContent : [{ type: 'text', text: proseText, citations: null }],
+              state,
+              playerInput,
+              repairInstructions: controlled.repairInstructions,
+              recoveryReason: 'prose-first chapter_status invalid',
+            })
+            apiMsForLatency = (apiMsForLatency ?? 0) + repaired.apiMs
+            if (repaired.usage) {
+              const repairUsage = repaired.usage as {
+                input_tokens: number
+                output_tokens: number
+                cache_creation_input_tokens?: number
+                cache_read_input_tokens?: number
+              }
+              send({
+                type: 'token_usage',
+                usage: {
+                  model: NARRATOR_MODEL,
+                  inputTokens: repairUsage.input_tokens,
+                  outputTokens: repairUsage.output_tokens,
+                  cacheWriteTokens: repairUsage.cache_creation_input_tokens ?? 0,
+                  cacheReadTokens: repairUsage.cache_read_input_tokens ?? 0,
+                },
+              })
+            }
+            recoveryNotes.push(...repaired.recoveryNotes)
+            if (repaired.input) {
+              recovered = { input: repaired.input, recoveryNotes: [] }
+              controlled = validateProseFirstChapterController({
+                narrateInput: repaired.input,
+                advisory: closeLoopAdvisory,
+              })
+              narrateInput = controlled.input
+              recoveryNotes.push(...controlled.recoveryNotes)
+              if (controlled.repairInstructions.length > 0) {
+                recoveryNotes.push(
+                  'prose-first chapter_status remained invalid after one bounded repair; accepted locally normalized fields where possible'
+                )
+              }
+            }
+          }
+
+          if (recoveryNotes.length > 0) {
             console.warn('[sf2/narrator] narrate_turn input recovered', {
-              recoveryNotes: recovered.recoveryNotes,
+              recoveryNotes,
               turnIndex: state.history.turns.length,
             })
             send({
               type: 'narrator_output_recovered',
-              recoveryNotes: recovered.recoveryNotes,
+              recoveryNotes,
               turnIndex: state.history.turns.length,
             })
           }
           if (turnContext.narrativeTempo) {
-            const chosenTempoMode = normalizeTempoModeFromToolInput(recovered.input)
+            const chosenTempoMode = normalizeTempoModeFromToolInput(narrateInput)
             send({
               type: 'tempo_diagnostic',
               recommendedTempoMode: turnContext.narrativeTempo.mode,
@@ -737,7 +908,7 @@ export async function POST(req: NextRequest) {
               broadGoal: turnContext.narrativeTempo.broadGoal,
             })
           }
-          send({ type: 'narrate_turn', input: recovered.input })
+          send({ type: 'narrate_turn', input: narrateInput })
         } else if (completed.stop_reason !== 'max_tokens' && proseText.trim().length > 0) {
           if (turnContext.requiredRollGate && isHardRollGate(turnContext.requiredRollGate)) {
             console.warn('[sf2/narrator] blocked commit repair missing required request_roll', {
@@ -772,12 +943,19 @@ export async function POST(req: NextRequest) {
               gatedTextBuffer = ''
             }
           }
+          const closeLoopAdvisory = proseFirstCloseLoopAdvisoryFromContext(turnContext)
           const repaired = await repairMissingNarrateTurn({
             client,
             turnContext,
             completedContent: completed.content,
             state,
             playerInput,
+            repairInstructions: closeLoopAdvisory
+              ? [
+                  'Because this is a prose-first turn, include a complete chapter_status object in the narrate_turn tool input.',
+                  `Private close-loop advisory:\n${closeLoopAdvisory.text}`,
+                ]
+              : undefined,
           })
           apiMsForLatency = (apiMsForLatency ?? 0) + repaired.apiMs
 
@@ -811,8 +989,68 @@ export async function POST(req: NextRequest) {
             turnIndex: state.history.turns.length,
           })
           if (repaired.input) {
+            let controlled = validateProseFirstChapterController({
+              narrateInput: repaired.input,
+              advisory: closeLoopAdvisory,
+            })
+            const recoveryNotes = [...controlled.recoveryNotes]
+            if (controlled.repairInstructions.length > 0) {
+              const repairContent = textBlocksOnly(completed.content)
+              const statusRepaired = await repairMissingNarrateTurn({
+                client,
+                turnContext,
+                completedContent: repairContent.length > 0 ? repairContent : [{ type: 'text', text: proseText, citations: null }],
+                state,
+                playerInput,
+                repairInstructions: controlled.repairInstructions,
+                recoveryReason: 'prose-first chapter_status invalid after missing-commit repair',
+              })
+              apiMsForLatency = (apiMsForLatency ?? 0) + statusRepaired.apiMs
+              if (statusRepaired.usage) {
+                const statusRepairUsage = statusRepaired.usage as {
+                  input_tokens: number
+                  output_tokens: number
+                  cache_creation_input_tokens?: number
+                  cache_read_input_tokens?: number
+                }
+                send({
+                  type: 'token_usage',
+                  usage: {
+                    model: NARRATOR_MODEL,
+                    inputTokens: statusRepairUsage.input_tokens,
+                    outputTokens: statusRepairUsage.output_tokens,
+                    cacheWriteTokens: statusRepairUsage.cache_creation_input_tokens ?? 0,
+                    cacheReadTokens: statusRepairUsage.cache_read_input_tokens ?? 0,
+                  },
+                })
+              }
+              recoveryNotes.push(...statusRepaired.recoveryNotes)
+              if (statusRepaired.input) {
+                controlled = validateProseFirstChapterController({
+                  narrateInput: statusRepaired.input,
+                  advisory: closeLoopAdvisory,
+                })
+                recoveryNotes.push(...controlled.recoveryNotes)
+              }
+              if (controlled.repairInstructions.length > 0) {
+                recoveryNotes.push(
+                  'prose-first chapter_status remained invalid after one metadata repair following missing-commit repair; accepted locally normalized fields where possible'
+                )
+              }
+            }
+            if (recoveryNotes.length > 0) {
+              console.warn('[sf2/narrator] repaired narrate_turn input normalized', {
+                recoveryNotes,
+                turnIndex: state.history.turns.length,
+              })
+              send({
+                type: 'narrator_output_recovered',
+                recoveryNotes,
+                turnIndex: state.history.turns.length,
+              })
+            }
             if (turnContext.narrativeTempo) {
-              const chosenTempoMode = normalizeTempoModeFromToolInput(repaired.input)
+              const chosenTempoMode = normalizeTempoModeFromToolInput(controlled.input)
               send({
                 type: 'tempo_diagnostic',
                 recommendedTempoMode: turnContext.narrativeTempo.mode,
@@ -826,7 +1064,7 @@ export async function POST(req: NextRequest) {
                 broadGoal: turnContext.narrativeTempo.broadGoal,
               })
             }
-            send({ type: 'narrate_turn', input: repaired.input })
+            send({ type: 'narrate_turn', input: controlled.input })
           } else {
             send({ type: 'error', message: 'narrate_turn missing and commit repair failed' })
           }

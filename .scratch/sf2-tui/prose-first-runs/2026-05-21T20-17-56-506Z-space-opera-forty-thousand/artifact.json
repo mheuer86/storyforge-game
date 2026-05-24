@@ -1,0 +1,87 @@
+{
+  "kind": "sf2-prose-first-terminal-smoke",
+  "brief": {
+    "id": "space-opera:forty-thousand",
+    "genre": "space-opera",
+    "hook": "forty-thousand",
+    "title": "Forty Thousand"
+  },
+  "transcript": [
+    {
+      "speaker": "narrator",
+      "content": "Forty Thousand\n\nAnswer these character creation questions:\n1. What is the ship called, and who aboard still says the name like it means home?\n2. Who owns the forty-thousand-credit marker tonight: a creditor, a collector, a former ally, a corporate desk, or someone worse?\n3. What did you do to keep your crew flying that you still have not told them?\n4. What kind of cargo, passenger, data, route, or claim would you normally refuse on sight?\n5. When everything goes bad, what name do station people use for you: captain, courier, smuggler, pilot, liar, or something more personal?",
+      "at": "2026-05-21T20:17:56.505Z"
+    },
+    {
+      "speaker": "player",
+      "content": "I name the ship Kestrel and say the debt belongs to an old route boss.",
+      "at": "2026-05-21T20:17:56.506Z"
+    },
+    {
+      "speaker": "narrator",
+      "content": "Recorded setup answer: I name the ship Kestrel and say the debt belongs to an old route boss.\n\nThe next smoke turn would enter the opening scene.",
+      "at": "2026-05-21T20:17:56.506Z"
+    }
+  ],
+  "rollLog": [],
+  "mechanicalStateSnapshots": [
+    {
+      "turn": 0,
+      "hp": "pending character creation",
+      "clocks": [
+        {
+          "name": "- The Marker Comes Due: how close the creditor is to owning the PC's options",
+          "value": 0,
+          "max": 6
+        }
+      ]
+    },
+    {
+      "turn": 1,
+      "hp": "pending character creation",
+      "clocks": [
+        {
+          "name": "- The Marker Comes Due: how close the creditor is to owning the PC's options",
+          "value": 0,
+          "max": 6
+        }
+      ]
+    }
+  ],
+  "archivistOutputs": [
+    {
+      "turn": 0,
+      "character": "Pending",
+      "npcs": [
+        "The Broker",
+        "The Marker Face",
+        "The Ship's Practical Heart",
+        "The Station Functionary",
+        "The Witness Under The Panel"
+      ],
+      "location": "Character creation"
+    },
+    {
+      "turn": 1,
+      "character": "Pending",
+      "npcs": [
+        "The Broker",
+        "The Marker Face",
+        "The Ship's Practical Heart",
+        "The Station Functionary",
+        "The Witness Under The Panel"
+      ],
+      "location": "Character creation"
+    }
+  ],
+  "diagnostics": {
+    "adapter": "local smoke adapter",
+    "liveNarrator": false,
+    "liveArchivist": false
+  },
+  "handoverDocuments": {
+    "sessionBrief": "",
+    "gmMemory": "",
+    "quickReference": ""
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "kind": "sf2-prose-first-terminal-smoke",
+  "brief": {
+    "id": "cold-war:cardinal",
+    "genre": "cold-war",
+    "hook": "cardinal",
+    "title": "Cardinal"
+  },
+  "transcript": [
+    {
+      "speaker": "narrator",
+      "content": "Cardinal\n\nAnswer these character creation questions:\n1. **The briefing.** Mace closes the door. CARDINAL's situation — three missed drops, the timeline, what's at stake if Keslov has been rolled up and is being used to identify the network. The operative's task: independently verify the CLOCK drop site, attempt to establish contact through the emergency protocol, assess CARDINAL's status. Report back before the MIRROR drop time tomorrow.\n2. **The SDR.** Before crossing into East Berlin, the operative runs a surveillance detection route through West Berlin. Ninety minutes. What they notice — or don't notice. The question of whether they're clean when they reach Checkpoint Charlie.\n3. **Checkpoint Charlie.** Documentation. The specific theater of the crossing. East German border guards doing their job thoroughly. The texture of the East on the other side of the barrier.\n4. **CLOCK.** The restaurant on Schönhauser Allee. The men's bathroom. The tile. What's there — and whether it matches what the station was told.\n5. **The emergency protocol location.** Friedrichstrasse. The doorframe. The absence or presence of a red thumbtack. And what the operative notices in the street around them that suggests someone got there first.",
+      "at": "2026-05-21T20:52:43.178Z"
+    },
+    {
+      "speaker": "player",
+      "content": "I answer the character creation questions with a scarred name, an unpaid debt, and a willingness to risk myself for the missing.",
+      "at": "2026-05-21T20:52:43.183Z"
+    },
+    {
+      "speaker": "narrator",
+      "content": "Recorded setup answer: I answer the character creation questions with a scarred name, an unpaid debt, and a willingness to risk myself for the missing.\n\nThe next smoke turn would enter the opening scene.",
+      "at": "2026-05-21T20:52:43.183Z"
+    }
+  ],
+  "rollLog": [],
+  "mechanicalStateSnapshots": [
+    {
+      "turn": 0,
+      "hp": "pending character creation",
+      "clocks": []
+    },
+    {
+      "turn": 1,
+      "hp": "pending character creation",
+      "clocks": []
+    }
+  ],
+  "archivistOutputs": [
+    {
+      "turn": 0,
+      "character": "Pending",
+      "npcs": [],
+      "location": "Character creation"
+    },
+    {
+      "turn": 1,
+      "character": "Pending",
+      "npcs": [],
+      "location": "Character creation"
+    }
+  ],
+  "diagnostics": {
+    "adapter": "local smoke adapter",
+    "liveNarrator": false,
+    "liveArchivist": false
+  },
+  "handoverDocuments": {
+    "sessionBrief": "",
+    "gmMemory": "",
+    "quickReference": ""
+  }
+}

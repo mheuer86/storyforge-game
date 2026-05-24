@@ -137,6 +137,67 @@ export const narrateTurnTool: Anthropic.Tool = {
           pivot_signaled: { type: 'boolean' },
         },
       },
+      chapter_status: {
+        type: 'object',
+        description:
+          'Optional hidden chapter-loop metadata for prose-first narrator diagnostics. Do not mention this in player-facing prose. Normal SF2 narrator calls may omit it.',
+        properties: {
+          phase: {
+            type: 'string',
+            enum: ['opening', 'pressure', 'decision', 'aftermath', 'close_candidate', 'closed', 'reframed'],
+            description: 'Current chapter-loop phase after this turn.',
+          },
+          foreground_question: {
+            type: 'string',
+            description: 'The live chapter question this turn is answering, transforming, or deferring.',
+          },
+          answered: {
+            type: 'boolean',
+            description: 'Whether the foreground question is answered, failed, or transformed by established facts.',
+          },
+          close_candidate: {
+            type: 'boolean',
+            description: 'True when the chapter is close-soon even if an active blocker prevents closing this turn.',
+          },
+          close_intent: {
+            type: 'string',
+            enum: ['none', 'continue_pressure', 'close_after_current_exchange', 'close_this_turn', 'reframe_this_turn'],
+            description: 'Private close-loop intent for this turn.',
+          },
+          handover_ready: {
+            type: 'boolean',
+            description: 'True only when a clean next-chapter handover could be written from current established facts.',
+          },
+          signals_true: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Close/reframe signals that are already true in transcript or completed by this turn. Do not include future facts.',
+          },
+          never_close_mid_active: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Live response obligations that forbid closing mid-exchange.',
+          },
+          active_blockers: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Current blockers preventing close/reframe.',
+          },
+          next_required_delta: {
+            type: 'string',
+            description: 'Smallest next beat needed before close/reframe becomes clean.',
+          },
+          should_not_do_next: {
+            type: 'string',
+            description: 'What the next turn should avoid repeating or reopening.',
+          },
+          reason: {
+            type: 'string',
+            description:
+              'Fact-locked Done / In flight / Not done reasoning. Fill direct fields above; do not put JSON in this string.',
+          },
+        },
+      },
       tempo_mode: {
         type: 'string',
         enum: SF2_NARRATIVE_TEMPO_MODES,

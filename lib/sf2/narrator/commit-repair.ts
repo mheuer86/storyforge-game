@@ -13,7 +13,11 @@ export interface MissingNarrateTurnRepairRequest {
 export function buildMissingNarrateTurnRepairRequest(input: {
   turnContext: Pick<Sf2NarratorTurnContext, 'system' | 'messages'>
   completedContent: Anthropic.MessageParam['content']
+  repairInstructions?: string[]
 }): MissingNarrateTurnRepairRequest {
+  const extraInstructions = (input.repairInstructions ?? [])
+    .map((instruction) => instruction.trim())
+    .filter(Boolean)
   return {
     maxTokens: 1200,
     system: input.turnContext.system,
@@ -32,6 +36,7 @@ export function buildMissingNarrateTurnRepairRequest(input: {
               'The assistant prose immediately above was already streamed to the player. Do not rewrite it, continue it, summarize it, or add new prose.',
               `Emit exactly one ${NARRATOR_TOOL_NAME} tool call for the already-streamed turn.`,
               'Base mechanical_effects, hinted_entities, authorial_moves, and suggested_actions only on that already-streamed prose and the current scene state.',
+              ...extraInstructions,
               'Do not request a roll. Do not add natural-language commentary.',
             ].join('\n'),
           },

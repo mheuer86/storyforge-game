@@ -1,0 +1,93 @@
+{
+  "kind": "sf2-prose-first-terminal-smoke",
+  "brief": {
+    "id": "pale-flame",
+    "genre": "grimdark",
+    "hook": "ash-road",
+    "title": "Pale Flame"
+  },
+  "transcript": [
+    {
+      "speaker": "narrator",
+      "content": "Pale Flame\n\nAnswer these character creation questions:\n1. What vow keeps you walking when any sane person would turn back?\n2. Who did you fail to save before this journey?\n3. What sign of the holy do you still trust?\n4. Which sin would you commit again if it saved one life?\n5. What name should the wounded whisper when they need you?",
+      "at": "2026-05-21T20:08:32.882Z"
+    },
+    {
+      "speaker": "player",
+      "content": "I am Cael, sworn to carry mercy even when it costs blood.",
+      "at": "2026-05-21T20:08:32.883Z"
+    },
+    {
+      "speaker": "narrator",
+      "content": "Recorded setup answer: I am Cael, sworn to carry mercy even when it costs blood.\n\nThe next smoke turn would enter the opening scene.",
+      "at": "2026-05-21T20:08:32.883Z"
+    }
+  ],
+  "rollLog": [],
+  "mechanicalStateSnapshots": [
+    {
+      "turn": 0,
+      "hp": "pending character creation",
+      "clocks": [
+        {
+          "name": "The Pyre Road",
+          "value": 0,
+          "max": 6
+        },
+        {
+          "name": "The Missing Healer",
+          "value": 0,
+          "max": 6
+        }
+      ]
+    },
+    {
+      "turn": 1,
+      "hp": "pending character creation",
+      "clocks": [
+        {
+          "name": "The Pyre Road",
+          "value": 0,
+          "max": 6
+        },
+        {
+          "name": "The Missing Healer",
+          "value": 0,
+          "max": 6
+        }
+      ]
+    }
+  ],
+  "archivistOutputs": [
+    {
+      "turn": 0,
+      "character": "Pending",
+      "npcs": [
+        "Sister Ansel",
+        "Captain Veyr",
+        "Maren"
+      ],
+      "location": "Character creation"
+    },
+    {
+      "turn": 1,
+      "character": "Pending",
+      "npcs": [
+        "Sister Ansel",
+        "Captain Veyr",
+        "Maren"
+      ],
+      "location": "Character creation"
+    }
+  ],
+  "diagnostics": {
+    "adapter": "local smoke adapter",
+    "liveNarrator": false,
+    "liveArchivist": false
+  },
+  "handoverDocuments": {
+    "sessionBrief": "",
+    "gmMemory": "",
+    "quickReference": ""
+  }
+}
