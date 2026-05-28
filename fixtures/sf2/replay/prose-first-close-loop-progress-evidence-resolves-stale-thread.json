@@ -1,0 +1,107 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-progress-evidence-resolves-stale-thread",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "Regression from Cardinal: Archivist progress can establish that a chapter objective is resolved before the thread status is transitioned. Close-loop pacing should not let stale active status alone keep that thread Not done."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "meta": {
+        "seedId": "cold-war/cardinal",
+        "genreId": "cold-war",
+        "currentChapter": 1
+      },
+      "campaign": {
+        "threads": {
+          "thread_cardinal_drop": {
+            "id": "thread_cardinal_drop",
+            "title": "CARDINAL dead-drop pattern",
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "npc", "id": "npc_cardinal" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8,
+            "resolutionCriteria": "Determine whether CARDINAL's missed dead drops represent a real intelligence compromise or a false alarm; locate and assess CARDINAL's status and reason for non-contact",
+            "failureMode": "CARDINAL is burned before the station understands the compromise",
+            "retrievalCue": "CARDINAL missed dead drops and emergency contact pattern",
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [
+              {
+                "id": "progress_cardinal_resolved",
+                "turn": 18,
+                "summary": "CARDINAL's dead-drop pattern now resolved as asset-management operation: Webb cleared the CLOCK drop, CARDINAL is intact but product compromised, and the MIRROR window is a rescue-or-trap scenario."
+              },
+              {
+                "id": "progress_webb_confirmed",
+                "turn": 22,
+                "summary": "Webb confirmed as mole after clearing CARDINAL's MIRROR drop and receiving street instruction from a KGB contact. CARDINAL left wobbling but alive, and the next decision is whether to move on Webb or find CARDINAL first."
+              }
+            ],
+            "tensionHistory": []
+          }
+        }
+      },
+      "chapter": {
+        "number": 1,
+        "setup": {
+          "activeThreadIds": ["thread_cardinal_drop"],
+          "loadBearingThreadIds": ["thread_cardinal_drop"],
+          "spineThreadId": "thread_cardinal_drop"
+        }
+      },
+      "history": {
+        "turns": [
+          {
+            "index": 0,
+            "chapter": 1,
+            "playerInput": "I observe MIRROR.",
+            "narratorProse": "CARDINAL loads the drop and Webb clears it.",
+            "timestamp": "2026-05-26T00:00:00.000Z"
+          },
+          {
+            "index": 1,
+            "chapter": 1,
+            "playerInput": "I follow Webb.",
+            "narratorProse": "Webb receives street instruction from a KGB contact. Mace presents the next decision: find CARDINAL first or move on Webb.",
+            "timestamp": "2026-05-26T00:01:00.000Z"
+          }
+        ]
+      }
+    },
+    "turnIndex": 2,
+    "playerInput": "We do it three ways. I go meet CARDINAL. You move on Webb. After CARDINAL I meet Schafer.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "The decision lands.",
+      "annotation": null
+    },
+    "archivist": {
+      "patch": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "stateInput": {
+        "playerInput": "We do it three ways. I go meet CARDINAL. You move on Webb. After CARDINAL I meet Schafer."
+      },
+      "derivedInput": {
+        "activeBlockersCount": 0
+      },
+      "advisory": {
+        "phaseEquals": "close_candidate_or_plan",
+        "textContainsAll": [
+          "Phase recommendation: close_candidate_or_plan",
+          "thread resolved: CARDINAL dead-drop pattern"
+        ],
+        "textContainsNone": [
+          "thread unresolved: CARDINAL dead-drop pattern"
+        ]
+      }
+    }
+  }
+}

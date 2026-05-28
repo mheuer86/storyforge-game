@@ -11,6 +11,7 @@ import {
   type Sf2NarratorTurnContext,
 } from '@/lib/sf2/narrator/turn-context'
 import { normalizeSf2SkillKey } from '@/lib/sf2/rollable-skills'
+import { reconcileSf2RollGateDc } from '@/lib/sf2/narrator/roll-gates'
 import { reconcileRollModifierWithSocialAdvisories } from '@/lib/sf2/social-modifiers/evaluate'
 import { buildMissingNarrateTurnRepairRequest } from '@/lib/sf2/narrator/commit-repair'
 import {
@@ -548,11 +549,15 @@ export async function POST(req: NextRequest) {
       let apiAttempts = 0
       let visibleTextSent = false
       const providerRetryNotes: string[] = []
+      const forceRequestRoll = isHardRollGate(turnContext.requiredRollGate)
+      const narratorToolChoice = forceRequestRoll
+        ? { type: 'tool' as const, name: REQUEST_ROLL_TOOL_NAME, disable_parallel_tool_use: true }
+        : { type: 'auto' as const, disable_parallel_tool_use: true }
       const streamModelAttempt = async (cacheControl: 'cached' | 'uncached') => {
         apiAttempts += 1
         const modelStream = await client.messages.stream({
           model: NARRATOR_MODEL,
-          max_tokens: 4096,
+          max_tokens: forceRequestRoll ? 1024 : 4096,
           system: cacheControl === 'cached'
             ? turnContext.system
             : stripCacheControlDeep(turnContext.system),
@@ -565,7 +570,7 @@ export async function POST(req: NextRequest) {
           // emission would let the model fire both, and our find()-based
           // dispatch silently drops the narrate_turn (request_roll wins
           // ordering). disable_parallel_tool_use makes the contract explicit.
-          tool_choice: { type: 'auto', disable_parallel_tool_use: true },
+          tool_choice: narratorToolChoice,
           messages: cacheControl === 'cached'
             ? turnContext.messages
             : stripCacheControlDeep(turnContext.messages),
@@ -740,6 +745,7 @@ export async function POST(req: NextRequest) {
             modifier_reason?: string
           }
           const skillBinding = bindRequiredRollGateSkill(input.skill, turnContext)
+          const dcBinding = reconcileSf2RollGateDc(state, turnContext.requiredRollGate, input.dc)
           const rollModifier = reconcileRollModifierWithSocialAdvisories({
             state,
             playerInput: turnContext.intentQueue.current.text || playerInput,
@@ -761,6 +767,7 @@ export async function POST(req: NextRequest) {
               input: dropUndefinedFields({
                 ...input,
                 skill: skillBinding.skill,
+                dc: dcBinding.dc,
                 modifier_type: rollModifier.modifierType,
                 modifier_reason: rollModifier.modifierReason,
               }),
@@ -777,7 +784,7 @@ export async function POST(req: NextRequest) {
             requestedSkill: skillBinding.requestedSkill,
             intendedSkills: skillBinding.intendedSkills,
             skillOverrideReason: skillBinding.skillOverrideReason,
-            dc: input.dc,
+            dc: dcBinding.dc,
             why: input.why,
             consequenceOnFail: input.consequence_on_fail,
             modifierType: rollModifier.modifierType,

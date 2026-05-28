@@ -276,13 +276,13 @@ function reduceCastIntent(
     {
       presentNpcIds: rawPresentNpcIds,
       currentInterlocutorIds: rawInterlocutorIds,
-      mode: 'observe',
+      mode: 'strict',
     }
   )
   const idCheck = snapshotRefs.idCheck
   if (!idCheck.ok) {
     emitInvariant(emitter, 'canonical_id_violation', {
-      mode: 'observe',
+      mode: 'strict',
       violations: idCheck.violations,
       detail: formatViolations(idCheck.violations),
       priorSceneId: intent.priorSceneId,

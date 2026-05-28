@@ -192,6 +192,7 @@ function validateFinalState(closeLoop, exportData) {
   if (!exportData.currentState) {
     return { pass: false, failures: ['export missing currentState'], phase: null }
   }
+  const expectedTurnIndex = exportData.currentState.history?.turns?.length ?? null
   const input = closeLoop.buildProseFirstCloseLoopInputFromState({
     state: exportData.currentState,
     playerInput: 'Continue from the current corridor pressure.',
@@ -207,8 +208,8 @@ function validateFinalState(closeLoop, exportData) {
   if (!threadFactIds.some((id) => id.startsWith('thread_'))) {
     failures.push('final-state derivation did not surface generic thread-derived facts')
   }
-  if (input.turnIndex < 40) {
-    failures.push(`final-state turnIndex expected >= 40, got ${input.turnIndex}`)
+  if (expectedTurnIndex !== null && input.turnIndex !== expectedTurnIndex) {
+    failures.push(`final-state turnIndex expected ${expectedTurnIndex}, got ${input.turnIndex}`)
   }
 
   return {
@@ -216,6 +217,7 @@ function validateFinalState(closeLoop, exportData) {
     failures,
     phase: advisory.phase,
     turnIndex: input.turnIndex,
+    expectedTurnIndex,
     hardBoundary: input.hardBoundary ?? null,
     doneFactIds: advisory.facts.done.map((fact) => fact.id),
     inFlightFactIds: advisory.facts.inFlight.map((fact) => fact.id),

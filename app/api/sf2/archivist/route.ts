@@ -28,7 +28,7 @@ export const maxDuration = 60
 
 const requestSchema = z.object({
   state: z.record(z.unknown()),
-  narratorProse: z.string().max(8000),
+  narratorProse: z.string().max(32000),
   narratorAnnotation: z.record(z.unknown()).optional(),
   turnIndex: z.number(),
 })

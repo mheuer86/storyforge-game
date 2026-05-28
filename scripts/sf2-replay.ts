@@ -15,7 +15,11 @@ import {
   buildNarratorTurnContext,
   type Sf2NarratorRollResolution,
 } from '../lib/sf2/narrator/turn-context'
-import { extractSf2RollSkillTags, inspectSf2RollSkillTags } from '../lib/sf2/narrator/roll-gates'
+import {
+  extractSf2RollSkillTags,
+  inspectSf2RollSkillTags,
+  reconcileSf2RollGateDc,
+} from '../lib/sf2/narrator/roll-gates'
 import {
   evaluateSocialModifierAdvisories,
   reconcileRollModifierWithSocialAdvisories,
@@ -671,6 +675,12 @@ interface ReplayFixture {
       sourceId?: string
       skillsInclude?: string[]
       reasonIncludes?: string
+      dcPolicy?: {
+        requestedDc: number
+        dc: number
+        overridden?: boolean
+        reasonIncludes?: string
+      }
     }
     rollResolver?: {
       cases: Array<{
@@ -2890,6 +2900,21 @@ function assertRequiredRollGate(
   }
   if (expected.reasonIncludes !== undefined && !gate.reason.includes(expected.reasonIncludes)) {
     failures.push(`requiredRollGate.reason missing "${expected.reasonIncludes}"; got "${gate.reason}"`)
+  }
+  if (expected.dcPolicy) {
+    const dc = reconcileSf2RollGateDc(stateBefore, gate, expected.dcPolicy.requestedDc)
+    if (dc.dc !== expected.dcPolicy.dc) {
+      failures.push(`requiredRollGate.dcPolicy.dc: expected ${expected.dcPolicy.dc}, got ${dc.dc}`)
+    }
+    if (expected.dcPolicy.overridden !== undefined && dc.overridden !== expected.dcPolicy.overridden) {
+      failures.push(`requiredRollGate.dcPolicy.overridden: expected ${String(expected.dcPolicy.overridden)}, got ${String(dc.overridden)}`)
+    }
+    if (
+      expected.dcPolicy.reasonIncludes !== undefined &&
+      !String(dc.reason ?? '').includes(expected.dcPolicy.reasonIncludes)
+    ) {
+      failures.push(`requiredRollGate.dcPolicy.reason missing "${expected.dcPolicy.reasonIncludes}"; got "${dc.reason ?? ''}"`)
+    }
   }
 }
 

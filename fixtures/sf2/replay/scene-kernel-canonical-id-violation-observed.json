@@ -1,9 +1,9 @@
 {
   "schema": "sf2-replay-fixture/v1",
-  "name": "canonical_id_violation fires (observe mode) when narrator emits display-style ids",
+  "name": "canonical_id_violation rejects display-style scene ids",
   "source": {
     "kind": "synthetic",
-    "purpose": "PRD Fix 4: free-text IDs in scene state must surface as instrumentation. Phase A is observe-only — the existing resolveNpcReference + placeholder path still runs (existing behavior preserved), but a canonical_id_violation invariant event records the drift signal so we can see how often it actually fires before flipping to block mode in Phase E."
+    "purpose": "Free-text IDs in scene state must surface as instrumentation, but the scene snapshot reducer now runs strict identity handling: invalid IDs are not repaired into placeholder NPCs."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -66,6 +66,9 @@
     }
   },
   "expected": {
+    "presentNpcIdsExact": ["npc_mirren"],
+    "presentNpcIdsExcludes": ["npc_grey_coat"],
+    "entityIdsAbsent": ["npc_grey_coat"],
     "invariantEventsInclude": ["canonical_id_violation"],
     "invariantEventDetailIncludes": [
       { "type": "canonical_id_violation", "detailIncludes": "grey-coat" }

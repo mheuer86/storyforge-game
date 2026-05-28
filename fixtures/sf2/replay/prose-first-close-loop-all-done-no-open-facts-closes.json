@@ -1,0 +1,45 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "prose-first-close-loop-all-done-no-open-facts-closes",
+  "source": {
+    "kind": "synthetic-regression",
+    "notes": "When close pressure is present and the chapter fact pool has Done facts with no In flight or Not done facts, neutral continuation input should still be a close candidate."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "playerInput": "I take stock.",
+    "isInitial": false,
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "proseFirstCloseLoop": {
+      "advisoryInput": {
+        "turnIndex": 23,
+        "playerInput": "I take stock.",
+        "doneFacts": [
+          {
+            "id": "thread_cardinal_drop_resolved",
+            "text": "thread resolved: CARDINAL dead-drop pattern"
+          }
+        ],
+        "inFlightFacts": [],
+        "notDoneFacts": [],
+        "closePressure": true
+      },
+      "advisory": {
+        "phaseEquals": "close_candidate_or_plan",
+        "textContainsAll": [
+          "Phase recommendation: close_candidate_or_plan",
+          "thread resolved: CARDINAL dead-drop pattern"
+        ],
+        "textContainsNone": [
+          "Phase recommendation: compress_no_future",
+          "Not done: thread unresolved"
+        ]
+      }
+    }
+  }
+}

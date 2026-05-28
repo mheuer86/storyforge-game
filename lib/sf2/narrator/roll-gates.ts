@@ -17,6 +17,7 @@ export type Sf2RollGateKind =
   | 'technical_system'
   | 'investigation_search'
   | 'risky_movement'
+  | 'clandestine_contact'
   | 'physical_contest'
   | 'constrained_departure'
   | 'combat_attack'
@@ -35,6 +36,13 @@ export interface Sf2RequiredRollGate {
   sourceId?: string
 }
 
+export interface Sf2RollGateDcReconciliation {
+  requestedDc: number
+  dc: number
+  overridden: boolean
+  reason?: string
+}
+
 const SKILL_TAG_PATTERN = /\[([^\]]+)\]/g
 
 const GATE_SKILLS: Record<Exclude<Sf2RollGateKind, 'skill_tag'>, string[]> = {
@@ -43,6 +51,7 @@ const GATE_SKILLS: Record<Exclude<Sf2RollGateKind, 'skill_tag'>, string[]> = {
   technical_system: ['Investigation', 'Arcana'],
   investigation_search: ['Perception', 'Investigation'],
   risky_movement: ['Stealth', 'Acrobatics', 'Athletics'],
+  clandestine_contact: ['Stealth', 'Deception', 'Insight'],
   physical_contest: ['Athletics', 'Acrobatics'],
   constrained_departure: ['Piloting', 'Investigation', 'Athletics'],
   combat_attack: ['Athletics', 'Acrobatics'],
@@ -119,10 +128,10 @@ export function computeRequiredRollGate(state: Sf2State, playerInput: string): S
   if (resistanceGate) return resistanceGate
 
   const npcGate = detectNpcInformationGate(state, input)
-  if (npcGate) return npcGate
+  if (npcGate) return contextualizeRollGateBinding(state, input, npcGate)
 
   const departureGate = detectConstrainedDepartureGate(state, input)
-  if (departureGate) return departureGate
+  if (departureGate) return contextualizeRollGateBinding(state, input, departureGate)
 
   if (matchesAny(input, [
     /\b(compel|demand|threaten|intimidate|lean on|corner|confront|challenge|coerce|make (?:him|her|them|it) (?:talk|answer|move|stand down))\b/,
@@ -130,34 +139,42 @@ export function computeRequiredRollGate(state: Sf2State, playerInput: string): S
     /\b(?:speed up|hurry|expedite|accelerate|make sure|you better|need\b.{0,30}\bnow)\b/,
     /\b(talk (?:him|her|them|it) (?:into|down|out of)|convince|persuade|bluff|lie to|deceive|fast[- ]talk|negotiate|bargain)\b/,
   ])) {
-    return buildGate('social_pressure', 'free_text', 'social pressure or leverage against another actor')
+    return contextualizeRollGateBinding(state, input, buildGate('social_pressure', 'free_text', 'social pressure or leverage against another actor'))
   }
 
   if (matchesAny(input, [
     /\b(hack|slice|decrypt|crack|bypass|override|spoof|jam|scan|diagnose|calibrate|repair|reroute|patch|access|unlock|open|force open|disable|disarm)\b/,
     /\b(console|terminal|system|network|camera|sensor|drone|door|lock|hatch|ward|rune|array|engine|reactor|beacon|manifest|database|archive|logs?)\b.*\b(check|search|scan|query|pull|access|review|compare)\b/,
   ])) {
-    return buildGate('technical_system', 'free_text', 'technical, magical, or system interaction with an uncertain result')
+    return contextualizeRollGateBinding(state, input, buildGate('technical_system', 'free_text', 'technical, magical, or system interaction with an uncertain result'))
   }
 
   if (matchesAny(input, [
     /\b(search|look for|inspect|examine|investigate|sweep|scan|study|analyze|analyse|track|trace|follow the trail|check (?:the )?(?:room|area|desk|body|logs?|records?|files?|manifest|cargo|hold))\b/,
     /\b(find (?:a|the|any|where|who|what|why)|figure out|piece together|read the room|case the place)\b/,
+    /\b(document|photograph|record)\b.{0,60}\b(everything|contact|drop|surveillance|evidence|handoff|meeting|exchange|them|him|her)\b/,
   ])) {
-    return buildGate('investigation_search', 'free_text', 'investigation, search, scan, or non-trivial observation')
+    return contextualizeRollGateBinding(state, input, buildGate('investigation_search', 'free_text', 'investigation, search, scan, or non-trivial observation'))
+  }
+
+  if (matchesAny(input, [
+    /\b(contact|meet|signal|approach|reach)\b.{0,60}\b(source|asset|handler|cutout|dead drop|drop site|informant|contact)\b/,
+    /\b(cutout|dead drop|drop site|brush pass|clandestine contact)\b/,
+  ])) {
+    return contextualizeRollGateBinding(state, input, buildGate('clandestine_contact', 'free_text', 'clandestine contact or signal under uncertain surveillance'))
   }
 
   if (matchesAny(input, [
     /\b(sneak|hide|slip past|creep|shadow|tail|evade|escape|flee|run past|dash through|cross|climb|jump|leap|crawl|squeeze|swim|balance|pickpocket|palm)\b/,
     /\b(through|past|across|over|under)\b.*\b(guards?|patrol|fire|gap|chasm|crowd|checkpoint|blocked|locked|watched|danger|hazard)\b/,
   ])) {
-    return buildGate('risky_movement', 'free_text', 'risky stealth, escape, or movement under pressure')
+    return contextualizeRollGateBinding(state, input, buildGate('risky_movement', 'free_text', 'risky stealth, escape, or movement under pressure'))
   }
 
   if (matchesAny(input, [
     /\b(grapple|shove|tackle|wrestle|force|break|bend|lift|drag|carry|hold (?:him|her|them|it|the)|restrain|block|slam|kick|smash|force (?:the )?(?:door|hatch|gate|lock))\b/,
   ])) {
-    return buildGate('physical_contest', 'free_text', 'physical contest or force against resistance')
+    return contextualizeRollGateBinding(state, input, buildGate('physical_contest', 'free_text', 'physical contest or force against resistance'))
   }
 
   return null
@@ -177,8 +194,48 @@ export function renderRollGateBlock(gate: Sf2RequiredRollGate | null): string {
   return `\n\n---\n\n### Private roll advisory (expected, never mention)\nThe player's action pushes against meaningful uncertainty: ${gate.reason}. Gate source: ${gate.source}. You SHOULD call \`request_roll\` before resolving the action's outcome, using ${skillList}. If you continue without a roll, still resolve the action decisively: fail forward, reveal partial information, advance time, add cost, or let an antagonist move. For broad goals, resolve at goal scale after at most one meaningful roll; failure means progress arrives late, publicly, through the wrong person, with a cost, or alongside an antagonist move, not that nothing happens. Do not convert a broad goal into repeated requests, document checks, or refusal loops.`
 }
 
+export function reconcileSf2RollGateDc(
+  state: Sf2State,
+  gate: Sf2RequiredRollGate | null,
+  requestedDc: number
+): Sf2RollGateDcReconciliation {
+  const normalizedRequested = clampDc(Number.isFinite(requestedDc) ? Math.round(requestedDc) : 15)
+  if (gate?.binding !== 'hard') {
+    return {
+      requestedDc: normalizedRequested,
+      dc: normalizedRequested,
+      overridden: normalizedRequested !== requestedDc,
+      reason: normalizedRequested !== requestedDc ? 'requested DC normalized to the supported range' : undefined,
+    }
+  }
+
+  if (gate.kind === 'explicit_roll') {
+    return {
+      requestedDc: normalizedRequested,
+      dc: normalizedRequested,
+      overridden: normalizedRequested !== requestedDc,
+      reason: normalizedRequested !== requestedDc ? 'explicit-roll DC normalized to the supported range' : undefined,
+    }
+  }
+
+  const policyDc = hardRollGatePolicyDc(state, gate)
+  return {
+    requestedDc: normalizedRequested,
+    dc: policyDc,
+    overridden: policyDc !== normalizedRequested,
+    reason: policyDc !== normalizedRequested
+      ? `hard ${gate.kind} gate uses code-owned DC ${policyDc}`
+      : undefined,
+  }
+}
+
 function detectExplicitRoll(input: string): Sf2RequiredRollGate | null {
-  if (!/\b(roll|check|skill check)\b/.test(input)) return null
+  if (!matchesAny(input, [
+    /\broll(?:ing)?\b/,
+    /\bskill check\b/,
+    /\b(?:make|do|give|request|call for|ask for)\s+(?:a\s+)?(?:skill\s+)?check\b/,
+    /\bwith\s+(?:a\s+)?(?:skill\s+)?check\b/,
+  ])) return null
   return buildGate('explicit_roll', 'explicit_player_request', 'the player explicitly requested a check', 'hard')
 }
 
@@ -232,11 +289,7 @@ function detectNpcInformationGate(state: Sf2State, input: string): Sf2RequiredRo
   const present = new Set(state.world.sceneSnapshot.presentNpcIds)
   const npc = Object.values(state.campaign.npcs).find((candidate) => {
     if (!present.has(candidate.id)) return false
-    const trusted = candidate.disposition === 'trusted'
-    const earnedDisclosure = candidate.identity?.keyFacts?.some((fact) =>
-      /\b(trusts|trusted|earned disclosure|shared freely|owes the truth|full disclosure)\b/i.test(fact)
-    )
-    return !trusted || !earnedDisclosure
+    return !isEarnedDisclosureNpc(candidate)
   })
   if (!npc) return null
   return {
@@ -252,6 +305,98 @@ function buildGate(
   binding: Sf2RollGateBinding = 'expected'
 ): Sf2RequiredRollGate {
   return { required: true, kind, source, reason, skills: GATE_SKILLS[kind], binding }
+}
+
+function contextualizeRollGateBinding(
+  state: Sf2State,
+  input: string,
+  gate: Sf2RequiredRollGate
+): Sf2RequiredRollGate {
+  if (gate.binding !== 'expected') return gate
+  if (gate.kind === 'npc_information') {
+    return hardenGate(gate, 'resistant actionable NPC information should not be volunteered for free')
+  }
+  if (gate.kind === 'social_pressure' && hasPresentResistantNpc(state)) {
+    return hardenGate(gate, 'the current NPC is not an earned-disclosure ally')
+  }
+  if (gate.kind === 'clandestine_contact') {
+    return hardenGate(gate, 'clandestine contact carries exposure risk')
+  }
+  if (isHighStakesRollContext(state, input)) {
+    return hardenGate(gate, 'the current scene is under active high-stakes pressure')
+  }
+  return gate
+}
+
+function hardenGate(gate: Sf2RequiredRollGate, reason: string): Sf2RequiredRollGate {
+  return {
+    ...gate,
+    binding: 'hard',
+    reason: `${gate.reason}; ${reason}`,
+  }
+}
+
+function isHighStakesRollContext(state: Sf2State, input: string): boolean {
+  if (state.world.combat?.active) return true
+  if (state.world.operation?.status === 'active') return true
+  if (Object.values(state.campaign.procedures ?? {}).some(isActiveSf2Procedure)) return true
+  if (Object.values(state.campaign.threads).some((thread) => thread.status === 'active' && thread.tension >= 7)) return true
+  return /\b(carefully|ready for anything|under pressure|surveillance|watcher|mole|asset|source|handler|compromised|evidence|camera|photograph|document|drop|cutout|dead drop|tail|follow)\b/.test(input)
+}
+
+function hasPresentResistantNpc(state: Sf2State): boolean {
+  const present = new Set(state.world.sceneSnapshot.presentNpcIds)
+  return Object.values(state.campaign.npcs).some((candidate) => {
+    if (!present.has(candidate.id)) return false
+    return !isEarnedDisclosureNpc(candidate)
+  })
+}
+
+function isEarnedDisclosureNpc(npc: Sf2State['campaign']['npcs'][string]): boolean {
+  if (npc.disposition !== 'trusted') return false
+  return Boolean(npc.identity?.keyFacts?.some((fact) =>
+    /\b(trusts|trusted|earned disclosure|shared freely|owes the truth|full disclosure)\b/i.test(fact)
+  ))
+}
+
+function hardRollGatePolicyDc(state: Sf2State, gate: Sf2RequiredRollGate): number {
+  const highStakes = isHighStakesRollContext(state, '')
+  switch (gate.kind) {
+    case 'npc_information':
+    case 'social_pressure':
+      return socialDcForGate(state, gate)
+    case 'investigation_search':
+      return clampDc(14 + (highStakes ? 1 : 0))
+    case 'technical_system':
+      return clampDc(15 + (highStakes ? 1 : 0))
+    case 'risky_movement':
+    case 'physical_contest':
+      return clampDc(15 + (highStakes ? 1 : 0))
+    case 'clandestine_contact':
+      return clampDc(16 + (highStakes ? 1 : 0))
+    case 'constrained_departure':
+      return clampDc(16)
+    case 'combat_attack':
+    case 'resistance_save':
+      return clampDc(15)
+    case 'skill_tag':
+    case 'explicit_roll':
+      return 15
+  }
+}
+
+function socialDcForGate(state: Sf2State, gate: Sf2RequiredRollGate): number {
+  const npc = gate.sourceId ? state.campaign.npcs[gate.sourceId] : undefined
+  const disposition = npc?.disposition
+  if (disposition === 'hostile') return 18
+  if (disposition === 'wary') return 16
+  if (disposition === 'favorable') return 13
+  if (disposition === 'trusted') return 12
+  return 15
+}
+
+function clampDc(value: number): number {
+  return Math.min(25, Math.max(5, value))
 }
 
 function normalizeRollGateText(value: string): string {

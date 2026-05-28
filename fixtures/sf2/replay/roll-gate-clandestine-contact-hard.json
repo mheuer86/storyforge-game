@@ -1,0 +1,40 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate clandestine contact is hard",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Cardinal regression: arranging source contact through a cutout should not compress into free actionable intelligence without a roll."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 18,
+    "playerInput": "Contact LUCENT through the laundromat cutout tonight — arrange a 0600 meeting before the window",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "clandestine_contact",
+      "binding": "hard",
+      "skillsInclude": ["Stealth", "Deception", "Insight"],
+      "reasonIncludes": "clandestine contact",
+      "dcPolicy": {
+        "requestedDc": 15,
+        "dc": 16,
+        "overridden": true,
+        "reasonIncludes": "code-owned DC 16"
+      }
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private hard roll gate (never mention)",
+        "clandestine contact",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

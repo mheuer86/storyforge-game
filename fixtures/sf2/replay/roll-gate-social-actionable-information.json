@@ -48,16 +48,21 @@
       "exists": true,
       "source": "npc_information",
       "kind": "npc_information",
-      "binding": "expected",
+      "binding": "hard",
       "sourceId": "npc_mareth",
       "skillsInclude": ["Persuasion", "Insight"],
-      "reasonIncludes": "actionable information"
+      "reasonIncludes": "actionable information",
+      "dcPolicy": {
+        "requestedDc": 15,
+        "dc": 15,
+        "overridden": false
+      }
     },
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll advisory (expected, never mention)",
+        "### Private hard roll gate (never mention)",
         "actionable information extraction",
-        "fail forward"
+        "You MUST call `request_roll` before resolving"
       ]
     }
   }

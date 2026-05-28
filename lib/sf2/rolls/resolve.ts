@@ -171,6 +171,11 @@ export function resolveSf2SkillAbility(state: Sf2State, skill: string): {
   reason: 'explicit' | 'playbook_primary' | 'wis_fallback'
 } {
   const normalized = normalizeText(skill)
+  const explicitAbility = abilityFromName(normalized)
+  if (explicitAbility) {
+    return { ability: explicitAbility, reason: 'explicit' }
+  }
+
   for (const entry of SKILL_STAT_PATTERNS) {
     if (entry.patterns.some((pattern) => pattern.test(normalized))) {
       return { ability: entry.ability, reason: 'explicit' }
@@ -184,6 +189,32 @@ export function resolveSf2SkillAbility(state: Sf2State, skill: string): {
   }
 
   return { ability: 'WIS', reason: 'wis_fallback' }
+}
+
+function abilityFromName(normalized: string): Sf2Ability | null {
+  const compact = normalized.replace(/[^a-z]/g, '')
+  switch (compact) {
+    case 'str':
+    case 'strength':
+      return 'STR'
+    case 'dex':
+    case 'dexterity':
+      return 'DEX'
+    case 'con':
+    case 'constitution':
+      return 'CON'
+    case 'int':
+    case 'intelligence':
+      return 'INT'
+    case 'wis':
+    case 'wisdom':
+      return 'WIS'
+    case 'cha':
+    case 'charisma':
+      return 'CHA'
+    default:
+      return null
+  }
 }
 
 export function resolveSf2Roll(

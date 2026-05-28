@@ -1,0 +1,28 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate check read is not explicit",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Ordinary phrasing like 'check his read' must not be treated as an explicit player request for a mechanical check."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 23,
+    "playerInput": "After Cardinal, I meet Schafer. Check his read on the situation and what he found out.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": false
+    },
+    "narratorMessages": {
+      "userMessageContainsNone": [
+        "### Private hard roll gate (never mention)",
+        "the player explicitly requested a check"
+      ]
+    }
+  }
+}

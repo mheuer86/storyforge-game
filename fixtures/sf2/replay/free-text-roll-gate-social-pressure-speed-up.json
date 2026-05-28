@@ -3,7 +3,7 @@
   "name": "free text roll gate social pressure speed up",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Untagged free text that pressures an NPC to speed up a process injects an expected private roll advisory."
+    "purpose": "Untagged free text that pressures a wary NPC to speed up a process injects a hard private roll gate."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -46,9 +46,9 @@
   "expected": {
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll advisory (expected, never mention)",
+        "### Private hard roll gate (never mention)",
         "social pressure or leverage against another actor",
-        "You SHOULD call `request_roll` before resolving"
+        "You MUST call `request_roll` before resolving"
       ]
     }
   }

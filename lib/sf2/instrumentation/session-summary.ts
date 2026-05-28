@@ -176,6 +176,21 @@ function pricingForModel(model: string | undefined, fallback: keyof typeof PRICI
   return PRICING[fallback]
 }
 
+function tokenUsageDedupKey(
+  ev: DebugEvent,
+  usage: { role?: string; model?: string; inputTokens?: number; outputTokens?: number; cacheWriteTokens?: number; cacheReadTokens?: number }
+): string {
+  return [
+    ev.at,
+    usage.role ?? '',
+    usage.model ?? '',
+    usage.inputTokens ?? 0,
+    usage.outputTokens ?? 0,
+    usage.cacheWriteTokens ?? 0,
+    usage.cacheReadTokens ?? 0,
+  ].join('|')
+}
+
 interface ChapterSnapshot {
   chapter: number
   turn: number
@@ -282,9 +297,13 @@ export function computeSessionSummary(
   let authorOnlyCallsObserved = 0
   let chapterMeaningCallsObserved = 0
   let narratorEventCost = 0
+  const seenTokenUsageEvents = new Set<string>()
   for (const ev of debug) {
     if (ev.kind !== 'token_usage') continue
     const d = ev.data as { role?: string; model?: string; inputTokens?: number; outputTokens?: number; cacheWriteTokens?: number; cacheReadTokens?: number }
+    const dedupKey = tokenUsageDedupKey(ev, d)
+    if (seenTokenUsageEvents.has(dedupKey)) continue
+    seenTokenUsageEvents.add(dedupKey)
     const bucket =
       d.role === 'narrator'
         ? narratorTokens

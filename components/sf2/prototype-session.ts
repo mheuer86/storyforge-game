@@ -497,6 +497,16 @@ export function continueSf2PrototypeWithHandover(
 }
 
 export function exportSf2PrototypeArtifact(session: Sf2PrototypeSession) {
+  const fallbackHandoverDocuments = buildSf2PrototypeFallbackHandoverDocuments(
+    session,
+    'export requested before chapter handover compilation'
+  )
+  const handoverDocuments: Sf2HandoverDocuments = {
+    sessionBrief: session.handoverDocuments?.sessionBrief?.trim() || fallbackHandoverDocuments.sessionBrief,
+    gmMemory: session.handoverDocuments?.gmMemory?.trim() || fallbackHandoverDocuments.gmMemory,
+    quickReference: session.handoverDocuments?.quickReference?.trim() || fallbackHandoverDocuments.quickReference,
+  }
+
   return {
     kind: 'sf2-prose-first-prototype',
     exportedAt: new Date().toISOString(),
@@ -507,11 +517,7 @@ export function exportSf2PrototypeArtifact(session: Sf2PrototypeSession) {
     mechanicalSnapshots: session.snapshots,
     archivistOutputs: session.archivistOutputs,
     diagnostics: session.diagnostics,
-    handoverDocuments: session.handoverDocuments ?? {
-      sessionBrief: '',
-      gmMemory: '',
-      quickReference: '',
-    },
+    handoverDocuments,
     lastHandoverResult: session.lastHandoverResult,
   }
 }

@@ -1,0 +1,34 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate explicit check stays hard",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Explicit mechanical check requests should still produce a hard roll gate after narrowing the generic word 'check'."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "turnIndex": 4,
+    "playerInput": "Can I make a check to read whether he's lying?",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "explicit_player_request",
+      "kind": "explicit_roll",
+      "binding": "hard",
+      "skillsInclude": ["Investigation", "Perception", "Persuasion"],
+      "reasonIncludes": "explicitly requested a check"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private hard roll gate (never mention)",
+        "the player explicitly requested a check",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

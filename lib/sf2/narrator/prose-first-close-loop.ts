@@ -267,6 +267,14 @@ function deriveCloseLoopPhase(
   if (hardBoundary) return 'hard_boundary_strict'
   if (activeBlockers.length > 0) return 'active_revelation_defer'
   if (input.decisionCommitted || input.objectiveAccepted) return 'close_candidate_or_plan'
+  if (
+    input.closePressure &&
+    (input.doneFacts?.length ?? 0) > 0 &&
+    (input.inFlightFacts?.length ?? 0) === 0 &&
+    (input.notDoneFacts?.length ?? 0) === 0
+  ) {
+    return 'close_candidate_or_plan'
+  }
   if (input.closePressure) return 'compress_no_future'
   return 'early_no_close'
 }
@@ -329,22 +337,27 @@ function deriveChapterThreadFacts(
       chapterThreadIds.has(thread.id)
     ))
 
+  const resolvedThreads = chapterThreads.filter((thread) =>
+    isClosedThreadStatus(thread.status) || hasStrongThreadResolutionEvidence(thread)
+  )
+  const unresolvedActiveThreads = chapterThreads.filter((thread) =>
+    thread.status === 'active' && !hasStrongThreadResolutionEvidence(thread)
+  )
+
   return {
-    done: chapterThreads
-      .filter((thread) => isClosedThreadStatus(thread.status))
+    done: resolvedThreads
       .map((thread) => ({
         id: `thread_${thread.id}_resolved`,
         text: `thread resolved: ${thread.title}`,
         aliases: [thread.title, thread.retrievalCue],
       })),
-    inFlight: chapterThreads
-      .filter((thread) => thread.status === 'active')
+    inFlight: unresolvedActiveThreads
       .map((thread) => ({
         id: `thread_${thread.id}_in_flight`,
         text: `thread in flight: ${thread.title}`,
         aliases: [thread.title, thread.retrievalCue],
       })),
-    notDone: chapterThreads
+    notDone: unresolvedActiveThreads
       .filter((thread) => thread.status === 'active' && (thread.loadBearing || thread.spineForChapter === currentChapter))
       .map((thread) => ({
         id: `thread_${thread.id}_unresolved`,
@@ -363,6 +376,28 @@ function deriveStateActiveBlockers(state: Sf2State): string[] {
 
 function isClosedThreadStatus(status: string): boolean {
   return status.startsWith('resolved_') || status === 'abandoned'
+}
+
+function hasStrongThreadResolutionEvidence(thread: Sf2State['campaign']['threads'][string]): boolean {
+  if (thread.status !== 'active') return false
+  const latestProgress = thread.progressEvents
+    .slice(-4)
+    .map((event) => `${event.summary} ${event.evidenceQuote ?? ''}`)
+    .join('\n')
+  const text = normalizeText(latestProgress)
+  if (!text) return false
+  return [
+    /\bnow resolved\b/,
+    /\bdefinitively established\b/,
+    /\bconfirmed as\b/,
+    /\bis now confirmed\b/,
+    /\bnow understood as\b/,
+    /\bmeeting complete\b/,
+    /\boperation complete\b/,
+    /\brelationship stabilized\b/,
+    /\bdecision is locked\b/,
+    /\bnext decision is\b/,
+  ].some((pattern) => pattern.test(text))
 }
 
 function deriveRunSpecificNotDoneFacts(

@@ -1,0 +1,74 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll resolver maps bare ability names",
+  "source": {
+    "purpose": "Narrator request_roll may emit ability names such as Charisma, Dexterity, or Wisdom. These must map to the matching ability instead of falling back to WIS."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "player": {
+        "name": "Replay Operative",
+        "level": 1,
+        "stats": { "STR": 10, "DEX": 16, "CON": 12, "INT": 12, "WIS": 14, "CHA": 8 },
+        "proficiencies": []
+      }
+    },
+    "turnIndex": 0,
+    "playerInput": "Resolve ability-name roll math.",
+    "narrator": {
+      "prose": "The check waits on the sheet.",
+      "annotation": {
+        "suggested_actions": [],
+        "mechanical_effects": []
+      }
+    },
+    "archivist": null
+  },
+  "expected": {
+    "rollResolver": {
+      "cases": [
+        {
+          "name": "charisma maps to CHA",
+          "skill": "Charisma",
+          "dc": 15,
+          "expect": {
+            "ability": "CHA",
+            "modifier": -1,
+            "sourceLabelsInclude": ["CHA -1"]
+          }
+        },
+        {
+          "name": "dexterity maps to DEX",
+          "skill": "Dexterity",
+          "dc": 15,
+          "expect": {
+            "ability": "DEX",
+            "modifier": 3,
+            "sourceLabelsInclude": ["DEX +3"]
+          }
+        },
+        {
+          "name": "wis abbreviation maps to WIS",
+          "skill": "WIS",
+          "dc": 15,
+          "expect": {
+            "ability": "WIS",
+            "modifier": 2,
+            "sourceLabelsInclude": ["WIS +2"]
+          }
+        },
+        {
+          "name": "intelligence maps to INT",
+          "skill": "Intelligence",
+          "dc": 15,
+          "expect": {
+            "ability": "INT",
+            "modifier": 1,
+            "sourceLabelsInclude": ["INT +1"]
+          }
+        }
+      ]
+    }
+  }
+}

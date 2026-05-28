@@ -3,7 +3,7 @@
   "name": "free text roll gate social NPC information",
   "source": {
     "kind": "synthetic-deterministic",
-    "purpose": "Untagged pressure for information from a wary on-stage NPC injects an expected private roll advisory."
+    "purpose": "Untagged pressure for information from a wary on-stage NPC injects a hard private roll gate."
   },
   "input": {
     "stateBeforePreset": "minimal",
@@ -46,9 +46,9 @@
   "expected": {
     "narratorMessages": {
       "userMessageContainsAll": [
-        "### Private roll advisory (expected, never mention)",
+        "### Private hard roll gate (never mention)",
         "information extraction from a wary or neutral NPC",
-        "You SHOULD call `request_roll` before resolving"
+        "You MUST call `request_roll` before resolving"
       ]
     }
   }

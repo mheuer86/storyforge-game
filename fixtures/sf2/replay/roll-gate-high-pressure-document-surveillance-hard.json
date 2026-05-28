@@ -1,0 +1,70 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate high pressure document surveillance is hard",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Cardinal regression: photographing/documenting a live surveillance exchange should force dice instead of becoming automatic competent prose."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "factions": {
+          "faction_opposition": {
+            "id": "faction_opposition",
+            "name": "Opposition Watchers",
+            "type": "hostile service",
+            "stance": "hostile",
+            "heat": 4,
+            "agenda": "Document the operative",
+            "resources": [],
+            "pressure": []
+          }
+        },
+        "threads": {
+          "thread_live_surveillance": {
+            "id": "thread_live_surveillance",
+            "title": "Live surveillance geometry",
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_opposition" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8,
+            "resolutionCriteria": "Document who clears the drop and who watches them",
+            "failureMode": "The watcher spots the operative",
+            "retrievalCue": "camera, drop site, hostile watcher",
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 21,
+    "playerInput": "Use your camera to document everything, Webb, GRU, the drop, and the contact. Be ready for anything.",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "investigation_search",
+      "binding": "hard",
+      "skillsInclude": ["Perception", "Investigation"],
+      "reasonIncludes": "high-stakes pressure"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private hard roll gate (never mention)",
+        "investigation, search, scan, or non-trivial observation",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}

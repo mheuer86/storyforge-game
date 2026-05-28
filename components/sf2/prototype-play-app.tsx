@@ -309,9 +309,10 @@ export function Sf2PrototypePlayApp({
           onAnnotation: (annotation) => {
             recordDiagnostic({ kind: 'narrator_annotation', at: Date.now(), data: annotation })
           },
-          onNarratorUsage: (usage) => {
-            recordDiagnostic({ kind: 'token_usage', at: Date.now(), data: { role: 'narrator', ...usage } })
-          },
+          // Client orchestrator already forwards narrator usage through
+          // onDiagnostic as token_usage; recording it here double-counts cost
+          // in prototype exports.
+          onNarratorUsage: () => {},
           onDiagnostic: (entry) => recordDiagnostic(toPrototypeDiagnostic(entry)),
         },
       })

@@ -1,0 +1,70 @@
+{
+  "schema": "sf2-replay-fixture/v1",
+  "name": "roll gate high pressure investigation is hard",
+  "source": {
+    "kind": "synthetic-regression",
+    "purpose": "Cardinal regression: studying operational evidence under active high-tension pressure should force a roll instead of giving the Narrator a skippable advisory."
+  },
+  "input": {
+    "stateBeforePreset": "minimal",
+    "stateBeforePatch": {
+      "campaign": {
+        "factions": {
+          "faction_station": {
+            "id": "faction_station",
+            "name": "The Station",
+            "type": "intelligence service",
+            "stance": "allied",
+            "heat": 2,
+            "agenda": "Keep the asset alive",
+            "resources": [],
+            "pressure": []
+          }
+        },
+        "threads": {
+          "thread_asset_compromise": {
+            "id": "thread_asset_compromise",
+            "title": "Asset compromise",
+            "category": "thread",
+            "status": "active",
+            "owner": { "kind": "faction", "id": "faction_station" },
+            "stakeholders": [],
+            "tension": 8,
+            "peakTension": 8,
+            "resolutionCriteria": "Determine whether the asset is compromised",
+            "failureMode": "The asset is burned",
+            "retrievalCue": "missing contact signals and suspect report",
+            "chapterCreated": 1,
+            "loadBearing": true,
+            "resolutionGates": [],
+            "progressEvents": [],
+            "tensionHistory": []
+          }
+        }
+      }
+    },
+    "turnIndex": 6,
+    "playerInput": "Study the map and photographs before responding — absorb the operational picture before committing to anything",
+    "narrator": {
+      "prose": "",
+      "annotation": null
+    }
+  },
+  "expected": {
+    "requiredRollGate": {
+      "exists": true,
+      "source": "free_text",
+      "kind": "investigation_search",
+      "binding": "hard",
+      "skillsInclude": ["Perception", "Investigation"],
+      "reasonIncludes": "high-stakes pressure"
+    },
+    "narratorMessages": {
+      "userMessageContainsAll": [
+        "### Private hard roll gate (never mention)",
+        "investigation, search, scan, or non-trivial observation",
+        "You MUST call `request_roll` before resolving"
+      ]
+    }
+  }
+}
