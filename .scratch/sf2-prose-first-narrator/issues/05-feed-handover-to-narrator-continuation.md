@@ -1,7 +1,7 @@
 # Feed Handover To Narrator For Chapter 2+
 
-Status: ready-for-agent
-Labels: ready-for-agent
+Status: superseded
+Labels: superseded
 Type: AFK
 Area: SF2 / narrator / chapter transition
 
@@ -47,3 +47,7 @@ The old Chapter Author path remains as fallback when handover documents are miss
 ## Blocked by
 
 - 04-chapter-close-handover-compiler.md
+
+## Comments
+
+2026-06-10: Superseded by `.scratch/sf2-next-architecture/issues/09-chapter-2-continuation-typed-precedence.md`, which carries this scope forward and adds typed-state precedence rules, conflict errata, and pinned-amendment injection. See `.scratch/sf2-next-architecture/PRD.md` (Migration and Existing-Ticket Disposition).
