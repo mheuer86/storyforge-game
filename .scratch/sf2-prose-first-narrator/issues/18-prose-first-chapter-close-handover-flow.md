@@ -1,5 +1,5 @@
 # 18 - Wire Validated Chapter Close To Handover Flow
-Status: ready Type: AFK Area: SF2 prose-first prototype / chapter close / handover
+Status: superseded Type: AFK Area: SF2 prose-first prototype / chapter close / handover
 
 ## Parent
 
@@ -41,3 +41,7 @@ Use hybrid close:
 - Automatic for validated hard-boundary closes.
 - Player-confirmed for soft close candidates.
 - No close during active NPC/revelation/negotiation scenes.
+
+## Comments
+
+2026-06-10: Superseded by `.scratch/sf2-next-architecture/issues/06-one-pass-close-ceremony.md`, which carries this scope forward into the one-pass close ceremony (landing → player-facing retrospective → parallel handover compile) and folds in ticket 20. See `.scratch/sf2-next-architecture/PRD.md` (Migration and Existing-Ticket Disposition).
